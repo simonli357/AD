@@ -1,0 +1,6 @@
+# Description: GPS configuration file
+rate: 4
+max_noise: 0.2
+gps_delay: 1.0
+cov: 0.02
+manual_integration: false

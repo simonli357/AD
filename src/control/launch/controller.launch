@@ -1,0 +1,101 @@
+<launch>
+
+  <arg name="sign" default="false"/>
+  <arg name="ekf" default="false"/>
+  <arg name="lane" default="false"/>
+  <arg name="name" default="car1"/>
+  <arg name="v" default="50"/>
+  <arg name="vref" default="0.$(arg v)"/>
+
+  <!-- speed challenge -->
+  <!-- <arg name="x0" default="11.71"/>
+  <arg name="y0" default="1.896"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="speedrun"/> -->
+
+  <!-- start -->
+  <!-- <arg name="x0" default="0.39"/>
+  <arg name="y0" default="5.8"/>
+  <arg name="yaw0" default="-1.57"/>
+  <arg name = "path" default="run1"/> -->
+
+  <!-- speed curve -->
+  <arg name="x0" default="5.118"/>
+  <arg name="y0" default="4.78"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="test2"/>
+
+  <!-- ramp -->
+  <!-- <arg name="x0" default="1.578"/>
+  <arg name="y0" default="11.8"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="test3"/> -->
+
+  <!-- hw, head of car aligning with P in Park -->
+  <!-- <arg name="x0" default="5.614"/>
+  <arg name="y0" default="11.8"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="test4"/> -->
+
+  <!-- rdb, head of car at end of dotted line -->
+  <!-- <arg name="x0" default="13.454"/>
+  <arg name="y0" default="10.4"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="test5"/> -->
+
+  <!-- right turn -->
+  <!-- <arg name="x0" default="15.273"/>
+  <arg name="y0" default="6.067"/>
+  <arg name="yaw0" default="-1.57"/>
+  <arg name = "path" default="test6"/> -->
+
+  <!-- parking -->
+  <!-- <arg name="x0" default="7.966"/>
+  <arg name="y0" default="0.946"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="test6"/> -->
+
+  <arg name="real" default="false"/>
+  <arg name="subModel" default="false"/>
+  <arg name = "rate" default="300"/>
+  <param name="pathName" value="$(arg path)"/>
+  <param name="vrefInt" value="$(arg v)"/>
+  <arg name = "gmapping" default="false"/>
+  <param name="gmapping" value="$(arg gmapping)"/>
+  <arg name = "amcl" default="false"/>
+  <param name="amcl" value="$(arg amcl)"/>
+  <arg name = "lidarOdom" default="false"/>
+  <param name="lidarOdom" value="$(arg lidarOdom)"/>
+  <arg name = "dashboard" default="true"/>
+  <param name="dashboard" value="$(arg dashboard)"/>
+  <arg name = "realsense_imu" default="false"/>
+  <param name="realsense_imu" value="$(arg realsense_imu)"/>
+  <arg name = "kb" default="false"/>
+  <param name="kb" value="$(arg kb)"/>
+  <arg name = "hw" default="1.33"/>
+  <param name="hw" value="$(arg hw)"/>
+  <arg name = "gps" default="false"/>
+  <param name="gps" value="$(arg gps)"/>
+  <arg name = "pub_wpts" default="true"/>
+  <param name="pub_wpts" value="$(arg pub_wpts)"/>
+  <rosparam command="load" file="$(find control)/scripts/config/mpc_config$(arg v).yaml" />
+  <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
+  <rosparam command="load" file="$(find control)/scripts/config/mpc_config_park.yaml" />
+
+  <node pkg="control" type="path2.py" name="path_planner" output="screen"></node> 
+  <node pkg="control" type="controller" name="$(anon mpc_controller)" output="screen"> 
+    <param name="sign" value="$(arg sign)"/>
+    <param name="ekf" value="$(arg ekf)"/>
+    <param name="lane" value="$(arg lane)"/>
+    <param name="name" value="$(arg name)"/>
+    <param name="/robot_name" value="$(arg name)"/>
+    <param name="vref" value="$(arg vref)"/>
+    <param name="x0" value="$(arg x0)"/>
+    <param name="y0" value="$(arg y0)"/>
+    <param name="yaw0" value="$(arg yaw0)"/>
+    <param name="real" value="$(arg real)"/>
+    <param name="/real" value="$(arg real)"/>
+    <param name="subModel" value="$(arg subModel)"/>
+    <param name="rate" value="$(arg rate)"/>
+  </node>
+</launch>

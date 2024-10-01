@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" clear_params="true">
+    <rosparam command="load" file="$(find control)/config/ekf.yaml" />
+  </node>
+  <node pkg="localization" type="localization_plot.py" name="localization_plot" output="screen"> </node>
+
+</launch>

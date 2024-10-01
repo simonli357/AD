@@ -1,0 +1,131 @@
+cmake_minimum_required(VERSION 3.0.2)
+# cmake_minimum_required(VERSION 3.18)
+project(perception)
+
+set(CMAKE_CXX_STANDARD 17)
+
+find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
+  roscpp
+  rospy
+  std_msgs
+  message_generation
+  sensor_msgs
+  cv_bridge
+  image_transport
+  utils
+)
+
+find_package(CUDA REQUIRED)
+if(CUDA_FOUND)
+  message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}")
+else()
+  message("-- CUDA not found")
+endif()
+include_directories(${CUDA_INCLUDE_DIRS})
+link_directories(${CUDA_LIBRARY_DIRS})
+find_package(realsense2 REQUIRED)
+if (realsense2_FOUND)
+  message("-- RealSense found")
+else()
+  message("-- RealSense not found")
+endif()
+find_package (Eigen3 REQUIRED )
+
+# For finding FindTensorRT.cmake
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
+find_package(ncnn REQUIRED)
+if (${ncnn_FOUND})
+  message("-- NCNN found.")
+  message("-- NCNN_VULKAN flag is ${NCNN_VULKAN}")
+  if (${NCNN_VULKAN})
+    message("-- AUTO-ENABLING GPU_SUPPORT")
+  endif()
+  set(GPU_SUPPORT ON)
+  include_directories(${ncnn_INCLUDE})
+  link_directories(${ncnn_LIB})
+endif()
+
+find_package(OpenCV 4.5 REQUIRED)
+if (OpenCV_FOUND)
+    message("OpenCV found ${OpenCV_VERSION}, ${OpenCV_INCLUDE_DIRS}")
+else()
+    message("OpenCV not found")
+endif()
+
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS
+  geometry_msgs
+  roscpp
+  rospy
+  std_msgs
+  utils
+  message_runtime
+  image_transport
+  cv_bridge
+  sensor_msgs
+)
+
+include_directories(
+  include
+  include/ncnn/include
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
+)
+
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
+
+file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
+add_library(alglib SHARED ${ALGLIB_SOURCES})
+
+add_executable(lane
+  src/lane.cpp
+)
+target_link_libraries(lane
+  ${catkin_LIBRARIES}
+)
+
+add_executable(signFastest
+  src/signFastest.cpp
+  src/yolo-fastestv2.cpp
+)
+target_link_libraries(signFastest
+  ${catkin_LIBRARIES}
+  ncnn ${OpenCV_LIBS}
+)
+
+add_executable(videoDetector
+  src/videoDetector.cpp
+  src/yolo-fastestv2.cpp
+)
+target_link_libraries(videoDetector
+  ${catkin_LIBRARIES}
+  ncnn ${OpenCV_LIBS}
+)
+
+add_executable(cameraNode
+  src/cameraNode.cpp
+  src/yolo-fastestv2.cpp
+  src/engine.cpp
+  src/yolov8.cpp
+)
+target_link_libraries(cameraNode
+  ${catkin_LIBRARIES}
+  ncnn
+  ${OpenCV_LIBS}
+  ${realsense2_LIBRARY}
+  ${CUDA_LIBRARIES}
+  nvinfer
+  nvparsers
+  nvonnxparser
+  alglib
+  ${Python3_LIBRARIES}
+  ${realsense2_LIBRARY}
+)
+
+

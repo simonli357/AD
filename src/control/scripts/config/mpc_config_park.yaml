@@ -1,0 +1,36 @@
+T_park: 0.05
+N_park: 49
+park_thresh: 0.1
+exit_thresh: 0.1
+
+parallel_park:
+  offset_x = 0.63
+  offset_y = 0.32
+  target_yaw = 3.14159265359
+
+constraints_park:
+  # sim
+  # v_max: 0.7
+  # v_min: -0.7
+  # v_ref: -0.7
+
+  #gazebo
+  v_max: 0.5
+  v_min: -0.5
+  v_ref: -0.5
+
+  delta_max: 0.4
+  delta_min: -0.4
+  x_min: -4
+  x_max: 4
+  y_min: -4
+  y_max: 4
+
+costs_park:
+  x_cost: 1
+  y_cost: 7
+  yaw_cost: 1
+  v_cost: 0.5
+  steer_cost: 0.05
+  delta_v_cost: 0.
+  delta_steer_cost: 0.

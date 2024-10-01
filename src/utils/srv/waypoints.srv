@@ -1,0 +1,13 @@
+# Request
+string pathName
+string vrefName
+float64 x0
+float64 y0
+float64 yaw0
+---
+# Response
+std_msgs/Float32MultiArray state_refs
+std_msgs/Float32MultiArray input_refs
+std_msgs/Float32MultiArray wp_attributes
+std_msgs/Float32MultiArray wp_normals
+std_msgs/Float32MultiArray maneuver_directions

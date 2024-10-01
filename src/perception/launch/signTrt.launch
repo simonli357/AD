@@ -1,0 +1,14 @@
+<launch>
+
+<rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+<arg name="show" default="false"/>
+<arg name="print" default="true"/>
+<arg name="print_duration" default="true"/>
+<param name="showFlag" value="$(arg show)"/>
+<param name="printFlag" value="$(arg print)"/>
+<param name="printDuration" value="$(arg print_duration)"/>
+<node pkg="perception" name="signTrt" output="screen" type="signTRT2" required="true">
+<!-- <node pkg="perception" name="signTrt" output="screen" type="sign_tensorrt.py" required="true"> -->
+</node>
+
+</launch>

@@ -1,0 +1,17 @@
+<launch>
+
+<rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+<arg name="show" default="false"/>
+<arg name="print" default="false"/>
+<arg name="print_duration" default="false"/>
+<arg name="depth" default="true"/>
+<arg name="real" default="false"/>
+<node pkg="perception" name="signFastest2" output="screen" type="signFastest" required="true">
+    <param name="showFlag" value="$(arg show)"/>
+    <param name="printFlag" value="$(arg print)"/>
+    <param name="printDuration" value="$(arg print_duration)"/>
+    <param name="hasDepthImage" value="$(arg depth)"/>
+    <param name="real" value="$(arg real)"/>
+</node>
+
+</launch>
