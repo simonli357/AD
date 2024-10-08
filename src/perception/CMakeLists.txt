@@ -128,4 +128,9 @@ target_link_libraries(cameraNode
   ${realsense2_LIBRARY}
 )
 
+install(DIRECTORY include/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.hpp"
+)
+
 

@@ -79,6 +79,7 @@
   <exec_depend>tf</exec_depend>
   <exec_depend>message_runtime</exec_depend>
   <depend>utils</depend>
+  <depend>perception</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

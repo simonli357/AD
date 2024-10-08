@@ -18,6 +18,7 @@
 #include "engine.h"
 #include "yolov8.h"
 #include <memory>
+#include <eigen3/Eigen/Dense>
 
 using namespace std::chrono;
 
@@ -35,7 +36,8 @@ std::string getSourceDirectory() {
 
 class SignFastest {
     public:
-        SignFastest(ros::NodeHandle& nh)
+        SignFastest(ros::NodeHandle& nh, bool real = false) : 
+            real(real), object_pose_body_frame(Eigen::Vector3d(0, 0, 0))
         {
             std::cout.precision(4);
             nh.param("class_names", class_names, std::vector<std::string>());
@@ -102,6 +104,106 @@ class SignFastest {
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
             std::cout <<"pub created" << std::endl;
         }
+        
+        static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240}; // fx, fy, cx, cy
+        static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
+        static constexpr double parallel_w2h_ratio = 1.30;
+        static constexpr double perpendicular_w2h_ratio = 2.88;
+        static constexpr double CAR_WIDTH = 0.1885;
+        static constexpr double CAR_HEIGHT = 0.1155;
+        static constexpr double CAR_LENGTH = 0.464;
+        static constexpr std::array<double, 3> CAMERA_POSE = {0.095, 0, 0.165};
+        Eigen::Vector3d object_pose_body_frame;
+        
+        static void estimate_object_pose2d(Eigen::Vector3d &out, double x1, double y1, double x2, double y2,
+                                                double object_distance,
+                                                bool is_car = false)
+        {
+            double yaw = 0;
+            
+            if (is_car) {
+                double car_pixel_w2h_ratio = std::abs((x2 - x1) / (y2 - y1));
+                // std::cout << "car_pixel_w2h_ratio: " << car_pixel_w2h_ratio << std::endl;
+
+                // Normalize the ratio to a scale of 0 (parallel) to 1 (perpendicular)
+                double normalized_ratio_parallel = std::max((car_pixel_w2h_ratio / parallel_w2h_ratio), 1.0);
+                double normalized_ratio_perpendicular = std::min(car_pixel_w2h_ratio / perpendicular_w2h_ratio, 1.0);
+                // std::cout << "normalized_ratio_parallel: " << normalized_ratio_parallel << std::endl;
+                // std::cout << "normalized_ratio_perpendicular: " << normalized_ratio_perpendicular << std::endl;
+
+                double parallel_diff = std::abs(normalized_ratio_parallel - 1);
+                double perpendicular_diff = std::abs(normalized_ratio_perpendicular - 1);
+                double dist;
+                if (car_pixel_w2h_ratio < 2.0 || parallel_diff < perpendicular_diff) { // Parallel to the camera
+                    // std::cout << "Parallel to the camera" << std::endl;
+                    dist = CAR_LENGTH / 2 / normalized_ratio_parallel;
+                    yaw = 0;
+                } else { // Perpendicular to the camera
+                    dist = CAR_WIDTH / 2 / normalized_ratio_perpendicular;
+                    yaw = M_PI / 2;
+                }
+                if (std::abs(car_pixel_w2h_ratio-parallel_w2h_ratio)/parallel_w2h_ratio < 0.1) {
+                    yaw = 0;
+                } else if (std::abs(car_pixel_w2h_ratio-perpendicular_w2h_ratio)/perpendicular_w2h_ratio < 0.1) {
+                    yaw = M_PI / 2;
+                } else {
+                    yaw = (car_pixel_w2h_ratio - parallel_w2h_ratio) / (perpendicular_w2h_ratio - parallel_w2h_ratio) * (M_PI / 2);
+                }
+                // std::cout << "yaw: " << yaw << std::endl;
+                object_distance += dist;
+            }
+
+            // Extract camera parameters
+            double fx = CAMERA_PARAMS[0];
+            double fy = CAMERA_PARAMS[1];
+            double cx = CAMERA_PARAMS[2];
+            double cy = CAMERA_PARAMS[3];
+
+            // Compute bounding box center in image coordinates
+            double bbox_center_x = (x1 + x2) / 2;
+            double bbox_center_y = (y1 + y2) / 2;
+
+            // Convert image coordinates to normalized coordinates
+            double x_norm = (bbox_center_x - cx) / fx;
+            double y_norm = (bbox_center_y - cy) / fy;
+
+            // Add distance from camera to robot center
+            object_distance += CAMERA_POSE[0];
+
+            // Estimate 3D coordinates in the camera frame
+            double X_c = x_norm * object_distance;
+            double Y_c = y_norm * object_distance;
+            double Z_c = object_distance;
+
+            // // 3D point in the camera frame
+            // Eigen::Vector3d P_c(X_c, Y_c, Z_c);
+            // // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
+            // Eigen::Vector3d P_v(Z_c, -X_c, 0);
+
+            // // Rotation matrix from vehicle to world coordinates
+            // Eigen::Matrix2d R_vw;
+            // R_vw << std::cos(yaw), -std::sin(yaw),
+            //         std::sin(yaw), std::cos(yaw);
+
+            // // Translate to world coordinates
+            // Eigen::Vector2d vehicle_pos(x, y);
+            // Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+            // Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
+
+            // return world_coordinates;
+            out << Z_c, -X_c, yaw;
+        }
+        static void estimate_object_pose2d(Eigen::Vector3d &out,
+                                            const std::array<double, 4>& bounding_box, 
+                                            double object_distance, 
+                                            bool is_car = false) {
+            double x1 = bounding_box[0];
+            double y1 = bounding_box[1];
+            double x2 = bounding_box[2];
+            double y2 = bounding_box[3];
+            estimate_object_pose2d(out, x1, y1, x2, y2, object_distance, is_car);
+        }
+
         enum OBJECT {
             ONEWAY,
             HIGHWAYENTRANCE,
@@ -203,6 +305,10 @@ class SignFastest {
                 sign_msg.data.push_back(distance);
                 sign_msg.data.push_back(confidence);
                 sign_msg.data.push_back(static_cast<float>(class_id));
+                estimate_object_pose2d(object_pose_body_frame, x1, y1, x2, y2, distance, true);
+                sign_msg.data.push_back(object_pose_body_frame[0]);
+                sign_msg.data.push_back(object_pose_body_frame[1]);
+                sign_msg.data.push_back(object_pose_body_frame[2]);
                 return 1;
             }
             return 0;
@@ -265,7 +371,7 @@ class SignFastest {
                 std_msgs::MultiArrayDimension dim;
                 dim.label = "detections";
                 dim.size = hsy;
-                dim.stride = boxes.size() * 7;
+                dim.stride = boxes.size() * 10;
                 sign_msg.layout.dim.push_back(dim); 
             }
             // Publish Sign message
@@ -357,13 +463,16 @@ class SignFastest {
                     for (int i = 0; i < boxes.size(); i++) {
                         double distance = computeMedianDepth(depthImage, boxes[i].x1, boxes[i].y1, boxes[i].x2, boxes[i].y2)/1000;
                         std::cout<< "x1:" << boxes[i].x1<<", y1:"<<boxes[i].y1<<", x2:"<<boxes[i].x2<<", y2:"<<boxes[i].y2
-                        <<", conf:"<<boxes[i].score<<", id:"<<boxes[i].cate<<", "<<class_names[boxes[i].cate]<<", dist:"<< distance <<", w:"<<boxes[i].x2-boxes[i].x1<<", h:"<<boxes[i].y2-boxes[i].y1<<std::endl;
+                        <<", conf:"<<boxes[i].score<<", id:"<<boxes[i].cate<<", "<<class_names[boxes[i].cate]<<", dist:"<< 
+                        distance <<", w:"<<boxes[i].x2-boxes[i].x1<<", h:"<<boxes[i].y2-boxes[i].y1 <<
+                        ", pose: (" << object_pose_body_frame.transpose() << ")" << std::endl;
                     }
                 } else {
                     for (const struct Object& box : detected_objects) {
                         double distance = computeMedianDepth(depthImage, box.rect.x, box.rect.y, box.rect.x + box.rect.width, box.rect.y + box.rect.height)/1000;
                         std::cout<< "x1:" << box.rect.x<<", y1:"<<box.rect.y<<", x2:"<<box.rect.x + box.rect.width<<", y2:"<<box.rect.y + box.rect.height
-                        <<", conf:"<<box.probability<<", id:"<<box.label<<", "<<class_names[box.label]<<", dist:"<< distance <<", w:"<<box.rect.width<<", h:"<<box.rect.height<<std::endl;
+                        <<", conf:"<<box.probability<<", id:"<<box.label<<", "<<class_names[box.label]<<", dist:"<< 
+                        distance <<", w:"<<box.rect.width<<", h:"<<box.rect.height<<", pose: (" << object_pose_body_frame.transpose() << ")" << std::endl;
                     }
                 
                 }

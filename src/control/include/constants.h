@@ -102,12 +102,12 @@ namespace VehicleConstants {
     static constexpr double haha = 369. - INNER_LANE_OFFSET;
     // add half of inner lane width to the x values
     // static constexpr std::array<double, 13> Y_ALIGNED_LANE_CENTERS = {0.22237, 0.591617, 2.383851, 2.754291, 4.63, 4.9981, 6.49, 6.864, 15.17, 16.963, 15.54, 15.7404, 16.112};
-    static const std::vector<double> NORTH_FACING_LANE_CENTERS = {0.579612+ofs6, 2.744851+ofs6, 4.9887+ofs6, 6.77784+ofs6, 6.8507+ofs6, 16.954+ofs6, 15.532+ofs6, 16.1035+ofs6};
+    static const std::vector<double> NORTH_FACING_LANE_CENTERS = {0.579612+ofs6, 2.744851+ofs6, 4.9887+ofs6, 6.51+ofs6, 6.8507+ofs6, 16.954+ofs6, 15.532+ofs6, 16.1035+ofs6};
     static const std::vector<double> SOUTH_FACING_LANE_CENTERS = {0.50684-ofs6, 2.667-ofs6, 4.9156-ofs6, 15.165279+ofs6, 15.1632+ofs6};
     // add half of inner lane width to the y values
     // static constexpr std::array<double, 13> X_ALIGNED_LANE_CENTERS = {13.314624, 12.94356, 10.669, 10.2963, 3.89, 0.598716, 0.9698, 3.516515, 3.88667, 6.4122, 6.78514, 11.6955, 12.0661};
-    static const std::vector<double> EAST_FACING_LANE_CENTERS = {12.904+ofs6, 10.5538-ofs6, 0.503891-ofs6, 3.79216-ofs6, 6.6816-ofs6, 10.5538-ofs6};
-    static const std::vector<double> WEST_FACING_LANE_CENTERS = {13.314624+ofs6, 10.633+ofs6, 3.86375+ofs6, 0.58153+ofs6, 3.8661+ofs6, 6.753+ofs6, 13.278+ofs6};
+    static const std::vector<double> EAST_FACING_LANE_CENTERS = {12.904+ofs6, 10.5538-ofs6, 0.503891-ofs6, 3.79216-ofs6, 6.6816-ofs6, 10.5538-ofs6, 11.6588+ofs6};
+    static const std::vector<double> WEST_FACING_LANE_CENTERS = {13.314624+ofs6, 10.633+ofs6, 3.86375+ofs6, 0.58153+ofs6, 1.072+ofs6, 3.8661+ofs6, 6.753+ofs6, 13.278+ofs6, 12.032+ofs6};
 
     
     // intersection coordinates
@@ -182,7 +182,8 @@ namespace VehicleConstants {
         {{2.744851+ofs6*2+pole_size+sign_ofs1, 5.9603-sign_ofs2}},
         {{4.9887+ofs6*2+pole_size+sign_ofs1, 5.958-sign_ofs2}},
         {{4.9887+ofs6*2+pole_size+sign_ofs1, 3.07-sign_ofs2}},
-        {{6.77784-ofs6*2+pole_size+sign_ofs1, 3.44261-sign_ofs2}},
+        {{6.4836+ofs6*2+pole_size+sign_ofs1, 3.44261-sign_ofs2}},
+        // {{6.9, 3.425}},
     };
 
     static const std::vector<std::vector<double>> WEST_FACING_SIGNS = {
@@ -206,7 +207,7 @@ namespace VehicleConstants {
         {{4.19476-sign_ofs2, 3.79216-ofs6*2-pole_size-sign_ofs1}}, 
         {{4.194644-sign_ofs2, 0.503836-ofs6*2-pole_size-sign_ofs1}}, 
         {{14.7386-sign_ofs2, 1.07135-ofs6*2-pole_size-sign_ofs1}}, 
-        {{14.983-sign_ofs2, 10.5538-ofs6*2-pole_size-sign_ofs1}}
+        // {{14.983-sign_ofs2, 10.5538-ofs6*2-pole_size-sign_ofs1}}
     };
 
     // PARKING SIGN COORDINATES
@@ -233,8 +234,8 @@ namespace VehicleConstants {
     static const std::vector<std::vector<double>> NORTH_FACING_CROSSWALKS = {{{{17.253+cw_ofs1, 2.313-cw_ofs2}},{{5.371+cw_ofs1, 7.3775-cw_ofs2}}}};
 
     //utils
-    static constexpr int NUM_VALUES_PER_OBJECT = 7;
-    enum SignValues { x1, y1, x2, y2, distance, confidence, id };
+    static constexpr int NUM_VALUES_PER_OBJECT = 10;
+    enum SignValues { x1, y1, x2, y2, distance, confidence, id, x_rel, y_rel, yaw_rel};
     enum LOCALIZATION_SOURCE {
         ODOM,
         EKF
@@ -245,7 +246,3 @@ namespace VehicleConstants {
 }
 
 #endif // VEHICLE_CONSTANTS_H
-
-// 0.015, 0.06783
-// 0, 0.0611
-// 15.3 15.202

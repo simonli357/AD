@@ -101,6 +101,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   utils
+  perception
 )
 
 catkin_package(
@@ -140,6 +141,7 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 add_executable(utility 
 src/utility_main.cpp
 src/utility.cpp
+src/RoadObject.cpp
 )
 target_link_libraries(utility
 ${catkin_LIBRARIES}
@@ -149,6 +151,7 @@ add_executable(controller
 src/controller.cpp
 src/optimizer.cpp
 src/utility.cpp
+src/RoadObject.cpp
 )
 target_link_libraries(controller
 ocp_shared_lib 
@@ -156,11 +159,4 @@ sim_shared_lib
 ${catkin_LIBRARIES}
 nlohmann_json::nlohmann_json
 ${CURSES_LIBRARIES}
-)
-
-add_executable(bridge1
-  src/bridge.cpp
-)
-target_link_libraries(bridge1
-  ${catkin_LIBRARIES}
 )

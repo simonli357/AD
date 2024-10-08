@@ -24,6 +24,7 @@
 #include <cmath>
 #include <boost/asio.hpp>
 #include "constants.h"
+#include "RoadObject.hpp"
 
 using namespace VehicleConstants;
 
@@ -35,6 +36,7 @@ public:
     void callTriggerService();
 // private:
 
+    std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
     double left_trajectory1, left_trajectory2, right_trajectory1, right_trajectory2, p_rad, gps_offset_x, gps_offset_y;
 
@@ -97,6 +99,7 @@ public:
     ros::Publisher odom_lidar_pub;
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
+    ros::Publisher road_object_pub;
     ros::Publisher pose_pub;
     ros::Publisher waypoints_pub;
     ros::Publisher detected_cars_pub;
@@ -319,36 +322,6 @@ public:
             object_distance += dist;
         }
 
-        // std::array<double, 2> vehicle_pos = { x, y }; // Only x and y are needed for 2D
-        
-        // double fx = camera_params[0];
-        // double cx = camera_params[2];
-        
-        // double bbox_center_x = (x1 + x2) / 2;
-        
-        // double X_c = (bbox_center_x - cx) / fx * object_distance;
-        
-        // // Vehicle coordinates (X_v is forward, Y_v is left/right from the vehicle's perspective)
-        // double X_v = object_distance;
-        // double Y_v = -X_c; 
-
-        // std::array<std::array<double, 2>, 2> rotation_matrix = {{
-        //     { std::cos(yaw), -std::sin(yaw) },
-        //     { std::sin(yaw), std::cos(yaw) }
-        // }};
-        
-        // std::array<double, 2> vehicle_coordinates = {
-        //     rotation_matrix[0][0] * X_v + rotation_matrix[0][1] * Y_v,
-        //     rotation_matrix[1][0] * X_v + rotation_matrix[1][1] * Y_v
-        // };
-        
-        // Eigen::Vector2d world_coordinates = {
-        //     vehicle_pos[0] + vehicle_coordinates[0],
-        //     vehicle_pos[1] + vehicle_coordinates[1]
-        // };
-        
-        // return world_coordinates;
-
         // Extract camera parameters
         double fx = camera_params[0];
         double fy = camera_params[1];
@@ -502,4 +475,40 @@ public:
         // std::cout << strs.str() << std::endl;
     }
 
+    std::array<double, 3> object_to_world(double object_x, double object_y, double object_yaw, 
+                                double vehicle_x, double vehicle_y, double vehicle_yaw)
+    {
+        double world_x = vehicle_x + (std::cos(vehicle_yaw) * object_x - std::sin(vehicle_yaw) * object_y);
+        double world_y = vehicle_y + (std::sin(vehicle_yaw) * object_x + std::cos(vehicle_yaw) * object_y);
+        double world_yaw = object_yaw + vehicle_yaw;
+        return {world_x, world_y, world_yaw};
+    }
+    double nearest_direction(double yaw) {
+        while(yaw > 2 * M_PI) {
+            yaw -= 2 * M_PI;
+        }
+        while(yaw < 0) {
+            yaw += 2 * M_PI;
+        }
+
+        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
+
+        double minDifference = std::abs(yaw - directions[0]);
+        double nearestDirection = directions[0];
+
+        for (int i = 1; i < 5; ++i) {
+            double difference = std::abs(yaw - directions[i]);
+            if (difference < minDifference) {
+                minDifference = difference;
+                nearestDirection = directions[i];
+            }
+        }
+        while (nearestDirection - yaw > M_PI) {
+            nearestDirection -= 2 * M_PI;
+        }
+        while (nearestDirection - yaw < -M_PI) {
+            nearestDirection += 2 * M_PI;
+        }
+        return nearestDirection;
+    }
 };

@@ -8,10 +8,10 @@
   <arg name="vref" default="0.$(arg v)"/>
 
   <!-- speed challenge -->
-  <!-- <arg name="x0" default="11.71"/>
+  <arg name="x0" default="11.71"/>
   <arg name="y0" default="1.896"/>
   <arg name="yaw0" default="0"/>
-  <arg name = "path" default="speedrun"/> -->
+  <arg name = "path" default="speedrun"/>
 
   <!-- start -->
   <!-- <arg name="x0" default="0.39"/>
@@ -20,10 +20,10 @@
   <arg name = "path" default="run1"/> -->
 
   <!-- speed curve -->
-  <arg name="x0" default="5.118"/>
+  <!-- <arg name="x0" default="5.118"/>
   <arg name="y0" default="4.78"/>
   <arg name="yaw0" default="1.5708"/>
-  <arg name = "path" default="test2"/>
+  <arg name = "path" default="test2"/> -->
 
   <!-- ramp -->
   <!-- <arg name="x0" default="1.578"/>
@@ -82,7 +82,7 @@
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
   <rosparam command="load" file="$(find control)/scripts/config/mpc_config_park.yaml" />
 
-  <node pkg="control" type="path2.py" name="path_planner" output="screen"></node> 
+  <!-- <node pkg="control" type="path2.py" name="path_planner" output="screen"></node>  -->
   <node pkg="control" type="controller" name="$(anon mpc_controller)" output="screen"> 
     <param name="sign" value="$(arg sign)"/>
     <param name="ekf" value="$(arg ekf)"/>
