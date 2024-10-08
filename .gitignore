@@ -3,6 +3,7 @@ src/perception/include/ncnn
 src/control/scripts/__pycache__
 
 devel/
+install/
 logs/
 build/
 bin/
