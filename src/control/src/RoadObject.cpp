@@ -3,33 +3,23 @@
 int RoadObject::OBJECT_COUNT = 0;
 
 const std::array<std::string, 13> RoadObject::OBJECT_NAMES = {
-    "Car",
-    "Pedestrian",
-    "Traffic_Light",
-    "Stop_Sign",
-    "Parking_Sign",
-    "Crosswalk",
-    "Roundabout",
-    "Priority",
-    "No_Entry",
-    "One_Way",
-    "Highway_Entrance",
-    "Highway_Exit"
+    "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car"
 };
 
 const std::array<std::array<double, 2>, 13> RoadObject::OBJECT_SIZE = { // width, length
-    std::array<double, 2>{0.464, 0.1885}, // Car
-    std::array<double, 2>{0.1,   0.1}, // Pedestrian
-    std::array<double, 2>{0.12,  0.12}, // Traffic_Light
-    std::array<double, 2>{0.1,   0.1}, // Stop_Sign
-    std::array<double, 2>{0.1,   0.1}, // Parking_Sign
-    std::array<double, 2>{0.1,   0.1}, // Crosswalk
-    std::array<double, 2>{0.1,   0.1}, // Roundabout
-    std::array<double, 2>{0.1,   0.1}, // Priority
-    std::array<double, 2>{0.1,   0.1}, // No_Entry
-    std::array<double, 2>{0.1,   0.1}, // One_Way
-    std::array<double, 2>{0.1,   0.1}, // Highway_Entrance
-    std::array<double, 2>{0.1,   0.1}  // Highway_Exit
+    std::array<double, 2>{0.1, 0.1}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,  0.1}, 
+    std::array<double, 2>{0.1,   0.1},
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,   0.1},
+    std::array<double, 2>{0.12,   0.12}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.1,   0.1}, 
+    std::array<double, 2>{0.464,   0.1885} 
 };
 
 RoadObject::~RoadObject() {

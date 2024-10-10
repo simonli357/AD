@@ -103,6 +103,8 @@ class SignFastest {
 
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
             std::cout <<"pub created" << std::endl;
+
+            processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
         
         static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240}; // fx, fy, cx, cy
@@ -224,6 +226,8 @@ class SignFastest {
         yoloFastestv2 api;
 
         ros::Publisher pub;
+        ros::Publisher processed_image_pub;
+        sensor_msgs::ImagePtr processed_image_msg;
         bool show;
         bool print;
         bool printDuration;
@@ -445,15 +449,10 @@ class SignFastest {
                     }
                     
                     yolov8->drawObjectLabels(image_copy, detected_objects, distances);
-                    // double maxVal;
-                    // double minVal;
-                    // if (hasDepthImage) {
-                    //     cv::minMaxIdx(depthImage, &minVal, &maxVal);
-                    //     depthImage.convertTo(normalizedDepthImage, CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
-                    // }
-                    // yolov8->drawObjectLabels(normalizedDepthImage, detected_objects);
-                    // cv::imshow("normalized depth image", normalizedDepthImage);
                     
+                    processed_image_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image_copy).toImageMsg();
+                    processed_image_pub.publish(processed_image_msg);
+
                     cv::imshow("image", image_copy);
                     cv::waitKey(1);
                 }

@@ -6,11 +6,14 @@ import numpy as np
 import os
 import math
 import rospy
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QImage, QPixmap
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
+from std_srvs.srv import SetBool, SetBoolRequest
 from utils.srv import waypoints, waypointsRequest, waypointsResponse
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
 
 class OpenCVGuiApp(QWidget):
     def __init__(self):
@@ -27,20 +30,24 @@ class OpenCVGuiApp(QWidget):
         
         # Set up the window
         self.setWindowTitle('BFMC Dashboard')
-        self.setGeometry(100, 100, int(self.image_width*1.1), int(self.image_height*1.2))
+        self.setGeometry(100, 100, 1500, 800)
 
         # Set up layout
-        self.layout = QVBoxLayout()
-
-        # Map Display
-        # self.map_label = QLabel(self)
-        # self.layout.addWidget(self.map_label)
+        self.layout = QHBoxLayout()
+        
+        # Left Panel - Map Display
+        self.left_panel_layout = QVBoxLayout()
+        self.left_panel_widget = QWidget()
+        # self.left_panel_widget.setFixedSize(1000, 800)
+        self.left_panel_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.left_panel_widget.setLayout(self.left_panel_layout)
 
         # Graphics View for zoom and pan
         self.graphics_view = QGraphicsView(self)
         self.graphics_view.setDragMode(QGraphicsView.ScrollHandDrag)
         self.graphics_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.layout.addWidget(self.graphics_view)
+        self.graphics_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.left_panel_layout.addWidget(self.graphics_view)
 
         # Scene to display the map
         self.scene = QGraphicsScene(self)
@@ -49,25 +56,29 @@ class OpenCVGuiApp(QWidget):
         self.scene.addItem(self.map_item)
         
         # Set up buttons
-        self.button_layout = QHBoxLayout()
+        self.toggle_button_layout = QHBoxLayout()
         self.toggle_visibility_button = QPushButton('Toggle Visibility')
         self.toggle_lanes_button = QPushButton('Toggle Lanes')
         self.toggle_cars_button = QPushButton('Toggle Cars')
         self.toggle_destinations_button = QPushButton('Toggle Destinations')
         self.toggle_path_button = QPushButton('Toggle Path')
         self.toggle_gt_button = QPushButton('Toggle Ground Truth')
-
-        self.button_layout.addWidget(self.toggle_visibility_button)
-        self.button_layout.addWidget(self.toggle_lanes_button)
-        self.button_layout.addWidget(self.toggle_cars_button)
-        self.button_layout.addWidget(self.toggle_destinations_button)
-        self.button_layout.addWidget(self.toggle_path_button)
-        self.button_layout.addWidget(self.toggle_gt_button)
-
-        self.layout.addLayout(self.button_layout)
-
-        # Set the main layout
-        self.setLayout(self.layout)
+        self.toggle_depth_button = QPushButton('Toggle Depth')
+        self.toggle_button_layout.addWidget(self.toggle_visibility_button)
+        self.toggle_button_layout.addWidget(self.toggle_lanes_button)
+        self.toggle_button_layout.addWidget(self.toggle_cars_button)
+        self.toggle_button_layout.addWidget(self.toggle_destinations_button)
+        self.toggle_button_layout.addWidget(self.toggle_path_button)
+        self.toggle_button_layout.addWidget(self.toggle_gt_button)
+        self.toggle_button_layout.addWidget(self.toggle_depth_button)
+        
+        self.left_panel_layout.addLayout(self.toggle_button_layout)
+        
+        self.control_button_layout = QHBoxLayout()
+        self.start_button = QPushButton('Start')
+        self.stop_button = QPushButton('Stop')
+        self.control_button_layout.addWidget(self.start_button)
+        self.control_button_layout.addWidget(self.stop_button)
 
         # Connect buttons to functions
         self.toggle_visibility_button.clicked.connect(self.toggle_visibility)
@@ -76,13 +87,47 @@ class OpenCVGuiApp(QWidget):
         self.toggle_destinations_button.clicked.connect(self.toggle_destinations)
         self.toggle_path_button.clicked.connect(self.toggle_path)
         self.toggle_gt_button.clicked.connect(self.toggle_gt)
+        self.toggle_depth_button.clicked.connect(self.toggle_depth)
+        self.start_button.clicked.connect(self.start)
+        self.stop_button.clicked.connect(self.stop)
         
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
         self.sign_size_slider.setRange(5, 100)
         self.sign_size_slider.setValue(20)
         self.sign_size_slider.valueChanged.connect(self.update_sign_size)
-        self.layout.addWidget(self.sign_size_slider)
+        self.left_panel_layout.addWidget(self.sign_size_slider)
+        # Add left panel to main layout
+        self.layout.addWidget(self.left_panel_widget)
+        
+        # Right Panel - Camera Feed and Vehicle Info
+        self.right_panel_layout = QVBoxLayout()
+        self.right_panel_widget = QWidget()
+        self.camera_w = int(640 /640 * 500)
+        self.camera_h = int(480 / 640 * 500)
+        self.right_panel_widget.setFixedSize(self.camera_w, 800)
+        self.right_panel_widget.setLayout(self.right_panel_layout)
+        
+        # Camera feed label
+        self.camera_label = QLabel(self)
+        self.camera_label.setFixedSize(self.camera_w, self.camera_h)
+        self.right_panel_layout.addWidget(self.camera_label)
+        # Vehicle information labels
+        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.speed_label = QLabel('Speed: 0.0 m/s')
+        self.right_panel_layout.addWidget(self.position_label)
+        self.right_panel_layout.addWidget(self.speed_label)
+        self.right_panel_layout.addLayout(self.control_button_layout)
+        
+        # Add a text area for status messages
+        self.message_display = QTextEdit()
+        self.message_display.setReadOnly(True)
+        self.right_panel_layout.addWidget(self.message_display)
+        self.message_history = []
+        
+        # Add right panel to main layout
+        self.layout.addWidget(self.right_panel_widget)
+        self.setLayout(self.layout)
 
         # ROS-related attributes
         self.show_elements = True
@@ -91,9 +136,11 @@ class OpenCVGuiApp(QWidget):
         self.show_destinations = True
         self.show_path = True
         self.show_gt = True
+        self.show_depth = False
         self.state_refs_np = None
         self.attributes_np = None
         self.sign_size = 20
+        self.bridge = CvBridge()
 
         # Load map image
         self.current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -109,12 +156,32 @@ class OpenCVGuiApp(QWidget):
         # Timer to update the map display
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_map)
-        self.timer.start(100)
+        self.timer.start(100) # Update every 100 ms
         
         # Mouse events for zoom
         self.graphics_view.viewport().installEventFilter(self)
         
+        # ROS Subscribers
+        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
+        self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
+        self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
+        self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
+        self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
+        self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
+        
         # Objects
+        self.detected_data = None
+        self.waypoints = None
+        self.numObj = 0
+        self.detected_objects = np.zeros(10)
+        self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car"]
+        self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75]
+
+        self.COLOR_LIST = [
+            (1, 1, 1), (0.098, 0.325, 0.850), (0.125, 0.694, 0.929), (0.556, 0.184, 0.494), (0.188, 0.674, 0.466),
+            (0.933, 0.745, 0.301), (0.184, 0.078, 0.635), (0.300, 0.300, 0.300), (0.600, 0.600, 0.600), (0.000, 0.000, 1.000),
+            (0.000, 0.500, 1.000), (0.000, 0.749, 0.749), (0.000, 1.000, 0.000)
+        ]
         self.object_dict = {
             0: "Oneway",
             1: "Highway Entrance",
@@ -128,9 +195,28 @@ class OpenCVGuiApp(QWidget):
             9: "Traffic Light",
             10: "Block",
             11: "Pedestrian",
-            12: "Car"
+            12: "Car",
+            13: "Sign"
         }
-        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
+
+        self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
+        
+        self.sign_images = []
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'oneway.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'highway_entrance.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'roundabout.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'parking.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'crosswalk.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'noentry.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'highway_exit.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'priority.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'roadblock.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'pedestrian.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'car.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
+        
         self.road_msg_length = 6
         self.road_msg_dict = {
             'type': 0,
@@ -140,11 +226,122 @@ class OpenCVGuiApp(QWidget):
             'speed': 4,
             'confidence': 5
         }
-        self.detected_data = None
 
+    # ROS service calls
+    def start(self):
+        self.call_start_service(True)
+    def stop(self):
+        self.call_start_service(False)
+    def call_start_service(self, start):
+        print("service call")
+        rospy.wait_for_service("/start_bool", timeout=5)
+        try:
+            # Create a service proxy
+            service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
+            request = SetBoolRequest()
+            request.data = start
+            # Call the service
+            response = service_proxy(request)
+            if response.success:
+                rospy.loginfo("Service call succeeded!")
+            else:
+                rospy.logerr("Service call failed!")
+        except rospy.ServiceException as e:
+            print("Service call failed:", e)
+            
     # ROS callback functions
+    def sign_callback(self, sign):
+        if sign.data:
+            self.numObj = len(sign.data) // 10
+            if self.numObj > 0:
+                self.detected_objects = np.array(sign.data)#.reshape(-1, 7).T
+        else:
+            self.numObj = 0
+    def waypoint_callback(self, data):
+        self.waypoints = data.data
     def road_objects_callback(self, msg):
         self.detected_data = np.array(msg.data).reshape(-1, self.road_msg_length)
+    def add_sign_detection_to_image(self, image):
+        for i in range(self.numObj):
+            try:
+                id = int(self.detected_objects[10 * i + 6])
+            except:
+                return
+            if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
+                continue
+
+            # Choosing color for bounding box and text background
+            color_index = id % len(self.COLOR_LIST)
+            color = tuple(int(c * 255) for c in self.COLOR_LIST[color_index])  # Scale color to [0, 255]
+
+            # Determine text color based on brightness
+            mean_color = np.mean(color)
+            text_color = (0, 0, 0) if mean_color > 127 else (255, 255, 255)
+
+            # Text for object detection
+            confidence = self.detected_objects[10 * i + 5] * 100
+            distance = self.detected_objects[10 * i + 4]
+            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
+
+            # Get label size and base line
+            label_size, baseLine = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+
+            # Bounding box coordinates
+            x1 = int(self.detected_objects[10 * i])
+            y1 = int(self.detected_objects[10 * i + 1])
+            x2 = int(self.detected_objects[10 * i + 2])
+            y2 = int(self.detected_objects[10 * i + 3])
+
+            # Draw bounding box
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
+
+            # Draw label background
+            y = y1 - label_size[1] - baseLine
+            if y < 0:
+                y = 0
+            x = x1
+            if x + label_size[0] > image.shape[1]:
+                x = image.shape[1] - label_size[0]
+            
+            # Draw text background with transparency effect
+            txt_bk_color = tuple(int(c * 0.7) for c in color)
+            cv2.rectangle(image, (x, y), (x + label_size[0], y + label_size[1] + baseLine), txt_bk_color, -1)
+
+            # Put label text
+            cv2.putText(image, text, (x, y + label_size[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
+
+        return image
+    def camera_callback(self, msg):
+        if self.show_depth:
+            return
+        cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        cv_image = self.add_sign_detection_to_image(cv_image)
+        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image)
+        self.camera_label.setPixmap(pixmap)
+    def depth_callback(self, msg):
+        if not self.show_depth:
+            return
+        depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+        # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
+        # Apply normalization with a focus on closer objects
+        depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
+        depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
+        depth_colored = self.add_sign_detection_to_image(depth_colored)
+        depth_colored = cv2.resize(depth_colored, (self.camera_w, self.camera_h))
+        h, w, ch = depth_colored.shape
+        bytes_per_line = ch * w
+        qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(qt_image)
+        self.camera_label.setPixmap(pixmap)
+    def message_callback(self, msg):
+        self.message_history.append(msg.data)
+        if len(self.message_history) > 15:
+            self.message_history.pop(0)
         
     def toggle_visibility(self):
         self.show_elements = not self.show_elements
@@ -163,6 +360,9 @@ class OpenCVGuiApp(QWidget):
     
     def toggle_gt(self):
         self.show_gt = not self.show_gt
+    
+    def toggle_depth(self):
+        self.show_depth = not self.show_depth
         
     def update_sign_size(self, value):
         self.sign_size = value
@@ -212,7 +412,10 @@ class OpenCVGuiApp(QWidget):
                        radius=int(radius), color=color, thickness=-1)
         return image_copy
 
+    def get_key_from_value(self, value):
+        return self.reverse_object_dict.get(value, None)
     def draw_objects(self, image):
+        
         if self.show_gt:
             for index, row in self.data.iterrows():
                 x, y, entity_type, orientation = row['X'], row['Y'], row['Type'], row['Orientation']
@@ -238,12 +441,23 @@ class OpenCVGuiApp(QWidget):
                         cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
                 else:
                     if self.show_elements:
-                        self.draw_sign(image, pixel_x, pixel_y, entity_type, orientation, self.sign_size)
+                        sign_index = self.get_key_from_value(entity_type)
+                        self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
                         
     def draw_detected_objects(self, image):
         if True:
+            if self.waypoints is not None:
+                for i in range(0, len(self.waypoints), 8):
+                    center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
+                    cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
             if self.detected_data is None:
                 return
+            x = self.detected_data[0, self.road_msg_dict['x']]
+            y = self.detected_data[0, self.road_msg_dict['y']]
+            yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f})')
+            speed = self.detected_data[0, self.road_msg_dict['speed']]
+            self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x = self.detected_data[i, self.road_msg_dict['x']]
@@ -257,12 +471,12 @@ class OpenCVGuiApp(QWidget):
                 orientation = - orientation
                 
                 if self.object_dict[obj_type] == 'Car':
-                    if self.show_cars:
+                    if i == 0:
+                        self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2, car_color=(0, 0, 255))
+                    else:
                         self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2)
                 else:
-                    entity_type = self.object_dict[obj_type]
-                    if self.show_elements:
-                        self.draw_sign(image, pixel_x, pixel_y, entity_type, orientation, self.sign_size)
+                    self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, obj_type)
 
     def draw_car(self, image, x, y, yaw, steer=23.0, car_color=(0, 255, 255), wheel_color=(0, 0, 0)):
         LENGTH = 4.5*0.108 *800*self.scale_factor/20.696 # Car length
@@ -321,7 +535,7 @@ class OpenCVGuiApp(QWidget):
         cv2.polylines(image, [to_int_coords(fl_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(rl_wheel)], isClosed=True, color=wheel_color, thickness=2)
 
-        cv2.circle(image, (int(x), int(y)), int(WIDTH/2.5), (0, 0, 0), -1)
+        cv2.circle(image, (int(x), int(y)), int(WIDTH/2.5), (143, 28, 90), -1)
         
         self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
         
@@ -361,55 +575,30 @@ class OpenCVGuiApp(QWidget):
         y_end = int(y - arrow_length * np.sin(orientation))
         cv2.arrowedLine(image, (x, y), (x_end, y_end), (0, 0, 255), 2, tipLength=0.3)
 
-    def draw_sign(self, image, x, y, sign_type, orientation, size):
+    def draw_sign(self, image, x, y, orientation, size, sign_type):
         self.draw_arrow(image, x, y, -orientation, 20)
-        try:
-            img = None
-            assets_path = os.path.join(self.current_dir, 'assets')
-            if sign_type == 'Roundabout':
-                img = cv2.imread(os.path.join(assets_path, 'roundabout.jpg'))
-            elif sign_type == 'Sign':
-                img = cv2.imread(os.path.join(assets_path, 'stopsign.jpg'))
-            elif sign_type == 'Parking':
-                img = cv2.imread(os.path.join(assets_path, 'parking.jpg'))
-            elif sign_type == 'Crosswalk':
-                img = cv2.imread(os.path.join(assets_path, 'crosswalk.jpg'))
-            elif sign_type == 'Highway Entrance':
-                img = cv2.imread(os.path.join(assets_path, 'highway_entrance.jpg'))
-            elif sign_type == 'Highway Exit':
-                img = cv2.imread(os.path.join(assets_path, 'highway_exit.jpg'))
-            elif sign_type == 'Oneway':
-                img = cv2.imread(os.path.join(assets_path, 'oneway.jpg'))
-            elif sign_type == 'No Entry':
-                img = cv2.imread(os.path.join(assets_path, 'noentry.jpg'))
-            elif sign_type == 'Pedestrian':
-                img = cv2.imread(os.path.join(assets_path, 'pedestrian.jpg'))
-            elif sign_type == 'Traffic Light':
-                img = cv2.imread(os.path.join(assets_path, 'trafficlight.png'))
-            
-            if img is not None:
-                size = max(5, size)
-                img = cv2.resize(img, (size, size))  # Resize sign based on trackbar value
+        img = self.sign_images[int(sign_type)]
+        if img is not None:
+            size = max(5, size)
+            img = cv2.resize(img, (size, size))  # Resize sign based on trackbar value
 
-                # Rotate the image according to orientation (optional)
-                # center = (img.shape[1] // 2, img.shape[0] // 2)
-                # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(orientation), 1.0)
-                # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(0), 1.0)
-                # img = cv2.warpAffine(img, rotation_matrix, (img.shape[1], img.shape[0]))
+            # Rotate the image according to orientation (optional)
+            # center = (img.shape[1] // 2, img.shape[0] // 2)
+            # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(orientation), 1.0)
+            # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(0), 1.0)
+            # img = cv2.warpAffine(img, rotation_matrix, (img.shape[1], img.shape[0]))
 
-                # Calculate the boundaries for placing the image
-                x_start = max(0, x - size // 2)
-                y_start = max(0, y - size // 2)
-                x_end = min(image.shape[1], x_start + img.shape[1])
-                y_end = min(image.shape[0], y_start + img.shape[0])
+            # Calculate the boundaries for placing the image
+            x_start = max(0, x - size // 2)
+            y_start = max(0, y - size // 2)
+            x_end = min(image.shape[1], x_start + img.shape[1])
+            y_end = min(image.shape[0], y_start + img.shape[0])
 
-                # Only overlay the part of the sign that fits in the map
-                sign_x_end = x_end - x_start
-                sign_y_end = y_end - y_start
+            # Only overlay the part of the sign that fits in the map
+            sign_x_end = x_end - x_start
+            sign_y_end = y_end - y_start
 
-                image[y_start:y_end, x_start:x_end] = img[:sign_y_end, :sign_x_end]
-        except FileNotFoundError:
-            print(f"Image for {sign_type} not found. Skipping.")
+            image[y_start:y_end, x_start:x_end] = img[:sign_y_end, :sign_x_end]
             
     def update_map(self):
         # Create a copy of the map to draw on
@@ -421,6 +610,7 @@ class OpenCVGuiApp(QWidget):
 
         self.draw_objects(display_image)
         self.draw_detected_objects(display_image)
+        self.message_display.setPlainText("\n".join(self.message_history))
         
         # Convert the frame to RGB format
         display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)

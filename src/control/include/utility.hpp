@@ -65,6 +65,8 @@ public:
     int num_obj = 0;
     std::mutex lock;
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
+    int debugLevel = 5;
+    std_msgs::String debug_msg;
     bool real;
     bool useGmapping = true, useLidarOdom = false, useAmcl = false;
     double rateVal;
@@ -100,6 +102,7 @@ public:
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
     ros::Publisher road_object_pub;
+    ros::Publisher message_pub;
     ros::Publisher pose_pub;
     ros::Publisher waypoints_pub;
     ros::Publisher detected_cars_pub;
@@ -439,7 +442,7 @@ public:
     }
     void send_speed(float f_velocity) {
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_speed: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -451,7 +454,7 @@ public:
 
     void send_steer(float f_angle) {
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_steer: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -464,7 +467,7 @@ public:
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_speed_and_steer: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -510,5 +513,13 @@ public:
             nearestDirection += 2 * M_PI;
         }
         return nearestDirection;
+    }
+
+    void debug(const std::string& message, int level) {
+        if (debugLevel > level) {
+            debug_msg.data = message;
+            message_pub.publish(msg);
+            ROS_INFO("%s", message.c_str());
+        }
     }
 };

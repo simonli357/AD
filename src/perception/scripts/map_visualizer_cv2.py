@@ -269,7 +269,6 @@ cv2.createTrackbar('Sign Size', 'Map', sign_size, 100, update_size)
 cv2.createTrackbar('Arrow Size', 'Map', arrow_size, 100, update_size)
 cv2.createTrackbar('Intersection Size', 'Map', intersection_size, 100, update_size)
 
-print("hi")
 map_image_with_path = illustrate_path(map_image, state_refs_np, attributes_np)
 
 rate = rospy.Rate(100)

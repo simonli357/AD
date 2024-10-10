@@ -47,6 +47,7 @@ namespace VehicleConstants {
         PEDESTRIAN,
         CAR,
     };
+    const std::array<std::string, 13> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car" };
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,
