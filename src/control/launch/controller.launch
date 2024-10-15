@@ -78,7 +78,7 @@
   <param name="gps" value="$(arg gps)"/>
   <arg name = "pub_wpts" default="true"/>
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
-  <arg name = "pub_msg" default="true"/>
+  <arg name = "debug_level" default="5"/>
   <param name="debug_level" value="$(arg debug_level)"/>
   <rosparam command="load" file="$(find control)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />

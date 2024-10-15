@@ -518,7 +518,7 @@ public:
     void debug(const std::string& message, int level) {
         if (debugLevel > level) {
             debug_msg.data = message;
-            message_pub.publish(msg);
+            message_pub.publish(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
     }

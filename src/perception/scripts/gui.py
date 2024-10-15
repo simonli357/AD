@@ -21,18 +21,15 @@ class OpenCVGuiApp(QWidget):
         self.current_zoom = 1.0
         self.min_zoom = 1.0
         
-        # Dimensions
         self.scale_factor = 1.5
         self.image_width_real = 20.696
         self.image_height_real = 13.786
         self.image_width = int(800 * self.scale_factor)
         self.image_height = int(533 * self.scale_factor)
         
-        # Set up the window
         self.setWindowTitle('BFMC Dashboard')
         self.setGeometry(100, 100, 1500, 800)
 
-        # Set up layout
         self.layout = QHBoxLayout()
         
         # Left Panel - Map Display
@@ -129,7 +126,7 @@ class OpenCVGuiApp(QWidget):
         self.layout.addWidget(self.right_panel_widget)
         self.setLayout(self.layout)
 
-        # ROS-related attributes
+        # Button related attributes
         self.show_elements = True
         self.show_lanes = True
         self.show_cars = True
@@ -270,32 +267,25 @@ class OpenCVGuiApp(QWidget):
             if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
                 continue
 
-            # Choosing color for bounding box and text background
             color_index = id % len(self.COLOR_LIST)
             color = tuple(int(c * 255) for c in self.COLOR_LIST[color_index])  # Scale color to [0, 255]
 
-            # Determine text color based on brightness
             mean_color = np.mean(color)
             text_color = (0, 0, 0) if mean_color > 127 else (255, 255, 255)
 
-            # Text for object detection
             confidence = self.detected_objects[10 * i + 5] * 100
             distance = self.detected_objects[10 * i + 4]
             text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
 
-            # Get label size and base line
             label_size, baseLine = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
 
-            # Bounding box coordinates
             x1 = int(self.detected_objects[10 * i])
             y1 = int(self.detected_objects[10 * i + 1])
             x2 = int(self.detected_objects[10 * i + 2])
             y2 = int(self.detected_objects[10 * i + 3])
 
-            # Draw bounding box
             cv2.rectangle(image, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
 
-            # Draw label background
             y = y1 - label_size[1] - baseLine
             if y < 0:
                 y = 0
@@ -303,11 +293,9 @@ class OpenCVGuiApp(QWidget):
             if x + label_size[0] > image.shape[1]:
                 x = image.shape[1] - label_size[0]
             
-            # Draw text background with transparency effect
             txt_bk_color = tuple(int(c * 0.7) for c in color)
             cv2.rectangle(image, (x, y), (x + label_size[0], y + label_size[1] + baseLine), txt_bk_color, -1)
 
-            # Put label text
             cv2.putText(image, text, (x, y + label_size[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
 
         return image
@@ -340,7 +328,7 @@ class OpenCVGuiApp(QWidget):
         self.camera_label.setPixmap(pixmap)
     def message_callback(self, msg):
         self.message_history.append(msg.data)
-        if len(self.message_history) > 15:
+        if len(self.message_history) > 8:
             self.message_history.pop(0)
         
     def toggle_visibility(self):
@@ -420,7 +408,6 @@ class OpenCVGuiApp(QWidget):
             for index, row in self.data.iterrows():
                 x, y, entity_type, orientation = row['X'], row['Y'], row['Type'], row['Orientation']
 
-                # Convert map coordinates to pixel coordinates
                 pixel_x = int(x * (image.shape[1] / 20.696))
                 pixel_y = int((13.786 - y) * (image.shape[0] / 13.786))
                 # orientation = 2 * np.pi - orientation
@@ -588,23 +575,19 @@ class OpenCVGuiApp(QWidget):
             # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(0), 1.0)
             # img = cv2.warpAffine(img, rotation_matrix, (img.shape[1], img.shape[0]))
 
-            # Calculate the boundaries for placing the image
             x_start = max(0, x - size // 2)
             y_start = max(0, y - size // 2)
             x_end = min(image.shape[1], x_start + img.shape[1])
             y_end = min(image.shape[0], y_start + img.shape[0])
 
-            # Only overlay the part of the sign that fits in the map
             sign_x_end = x_end - x_start
             sign_y_end = y_end - y_start
 
             image[y_start:y_end, x_start:x_end] = img[:sign_y_end, :sign_x_end]
             
     def update_map(self):
-        # Create a copy of the map to draw on
         display_image = self.map_image.copy()
 
-        # Illustrate path if needed
         if self.show_path:
             display_image = self.illustrate_path(display_image)
 
@@ -612,12 +595,10 @@ class OpenCVGuiApp(QWidget):
         self.draw_detected_objects(display_image)
         self.message_display.setPlainText("\n".join(self.message_history))
         
-        # Convert the frame to RGB format
         display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)
         height, width, channel = display_image.shape
         step = channel * width
         q_img = QImage(display_image.data, width, height, step, QImage.Format_RGB888)
-        # self.map_label.setPixmap(QPixmap.fromImage(q_img))
         pixmap = QPixmap.fromImage(q_img)
         self.map_item.setPixmap(pixmap)
 

@@ -60,6 +60,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         nh.param<double>("/sim/gps_offset_y", gps_offset_y, 0.0);
     }
     nh.param<int>("debug_level", debugLevel, 5);
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
     nh.param<bool>("/gps", hasGps, false);
     if (real) {
         serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
@@ -228,7 +229,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
-        message_pub = nh.advertise<std_msgs::String>("/message", 10);
         car_pose_msg.data.push_back(0.0); // self
         car_pose_msg.data.push_back(0.0);
         road_objects.push_back(std::make_shared<RoadObject>(RoadObject::ObjectType::CAR, x0, y0, yaw, velocity_command, 0.0));

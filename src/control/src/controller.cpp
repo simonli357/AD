@@ -7,7 +7,6 @@
 #include "utility.hpp"
 #include "optimizer.hpp"
 #include <signal.h>
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <iostream>
 #include "utils/waypoints.h"
@@ -1049,36 +1048,19 @@ void StateMachine::update_mpc_state() {
         stop_for(stop_duration / 3);
         utils.get_states(x, y, yaw);
     }
-    if(debug) {
-        ;
-    }
 }
 void StateMachine::solve(bool safety_check) {
-    // auto start = std::chrono::high_resolution_clock::now();
-
     int status = mpc.update_and_solve(mpc.x_current, safety_check);
     publish_commands();
-    if (debug) {
-        ;
-    }
-    // auto stop = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop-start);
-    // ROS_INFO("Solve time: %f ms", duration.count()/1000.0);
 }
 void StateMachine::publish_commands() {
-    /*
-    Publishes the commands of the MPC controller to the car
-    */
-
     if(pubWaypoints) {
         publish_waypoints();
     }
     
-    double steer = -mpc.u_current[1] * 180 / M_PI; // convert to degrees
+    double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
-    // ROS_INFO("publish_commands: steer: %.3f, speed: %.3f", steer, speed);
-    // steer = 23;
-    // speed = 0.573;
+
     utils.publish_cmd_vel(steer, speed);
 }
 void StateMachine::change_state(STATE new_state) {
@@ -1641,11 +1623,8 @@ void StateMachine::run() {
             // change_state(STATE::INTERSECTION_MANEUVERING);
             // change_state(STATE::PARKING);
         } else if (state == STATE::DONE) {
-            std::cout << "Done" << std::endl;
+            utils.debug("Done", 2);
             utils.stop_car();
-            // if (debug) {
-            //     mpc.computeStats(357);
-            // }
             break;
         } else if (state == STATE::KEYBOARD_CONTROL) {
             // Constants for steering and speed
@@ -1751,18 +1730,7 @@ void signalHandler(int signum) {
     exit(signum);
 }
 
-using json = nlohmann::json;
 int main(int argc, char **argv) {
-    // std::string dir = Optimizer::getSourceDirectory();
-    // dir.replace(dir.rfind("src"), 3, "scripts");
-    // std::string file_path = dir + "/" + "config/mpc_config2.json";
-    // std::ifstream file(file_path);
-    // if(!file.is_open()) {
-    //     std::cout << "Failed to open file: " << file_path << std::endl;
-    //     exit(1);
-    // }
-    // json j;
-    // file >> j;
 
     std::cout.precision(3);
     //create anonymous node handle
@@ -1798,12 +1766,10 @@ int main(int argc, char **argv) {
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
 
-    // std::thread t(&StateMachine::run, &sm);
     std::thread t2(&Utility::spin, &sm.utils);
     
     sm.run();
 
-    // t.join();
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
