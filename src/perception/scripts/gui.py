@@ -162,14 +162,6 @@ class OpenCVGuiApp(QWidget):
         # Mouse events for zoom
         self.graphics_view.viewport().installEventFilter(self)
         
-        # ROS Subscribers
-        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
-        self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
-        self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
-        self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
-        self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
-        self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
-        
         # Objects
         self.detected_data = None
         self.waypoints = None
@@ -227,6 +219,15 @@ class OpenCVGuiApp(QWidget):
             'speed': 4,
             'confidence': 5
         }
+        
+        # ROS Subscribers
+        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
+        self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
+        self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
+        self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
+        self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
+        self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
+        return
 
     # ROS service calls
     def start(self):
@@ -477,11 +478,15 @@ class OpenCVGuiApp(QWidget):
         WHEEL_WIDTH = 0.2*0.108 *800*self.scale_factor/20.696 # Width of the wheel
         TREAD = 0.7*0.108 *800*self.scale_factor/20.696 # Distance between left and right wheels
         WB = 0.27 *800*self.scale_factor/20.696 # Wheelbase: distance between the front and rear wheels
+        half_length = LENGTH / 2
+        half_width = WIDTH / 2
         # yaw = np.pi * 0.25
         # Define the outline of the car
-        outline = np.array([[-BACKTOWHEEL, (LENGTH - BACKTOWHEEL), (LENGTH - BACKTOWHEEL), -BACKTOWHEEL, -BACKTOWHEEL],
-                            [WIDTH / 2, WIDTH / 2, - WIDTH / 2, -WIDTH / 2, WIDTH / 2]])
-
+        # outline = np.array([[-BACKTOWHEEL, (LENGTH - BACKTOWHEEL), (LENGTH - BACKTOWHEEL), -BACKTOWHEEL, -BACKTOWHEEL],
+        #                     [WIDTH / 2, WIDTH / 2, - WIDTH / 2, -WIDTH / 2, WIDTH / 2]])
+        outline = np.array([[-half_length, half_length, half_length, -half_length, -half_length],
+                    [half_width, half_width, -half_width, -half_width, half_width]])
+        
         fr_wheel = np.array([[WHEEL_LEN, -WHEEL_LEN, -WHEEL_LEN, WHEEL_LEN, WHEEL_LEN],
                             [-WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD]])
         rr_wheel = np.copy(fr_wheel)
@@ -520,7 +525,7 @@ class OpenCVGuiApp(QWidget):
             return np.array(shape.T, dtype=np.int32).reshape((-1, 1, 2))
 
         cv2.polylines(image, [to_int_coords(outline)], isClosed=True, color=car_color, thickness=2)
-
+        
         cv2.polylines(image, [to_int_coords(fr_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(rr_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(fl_wheel)], isClosed=True, color=wheel_color, thickness=2)

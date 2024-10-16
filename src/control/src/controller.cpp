@@ -570,7 +570,7 @@ public:
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_ROUNDABOUT :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_ROUNDABOUT :
                                                                         SOUTH_FACING_ROUNDABOUT;
-                    sign_based_relocalization(sign_pose, ROUNDABOUT_POSES);
+                    sign_based_relocalization(sign_pose, intersection_signs);
                 } else {
                     int nearestDirectionIndex = mpc.NearestDirectionIndex(running_yaw);
                     const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_SIGNS :
