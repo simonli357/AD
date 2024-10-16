@@ -1043,11 +1043,3 @@ void Utility::spin() {
         rate->sleep();
     }
 }
-
-// int main(int argc, char **argv) {
-//     ros::init(argc, argv, "utility_node");
-//     ros::NodeHandle nh;
-//     Utility utility(nh);
-//     ros::spin();
-//     return 0;
-// }
