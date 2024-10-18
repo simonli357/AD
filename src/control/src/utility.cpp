@@ -104,14 +104,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     velocity = 0.0;
     odomX = 0.0;
     odomY = 0.0;
-    odomX_lidar = 0.0;
-    odomY_lidar = 0.0;
     odomYaw = yaw0;
     ekf_x = x0;
     ekf_y = y0;
     ekf_yaw = yaw0;
-    gmapping_x = x0;
-    gmapping_y = y0;
     if (x0 > 0 && y0 > 0) {
         set_pose_using_service(x0, y0, yaw0);
     }
@@ -127,14 +123,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 
     std::fill(std::begin(odom_msg.pose.covariance), std::end(odom_msg.pose.covariance), 0.0);
     std::fill(std::begin(odom_msg.twist.covariance), std::end(odom_msg.twist.covariance), 0.0);
-    std::fill(std::begin(odom_lidar_msg.pose.covariance), std::end(odom_lidar_msg.pose.covariance), 0.0);
-    std::fill(std::begin(odom_lidar_msg.twist.covariance), std::end(odom_lidar_msg.twist.covariance), 0.0);
     // covariance_value = 0.01 * 4;
     // for (int hsy=0; hsy<36; hsy+=7) {
     //     odom_msg.pose.covariance[hsy] = covariance_value;
     //     odom_msg.twist.covariance[hsy] = covariance_value;
-    //     odom_lidar_msg.pose.covariance[hsy] = covariance_value;
-    //     odom_lidar_msg.twist.covariance[hsy] = covariance_value;
     // }
     double dt = 1.0 / odom_publish_frequency;
     double variance_v = sigma_v * sigma_v;
@@ -165,9 +157,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     odom_msg.header.frame_id = "odom";
     odom_msg.child_frame_id = "chassis";
     // odom1_pub = nh.advertise<nav_msgs::Odometry>("odom1", 3);
-    odom_lidar_pub = nh.advertise<nav_msgs::Odometry>("odom1", 3);
-    odom_lidar_msg.header.frame_id = "odom";
-    odom_lidar_msg.child_frame_id = "chassis";
 
     // if (robot_name[0] != '/') {
     //     robot_name = "/" + robot_name;
@@ -177,7 +166,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     detected_cars_pub = nh.advertise<std_msgs::Float32MultiArray>("/detected_cars", 3);
     state_offset_pub = nh.advertise<std_msgs::Float32MultiArray>("/state_offset", 3);
     
-    odom_lidar_sub = nh.subscribe("/odom_lidar", 3, &Utility::odom_lidar_callback, this);
     if (pubOdom) {
         odom_pub_timer = nh.createTimer(ros::Duration(1.0 / odom_publish_frequency), &Utility::odom_pub_timer_callback, this);
     }
@@ -234,18 +222,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         road_objects.push_back(std::make_shared<RoadObject>(RoadObject::ObjectType::CAR, x0, y0, yaw, velocity_command, 0.0));
     }
 
-    nh.param<bool>("/gmapping", useGmapping, false);
-    nh.param<bool>("/lidarOdom", useLidarOdom, false);
-    nh.param<bool>("/amcl", useAmcl, false);
-    if (useGmapping) {
-        debug("using gmapping", 1);
-        tf_sub = nh.subscribe("/tf", 3, &Utility::tf_callback, this);
-        pose_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/chassis_pose", 3);
-    } else if(useAmcl) {
-        debug("using amcl", 1);
-        amcl_sub = nh.subscribe("/amcl_pose", 3, &Utility::amcl_callback, this);
-        pose_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/chassis_pose", 3);
-    }
     timerodom = ros::Time::now();
 }
 
@@ -253,78 +229,6 @@ Utility::~Utility() {
     stop_car(); 
 }
 
-void Utility::odom_lidar_callback(const nav_msgs::Odometry::ConstPtr& msg) {
-    if(x0 < 0 || y0 < 0) {
-        ROS_WARN("odom_lidar_callback: x0 or y0 is less than 0");
-        return;
-    }
-    lock.lock();
-    odomX_lidar = msg->pose.pose.position.x;
-    odomY_lidar = msg->pose.pose.position.y;
-    // ROS_INFO("odomX_lidar: %.3f, odomY_lidar: %.3f", odomX_lidar, odomY_lidar);
-
-    auto current_time = ros::Time::now();
-    odom_lidar_msg.header.stamp = current_time;
-    odom_lidar_msg.pose.pose.position.x = odomX_lidar + x0;
-    odom_lidar_msg.pose.pose.position.y = odomY_lidar + y0;
-    odom_lidar_msg.pose.pose.position.z = 0.032939;
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, yaw);
-    odom_lidar_msg.pose.pose.orientation = tf2::toMsg(quaternion);
-    odom_lidar_pub.publish(odom_lidar_msg);
-
-    lock.unlock();
-}
-void Utility::tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg) {
-    for(const auto& transform : msg->transforms) {
-        if (x0 > 0 && y0 > 0 && transform.child_frame_id == "odom" && transform.header.frame_id == "map") {
-            double dx = transform.transform.translation.x;
-            double dy = transform.transform.translation.y;
-            geometry_msgs::PoseWithCovarianceStamped pose_msg;
-            pose_msg.header.frame_id = "odom";
-            pose_msg.header.stamp = ros::Time::now();
-            double odomX1, odomY1;
-            if(useLidarOdom) {
-                odomX1 = odomX_lidar;
-                odomY1 = odomY_lidar;
-                debug("using lidar odom", 1);
-            } else {
-                odomX1 = this->odomX;
-                odomY1 = this->odomY;
-            }
-            lock.lock();
-            gmapping_x = dx + odomX1 + x0;
-            gmapping_y = dy + odomY1 + y0;
-            lock.unlock();
-            pose_msg.pose.pose.position.x = gmapping_x;
-            pose_msg.pose.pose.position.y = gmapping_y;
-            pose_msg.pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), yaw));
-            pose_msg.pose.covariance = odom_msg.pose.covariance;
-            // ROS_INFO("dx: %.3f, dy: %.3f, x: %.3f, y: %.3f", dx, dy, pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y);
-            pose_pub.publish(pose_msg);
-        }
-    }
-}
-void Utility::amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-    if (x0 < 0 || y0 < 0) {
-        ROS_WARN("amcl_callback: x0 or y0 is less than 0");
-        return;
-    }
-    double dx = msg->pose.pose.position.x;
-    double dy = msg->pose.pose.position.y;
-    // ROS_INFO("amcl_callback: dx: %.3f, dy: %.3f", dx, dy);
-    lock.lock();
-    gmapping_x = dx + x0;
-    gmapping_y = dy + y0;
-    lock.unlock();
-    geometry_msgs::PoseWithCovarianceStamped pose_msg;
-    pose_msg.header.stamp = ros::Time::now();
-    pose_msg.pose.pose.position.x = gmapping_x;
-    pose_msg.pose.pose.position.y = gmapping_y;
-    pose_msg.pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), yaw));
-    pose_msg.pose.covariance = odom_msg.pose.covariance;
-    pose_pub.publish(pose_msg);
-}
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
     publish_odom();
 }
@@ -659,8 +563,6 @@ void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     //             std::cout << "using ekf but haven't received data yet. ekf_x: " << ekf_x << ", ekf_y: " << ekf_y << std::endl;
     //             x0 = ekf_x;
     //             y0 = ekf_y;
-    //             gmapping_x = ekf_x;
-    //             gmapping_y = ekf_y;
     //         } else {
     //             ROS_INFO("Initializing... ekf_x: %.3f, ekf_y: %.3f", ekf_x, ekf_y);
     //         }

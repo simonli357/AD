@@ -75,7 +75,7 @@ public:
     double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     bool stopline = false;
     double yaw, velocity, steer_command, velocity_command, x_speed, y_speed;
-    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y, gmapping_x, gmapping_y, odomX_lidar, odomY_lidar;
+    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
@@ -98,7 +98,6 @@ public:
 
     // publishers
     ros::Publisher odom_pub;
-    ros::Publisher odom_lidar_pub;
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
     ros::Publisher road_object_pub;
@@ -110,7 +109,6 @@ public:
 
     // messages
     nav_msgs::Odometry odom_msg;
-    nav_msgs::Odometry odom_lidar_msg;
     // nav_msgs::Odometry odom1_msg;
     nav_msgs::Odometry ekf_msg;
     std_msgs::String msg;
@@ -136,8 +134,6 @@ public:
     ros::Subscriber imu_sub;
     ros::Subscriber ekf_sub;
     ros::Subscriber tf_sub;
-    ros::Subscriber odom_lidar_sub;
-    ros::Subscriber amcl_sub;
 
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);
@@ -157,8 +153,6 @@ public:
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg);
-    void amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
-    void odom_lidar_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void spin();
     // Methods
     void stop_car();
@@ -205,14 +199,6 @@ public:
         //     // ROS_INFO("Using gps: %.3f, %.3f", gps_x, gps_y);
         //     x_ = gps_x;
         //     y_ = gps_y;
-        // } else if(useGmapping || useAmcl) {
-        //     // ROS_INFO("Using gmapping: %.3f, %.3f", gmapping_x, gmapping_y);
-        //     x_ = gmapping_x;
-        //     y_ = gmapping_y;
-        // } else if(useLidarOdom) {
-        //     // ROS_INFO("Using lidar odom: %.3f, %.3f", odomX_lidar, odomY_lidar);
-        //     x_ = odomX_lidar + x0;
-        //     y_ = odomY_lidar + y0;
         // } else {
         //     // ROS_INFO("Using odom: %.3f, %.3f", odomX, odomY);
         //     x_ = odomX + x0;
@@ -267,12 +253,6 @@ public:
             std::cout << "received message from model" << std::endl;
             x0 = gps_x;
             y0 = gps_y;
-        } else if(useGmapping || useAmcl) {
-            x0 = gmapping_x;
-            y0 = gmapping_y;
-        } else if(useLidarOdom) {
-            x0 = odomX_lidar;
-            y0 = odomY_lidar;
         } else {
             x0 = odomX;
             y0 = odomY;
