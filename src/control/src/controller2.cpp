@@ -21,7 +21,7 @@ using namespace VehicleConstants;
 class StateMachine {
 public:
     StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real): 
-    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), path_manager(T,N,v_ref), xs(5),
+    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), path_manager(nh,T,N,v_ref), xs(5),
     state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), end_index(0), real(real)
     {
         // tunables
@@ -91,10 +91,6 @@ public:
             std::cout << "keyboard control enabled" << std::endl;
             change_state(STATE::KEYBOARD_CONTROL);
         }
-        if(!nh.getParam("/pathName", pathName)) {
-            ROS_ERROR("Failed to get param 'pathName'");
-            pathName = "path1";
-        }
         nh.param("/dashboard", dashboard, true);
         nh.param("/gps", hasGps, false);
 
@@ -149,7 +145,6 @@ public:
     Eigen::VectorXd xs;
     int state = 0;
     bool debug = true, sign, ekf, lane, real, dashboard, keyboardControl, hasGps, pubWaypoints;
-    std::string pathName;
     double running_x, running_y, running_yaw;
     
     std::array<double, 3> x0;
@@ -179,45 +174,9 @@ public:
         }
         double x, y, yaw;
         utils.get_states(x, y, yaw);
-        utils.debug("start(): x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", yaw=" + std::to_string(yaw), 2);
-        ros::ServiceClient waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
-        utils::waypoints srv;
-        srv.request.pathName = pathName;
-        srv.request.x0 = x;
-        srv.request.y0 = y;
-        srv.request.yaw0 = yaw;
-        //convert v_ref to string
-        int vrefInt;
-        if(!nh.getParam("/vrefInt", vrefInt)) {
-            ROS_ERROR("Failed to get param 'vrefInt'");
-            vrefInt = 25;
-        }
-        if (vrefInt > 30) vrefInt = 35;
-        srv.request.vrefName = std::to_string(vrefInt);
-        utils.debug("waiting for waypoints service", 1);
-        if(waypoints_client.waitForExistence(ros::Duration(5))) {
-            utils.debug("waypoints service found", 2);
-        } else {
-            utils.debug("waypoints service not found after 5 seconds", 1);
-        }
-        if(waypoints_client.call(srv)) {
-            std::vector<double> state_refs(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
-            std::vector<double> input_refs(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end()); // N by 2
-            std::vector<double> wp_attributes(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
-            std::vector<double> wp_normals(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
-            std::vector<int> maneuver_directions(srv.response.maneuver_directions.data.begin(), srv.response.maneuver_directions.data.end()); // N by 1
-            maneuver_indices = maneuver_directions;
-            int N = state_refs.size() / 3;
-            path_manager.state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs.data(), 3, N).transpose();
-            path_manager.input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs.data(), 2, N).transpose();
-            path_manager.state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes.data(), N);
-            path_manager.normals = Eigen::Map<Eigen::MatrixXd>(wp_normals.data(), 2, N).transpose();
-
-            utils.debug("initialize(): Received waypoints of size " + std::to_string(N), 2);
-        } else {
-            utils.debug("ERROR: initialize(): Failed to call service waypoints", 1);
-        }
         utils.update_states(x_current);
+        utils.debug("start(): x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", yaw=" + std::to_string(yaw), 2);
+        path_manager.call_waypoint_service(x, y, yaw);
         destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
         utils.debug("initialize(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
 
@@ -227,13 +186,7 @@ public:
         return 1;
     }
     int start() {
-        // if (lane) {
-        //     change_state(STATE::LANE_FOLLOWING);
-        // } else {
-        //     change_state(STATE::MOVING);
-        // }
         change_state(STATE::MOVING);
-        // change_state(STATE::PARKING); //uncomment and recompile
         return 1;
     }
     bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
@@ -278,27 +231,8 @@ public:
         double total_x, total_y;
         while (ros::Time::now() < timer) {
             utils.publish_cmd_vel(0.0, 0.0);
-            // if(utils.useEkf) {
-            //     utils.get_ekf_states(ekf_x, ekf_y);
-            //     total_x += ekf_x;
-            //     total_y += ekf_y;
-            //     n++;
-            // }
             rate->sleep();
         }
-        // if (utils.useEkf) {
-        //     lock.lock();
-        //     double difference_x = utils.x0 + utils.odomX - total_x / n;
-        //     double difference_y = utils.y0 + utils.odomY - total_y / n;
-        //     double distance = std::sqrt(difference_x * difference_x + difference_y * difference_y);
-        //     if (distance > 3.0) {
-        //         ROS_WARN("large distance between ekf and odom: %.3f", distance);
-        //     }
-        //     utils.x0 = total_x / n - utils.odomX;
-        //     utils.y0 = total_y / n - utils.odomY;
-        //     ROS_INFO("reset x0 with odom: new x0: %.3f, y0: %.3f, xy offset: %.3f, %.3f", utils.x0, utils.y0, difference_x, difference_y);
-        //     lock.unlock();
-        // }
     }
     int parking_maneuver_hardcode(bool right=true, bool exit=false, double rate_val=20, double initial_y_error = 0, double initial_yaw_error = 0) {
         Eigen::VectorXd targets(3);
@@ -308,10 +242,7 @@ public:
         double base_yaw_target = parking_base_target_yaw * M_PI;
         base_yaw_target = base_yaw_target + 0.02 / (0.29 * M_PI) * base_yaw_target * initial_y_error / MAX_PARKING_Y_ERROR * (right ? 1 : -1);
         utils.debug("parking_maneuver_hardcode(): initial y error: " + std::to_string(initial_y_error) + ", initial yaw error: " + std::to_string(initial_yaw_error) + ", base yaw target: " + std::to_string(base_yaw_target / M_PI), 2);
-        // if (!real) base_yaw_target = 0.31 * M_PI;
-        // if (!real) base_yaw_target = 0.27 * M_PI;
         double base_steer = - HARD_MAX_STEERING;
-        // base_steer = - 20;
         double base_speed = parking_base_speed;
         double base_thresh = parking_base_thresh;
         targets << base_yaw_target, 0.0, 0.0;
@@ -391,7 +322,6 @@ public:
                     yaw_error += 2*M_PI;
                 }
             }
-            // ROS_INFO("yaw: %.3f, targ: %.3f, yaw_err: %.3f, steer: %.3f, speed: %.3f", yaw, target_yaws(stage-1), yaw_error, steering_angle, speed);
             bool exit_cond;
             if (std::abs(steering_angle) < 0.1) {
                 double x, y, yaw;
@@ -405,7 +335,6 @@ public:
                 } else {
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
-                // exit_cond = std::abs(yaw_error) < thresholds(stage-1);
                 utils.publish_cmd_vel(steering_angle, speed);
             }
             if (exit_cond) {
@@ -435,7 +364,6 @@ public:
         if(lane && use_stopline) {
             if (utils.stopline)
             {
-                // std::cout << "DEBUG: utils.stopline is true" << std::endl;
                 update_mpc_states(running_x, running_y, running_yaw);
                 int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
                 int num_index = static_cast<int>(0.15 * path_manager.density);

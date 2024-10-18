@@ -1,6 +1,7 @@
 #ifndef PathManager_HPP
 #define PathManager_HPP
 
+#include <ros/ros.h>
 #include <vector>
 #include <string>
 #include <Eigen/Dense>
@@ -13,11 +14,12 @@
 #include <limits.h>
 #include <cmath>
 #include "constants.h"
+#include "utils/waypoints.h"
 
 class PathManager {
 public:
-    PathManager(double T, int N, double v_ref):
-        T(T), N(N), v_ref(v_ref), density(1/T/v_ref), region_of_acceptance(0.03076923*3 * (0.125*1.3) / density), 
+    PathManager(ros::NodeHandle& nh_, double T, int N, double v_ref):
+        nh(nh), T(T), N(N), v_ref(v_ref), density(1/T/v_ref), region_of_acceptance(0.03076923*3 * (0.125*1.3) / density), 
         region_of_acceptance_cw(region_of_acceptance * 1.0/1.5), region_of_acceptance_hw(region_of_acceptance * 1.5), t0(0.0), closest_waypoint_index(0)
     {
         std::cout << "Path Manager Constructor" << std::endl;
@@ -44,10 +46,19 @@ public:
         int len = static_cast<int>(num_waypoints * 2);
         std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
         if(v_ref > 0.3) v_ref = 0.35;
+
+        waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
+        if(!nh.getParam("/pathName", pathName)) {
+            ROS_ERROR("Failed to get param 'pathName'");
+            pathName = "speedrun";
+        }
     }
-    PathManager(): PathManager(0.125, 40, 0.25) {}
+    PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
 
+    ros::NodeHandle nh;
+    ros::ServiceClient waypoints_client;
+    std::string pathName;
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0, num_waypoints=0;
     int v_ref_int;
     int N;
@@ -234,6 +245,41 @@ public:
         return closest;
     }
     
+    int call_waypoint_service(double x, double y, double yaw) {
+        utils::waypoints srv;
+        srv.request.pathName = pathName;
+        srv.request.x0 = x;
+        srv.request.y0 = y;
+        srv.request.yaw0 = yaw;
+        //convert v_ref to string
+        int vrefInt;
+        if(!nh.getParam("/vrefInt", vrefInt)) {
+            ROS_ERROR("Failed to get param 'vrefInt'");
+            vrefInt = 25;
+        }
+        if (vrefInt > 30) vrefInt = 35;
+        srv.request.vrefName = std::to_string(vrefInt);
+        if(waypoints_client.waitForExistence(ros::Duration(5))) {
+            ROS_INFO("waypoints service found");
+        } else {
+            ROS_INFO("waypoints service not found after 5 seconds");
+        }
+        if(waypoints_client.call(srv)) {
+            std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
+            std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end()); // N by 2
+            std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
+            std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
+            int N = state_refs.size() / 3;
+            state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+            input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+            state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+            normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+
+            ROS_INFO("initialize(): Received waypoints of size %d", N);
+        } else {
+            ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
+        }
+    }
     static std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
         size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path

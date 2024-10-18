@@ -148,7 +148,6 @@ ${catkin_LIBRARIES}
 
 add_executable(controller 
 src/controller2.cpp
-src/optimizer.cpp
 src/utility.cpp
 src/RoadObject.cpp
 )
