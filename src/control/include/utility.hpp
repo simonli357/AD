@@ -220,6 +220,9 @@ public:
         // }
         return 0;
     }
+    void update_states(Eigen::Vector3d& o_state) {
+        o_state << odomX + x0, odomY + y0, yaw;
+    }
     int recalibrate_states(double x_offset, double y_offset) {
         if(useEkf) {
             if (hasGps) {

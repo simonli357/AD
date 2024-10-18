@@ -5,7 +5,8 @@
 #include <vector>
 #include <mutex>
 #include "utility.hpp"
-#include "optimizer.hpp"
+#include "PathManager.hpp"
+#include "MPC.hpp"
 #include <signal.h>
 #include <fstream>
 #include <iostream>
@@ -20,7 +21,7 @@ using namespace VehicleConstants;
 class StateMachine {
 public:
     StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real): 
-    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), xs(5),
+    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), path_manager(T,N,v_ref), xs(5),
     state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), end_index(0), real(real)
     {
         // tunables
@@ -129,6 +130,7 @@ public:
     bool use_stopline = true, relocalize = true, use_lane = false, has_light = false, useTrajectory=true;
     int pedestrian_count_thresh = 8;
 
+    Eigen::Vector3d x_current;
     std::vector<Eigen::Vector2d> PARKING_SPOTS;
 
     // std::array<int, 9> maneuver_indices = {2, 2, 2, 2, 2, 2, 2, 2, 2};
@@ -155,7 +157,8 @@ public:
 
     std::mutex lock;
     Utility utils;
-    Optimizer mpc;
+    PathManager path_manager;
+    MPC mpc;
 
     ros::Timer ekf_update_timer;
     void ekf_update_timer_callback(const ros::TimerEvent&) {
@@ -204,25 +207,21 @@ public:
             std::vector<double> wp_normals(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
             std::vector<int> maneuver_directions(srv.response.maneuver_directions.data.begin(), srv.response.maneuver_directions.data.end()); // N by 1
             maneuver_indices = maneuver_directions;
-            // exit(0);
             int N = state_refs.size() / 3;
-            mpc.state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs.data(), 3, N).transpose();
-            mpc.input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs.data(), 2, N).transpose();
-            mpc.state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes.data(), N);
-            mpc.normals = Eigen::Map<Eigen::MatrixXd>(wp_normals.data(), 2, N).transpose();
-            // for (int i = 0; i < N/5; i++) {
-            //     std::cout << "state refs " << i << ": " << mpc.state_refs.row(i) << std::endl;
-            // }
-            // exit(0);
+            path_manager.state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs.data(), 3, N).transpose();
+            path_manager.input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs.data(), 2, N).transpose();
+            path_manager.state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes.data(), N);
+            path_manager.normals = Eigen::Map<Eigen::MatrixXd>(wp_normals.data(), 2, N).transpose();
+
             utils.debug("initialize(): Received waypoints of size " + std::to_string(N), 2);
         } else {
             utils.debug("ERROR: initialize(): Failed to call service waypoints", 1);
         }
-        mpc.initialize_current_states(x, y, utils.yaw);
-        destination = mpc.state_refs.row(mpc.state_refs.rows()-1).head(2);
+        utils.update_states(x_current);
+        destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
         utils.debug("initialize(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
 
-        mpc.target_waypoint_index = mpc.find_closest_waypoint(0, mpc.state_refs.rows()-1); // search from the beginning to the end
+        path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
         mpc.reset_solver();
         initialized = true;
         return 1;
@@ -255,9 +254,21 @@ public:
         
     }
     ros::ServiceServer start_trigger;
-    void solve(bool safety_check = true);
+    void solve();
     void publish_commands();
-    void update_mpc_state();
+    void update_mpc_states();
+    void update_mpc_states(double x, double y, double yaw) {
+        if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
+            double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
+            while (ref_yaw - yaw > M_PI) {
+                yaw += 2 * M_PI;
+            }
+            while (ref_yaw - yaw < -M_PI) {
+                yaw -= 2 * M_PI;
+            }
+        }
+        x_current << x, y, yaw;
+    }
     void change_state(STATE new_state);
     void run();
     void stop_for(double duration) {
@@ -352,7 +363,7 @@ public:
         // get current states
         utils.get_states(x0, y0, yaw0);
         // get closest direction
-        yaw0 = mpc.NearestDirection(yaw0);
+        yaw0 = PathManager::NearestDirection(yaw0);
         while (yaw0 < -M_PI) yaw0 += 2*M_PI;
         while (yaw0 > M_PI) yaw0 -= 2*M_PI;
         Eigen::VectorXd yaw0_vec = Eigen::VectorXd::Constant(targets.size(), yaw0);
@@ -416,38 +427,21 @@ public:
         return 0;
     }
 
-    int move_to(Eigen::VectorXd xs, double thresh=0.1) {
-        ros::Rate temp_rate(1/T_park);
-        std::cout << "park rate: " << 1/T_park << std::endl;
-        mpc.set_up_park(xs);
-        int status, i = 0;
-        while(1) {
-            update_mpc_state();
-            status = mpc.update_and_solve_park(xs, thresh*thresh);
-            publish_commands();
-            if (status == 2 || i>200) {
-                break;
-            }
-            i++;
-            temp_rate.sleep();
-        }
-        return status;
-    }
     bool intersection_reached() {
         static Eigen::Vector2d last_intersection_point = {0, 0};
         static const double INTERSECTION_DISTANCE_THRESHOLD = 0.753; // minimum distance between two intersections
         static double lookahead_dist = 0.15;
-        static int num_index = static_cast<int>(lookahead_dist * mpc.density);
+        static int num_index = static_cast<int>(lookahead_dist * path_manager.density);
         if(lane && use_stopline) {
             if (utils.stopline)
             {
                 // std::cout << "DEBUG: utils.stopline is true" << std::endl;
-                mpc.update_current_states(running_x, running_y, running_yaw);
-                int closest_idx = mpc.find_closest_waypoint(0, mpc.state_refs.rows()-1);
-                int num_index = static_cast<int>(0.15 * mpc.density);
+                update_mpc_states(running_x, running_y, running_yaw);
+                int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+                int num_index = static_cast<int>(0.15 * path_manager.density);
                 for (int i = closest_idx; i < closest_idx + num_index; i++) {
-                    if (i >= mpc.state_refs.rows()) break;
-                    if (mpc.attribute_cmp(i, mpc.ATTRIBUTE::CROSSWALK) || mpc.attribute_cmp(i, mpc.ATTRIBUTE::DOTTED_CROSSWALK)) {
+                    if (i >= path_manager.state_refs.rows()) break;
+                    if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::CROSSWALK) || path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::DOTTED_CROSSWALK)) {
                         utils.debug("intersection_reached(): detected crosswalk lines, ignoring...", 2);
                         return false;
                     }
@@ -457,15 +451,14 @@ public:
                     return false;
                 }
                 utils.get_states(running_x, running_y, running_yaw);
-                mpc.update_current_states(running_x, running_y, running_yaw);
-                int target_index = mpc.find_closest_waypoint(0, mpc.state_refs.rows()-1);
+                update_mpc_states(running_x, running_y, running_yaw);
+                int target_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
                 bool found = false;
                 lookahead_dist = 0.4;
-                num_index = static_cast<int>(lookahead_dist * mpc.density);
+                num_index = static_cast<int>(lookahead_dist * path_manager.density);
                 for (int i = 0; i < num_index; i++) {
-                    if (target_index + i >= mpc.state_refs.rows()) break;
-                    if(mpc.attribute_cmp(target_index+i, mpc.ATTRIBUTE::STOPLINE)) {
-                        // std::cout << "stopline detected at (" << mpc.state_refs(mpc.target_waypoint_index, 0) << ", " << mpc.state_refs(mpc.target_waypoint_index, 1) << ")" << std::endl;
+                    if (target_index + i >= path_manager.state_refs.rows()) break;
+                    if(path_manager.attribute_cmp(target_index+i, path_manager.ATTRIBUTE::STOPLINE)) {
                         found = true;
                         break;
                     }
@@ -491,13 +484,12 @@ public:
             }
         }
         utils.get_states(running_x, running_y, running_yaw);
-        mpc.update_current_states(running_x, running_y, running_yaw);
-        int target_index = mpc.find_closest_waypoint(0, mpc.state_refs.rows()-1);
+        update_mpc_states(running_x, running_y, running_yaw);
+        int target_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
         bool found = false;
         for (int i = 0; i < num_index; i++) {
-            if (target_index + i >= mpc.state_refs.rows()) break;
-            if(mpc.attribute_cmp(target_index+i, mpc.ATTRIBUTE::STOPLINE)) {
-                // std::cout << "stopline detected at (" << mpc.state_refs(mpc.target_waypoint_index, 0) << ", " << mpc.state_refs(mpc.target_waypoint_index, 1) << ")" << std::endl;
+            if (target_index + i >= path_manager.state_refs.rows()) break;
+            if(path_manager.attribute_cmp(target_index+i, path_manager.ATTRIBUTE::STOPLINE)) {
                 found = true;
                 break;
             }
@@ -565,14 +557,14 @@ public:
             if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
                 auto sign_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
                 if (stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                    int nearestDirectionIndex = mpc.NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
                     const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_ROUNDABOUT :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_ROUNDABOUT :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_ROUNDABOUT :
                                                                         SOUTH_FACING_ROUNDABOUT;
                     sign_based_relocalization(sign_pose, intersection_signs);
                 } else {
-                    int nearestDirectionIndex = mpc.NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
                     const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_SIGNS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_SIGNS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_SIGNS :
@@ -610,7 +602,7 @@ public:
                 if (relocalize) {
                 // if (1) {
                     auto crosswalk_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(crosswalk_index), detected_dist, CAMERA_PARAMS);
-                    int nearestDirectionIndex = mpc.NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
                     const auto& direction_crosswalks = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
@@ -623,9 +615,9 @@ public:
         return -1;
     }
     double check_highway() {
-        mpc.update_current_states(running_x, running_y, running_yaw);
-        int closest_idx = mpc.find_closest_waypoint(0, mpc.state_refs.rows()-1);
-        return mpc.attribute_cmp(closest_idx, mpc.ATTRIBUTE::HIGHWAYLEFT) || mpc.attribute_cmp(closest_idx, mpc.ATTRIBUTE::HIGHWAYRIGHT);
+        update_mpc_states(running_x, running_y, running_yaw);
+        int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+        return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
     }
     void pedestrian_detected() {
         int pedestrian_count = 0;
@@ -692,7 +684,7 @@ public:
         // stop_for(0.5);
         // check orientation
         double yaw = utils.get_yaw();
-        double nearest_direction = mpc.NearestDirection(yaw);
+        double nearest_direction = PathManager::NearestDirection(yaw);
         double yaw_error = nearest_direction - yaw;
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -701,7 +693,7 @@ public:
             return 0;
         }
 
-        int nearestDirectionIndex = mpc.NearestDirectionIndex(yaw);
+        int nearestDirectionIndex = PathManager::NearestDirectionIndex(yaw);
         const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
@@ -737,7 +729,7 @@ public:
         double center = utils.center + pixel_center_offset;
         if (center >= 240 && center <= 400) {
             double yaw = utils.get_yaw();
-            double nearest_direction = mpc.NearestDirection(yaw);
+            double nearest_direction = PathManager::NearestDirection(yaw);
             double yaw_error = nearest_direction - yaw;
             if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
             else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -746,7 +738,7 @@ public:
                 return 0;
             }
             double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
-            int nearestDirectionIndex = mpc.NearestDirectionIndex(yaw);
+            int nearestDirectionIndex = PathManager::NearestDirectionIndex(yaw);
             const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_LANE_CENTERS :
@@ -798,7 +790,7 @@ public:
     }
     void wait_for_green() {
         if (has_light) {
-            int neareastDirection = mpc.NearestDirectionIndex(utils.get_yaw());
+            int neareastDirection = PathManager::NearestDirectionIndex(utils.get_yaw());
             static std::string light_topic_name;
             if (neareastDirection == 0) light_topic_name = "/east_traffic_light";
             else if (neareastDirection == 1) light_topic_name = "/north_traffic_light";
@@ -832,7 +824,7 @@ public:
     }
     void publish_waypoints() {
         static Eigen::MatrixXd waypoints = Eigen::MatrixXd::Zero(mpc.N, 3);
-        mpc.get_current_waypoints(waypoints);
+        path_manager.get_current_waypoints(waypoints);
         static std_msgs::Float32MultiArray msg;
         msg.data.clear();
         for (int i = 0; i < waypoints.rows(); ++i) {
@@ -880,8 +872,8 @@ public:
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
         // for (int car_index: cars) {
-            mpc.update_current_states(running_x, running_y, running_yaw);
-            int closest_idx = mpc.find_closest_waypoint();
+            update_mpc_states(running_x, running_y, running_yaw);
+            int closest_idx = path_manager.find_closest_waypoint(x_current);
             dist = utils.object_distance(car_index); // compute distance to back of car
             if (dist < MAX_CAR_DIST && dist > 0 && closest_idx >= end_index * 1.2) {
                 utils.object_box(car_index, bbox);
@@ -892,18 +884,18 @@ public:
                 printf("estimated car pose: %.3f, %.3f\n", car_pose[0], car_pose[1]);
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
-                int look_ahead_index = look_ahead_dist * mpc.density + closest_idx;
+                int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
                 // compute distance from car_pose to waypoint, find closest waypoint and distance
                 double min_dist_sq = 1000.;
                 int min_index = 0;
                 // std::cout << "closest index: " << closest_idx << ", look ahead index: " << look_ahead_index << std::endl;
                 for (int i = closest_idx; i < look_ahead_index; i++) {
-                    // double dist_sq = (car_pose.head(2) - mpc.state_refs.row(i).head(2)).squaredNorm();
-                    if (i >= mpc.state_refs.rows()) {
+                    // double dist_sq = (car_pose.head(2) - path_manager.state_refs.row(i).head(2)).squaredNorm();
+                    if (i >= path_manager.state_refs.rows()) {
                         ROS_WARN("check_car(): i exceeds state_refs size, stopping...");
                         break;
                     }
-                    double dist_sq = std::pow(car_pose[0] - mpc.state_refs(i, 0), 2) + std::pow(car_pose[1] - mpc.state_refs(i, 1), 2);
+                    double dist_sq = std::pow(car_pose[0] - path_manager.state_refs(i, 0), 2) + std::pow(car_pose[1] - path_manager.state_refs(i, 1), 2);
                     if (dist_sq < min_dist_sq) {
                         min_dist_sq = dist_sq;
                         min_index = i;
@@ -918,11 +910,8 @@ public:
                 }
                 std::cout << "min dist between car and closest waypoint: " << min_dist << ", same lane: " << (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) << std::endl;
                 if (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) {
-                    int idx = static_cast<int>(closest_idx + dist * mpc.density * 0.75); // compute index of midpoint between detected car and ego car
-                    // int attribute = mpc.state_attributes(idx);
-                    // std::cout << "attribute: " << attribute << std::endl;
-                    // if (attribute != mpc.ATTRIBUTE::DOTTED && attribute != mpc.ATTRIBUTE::DOTTED_CROSSWALK && attribute != mpc.ATTRIBUTE::HIGHWAYLEFT && attribute != mpc.ATTRIBUTE::HIGHWAYRIGHT) {
-                    if (idx < mpc.state_refs.rows() && !mpc.attribute_cmp(idx, mpc.ATTRIBUTE::DOTTED) && !mpc.attribute_cmp(idx, mpc.ATTRIBUTE::DOTTED_CROSSWALK) && !mpc.attribute_cmp(idx, mpc.ATTRIBUTE::HIGHWAYLEFT) && !mpc.attribute_cmp(idx, mpc.ATTRIBUTE::HIGHWAYRIGHT)) {
+                    int idx = static_cast<int>(closest_idx + dist * path_manager.density * 0.75); // compute index of midpoint between detected car and ego car
+                    if (idx < path_manager.state_refs.rows() && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED_CROSSWALK) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) {
                         if (dist < MAX_TAILING_DIST) {
                             mpc.reset_solver();
                             utils.debug("check_car(): detetected car is in one way or non-dotted region, dist = " + std::to_string(dist) + ", stopping...", 2);
@@ -934,19 +923,19 @@ public:
                     } else {
                         double start_dist = std::max(dist - CAM_TO_CAR_FRONT, MIN_DIST_TO_CAR) - MIN_DIST_TO_CAR;
                         bool right = false;
-                        double density = mpc.density;
+                        double density = path_manager.density;
                         static double lane_offset = LANE_OFFSET * change_lane_offset_scaler ;
                         int end_index_scaler = 1.15;
-                        // if (attribute == mpc.ATTRIBUTE::HIGHWAYRIGHT) { // if on right side of highway, overtake on left
-                        for (int i = idx; i < static_cast<int>(idx + 0.5 * mpc.density); i++) {
-                            if (mpc.attribute_cmp(i, mpc.ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
+                        // if (attribute == path_manager.ATTRIBUTE::HIGHWAYRIGHT) { // if on right side of highway, overtake on left
+                        for (int i = idx; i < static_cast<int>(idx + 0.5 * path_manager.density); i++) {
+                            if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
                                 density *= 1/1.33;
                                 end_index_scaler *= 1.5;
                                 utils.debug("check_car(): detected car is on right side of highway, overtake on left", 2);
                                 break;
                             }
-                            // else if (attribute == mpc.ATTRIBUTE::HIGHWAYLEFT) { // if on left side of highway, overtake on right
-                            else if (mpc.attribute_cmp(i, mpc.ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
+                            // else if (attribute == path_manager.ATTRIBUTE::HIGHWAYLEFT) { // if on left side of highway, overtake on right
+                            else if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
                                 right = true; 
                                 density *= 1/1.33;
                                 end_index_scaler *= 1.5;
@@ -958,12 +947,12 @@ public:
                             int start_index = closest_idx + static_cast<int>(start_dist * density);
                             
                             end_index = start_index + static_cast<int>((CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * density * end_index_scaler);
-                            if (start_index >= mpc.state_refs.rows() || end_index >= mpc.state_refs.rows()) {
+                            if (start_index >= path_manager.state_refs.rows() || end_index >= path_manager.state_refs.rows()) {
                                 utils.debug("WARNING: check_car(): start or end index exceeds state_refs size, stopping...", 2);
                                 return;
                             };
-                            mpc.change_lane(start_index, end_index, right, lane_offset);
-                            utils.debug("check_car(): changing lane to the " + std::string(right ? "right" : "left") + " in " + std::to_string(start_dist) + " meters. start pose: (" + std::to_string(mpc.state_refs(start_index, 0)) + "," + std::to_string(mpc.state_refs(start_index, 1)) + "), end: (" + std::to_string(mpc.state_refs(end_index, 0)) + ", " + std::to_string(mpc.state_refs(end_index, 1)) + "), cur: (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
+                            path_manager.change_lane(start_index, end_index, right, lane_offset);
+                            utils.debug("check_car(): changing lane to the " + std::string(right ? "right" : "left") + " in " + std::to_string(start_dist) + " meters. start pose: (" + std::to_string(path_manager.state_refs(start_index, 0)) + "," + std::to_string(path_manager.state_refs(start_index, 1)) + "), end: (" + std::to_string(path_manager.state_refs(end_index, 0)) + ", " + std::to_string(path_manager.state_refs(end_index, 1)) + "), cur: (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
                         } else {
                             utils.debug("check_car(): hardcode lane change. proceeding to lane follow until start distance (" + std::to_string(start_dist) + ") reached...", 2);
                             start_dist = std::max(0.0, start_dist - CAR_LENGTH/2);
@@ -984,18 +973,18 @@ public:
                             int start_index = closest_idx + static_cast<int>((start_dist + CAR_LENGTH) * density);
                             double end_dist = (CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * 0.7 * end_index_scaler;
                             int end_index = start_index + static_cast<int>((end_dist + CAR_LENGTH) * density);
-                            if (start_index >= mpc.state_refs.rows() || end_index >= mpc.state_refs.rows()) {
+                            if (start_index >= path_manager.state_refs.rows() || end_index >= path_manager.state_refs.rows()) {
                                 ROS_WARN("check_car(): start or end index exceeds state_refs size, stopping...");
                                 return;
                             };
-                            // double start_yaw_diff = std::atan2(mpc.state_refs(start_index, 1) - y0, mpc.state_refs(start_index, 0) - x0);
+                            // double start_yaw_diff = std::atan2(path_manager.state_refs(start_index, 1) - y0, path_manager.state_refs(start_index, 0) - x0);
                             // // if (std::abs(start_yaw_diff) > 0.4 * M_PI) start_yaw_diff = 0;
                             
-                            // double end_yaw_diff = std::atan2(mpc.state_refs(end_index, 1) - mpc.state_refs(start_index, 1), mpc.state_refs(end_index, 0) - mpc.state_refs(start_index, 0));
+                            // double end_yaw_diff = std::atan2(path_manager.state_refs(end_index, 1) - path_manager.state_refs(start_index, 1), path_manager.state_refs(end_index, 0) - path_manager.state_refs(start_index, 0));
                             // // if (std::abs(end_yaw_diff) > 0.4 * M_PI) end_yaw_diff = 0;
 
-                            double start_yaw = mpc.state_refs(start_index, 2);
-                            double end_yaw = mpc.state_refs(end_index, 2);
+                            double start_yaw = path_manager.state_refs(start_index, 2);
+                            double end_yaw = path_manager.state_refs(end_index, 2);
                             ROS_INFO("start yaw: %.3f, end yaw: %.3f", start_yaw, end_yaw);
                             double start_yaw_diff = start_yaw - yaw0;
                             double end_yaw_diff = end_yaw - start_yaw;
@@ -1004,7 +993,7 @@ public:
                             while (end_yaw_diff > M_PI) end_yaw_diff -= 2*M_PI;
                             while (end_yaw_diff < -M_PI) end_yaw_diff += 2*M_PI;
 
-                            ROS_INFO("start point: <%.3f, %.3f>, start index: %d, end point: <%.3f, %.3f>, end index: %d", mpc.state_refs(start_index, 0), mpc.state_refs(start_index, 1), start_index, mpc.state_refs(end_index, 0), mpc.state_refs(end_index, 1), end_index);
+                            ROS_INFO("start point: <%.3f, %.3f>, start index: %d, end point: <%.3f, %.3f>, end index: %d", path_manager.state_refs(start_index, 0), path_manager.state_refs(start_index, 1), start_index, path_manager.state_refs(end_index, 0), path_manager.state_refs(end_index, 1), end_index);
                             ROS_INFO("yaw0: %.3f, start_yaw_diff: %.3f, end_yaw_diff: %.3f", yaw0, start_yaw_diff, end_yaw_diff);
 
                             utils.get_states(x0, y0, yaw0);
@@ -1040,27 +1029,37 @@ public:
     }
 };
 
-void StateMachine::update_mpc_state() {
-    double x, y, yaw;
-    utils.get_states(x, y, yaw);
-    while(!mpc.update_current_states(x, y, yaw)) {
-        ROS_WARN("update_current_states failed, stopping briefly...");
-        stop_for(stop_duration / 3);
-        utils.get_states(x, y, yaw);
+void StateMachine::update_mpc_states() {
+    utils.update_states(x_current);
+    double yaw = x_current(2);
+    if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
+        double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
+        while (ref_yaw - yaw > M_PI) {
+            yaw += 2 * M_PI;
+        }
+        while (ref_yaw - yaw < -M_PI) {
+            yaw -= 2 * M_PI;
+        }
     }
+    x_current(2) = yaw;
 }
-void StateMachine::solve(bool safety_check) {
-    int status = mpc.update_and_solve(mpc.x_current, safety_check);
+void StateMachine::solve() {
+    int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
+    int idx = path_manager.target_waypoint_index;
+    if (idx >= path_manager.state_refs.rows()) {
+        idx = path_manager.state_refs.rows() - 1;
+    }
+    Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, path_manager.state_refs.rows() - idx, 3);
+    Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, path_manager.input_refs.rows() - idx, 2);
+    int status = mpc.solve(state_refs_block, input_refs_block, x_current);
     publish_commands();
 }
 void StateMachine::publish_commands() {
     if(pubWaypoints) {
         publish_waypoints();
     }
-    
     double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
-
     utils.publish_cmd_vel(steer, speed);
 }
 void StateMachine::change_state(STATE new_state) {
@@ -1079,7 +1078,6 @@ void StateMachine::run() {
             exit_detected();
         }
         utils.get_states(running_x, running_y, running_yaw);
-        // if (mpc.target_waypoint_index >= mpc.num_waypoints -1) change_state(STATE::DONE);
         if (state == STATE::MOVING) {
             if(intersection_reached()) {
                 utils.debug("intersection reached", 2);
@@ -1110,8 +1108,8 @@ void StateMachine::run() {
                     utils.debug("roundabout detected, using mpc...", 3);
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                     if (use_lane) {
-                        mpc.update_current_states(running_x, running_y, running_yaw, false);
-                        solve(false);
+                        update_mpc_states(running_x, running_y, running_yaw);
+                        solve();
                         rate->sleep();
                         continue;
                     }
@@ -1119,8 +1117,8 @@ void StateMachine::run() {
                     if (use_lane) {
                         ROS_WARN("intersection reached but no sign detected, using mpc...");
                         stopsign_flag = STOPSIGN_FLAGS::NONE;
-                        mpc.update_current_states(running_x, running_y, running_yaw, false);
-                        solve(false);
+                        update_mpc_states(running_x, running_y, running_yaw);
+                        solve();
                         rate->sleep();
                         continue;
                     }
@@ -1146,8 +1144,8 @@ void StateMachine::run() {
                 }
                 check_car();    
             }
-            mpc.update_current_states(running_x, running_y, running_yaw, false);
-            int closest_idx = mpc.find_closest_waypoint();
+            update_mpc_states(running_x, running_y, running_yaw);
+            int closest_idx = path_manager.find_closest_waypoint(x_current);
             if (relocalize) {
                 static int lane_relocalization_semaphore = 0;
                 lane_relocalization_semaphore++;
@@ -1157,21 +1155,21 @@ void StateMachine::run() {
                 }
             }
             if (!use_lane) {
-                update_mpc_state();
-                double error_sq = (mpc.x_current.head(2) - destination).squaredNorm();
-                if (error_sq < TOLERANCE_SQUARED && mpc.target_waypoint_index >= mpc.state_refs.rows() * 0.9) {
+                update_mpc_states();
+                double error_sq = (x_current.head(2) - destination).squaredNorm();
+                if (error_sq < TOLERANCE_SQUARED && path_manager.target_waypoint_index >= path_manager.state_refs.rows() * 0.9) {
                     change_state(STATE::DONE);
                 }
                 solve();
             } else {
-                if(mpc.is_not_detectable(closest_idx)) {
+                if(path_manager.is_not_detectable(closest_idx)) {
                     std::cout << "non-detectable area, using mpc" << std::endl;
-                    solve(false);
+                    solve();
                 } else {
-                    mpc.target_waypoint_index = closest_idx + 1;
+                    path_manager.target_waypoint_index = closest_idx + 1;
                     // std::cout << "detectable area, using lane follow" << std::endl;
                     if(check_crosswalk() > 0) {
-                        orientation_follow(mpc.NearestDirection(utils.get_yaw()));
+                        orientation_follow(PathManager::NearestDirection(utils.get_yaw()));
                     } else {
                         lane_follow();
                     }
@@ -1184,7 +1182,7 @@ void StateMachine::run() {
             double x0, y0, yaw0;
             utils.get_states(x0, y0, yaw0);
             // utils.reset_odom();
-            double orientation = mpc.NearestDirection(utils.get_yaw());
+            double orientation = PathManager::NearestDirection(utils.get_yaw());
             ROS_INFO("sign detected at a distance of: %.3f, offset: %.3f, resetting odom...", detected_dist, offset);
             while(1) {
                 double x, y, yaw;
@@ -1209,7 +1207,7 @@ void StateMachine::run() {
                         lane_follow();
                     }
                 } else {
-                    mpc.update_current_states(x, y, yaw);
+                    update_mpc_states(x, y, yaw);
                     solve();
                 }
                 rate->sleep();
@@ -1238,15 +1236,15 @@ void StateMachine::run() {
                 } else if(stopsign_flag == STOPSIGN_FLAGS::RDB) {
                     ROS_INFO("roundabout detected. using mpc...");
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    mpc.update_current_states(running_x, running_y, running_yaw, false);
-                    solve(false);
+                    update_mpc_states(running_x, running_y, running_yaw);
+                    solve();
                     rate->sleep();
                     continue;
                 } else {
                     ROS_WARN("intersection reached but no sign detected, using mpc...");
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    mpc.update_current_states(running_x, running_y, running_yaw, false);
-                    solve(false);
+                    update_mpc_states(running_x, running_y, running_yaw);
+                    solve();
                     rate->sleep();
                     continue;
                 }
@@ -1261,8 +1259,8 @@ void StateMachine::run() {
                 }
                 check_car();
             }
-            mpc.update_current_states(running_x, running_y, running_yaw, false);
-            int closest_idx = mpc.find_closest_waypoint();
+            update_mpc_states(running_x, running_y, running_yaw);
+            int closest_idx = path_manager.find_closest_waypoint(x_current);
             if (relocalize && lane) {
                 static int lane_relocalization_semaphore = 0;
                 lane_relocalization_semaphore++;
@@ -1271,14 +1269,14 @@ void StateMachine::run() {
                     lane_relocalization_semaphore = 0;
                 }
             }
-            if(mpc.is_not_detectable(closest_idx)) {
+            if(path_manager.is_not_detectable(closest_idx)) {
                 std::cout << "non-detectable area, using mpc" << std::endl;
-                solve(false);
+                solve();
             } else {
-                mpc.target_waypoint_index = closest_idx + 1;
+                path_manager.target_waypoint_index = closest_idx + 1;
                 // std::cout << "detectable area, using lane follow" << std::endl;
                 if(check_crosswalk() > 0) {
-                    orientation_follow(mpc.NearestDirection(utils.get_yaw()));
+                    orientation_follow(PathManager::NearestDirection(utils.get_yaw()));
                 } else {
                     lane_follow();
                 }
@@ -1310,7 +1308,7 @@ void StateMachine::run() {
             int target_spot = 0;
             auto temp_rate = ros::Rate(50);
             if (true) {
-                double orientation = mpc.NearestDirection(utils.get_yaw());
+                double orientation = PathManager::NearestDirection(utils.get_yaw());
                 ROS_INFO("orientation: %.3f", orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
@@ -1369,16 +1367,7 @@ void StateMachine::run() {
                         offset = base_offset + target_spot / 2 * PARKING_SPOT_LENGTH;
                         right_park = target_spot % 2 == 0;
                         ROS_INFO("car in spot, changing to target spot %d at (%.3f, %.3f), right: %s", target_spot, PARKING_SPOTS[target_spot][0], PARKING_SPOTS[target_spot][1], right_park ? "true" : "false");
-                        // mpc.set_up_park(xs);
                     }
-                    // update_mpc_state();
-                    // status = mpc.update_and_solve_park(xs, offset_thresh*offset_thresh);
-                    // publish_commands();
-                    // if (status == 2 || i>200) {
-                    //     break;
-                    // }
-                    // i++;
-                    // temp_rate.sleep();
                     double x, y, yaw;
                     utils.get_states(x, y, yaw);
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
@@ -1392,7 +1381,7 @@ void StateMachine::run() {
                     // if (norm_sq > offset * offset * 0.2) {
                     //     orientation_follow(orientation);
                     // } else {
-                    //     update_mpc_state();
+                    //     update_mpc_states();
                     //     solve();
                     // }
                     temp_rate.sleep();
@@ -1401,7 +1390,7 @@ void StateMachine::run() {
             stop_for(stop_duration/2);
             if (hard_code) {
                 // right_park = true; //temp
-                double orientation = mpc.NearestDirection(utils.get_yaw());
+                double orientation = PathManager::NearestDirection(utils.get_yaw());
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
                 double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
@@ -1409,16 +1398,12 @@ void StateMachine::run() {
                 // ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
                 // exit(0);
                 parking_maneuver_hardcode(right_park, false, 1/T_park, initial_y_error, initial_yaw_error);
-            } else {
-                xs << -0.63, -0.35, 0. , 0., 0.;
-                ROS_INFO("moving to: %.3f, %.3f, %.3f", xs[0], xs[1], xs[2]);
-                move_to(xs);
             }
             double x, y, yaw;
             utils.get_states(x, y, yaw);
             double x_error = x - PARKING_SPOTS[target_spot][0];
             if (std::abs(x_error) > 0.15) {
-                double orientation = mpc.NearestDirection(utils.get_yaw());
+                double orientation = PathManager::NearestDirection(utils.get_yaw());
                 ROS_INFO("parked but x offset too large: %.3f, adjusting... orientation: %.3f", x_error, orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
@@ -1451,166 +1436,11 @@ void StateMachine::run() {
             if (hard_code) {
                 // right_park = true;
                 parking_maneuver_hardcode(right_park, true, 1/T_park);
-            } else {
-                xs << -0.2, 0., 0. , 0., 0.;
-                utils.debug("moving back for " + std::to_string(xs[0]), 2);
-                move_to(xs, 0.05);
-                xs << 0.63, 0.4, 0., 0., 0.;
-                move_to(xs, 0.15);
             }
-            // if (lane) {
-            //     change_state(STATE::LANE_FOLLOWING);
-            // } else {
-            //     change_state(STATE::MOVING);
-            // }
-            mpc.target_waypoint_index = mpc.find_closest_waypoint(0, mpc.state_refs.rows() - 1);
+            path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1);
             change_state(STATE::MOVING);
         } else if (state == STATE::INTERSECTION_MANEUVERING) {
-            double x, y, yaw;
-            utils.get_states(x, y , yaw);
-            mpc.update_current_states(x, y, yaw, false);
-            int closest_index = mpc.find_closest_waypoint();
-            int look_ahead_index = closest_index + mpc.density * 1.5;
-            // compute the vector from the current position to the closest waypoint and the angle of the vector
-            auto start_vector = mpc.state_refs.row(closest_index).head(2) - mpc.state_refs.row(closest_index-8).head(2);
-            auto end_vector = mpc.state_refs.row(look_ahead_index).head(2) - mpc.state_refs.row(look_ahead_index+8).head(2);
-            double cross_product = start_vector[0] * end_vector[1] - start_vector[1] * end_vector[0];
-            double normalized_cross_product = cross_product / (start_vector.norm() * end_vector.norm());
-            int direction_estimate = 0; // 0: left, 1: straight, 2: right
-            if (normalized_cross_product > 0.75) {
-                direction_estimate = MANEUVER_DIRECTION::RIGHT;
-            } else if (normalized_cross_product < -0.75) {
-                direction_estimate = MANEUVER_DIRECTION::LEFT;
-            } else {
-                direction_estimate = MANEUVER_DIRECTION::STRAIGHT;
-            }
-            ROS_INFO("intersection Maneuvering: direction estimate: %s", MANEUVER_DIRECTIONS[direction_estimate].c_str());
-            maneuver_direction = maneuver_indices[maneuver_index];
-            if (maneuver_direction != direction_estimate) {
-                ROS_WARN("maneuver direction mismatch, expected: %s, detected: %s", MANEUVER_DIRECTIONS[maneuver_direction].c_str(), MANEUVER_DIRECTIONS[direction_estimate].c_str());
-                maneuver_direction = direction_estimate;
-            }
-            maneuver_index++;
-            bool use_mpc_for_maneuvering = false;
-            if (use_mpc_for_maneuvering) {
-                mpc.target_waypoint_index = 0;
-                Eigen::MatrixXd* state_refs_ptr;
-                if (maneuver_direction == 0) {
-                    state_refs_ptr = &mpc.left_turn_states;
-                } else if (maneuver_direction == 1) {
-                    state_refs_ptr = &mpc.straight_states;
-                } else if (maneuver_direction == 2) {
-                    state_refs_ptr = &mpc.right_turn_states;
-                } else {
-                    ROS_INFO("invalid maneuver direction: %d", maneuver_direction);
-                    change_state(STATE::MOVING);
-                    continue;
-                }
-                double x0, y0, yaw0;
-                utils.get_states(x0, y0, yaw0);
-                mpc.frame1 << x0, y0, yaw0;
-                mpc.frame2 = state_refs_ptr->row(0);
-                mpc.frame1[2] = mpc.NearestDirection(mpc.frame2[2]);
-                std::cout << "frame1: " << mpc.frame1 << ",\n frame2: " << mpc.frame2 << std::endl;
-                int last_history = mpc.last_waypoint_index;
-                mpc.last_waypoint_index = 0;
-                while(1) {
-                    pedestrian_detected();
-                    exit_detected();
-                    update_mpc_state();
-                    mpc.transform_point(mpc.x_current, mpc.x_current_transformed, mpc.frame1, mpc.frame2);
-                    double yaw_frame2 = mpc.frame2[2];
-                    while (mpc.x_current_transformed[2] - yaw_frame2 > M_PI) {
-                        mpc.x_current_transformed[2] -= 2 * M_PI;
-                    }
-                    while (mpc.x_current_transformed[2] - yaw_frame2 < -M_PI) {
-                        mpc.x_current_transformed[2] += 2 * M_PI;
-                    }
-                    double error_sq = (mpc.x_current_transformed - state_refs_ptr->row(state_refs_ptr->rows()-1).transpose()).squaredNorm();
-                    if (error_sq < TOLERANCE_SQUARED) {
-                        break;
-                    }
-                    // ROS_INFO("error_sq: %.3f", error_sq);
-                    int status = mpc.update_and_solve(mpc.x_current_transformed, maneuver_direction);
-                    publish_commands();
-                    rate->sleep();
-                }
-                mpc.last_waypoint_index = last_history;
-            } else {
-                double x0, y0, yaw0;
-                utils.get_states(x0, y0, yaw0);
-                yaw0 = mpc.NearestDirection(utils.get_yaw());
-                static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
-                int direction_index = mpc.NearestDirectionIndex(yaw0);
-                int target_index = (direction_index - (maneuver_direction-1)) % 4;
-                if(target_index < 0) target_index += 4;
-                double target_yaw = directions[target_index];
-                while(target_yaw > M_PI) target_yaw -= 2*M_PI;
-                while(target_yaw < -M_PI) target_yaw += 2*M_PI;
-                // ROS_INFO("target_yaw: %.3f, cur_yaw: %.3f, direction_index: %d, target_index: %d", target_yaw, yaw0, direction_index, target_index);
-                static const std::array<Eigen::Matrix2d, 4> rotation_matrices = {
-                    Eigen::Matrix2d::Identity(),
-                    (Eigen::Matrix2d() << 0, -1, 1, 0).finished(), 
-                    (Eigen::Matrix2d() << -1, 0, 0, -1).finished(),
-                    (Eigen::Matrix2d() << 0, 1, -1, 0).finished()
-                };
-                Eigen::Vector2d odomFrame = {0, 0};
-                Eigen::Vector2d transformedFrame = {0, 0};
-                utils.setIntersectionDecision(maneuver_direction);
-                ROS_INFO("intersection maneuvering: using mpc.");
-                while(true) {
-                    pedestrian_detected();
-                    exit_detected();
-                    double x, y, yaw;
-                    utils.get_states(x, y, yaw);
-                    if (maneuver_direction == MANEUVER_DIRECTION::STRAIGHT) {
-                        double distance_traveled = std::sqrt(std::pow(x - x0, 2) + std::pow(y - y0, 2));
-                        // ROS_INFO("straight maneuver, distance traveled: %.3f", distance_traveled);
-                        if (distance_traveled > straight_trajectory_threshold) {
-                            break;
-                        }
-                        odomFrame << x - x0, y - y0;
-                        transformedFrame = odomFrame.transpose() * rotation_matrices[direction_index];
-                        double referenceY = utils.computeTrajectory(transformedFrame[0]);
-                        double error = (referenceY - transformedFrame[1]);
-                        double steer = -utils.computeTrajectoryPid(error);
-                        // ROS_INFO("target_yaw: %2f, cur_yaw: %2f, yaw_err: %.3f, tar y: %.3f, cur y: %.3f, err: %.3f, steer: %.3f", target_yaw, utils.get_yaw(), yaw_error, referenceY, transformedFrame[1], error, steer);
-                        mpc.target_waypoint_index++;
-                        utils.publish_cmd_vel(steer, 0.25);
-                        rate->sleep();
-                    } else {
-                        double yaw_error = target_yaw - utils.get_yaw();
-                        while(yaw_error > M_PI * 1.5) yaw_error -= 2*M_PI;
-                        while(yaw_error < -M_PI * 1.5) yaw_error += 2*M_PI;
-                        // ROS_INFO("target_yaw: %.3f, cur_yaw: %.3f, yaw_err: %.3f", target_yaw, utils.get_yaw(), yaw_error);
-                        if (std::abs(yaw_error) < left_trajectory_threshold) {
-                            break;
-                        }
-                        if (useTrajectory) {
-                            odomFrame << x - x0, y - y0;
-                            transformedFrame = odomFrame.transpose() * rotation_matrices[direction_index];
-                            double referenceY = utils.computeTrajectory(transformedFrame[0]);
-                            double error = (referenceY - transformedFrame[1]);
-                            double steer = -utils.computeTrajectoryPid(error);
-                            // ROS_INFO("target_yaw: %2f, cur_yaw: %2f, yaw_err: %.3f, tar y: %.3f, cur y: %.3f, err: %.3f, steer: %.3f", target_yaw, utils.get_yaw(), yaw_error, referenceY, transformedFrame[1], error, steer);
-                            mpc.target_waypoint_index++;
-                            utils.publish_cmd_vel(steer, 0.25);
-                        } else {
-                            mpc.update_current_states(x, y, yaw, false);
-                            solve(false);
-                        }
-                        rate->sleep();
-                    }
-                    
-                }
-            }
-            ROS_INFO("intersection maneuvering completed, proceeding to lane following...");
-            utils.get_states(running_x, running_y, running_yaw);
-            mpc.update_current_states(running_x, running_y, running_yaw, false);
-            int index = mpc.find_closest_waypoint(mpc.last_waypoint_index, mpc.last_waypoint_index + 3.0 * mpc.density);
-            mpc.last_waypoint_index = index;
-            mpc.target_waypoint_index = index;
-            change_state(STATE::LANE_FOLLOWING);
+            std::cout << "intersection maneuvering" << std::endl;
         } else if (state == STATE::INIT) {
             // initialize();
             if (dashboard) {
@@ -1620,8 +1450,6 @@ void StateMachine::run() {
                 initialize();
                 start();
             }
-            // change_state(STATE::INTERSECTION_MANEUVERING);
-            // change_state(STATE::PARKING);
         } else if (state == STATE::DONE) {
             utils.debug("Done", 2);
             utils.stop_car();
@@ -1720,9 +1548,6 @@ StateMachine *globalStateMachinePtr = nullptr;
 void signalHandler(int signum) {
     if (globalStateMachinePtr) {
         globalStateMachinePtr->utils.stop_car();
-        //globalStateMachinePtr->mpc.computeStats(357);
-        //globalStateMachinePtr->utils.print_detected_cars();
-
         globalStateMachinePtr->call_trigger_service();
     }
 
