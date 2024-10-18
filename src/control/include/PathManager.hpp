@@ -82,63 +82,6 @@ public:
         return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
     }
 
-    static double NearestDirection(double yaw) {
-        while(yaw > 2 * M_PI) {
-            yaw -= 2 * M_PI;
-        }
-        while(yaw < 0) {
-            yaw += 2 * M_PI;
-        }
-
-        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
-
-        double minDifference = std::abs(yaw - directions[0]);
-        double nearestDirection = directions[0];
-
-        for (int i = 1; i < 5; ++i) {
-            double difference = std::abs(yaw - directions[i]);
-            if (difference < minDifference) {
-                minDifference = difference;
-                nearestDirection = directions[i];
-            }
-        }
-        while (nearestDirection - yaw > M_PI) {
-            nearestDirection -= 2 * M_PI;
-        }
-        while (nearestDirection - yaw < -M_PI) {
-            nearestDirection += 2 * M_PI;
-        }
-        return nearestDirection;
-    }
-    
-    static int NearestDirectionIndex(double yaw) {
-        while(yaw > 2 * M_PI) {
-            yaw -= 2 * M_PI;
-        }
-        while(yaw < 0) {
-            yaw += 2 * M_PI;
-        }
-
-        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
-
-        double minDifference = std::abs(yaw - directions[0]);
-        double nearestDirection = directions[0];
-
-        int closest_index = 0;
-        for (int i = 1; i < 5; ++i) {
-            double difference = std::abs(yaw - directions[i]);
-            if (difference < minDifference) {
-                minDifference = difference;
-                nearestDirection = directions[i];
-                closest_index = i;
-            }
-        }
-        if (closest_index == 4) {
-            closest_index = 0;
-        }
-        return closest_index;
-    }
-
     void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36-0.1) {
         if (shift_right) shift_distance *= -1;
         // state_refs.block(start_index, 0, end_index-start_index, 2) += normals.block(start_index, 0, end_index-start_index, 2) * shift_distance;

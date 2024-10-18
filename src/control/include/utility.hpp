@@ -489,13 +489,9 @@ public:
         double world_yaw = object_yaw + vehicle_yaw;
         return {world_x, world_y, world_yaw};
     }
-    double nearest_direction(double yaw) {
-        while(yaw > 2 * M_PI) {
-            yaw -= 2 * M_PI;
-        }
-        while(yaw < 0) {
-            yaw += 2 * M_PI;
-        }
+
+    static double nearest_direction(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
 
         static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
 
@@ -517,7 +513,34 @@ public:
         }
         return nearestDirection;
     }
+    
+    static int nearest_direction_index(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
 
+        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
+
+        double minDifference = std::abs(yaw - directions[0]);
+        double nearestDirection = directions[0];
+
+        int closest_index = 0;
+        for (int i = 1; i < 5; ++i) {
+            double difference = std::abs(yaw - directions[i]);
+            if (difference < minDifference) {
+                minDifference = difference;
+                nearestDirection = directions[i];
+                closest_index = i;
+            }
+        }
+        if (closest_index == 4) {
+            closest_index = 0;
+        }
+        return closest_index;
+    }
+
+    static double yaw_mod(double yaw, double ref=0) {
+        while (yaw - ref > M_PI) yaw -= 2 * M_PI;
+        while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+    }
     void debug(const std::string& message, int level) {
         if (debugLevel > level) {
             debug_msg.data = message;

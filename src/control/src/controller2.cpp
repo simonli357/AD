@@ -213,12 +213,7 @@ public:
     void update_mpc_states(double x, double y, double yaw) {
         if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
             double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
-            while (ref_yaw - yaw > M_PI) {
-                yaw += 2 * M_PI;
-            }
-            while (ref_yaw - yaw < -M_PI) {
-                yaw -= 2 * M_PI;
-            }
+            yaw = Utility::yaw_mod(yaw, ref_yaw);
         }
         x_current << x, y, yaw;
     }
@@ -226,9 +221,6 @@ public:
     void run();
     void stop_for(double duration) {
         ros::Time timer = ros::Time::now() + ros::Duration(duration);
-        int n = 0;
-        double ekf_x, ekf_y;
-        double total_x, total_y;
         while (ros::Time::now() < timer) {
             utils.publish_cmd_vel(0.0, 0.0);
             rate->sleep();
@@ -294,9 +286,8 @@ public:
         // get current states
         utils.get_states(x0, y0, yaw0);
         // get closest direction
-        yaw0 = PathManager::NearestDirection(yaw0);
-        while (yaw0 < -M_PI) yaw0 += 2*M_PI;
-        while (yaw0 > M_PI) yaw0 -= 2*M_PI;
+        yaw0 = Utility::nearest_direction(yaw0);
+        yaw0 = Utility::yaw_mod(yaw0);
         Eigen::VectorXd yaw0_vec = Eigen::VectorXd::Constant(targets.size(), yaw0);
         Eigen::VectorXd target_yaws = targets + yaw0_vec;
         std::cout << "target yaws: " << target_yaws.transpose() << std::endl;
@@ -312,8 +303,7 @@ public:
         double yaw_error_sign = yaw_error > 0 ? 1 : -1;
         while(1) {
             yaw = utils.get_yaw();
-            while (yaw < -M_PI) yaw += 2*M_PI;
-            while (yaw > M_PI) yaw -= 2*M_PI;
+            yaw = Utility::yaw_mod(yaw);
             yaw_error = yaw - target_yaws(stage-1);
             while(std::abs(yaw_error) > M_PI * 1.2) {
                 if(yaw_error > M_PI * 1.2) {
@@ -485,14 +475,14 @@ public:
             if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
                 auto sign_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
                 if (stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = Utility::nearest_direction_index(running_yaw);
                     const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_ROUNDABOUT :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_ROUNDABOUT :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_ROUNDABOUT :
                                                                         SOUTH_FACING_ROUNDABOUT;
                     sign_based_relocalization(sign_pose, intersection_signs);
                 } else {
-                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = Utility::nearest_direction_index(running_yaw);
                     const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_SIGNS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_SIGNS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_SIGNS :
@@ -530,7 +520,7 @@ public:
                 if (relocalize) {
                 // if (1) {
                     auto crosswalk_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(crosswalk_index), detected_dist, CAMERA_PARAMS);
-                    int nearestDirectionIndex = PathManager::NearestDirectionIndex(running_yaw);
+                    int nearestDirectionIndex = Utility::nearest_direction_index(running_yaw);
                     const auto& direction_crosswalks = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
@@ -612,7 +602,7 @@ public:
         // stop_for(0.5);
         // check orientation
         double yaw = utils.get_yaw();
-        double nearest_direction = PathManager::NearestDirection(yaw);
+        double nearest_direction = Utility::nearest_direction(yaw);
         double yaw_error = nearest_direction - yaw;
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -621,7 +611,7 @@ public:
             return 0;
         }
 
-        int nearestDirectionIndex = PathManager::NearestDirectionIndex(yaw);
+        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
         const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
@@ -657,7 +647,7 @@ public:
         double center = utils.center + pixel_center_offset;
         if (center >= 240 && center <= 400) {
             double yaw = utils.get_yaw();
-            double nearest_direction = PathManager::NearestDirection(yaw);
+            double nearest_direction = Utility::nearest_direction(yaw);
             double yaw_error = nearest_direction - yaw;
             if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
             else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -666,7 +656,7 @@ public:
                 return 0;
             }
             double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
-            int nearestDirectionIndex = PathManager::NearestDirectionIndex(yaw);
+            int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
             const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_LANE_CENTERS :
@@ -718,7 +708,7 @@ public:
     }
     void wait_for_green() {
         if (has_light) {
-            int neareastDirection = PathManager::NearestDirectionIndex(utils.get_yaw());
+            int neareastDirection = Utility::nearest_direction_index(utils.get_yaw());
             static std::string light_topic_name;
             if (neareastDirection == 0) light_topic_name = "/east_traffic_light";
             else if (neareastDirection == 1) light_topic_name = "/north_traffic_light";
@@ -916,10 +906,8 @@ public:
                             ROS_INFO("start yaw: %.3f, end yaw: %.3f", start_yaw, end_yaw);
                             double start_yaw_diff = start_yaw - yaw0;
                             double end_yaw_diff = end_yaw - start_yaw;
-                            while (start_yaw_diff > M_PI) start_yaw_diff -= 2*M_PI;
-                            while (start_yaw_diff < -M_PI) start_yaw_diff += 2*M_PI;
-                            while (end_yaw_diff > M_PI) end_yaw_diff -= 2*M_PI;
-                            while (end_yaw_diff < -M_PI) end_yaw_diff += 2*M_PI;
+                            start_yaw_diff = Utility::yaw_mod(start_yaw_diff);
+                            end_yaw_diff = Utility::yaw_mod(end_yaw_diff);
 
                             ROS_INFO("start point: <%.3f, %.3f>, start index: %d, end point: <%.3f, %.3f>, end index: %d", path_manager.state_refs(start_index, 0), path_manager.state_refs(start_index, 1), start_index, path_manager.state_refs(end_index, 0), path_manager.state_refs(end_index, 1), end_index);
                             ROS_INFO("yaw0: %.3f, start_yaw_diff: %.3f, end_yaw_diff: %.3f", yaw0, start_yaw_diff, end_yaw_diff);
@@ -962,12 +950,7 @@ void StateMachine::update_mpc_states() {
     double yaw = x_current(2);
     if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
         double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
-        while (ref_yaw - yaw > M_PI) {
-            yaw += 2 * M_PI;
-        }
-        while (ref_yaw - yaw < -M_PI) {
-            yaw -= 2 * M_PI;
-        }
+        yaw = Utility::yaw_mod(yaw, ref_yaw);
     }
     x_current(2) = yaw;
 }
@@ -1097,7 +1080,7 @@ void StateMachine::run() {
                     path_manager.target_waypoint_index = closest_idx + 1;
                     // std::cout << "detectable area, using lane follow" << std::endl;
                     if(check_crosswalk() > 0) {
-                        orientation_follow(PathManager::NearestDirection(utils.get_yaw()));
+                        orientation_follow(Utility::nearest_direction(utils.get_yaw()));
                     } else {
                         lane_follow();
                     }
@@ -1110,7 +1093,7 @@ void StateMachine::run() {
             double x0, y0, yaw0;
             utils.get_states(x0, y0, yaw0);
             // utils.reset_odom();
-            double orientation = PathManager::NearestDirection(utils.get_yaw());
+            double orientation = Utility::nearest_direction(utils.get_yaw());
             ROS_INFO("sign detected at a distance of: %.3f, offset: %.3f, resetting odom...", detected_dist, offset);
             while(1) {
                 double x, y, yaw;
@@ -1148,76 +1131,9 @@ void StateMachine::run() {
             stopsign_flag = 0;
             continue;
         } else if (state == STATE::LANE_FOLLOWING) {
-            if(intersection_reached()) {
-                if(stopsign_flag == STOPSIGN_FLAGS::STOP || stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    // change_state(STATE::WAITING_FOR_STOPSIGN);
-                    ROS_INFO("stop sign detected, stopping for %.3f seconds...", stop_duration);
-                    stop_for(stop_duration);
-                    change_state(STATE::INTERSECTION_MANEUVERING);
-                    continue;
-                } else if(stopsign_flag == STOPSIGN_FLAGS::PRIO) {
-                    ROS_INFO("priority detected. transitioning to intersection maneuvering");
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    change_state(STATE::INTERSECTION_MANEUVERING);
-                    continue;
-                } else if(stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                    ROS_INFO("roundabout detected. using mpc...");
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    update_mpc_states(running_x, running_y, running_yaw);
-                    solve();
-                    rate->sleep();
-                    continue;
-                } else {
-                    ROS_WARN("intersection reached but no sign detected, using mpc...");
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                    update_mpc_states(running_x, running_y, running_yaw);
-                    solve();
-                    rate->sleep();
-                    continue;
-                }
-            }
-            if (sign) {
-                check_stop_sign();
-                int park_index = park_sign_detected();
-                if(park_index>=0 && park_count < 1) {
-                    change_state(STATE::PARKING);
-                    park_count++;
-                    continue;
-                }
-                check_car();
-            }
-            update_mpc_states(running_x, running_y, running_yaw);
-            int closest_idx = path_manager.find_closest_waypoint(x_current);
-            if (relocalize && lane) {
-                static int lane_relocalization_semaphore = 0;
-                lane_relocalization_semaphore++;
-                if (lane_relocalization_semaphore >= 5) {
-                    lane_based_relocalization();
-                    lane_relocalization_semaphore = 0;
-                }
-            }
-            if(path_manager.is_not_detectable(closest_idx)) {
-                std::cout << "non-detectable area, using mpc" << std::endl;
-                solve();
-            } else {
-                path_manager.target_waypoint_index = closest_idx + 1;
-                // std::cout << "detectable area, using lane follow" << std::endl;
-                if(check_crosswalk() > 0) {
-                    orientation_follow(PathManager::NearestDirection(utils.get_yaw()));
-                } else {
-                    lane_follow();
-                }
-            }
-            rate->sleep();
-            continue;
+            std::cout << "lane following" << std::endl;
         } else if (state == STATE::WAITING_FOR_STOPSIGN) {
             stop_for(stop_duration);
-            // if (lane) {
-            //     change_state(STATE::INTERSECTION_MANEUVERING);
-            // } else {
-            //     change_state(STATE::MOVING);
-            // }
             change_state(STATE::MOVING);
         } else if (state == STATE::WAITING_FOR_LIGHT) {
             stop_for(stop_duration);
@@ -1236,7 +1152,7 @@ void StateMachine::run() {
             int target_spot = 0;
             auto temp_rate = ros::Rate(50);
             if (true) {
-                double orientation = PathManager::NearestDirection(utils.get_yaw());
+                double orientation = Utility::nearest_direction(utils.get_yaw());
                 ROS_INFO("orientation: %.3f", orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
@@ -1318,7 +1234,7 @@ void StateMachine::run() {
             stop_for(stop_duration/2);
             if (hard_code) {
                 // right_park = true; //temp
-                double orientation = PathManager::NearestDirection(utils.get_yaw());
+                double orientation = Utility::nearest_direction(utils.get_yaw());
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
                 double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
@@ -1331,7 +1247,7 @@ void StateMachine::run() {
             utils.get_states(x, y, yaw);
             double x_error = x - PARKING_SPOTS[target_spot][0];
             if (std::abs(x_error) > 0.15) {
-                double orientation = PathManager::NearestDirection(utils.get_yaw());
+                double orientation = Utility::nearest_direction(utils.get_yaw());
                 ROS_INFO("parked but x offset too large: %.3f, adjusting... orientation: %.3f", x_error, orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);

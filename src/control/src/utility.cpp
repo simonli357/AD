@@ -434,8 +434,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
 
             lock.lock();
             this->yaw = -yaw_deg * M_PI/180;
-            while(this->yaw < -M_PI) this->yaw += 2*M_PI;
-            while(this->yaw > M_PI) this->yaw -= 2*M_PI;
+            this->yaw = yaw_mod(this->yaw);
             lock.unlock();
 
             static bool debug_imu = false;
@@ -636,12 +635,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
         debug("initialized in imu callback", 2);
     }
     // yaw = yaw - initial_yaw + yaw0;
-    while(yaw < -M_PI) {
-        yaw += 2*M_PI;
-    }
-    while(yaw > M_PI) {
-        yaw -= 2*M_PI;
-    }
+    yaw = yaw_mod(yaw);
     lock.unlock();
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
