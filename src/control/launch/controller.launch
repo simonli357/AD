@@ -52,12 +52,6 @@
   <arg name = "rate" default="300"/>
   <param name="pathName" value="$(arg path)"/>
   <param name="vrefInt" value="$(arg v)"/>
-  <arg name = "gmapping" default="false"/>
-  <param name="gmapping" value="$(arg gmapping)"/>
-  <arg name = "amcl" default="false"/>
-  <param name="amcl" value="$(arg amcl)"/>
-  <arg name = "lidarOdom" default="false"/>
-  <param name="lidarOdom" value="$(arg lidarOdom)"/>
   <arg name = "dashboard" default="true"/>
   <param name="dashboard" value="$(arg dashboard)"/>
   <arg name = "realsense_imu" default="false"/>
@@ -70,7 +64,7 @@
   <param name="gps" value="$(arg gps)"/>
   <arg name = "pub_wpts" default="true"/>
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
-  <arg name = "debug_level" default="5"/>
+  <arg name = "debug_level" default="3"/>
   <param name="debug_level" value="$(arg debug_level)"/>
   <rosparam command="load" file="$(find control)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />

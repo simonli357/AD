@@ -520,6 +520,7 @@ public:
     static double yaw_mod(double yaw, double ref=0) {
         while (yaw - ref > M_PI) yaw -= 2 * M_PI;
         while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+        return yaw;
     }
     void debug(const std::string& message, int level) {
         if (debugLevel > level) {

@@ -7,8 +7,8 @@ import os
 import math
 import rospy
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import Qt, QTimer, QPointF
+from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
 from utils.srv import waypoints, waypointsRequest, waypointsResponse
@@ -74,6 +74,7 @@ class OpenCVGuiApp(QWidget):
         self.control_button_layout = QHBoxLayout()
         self.start_button = QPushButton('Start')
         self.stop_button = QPushButton('Stop')
+        self.started = False
         self.control_button_layout.addWidget(self.start_button)
         self.control_button_layout.addWidget(self.stop_button)
 
@@ -94,6 +95,7 @@ class OpenCVGuiApp(QWidget):
         self.sign_size_slider.setValue(20)
         self.sign_size_slider.valueChanged.connect(self.update_sign_size)
         self.left_panel_layout.addWidget(self.sign_size_slider)
+        
         # Add left panel to main layout
         self.layout.addWidget(self.left_panel_widget)
         
@@ -111,8 +113,12 @@ class OpenCVGuiApp(QWidget):
         self.right_panel_layout.addWidget(self.camera_label)
         # Vehicle information labels
         self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.cursor_x = 3.86
+        self.cursor_y = 3.62
         self.speed_label = QLabel('Speed: 0.0 m/s')
         self.right_panel_layout.addWidget(self.position_label)
+        self.right_panel_layout.addWidget(self.cursor_label)
         self.right_panel_layout.addWidget(self.speed_label)
         self.right_panel_layout.addLayout(self.control_button_layout)
         
@@ -125,7 +131,141 @@ class OpenCVGuiApp(QWidget):
         # Add right panel to main layout
         self.layout.addWidget(self.right_panel_widget)
         self.setLayout(self.layout)
+        
+        # Timer to update the map display
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_map)
+        self.timer.start(100) # Update every 100 ms
+        
+        # Mouse events for zoom
+        self.graphics_view.viewport().installEventFilter(self)
+        
+        dark_style = """
+            QWidget {
+                background-color: #1E1E1E;  /* Dark background */
+                color: #FFFFFF;  /* White text */
+                font-family: 'Roboto', sans-serif;  /* Modern font */
+                font-size: 14px;
+            }
 
+            QPushButton {
+                background-color: #0CD2EE;  /* Slightly lighter button background */
+                border: 2px solid #3E3E3E;  /* Subtle border */
+                border-radius: 8px;  /* Rounded buttons */
+                color: #FFFFFF;  /* White text */
+                padding: 10px;
+            }
+
+            QPushButton:hover {
+                background-color: #3A3A3A;  /* Change button color on hover */
+                border-color: #5E5E5E;  /* Lighter border on hover */
+            }
+
+            QPushButton:pressed {
+                background-color: #007BFF;  /* Blue accent when pressed */
+                border-color: #0056b3;
+            }
+
+            QSlider::groove:horizontal {
+                border: 1px solid #444;
+                height: 8px;
+                background: #2A2A2A;  /* Dark slider track */
+                border-radius: 4px;
+            }
+
+            QSlider::handle:horizontal {
+                background: #007BFF;  /* Blue slider handle */
+                border: 1px solid #0056b3;
+                width: 14px;
+                margin: -4px 0;  /* Center the handle */
+                border-radius: 7px;  /* Rounded handle */
+            }
+
+            QLabel {
+                color: #BBBBBB;  /* Slightly dim text for labels */
+            }
+
+            QGraphicsView {
+                border: none;
+            }
+
+            QTextEdit {
+                background-color: #2A2A2A;
+                border: 2px solid #3E3E3E;
+                color: #FFFFFF;
+            }
+        """
+        self.setStyleSheet(dark_style)
+
+        text_style = """
+            QLabel {
+                color: #00FF00;  /* Neon green text */
+                font-family: 'Roboto', sans-serif;
+                font-size: 14px;
+            }
+        """
+        self.position_label.setStyleSheet(text_style)
+        self.cursor_label.setStyleSheet(text_style)
+        self.speed_label.setStyleSheet(text_style)
+
+        panel_border_style = """
+            QWidget {
+                border: 2px solid #007BFF;
+                border-radius: 10px;
+                background-color: #1E1E1E;
+            }
+        """
+        self.left_panel_widget.setStyleSheet(panel_border_style)
+        self.right_panel_widget.setStyleSheet(panel_border_style)
+        
+        gradient_button_style = """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #007BFF, stop:1 #00FFFF);  /* Blue to cyan gradient */
+                border: 2px solid #007BFF;
+                border-radius: 12px;
+                color: white;
+                padding: 10px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #00FFFF, stop:1 #007BFF);  /* Reverse gradient on hover */
+            }
+
+            QPushButton:pressed {
+                background-color: #0056b3;
+            }
+        """
+        self.toggle_visibility_button.setStyleSheet(gradient_button_style)
+        self.toggle_cars_button.setStyleSheet(gradient_button_style)
+        self.toggle_lanes_button.setStyleSheet(gradient_button_style)
+        self.toggle_destinations_button.setStyleSheet(gradient_button_style)
+        self.toggle_path_button.setStyleSheet(gradient_button_style)
+        self.toggle_gt_button.setStyleSheet(gradient_button_style)
+        self.toggle_depth_button.setStyleSheet(gradient_button_style)
+        
+        round_button_style = """
+            QPushButton {
+                background-color: #28A745;  /* Initial color: Green for Start */
+                border: 2px solid #28A745;  /* Same color as the background */
+                border-radius: 40px;  /* Half of width and height for a circle */
+                color: white;
+                font-size: 14px;
+                width: 80px;
+                height: 80px;
+            }
+
+            QPushButton:pressed {
+                background-color: #DC3545;  /* Red when pressed */
+                border-color: #DC3545;
+            }
+        """
+        self.start_button.setStyleSheet(round_button_style)
+        self.stop_button.setStyleSheet(round_button_style)
+        
         # Button related attributes
         self.show_elements = True
         self.show_lanes = True
@@ -153,14 +293,6 @@ class OpenCVGuiApp(QWidget):
         yaw_init = rospy.get_param('/yaw_init')
         path_name = rospy.get_param('/path_name')
         self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
-
-        # Timer to update the map display
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_map)
-        self.timer.start(100) # Update every 100 ms
-        
-        # Mouse events for zoom
-        self.graphics_view.viewport().installEventFilter(self)
         
         # Objects
         self.detected_data = None
@@ -231,7 +363,34 @@ class OpenCVGuiApp(QWidget):
 
     # ROS service calls
     def start(self):
-        self.call_start_service(True)
+        self.call_start_service(not self.started)
+        if not self.started:
+            self.start_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #DC3545;  /* Red */
+                    border: 2px solid #DC3545;
+                    border-radius: 40px;
+                    color: white;
+                    font-size: 14px;
+                    width: 80px;
+                    height: 80px;
+                }
+            """)
+            self.start_button.setText("Stop")
+        else:
+            self.start_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #28A745;  /* Green */
+                    border: 2px solid #28A745;
+                    border-radius: 40px;
+                    color: white;
+                    font-size: 14px;
+                    width: 80px;
+                    height: 80px;
+                }
+            """)
+            self.start_button.setText("Start")
+        self.started = not self.started
     def stop(self):
         self.call_start_service(False)
     def call_start_service(self, start):
@@ -361,7 +520,7 @@ class OpenCVGuiApp(QWidget):
         self.sign_size = value
 
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
-        rospy.wait_for_service('waypoint_path')
+        rospy.wait_for_service('waypoint_path', timeout=5)
         try:
             waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
             req = waypointsRequest()
@@ -636,7 +795,50 @@ class OpenCVGuiApp(QWidget):
             
     def closeEvent(self, event):
         event.accept()
+    
+    def mousePressEvent(self, event):
+        # Get the position of the mouse click in the scene coordinates
+        scene_position = self.graphics_view.mapToScene(event.pos())
 
+        # Get the pixel coordinates relative to the image
+        image_x = scene_position.x() - 25
+        image_y = scene_position.y() - 23
+
+        # Remove any previous marker
+        if hasattr(self, 'cursor_marker') and self.cursor_marker:
+            self.scene.removeItem(self.cursor_marker)
+        if hasattr(self, 'cursor_marker_x1') and self.cursor_marker_x1:
+            self.scene.removeItem(self.cursor_marker_x1)
+        if hasattr(self, 'cursor_marker_x2') and self.cursor_marker_x2:
+            self.scene.removeItem(self.cursor_marker_x2)
+            
+        # Check if the click is within the bounds of the image
+        if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
+            # Convert the pixel coordinates to real-world coordinates
+            self.cursor_x = image_x * (self.image_width_real / self.image_width)
+            self.cursor_y = 13.786 - image_y * (self.image_height_real / self.image_height)
+
+            # Display the real-world coordinates in the bottom left corner (or anywhere else)
+            self.cursor_label.setText(f'Cursor: (x: {self.cursor_x:.2f} m, y: {self.cursor_y:.2f} m)')
+            cursor_radius = 10  # Adjust the size of the cursor
+            pen = QPen(QColor(0, 150, 255), 2)
+            # Create a circle to represent the cursor marker
+            self.cursor_marker = self.scene.addEllipse(
+                image_x - cursor_radius, image_y - cursor_radius,
+                cursor_radius * 2, cursor_radius * 2, pen
+            )
+            marker_size = 20  # Adjust the size of the "X"
+            pen = QPen(QColor(255, 0, 0), 3)
+            self.cursor_marker_x1 = self.scene.addLine(
+                image_x - marker_size / 2, image_y - marker_size / 2,
+                image_x + marker_size / 2, image_y + marker_size / 2,
+                pen
+            )
+            self.cursor_marker_x2 = self.scene.addLine(
+                image_x - marker_size / 2, image_y + marker_size / 2,
+                image_x + marker_size / 2, image_y - marker_size / 2,
+                pen
+            )
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = OpenCVGuiApp()
