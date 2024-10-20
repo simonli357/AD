@@ -15,6 +15,7 @@
 #include <cmath>
 #include "constants.h"
 #include "utils/waypoints.h"
+#include "utils/go_to.h"
 
 class PathManager {
 public:
@@ -38,12 +39,10 @@ public:
         
         state_refs_ptr = &state_refs;
         normals = loadTxt(dir + "/../scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
-        num_waypoints = state_refs.rows();
 
         target_waypoint_index = 0;
         last_waypoint_index = target_waypoint_index;
 
-        int len = static_cast<int>(num_waypoints * 2);
         std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
         if(v_ref > 0.3) v_ref = 0.35;
 
@@ -52,14 +51,17 @@ public:
             ROS_ERROR("Failed to get param 'pathName'");
             pathName = "speedrun";
         }
+
+        go_to_client = nh.serviceClient<utils::go_to>("/go_to");
     }
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
 
     ros::NodeHandle nh;
     ros::ServiceClient waypoints_client;
+    ros::ServiceClient go_to_client;
     std::string pathName;
-    int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0, num_waypoints=0;
+    int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
     int v_ref_int;
     int N;
     bool use25 = false;
@@ -127,7 +129,10 @@ public:
     }
     
     void get_current_waypoints(Eigen::MatrixXd& output) {
-        output = state_refs.block(target_waypoint_index, 0, N, 3);
+        int start = std::min(target_waypoint_index, static_cast<int>(state_refs.rows()) - 2);
+        int end = std::min(N, static_cast<int>(state_refs.rows()) - target_waypoint_index - 1);
+        end = std::max(end, 1);
+        output = state_refs.block(start, 0, end, 3);
     }
     
     int find_next_waypoint(int &output_target, const Eigen::Vector3d &i_current_state, int min_index = -1, int max_index = -1) {
@@ -144,7 +149,7 @@ public:
         closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
         double distance_to_current = std::sqrt((state_refs(closest_waypoint_index, 0) - i_current_state[0]) * (state_refs(closest_waypoint_index, 0) - i_current_state[0]) + (state_refs(closest_waypoint_index, 1) - i_current_state[1]) * (state_refs(closest_waypoint_index, 1) - i_current_state[1]));
         if (distance_to_current > 1.2) {
-            std::cout << "WARNING: Optimizer::find_next_waypoint(): distance to closest waypoint is too large: " << distance_to_current << std::endl;
+            std::cout << "WARNING: PathManager::find_next_waypoint(): distance to closest waypoint is too large: " << distance_to_current << std::endl;
             min_index = static_cast<int>(std::max(closest_waypoint_index - distance_to_current * density * 1.2, 0.0));
             closest_waypoint_index = find_closest_waypoint(i_current_state, min_index , max_index);
         }
@@ -188,7 +193,7 @@ public:
         return closest;
     }
     
-    int call_waypoint_service(double x, double y, double yaw) {
+    bool call_waypoint_service(double x, double y, double yaw) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -206,23 +211,70 @@ public:
             ROS_INFO("waypoints service found");
         } else {
             ROS_INFO("waypoints service not found after 5 seconds");
+            return false;
         }
         if(waypoints_client.call(srv)) {
             std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
             std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end()); // N by 2
             std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
             std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
-            int N = state_refs.size() / 3;
+            int N = state_refs_v.size() / 3;
             state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
             input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
             state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
+            return true;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
+            return false;
         }
     }
+    
+    bool call_go_to_service(double x, double y, double yaw, double dest_x, double dest_y) {
+        utils::go_to srv;
+        srv.request.x0 = x;
+        srv.request.y0 = y;
+        srv.request.yaw0 = yaw;
+        srv.request.dest_x = dest_x;
+        srv.request.dest_y = dest_y;
+        //convert v_ref to string
+        int vrefInt;
+        if(!nh.getParam("/vrefInt", vrefInt)) {
+            ROS_ERROR("Failed to get param 'vrefInt'");
+            vrefInt = 25;
+        }
+        if (vrefInt > 30) vrefInt = 35;
+        srv.request.vrefName = std::to_string(vrefInt);
+        if(go_to_client.waitForExistence(ros::Duration(5))) {
+            ROS_INFO("go_to service found");
+        } else {
+            ROS_INFO("go_to service not found after 5 seconds");
+            return false;
+        }
+        if(go_to_client.call(srv)) {
+            std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
+            std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end()); // N by 2
+            std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
+            std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
+            int N = state_refs_v.size() / 3;
+            state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+            input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+            state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+            normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+
+            ROS_INFO("initialize(): Received waypoints of size %d", N);
+            target_waypoint_index = 0;
+            last_waypoint_index = target_waypoint_index;
+            closest_waypoint_index = 0;
+            return true;
+        } else {
+            ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
+            return false;
+        }
+    }
+    
     static std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
         size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path

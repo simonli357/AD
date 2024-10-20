@@ -11,7 +11,8 @@ from PyQt5.QtCore import Qt, QTimer, QPointF
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
-from utils.srv import waypoints, waypointsRequest, waypointsResponse
+from utils.srv import waypoints, waypointsRequest, waypointsResponse, goto_command, goto_commandRequest, goto_commandResponse
+from utils.msg import Lane
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
@@ -73,10 +74,10 @@ class OpenCVGuiApp(QWidget):
         
         self.control_button_layout = QHBoxLayout()
         self.start_button = QPushButton('Start')
-        self.stop_button = QPushButton('Stop')
+        self.goto_button = QPushButton('Go to')
         self.started = False
         self.control_button_layout.addWidget(self.start_button)
-        self.control_button_layout.addWidget(self.stop_button)
+        self.control_button_layout.addWidget(self.goto_button)
 
         # Connect buttons to functions
         self.toggle_visibility_button.clicked.connect(self.toggle_visibility)
@@ -87,7 +88,7 @@ class OpenCVGuiApp(QWidget):
         self.toggle_gt_button.clicked.connect(self.toggle_gt)
         self.toggle_depth_button.clicked.connect(self.toggle_depth)
         self.start_button.clicked.connect(self.start)
-        self.stop_button.clicked.connect(self.stop)
+        self.goto_button.clicked.connect(self.goto)
         
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
@@ -247,24 +248,60 @@ class OpenCVGuiApp(QWidget):
         self.toggle_gt_button.setStyleSheet(gradient_button_style)
         self.toggle_depth_button.setStyleSheet(gradient_button_style)
         
-        round_button_style = """
+        circular_button_style = """
             QPushButton {
-                background-color: #28A745;  /* Initial color: Green for Start */
-                border: 2px solid #28A745;  /* Same color as the background */
-                border-radius: 40px;  /* Half of width and height for a circle */
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
+                border: 2px solid #28A745;  /* Green border */
+                border-radius: 40px;  /* Circular shape (80px diameter) */
                 color: white;
                 font-size: 14px;
                 width: 80px;
                 height: 80px;
+                padding: 10px;
+            }
+            
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #00FFFF, stop:1 #007BFF);  /* Reverse gradient on hover */
             }
 
             QPushButton:pressed {
-                background-color: #DC3545;  /* Red when pressed */
-                border-color: #DC3545;
+                background-color: #0056b3;
+            }
+            
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient when pressed */
+                border-color: #DC3545;  /* Red border */
             }
         """
-        self.start_button.setStyleSheet(round_button_style)
-        self.stop_button.setStyleSheet(round_button_style)
+        self.start_button.setStyleSheet(circular_button_style)
+        gradient_button_style2 = """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #00FFFF, stop:1 #28A745);
+                border: 2px solid #28A745;  /* Green border */
+                border-radius: 40px;  /* Circular shape (80px diameter) */
+                color: white;
+                font-size: 14px;
+                width: 80px;
+                height: 80px;
+                padding: 10px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #00FFFF, stop:1 #007BFF);  /* Reverse gradient on hover */
+            }
+
+            QPushButton:pressed {
+                background-color: #0056b3;
+            }
+        """
+        self.goto_button.setStyleSheet(gradient_button_style2)
         
         # Button related attributes
         self.show_elements = True
@@ -295,13 +332,18 @@ class OpenCVGuiApp(QWidget):
         self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
         
         # Objects
+        # Lane
+        self.center = None
+        self.crosswalk = False
+        self.stopline = False
+        # Sign
         self.detected_data = None
         self.waypoints = None
         self.numObj = 0
         self.detected_objects = np.zeros(10)
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75]
-
+        
         self.COLOR_LIST = [
             (1, 1, 1), (0.098, 0.325, 0.850), (0.125, 0.694, 0.929), (0.556, 0.184, 0.494), (0.188, 0.674, 0.466),
             (0.933, 0.745, 0.301), (0.184, 0.078, 0.635), (0.300, 0.300, 0.300), (0.600, 0.600, 0.600), (0.000, 0.000, 1.000),
@@ -358,6 +400,7 @@ class OpenCVGuiApp(QWidget):
         self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
         self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
         self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
+        self.sign_sub = rospy.Subscriber('/lane', Lane, self.lane_callback)
         self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
@@ -367,32 +410,64 @@ class OpenCVGuiApp(QWidget):
         if not self.started:
             self.start_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #DC3545;  /* Red */
-                    border: 2px solid #DC3545;
-                    border-radius: 40px;
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #DC3545, stop:1 #00FF00);
+                    border: 2px solid #DC3545;  
+                    border-radius: 40px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
                     width: 80px;
                     height: 80px;
+                    padding: 10px;
+                }
+                QPushButton:pressed {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient when pressed */
+                    border-color: #DC3545;  /* Red border */
                 }
             """)
             self.start_button.setText("Stop")
         else:
             self.start_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #28A745;  /* Green */
-                    border: 2px solid #28A745;
-                    border-radius: 40px;
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
+                    border: 2px solid #28A745;  /* Green border */
+                    border-radius: 40px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
                     width: 80px;
                     height: 80px;
+                    padding: 10px;
+                }
+                QPushButton:pressed {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient when pressed */
+                    border-color: #DC3545;  /* Red border */
                 }
             """)
             self.start_button.setText("Start")
         self.started = not self.started
-    def stop(self):
-        self.call_start_service(False)
+    def goto(self):
+        self.call_goto_service(self.cursor_x, self.cursor_y)
+    def call_goto_service(self, x, y):
+        print("goto command service called, waiting for service...")
+        rospy.wait_for_service('goto_command', timeout=5)
+        print("service found, calling service...")
+        try:
+            goto_service = rospy.ServiceProxy('goto_command', goto_command)
+            req = goto_commandRequest()
+            req.dest_x = x
+            req.dest_y = y
+
+            res = goto_service(req)
+            if not res.success:
+                print("Failed to send goto command")
+            self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+            self.attributes_np = np.array(res.wp_attributes.data)
+            print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
     def call_start_service(self, start):
         print("service call")
         rospy.wait_for_service("/start_bool", timeout=5)
@@ -411,6 +486,10 @@ class OpenCVGuiApp(QWidget):
             print("Service call failed:", e)
             
     # ROS callback functions
+    def lane_callback(self, msg):
+        self.center = msg.center
+        self.crosswalk = msg.crosswalk
+        self.stopline = msg.stopline
     def sign_callback(self, sign):
         if sign.data:
             self.numObj = len(sign.data) // 10
@@ -422,6 +501,24 @@ class OpenCVGuiApp(QWidget):
         self.waypoints = data.data
     def road_objects_callback(self, msg):
         self.detected_data = np.array(msg.data).reshape(-1, self.road_msg_length)
+    def add_lane_detection_to_image(self, image):
+        if self.center is None:
+            return image
+        # Draw the center line
+        cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
+
+        # Add text if stopline or crosswalk is detected
+        if self.stopline:
+            cv2.putText(image, "Stopline detected!", 
+                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.3)), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+        if self.crosswalk:
+            cv2.putText(image, "Crosswalk detected!", 
+                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.4)), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        return image
+
     def add_sign_detection_to_image(self, image):
         for i in range(self.numObj):
             try:
@@ -468,6 +565,7 @@ class OpenCVGuiApp(QWidget):
             return
         cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         cv_image = self.add_sign_detection_to_image(cv_image)
+        cv_image = self.add_lane_detection_to_image(cv_image)
         rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
         h, w, ch = rgb_image.shape
@@ -484,6 +582,7 @@ class OpenCVGuiApp(QWidget):
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
         depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
         depth_colored = self.add_sign_detection_to_image(depth_colored)
+        depth_colored = self.add_lane_detection_to_image(depth_colored)
         depth_colored = cv2.resize(depth_colored, (self.camera_w, self.camera_h))
         h, w, ch = depth_colored.shape
         bytes_per_line = ch * w

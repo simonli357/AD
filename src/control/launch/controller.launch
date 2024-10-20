@@ -1,8 +1,8 @@
 <launch>
 
-  <arg name="sign" default="false"/>
+  <arg name="sign" default="true"/>
   <arg name="ekf" default="false"/>
-  <arg name="lane" default="false"/>
+  <arg name="lane" default="true"/>
   <arg name="name" default="car1"/>
   <arg name="v" default="50"/>
   <arg name="vref" default="0.$(arg v)"/>

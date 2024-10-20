@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include "utils/waypoints.h"
+#include "utils/goto_command.h"
 #include <std_srvs/Trigger.h>
 #include <std_srvs/SetBool.h>
 #include <ncurses.h>
@@ -48,7 +49,9 @@ public:
             nh.param<double>("/real/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold, 15);
             nh.param<double>("/real/NORMAL_SPEED", NORMAL_SPEED, 0.175);
             nh.param<double>("/real/FAST_SPEED", FAST_SPEED, 0.4);
-            nh.param<bool>("/real/relocalize", relocalize, true);
+            nh.param<bool>("/real/lane_relocalize", lane_relocalize, true);
+            nh.param<bool>("/real/sign_relocalize", sign_relocalize, true);
+            nh.param<bool>("/real/intersection_relocalize", intersection_relocalize, true);
             nh.param<bool>("/real/use_lane", use_lane, false);
             nh.param<bool>("/real/has_light", has_light, false);
             nh.param<double>("/real/change_lane_offset_scaler", change_lane_offset_scaler, 1.2);
@@ -76,7 +79,9 @@ public:
             nh.param<double>("/sim/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold, 15);
             nh.param<double>("/sim/NORMAL_SPEED", NORMAL_SPEED, 0.175);
             nh.param<double>("/sim/FAST_SPEED", FAST_SPEED, 0.4);
-            nh.param<bool>("/sim/relocalize", relocalize, true);
+            nh.param<bool>("/sim/lane_relocalize", lane_relocalize, true);
+            nh.param<bool>("/sim/sign_relocalize", sign_relocalize, true);
+            nh.param<bool>("/sim/intersection_relocalize", intersection_relocalize, true);
             nh.param<bool>("/sim/use_lane", use_lane, false);
             nh.param<bool>("/sim/has_light", has_light, false);
             nh.param<double>("/sim/change_lane_offset_scaler", change_lane_offset_scaler, 1.3);
@@ -106,6 +111,7 @@ public:
         double rateVal = 1/mpc.T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
+        goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
         utils.debug("state machine initialized", 2);
@@ -123,7 +129,8 @@ public:
             intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_target_yaw = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
             change_lane_speed=0.2, change_lane_thresh=0.05, intersection_localization_orientation_threshold = 15, NORMAL_SPEED = 0.175,
             FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
-    bool use_stopline = true, relocalize = true, use_lane = false, has_light = false, useTrajectory=true;
+    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false, useTrajectory=true;
+    bool initialized = false;
     int pedestrian_count_thresh = 8;
 
     Eigen::Vector3d x_current;
@@ -153,6 +160,34 @@ public:
     std::mutex lock;
     Utility utils;
     PathManager path_manager;
+    ros::ServiceServer goto_command_server;
+    bool goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res) {
+        utils.update_states(x_current);
+        if (!path_manager.call_go_to_service(x_current[0], x_current[1], x_current[2], req.dest_x, req.dest_y)) {
+            res.success = false;
+            return false;
+        }
+        auto state_refs = path_manager.state_refs.transpose();
+        auto input_refs = path_manager.input_refs.transpose();
+        auto& state_attributes = path_manager.state_attributes;
+        auto normals = path_manager.normals.transpose();
+        res.state_refs.data = std::vector<float>(state_refs.data(), state_refs.data() + state_refs.size());
+        res.input_refs.data = std::vector<float>(input_refs.data(), input_refs.data() + input_refs.size());
+        res.wp_attributes.data = std::vector<float>(state_attributes.data(), state_attributes.data() + state_attributes.size());
+        res.wp_normals.data = std::vector<float>(normals.data(), normals.data() + normals.size());
+        res.success = true;
+        destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
+        // for (int i = 0; i<path_manager.state_refs.rows(); i++) {
+        //     std::cout << i << ") " << path_manager.state_refs(i, 0) << ", " << path_manager.state_refs(i, 1) << ", " << path_manager.state_refs(i, 2) << std::endl;
+        // }
+        utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
+        utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
+
+        path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
+        mpc.reset_solver();
+        initialized = true;
+        return true;
+    }
     MPC mpc;
 
     ros::Timer ekf_update_timer;
@@ -165,7 +200,6 @@ public:
         client.call(srv);
     }
     int initialize() {
-        static bool initialized = false;
         if (initialized) return 1;
         // sleep 2 seconds to allow for initialization
         ros::Duration(2).sleep();
@@ -178,6 +212,7 @@ public:
         utils.debug("start(): x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", yaw=" + std::to_string(yaw), 2);
         path_manager.call_waypoint_service(x, y, yaw);
         destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
+        utils.debug("initialize(): start: " + std::to_string(x) + ", " + std::to_string(y), 2);
         utils.debug("initialize(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
 
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
@@ -191,7 +226,7 @@ public:
     }
     bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
         static int history = -1;
-        if (req.data && state == STATE::INIT) {
+        if (req.data && (state == STATE::INIT || state == STATE::DONE)) {
             initialize();
             start();
             res.success = true;
@@ -395,7 +430,7 @@ public:
                     return false;
                 }
                 // std::cout << "DEBUG: returning true" << std::endl;
-                if (relocalize) {
+                if (intersection_relocalize) {
                     intersection_based_relocalization();
                 }
                 return true;
@@ -471,8 +506,8 @@ public:
                     }
                 }
             }
-            // if (relocalize && stopsign_flag != STOPSIGN_FLAGS::NONE) {
-            if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
+            if (sign_relocalize && stopsign_flag != STOPSIGN_FLAGS::NONE) {
+            // if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
                 auto sign_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
                 if (stopsign_flag == STOPSIGN_FLAGS::RDB) {
                     int nearestDirectionIndex = Utility::nearest_direction_index(running_yaw);
@@ -517,7 +552,7 @@ public:
                 double cd = (detected_dist + CROSSWALK_LENGTH) / NORMAL_SPEED * cw_speed_ratio;
                 crosswalk_cooldown_timer = ros::Time::now() + ros::Duration(cd);
                 std::cout << "crosswalk detected at a distance of: " << detected_dist << std::endl;
-                if (relocalize) {
+                if (sign_relocalize) {
                 // if (1) {
                     auto crosswalk_pose = utils.estimate_object_pose2d(running_x, running_y, running_yaw, utils.object_box(crosswalk_index), detected_dist, CAMERA_PARAMS);
                     int nearestDirectionIndex = Utility::nearest_direction_index(running_yaw);
@@ -607,7 +642,7 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         if(std::abs(yaw_error) > intersection_localization_orientation_threshold * M_PI / 180) {
-            ROS_WARN("intersection_based_relocalization(): FAILURE: yaw error too large: %.3f, intersection based relocalization failed...", yaw_error);
+            utils.debug("intersection_based_relocalization(): FAILURE: yaw error too large: " + std::to_string(yaw_error), 2);
             return 0;
         }
 
@@ -675,10 +710,10 @@ public:
                 }
                 if (min_error < LANE_OFFSET) {
                     utils.recalibrate_states(0, min_error);
-                    ROS_DEBUG("lane_based_relocalization(): SUCCESS: error: %.3f, running y: %.3f, center: %.3f, offset: %.3f, nearest direction: %d, minidx: %d", min_error, running_y, LANE_CENTERS[min_index], offset, nearestDirectionIndex, min_index);
+                    utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(min_error) + ", running y: " + std::to_string(running_y) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 1;
                 } else {
-                    ROS_WARN("lane_based_relocalization(): FAILURE: error too large: %.3f, running y: %.3f, center: %.3f, offset: %.3f, nearest direction: %d, minidx: %d", min_error, running_y, LANE_CENTERS[min_index], offset, nearestDirectionIndex, min_index);
+                    utils.debug("lane_based_relocalization(): FAILURE: error too large: " + std::to_string(min_error) + ", running y: " + std::to_string(running_y) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 0;
                 }
             } else if (nearestDirectionIndex == 1 || nearestDirectionIndex == 3) { // North, 1 || South, 3
@@ -696,10 +731,10 @@ public:
                 // ROS_INFO("center: %.3f, offset: %.3f, running_x: %.3f, min_error: %.3f, closest lane center: %.3f", center, offset, running_x, min_error, Y_ALIGNED_LANE_CENTERS[min_index]);
                 if (std::abs(min_error) < LANE_OFFSET) {
                     utils.recalibrate_states(min_error, 0);
-                    ROS_DEBUG("lane_based_relocalization(): SUCCESS: error: %.3f, running x: %.3f, center: %.3f, offset: %.3f, nearest direction: %d, minidx: %d", std::abs(min_error), running_x, LANE_CENTERS[min_index], offset, nearestDirectionIndex, min_index);
+                    utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(std::abs(min_error)) + ", running x: " + std::to_string(running_x) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 1;
                 } else {
-                    ROS_WARN("lane_based_relocalization(): FAILURE: error too large: %.3f, running x: %.3f, center: %.3f, offset: %.3f, nearest direction: %d, minidx: %d", std::abs(min_error), running_x, LANE_CENTERS[min_index], offset, nearestDirectionIndex, min_index);
+                    utils.debug("lane_based_relocalization(): FAILURE: error too large: " + std::to_string(std::abs(min_error)) + ", running x: " + std::to_string(running_x) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 0;
                 }
             }
@@ -957,12 +992,22 @@ void StateMachine::update_mpc_states() {
 void StateMachine::solve() {
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
     int idx = path_manager.target_waypoint_index;
-    if (idx >= path_manager.state_refs.rows()) {
-        idx = path_manager.state_refs.rows() - 1;
+    if (idx > path_manager.state_refs.rows()-2) {
+        idx = path_manager.state_refs.rows() - 2;
+        utils.debug("WARNING: solve(): target waypoint index exceeds state_refs size, using last waypoint...", 3);
     }
-    Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, path_manager.state_refs.rows() - idx, 3);
-    Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, path_manager.input_refs.rows() - idx, 2);
-    int status = mpc.solve(state_refs_block, input_refs_block, x_current);
+    int N = std::min(Eigen::Index(path_manager.N), path_manager.state_refs.rows() - idx);
+    if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
+        
+        Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
+        Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
+        int status = mpc.solve(state_refs_block, input_refs_block, x_current);
+    } else {
+        ROS_WARN("Block indices are out of bounds, skipping solve.");
+        ROS_INFO("state_refs rows: %ld, cols: %ld", path_manager.state_refs.rows(), path_manager.state_refs.cols());
+        ROS_INFO("input_refs rows: %ld, cols: %ld", path_manager.input_refs.rows(), path_manager.input_refs.cols());
+        ROS_INFO("idx: %d, N: %d", idx, N);
+    }
     publish_commands();
 }
 void StateMachine::publish_commands() {
@@ -1057,7 +1102,7 @@ void StateMachine::run() {
             }
             update_mpc_states(running_x, running_y, running_yaw);
             int closest_idx = path_manager.find_closest_waypoint(x_current);
-            if (relocalize) {
+            if (lane_relocalize) {
                 static int lane_relocalization_semaphore = 0;
                 lane_relocalization_semaphore++;
                 if (lane_relocalization_semaphore >= 5) {
@@ -1164,7 +1209,7 @@ void StateMachine::run() {
                     change_state(STATE::MOVING);
                 }
                 // if (1) {
-                if (relocalize) {
+                if (sign_relocalize) {
                     auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist, CAMERA_PARAMS);
                     int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES);
                 }
@@ -1295,9 +1340,9 @@ void StateMachine::run() {
                 start();
             }
         } else if (state == STATE::DONE) {
-            utils.debug("Done", 2);
+            utils.debug("Done", 5);
             utils.stop_car();
-            break;
+            continue;
         } else if (state == STATE::KEYBOARD_CONTROL) {
             // Constants for steering and speed
             const double STEERING_INCREMENT = 2;  

@@ -10,7 +10,9 @@ real:
   change_lane_speed: 0.2
   left_trajectory_threshold: 12 # degrees
   right_trajectory_threshold: 12
-  relocalize: false
+  lane_relocalize: false
+  sign_relocalize: false
+  intersection_relocalize: false
   use_lane: false
   has_light: false
   change_lane_offset_scaler: 0.9
@@ -57,7 +59,7 @@ sim:
   cw_speed_ratio: 0.7143
   hw_speed_ratio: 1.33
   sign_localization_threshold: 1.5
-  lane_localization_threshold: 0.9
+  lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 1.5
   intersection_localization_orientation_threshold: 15.0 # degrees
@@ -74,7 +76,9 @@ sim:
   parking_base_thresh: 0.1
   NORMAL_SPEED: 0.23
   FAST_SPEED: 0.4
-  relocalize: false
+  lane_relocalize: true
+  sign_relocalize: false
+  intersection_relocalize: false
   use_lane: false
   has_light: false
   change_lane_offset_scaler: 1.3
