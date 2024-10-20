@@ -80,6 +80,9 @@ include_directories(
 include_directories(~/TensorRT-8.6.1.6/include)
 link_directories(~/TensorRT-8.6.1.6/lib)
 
+include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
+link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
+
 file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 add_library(alglib SHARED ${ALGLIB_SOURCES})
 
