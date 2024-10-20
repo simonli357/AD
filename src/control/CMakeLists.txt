@@ -88,7 +88,6 @@ file(GLOB sim_solver18
         )
 
 find_package(Curses REQUIRED)
-find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
@@ -148,8 +147,7 @@ ${catkin_LIBRARIES}
 )
 
 add_executable(controller 
-src/controller.cpp
-src/optimizer.cpp
+src/controller2.cpp
 src/utility.cpp
 src/RoadObject.cpp
 )
@@ -157,6 +155,5 @@ target_link_libraries(controller
 ocp_shared_lib 
 sim_shared_lib
 ${catkin_LIBRARIES}
-nlohmann_json::nlohmann_json
 ${CURSES_LIBRARIES}
 )

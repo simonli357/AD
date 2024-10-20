@@ -85,16 +85,24 @@ class GlobalPlanner:
 
     def get_node_number(self, identifier):
         if isinstance(identifier, str):
-            return self.place_names.get(identifier)
+            if self.place_names.get(identifier) is not None:
+                return self.place_names[identifier]
+            else:
+                return int(identifier)
         elif isinstance(identifier, int):
             return identifier
         else:
             raise ValueError(f"Invalid destination identifier: {identifier}")
 
     def plan_path(self, start, end):
-        path = nx.dijkstra_path(self.G, source=str(start), target=str(end))
+        if not isinstance(start, str):
+            start = str(start)
+        if not isinstance(end, str):
+            end = str(end)
+        print("start: ", start, "end: ", end)
+        path = nx.dijkstra_path(self.G, source=start, target=end)
         path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        # print("path: ", path)
+        print("path: ", path)
         wp_x = []
         wp_y = []
         wp_attributes = []

@@ -1,3 +1,31 @@
+speedcurve:
+  - 432
+  - 171
+  - 154
+  - 412
+
+highway_east:
+  - 412
+  - 357
+  - 327
+
+bus_lane:
+  - 327
+  - 280
+  - 297
+  - 139
+
+parking:
+  - 122
+  - 184
+  - 242
+
+oneway:
+  - 202
+  - 196
+  - 297
+  - 150
+
 speedrun:
   # - start
   - nomarking_entrance

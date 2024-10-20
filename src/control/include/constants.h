@@ -47,6 +47,7 @@ namespace VehicleConstants {
         PEDESTRIAN,
         CAR,
     };
+    const std::array<std::string, 13> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car" };
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,
@@ -218,7 +219,7 @@ namespace VehicleConstants {
     // ROUNDABOUT COORDINATES
     static constexpr double rdb_ofs1 = 0.107834;
     static constexpr double rdb_ofs2 = 0.05361;
-    static const std::vector<std::vector<double>> ROUNDABOUT_POSES = {{{{14.9777, 10.263}}, {{16.3974, 9.455325}}, {{17.247, 11.067}}, {{15.639, 11.80325}}}};
+    // static const std::vector<std::vector<double>> ROUNDABOUT_POSES = {{{{14.9777, 10.263}}, {{16.3974, 9.455325}}, {{17.247, 11.067}}, {{15.639, 11.80325}}}};
     static const std::vector<std::vector<double>> EAST_FACING_ROUNDABOUT = {{{14.9777-rdb_ofs2, 10.263-rdb_ofs1}}};
     static const std::vector<std::vector<double>> NORTH_FACING_ROUNDABOUT = {{{16.4+rdb_ofs1, 9.52-rdb_ofs2}}};
     static const std::vector<std::vector<double>> WEST_FACING_ROUNDABOUT = {{{17.164+rdb_ofs2, 10.928+rdb_ofs1}}};

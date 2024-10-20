@@ -1,8 +1,8 @@
 <launch>
 
-  <arg name="sign" default="false"/>
+  <arg name="sign" default="true"/>
   <arg name="ekf" default="false"/>
-  <arg name="lane" default="false"/>
+  <arg name="lane" default="true"/>
   <arg name="name" default="car1"/>
   <arg name="v" default="50"/>
   <arg name="vref" default="0.$(arg v)"/>
@@ -13,59 +13,45 @@
   <arg name="yaw0" default="0"/>
   <arg name = "path" default="speedrun"/>
 
-  <!-- start -->
-  <!-- <arg name="x0" default="0.39"/>
-  <arg name="y0" default="5.8"/>
-  <arg name="yaw0" default="-1.57"/>
-  <arg name = "path" default="run1"/> -->
+  <!-- speedcurve -->
+  <!-- <arg name="x0" default="3.66"/>
+  <arg name="y0" default="12.186"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="speedcurve"/> -->
 
-  <!-- speed curve -->
-  <!-- <arg name="x0" default="5.118"/>
-  <arg name="y0" default="4.78"/>
-  <arg name="yaw0" default="1.5708"/>
-  <arg name = "path" default="test2"/> -->
-
-  <!-- ramp -->
-  <!-- <arg name="x0" default="1.578"/>
-  <arg name="y0" default="11.8"/>
+  <!-- highway_east -->
+  <!-- <arg name="x0" default="2.48"/>
+  <arg name="y0" default="11.788"/>
   <arg name="yaw0" default="0"/>
-  <arg name = "path" default="test3"/> -->
+  <arg name = "path" default="highway_east"/> -->
 
-  <!-- hw, head of car aligning with P in Park -->
-  <!-- <arg name="x0" default="5.614"/>
-  <arg name="y0" default="11.8"/>
-  <arg name="yaw0" default="0"/>
-  <arg name = "path" default="test4"/> -->
-
-  <!-- rdb, head of car at end of dotted line -->
-  <!-- <arg name="x0" default="13.454"/>
-  <arg name="y0" default="10.4"/>
-  <arg name="yaw0" default="0"/>
-  <arg name = "path" default="test5"/> -->
-
-  <!-- right turn -->
-  <!-- <arg name="x0" default="15.273"/>
-  <arg name="y0" default="6.067"/>
-  <arg name="yaw0" default="-1.57"/>
-  <arg name = "path" default="test6"/> -->
+  <!-- bus_lane -->
+  <!-- <arg name="x0" default="15.3"/>
+  <arg name="y0" default="6.196"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="bus_lane"/> -->
 
   <!-- parking -->
-  <!-- <arg name="x0" default="7.966"/>
-  <arg name="y0" default="0.946"/>
-  <arg name="yaw0" default="0"/>
-  <arg name = "path" default="test6"/> -->
+  <!-- <arg name="x0" default="0.35"/>
+  <arg name="y0" default="2.726"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="parking"/> -->
+
+  <!-- oneway -->
+  <!-- <arg name="x0" default="4.76"/>
+  <arg name="y0" default="2.706"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="oneway"/> -->
+
+  <param name="x0" value="$(arg x0)"/>
+  <param name="y0" value="$(arg y0)"/>
+  <param name="yaw0" value="$(arg yaw0)"/>
 
   <arg name="real" default="false"/>
   <arg name="subModel" default="false"/>
   <arg name = "rate" default="300"/>
   <param name="pathName" value="$(arg path)"/>
   <param name="vrefInt" value="$(arg v)"/>
-  <arg name = "gmapping" default="false"/>
-  <param name="gmapping" value="$(arg gmapping)"/>
-  <arg name = "amcl" default="false"/>
-  <param name="amcl" value="$(arg amcl)"/>
-  <arg name = "lidarOdom" default="false"/>
-  <param name="lidarOdom" value="$(arg lidarOdom)"/>
   <arg name = "dashboard" default="true"/>
   <param name="dashboard" value="$(arg dashboard)"/>
   <arg name = "realsense_imu" default="false"/>
@@ -78,6 +64,8 @@
   <param name="gps" value="$(arg gps)"/>
   <arg name = "pub_wpts" default="true"/>
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
+  <arg name = "debug_level" default="3"/>
+  <param name="debug_level" value="$(arg debug_level)"/>
   <rosparam command="load" file="$(find control)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
   <rosparam command="load" file="$(find control)/scripts/config/mpc_config_park.yaml" />

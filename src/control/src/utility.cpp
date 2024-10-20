@@ -59,6 +59,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         nh.param<double>("/sim/gps_offset_x", gps_offset_x, 0.0);
         nh.param<double>("/sim/gps_offset_y", gps_offset_y, 0.0);
     }
+    nh.param<int>("debug_level", debugLevel, 5);
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
     nh.param<bool>("/gps", hasGps, false);
     if (real) {
         serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
@@ -102,14 +104,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     velocity = 0.0;
     odomX = 0.0;
     odomY = 0.0;
-    odomX_lidar = 0.0;
-    odomY_lidar = 0.0;
     odomYaw = yaw0;
     ekf_x = x0;
     ekf_y = y0;
     ekf_yaw = yaw0;
-    gmapping_x = x0;
-    gmapping_y = y0;
     if (x0 > 0 && y0 > 0) {
         set_pose_using_service(x0, y0, yaw0);
     }
@@ -125,14 +123,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 
     std::fill(std::begin(odom_msg.pose.covariance), std::end(odom_msg.pose.covariance), 0.0);
     std::fill(std::begin(odom_msg.twist.covariance), std::end(odom_msg.twist.covariance), 0.0);
-    std::fill(std::begin(odom_lidar_msg.pose.covariance), std::end(odom_lidar_msg.pose.covariance), 0.0);
-    std::fill(std::begin(odom_lidar_msg.twist.covariance), std::end(odom_lidar_msg.twist.covariance), 0.0);
     // covariance_value = 0.01 * 4;
     // for (int hsy=0; hsy<36; hsy+=7) {
     //     odom_msg.pose.covariance[hsy] = covariance_value;
     //     odom_msg.twist.covariance[hsy] = covariance_value;
-    //     odom_lidar_msg.pose.covariance[hsy] = covariance_value;
-    //     odom_lidar_msg.twist.covariance[hsy] = covariance_value;
     // }
     double dt = 1.0 / odom_publish_frequency;
     double variance_v = sigma_v * sigma_v;
@@ -163,9 +157,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     odom_msg.header.frame_id = "odom";
     odom_msg.child_frame_id = "chassis";
     // odom1_pub = nh.advertise<nav_msgs::Odometry>("odom1", 3);
-    odom_lidar_pub = nh.advertise<nav_msgs::Odometry>("odom1", 3);
-    odom_lidar_msg.header.frame_id = "odom";
-    odom_lidar_msg.child_frame_id = "chassis";
 
     // if (robot_name[0] != '/') {
     //     robot_name = "/" + robot_name;
@@ -175,7 +166,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     detected_cars_pub = nh.advertise<std_msgs::Float32MultiArray>("/detected_cars", 3);
     state_offset_pub = nh.advertise<std_msgs::Float32MultiArray>("/state_offset", 3);
     
-    odom_lidar_sub = nh.subscribe("/odom_lidar", 3, &Utility::odom_lidar_callback, this);
     if (pubOdom) {
         odom_pub_timer = nh.createTimer(ros::Duration(1.0 / odom_publish_frequency), &Utility::odom_pub_timer_callback, this);
     }
@@ -197,16 +187,16 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     } else {
         imu_topic_name = car_imu_topic;
     }
-    ROS_INFO("imu topic: %s", imu_topic_name.c_str());
+    debug("imu topic: " + imu_topic_name, 2);
     if (subImu) {
         if (!real) {
-            std::cout << "waiting for Imu message" << std::endl;
+            debug("waiting for Imu message", 1);
             ros::topic::waitForMessage<sensor_msgs::Imu>(imu_topic_name);
             std::cout << "received message from Imu" << std::endl;
             imu_sub = nh.subscribe(imu_topic_name, 3, &Utility::imu_callback, this);
             // imu_sub = nh.subscribe(imu_topic, 3, &Utility::imu_callback, this);
         } else {
-            ROS_INFO("getting imu from serial port");
+            debug("getting imu from serial port", 1);
             // create a ros timer to read from serial port
             imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
             imu_pub_timer = nh.createTimer(ros::Duration(1.0 / rateVal), &Utility::imu_pub_timer_callback, this);
@@ -229,20 +219,9 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
         car_pose_msg.data.push_back(0.0);
+        road_objects.push_back(std::make_shared<RoadObject>(RoadObject::ObjectType::CAR, x0, y0, yaw, velocity_command, 0.0));
     }
 
-    nh.param<bool>("/gmapping", useGmapping, false);
-    nh.param<bool>("/lidarOdom", useLidarOdom, false);
-    nh.param<bool>("/amcl", useAmcl, false);
-    if (useGmapping) {
-        ROS_INFO("using gmapping");
-        tf_sub = nh.subscribe("/tf", 3, &Utility::tf_callback, this);
-        pose_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/chassis_pose", 3);
-    } else if(useAmcl) {
-        ROS_INFO("using amcl");
-        amcl_sub = nh.subscribe("/amcl_pose", 3, &Utility::amcl_callback, this);
-        pose_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/chassis_pose", 3);
-    }
     timerodom = ros::Time::now();
 }
 
@@ -250,78 +229,6 @@ Utility::~Utility() {
     stop_car(); 
 }
 
-void Utility::odom_lidar_callback(const nav_msgs::Odometry::ConstPtr& msg) {
-    if(x0 < 0 || y0 < 0) {
-        ROS_WARN("odom_lidar_callback: x0 or y0 is less than 0");
-        return;
-    }
-    lock.lock();
-    odomX_lidar = msg->pose.pose.position.x;
-    odomY_lidar = msg->pose.pose.position.y;
-    // ROS_INFO("odomX_lidar: %.3f, odomY_lidar: %.3f", odomX_lidar, odomY_lidar);
-
-    auto current_time = ros::Time::now();
-    odom_lidar_msg.header.stamp = current_time;
-    odom_lidar_msg.pose.pose.position.x = odomX_lidar + x0;
-    odom_lidar_msg.pose.pose.position.y = odomY_lidar + y0;
-    odom_lidar_msg.pose.pose.position.z = 0.032939;
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, yaw);
-    odom_lidar_msg.pose.pose.orientation = tf2::toMsg(quaternion);
-    odom_lidar_pub.publish(odom_lidar_msg);
-
-    lock.unlock();
-}
-void Utility::tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg) {
-    for(const auto& transform : msg->transforms) {
-        if (x0 > 0 && y0 > 0 && transform.child_frame_id == "odom" && transform.header.frame_id == "map") {
-            double dx = transform.transform.translation.x;
-            double dy = transform.transform.translation.y;
-            geometry_msgs::PoseWithCovarianceStamped pose_msg;
-            pose_msg.header.frame_id = "odom";
-            pose_msg.header.stamp = ros::Time::now();
-            double odomX1, odomY1;
-            if(useLidarOdom) {
-                odomX1 = odomX_lidar;
-                odomY1 = odomY_lidar;
-                ROS_INFO("using lidar odom");
-            } else {
-                odomX1 = this->odomX;
-                odomY1 = this->odomY;
-            }
-            lock.lock();
-            gmapping_x = dx + odomX1 + x0;
-            gmapping_y = dy + odomY1 + y0;
-            lock.unlock();
-            pose_msg.pose.pose.position.x = gmapping_x;
-            pose_msg.pose.pose.position.y = gmapping_y;
-            pose_msg.pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), yaw));
-            pose_msg.pose.covariance = odom_msg.pose.covariance;
-            // ROS_INFO("dx: %.3f, dy: %.3f, x: %.3f, y: %.3f", dx, dy, pose_msg.pose.pose.position.x, pose_msg.pose.pose.position.y);
-            pose_pub.publish(pose_msg);
-        }
-    }
-}
-void Utility::amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-    if (x0 < 0 || y0 < 0) {
-        ROS_WARN("amcl_callback: x0 or y0 is less than 0");
-        return;
-    }
-    double dx = msg->pose.pose.position.x;
-    double dy = msg->pose.pose.position.y;
-    // ROS_INFO("amcl_callback: dx: %.3f, dy: %.3f", dx, dy);
-    lock.lock();
-    gmapping_x = dx + x0;
-    gmapping_y = dy + y0;
-    lock.unlock();
-    geometry_msgs::PoseWithCovarianceStamped pose_msg;
-    pose_msg.header.stamp = ros::Time::now();
-    pose_msg.pose.pose.position.x = gmapping_x;
-    pose_msg.pose.pose.position.y = gmapping_y;
-    pose_msg.pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0, 0, 1), yaw));
-    pose_msg.pose.covariance = odom_msg.pose.covariance;
-    pose_pub.publish(pose_msg);
-}
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
     publish_odom();
 }
@@ -431,8 +338,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
 
             lock.lock();
             this->yaw = -yaw_deg * M_PI/180;
-            while(this->yaw < -M_PI) this->yaw += 2*M_PI;
-            while(this->yaw > M_PI) this->yaw -= 2*M_PI;
+            this->yaw = yaw_mod(this->yaw);
             lock.unlock();
 
             static bool debug_imu = false;
@@ -479,6 +385,9 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         num_obj = 0;
     }
     lock.unlock();
+    double x, y, yaw;
+    get_states(x, y, yaw);
+    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0);
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -488,18 +397,15 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         double x_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x_rel];
         double y_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
         double yaw_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
-        double x, y, yaw;
-        get_states(x, y, yaw);
         auto world_states = object_to_world(x_rel, y_rel, yaw_rel, x, y, yaw);
-        ROS_INFO("%d detected: (%.2f, %.2f, %.2f)", static_cast<int>(type), world_states[0], world_states[1], world_states[2]);
         if(type != OBJECT::CAR) {
             world_states[2] = nearest_direction(yaw);
         }
-        for(auto obj: road_objects) {
+        for(int i = 1; i<road_objects.size(); ++i) {
+            auto obj = road_objects[i];
             if(static_cast<int>(obj->type) == type) {
                 if (obj->is_same_object(world_states[0], world_states[1])) {
                     found_same = true;
-                    ROS_INFO("same object detected, size: %d", road_objects.size());
                     obj->merge(world_states[0], world_states[1], world_states[2], 0.0, confidence);
                     break;
                 }
@@ -507,7 +413,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         }
         if (!found_same) {
             road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
-            ROS_INFO("new object detected, size: %d", road_objects.size());
+            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 2);
         }
     }
     auto road_object_msg = RoadObject::create_msg(road_objects);
@@ -516,77 +422,77 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         road_object_pub.publish(road_object_msg);
     }
     
-    // static bool populate_car_pose = true;
-    // if (!populate_car_pose) {
-    //     return;
+    static bool populate_car_pose = true;
+    if (!populate_car_pose) {
+        return;
+    }
+    int car_id = 12;
+    double threshold = 0.5;
+    for(int i = 0; i < num_obj; i++) {
+        if(msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id] == car_id) {
+            double dist = object_distance(i);
+            if(dist > 3.0 || dist < 0.6) continue;
+            double xmin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
+            double ymin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
+            double xmax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
+            double ymax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
+            double x, y, yaw;
+            get_states(x, y, yaw);
+            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, CAMERA_PARAMS, true);
+            // std::cout << "world_pose: (" << world_pose[0] << ", " << world_pose[1] << "), self pose: (" << x << ", " << y << ")" << std::endl;
+            // check error norm between x, y of detected car and the ones in the detected_cars vector
+            // if error norm greater than threshold, add to detected_cars vector
+            // else, update the x, y of the detected car in the detected_cars vector by averaging 
+            if (detected_cars.size() == 0) {
+                detected_cars.push_back(world_pose);
+                detected_cars_counter.push_back(1);
+                car_pose_msg.data.push_back(world_pose[0]);
+                car_pose_msg.data.push_back(world_pose[1]);
+                // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << ")" << std::endl;
+                continue;
+            }
+            for(int j = 0; j < detected_cars.size(); j++) {
+                double error_norm_sq = (detected_cars[j] - world_pose).squaredNorm();
+                double score = msg->data[i * NUM_VALUES_PER_OBJECT + confidence];
+                if(error_norm_sq < threshold * threshold) {
+                    // if (detected_cars_counter[j] < 15) {
+                    if (true) {
+                        // detected_cars[j] = (detected_cars[j] * detected_cars_counter[j] + world_pose) / (detected_cars_counter[j] + 1);
+                        detected_cars[j] = (detected_cars[j] * 0.1 + world_pose * 0.9);
+                        car_pose_msg.data[(j+1) * 2] = detected_cars[j][0];
+                        car_pose_msg.data[(j+1) * 2 + 1] = detected_cars[j][1];
+                        // std::cout << "updated car detected at (" << detected_cars[j][0] << ", " << detected_cars[j][1] << ")" << std::endl;
+                        detected_cars_counter[j]++;
+                    }
+                    recent_car_indices.remove(j); // remove j if it exists
+                    recent_car_indices.push_front(j); // add j to the front
+                    break;
+                } else if(j == detected_cars.size() - 1) {
+                    detected_cars.push_back(world_pose);
+                    car_pose_msg.data.push_back(world_pose[0]);
+                    car_pose_msg.data.push_back(world_pose[1]);
+                    detected_cars_counter.push_back(1);
+                    recent_car_indices.push_front(detected_cars.size() - 1); // Add new car as most recent
+                    // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << "), num cars: " << detected_cars.size() << std::endl;
+                    break;
+                }
+            }
+            while (recent_car_indices.size() > 5) {
+                recent_car_indices.pop_back(); // keep only 4 most recent cars
+            }
+            static bool publish_cars = true;
+            if(publish_cars) {
+                std_msgs::Float32MultiArray car_msg;
+                car_msg.data = car_pose_msg.data;
+                car_pose_pub.publish(car_msg);
+            }
+        }
+    }
+    // print car_pose_msg
+    // for (int i = 0; i < car_pose_msg.data.size(); i += 2) {
+    //     std::cout << "car " << i / 2 << ": (" << car_pose_msg.data[i] << ", " << car_pose_msg.data[i + 1] << ")" << std::endl;
     // }
-    // int car_id = 12;
-    // double threshold = 0.5;
-    // for(int i = 0; i < num_obj; i++) {
-    //     if(msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id] == car_id) {
-    //         double dist = object_distance(i);
-    //         if(dist > 3.0 || dist < 0.6) continue;
-    //         double xmin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
-    //         double ymin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
-    //         double xmax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
-    //         double ymax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
-    //         double x, y, yaw;
-    //         get_states(x, y, yaw);
-    //         Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, CAMERA_PARAMS, true);
-    //         // std::cout << "world_pose: (" << world_pose[0] << ", " << world_pose[1] << "), self pose: (" << x << ", " << y << ")" << std::endl;
-    //         // check error norm between x, y of detected car and the ones in the detected_cars vector
-    //         // if error norm greater than threshold, add to detected_cars vector
-    //         // else, update the x, y of the detected car in the detected_cars vector by averaging 
-    //         if (detected_cars.size() == 0) {
-    //             detected_cars.push_back(world_pose);
-    //             detected_cars_counter.push_back(1);
-    //             car_pose_msg.data.push_back(world_pose[0]);
-    //             car_pose_msg.data.push_back(world_pose[1]);
-    //             // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << ")" << std::endl;
-    //             continue;
-    //         }
-    //         for(int j = 0; j < detected_cars.size(); j++) {
-    //             double error_norm_sq = (detected_cars[j] - world_pose).squaredNorm();
-    //             double score = msg->data[i * NUM_VALUES_PER_OBJECT + confidence];
-    //             if(error_norm_sq < threshold * threshold) {
-    //                 // if (detected_cars_counter[j] < 15) {
-    //                 if (true) {
-    //                     // detected_cars[j] = (detected_cars[j] * detected_cars_counter[j] + world_pose) / (detected_cars_counter[j] + 1);
-    //                     detected_cars[j] = (detected_cars[j] * 0.1 + world_pose * 0.9);
-    //                     car_pose_msg.data[(j+1) * 2] = detected_cars[j][0];
-    //                     car_pose_msg.data[(j+1) * 2 + 1] = detected_cars[j][1];
-    //                     // std::cout << "updated car detected at (" << detected_cars[j][0] << ", " << detected_cars[j][1] << ")" << std::endl;
-    //                     detected_cars_counter[j]++;
-    //                 }
-    //                 recent_car_indices.remove(j); // remove j if it exists
-    //                 recent_car_indices.push_front(j); // add j to the front
-    //                 break;
-    //             } else if(j == detected_cars.size() - 1) {
-    //                 detected_cars.push_back(world_pose);
-    //                 car_pose_msg.data.push_back(world_pose[0]);
-    //                 car_pose_msg.data.push_back(world_pose[1]);
-    //                 detected_cars_counter.push_back(1);
-    //                 recent_car_indices.push_front(detected_cars.size() - 1); // Add new car as most recent
-    //                 // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << "), num cars: " << detected_cars.size() << std::endl;
-    //                 break;
-    //             }
-    //         }
-    //         while (recent_car_indices.size() > 5) {
-    //             recent_car_indices.pop_back(); // keep only 4 most recent cars
-    //         }
-    //         static bool publish_cars = true;
-    //         if(publish_cars) {
-    //             std_msgs::Float32MultiArray car_msg;
-    //             car_msg.data = car_pose_msg.data;
-    //             car_pose_pub.publish(car_msg);
-    //         }
-    //     }
-    // }
-    // // print car_pose_msg
-    // // for (int i = 0; i < car_pose_msg.data.size(); i += 2) {
-    // //     std::cout << "car " << i / 2 << ": (" << car_pose_msg.data[i] << ", " << car_pose_msg.data[i + 1] << ")" << std::endl;
-    // // }
-    // car_pose_pub.publish(car_pose_msg);
+    car_pose_pub.publish(car_pose_msg);
 }
 void Utility::lane_callback(const utils::Lane::ConstPtr& msg) {
     static double previous_center = 320;
@@ -630,15 +536,10 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     }
     if (!initializationFlag && x0 > 0 && y0 > 0) {
         initializationFlag = true;
-        ROS_INFO("initialized in imu callback");
+        debug("initialized in imu callback", 2);
     }
     // yaw = yaw - initial_yaw + yaw0;
-    while(yaw < -M_PI) {
-        yaw += 2*M_PI;
-    }
-    while(yaw > M_PI) {
-        yaw -= 2*M_PI;
-    }
+    yaw = yaw_mod(yaw);
     lock.unlock();
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
@@ -662,8 +563,6 @@ void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     //             std::cout << "using ekf but haven't received data yet. ekf_x: " << ekf_x << ", ekf_y: " << ekf_y << std::endl;
     //             x0 = ekf_x;
     //             y0 = ekf_y;
-    //             gmapping_x = ekf_x;
-    //             gmapping_y = ekf_y;
     //         } else {
     //             ROS_INFO("Initializing... ekf_x: %.3f, ekf_y: %.3f", ekf_x, ekf_y);
     //         }
@@ -739,12 +638,12 @@ void Utility::set_pose_using_service(double x, double y, double yaw) {
         robot_localization::SetPose srv;
         srv.request.pose = pose_msg;
         if (client.call(srv)) {
-            ROS_INFO("Service call successful");
+            debug("set pose service call successful", 2);
         } else {
-            ROS_ERROR("Failed to call service set_pose");
+            debug("ERROR: set pose service call failed", 1);
         }
     } catch (const std::exception& e) {
-        ROS_ERROR("Service call failed: %s", e.what());
+        debug("ERROR: set pose service call failed" + std::string(e.what()), 1);
     }
 }
 
@@ -877,7 +776,7 @@ void Utility::object_box(int index, std::array<double, 4>& oBox) {
 }
 void Utility::set_initial_pose(double x, double y, double yaw) {
     // initializationTimer = ros::Time::now();
-    ROS_INFO("Setting initial pose: x: %.3f, y: %.3f, yaw: %.3f", x, y, yaw);
+    debug("Setting initial pose: x: " + std::to_string(x) + ", y: " + std::to_string(y) + ", yaw: " + std::to_string(yaw), 1);
     odomX = x;
     odomY = y;
     odomYaw = yaw;
@@ -1017,12 +916,12 @@ void Utility::callTriggerService() {
     std_srvs::Trigger srv;
     try {
         if (triggerServiceClient.call(srv)) {
-            ROS_INFO("Service response: %s", srv.response.message.c_str());
+            debug("trigger service response: " + srv.response.message, 2);
         } else {
-            ROS_ERROR("Failed to call service trigger_service");
+            debug("ERROR: Failed to call service trigger_service", 1);
         }
     } catch (const std::exception& e) {
-        ROS_ERROR("Service call failed: %s", e.what());
+        debug("ERROR: Failed to call service trigger_service" + std::string(e.what()), 1);
     }
 }
 std::array<double, 3> Utility::get_real_states() const {
@@ -1030,7 +929,7 @@ std::array<double, 3> Utility::get_real_states() const {
 }
 void Utility::spin() {
     // auto start = std::chrono::high_resolution_clock::now();
-    ROS_INFO("Utility node spinning at a rate of %f", rateVal);
+    debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
     while (ros::ok()) {
         // auto end = std::chrono::high_resolution_clock::now();
         // std::chrono::duration<double> elapsed = end - start;
@@ -1040,11 +939,3 @@ void Utility::spin() {
         rate->sleep();
     }
 }
-
-// int main(int argc, char **argv) {
-//     ros::init(argc, argv, "utility_node");
-//     ros::NodeHandle nh;
-//     Utility utility(nh);
-//     ros::spin();
-//     return 0;
-// }

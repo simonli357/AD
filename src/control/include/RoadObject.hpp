@@ -7,18 +7,19 @@
 class RoadObject {
 public:
     enum ObjectType {
-        CAR,
-        PEDESTRIAN,
-        TRAFFIC_LIGHT,
-        STOP_SIGN,
-        PARKING_SIGN,
-        CROSSWALK,
+        ONEWAY,
+        HIGHWAYENTRANCE,
+        STOPSIGN,
         ROUNDABOUT,
+        PARK,
+        CROSSWALK,
+        NOENTRY,
+        HIGHWAYEXIT,
         PRIORITY,
-        NO_ENTRY,
-        ONE_WAY,
-        HIGHWAY_ENTRANCE,
-        HIGHWAY_EXIT
+        LIGHTS,
+        BLOCK,
+        PEDESTRIAN,
+        CAR
     };
 
     static int OBJECT_COUNT;
@@ -46,10 +47,17 @@ public:
     double confidence;
     
     bool is_same_object(double x, double y) {
-        printf("std::abs(this->x - x): %.3f, std::abs(this->y - y): %.3f\n", std::abs(this->x - x), std::abs(this->y - y));
+        int type = static_cast<int>(this->type);
         return (std::abs(this->x - x) < OBJECT_SIZE[type][0]*2 && std::abs(this->y - y) < OBJECT_SIZE[type][1]*2);
     }
     void merge(double x, double y, double yaw, double speed, double confidence) {
+        if(confidence >= 1.) {
+            this->x = x;
+            this->y = y;
+            this->yaw = yaw;
+            this->speed = speed;
+            return;
+        }
         this->x = (this->x * this->detection_count + x) / (this->detection_count + 1);
         this->y = (this->y * this->detection_count + y) / (this->detection_count + 1);
         this->yaw = (this->yaw * this->detection_count + yaw) / (this->detection_count + 1);

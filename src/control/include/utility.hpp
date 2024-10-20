@@ -65,6 +65,8 @@ public:
     int num_obj = 0;
     std::mutex lock;
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
+    int debugLevel = 5;
+    std_msgs::String debug_msg;
     bool real;
     bool useGmapping = true, useLidarOdom = false, useAmcl = false;
     double rateVal;
@@ -73,7 +75,7 @@ public:
     double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     bool stopline = false;
     double yaw, velocity, steer_command, velocity_command, x_speed, y_speed;
-    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y, gmapping_x, gmapping_y, odomX_lidar, odomY_lidar;
+    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
@@ -96,10 +98,10 @@ public:
 
     // publishers
     ros::Publisher odom_pub;
-    ros::Publisher odom_lidar_pub;
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
     ros::Publisher road_object_pub;
+    ros::Publisher message_pub;
     ros::Publisher pose_pub;
     ros::Publisher waypoints_pub;
     ros::Publisher detected_cars_pub;
@@ -107,7 +109,6 @@ public:
 
     // messages
     nav_msgs::Odometry odom_msg;
-    nav_msgs::Odometry odom_lidar_msg;
     // nav_msgs::Odometry odom1_msg;
     nav_msgs::Odometry ekf_msg;
     std_msgs::String msg;
@@ -133,8 +134,6 @@ public:
     ros::Subscriber imu_sub;
     ros::Subscriber ekf_sub;
     ros::Subscriber tf_sub;
-    ros::Subscriber odom_lidar_sub;
-    ros::Subscriber amcl_sub;
 
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);
@@ -154,8 +153,6 @@ public:
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg);
-    void amcl_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
-    void odom_lidar_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void spin();
     // Methods
     void stop_car();
@@ -202,20 +199,15 @@ public:
         //     // ROS_INFO("Using gps: %.3f, %.3f", gps_x, gps_y);
         //     x_ = gps_x;
         //     y_ = gps_y;
-        // } else if(useGmapping || useAmcl) {
-        //     // ROS_INFO("Using gmapping: %.3f, %.3f", gmapping_x, gmapping_y);
-        //     x_ = gmapping_x;
-        //     y_ = gmapping_y;
-        // } else if(useLidarOdom) {
-        //     // ROS_INFO("Using lidar odom: %.3f, %.3f", odomX_lidar, odomY_lidar);
-        //     x_ = odomX_lidar + x0;
-        //     y_ = odomY_lidar + y0;
         // } else {
         //     // ROS_INFO("Using odom: %.3f, %.3f", odomX, odomY);
         //     x_ = odomX + x0;
         //     y_ = odomY + y0;
         // }
         return 0;
+    }
+    void update_states(Eigen::Vector3d& o_state) {
+        o_state << odomX + x0, odomY + y0, yaw;
     }
     int recalibrate_states(double x_offset, double y_offset) {
         if(useEkf) {
@@ -261,12 +253,6 @@ public:
             std::cout << "received message from model" << std::endl;
             x0 = gps_x;
             y0 = gps_y;
-        } else if(useGmapping || useAmcl) {
-            x0 = gmapping_x;
-            y0 = gmapping_y;
-        } else if(useLidarOdom) {
-            x0 = odomX_lidar;
-            y0 = odomY_lidar;
         } else {
             x0 = odomX;
             y0 = odomY;
@@ -439,7 +425,7 @@ public:
     }
     void send_speed(float f_velocity) {
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_speed: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -451,7 +437,7 @@ public:
 
     void send_steer(float f_angle) {
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_steer: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -464,7 +450,7 @@ public:
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         if (serial == nullptr) {
-            ROS_INFO("Serial is null");
+            debug("send_speed_and_steer: Serial is null", 2);
             return;
         }
         std::stringstream strs;
@@ -483,13 +469,9 @@ public:
         double world_yaw = object_yaw + vehicle_yaw;
         return {world_x, world_y, world_yaw};
     }
-    double nearest_direction(double yaw) {
-        while(yaw > 2 * M_PI) {
-            yaw -= 2 * M_PI;
-        }
-        while(yaw < 0) {
-            yaw += 2 * M_PI;
-        }
+
+    static double nearest_direction(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
 
         static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
 
@@ -510,5 +492,41 @@ public:
             nearestDirection += 2 * M_PI;
         }
         return nearestDirection;
+    }
+    
+    static int nearest_direction_index(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
+
+        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
+
+        double minDifference = std::abs(yaw - directions[0]);
+        double nearestDirection = directions[0];
+
+        int closest_index = 0;
+        for (int i = 1; i < 5; ++i) {
+            double difference = std::abs(yaw - directions[i]);
+            if (difference < minDifference) {
+                minDifference = difference;
+                nearestDirection = directions[i];
+                closest_index = i;
+            }
+        }
+        if (closest_index == 4) {
+            closest_index = 0;
+        }
+        return closest_index;
+    }
+
+    static double yaw_mod(double yaw, double ref=0) {
+        while (yaw - ref > M_PI) yaw -= 2 * M_PI;
+        while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+        return yaw;
+    }
+    void debug(const std::string& message, int level) {
+        if (debugLevel > level) {
+            debug_msg.data = message;
+            message_pub.publish(debug_msg);
+            ROS_INFO("%s", message.c_str());
+        }
     }
 };

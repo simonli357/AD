@@ -9,7 +9,7 @@ import yaml
 import math
 import rospy
 from std_msgs.msg import Float32MultiArray
-from utils.srv import waypoints, waypointsResponse
+from utils.srv import waypoints, waypointsResponse, go_to, go_toResponse
 
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
@@ -162,18 +162,25 @@ def interpolate_waypoints2(waypoints, num_points):
     return new_waypoints
 
 class Path:
-    def __init__(self, v_ref, N, T, x0=None, name="speedrun"):
+    def __init__(self, v_ref, N, T, x0=None, name="speedrun", dest = None):
         self.hw_density_factor = rospy.get_param('hw', default=1.33)
 
         self.v_ref = v_ref
         print("v_ref: ", v_ref, ", N: ", N, ", T: ", T, ", x0: ", x0, ", name: ", name)
         self.N = N
         self.global_planner = GlobalPlanner()
-        self.name = name
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
-            data = yaml.safe_load(stream)
-            destinations = data[name]
+        if name is not None:
+            self.name = name
+            current_path = os.path.dirname(os.path.abspath(__file__))
+            with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
+                data = yaml.safe_load(stream)
+                destinations = data[name]
+        else:
+            dest_x = dest[0]
+            dest_y = dest[1]
+            destination = self.global_planner.find_closest_node(dest_x, dest_y)
+            print("destination: ", destination, type(destination))
+            destinations = [destination]
 
         # Plan runs between sequential destinations
         runs = []
@@ -202,7 +209,6 @@ class Path:
                 # print(i, ") attribute:\n", attribute)
                 attributes.append(attribute)
                 self.maneuver_directions.extend(maneuver_directions)
-
 
         runs1 = np.hstack(runs)
         # for undetected in self.undetectable_areas:
@@ -460,7 +466,37 @@ class Path:
             cv2.circle(self.map, (int(state_refs[0, i]/20.696*self.map.shape[1]),int((13.786-state_refs[1, i])/13.786*self.map.shape[0])), radius=int(radius), color=color, thickness=-1)
         cv2.imshow('map357', self.map)
         cv2.waitKey(0)
-        
+
+def handle_goto_service(req):
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    vrefName = req.vrefName
+    if int(vrefName) >30:
+        vrefName = "50"
+    config_path='../../control/scripts/config/mpc_config' + vrefName + '.yaml'
+    path = os.path.join(current_path, config_path)
+    with open(path, 'r') as f:
+        config = yaml.safe_load(f)
+    T = config['T']
+    N = config['N']
+    constraint_name = 'constraints'
+
+    if req.x0 <= -1 or req.y0 <= -1:
+        initial_state = None
+    else:
+        initial_state = np.array([req.x0, req.y0, req.yaw0])
+
+    v_ref = config[constraint_name]['v_ref']
+    # print(f"v_ref: {v_ref}, N: {N}, T: {T}, x0: {initial_state}, dest: [{req.dest_x}, {req.dest_y}]")
+    path = Path(v_ref = v_ref, N = N, T = T, x0= initial_state, name = None, dest = [req.dest_x, req.dest_y])
+
+    # path.illustrate_path(path.state_refs.T)
+    state_refs = Float32MultiArray(data = path.state_refs.flatten())
+    input_refs = Float32MultiArray(data = path.input_refs.flatten())
+    attributes = Float32MultiArray(data = path.attributes.flatten())
+    normals = Float32MultiArray(data = path.wp_normals.flatten())
+    
+    return go_toResponse(state_refs, input_refs, attributes, normals)
+
 def handle_array_service(req):
     """
     Service callback function to return numpy arrays a, b, and c.
@@ -494,12 +530,11 @@ def handle_array_service(req):
     input_refs = Float32MultiArray(data = path.input_refs.flatten())
     attributes = Float32MultiArray(data = path.attributes.flatten())
     normals = Float32MultiArray(data = path.wp_normals.flatten())
-    maneuver_directions = Float32MultiArray(data = path.maneuver_directions)    
     
     # print("sizes: ", len(state_refs.data), len(input_refs.data), len(attributes.data), len(normals.data))
     # import threading
     # threading.Thread(target=initiate_shutdown).start()
-    return waypointsResponse(state_refs, input_refs, attributes, normals, maneuver_directions)
+    return waypointsResponse(state_refs, input_refs, attributes, normals)
 
 def initiate_shutdown():
     """
@@ -512,6 +547,8 @@ if __name__ == "__main__":
     rospy.init_node('waypointPathServer')
     s = rospy.Service('waypoint_path', waypoints, handle_array_service)
     rospy.loginfo("waypoint_path service is ready.")
+    goto_service = rospy.Service('go_to', go_to, handle_goto_service)
+    rospy.loginfo("go_to service is ready.")
     # global hw_density_factor
     # hw_density_factor = rospy.get_param('hw', default=1.33)
     rate = rospy.Rate(10)

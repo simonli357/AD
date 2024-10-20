@@ -21,11 +21,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
  add_service_files(
   FILES
-  Localization.srv
-  nav.srv
-  get_direction.srv
-  dotted.srv
   waypoints.srv
+  go_to.srv
+  goto_command.srv
 )
 
  generate_messages(

@@ -31,6 +31,7 @@
     <param name="/newlane" value="$(arg newlane)"/>
     <param name="/realsense" value="$(arg realsense)"/>
     <param name="/rate" value="$(arg rate)"/>
+    <!-- publish camera image if realsense enabled -->
     <param name="/pubImage" value="$(arg pubImage)"/>
     <param name="/thread" value="$(arg thread)"/>
     <param name="/lane_rate" value="$(arg lane_rate)"/>
