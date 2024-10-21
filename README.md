@@ -134,95 +134,42 @@ http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-z
     sudo apt-get install libncurses5-dev libncursesw5-dev
     ```
 
-## Running the Example
+## Build
 
-### Acados Simulation
-
-1. Run the following command to execute the MPC simulation:
+1. Build the packages using
     ```bash
-    python3 scripts/mpc_acados.py
+    catkin_make --pkg utils
+    catkin_make
     ```
 
-2. Upon successful execution, a GIF illustrating the simulation will be saved in `scripts/gifs_acados`.
+## Usage
 
-### Gazebo Simulation
+1. Run the simulation
 
-#### In Python
-##### Path Following
-1. Start the gazebo simulation:
+2. Run the path planner server:
     ```bash
     source devel/setup.bash
-    roslaunch sim_pkgs map_with_car.launch
+    rosrun planning path2.py
     ```
 
-2. Start the ekf node:
-    ```bash
-    roslaunch mpc ekf.launch
-    ```
-3. Start the control node:
-    ```bash
-    rosrun mpc control_node2.py --useEkf 
-    ```
-
-##### Follow Traffic Rules
-1. Start the gazebo simulation:
+3. Run the camera node in a new terminal:
     ```bash
     source devel/setup.bash
-    roslaunch sim_pkgs map_with_some_objects.launch
+    roslaunch perception cameraNode.launch newlane:=false
     ```
 
-2. Start the ekf node:
-    ```bash
-    roslaunch mpc ekf.launch
-    ```
-3. Start the object detctor node:
-    ```bash
-    roslaunch control signFastest.launch show:=true print:=true
-    ```
-3. Start the control node:
-    ```bash
-    rosrun mpc control_node2.py --useEkf --sign
-    ```
-
-#### In C++
-##### Path Following
-1. Start the gazebo simulation:
+4. Run the control node in a new terminal:
     ```bash
     source devel/setup.bash
-    roslaunch sim_pkgs map2023.launch
+    roslaunch control controller.launch sign:=true v:=25
     ```
 
-2. Start the ekf node:
-    ```bash
-    roslaunch mpc ekf.launch
-    ```
-3. Start the control node:
-    ```bash
-    roslaunch mpc controller.launch ekf:=true
-    ```
-4. If ekf set to false, we use the ground truth from gazebo to get the vehicle pose. In this case, no need to launch the ekf node.
-
-##### Follow Traffic Rules
-1. Start the gazebo simulation:
+4. Run the gui a new terminal:
     ```bash
     source devel/setup.bash
-    roslaunch sim_pkgs map2023objects.launch
+    roslaunch perception gui.py
     ```
-
-2. Start the ekf node:
-    ```bash
-    roslaunch mpc ekf.launch
-    ```
-3. Start the object detctor node:
-    ```bash
-    roslaunch control signFastest.launch show:=true print:=true
-    ```
-3. Start the control node:
-    ```bash
-    roslaunch mpc controller.launch ekf:=true sign:=true
-    ```
-
-
+    Press start to follow the planned path as illustrated. To change the path, double click on a desired destination on the map, then press the goto button.
 
 
 
