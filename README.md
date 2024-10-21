@@ -11,12 +11,39 @@ tbd
 - **localization**: 
 - **perception**: 
 - **planning**: 
+- **utils**: contains custom msgs and srvs used by the other packages.
 
 ## Dependencies
 
 ### ROS
 #### Installation:
 http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html
+
+### opencv (version 4.6.0 or above)
+#### Installation:
+
+1. Go to this link: https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
+
+2. Follow instructions in Build with opencv_contrib to install
+
+3. Build cv_bridge:
+    clone this repository if you haven't done so yet:
+    ```bash
+    cd
+    git clone https://github.com/slsecrets357/AD.git
+    ```
+    locate where your opencv build, then build cv_bridge
+    ```bash
+    cd ~/AD
+    # Replace /path/to/opencv-4.9.0 with the actual path to your OpenCV installation
+    catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
+    ```
+
+### Python libraries
+#### Installation:
+    ```bash
+    pip install -r ~/AD/requirements.txt
+    ```
 
 ### robot_localization
 #### Installation:
@@ -27,6 +54,26 @@ http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-z
     sudo apt install ros-noetic-robot-localization
     ```
 
+### ncnn
+#### Installation:
+
+1. Go to this link: https://github.com/Tencent/ncnn/wiki/how-to-build
+
+2. Follow instructions in to install for your specific machine.
+
+3. Create an folder named "ncnn" in src/perception/include, then copy the "bin", "include" and "lib" folders from the installed ncnn directory into the new folder
+
+### TensorRT
+#### Installation:
+
+1. Follow instructions in Cuda&TrtInstall.md to install.
+2. add these lines in the cmakelist.txt to avoid NvInfer.h and cuda_runtime.h not found error. Replace with the actual path to your TensorRT and Cuda directories.
+    ```bash
+    include_directories(/home/{user}/TensorRT-8.6.1.6/include) 
+    link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
+    include_directories(/usr/local/cuda/targets/x86_64-linux/include) 
+    link_directories(/usr/local/cuda/targets/x86_64-linux/lib)"
+    ```
 ### Acados
 
 #### Installation:

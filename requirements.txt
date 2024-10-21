@@ -1,0 +1,11 @@
+pyqt
+opencv
+numpy
+matplotlib
+pandas
+timeit
+tqdm
+shutil
+yaml
+scipy
+networkx

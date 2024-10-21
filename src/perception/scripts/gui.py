@@ -420,6 +420,10 @@ class OpenCVGuiApp(QWidget):
                     height: 80px;
                     padding: 10px;
                 }
+                QPushButton:hover {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #00FFFF, stop:1 #28A745);
+                }
                 QPushButton:pressed {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient when pressed */
@@ -439,6 +443,10 @@ class OpenCVGuiApp(QWidget):
                     width: 80px;
                     height: 80px;
                     padding: 10px;
+                }
+                QPushButton:hover {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #00FFFF, stop:1 #28A745);
                 }
                 QPushButton:pressed {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,

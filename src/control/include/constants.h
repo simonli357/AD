@@ -107,7 +107,7 @@ namespace VehicleConstants {
     static const std::vector<double> SOUTH_FACING_LANE_CENTERS = {0.50684-ofs6, 2.667-ofs6, 4.9156-ofs6, 15.165279+ofs6, 15.1632+ofs6};
     // add half of inner lane width to the y values
     // static constexpr std::array<double, 13> X_ALIGNED_LANE_CENTERS = {13.314624, 12.94356, 10.669, 10.2963, 3.89, 0.598716, 0.9698, 3.516515, 3.88667, 6.4122, 6.78514, 11.6955, 12.0661};
-    static const std::vector<double> EAST_FACING_LANE_CENTERS = {12.904+ofs6, 10.5538-ofs6, 0.503891-ofs6, 3.79216-ofs6, 6.6816-ofs6, 10.5538-ofs6, 11.6588+ofs6};
+    static const std::vector<double> EAST_FACING_LANE_CENTERS = {12.904+ofs6, 10.5538-ofs6, 0.503891-ofs6, 1.072 - ofs6, 3.79216-ofs6, 6.6816-ofs6, 10.5538-ofs6, 11.6588+ofs6};
     static const std::vector<double> WEST_FACING_LANE_CENTERS = {13.314624+ofs6, 10.633+ofs6, 3.86375+ofs6, 0.58153+ofs6, 1.072+ofs6, 3.8661+ofs6, 6.753+ofs6, 13.278+ofs6, 12.032+ofs6};
 
     
