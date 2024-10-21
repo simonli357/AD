@@ -76,8 +76,8 @@ sim:
   parking_base_thresh: 0.1
   NORMAL_SPEED: 0.23
   FAST_SPEED: 0.4
-  lane_relocalize: true
-  sign_relocalize: false
+  lane_relocalize: false
+  sign_relocalize: true
   intersection_relocalize: false
   use_lane: false
   has_light: false

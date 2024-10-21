@@ -708,7 +708,7 @@ public:
                     }
                     // std::cout << "i: " << i << ", center: " << LANE_CENTERS[i] << ", error: " << error << "min_error: " << min_error << "min_index: " << min_index << std::endl;
                 }
-                if (min_error < LANE_OFFSET) {
+                if (std::abs(min_error) < LANE_OFFSET/2) {
                     utils.recalibrate_states(0, min_error);
                     utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(min_error) + ", running y: " + std::to_string(running_y) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 1;
@@ -729,7 +729,7 @@ public:
                     // std::cout << "i: " << i << ", center: " << LANE_CENTERS[i] << ", error: " << error << "min_error: " << min_error << "min_index: " << min_index << std::endl;
                 }
                 // ROS_INFO("center: %.3f, offset: %.3f, running_x: %.3f, min_error: %.3f, closest lane center: %.3f", center, offset, running_x, min_error, Y_ALIGNED_LANE_CENTERS[min_index]);
-                if (std::abs(min_error) < LANE_OFFSET) {
+                if (std::abs(min_error) < LANE_OFFSET/2) {
                     utils.recalibrate_states(min_error, 0);
                     utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(std::abs(min_error)) + ", running x: " + std::to_string(running_x) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
                     return 1;
@@ -1027,13 +1027,17 @@ void StateMachine::run() {
     static ros::Time overtake_cd = ros::Time::now();
     static bool wrong_lane = false;
     utils.debug("start running", 3);
-    double running_x, running_y, running_yaw;
+    // double running_x, running_y, running_yaw;
+    double &running_x = x_current(0);
+    double &running_y = x_current(1);
+    double &running_yaw = x_current(2);
     while (ros::ok()) {
         if (sign) {
             pedestrian_detected();
             exit_detected();
         }
-        utils.get_states(running_x, running_y, running_yaw);
+        // utils.get_states(running_x, running_y, running_yaw);
+        utils.update_states(x_current);
         if (state == STATE::MOVING) {
             if(intersection_reached()) {
                 utils.debug("intersection reached", 2);
@@ -1102,7 +1106,7 @@ void StateMachine::run() {
             }
             update_mpc_states(running_x, running_y, running_yaw);
             int closest_idx = path_manager.find_closest_waypoint(x_current);
-            if (lane_relocalize) {
+            if (lane_relocalize && !path_manager.is_not_detectable(closest_idx)) {
                 static int lane_relocalization_semaphore = 0;
                 lane_relocalization_semaphore++;
                 if (lane_relocalization_semaphore >= 5) {
