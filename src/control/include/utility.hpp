@@ -38,7 +38,7 @@ public:
 
     std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
-    double left_trajectory1, left_trajectory2, right_trajectory1, right_trajectory2, p_rad, gps_offset_x, gps_offset_y;
+    double p_rad, gps_offset_x, gps_offset_y;
 
     typedef double (Utility::*TrajectoryFunction)(double x);
     TrajectoryFunction trajectoryFunction;
@@ -68,7 +68,6 @@ public:
     int debugLevel = 5;
     std_msgs::String debug_msg;
     bool real;
-    bool useGmapping = true, useLidarOdom = false, useAmcl = false;
     double rateVal;
     ros::Rate* rate;
 
@@ -171,7 +170,7 @@ public:
     void publish_cmd_vel(double steering_angle, double velocity = -3.57, bool clip = true);
     void lane_follow();
     void idle();
-    double  get_steering_angle(double offset=-20);
+    double get_steering_angle(double offset=-20);
     void set_rate(double rateVal);
     double get_current_orientation();
     std::array<double, 3> get_real_states() const;
@@ -225,6 +224,7 @@ public:
             x0 += x_offset;
             y0 += y_offset;
         }
+        return 1;
     }
     int get_mean_ekf(double &x_, double &y_, int n = 10) {
         auto ekf_states = Eigen::MatrixXd (2, n);
@@ -355,74 +355,7 @@ public:
         double y2 = bounding_box[3];
         return estimate_object_pose2d(x, y, yaw, x1, y1, x2, y2, object_distance, camera_params, is_car);
     }
-    // 8773598130 2036 0590595 
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__); 
-        size_t last_dir_sep = file_path.rfind('/');
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\'); 
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
-    }
-    double straightTrajectory(double x) {
-        return 0;
-    }
-
-    double leftTrajectorySim(double x) {
-        return exp(left_trajectory1 * (x + left_trajectory2));
-    }
-
-    double rightTrajectorySim(double x) {
-        return - exp(right_trajectory1 * (x + right_trajectory2));
-    }
-    void setIntersectionDecision(int decision) {
-        intersectionDecision = decision;
-        std::cout << "Intersection decision: " << intersectionDecision << std::endl;
-        switch (decision) {
-            case 0: // Left
-                trajectoryFunction = &Utility::leftTrajectorySim;
-                ROS_INFO("Left trajectory");
-                break;
-            case 1: // Straight
-                trajectoryFunction = &Utility::straightTrajectory;
-                ROS_INFO("Straight trajectory");
-                break;
-            case 2: // Right
-                trajectoryFunction = &Utility::rightTrajectorySim;
-                ROS_INFO("Right trajectory");
-                break;
-            default:
-                trajectoryFunction = nullptr;
-                ROS_INFO("Invalid trajectory");
-        }
-    }
-    double computeTrajectory(double x) {
-        if (trajectoryFunction != nullptr) {
-            return (this->*trajectoryFunction)(x);
-        }
-        return 0;
-    }
-    double computeTrajectoryPid(double error) {
-        static double last_error = 0;
-        static double error_sum = 0;
-        static ros::Time last_time = ros::Time::now() - ros::Duration(0.1);
-        // static double p_rad = 0;
-        // if (real) {
-        //     p_rad = 3.25;
-        // } else {
-        //     p_rad = 2.35;
-        // }
-        static double p = p_rad * 180 / M_PI; //2.35
-        static double d = 0;//1 * 180 / M_PI;
-        ros::Time current_time = ros::Time::now();
-        double dt = (current_time - last_time).toSec();
-        last_time = current_time;
-        double derivative = (error - last_error) / dt;
-        return p * error + d * derivative;
-    }
+    
     void send_speed(float f_velocity) {
         if (serial == nullptr) {
             debug("send_speed: Serial is null", 2);
@@ -522,6 +455,19 @@ public:
         while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
         return yaw;
     }
+    
+    static std::string getSourceDirectory() {
+        std::string file_path(__FILE__); 
+        size_t last_dir_sep = file_path.rfind('/');
+        if (last_dir_sep == std::string::npos) {
+            last_dir_sep = file_path.rfind('\\'); 
+        }
+        if (last_dir_sep != std::string::npos) {
+            return file_path.substr(0, last_dir_sep);  // Extract directory path
+        }
+        return "";  // Return empty string if path not found
+    }
+
     void debug(const std::string& message, int level) {
         if (debugLevel > level) {
             debug_msg.data = message;
