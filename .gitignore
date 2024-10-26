@@ -1,6 +1,10 @@
+.vscode/
+
 src/perception/models/trt/*.engine
 src/perception/include/ncnn
 src/control/scripts/__pycache__
+src/planning/scripts/__pycache__
+src/perception/scripts/__pycache__
 
 devel/
 install/
