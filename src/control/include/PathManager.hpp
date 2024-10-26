@@ -64,8 +64,6 @@ public:
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
     int v_ref_int;
     int N;
-    bool use25 = false;
-    bool use18 = false;
     double region_of_acceptance, region_of_acceptance_cw, region_of_acceptance_hw, v_ref, t0, T, density, rdb_circumference = 3.95;
     bool debug = true;
     Eigen::MatrixXd state_refs, input_refs, normals, left_turn_states, right_turn_states, straight_states;
