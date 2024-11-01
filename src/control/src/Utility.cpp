@@ -35,10 +35,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double sigma_delta = 10.0; // degrees
     double odom_publish_frequency = 50; 
     if (real) {
-        nh.param<double>("/real/left_trajectory1", left_trajectory1, 3.57);
-        nh.param<double>("/real/left_trajectory2", left_trajectory2, -0.86835);
-        nh.param<double>("/real/right_trajectory1", right_trajectory1, 3.57);
-        nh.param<double>("/real/right_trajectory2", right_trajectory2, -1.17647);
         nh.param<double>("/real/p_rad", p_rad, 3.25);
         nh.param<double>("/real/sigma_v", sigma_v, 0.1);
         nh.param<double>("/real/sigma_delta", sigma_delta, 10.0);
@@ -47,10 +43,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         nh.param<double>("/real/gps_offset_x", gps_offset_x, 0.075);
         nh.param<double>("/real/gps_offset_y", gps_offset_y, 0.0);
     } else {
-        nh.param<double>("/sim/left_trajectory1", left_trajectory1, 3.75);
-        nh.param<double>("/sim/left_trajectory2", left_trajectory2, -0.49);
-        nh.param<double>("/sim/right_trajectory1", right_trajectory1, 3.75);
-        nh.param<double>("/sim/right_trajectory2", right_trajectory2, -0.8);
         nh.param<double>("/sim/p_rad", p_rad, 2.35);
         nh.param<double>("/sim/sigma_v", sigma_v, 0.1);
         nh.param<double>("/sim/sigma_delta", sigma_delta, 10.0);
@@ -607,14 +599,14 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
 }
 
 void Utility::stop_car() {
-    std::cout << "Stopping car" << std::endl;
+    // std::cout << "Stopping car" << std::endl;
     msg.data = "{\"action\":\"1\",\"speed\":" + std::to_string(0.0) + "}";
     msg2.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(0.0) + "}";
     for (int i = 0; i < 10; i++) {
         publish_cmd_vel(0.0, 0.0);
         ros::Duration(0.15).sleep();
     }
-    std::cout << "sent commands to stop car" << std::endl;
+    // std::cout << "sent commands to stop car" << std::endl;
 }
 
 void Utility::set_pose_using_service(double x, double y, double yaw) {
@@ -681,7 +673,7 @@ void Utility::publish_odom() {
     state_offset_msg.data.push_back(y0);
     state_offset_pub.publish(state_offset_msg);
 
-    static bool publish_tf = !useLidarOdom;
+    static bool publish_tf = false;
     if (publish_tf) {
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header.stamp = current_time;
