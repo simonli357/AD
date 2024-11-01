@@ -537,6 +537,7 @@ public:
     int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES) {
         int min_index = 0;
         double min_error_sq = 1000;
+        // utils.debug("sign_based_relocalization(): estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + ")", 5);
         for (std::size_t i = 0; i < EMPIRICAL_POSES.size(); ++i) {
             double error_sq = std::pow(estimated_sign_pose[0] - EMPIRICAL_POSES[i][0], 2) + std::pow(estimated_sign_pose[1] - EMPIRICAL_POSES[i][1], 2);
             if (error_sq < min_error_sq) {
@@ -758,7 +759,7 @@ public:
                 utils.get_states(x, y, yaw);
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, CAMERA_PARAMS);
                 // auto car_pose = utils.detected_cars[car_index];
-                printf("estimated pose of detected car: %.3f, %.3f\n", car_pose[0], car_pose[1]);
+                utils.debug("check_car(): detected car at a distance of: " + std::to_string(dist), 2);
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
@@ -769,7 +770,7 @@ public:
                 for (int i = closest_idx; i < look_ahead_index; i++) { // iterate over waypoints in front of car, compute distance to car
                     // double dist_sq = (car_pose.head(2) - path_manager.state_refs.row(i).head(2)).squaredNorm();
                     if (i >= path_manager.state_refs.rows()) {
-                        ROS_WARN("check_car(): i exceeds state_refs size, stopping...");
+                        utils.debug("check_car(): WARNING: i exceeds state_refs size, stopping...", 2);
                         break;
                     }
                     double dist_sq = std::pow(car_pose[0] - path_manager.state_refs(i, 0), 2) + std::pow(car_pose[1] - path_manager.state_refs(i, 1), 2);
@@ -785,7 +786,7 @@ public:
                 } else if (min_dist > LANE_OFFSET - CAR_WIDTH * 1.2) {
                     detected_car_state = DETECTED_CAR_STATE::ADJACENT_LANE;
                 }
-                std::cout << "min dist between car and closest waypoint: " << min_dist << ", same lane: " << (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) << std::endl;
+                utils.debug("check_car(): min dist between car and closest waypoint: " + std::to_string(min_dist) + ", same lane: " + std::to_string(detected_car_state == DETECTED_CAR_STATE::SAME_LANE), 2);
                 if (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) {
                     int idx = static_cast<int>(closest_idx + dist * path_manager.density * 0.75); // compute index of midpoint between detected car and ego car
                     if (idx < path_manager.state_refs.rows() && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED_CROSSWALK) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) {

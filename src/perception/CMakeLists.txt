@@ -4,6 +4,19 @@ project(perception)
 
 set(CMAKE_CXX_STANDARD 17)
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+    set(VCPKG_TARGET_TRIPLET "x64-linux")
+    message("system processor is x86_64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(VCPKG_TARGET_TRIPLET "arm64-linux")
+    message("system processor is aarch64")
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/scripts/buildsystems/vcpkg.cmake)
+set(realsense2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/share/realsense2)
+
+
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
@@ -24,7 +37,7 @@ else()
 endif()
 include_directories(${CUDA_INCLUDE_DIRS})
 link_directories(${CUDA_LIBRARY_DIRS})
-find_package(realsense2 REQUIRED)
+find_package(realsense2 CONFIG REQUIRED)
 if (realsense2_FOUND)
   message("-- RealSense found")
 else()
@@ -118,14 +131,15 @@ target_link_libraries(cameraNode
   ${catkin_LIBRARIES}
   ncnn
   ${OpenCV_LIBS}
-  ${realsense2_LIBRARY}
+  # ${realsense2_LIBRARY}
+  realsense2::realsense2
   ${CUDA_LIBRARIES}
   nvinfer
   nvparsers
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
-  ${realsense2_LIBRARY}
+  # ${realsense2_LIBRARY}
 )
 
 install(DIRECTORY include/

@@ -704,10 +704,11 @@ class OpenCVGuiApp(QWidget):
                         
     def draw_detected_objects(self, image):
         if True:
-            if self.waypoints is not None:
-                for i in range(0, len(self.waypoints), 8):
-                    center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
-                    cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
+            # if self.waypoints is not None:
+            #     for i in range(0, len(self.waypoints)-1, 8):
+            #         print("len(self.waypoints): ", len(self.waypoints))
+            #         center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
+            #         cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
             if self.detected_data is None:
                 return
             x = self.detected_data[0, self.road_msg_dict['x']]
