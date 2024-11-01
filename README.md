@@ -74,6 +74,25 @@ http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-z
     include_directories(/usr/local/cuda/targets/x86_64-linux/include) 
     link_directories(/usr/local/cuda/targets/x86_64-linux/lib)"
     ```
+### Librealsense
+
+#### Installation:
+
+1. Install dependencies:
+```bash
+    sudo apt-get update
+    sudo apt-get install autoconf libudev-dev
+```
+2. Install vcpkg and librealsense2 with the following commands or follow instructions on https://github.com/IntelRealSense/librealsense:
+```bash
+    cd ~/AD
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    ./vcpkg install realsense2
+```
+
 ### Acados
 
 #### Installation:
