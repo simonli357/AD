@@ -599,14 +599,14 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
 }
 
 void Utility::stop_car() {
-    std::cout << "Stopping car" << std::endl;
+    // std::cout << "Stopping car" << std::endl;
     msg.data = "{\"action\":\"1\",\"speed\":" + std::to_string(0.0) + "}";
     msg2.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(0.0) + "}";
     for (int i = 0; i < 10; i++) {
         publish_cmd_vel(0.0, 0.0);
         ros::Duration(0.15).sleep();
     }
-    std::cout << "sent commands to stop car" << std::endl;
+    // std::cout << "sent commands to stop car" << std::endl;
 }
 
 void Utility::set_pose_using_service(double x, double y, double yaw) {
