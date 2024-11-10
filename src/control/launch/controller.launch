@@ -8,16 +8,16 @@
   <arg name="vref" default="0.$(arg v)"/>
 
   <!-- speed challenge -->
-  <arg name="x0" default="11.71"/>
+  <!-- <arg name="x0" default="11.71"/>
   <arg name="y0" default="1.896"/>
   <arg name="yaw0" default="0"/>
-  <arg name = "path" default="speedrun"/>
+  <arg name = "path" default="speedrun"/> -->
 
   <!-- speedcurve -->
-  <!-- <arg name="x0" default="3.66"/>
+  <arg name="x0" default="3.66"/>
   <arg name="y0" default="12.186"/>
   <arg name="yaw0" default="3.14159"/>
-  <arg name = "path" default="speedcurve"/> -->
+  <arg name = "path" default="speedcurve"/>
 
   <!-- highway_east -->
   <!-- <arg name="x0" default="2.48"/>

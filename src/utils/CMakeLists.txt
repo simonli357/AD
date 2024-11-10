@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   waypoints.srv
   go_to.srv
   goto_command.srv
+  set_states.srv
 )
 
  generate_messages(
