@@ -34,26 +34,21 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
     double odom_publish_frequency = 50; 
-    if (real) {
-        nh.param<double>("/real/p_rad", p_rad, 3.25);
-        nh.param<double>("/real/sigma_v", sigma_v, 0.1);
-        nh.param<double>("/real/sigma_delta", sigma_delta, 10.0);
-        nh.param<double>("/real/odom_rate", odom_publish_frequency, 50);
-        nh.param<double>("/real/ekf_timer_time", ekf_timer_time, 2.0);
-        nh.param<double>("/real/gps_offset_x", gps_offset_x, 0.075);
-        nh.param<double>("/real/gps_offset_y", gps_offset_y, 0.0);
-    } else {
-        nh.param<double>("/sim/p_rad", p_rad, 2.35);
-        nh.param<double>("/sim/sigma_v", sigma_v, 0.1);
-        nh.param<double>("/sim/sigma_delta", sigma_delta, 10.0);
-        nh.param<double>("/sim/odom_rate", odom_publish_frequency, 50);
-        nh.param<double>("/sim/ekf_timer_time", ekf_timer_time, 2.0);
-        nh.param<double>("/sim/gps_offset_x", gps_offset_x, 0.0);
-        nh.param<double>("/sim/gps_offset_y", gps_offset_y, 0.0);
+    std::string mode = real ? "/real" : "/sim";
+    bool success = true;
+    success = success && nh.getParam(mode + "/sigma_v", sigma_v);
+    success = success && nh.getParam(mode + "/sigma_delta", sigma_delta);
+    success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
+    success = success && nh.getParam(mode + "/gps_offset_x", gps_offset_x);
+    success = success && nh.getParam(mode + "/gps_offset_y", gps_offset_y);
+    success = success && nh.getParam("/debug_level", debugLevel);
+    success = success && nh.getParam("/gps", hasGps);
+    if (!success) {
+        std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
+        exit(1);
     }
-    nh.param<int>("debug_level", debugLevel, 5);
+
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
-    nh.param<bool>("/gps", hasGps, false);
     if (real) {
         serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
         serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
@@ -164,7 +159,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (useEkf) {
         this->subModel = false;
         ekf_sub = nh.subscribe("/odometry/filtered", 3, &Utility::ekf_callback, this);
-        ekf_update_timer = nh.createTimer(ros::Duration(ekf_timer_time), &Utility::ekf_update_timer_callback, this);
     } 
     if (this->subModel) {
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);

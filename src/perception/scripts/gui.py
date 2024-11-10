@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt, QTimer, QPointF
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
-from utils.srv import waypoints, waypointsRequest, waypointsResponse, goto_command, goto_commandRequest, goto_commandResponse
+from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandRequest, set_states, set_statesRequest
 from utils.msg import Lane
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
@@ -55,20 +55,22 @@ class OpenCVGuiApp(QWidget):
         
         # Set up buttons
         self.toggle_button_layout = QHBoxLayout()
-        self.toggle_visibility_button = QPushButton('Toggle Visibility')
+        self.toggle_signs_button = QPushButton('Toggle Signs')
         self.toggle_lanes_button = QPushButton('Toggle Lanes')
         self.toggle_cars_button = QPushButton('Toggle Cars')
         self.toggle_destinations_button = QPushButton('Toggle Destinations')
         self.toggle_path_button = QPushButton('Toggle Path')
-        self.toggle_gt_button = QPushButton('Toggle Ground Truth')
+        self.toggle_gt_button = QPushButton('Toggle GT')
         self.toggle_depth_button = QPushButton('Toggle Depth')
-        self.toggle_button_layout.addWidget(self.toggle_visibility_button)
+        self.toggle_button_layout.addWidget(self.toggle_signs_button)
         self.toggle_button_layout.addWidget(self.toggle_lanes_button)
         self.toggle_button_layout.addWidget(self.toggle_cars_button)
         self.toggle_button_layout.addWidget(self.toggle_destinations_button)
         self.toggle_button_layout.addWidget(self.toggle_path_button)
         self.toggle_button_layout.addWidget(self.toggle_gt_button)
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
+        self.set_states_button = QPushButton('Set States')
+        self.toggle_button_layout.addWidget(self.set_states_button)
         
         self.left_panel_layout.addLayout(self.toggle_button_layout)
         
@@ -80,7 +82,7 @@ class OpenCVGuiApp(QWidget):
         self.control_button_layout.addWidget(self.goto_button)
 
         # Connect buttons to functions
-        self.toggle_visibility_button.clicked.connect(self.toggle_visibility)
+        self.toggle_signs_button.clicked.connect(self.toggle_visibility)
         self.toggle_lanes_button.clicked.connect(self.toggle_lanes)
         self.toggle_cars_button.clicked.connect(self.toggle_cars)
         self.toggle_destinations_button.clicked.connect(self.toggle_destinations)
@@ -89,6 +91,7 @@ class OpenCVGuiApp(QWidget):
         self.toggle_depth_button.clicked.connect(self.toggle_depth)
         self.start_button.clicked.connect(self.start)
         self.goto_button.clicked.connect(self.goto)
+        self.set_states_button.clicked.connect(self.set_states)
         
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
@@ -240,14 +243,36 @@ class OpenCVGuiApp(QWidget):
                 background-color: #0056b3;
             }
         """
-        self.toggle_visibility_button.setStyleSheet(gradient_button_style)
+        self.toggle_signs_button.setStyleSheet(gradient_button_style)
         self.toggle_cars_button.setStyleSheet(gradient_button_style)
         self.toggle_lanes_button.setStyleSheet(gradient_button_style)
         self.toggle_destinations_button.setStyleSheet(gradient_button_style)
         self.toggle_path_button.setStyleSheet(gradient_button_style)
         self.toggle_gt_button.setStyleSheet(gradient_button_style)
         self.toggle_depth_button.setStyleSheet(gradient_button_style)
-        
+        gradient_button_style_red = """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient for Stop */
+                border: 2px solid #DC3545;  /* Red border */
+                border-radius: 12px;
+                color: white;
+                padding: 10px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    /* orange on hover */
+                    stop:0 #FF6347, stop:1 #DC3545);
+            }
+
+            QPushButton:pressed {
+                background-color: #0056b3;
+            }
+        """
+        self.set_states_button.setStyleSheet(gradient_button_style_red)
         circular_button_style = """
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -304,9 +329,9 @@ class OpenCVGuiApp(QWidget):
         self.goto_button.setStyleSheet(gradient_button_style2)
         
         # Button related attributes
-        self.show_elements = True
-        self.show_lanes = True
-        self.show_cars = True
+        self.show_signs = False
+        self.show_lanes = False
+        self.show_cars = False
         self.show_destinations = True
         self.show_path = True
         self.show_gt = True
@@ -458,6 +483,8 @@ class OpenCVGuiApp(QWidget):
         self.started = not self.started
     def goto(self):
         self.call_goto_service(self.cursor_x, self.cursor_y)
+    def set_states(self):
+        self.call_set_states_service(self.cursor_x, self.cursor_y)
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
         rospy.wait_for_service('goto_command', timeout=5)
@@ -474,6 +501,21 @@ class OpenCVGuiApp(QWidget):
             self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
             self.attributes_np = np.array(res.wp_attributes.data)
             print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
+    def call_set_states_service(self, x, y):
+        print("set states service called, waiting for service...")
+        rospy.wait_for_service('set_states', timeout=5)
+        print("service found, calling service...")
+        try:
+            set_states_service = rospy.ServiceProxy('set_states', set_states)
+            req = set_statesRequest()
+            req.x = x
+            req.y = y
+            res = set_states_service(req)
+            if not res.success:
+                print("Failed to send set states command")
+            print("Set_states service call successful. shape: ", self.state_refs_np.shape)
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
     def call_start_service(self, start):
@@ -603,7 +645,7 @@ class OpenCVGuiApp(QWidget):
             self.message_history.pop(0)
         
     def toggle_visibility(self):
-        self.show_elements = not self.show_elements
+        self.show_signs = not self.show_signs
 
     def toggle_lanes(self):
         self.show_lanes = not self.show_lanes
@@ -685,7 +727,7 @@ class OpenCVGuiApp(QWidget):
                 orientation = - orientation
 
                 if entity_type == 'Intersection':
-                    if self.show_elements:
+                    if self.show_signs:
                         self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
                 elif entity_type == 'Lane':
                     if self.show_lanes:
@@ -698,7 +740,7 @@ class OpenCVGuiApp(QWidget):
                         size = int(0.15 / 20.696 * 800 * self.scale_factor)
                         cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
                 else:
-                    if self.show_elements:
+                    if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)
                         self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
                         

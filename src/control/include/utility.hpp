@@ -38,7 +38,7 @@ public:
 
     std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
-    double p_rad, gps_offset_x, gps_offset_y;
+    double gps_offset_x, gps_offset_y;
 
     typedef double (Utility::*TrajectoryFunction)(double x);
     TrajectoryFunction trajectoryFunction;
@@ -139,7 +139,6 @@ public:
     ros::Timer imu_pub_timer;
     void imu_pub_timer_callback(const ros::TimerEvent&);
     ros::Timer ekf_update_timer;
-    double ekf_timer_time = 2;
     void ekf_update_timer_callback(const ros::TimerEvent&) {
         update_odom_with_ekf();
     }
@@ -179,6 +178,13 @@ public:
     std::unique_ptr<boost::asio::serial_port> serial;
     double get_yaw() {
         return yaw;
+    }
+    int set_states(double x, double y) {
+        x0 = x;
+        y0 = y;
+        odomX = 0;
+        odomY = 0;
+        return 0;
     }
     int get_states(double &x_, double &y_, double &yaw_) {
         yaw_ = yaw;
@@ -469,7 +475,7 @@ public:
     }
 
     void debug(const std::string& message, int level) {
-        if (debugLevel > level) {
+        if (debugLevel >= level) {
             debug_msg.data = message;
             message_pub.publish(debug_msg);
             ROS_INFO("%s", message.c_str());

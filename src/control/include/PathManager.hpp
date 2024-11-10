@@ -62,6 +62,8 @@ public:
     ros::ServiceClient go_to_client;
     std::string pathName;
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
+    int overtake_end_index = 0;
+    int overtake_end_index_scaler = 1.15;
     int v_ref_int;
     int N;
     double region_of_acceptance, region_of_acceptance_cw, region_of_acceptance_hw, v_ref, t0, T, density, rdb_circumference = 3.95;

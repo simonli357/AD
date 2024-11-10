@@ -85,6 +85,7 @@ catkin_package(
 include_directories(
   include
   include/ncnn/include
+  include/sort
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
@@ -126,6 +127,8 @@ add_executable(cameraNode
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp
+  include/sort/KalmanTracker.cpp
+  include/sort/Hungarian.cpp
 )
 target_link_libraries(cameraNode
   ${catkin_LIBRARIES}

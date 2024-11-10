@@ -12,6 +12,7 @@
 #include <iostream>
 #include "utils/waypoints.h"
 #include "utils/goto_command.h"
+#include "utils/set_states.h"
 #include <std_srvs/Trigger.h>
 #include <std_srvs/SetBool.h>
 #include <ncurses.h>
@@ -23,45 +24,49 @@ class StateMachine {
 public:
     StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real): 
     nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), path_manager(nh,T,N,v_ref),
-    state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), end_index(0), real(real)
+    state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real)
     {
         // tunables
         std::string mode = real ? "real" : "sim";
-        nh.param<double>("/" + mode + "/change_lane_yaw", change_lane_yaw, 0.15);
-        nh.param<double>("/" + mode + "/cw_speed_ratio", cw_speed_ratio, 0.7143);
-        nh.param<double>("/" + mode + "/hw_speed_ratio", hw_speed_ratio, 1.33);
-        nh.param<double>("/" + mode + "/sign_localization_threshold", sign_localization_threshold, 0.5);
-        nh.param<double>("/" + mode + "/lane_localization_orientation_threshold", lane_localization_orientation_threshold, 10);
-        nh.param<double>("/" + mode + "/pixel_center_offset", pixel_center_offset, 0.0);
-        nh.param<double>("/" + mode + "/constant_distance_to_intersection_at_detection", constant_distance_to_intersection_at_detection, 0.371);
-        nh.param<double>("/" + mode + "/intersection_localization_threshold", intersection_localization_threshold, 0.5);
-        nh.param<double>("/" + mode + "/stop_duration", stop_duration, 3.0);
-        nh.param<bool>("/" + mode + "/use_stopline", use_stopline, true);
-        nh.param<int>("/" + mode + "/pedestrian_count_thresh", pedestrian_count_thresh, 8);
-        nh.param<double>("/" + mode + "/parking_base_target_yaw", parking_base_target_yaw, 0.166);
-        nh.param<double>("/" + mode + "/parking_base_speed", parking_base_speed, -0.2);
-        nh.param<double>("/" + mode + "/parking_base_thresh", parking_base_thresh, 0.1);
-        nh.param<double>("/" + mode + "/change_lane_speed", change_lane_speed, 0.2);
-        nh.param<double>("/" + mode + "/change_lane_thresh", change_lane_thresh, 0.05);
-        nh.param<double>("/" + mode + "/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold, 15);
-        nh.param<double>("/" + mode + "/NORMAL_SPEED", NORMAL_SPEED, 0.175);
-        nh.param<double>("/" + mode + "/FAST_SPEED", FAST_SPEED, 0.4);
-        nh.param<bool>("/" + mode + "/lane_relocalize", lane_relocalize, true);
-        nh.param<bool>("/" + mode + "/sign_relocalize", sign_relocalize, true);
-        nh.param<bool>("/" + mode + "/intersection_relocalize", intersection_relocalize, true);
-        nh.param<bool>("/" + mode + "/use_lane", use_lane, false);
-        nh.param<bool>("/" + mode + "/has_light", has_light, false);
-        nh.param<double>("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler, 1.2);
-        nh.param<bool>("/" + mode + "/useTrajectory", useTrajectory, true);
-
-        nh.param("pub_wpts", pubWaypoints, true);
-        nh.param("/kb", keyboardControl, false);
+        utils.debug("mode: " + mode, 2);
+        bool success = true;
+        success = success && nh.getParam("/" + mode + "/change_lane_yaw", change_lane_yaw);
+        success = success && nh.getParam("/" + mode + "/cw_speed_ratio", cw_speed_ratio);
+        success = success && nh.getParam("/" + mode + "/hw_speed_ratio", hw_speed_ratio);
+        success = success && nh.getParam("/" + mode + "/sign_localization_threshold", sign_localization_threshold);
+        success = success && nh.getParam("/" + mode + "/lane_localization_orientation_threshold", lane_localization_orientation_threshold);
+        success = success && nh.getParam("/" + mode + "/pixel_center_offset", pixel_center_offset);
+        success = success && nh.getParam("/" + mode + "/constant_distance_to_intersection_at_detection", constant_distance_to_intersection_at_detection);
+        success = success && nh.getParam("/" + mode + "/intersection_localization_threshold", intersection_localization_threshold);
+        success = success && nh.getParam("/" + mode + "/stop_duration", stop_duration);
+        success = success && nh.getParam("/" + mode + "/use_stopline", use_stopline);
+        success = success && nh.getParam("/" + mode + "/pedestrian_count_thresh", pedestrian_count_thresh);
+        success = success && nh.getParam("/" + mode + "/parking_base_yaw_target", parking_base_yaw_target);
+        success = success && nh.getParam("/" + mode + "/parking_base_speed", parking_base_speed);
+        success = success && nh.getParam("/" + mode + "/parking_base_thresh", parking_base_thresh);
+        success = success && nh.getParam("/" + mode + "/change_lane_speed", change_lane_speed);
+        success = success && nh.getParam("/" + mode + "/change_lane_thresh", change_lane_thresh);
+        success = success && nh.getParam("/" + mode + "/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold);
+        success = success && nh.getParam("/" + mode + "/NORMAL_SPEED", NORMAL_SPEED);
+        success = success && nh.getParam("/" + mode + "/FAST_SPEED", FAST_SPEED);
+        success = success && nh.getParam("/" + mode + "/lane_relocalize", lane_relocalize);
+        success = success && nh.getParam("/" + mode + "/sign_relocalize", sign_relocalize);
+        success = success && nh.getParam("/" + mode + "/intersection_relocalize", intersection_relocalize);
+        success = success && nh.getParam("/" + mode + "/use_lane", use_lane);
+        success = success && nh.getParam("/" + mode + "/has_light", has_light);
+        success = success && nh.getParam("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
+        success = success && nh.getParam("/pub_wpts", pubWaypoints);
+        success = success && nh.getParam("/kb", keyboardControl);
         if (keyboardControl) {
-            std::cout << "keyboard control enabled" << std::endl;
+            utils.debug("keyboard control enabled", 2);
             change_state(STATE::KEYBOARD_CONTROL);
         }
-        nh.param("/dashboard", dashboard, true);
-        nh.param("/gps", hasGps, false);
+        success = success && nh.getParam("/dashboard", dashboard);
+        success = success && nh.getParam("/gps", hasGps);
+        if (!success) {
+            ROS_ERROR("Failed to get parameters");
+            ros::shutdown();
+        }
 
         //initialize parking spots
         for(int i=0; i<5; i++) {
@@ -75,6 +80,7 @@ public:
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
+        set_states_server = nh.advertiseService("/set_states", &StateMachine::set_states_callback, this);
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
         utils.debug("state machine initialized", 2);
@@ -88,10 +94,10 @@ public:
     //tunables
     double  change_lane_yaw = 0.15, cw_speed_ratio, hw_speed_ratio, sign_localization_threshold = 0.5, 
             lane_localization_orientation_threshold = 10, pixel_center_offset = -30.0, constant_distance_to_intersection_at_detection = 0.371,
-            intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_target_yaw = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
+            intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
             change_lane_speed=0.2, change_lane_thresh=0.05, intersection_localization_orientation_threshold = 15, NORMAL_SPEED = 0.175,
             FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
-    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false, useTrajectory=true;
+    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false;
     bool initialized = false;
     int pedestrian_count_thresh = 8;
 
@@ -104,7 +110,6 @@ public:
     bool right_park = true;
     int park_count = 0;
     int stopsign_flag = 0; // stopsign, traffic light, priority, roundabout
-    int end_index = 0;
     Eigen::Vector2d destination;
     int state = 0;
     bool sign, ekf, lane, real, dashboard, keyboardControl, hasGps, pubWaypoints;
@@ -115,7 +120,7 @@ public:
     std::mutex lock;
     Utility utils;
     PathManager path_manager;
-    ros::ServiceServer goto_command_server;
+    ros::ServiceServer goto_command_server, set_states_server;
     MPC mpc;
 
     void call_trigger_service() {
@@ -190,9 +195,10 @@ public:
         Eigen::VectorXd steerings(3);
         Eigen::VectorXd speeds(3);
         Eigen::VectorXd thresholds(3);
-        double base_yaw_target = parking_base_target_yaw * M_PI;
+        double base_yaw_target = parking_base_yaw_target * M_PI;
+        utils.debug("parking_maneuver_hardcode(): base yaw target: " + std::to_string(base_yaw_target / M_PI) + "pi", 3);
         base_yaw_target = base_yaw_target + 0.02 / (0.29 * M_PI) * base_yaw_target * initial_y_error / MAX_PARKING_Y_ERROR * (right ? 1 : -1);
-        utils.debug("parking_maneuver_hardcode(): initial y error: " + std::to_string(initial_y_error) + ", initial yaw error: " + std::to_string(initial_yaw_error) + ", base yaw target: " + std::to_string(base_yaw_target / M_PI), 2);
+        utils.debug("parking_maneuver_hardcode(): initial y error: " + std::to_string(initial_y_error) + ", initial yaw error: " + std::to_string(initial_yaw_error) + ", base yaw target: " + std::to_string(base_yaw_target / M_PI) + "pi", 2);
         double base_steer = - HARD_MAX_STEERING;
         double base_speed = parking_base_speed;
         double base_thresh = parking_base_thresh;
@@ -249,7 +255,8 @@ public:
         yaw0 = Utility::yaw_mod(yaw0);
         Eigen::VectorXd yaw0_vec = Eigen::VectorXd::Constant(targets.size(), yaw0);
         Eigen::VectorXd target_yaws = targets + yaw0_vec;
-        std::cout << "target yaws: " << target_yaws.transpose() << std::endl;
+        // std::cout << "target yaws: " << target_yaws.transpose() << std::endl;
+        utils.debug("maneuver_hardcode(): initial yaw: " + std::to_string(yaw0) + ", target yaws: " + std::to_string(target_yaws(0)) + ", " + std::to_string(target_yaws(1)), 2);
         utils.debug("maneuver_hardcode(): nearest direction: " + std::to_string(yaw0), 2);
         int stage = 1;
         int num_stages = targets.size();
@@ -264,6 +271,7 @@ public:
             yaw = utils.get_yaw();
             yaw = Utility::yaw_mod(yaw);
             yaw_error = yaw - target_yaws(stage-1);
+            utils.debug("maneuver_hardcode(): stage " + std::to_string(stage) + ", yaw: " + std::to_string(yaw) + ", target yaw: " + std::to_string(target_yaws(stage-1)) + ", yaw error: " + std::to_string(yaw_error), 5);
             while(std::abs(yaw_error) > M_PI * 1.2) {
                 if(yaw_error > M_PI * 1.2) {
                     yaw_error -= 2*M_PI;
@@ -284,6 +292,7 @@ public:
                 } else {
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
+                utils.debug("maneuver_hardcode(): yaw error: " + std::to_string(yaw_error) + ", exit condition: " + std::to_string(exit_cond), 5);
                 utils.publish_cmd_vel(steering_angle, speed);
             }
             if (exit_cond) {
@@ -747,13 +756,15 @@ public:
         double dist;
         std::list<int> cars = utils.recent_car_indices;
         // std::cout << "number of cars detected: " << cars.size() << std::endl;
+        utils.debug("check_car(): number of cars detected: " + std::to_string(cars.size()), 5);
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
         // for (int car_index: cars) {
             update_mpc_states(running_x, running_y, running_yaw);
             int closest_idx = path_manager.find_closest_waypoint(x_current);
             dist = utils.object_distance(car_index); // compute distance to back of car
-            if (dist < MAX_CAR_DIST && dist > 0 && closest_idx >= end_index * 1.2) { // if car is within range and ahead of ego car
+            utils.debug("check_car(): detected car at a distance of: " + std::to_string(dist) + ", closest index: " + std::to_string(closest_idx) + ", end index: " + std::to_string(path_manager.overtake_end_index), 4);
+            if (dist < MAX_CAR_DIST && dist > 0 && closest_idx >= path_manager.overtake_end_index * 1.2) { // if car is within range and ahead of ego car
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
@@ -803,12 +814,11 @@ public:
                         bool right = false;
                         double density = path_manager.density;
                         static double lane_offset = LANE_OFFSET * change_lane_offset_scaler ;
-                        int end_index_scaler = 1.15;
                         // if (attribute == path_manager.ATTRIBUTE::HIGHWAYRIGHT) { // if on right side of highway, overtake on left
                         for (int i = idx; i < static_cast<int>(idx + 0.5 * path_manager.density); i++) {
                             if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
                                 density *= 1/1.33;
-                                end_index_scaler *= 1.5;
+                                path_manager.overtake_end_index_scaler *= 1.5;
                                 utils.debug("check_car(): detected car is on right side of highway, overtake on left", 2);
                                 break;
                             }
@@ -816,7 +826,7 @@ public:
                             else if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
                                 right = true; 
                                 density *= 1/1.33;
-                                end_index_scaler *= 1.5;
+                                path_manager.overtake_end_index_scaler *= 1.5;
                                 utils.debug("check_car(): detected car is on left side of highway, overtake on right", 2);
                                 break;
                             }
@@ -824,13 +834,13 @@ public:
                         if (!use_lane) {
                             int start_index = closest_idx + static_cast<int>(start_dist * density);
                             
-                            end_index = start_index + static_cast<int>((CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * density * end_index_scaler);
-                            if (start_index >= path_manager.state_refs.rows() || end_index >= path_manager.state_refs.rows()) {
+                            path_manager.overtake_end_index = start_index + static_cast<int>((CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * density * path_manager.overtake_end_index_scaler);
+                            if (start_index >= path_manager.state_refs.rows() || path_manager.overtake_end_index >= path_manager.state_refs.rows()) {
                                 utils.debug("WARNING: check_car(): start or end index exceeds state_refs size, stopping...", 2);
                                 return;
                             };
-                            path_manager.change_lane(start_index, end_index, right, lane_offset);
-                            utils.debug("check_car(): changing lane to the " + std::string(right ? "right" : "left") + " in " + std::to_string(start_dist) + " meters. start pose: (" + std::to_string(path_manager.state_refs(start_index, 0)) + "," + std::to_string(path_manager.state_refs(start_index, 1)) + "), end: (" + std::to_string(path_manager.state_refs(end_index, 0)) + ", " + std::to_string(path_manager.state_refs(end_index, 1)) + "), cur: (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
+                            path_manager.change_lane(start_index, path_manager.overtake_end_index, right, lane_offset);
+                            utils.debug("check_car(): changing lane to the " + std::string(right ? "right" : "left") + " in " + std::to_string(start_dist) + " meters. start pose: (" + std::to_string(path_manager.state_refs(start_index, 0)) + "," + std::to_string(path_manager.state_refs(start_index, 1)) + "), end: (" + std::to_string(path_manager.state_refs(path_manager.overtake_end_index, 0)) + ", " + std::to_string(path_manager.state_refs(path_manager.overtake_end_index, 1)) + "), cur: (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
                         } else {
                             utils.debug("check_car(): hardcode lane change. proceeding to lane follow until start distance (" + std::to_string(start_dist) + ") reached...", 2);
                             start_dist = std::max(0.0, start_dist - CAR_LENGTH/2);
@@ -849,27 +859,27 @@ public:
                                 rate->sleep();
                             }
                             int start_index = closest_idx + static_cast<int>((start_dist + CAR_LENGTH) * density);
-                            double end_dist = (CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * 0.7 * end_index_scaler;
-                            int end_index = start_index + static_cast<int>((end_dist + CAR_LENGTH) * density);
-                            if (start_index >= path_manager.state_refs.rows() || end_index >= path_manager.state_refs.rows()) {
+                            double end_dist = (CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2) * 0.7 * path_manager.overtake_end_index_scaler;
+                            path_manager.overtake_end_index = start_index + static_cast<int>((end_dist + CAR_LENGTH) * density);
+                            if (start_index >= path_manager.state_refs.rows() || path_manager.overtake_end_index >= path_manager.state_refs.rows()) {
                                 ROS_WARN("check_car(): start or end index exceeds state_refs size, stopping...");
                                 return;
                             };
                             // double start_yaw_diff = std::atan2(path_manager.state_refs(start_index, 1) - y0, path_manager.state_refs(start_index, 0) - x0);
                             // // if (std::abs(start_yaw_diff) > 0.4 * M_PI) start_yaw_diff = 0;
                             
-                            // double end_yaw_diff = std::atan2(path_manager.state_refs(end_index, 1) - path_manager.state_refs(start_index, 1), path_manager.state_refs(end_index, 0) - path_manager.state_refs(start_index, 0));
+                            // double end_yaw_diff = std::atan2(path_manager.state_refs(path_manager.overtake_end_index, 1) - path_manager.state_refs(start_index, 1), path_manager.state_refs(path_manager.overtake_end_index, 0) - path_manager.state_refs(start_index, 0));
                             // // if (std::abs(end_yaw_diff) > 0.4 * M_PI) end_yaw_diff = 0;
 
                             double start_yaw = path_manager.state_refs(start_index, 2);
-                            double end_yaw = path_manager.state_refs(end_index, 2);
+                            double end_yaw = path_manager.state_refs(path_manager.overtake_end_index, 2);
                             ROS_INFO("start yaw: %.3f, end yaw: %.3f", start_yaw, end_yaw);
                             double start_yaw_diff = start_yaw - yaw0;
                             double end_yaw_diff = end_yaw - start_yaw;
                             start_yaw_diff = Utility::yaw_mod(start_yaw_diff);
                             end_yaw_diff = Utility::yaw_mod(end_yaw_diff);
 
-                            ROS_INFO("start point: <%.3f, %.3f>, start index: %d, end point: <%.3f, %.3f>, end index: %d", path_manager.state_refs(start_index, 0), path_manager.state_refs(start_index, 1), start_index, path_manager.state_refs(end_index, 0), path_manager.state_refs(end_index, 1), end_index);
+                            ROS_INFO("start point: <%.3f, %.3f>, start index: %d, end point: <%.3f, %.3f>, end index: %d", path_manager.state_refs(start_index, 0), path_manager.state_refs(start_index, 1), start_index, path_manager.state_refs(path_manager.overtake_end_index, 0), path_manager.state_refs(path_manager.overtake_end_index, 1), path_manager.overtake_end_index);
                             ROS_INFO("yaw0: %.3f, start_yaw_diff: %.3f, end_yaw_diff: %.3f", yaw0, start_yaw_diff, end_yaw_diff);
 
                             utils.get_states(x0, y0, yaw0);
@@ -925,11 +935,17 @@ public:
         utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
 
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
+        path_manager.overtake_end_index = 0;
         mpc.reset_solver();
         initialized = true;
         return true;
     }
     
+    bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res) {
+        utils.set_states(req.x, req.y);
+        res.success = true;
+        return true;
+    }
 };
 
 void StateMachine::update_mpc_states() {
@@ -1189,7 +1205,9 @@ void StateMachine::run() {
                 utils.get_states(x, y, yaw);
                 double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
                 double initial_yaw_error = orientation - yaw;
+                initial_yaw_error = Utility::yaw_mod(initial_yaw_error); // normalize to [-pi, pi]
                 // ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
+                utils.debug("orientation: " + std::to_string(orientation) + ", yaw: " + std::to_string(yaw), 4);
                 // exit(0);
                 parking_maneuver_hardcode(right_park, false, 1/T_park, initial_y_error, initial_yaw_error);
             }

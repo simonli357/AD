@@ -19,6 +19,8 @@
 #include "yolov8.h"
 #include <memory>
 #include <eigen3/Eigen/Dense>
+#include "Hungarian.h"
+#include "KalmanTracker.h"
 
 using namespace std::chrono;
 
@@ -32,6 +34,27 @@ std::string getSourceDirectory() {
         return file_path.substr(0, last_dir_sep);  // Extract directory path
     }
     return "";  // Return empty string if path not found
+}
+
+typedef struct TrackingBox
+{
+	int frame;
+	int id;
+	cv::Rect_<float> box;
+    float confidence;
+    int class_id;
+}TrackingBox;
+
+// Computes IOU between two bounding boxes
+double GetIOU(Rect_<float> bb_test, Rect_<float> bb_gt)
+{
+	float in = (bb_test & bb_gt).area();
+	float un = bb_test.area() + bb_gt.area() - in;
+
+	if (un < DBL_EPSILON)
+		return 0;
+
+	return (double)(in / un);
 }
 
 class SignFastest {
@@ -332,6 +355,7 @@ class SignFastest {
             static std::vector<int> detected_indices(OBJECT_COUNT, 0);
             std::fill(detected_indices.begin(), detected_indices.end(), 0);
 
+            vector<TrackingBox> detections;
             if (ncnn) {
                 api.detection(image, boxes);
                 for (const auto &box : boxes) {
@@ -344,6 +368,12 @@ class SignFastest {
                     int y1 = box.y1;
                     int x2 = box.x2;
                     int y2 = box.y2;
+                    // TrackingBox tmp;
+                    // tmp.box = cv::Rect_<float>(cv::Point_<float>(x1, y1), cv::Point_<float>(x2, y2));
+                    // tmp.class_id = class_id;
+                    // tmp.id = -1;
+                    // tmp.confidence = confidence;
+                    // detections.push_back(tmp);
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
             } else {
@@ -353,7 +383,7 @@ class SignFastest {
                     detected_indices[class_id] = 1;
                     sign_counter[class_id]++;
                     if (sign_counter[class_id] < counter_thresholds[class_id]) {
-                        ROS_INFO("%s detected but counter is only %d", class_names[class_id].c_str(), sign_counter[class_id]);
+                        // ROS_INFO("%s detected but counter is only %d", class_names[class_id].c_str(), sign_counter[class_id]);
                         continue;
                     }
                     float confidence = box.probability;
@@ -361,9 +391,21 @@ class SignFastest {
                     int y1 = box.rect.y;
                     int x2 = box.rect.x + box.rect.width;
                     int y2 = box.rect.y + box.rect.height;
+                    // TrackingBox tmp;
+                    // tmp.box = cv::Rect_<float>(cv::Point_<float>(x1, y1), cv::Point_<float>(x2, y2));
+                    // tmp.class_id = class_id;
+                    // tmp.id = -1;
+                    // tmp.confidence = confidence;
+                    // detections.push_back(tmp);
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
             }
+
+            // vector<TrackingBox> filtered_detections = filter(detections);
+            // for (auto &det : filtered_detections) {
+            //     printf("id: %d, class_id: %d, confidence: %.2f, x1: %.2f, y1: %.2f, x2: %.2f, y2: %.2f\n", det.id, det.class_id, det.confidence, det.box.x, det.box.y, det.box.x + det.box.width, det.box.y + det.box.height);
+            //     if (populate_sign_msg(sign_msg, image, depthImage, det.class_id, det.confidence, det.box.x, det.box.y, det.box.x + det.box.width, det.box.y + det.box.height)) hsy++;
+            // }
 
             for (int i = 0; i < OBJECT_COUNT; i++) {
                 if (!detected_indices[i]) {
@@ -526,4 +568,182 @@ class SignFastest {
             }
             return 0.5 * (depths[(index - 1) / 2] + depths[index / 2]);
         }
+
+        vector<TrackingBox> filter(vector<TrackingBox>& detData) {
+            // 3. update across frames
+            static bool first_call = true;
+            static int frame_count = -1;
+            static int max_age = 1;
+            static int min_hits = 3;
+            static double iouThreshold = 0.3;
+            static vector<KalmanTracker> trackers;
+            if (first_call) {
+                KalmanTracker::kf_count = 0; // tracking id relies on this, so we have to reset it in each seq.
+                first_call = false;
+            }
+
+            // variables used in the for-loop
+            static vector<Rect_<float>> predictedBoxes;
+            static vector<vector<double>> iouMatrix;
+            static vector<int> assignment;
+            static set<int> unmatchedDetections;
+            static set<int> unmatchedTrajectories;
+            static set<int> allItems;
+            static set<int> matchedItems;
+            static vector<cv::Point> matchedPairs;
+            static vector<TrackingBox> frameTrackingResult;
+            static unsigned int trkNum = 0;
+            static unsigned int detNum = 0;
+
+            frame_count++;
+            vector<TrackingBox> out;
+            if (trackers.size() == 0) // the first frame met
+            {
+                // initialize kalman trackers using first detections.
+                for (unsigned int i = 0; i < detData.size(); i++)
+                {
+                    KalmanTracker trk = KalmanTracker(detData[i].box, detData[i].class_id, detData[i].confidence);
+                    trackers.push_back(trk);
+                }
+                // output the first frame detections
+                for (unsigned int id = 0; id < detData.size(); id++)
+                {
+                    TrackingBox tb = detData[id];
+                    out.push_back(tb);
+                }
+                return out;
+            }
+
+            ///////////////////////////////////////
+            // 3.1. get predicted locations from existing trackers.
+            predictedBoxes.clear();
+
+            for (auto it = trackers.begin(); it != trackers.end();)
+            {
+                Rect_<float> pBox = (*it).predict();
+                if (pBox.x >= 0 && pBox.y >= 0)
+                {
+                    predictedBoxes.push_back(pBox);
+                    it++;
+                }
+                else
+                {
+                    it = trackers.erase(it);
+                    //cerr << "Box invalid at frame: " << frame_count << endl;
+                }
+            }
+
+            ///////////////////////////////////////
+            // 3.2. associate detections to tracked object (both represented as bounding boxes)
+            trkNum = predictedBoxes.size();
+            detNum = detData.size();
+
+            iouMatrix.clear();
+            iouMatrix.resize(trkNum, vector<double>(detNum, 0));
+
+            for (unsigned int i = 0; i < trkNum; i++) // compute iou matrix as a distance matrix
+            {
+                for (unsigned int j = 0; j < detNum; j++)
+                {
+                    // use 1-iou because the hungarian algorithm computes a minimum-cost assignment.
+                    iouMatrix[i][j] = 1 - GetIOU(predictedBoxes[i], detData[j].box);
+                }
+            }
+
+            // solve the assignment problem using hungarian algorithm.
+            // the resulting assignment is [track(prediction) : detection], with len=preNum
+            HungarianAlgorithm HungAlgo;
+            assignment.clear();
+            HungAlgo.Solve(iouMatrix, assignment);
+
+            // find matches, unmatched_detections and unmatched_predictions
+            unmatchedTrajectories.clear();
+            unmatchedDetections.clear();
+            allItems.clear();
+            matchedItems.clear();
+
+            if (detNum > trkNum) //	there are unmatched detections
+            {
+                for (unsigned int n = 0; n < detNum; n++)
+                    allItems.insert(n);
+
+                for (unsigned int i = 0; i < trkNum; ++i)
+                    matchedItems.insert(assignment[i]);
+
+                set_difference(allItems.begin(), allItems.end(),
+                    matchedItems.begin(), matchedItems.end(),
+                    insert_iterator<set<int>>(unmatchedDetections, unmatchedDetections.begin()));
+            }
+            else if (detNum < trkNum) // there are unmatched trajectory/predictions
+            {
+                for (unsigned int i = 0; i < trkNum; ++i)
+                    if (assignment[i] == -1) // unassigned label will be set as -1 in the assignment algorithm
+                        unmatchedTrajectories.insert(i);
+            }
+            else
+                ;
+
+            // filter out matched with low IOU
+            matchedPairs.clear();
+            for (unsigned int i = 0; i < trkNum; ++i)
+            {
+                if (assignment[i] == -1) // pass over invalid values
+                    continue;
+                if (1 - iouMatrix[i][assignment[i]] < iouThreshold)
+                {
+                    unmatchedTrajectories.insert(i);
+                    unmatchedDetections.insert(assignment[i]);
+                }
+                else
+                    matchedPairs.push_back(cv::Point(i, assignment[i]));
+            }
+
+            ///////////////////////////////////////
+            // 3.3. updating trackers
+
+            // update matched trackers with assigned detections.
+            // each prediction is corresponding to a tracker
+            int detIdx, trkIdx;
+            for (unsigned int i = 0; i < matchedPairs.size(); i++)
+            {
+                trkIdx = matchedPairs[i].x;
+                detIdx = matchedPairs[i].y;
+                trackers[trkIdx].update(detData[detIdx].box);
+            }
+
+            // create and initialise new trackers for unmatched detections
+            for (auto umd : unmatchedDetections)
+            {
+                KalmanTracker tracker = KalmanTracker(detData[umd].box, detData[umd].class_id, detData[umd].confidence);
+                trackers.push_back(tracker);
+            }
+
+            // get trackers' output
+            frameTrackingResult.clear();
+            for (auto it = trackers.begin(); it != trackers.end();)
+            {
+                if (((*it).m_time_since_update < 1) &&
+                    ((*it).m_hit_streak >= min_hits || frame_count <= min_hits))
+                {
+                    TrackingBox res;
+                    res.box = (*it).get_state();
+                    res.id = (*it).m_id + 1;
+                    res.frame = frame_count;
+                    res.confidence = (*it).m_confidence;
+                    res.class_id = (*it).m_class_id;
+                    frameTrackingResult.push_back(res);
+                    it++;
+                }
+                else
+                    it++;
+
+                // remove dead tracklet
+                if (it != trackers.end() && (*it).m_time_since_update > max_age)
+                    it = trackers.erase(it);
+            }
+
+            for (auto tb : frameTrackingResult) out.push_back(tb);
+            return out;
+        }
+
 };
