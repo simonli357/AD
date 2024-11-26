@@ -1,3 +1,69 @@
+run1:
+  - 127
+  - 130
+  - 185
+  - 225
+  - 228
+  - 239
+  - 257
+  - 261
+  - 317
+  - 368
+  - 386
+  - 318
+  - 330
+  - 288
+  - 42
+  - 71
+  - 116
+  - 121
+  - 132
+  - 198
+  - 301
+  - 164
+  - 93
+  - 133
+  - 80
+  - 419
+  - 403
+  - 343
+  - 363
+  - 399
+  - 425
+  - 436
+
+run2:
+  - 71
+  - 116
+  - 121
+  - 132
+  - 198
+  - 301
+  - 164
+  - 93
+  - 133
+  - 80
+  - 419
+  - 403
+  - 368
+  - 386
+  - 399
+  - 425
+  - 436
+  - 177
+  - 25
+  - 127
+  - 130
+  - 185
+  - 225
+  - 228
+  - 239
+  - 257
+  - 261
+  - 288
+  - 42
+  - 27
+
 speedcurve:
   - 437
   - 171
@@ -51,7 +117,7 @@ destinations:
   - 27
   - 25
   - 31
-  - 49
+  - 29
   - 301
   - 8
   - 289
@@ -63,120 +129,3 @@ destinations:
   - 261
   - 257
   - 56
-  
-speedrun:
-  # - start
-  - nomarking_entrance
-  # - highway_entrance_east
-  - 444
-  - speed_east_south
-  - 18
-
-speedrun1:
-  # - start
-  - nomarking_entrance
-  - highway_entrance_east
-  - speed_east_south
-  - 18
-
-run1:
-  # - add somethin?
-  - speed_north_west
-  - highway_entrance_west
-  - roundabout_exit_east
-  - bus_lane
-  # - add something?
-  - end
-
-test2: #speed curve
-  # - 136
-  - speed_north_west
-  - highway_entrance_west
-  - roundabout_exit_east
-  - bus_lane
-  - end
-
-test3: #ramp
-  - highway_entrance_west
-  - roundabout_exit_east
-  - bus_lane
-  - end
-
-test4: #hw
-  - highway_entrance_west
-  - roundabout_exit_east
-  - bus_lane
-  - end
-
-test5: #rdb
-  - roundabout_exit_east
-  - bus_lane
-  - end
-
-test6: #parking
-  - end
-
-# path1:
-#   - start
-#   - highway1_start
-#   - highway1_mid
-#   - highway2_start
-#   - highway2_mid
-#   - parallel_parking1
-
-normalrun:
-  - 116
-  - 131
-  - 157
-  - 226
-  - 306
-  - bus_lane
-  - end
-
-roundabouttest:
-  - 235
-  - 360
-  - 375
-  - 334
-
-path1:
-  # - start
-  - roundabout_entrance_south
-  - roundabout_west
-  - nomarking_entrance
-  - highway_entrance_east
-  - speed_entrance_west
-  - end
-
-# new track
-path2:
-  - start
-  - roundabout_entrance_south
-  - highway_entrance_east
-  - speed_entrance_west
-  - parallel_parking
-  - end
-
-path3:
-  - start
-  - roundabout_entrance_south
-  - bus_lane_entrance
-  - speed_entrance_south
-  - 2021_north
-  - 2023_north
-  - uniri_square_entrance
-  - ferdinand_exit
-  - end
-
-path4:
-  - start
-  - roundabout_entrance_south
-  - bus_lane_entrance
-  - end
-
-test1:
-  - top_left
-  - roundabout_west
-  - roundabout_exit_east
-  - end
-

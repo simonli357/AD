@@ -17,7 +17,6 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
-#include "utils/Lane.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
 #include <cmath>
@@ -39,8 +38,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam(mode + "/sigma_v", sigma_v);
     success = success && nh.getParam(mode + "/sigma_delta", sigma_delta);
     success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
-    success = success && nh.getParam(mode + "/gps_offset_x", gps_offset_x);
-    success = success && nh.getParam(mode + "/gps_offset_y", gps_offset_y);
     success = success && nh.getParam("/debug_level", debugLevel);
     success = success && nh.getParam("/gps", hasGps);
     if (!success) {
@@ -191,7 +188,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         // std::cout << "waiting for lane message" << std::endl;
-        // ros::topic::waitForMessage<utils::Lane>("/lane");
+        // ros::topic::waitForMessage<utils::Lane2>("/lane");
         // std::cout << "received message from lane" << std::endl;
         timerpid = ros::Time::now();
     }
@@ -399,7 +396,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         }
         if (!found_same) {
             road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
-            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 2);
+            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 3);
         }
     }
     auto road_object_msg = RoadObject::create_msg(road_objects);
@@ -480,7 +477,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     // }
     car_pose_pub.publish(car_pose_msg);
 }
-void Utility::lane_callback(const utils::Lane::ConstPtr& msg) {
+void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     static double previous_center = 320;
     lock.lock();
     center = msg->center;
@@ -506,7 +503,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // q_chassis = q_transform * q_imu;
     // q_chassis.normalize();
     // m_chassis = tf2::Matrix3x3(q_chassis);
-    double roll, pitch;
+    double roll;
 
     m_chassis = tf2::Matrix3x3(q_imu); // No transformation
 
@@ -641,6 +638,7 @@ void Utility::publish_odom() {
 
     odomX += dx;
     odomY += dy;
+    height += dheight;
     // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     
     auto current_time = ros::Time::now();
@@ -780,6 +778,9 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     //     ROS_WARN("update_states_rk4(): dt is too large: %.3f", dt);
     //     return 0;
     // }
+
+    dheight = speed * dt * odomRatio * sin(pitch);
+    speed *= cos(pitch);
     double magnitude = speed * dt * odomRatio;
     double yaw_rate = magnitude * tan(-steering_angle * M_PI / 180) / wheelbase;
 
@@ -802,7 +803,6 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
     dyaw = 1 / 6.0 * (k1_yaw + 2 * k2_yaw + 2 * k3_yaw + k4_yaw);
-    
     // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }

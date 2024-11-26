@@ -57,9 +57,9 @@ double GetIOU(Rect_<float> bb_test, Rect_<float> bb_gt)
 	return (double)(in / un);
 }
 
-class SignFastest {
+class SignFastest_trt {
     public:
-        SignFastest(ros::NodeHandle& nh, bool real = false) : 
+        SignFastest_trt(ros::NodeHandle& nh, bool real = false) : 
             real(real), object_pose_body_frame(Eigen::Vector3d(0, 0, 0))
         {
             std::cout.precision(4);
@@ -200,6 +200,22 @@ class SignFastest {
             double Y_c = y_norm * object_distance;
             double Z_c = object_distance;
 
+            // // 3D point in the camera frame
+            // Eigen::Vector3d P_c(X_c, Y_c, Z_c);
+            // // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
+            // Eigen::Vector3d P_v(Z_c, -X_c, 0);
+
+            // // Rotation matrix from vehicle to world coordinates
+            // Eigen::Matrix2d R_vw;
+            // R_vw << std::cos(yaw), -std::sin(yaw),
+            //         std::sin(yaw), std::cos(yaw);
+
+            // // Translate to world coordinates
+            // Eigen::Vector2d vehicle_pos(x, y);
+            // Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+            // Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
+
+            // return world_coordinates;
             out << Z_c, -X_c, yaw;
         }
         static void estimate_object_pose2d(Eigen::Vector3d &out,

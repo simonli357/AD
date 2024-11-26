@@ -16,6 +16,7 @@
 #include "constants.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
+#include <std_srvs/Trigger.h>
 
 class PathManager {
 public:
@@ -53,6 +54,7 @@ public:
         }
 
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
+        trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
@@ -60,6 +62,7 @@ public:
     ros::NodeHandle nh;
     ros::ServiceClient waypoints_client;
     ros::ServiceClient go_to_client;
+    ros::ServiceClient trigger_client;
     std::string pathName;
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
     int overtake_end_index = 0;
@@ -225,6 +228,7 @@ public:
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
+            set_params();
             return true;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
@@ -275,6 +279,23 @@ public:
         }
     }
     
+    bool set_params() {
+        std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
+        nh.setParam("/state_refs", state_refs_v);
+        std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
+        nh.setParam("/state_attributes", state_attributes_v);
+        std_srvs::Trigger trigger_srv;
+        if (trigger_client.call(trigger_srv)) {
+            if (trigger_srv.response.success) {
+                ROS_INFO("Python node notified successfully.");
+            } else {
+                ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str());
+            }
+        } else {
+            ROS_ERROR("Failed to call the notification service.");
+        }
+        return true;
+    }
     static std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
         size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path

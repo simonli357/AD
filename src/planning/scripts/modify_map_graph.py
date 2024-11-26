@@ -12,7 +12,7 @@ print('Loading graphml file from: ' + file_path)
 graph = nx.read_graphml(file_path)
 
 crosswalk = [ 151, 51, 258, 259, 252, 253, 254, 226, 227, 284, 285]
-dotted_crosswalk = [ 82, 164, 81, 165, 176, 177, 8, 7]
+dotted_crosswalk = [ 163, 162, 166, 165, 176, 175, 151]
 highwayRight = []
 highwayLeft = []
 for i in range(444, 463):
@@ -41,7 +41,7 @@ for i in range(331, 342):
     roundabout.append(i)
 
 intersection = [78, 76, 77, 208, 210, 211, 207, 186, 187, 244, 262, 245, 103, 105, 104, 34, 35, 33, 36, 47, 45, 48, 46, 290, 291, 200, 59, 60, 94,95,96, 22,21,23, 10,11,9,12, 85,86,87]
-stopline = [397, 405, 317, 367, 56, 54, 243, 261, 75, 185, 71, 73, 206, 28, 40, 98, 26, 100, 30, 38, 102, 32, 44, 42, 199, 289, 4, 6, 2, 14,18,16, 91, 89, 93, 80, 84]
+stopline = [397, 405, 317, 367, 56, 54, 243, 261, 75, 185, 71, 73, 206, 28, 40, 98, 26, 100, 30, 38, 102, 32, 44, 42, 199, 289, 4, 6, 2, 14,18,16, 91, 89, 93, 80, 84, 137, 148]
 for node in graph.nodes:
     graph.nodes[node]['new_attribute'] = 0
 # Change nodes that have 'dotted' edges to 'dotted' attribute

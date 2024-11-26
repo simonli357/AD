@@ -202,19 +202,19 @@
     </node>
     <node id="57">
       <data key="d0">15.48</data>
-      <data key="d1">9.93</data>
+      <data key="d1">9.75</data>
     </node>
     <node id="58">
       <data key="d0">15.48</data>
-      <data key="d1">9.93</data>
+      <data key="d1">9.75</data>
     </node>
     <node id="59">
       <data key="d0">15.48</data>
-      <data key="d1">9.93</data>
+      <data key="d1">9.75</data>
     </node>
     <node id="60">
       <data key="d0">15.48</data>
-      <data key="d1">9.93</data>
+      <data key="d1">9.75</data>
     </node>
     <node id="75">
       <data key="d0">1.94</data>
@@ -2733,10 +2733,10 @@
       <data key="d2">False</data>
     </edge>
     <edge source="186" target="211">
-      <data key="d3">False</data>
+      <data key="d2">False</data>
     </edge>
     <edge source="186" target="187">
-      <data key="d3">False</data>
+      <data key="d2">False</data>
     </edge>
     <edge source="211" target="212">
       <data key="d2">False</data>

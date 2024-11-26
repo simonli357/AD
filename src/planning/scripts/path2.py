@@ -553,8 +553,8 @@ if __name__ == "__main__":
     # hw_density_factor = rospy.get_param('hw', default=1.33)
     rate = rospy.Rate(10)
     while not rospy.is_shutdown():
-        rospy.spin()
-        # rate.sleep()
+        # rospy.spin()
+        rate.sleep()
     # current_path = os.path.dirname(os.path.realpath(__file__))
     # config_path='config/mpc_config18.yaml'
     # path = os.path.join(current_path, config_path)
