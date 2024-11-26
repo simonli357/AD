@@ -18,7 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
-#include "utils/Lane.h"
+#include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
 #include <cmath>
@@ -72,9 +72,10 @@ public:
     ros::Rate* rate;
 
     double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
-    bool stopline = false;
-    double yaw, velocity, steer_command, velocity_command, x_speed, y_speed;
-    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
+    // bool stopline = false;
+    int stopline = -1;
+    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
+    double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
@@ -117,7 +118,7 @@ public:
 
     gazebo_msgs::ModelStates model;
     std_msgs::Float32MultiArray sign;
-    utils::Lane lane;
+    utils::Lane2 lane;
     sensor_msgs::Imu imu_msg;
     tf2::Quaternion q_imu;
     tf2::Matrix3x3 m_chassis;
@@ -145,7 +146,7 @@ public:
     ros::Publisher imu_pub;
 
     // Callbacks
-    void lane_callback(const utils::Lane::ConstPtr& msg);
+    void lane_callback(const utils::Lane2::ConstPtr& msg);
     void sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);

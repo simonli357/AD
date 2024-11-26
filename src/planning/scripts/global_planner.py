@@ -157,8 +157,8 @@ class GlobalPlanner:
                 elif normalized_cross < -0.75:
                     maneuver_directions.append(2)
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
-                    x = prev_x + vec1[0] / mag1 * 0.001#25#57
-                    y = prev_y + vec1[1] / mag1 * 0.001#25#57
+                    x = prev_x + vec1[0] / mag1 * 0.15#0.001
+                    y = prev_y + vec1[1] / mag1 * 0.15#0.001
                     # adjust with vec2
                     # x += vec2[0] / mag2 * 0.0005 #15
                     # y += vec2[1] / mag2 * 0.0005 #15
