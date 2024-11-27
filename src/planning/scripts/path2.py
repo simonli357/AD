@@ -14,8 +14,8 @@ from utils.srv import waypoints, waypointsResponse, go_to, go_toResponse
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
 
-    diffs[diffs > np.pi] -= 2 * np.pi
-    diffs[diffs < -np.pi] += 2 * np.pi
+    diffs[diffs > np.pi * 0.8] -= 2 * np.pi
+    diffs[diffs < -np.pi * 0.8] += 2 * np.pi
     # Compute the smoothed yaw angles
     smooth_yaw = np.concatenate(([yaw_angles[0]], yaw_angles[0] + np.cumsum(diffs)))
     return smooth_yaw
@@ -70,13 +70,24 @@ def filter_waypoints_and_attributes(waypoints, attributes, threshold):
     return np.array(filtered_waypoints), np.array(filtered_attributes)
 
 def interpolate_waypoints(waypoints, num_points):
-    # print("num_points: ", num_points)
+    # Extract x and y coordinates
     x = waypoints[:, 0]
     y = waypoints[:, 1]
-    tck, u = splprep([x, y], s=0) 
-    # Generate set of equally spaced waypoints
+
+    # Calculate cumulative distances (arc-length)
+    distances = np.sqrt(np.diff(x)**2 + np.diff(y)**2)
+    cumulative_length = np.hstack(([0], np.cumsum(distances)))
+
+    # Normalize to a range [0, 1]
+    normalized_length = cumulative_length / cumulative_length[-1]
+
+    # Fit the spline using the normalized arc-length as parameter
+    tck, u = splprep([x, y], u=normalized_length, s=0)
+
+    # Generate equally spaced parameter values in normalized arc-length
     u_new = np.linspace(0, 1, num_points)
-    x_new, y_new = splev(u_new, tck) 
+    x_new, y_new = splev(u_new, tck)
+
     # Stack the x and y coordinates to get new waypoints
     new_waypoints = np.vstack((x_new, y_new)).T
     return new_waypoints
@@ -185,30 +196,26 @@ class Path:
         # Plan runs between sequential destinations
         runs = []
         attributes = []
-        self.maneuver_directions = []
         if x0 is not None:
             print("x0: ", x0)
             start = self.global_planner.find_closest_node(x0[0], x0[1])
             end = self.global_planner.get_node_number(destinations[0])
-            run, _, attribute, maneuver_directions = self.global_planner.plan_path(start, end)
+            run, _, attribute = self.global_planner.plan_path(start, end)
             runs.append(run)
             attributes.append(attribute)
-            self.maneuver_directions.extend(maneuver_directions)
         for i in range(len(destinations) - 1):
             start = self.global_planner.get_node_number(destinations[i])
             end = self.global_planner.get_node_number(destinations[i + 1])
-            run, _, attribute, maneuver_directions = self.global_planner.plan_path(start, end)
+            run, _, attribute = self.global_planner.plan_path(start, end)
             # if x0 is not None and i == 0:
             if False:
                 runs[0] = np.hstack((runs[0], run))
                 attributes[0].extend(attribute)
-                self.maneuver_directions.extend(maneuver_directions)
             else:
                 # print("run: ", run.shape)
                 runs.append(run)
                 # print(i, ") attribute:\n", attribute)
                 attributes.append(attribute)
-                self.maneuver_directions.extend(maneuver_directions)
 
         runs1 = np.hstack(runs)
         # for undetected in self.undetectable_areas:
@@ -555,9 +562,12 @@ if __name__ == "__main__":
     while not rospy.is_shutdown():
         # rospy.spin()
         rate.sleep()
-    # current_path = os.path.dirname(os.path.realpath(__file__))
-    # config_path='config/mpc_config18.yaml'
-    # path = os.path.join(current_path, config_path)
+        
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+    # print("current_dir: ", current_dir)
+    # config_path=os.path.join(current_dir, '../../control/scripts/config/mpc_config25.yaml')
+    # print("config_path: ", config_path)
+    # path = config_path
     # with open(path, 'r') as f:
     #     config = yaml.safe_load(f)
     # T = config['T']
@@ -568,4 +578,9 @@ if __name__ == "__main__":
 
     # v_ref = config[constraint_name]['v_ref']
     # print("v_ref: ", v_ref)
-    # path = Path(v_ref = v_ref, N = N, T = T)
+    # x0 = np.array([0.35,2.726,-1.5708])
+    # name = "run1"
+    # path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
+    # np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
+    # path.illustrate_path(path.state_refs.T)
+    
