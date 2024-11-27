@@ -9,7 +9,7 @@ ATTRIBUTES = ["normal", "crosswalk", "intersection", "oneway", "highwayLeft", "h
 
 class GlobalPlanner:
     def __init__(self):
-        self.hw_safety_offset = 0.1
+        self.hw_safety_offset = 0.05#0.1
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
         self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
         self.pos = {}
@@ -106,7 +106,6 @@ class GlobalPlanner:
         wp_x = []
         wp_y = []
         wp_attributes = []
-        maneuver_directions = []
         for node in path:
             attribute = self.attribute.get(node, 0)
             if int(node) in self.undetectable_areas:
@@ -144,7 +143,6 @@ class GlobalPlanner:
                 cross_product = np.cross(vec1, vec2)
                 normalized_cross = cross_product / (mag1 * mag2)
                 if normalized_cross > 0.75: #left
-                    maneuver_directions.append(0)
                     # print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     x, y = self.pos[node]
                     x += vec1[0] / mag1 * 0.005 #15
@@ -155,7 +153,6 @@ class GlobalPlanner:
                     wp_x.append(x)
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
-                    maneuver_directions.append(2)
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     x = prev_x + vec1[0] / mag1 * 0.15#0.001
                     y = prev_y + vec1[1] / mag1 * 0.15#0.001
@@ -166,7 +163,12 @@ class GlobalPlanner:
                     # y = prev_y + vec2[1] / mag2 * 0.001#25#57
                     wp_x.append(x)
                     wp_y.append(y)
-        return np.array([wp_x, wp_y]), path_edges, wp_attributes, maneuver_directions
+                else:
+                    if int(node) == 80:
+                        print("node 80 straight")
+                        exit()
+                    pass
+        return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
     def find_closest_node(self, x, y):
         closest_node = None
@@ -181,7 +183,7 @@ class GlobalPlanner:
         return closest_node
 
     def illustrate_path(self, start, end):
-        _, path_edges, _, _ = self.plan_path(start, end)
+        _, path_edges, _ = self.plan_path(start, end)
         img = mpimg.imread(self.current_dir + '/maps/Track.png')
         fig, ax = plt.subplots()
         color_map = {
@@ -204,4 +206,4 @@ class GlobalPlanner:
 if __name__ == "__main__":
     planner = GlobalPlanner()
     # planner.plan_path(18, 15)
-    planner.illustrate_path(84, 79)
+    planner.illustrate_path(399, 427)

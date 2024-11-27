@@ -590,7 +590,7 @@ public:
             utils.debug("sign_based_relocalization(" + sign_type + "): relative estimated pose to car: (" + std::to_string(estimated_sign_pose[0] - x) + ", " + std::to_string(estimated_sign_pose[1] - y) + ")", 2);
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
         }
-        mpc.reset_solver();
+        // mpc.reset_solver();
         return 1;
     }
     int intersection_based_relocalization() {
@@ -934,12 +934,10 @@ void StateMachine::update_mpc_states() {
 }
 void StateMachine::solve() {
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
-    // print current state
-    std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    // print the next 20 waypoints
-    for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 5, static_cast<int>(path_manager.state_refs.rows())); i++) {
-        std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
-    }
+    // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+    // for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 5, static_cast<int>(path_manager.state_refs.rows())); i++) {
+    //     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
+    // }
     int idx = path_manager.target_waypoint_index;
     if (idx > path_manager.state_refs.rows()-2) {
         idx = path_manager.state_refs.rows() - 2;
