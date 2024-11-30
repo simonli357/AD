@@ -40,6 +40,7 @@ public:
     int id;
     double x;
     double y;
+    double z;
     double yaw;
     double speed;
     std::string name;
@@ -50,17 +51,21 @@ public:
         int type = static_cast<int>(this->type);
         return (std::abs(this->x - x) < OBJECT_SIZE[type][0]*2 && std::abs(this->y - y) < OBJECT_SIZE[type][1]*2);
     }
-    void merge(double x, double y, double yaw, double speed, double confidence) {
+    void merge(double x, double y, double yaw, double speed, double confidence, double z = 0) {
         if(confidence >= 1.) {
             this->x = x;
             this->y = y;
             this->yaw = yaw;
             this->speed = speed;
+            this->confidence = confidence;
+            this->detection_count = 1;
+            this->z = z;
             return;
         }
         this->x = (this->x * this->detection_count + x) / (this->detection_count + 1);
         this->y = (this->y * this->detection_count + y) / (this->detection_count + 1);
         this->yaw = (this->yaw * this->detection_count + yaw) / (this->detection_count + 1);
+        this->z = (this->z * this->detection_count + z) / (this->detection_count + 1);
         this->speed = (this->speed * this->detection_count + speed) / (this->detection_count + 1);
         this->confidence = (this->confidence * this->detection_count + confidence) / (this->detection_count + 1);
         this->detection_count++;
@@ -78,6 +83,7 @@ public:
             msg.data.push_back(obj->yaw);
             msg.data.push_back(obj->speed);
             msg.data.push_back(obj->confidence);
+            msg.data.push_back(obj->z);
         }
         return msg;
     }

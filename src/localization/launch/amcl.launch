@@ -1,0 +1,22 @@
+<launch>
+  <!-- Load the map -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find localization)/maps/barca.yaml" />
+
+  <node name="amcl" pkg="amcl" type="amcl" output="screen">
+    <param name="odom_frame_id" value="odom" />
+    <param name="base_frame_id" value="chassis" />
+    <param name="global_frame_id" value="map" />
+    <param name="update_min_d" value="0.2" />
+    <param name="update_min_a" value="0.1" />
+    <param name="min_particles" value="500" />
+    <param name="max_particles" value="2000" />
+    <param name="laser_max_range" value="30.0" />
+    <param name="recovery_alpha_slow" value="0.001" />
+    <param name="recovery_alpha_fast" value="0.1" />
+
+    <remap from="scan" to="car1/scan" />
+  </node>
+
+  <!-- RViz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find localization)/config/laser.rviz" />
+</launch>

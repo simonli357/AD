@@ -1,5 +1,4 @@
 real:
-  # to tune:
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
   parking_base_yaw_target: 0.23 # times pi
@@ -8,28 +7,14 @@ real:
   change_lane_yaw: 0.29 # times pi
   change_lane_thresh: 0.05
   change_lane_speed: 0.2
-  left_trajectory_threshold: 12 # degrees
-  right_trajectory_threshold: 12
   lane_relocalize: false
   sign_relocalize: false
   intersection_relocalize: false
   use_lane: false
   has_light: false
   change_lane_offset_scaler: 0.9
-  useTrajectory: true
-  ekf_timer_time: 2.0
-  gps_offset_x: 0.075
-  gps_offset_y: 0.0
-
-  # almost good:
   sigma_delta: 10 # degrees
   sigma_v: 0.075
-  left_trajectory1: 3.57
-  left_trajectory2: -0.86835
-  right_trajectory1: 3.75
-  right_trajectory2: -0.49
-  p_rad: 3.25
-  straight_trajectory_threshold: 1.4
   cw_speed_ratio: 0.85
   hw_speed_ratio: 1.25
   sign_localization_threshold: 0.753
@@ -45,20 +30,12 @@ real:
   FAST_SPEED: 0.4
 
 sim:
-  left_trajectory1: 3.57
-  left_trajectory2: -1.17647
-  right_trajectory1: 3.75
-  right_trajectory2: -1.3
-  p_rad: 2.1
-  straight_trajectory_threshold: 1.4
-  left_trajectory_threshold: 12 # degrees
-  right_trajectory_threshold: 12
   change_lane_yaw: 0.25 # times pi
   change_lane_speed: 0.2
   change_lane_thresh: 0.05
   cw_speed_ratio: 0.7143
   hw_speed_ratio: 1.33
-  sign_localization_threshold: 1.5
+  sign_localization_threshold: 0.75
   lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 1.5
@@ -82,16 +59,3 @@ sim:
   use_lane: false
   has_light: false
   change_lane_offset_scaler: 1.3
-  useTrajectory: true
-  ekf_timer_time: 2.0
-  gps_offset_x: 0.
-  gps_offset_y: 0.
-
-  # to measure:
-  #   sign offset x,y
-  #   highway entrance
-  #   highway exit
-  #   rdb
-  #   park
-  #   crosswalk
-  #   light

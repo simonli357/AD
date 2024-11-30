@@ -16,6 +16,7 @@
 #include "constants.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
+#include <std_srvs/Trigger.h>
 
 class PathManager {
 public:
@@ -34,6 +35,7 @@ public:
         // path_name = "";
         path_name = "_path1";
         state_refs = loadTxt(dir + "/../scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
+        remove_large_yaw_jump();
         input_refs = loadTxt(dir + "/../scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
         state_attributes = loadTxt(dir + "/../scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
         
@@ -53,6 +55,7 @@ public:
         }
 
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
+        trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
@@ -60,8 +63,11 @@ public:
     ros::NodeHandle nh;
     ros::ServiceClient waypoints_client;
     ros::ServiceClient go_to_client;
+    ros::ServiceClient trigger_client;
     std::string pathName;
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
+    int overtake_end_index = 0;
+    int overtake_end_index_scaler = 1.15;
     int v_ref_int;
     int N;
     double region_of_acceptance, region_of_acceptance_cw, region_of_acceptance_hw, v_ref, t0, T, density, rdb_circumference = 3.95;
@@ -90,7 +96,6 @@ public:
         int total_points = end_index - start_index;
         // int ramp_length = static_cast<int>(density * VehicleConstants::CAR_LENGTH / 2);
         int ramp_length = static_cast<int>(density * 0.125);
-        std::cout << "ramp_length (#wpts): " << ramp_length << std::endl;
 
         // Define the start and end indices of the constant shift phase
         int ramp_up_end = start_index + ramp_length;
@@ -218,11 +223,13 @@ public:
             std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
             int N = state_refs_v.size() / 3;
             state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+            remove_large_yaw_jump();
             input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
             state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
+            set_params();
             return true;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
@@ -258,6 +265,7 @@ public:
             std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
             int N = state_refs_v.size() / 3;
             state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+            remove_large_yaw_jump();
             input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
             state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
@@ -273,6 +281,42 @@ public:
         }
     }
     
+    void remove_large_yaw_jump() {
+        for (int i = 2; i < state_refs.rows(); i++) {
+            double diff = state_refs(i, 2) - state_refs(i-1, 2);
+            if (std::abs(diff) > 1 && std::abs(diff) < 5) {
+                state_refs(i, 2) = 2 * state_refs(i-1, 2) - state_refs(i-2, 2);
+            }
+        }
+        for (int i = 1; i < state_refs.rows(); i++) {
+            double diff = state_refs(i, 2) - state_refs(i-1, 2);
+            while (diff > M_PI) {
+                state_refs(i, 2) -= 2 * M_PI;
+                diff = state_refs(i, 2) - state_refs(i-1, 2);
+            }
+            while (diff < -M_PI) {
+                state_refs(i, 2) += 2 * M_PI;
+                diff = state_refs(i, 2) - state_refs(i-1, 2);
+            }
+        }
+    }
+    bool set_params() {
+        std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
+        nh.setParam("/state_refs", state_refs_v);
+        std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
+        nh.setParam("/state_attributes", state_attributes_v);
+        std_srvs::Trigger trigger_srv;
+        if (trigger_client.call(trigger_srv)) {
+            if (trigger_srv.response.success) {
+                ROS_INFO("Python node notified successfully.");
+            } else {
+                ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str());
+            }
+        } else {
+            ROS_ERROR("Failed to call the notification service.");
+        }
+        return true;
+    }
     static std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
         size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path

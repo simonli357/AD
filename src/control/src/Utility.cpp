@@ -17,7 +17,6 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
-#include "utils/Lane.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
 #include <cmath>
@@ -34,26 +33,19 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
     double odom_publish_frequency = 50; 
-    if (real) {
-        nh.param<double>("/real/p_rad", p_rad, 3.25);
-        nh.param<double>("/real/sigma_v", sigma_v, 0.1);
-        nh.param<double>("/real/sigma_delta", sigma_delta, 10.0);
-        nh.param<double>("/real/odom_rate", odom_publish_frequency, 50);
-        nh.param<double>("/real/ekf_timer_time", ekf_timer_time, 2.0);
-        nh.param<double>("/real/gps_offset_x", gps_offset_x, 0.075);
-        nh.param<double>("/real/gps_offset_y", gps_offset_y, 0.0);
-    } else {
-        nh.param<double>("/sim/p_rad", p_rad, 2.35);
-        nh.param<double>("/sim/sigma_v", sigma_v, 0.1);
-        nh.param<double>("/sim/sigma_delta", sigma_delta, 10.0);
-        nh.param<double>("/sim/odom_rate", odom_publish_frequency, 50);
-        nh.param<double>("/sim/ekf_timer_time", ekf_timer_time, 2.0);
-        nh.param<double>("/sim/gps_offset_x", gps_offset_x, 0.0);
-        nh.param<double>("/sim/gps_offset_y", gps_offset_y, 0.0);
+    std::string mode = real ? "/real" : "/sim";
+    bool success = true;
+    success = success && nh.getParam(mode + "/sigma_v", sigma_v);
+    success = success && nh.getParam(mode + "/sigma_delta", sigma_delta);
+    success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
+    success = success && nh.getParam("/debug_level", debugLevel);
+    success = success && nh.getParam("/gps", hasGps);
+    if (!success) {
+        std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
+        exit(1);
     }
-    nh.param<int>("debug_level", debugLevel, 5);
+
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
-    nh.param<bool>("/gps", hasGps, false);
     if (real) {
         serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
         serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
@@ -164,7 +156,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (useEkf) {
         this->subModel = false;
         ekf_sub = nh.subscribe("/odometry/filtered", 3, &Utility::ekf_callback, this);
-        ekf_update_timer = nh.createTimer(ros::Duration(ekf_timer_time), &Utility::ekf_update_timer_callback, this);
     } 
     if (this->subModel) {
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
@@ -197,7 +188,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         // std::cout << "waiting for lane message" << std::endl;
-        // ros::topic::waitForMessage<utils::Lane>("/lane");
+        // ros::topic::waitForMessage<utils::Lane2>("/lane");
         // std::cout << "received message from lane" << std::endl;
         timerpid = ros::Time::now();
     }
@@ -379,7 +370,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     lock.unlock();
     double x, y, yaw;
     get_states(x, y, yaw);
-    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0);
+    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height);
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -405,7 +396,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         }
         if (!found_same) {
             road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
-            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 2);
+            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 3);
         }
     }
     auto road_object_msg = RoadObject::create_msg(road_objects);
@@ -486,7 +477,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     // }
     car_pose_pub.publish(car_pose_msg);
 }
-void Utility::lane_callback(const utils::Lane::ConstPtr& msg) {
+void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     static double previous_center = 320;
     lock.lock();
     center = msg->center;
@@ -512,14 +503,14 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // q_chassis = q_transform * q_imu;
     // q_chassis.normalize();
     // m_chassis = tf2::Matrix3x3(q_chassis);
-    double roll, pitch;
+    double roll;
 
     m_chassis = tf2::Matrix3x3(q_imu); // No transformation
 
     m_chassis.getRPY(roll, pitch, yaw);
 
     if (real) yaw *= -1;
-    // ROS_INFO("yaw: %.3f", yaw * 180 / M_PI);
+    // ROS_INFO("yaw: %.3f, pitch: %.3f", yaw * 180 / M_PI, pitch * 180 / M_PI);
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
@@ -647,6 +638,7 @@ void Utility::publish_odom() {
 
     odomX += dx;
     odomY += dy;
+    height -= dheight;
     // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     
     auto current_time = ros::Time::now();
@@ -663,7 +655,7 @@ void Utility::publish_odom() {
     odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
 
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, yaw);
+    quaternion.setRPY(0, pitch, yaw);
     odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
 
     odom_pub.publish(odom_msg);
@@ -673,7 +665,7 @@ void Utility::publish_odom() {
     state_offset_msg.data.push_back(y0);
     state_offset_pub.publish(state_offset_msg);
 
-    static bool publish_tf = false;
+    static bool publish_tf = true;
     if (publish_tf) {
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header.stamp = current_time;
@@ -682,9 +674,7 @@ void Utility::publish_odom() {
         transformStamped.transform.translation.x = odomX;
         transformStamped.transform.translation.y = odomY;
         transformStamped.transform.translation.z = 0.0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, yaw);
-        transformStamped.transform.rotation = tf2::toMsg(q);
+        transformStamped.transform.rotation = tf2::toMsg(quaternion);
         broadcaster.sendTransform(transformStamped);
     }
 }
@@ -786,6 +776,11 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     //     ROS_WARN("update_states_rk4(): dt is too large: %.3f", dt);
     //     return 0;
     // }
+    if (std::abs(pitch) <3 * M_PI / 180) {
+        pitch = 0;
+    }
+    dheight = speed * dt * odomRatio * sin(pitch);
+    speed *= cos(pitch);
     double magnitude = speed * dt * odomRatio;
     double yaw_rate = magnitude * tan(-steering_angle * M_PI / 180) / wheelbase;
 
@@ -808,7 +803,6 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
     dyaw = 1 / 6.0 * (k1_yaw + 2 * k2_yaw + 2 * k3_yaw + k4_yaw);
-    
     // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }
@@ -874,7 +868,7 @@ void Utility::publish_static_transforms() {
     geometry_msgs::TransformStamped t_camera = add_static_link(0, 0, 0.2, 0, 0, 0, "chassis", "camera");
     static_transforms.push_back(t_camera);
 
-    geometry_msgs::TransformStamped t_laser = add_static_link(0, 0, 0.2, 0, 0, M_PI/2, "chassis", "laser");
+    geometry_msgs::TransformStamped t_laser = add_static_link(0, 0, 0.2, 0, 0, 0, "chassis", "laser");
     static_transforms.push_back(t_laser);
 
     geometry_msgs::TransformStamped t_imu0 = add_static_link(0, 0, 0, 0, 0, 0, "chassis", "imu0");
