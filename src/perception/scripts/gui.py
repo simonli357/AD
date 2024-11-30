@@ -6,13 +6,14 @@ import numpy as np
 import os
 import math
 import rospy
+from std_srvs.srv import Trigger, TriggerResponse
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
 from PyQt5.QtCore import Qt, QTimer, QPointF
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
-from utils.srv import waypoints, waypointsRequest, waypointsResponse, goto_command, goto_commandRequest, goto_commandResponse
-from utils.msg import Lane
+from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandRequest, set_states, set_statesRequest
+from utils.msg import Lane2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
@@ -55,20 +56,22 @@ class OpenCVGuiApp(QWidget):
         
         # Set up buttons
         self.toggle_button_layout = QHBoxLayout()
-        self.toggle_visibility_button = QPushButton('Toggle Visibility')
+        self.toggle_signs_button = QPushButton('Toggle Signs')
         self.toggle_lanes_button = QPushButton('Toggle Lanes')
         self.toggle_cars_button = QPushButton('Toggle Cars')
         self.toggle_destinations_button = QPushButton('Toggle Destinations')
         self.toggle_path_button = QPushButton('Toggle Path')
-        self.toggle_gt_button = QPushButton('Toggle Ground Truth')
+        self.toggle_gt_button = QPushButton('Toggle GT')
         self.toggle_depth_button = QPushButton('Toggle Depth')
-        self.toggle_button_layout.addWidget(self.toggle_visibility_button)
+        self.toggle_button_layout.addWidget(self.toggle_signs_button)
         self.toggle_button_layout.addWidget(self.toggle_lanes_button)
         self.toggle_button_layout.addWidget(self.toggle_cars_button)
         self.toggle_button_layout.addWidget(self.toggle_destinations_button)
         self.toggle_button_layout.addWidget(self.toggle_path_button)
         self.toggle_button_layout.addWidget(self.toggle_gt_button)
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
+        self.set_states_button = QPushButton('Set States')
+        self.toggle_button_layout.addWidget(self.set_states_button)
         
         self.left_panel_layout.addLayout(self.toggle_button_layout)
         
@@ -80,7 +83,7 @@ class OpenCVGuiApp(QWidget):
         self.control_button_layout.addWidget(self.goto_button)
 
         # Connect buttons to functions
-        self.toggle_visibility_button.clicked.connect(self.toggle_visibility)
+        self.toggle_signs_button.clicked.connect(self.toggle_visibility)
         self.toggle_lanes_button.clicked.connect(self.toggle_lanes)
         self.toggle_cars_button.clicked.connect(self.toggle_cars)
         self.toggle_destinations_button.clicked.connect(self.toggle_destinations)
@@ -89,13 +92,13 @@ class OpenCVGuiApp(QWidget):
         self.toggle_depth_button.clicked.connect(self.toggle_depth)
         self.start_button.clicked.connect(self.start)
         self.goto_button.clicked.connect(self.goto)
+        self.set_states_button.clicked.connect(self.set_states)
         
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
         self.sign_size_slider.setRange(5, 100)
         self.sign_size_slider.setValue(20)
-        self.sign_size_slider.valueChanged.connect(self.update_sign_size)
-        self.left_panel_layout.addWidget(self.sign_size_slider)
+        # self.left_panel_layout.addWidget(self.sign_size_slider)
         
         # Add left panel to main layout
         self.layout.addWidget(self.left_panel_widget)
@@ -112,15 +115,38 @@ class OpenCVGuiApp(QWidget):
         self.camera_label = QLabel(self)
         self.camera_label.setFixedSize(self.camera_w, self.camera_h)
         self.right_panel_layout.addWidget(self.camera_label)
+        self.text_layout = QVBoxLayout()
+        self.text_time_layout = QHBoxLayout()
         # Vehicle information labels
-        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
         self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
         self.cursor_x = 3.86
         self.cursor_y = 3.62
         self.speed_label = QLabel('Speed: 0.0 m/s')
-        self.right_panel_layout.addWidget(self.position_label)
-        self.right_panel_layout.addWidget(self.cursor_label)
-        self.right_panel_layout.addWidget(self.speed_label)
+        self.text_layout.addWidget(self.position_label)
+        self.text_layout.addWidget(self.cursor_label)
+        self.text_layout.addWidget(self.speed_label)
+        self.text_time_layout.addLayout(self.text_layout)
+        #timer label
+        self.timer_label = QLabel('00:00:00')
+        self.timer_label.setAlignment(Qt.AlignCenter)
+        self.timer_label.setStyleSheet(
+            """
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 5px;
+            """
+        )
+        self.centiseconds = 0
+        self.time_timer = QTimer(self)
+        self.time_timer.timeout.connect(self.update_stopwatch)
+        # self.time_timer.start(10)  # Update every 10 ms
+        self.text_time_layout.addWidget(self.timer_label)
+        
+        self.right_panel_layout.addLayout(self.text_time_layout)
         self.right_panel_layout.addLayout(self.control_button_layout)
         
         # Add a text area for status messages
@@ -240,14 +266,36 @@ class OpenCVGuiApp(QWidget):
                 background-color: #0056b3;
             }
         """
-        self.toggle_visibility_button.setStyleSheet(gradient_button_style)
+        self.toggle_signs_button.setStyleSheet(gradient_button_style)
         self.toggle_cars_button.setStyleSheet(gradient_button_style)
         self.toggle_lanes_button.setStyleSheet(gradient_button_style)
         self.toggle_destinations_button.setStyleSheet(gradient_button_style)
         self.toggle_path_button.setStyleSheet(gradient_button_style)
         self.toggle_gt_button.setStyleSheet(gradient_button_style)
         self.toggle_depth_button.setStyleSheet(gradient_button_style)
-        
+        gradient_button_style_red = """
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #DC3545, stop:1 #FF6347);  /* Red gradient for Stop */
+                border: 2px solid #DC3545;  /* Red border */
+                border-radius: 12px;
+                color: white;
+                padding: 10px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    /* orange on hover */
+                    stop:0 #FF6347, stop:1 #DC3545);
+            }
+
+            QPushButton:pressed {
+                background-color: #0056b3;
+            }
+        """
+        self.set_states_button.setStyleSheet(gradient_button_style_red)
         circular_button_style = """
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -304,9 +352,9 @@ class OpenCVGuiApp(QWidget):
         self.goto_button.setStyleSheet(gradient_button_style2)
         
         # Button related attributes
-        self.show_elements = True
-        self.show_lanes = True
-        self.show_cars = True
+        self.show_signs = False
+        self.show_lanes = False
+        self.show_cars = False
         self.show_destinations = True
         self.show_path = True
         self.show_gt = True
@@ -328,7 +376,7 @@ class OpenCVGuiApp(QWidget):
         x_init = rospy.get_param('/x_init')
         y_init = rospy.get_param('/y_init')
         yaw_init = rospy.get_param('/yaw_init')
-        path_name = rospy.get_param('/path_name')
+        path_name = rospy.get_param('/pathName', default='run1')
         self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
         
         # Objects
@@ -384,15 +432,19 @@ class OpenCVGuiApp(QWidget):
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'car.jpg')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
         
-        self.road_msg_length = 6
+        self.road_msg_length = 7
         self.road_msg_dict = {
             'type': 0,
             'x': 1,
             'y': 2,
             'orientation': 3,
             'speed': 4,
-            'confidence': 5
+            'confidence': 5,
+            'z': 6
         }
+        
+        # ROS Services
+        self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
         
         # ROS Subscribers
         self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
@@ -400,14 +452,35 @@ class OpenCVGuiApp(QWidget):
         self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
         self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
         self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
-        self.sign_sub = rospy.Subscriber('/lane', Lane, self.lane_callback)
+        self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
         self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
     # ROS service calls
+    def update_params(self, req):
+        try:
+            # Retrieve updated parameters
+            state_refs = rospy.get_param('/state_refs')
+            self.state_refs_np = np.array(state_refs).reshape(3, -1)
+
+            state_attributes = rospy.get_param('/state_attributes')
+            self.attributes_np = np.array(state_attributes)
+
+            print("state ref shape: ", self.state_refs_np.shape)
+            #print first 3 rows
+            print("state ref: ", self.state_refs_np.T[:, :3])
+            path = os.path.dirname(os.path.abspath(__file__))
+            np.savetxt(os.path.join(path,'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+            print("saved state refs")
+            rospy.loginfo("Parameters updated successfully.")
+            return TriggerResponse(success=True, message="Parameters updated")
+        except Exception as e:
+            rospy.logerr(f"Failed to update parameters: {e}")
+            return TriggerResponse(success=False, message=f"Failed to update: {e}")
     def start(self):
         self.call_start_service(not self.started)
         if not self.started:
+            self.time_timer.start(10)
             self.start_button.setStyleSheet("""
                 QPushButton {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -432,6 +505,7 @@ class OpenCVGuiApp(QWidget):
             """)
             self.start_button.setText("Stop")
         else:
+            self.time_timer.stop()
             self.start_button.setStyleSheet("""
                 QPushButton {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -458,6 +532,8 @@ class OpenCVGuiApp(QWidget):
         self.started = not self.started
     def goto(self):
         self.call_goto_service(self.cursor_x, self.cursor_y)
+    def set_states(self):
+        self.call_set_states_service(self.cursor_x, self.cursor_y)
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
         rospy.wait_for_service('goto_command', timeout=5)
@@ -474,6 +550,21 @@ class OpenCVGuiApp(QWidget):
             self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
             self.attributes_np = np.array(res.wp_attributes.data)
             print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
+        except rospy.ServiceException as e:
+            rospy.logerr(f"Service call failed: {e}")
+    def call_set_states_service(self, x, y):
+        print("set states service called, waiting for service...")
+        rospy.wait_for_service('set_states', timeout=5)
+        print("service found, calling service...")
+        try:
+            set_states_service = rospy.ServiceProxy('set_states', set_states)
+            req = set_statesRequest()
+            req.x = x
+            req.y = y
+            res = set_states_service(req)
+            if not res.success:
+                print("Failed to send set states command")
+            print("Set_states service call successful. shape: ", self.state_refs_np.shape)
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
     def call_start_service(self, start):
@@ -516,7 +607,7 @@ class OpenCVGuiApp(QWidget):
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
 
         # Add text if stopline or crosswalk is detected
-        if self.stopline:
+        if self.stopline > 0:
             cv2.putText(image, "Stopline detected!", 
                         (int(image.shape[1] * 0.5), int(image.shape[0] * 0.3)), 
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
@@ -599,11 +690,18 @@ class OpenCVGuiApp(QWidget):
         self.camera_label.setPixmap(pixmap)
     def message_callback(self, msg):
         self.message_history.append(msg.data)
-        if len(self.message_history) > 8:
+        if len(self.message_history) > 6:
             self.message_history.pop(0)
-        
+    
+    def update_stopwatch(self):
+        self.centiseconds += 1
+        minutes = (self.centiseconds // 6000) % 60
+        seconds = (self.centiseconds // 100) % 60
+        centiseconds = self.centiseconds % 100
+        self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
+            
     def toggle_visibility(self):
-        self.show_elements = not self.show_elements
+        self.show_signs = not self.show_signs
 
     def toggle_lanes(self):
         self.show_lanes = not self.show_lanes
@@ -623,9 +721,6 @@ class OpenCVGuiApp(QWidget):
     def toggle_depth(self):
         self.show_depth = not self.show_depth
         
-    def update_sign_size(self, value):
-        self.sign_size = value
-
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
         rospy.wait_for_service('waypoint_path', timeout=5)
         try:
@@ -648,27 +743,69 @@ class OpenCVGuiApp(QWidget):
     def illustrate_path(self, image):
         if self.state_refs_np is None or self.attributes_np is None:
             return image
+        
         image_copy = image.copy()
+        ATTRIBUTES = {
+            "normal": (0, 255, 255),        # Yellow
+            "crosswalk": (0, 255, 0),         # Green
+            "intersection": (0, 0, 255),  # Red
+            "oneway": (0, 165, 255),          # Orange
+            "highwayLeft": (130, 0, 75),      # Indigo
+            "highwayRight": (193, 182, 255),         # Light pink
+            "roundabout": (255, 255, 255),    # White
+            "stopline": (255, 255, 0),    # Cyan
+            "dotted": (180, 130, 70),         # Steel blue
+            "dotted_crosswalk": (128, 0, 128),    # Purple
+        }
+        
         for i in range(0, self.state_refs_np.shape[1], 8):
             radius = 2
-            color = (0, 255, 255)
-            if self.attributes_np[i] == 4 or self.attributes_np[i] == 5:  # hard waypoints
-                color = (0, 0, 255)
-            elif self.attributes_np[i] == 1:  # crosswalk
-                color = (0, 255, 0)
-            elif self.attributes_np[i] == 9:
-                color = (255, 0, 0)
-            elif self.attributes_np[i] == 7:
-                color = (255, 255, 0)
-            elif self.attributes_np[i] == 6:
-                color = (255, 255, 255)
-            elif self.attributes_np[i] >= 100:
-                color = (0, 165, 255)
-            elif self.attributes_np[i] == 2 or self.attributes_np[i] == 102:
-                color = (255, 0, 255)
+            color = (0, 255, 255)  # Default color for normal
+            attr = self.attributes_np[i]
+            
+            # Assign colors based on attributes
+            if attr == 0 or attr == 100:
+                color = ATTRIBUTES["normal"]
+            elif attr == 1 or attr == 101:
+                color = ATTRIBUTES["crosswalk"]
+            elif attr == 2 or attr == 102:
+                color = ATTRIBUTES["intersection"]
+            elif attr == 3 or attr == 103:
+                color = ATTRIBUTES["oneway"]
+            elif attr == 4 or attr == 104:
+                color = ATTRIBUTES["highwayLeft"]
+            elif attr == 5 or attr == 105:
+                color = ATTRIBUTES["highwayRight"]
+            elif attr == 6 or attr == 106:
+                color = ATTRIBUTES["roundabout"]
+            elif attr == 7 or attr == 107:
+                color = ATTRIBUTES["stopline"]
+            elif attr == 8 or attr == 108:
+                color = ATTRIBUTES["dotted"]
+            elif attr == 9 or attr == 109:
+                color = ATTRIBUTES["dotted_crosswalk"]
+            
+            # if attr == 7 or attr == 107:
+            #     color = ATTRIBUTES["stopline"]
+            # else:
+            #     color = (0, 0, 0)
+            
             cv2.circle(image_copy, (int(self.state_refs_np[0, i] / 20.696 * image.shape[1]),
                                     int((13.786 - self.state_refs_np[1, i]) / 13.786 * image.shape[0])),
-                       radius=int(radius), color=color, thickness=-1)
+                    radius=radius, color=color, thickness=-1)
+        
+        # Add legend to the image
+        legend_x, legend_y = image.shape[1] // 2 - 150, image.shape[0] // 2 - 150  # Center of the image
+        legend_height = 20  # Height of each legend row
+        padding = 10
+        
+        for i, (label, color) in enumerate(ATTRIBUTES.items()):
+            rect_y = legend_y + i * (legend_height + padding)
+            cv2.rectangle(image_copy, (legend_x, rect_y),
+                        (legend_x + 20, rect_y + legend_height), color, -1)
+            cv2.putText(image_copy, label, (legend_x + 30, rect_y + legend_height - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        
         return image_copy
 
     def get_key_from_value(self, value):
@@ -685,7 +822,7 @@ class OpenCVGuiApp(QWidget):
                 orientation = - orientation
 
                 if entity_type == 'Intersection':
-                    if self.show_elements:
+                    if self.show_signs:
                         self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
                 elif entity_type == 'Lane':
                     if self.show_lanes:
@@ -698,23 +835,23 @@ class OpenCVGuiApp(QWidget):
                         size = int(0.15 / 20.696 * 800 * self.scale_factor)
                         cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
                 else:
-                    if self.show_elements:
+                    if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)
                         self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
                         
     def draw_detected_objects(self, image):
         if True:
-            # if self.waypoints is not None:
-            #     for i in range(0, len(self.waypoints)-1, 8):
-            #         print("len(self.waypoints): ", len(self.waypoints))
-            #         center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
-            #         cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
+            if self.waypoints is not None:
+                for i in range(0, len(self.waypoints)-1, 8):
+                    center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
+                    cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
             if self.detected_data is None:
                 return
             x = self.detected_data[0, self.road_msg_dict['x']]
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f})')
+            z = self.detected_data[0, self.road_msg_dict['z']]
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):

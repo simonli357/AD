@@ -18,7 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
-#include "utils/Lane.h"
+#include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
 #include <cmath>
@@ -38,7 +38,7 @@ public:
 
     std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
-    double p_rad, gps_offset_x, gps_offset_y;
+    double gps_offset_x, gps_offset_y;
 
     typedef double (Utility::*TrajectoryFunction)(double x);
     TrajectoryFunction trajectoryFunction;
@@ -72,9 +72,10 @@ public:
     ros::Rate* rate;
 
     double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
-    bool stopline = false;
-    double yaw, velocity, steer_command, velocity_command, x_speed, y_speed;
-    double odomX, odomY, odomYaw, dx, dy, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
+    // bool stopline = false;
+    int stopline = -1;
+    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
+    double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
@@ -117,7 +118,7 @@ public:
 
     gazebo_msgs::ModelStates model;
     std_msgs::Float32MultiArray sign;
-    utils::Lane lane;
+    utils::Lane2 lane;
     sensor_msgs::Imu imu_msg;
     tf2::Quaternion q_imu;
     tf2::Matrix3x3 m_chassis;
@@ -139,14 +140,13 @@ public:
     ros::Timer imu_pub_timer;
     void imu_pub_timer_callback(const ros::TimerEvent&);
     ros::Timer ekf_update_timer;
-    double ekf_timer_time = 2;
     void ekf_update_timer_callback(const ros::TimerEvent&) {
         update_odom_with_ekf();
     }
     ros::Publisher imu_pub;
 
     // Callbacks
-    void lane_callback(const utils::Lane::ConstPtr& msg);
+    void lane_callback(const utils::Lane2::ConstPtr& msg);
     void sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
@@ -180,10 +180,22 @@ public:
     double get_yaw() {
         return yaw;
     }
+    int set_states(double x, double y) {
+        x0 = x;
+        y0 = y;
+        odomX = 0;
+        odomY = 0;
+        return 0;
+    }
     int get_states(double &x_, double &y_, double &yaw_) {
+        if (subModel) {
+            x_ = gps_x;
+            y_ = gps_y;
+        } else {
+            x_ = odomX + x0;
+            y_ = odomY + y0;
+        }
         yaw_ = yaw;
-        x_ = odomX + x0;
-        y_ = odomY + y0;
         // if(useEkf) {
         //     // ROS_INFO("Using ekf: %.3f, %.3f", ekf_x, ekf_y);
         //     if (hasGps) {
@@ -206,7 +218,11 @@ public:
         return 0;
     }
     void update_states(Eigen::Vector3d& o_state) {
-        o_state << odomX + x0, odomY + y0, yaw;
+        if (subModel) {
+            o_state << gps_x, gps_y, yaw;
+        } else {
+            o_state << odomX + x0, odomY + y0, yaw;
+        }
     }
     int recalibrate_states(double x_offset, double y_offset) {
         if(useEkf) {
@@ -469,7 +485,7 @@ public:
     }
 
     void debug(const std::string& message, int level) {
-        if (debugLevel > level) {
+        if (debugLevel >= level) {
             debug_msg.data = message;
             message_pub.publish(debug_msg);
             ROS_INFO("%s", message.c_str());

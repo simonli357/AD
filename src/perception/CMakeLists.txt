@@ -4,6 +4,20 @@ project(perception)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Optimization flags for performance
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -ffast-math -funroll-loops -flto -fno-finite-math-only -funsafe-math-optimizations")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=fast -fassociative-math -fno-math-errno")
+set(CMAKE_BUILD_TYPE Release)
+
+# # Enable Link Time Optimization (LTO)
+# set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+
+# # Enable CUDA optimizations
+# set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
+
+find_package(PkgConfig)
+pkg_search_module(Eigen3 REQUIRED eigen3)
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
     set(VCPKG_TARGET_TRIPLET "x64-linux")
     message("system processor is x86_64")
@@ -85,10 +99,12 @@ catkin_package(
 include_directories(
   include
   include/ncnn/include
+  include/sort
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
 )
+include_directories(${Eigen3_INCLUDE_DIRS})
 
 include_directories(~/TensorRT-8.6.1.6/include)
 link_directories(~/TensorRT-8.6.1.6/lib)
@@ -129,6 +145,8 @@ add_executable(cameraNode
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp
+  include/sort/KalmanTracker.cpp
+  include/sort/Hungarian.cpp
 )
 target_link_libraries(cameraNode
   ${catkin_LIBRARIES}

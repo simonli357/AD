@@ -56,6 +56,7 @@ namespace VehicleConstants {
     enum DETECTED_CAR_STATE {
         SAME_LANE,
         ADJACENT_LANE,
+        OPPOSITE_LANE,
         NOT_SURE
     };
 
