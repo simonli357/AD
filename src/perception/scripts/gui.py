@@ -118,7 +118,7 @@ class OpenCVGuiApp(QWidget):
         self.text_layout = QVBoxLayout()
         self.text_time_layout = QHBoxLayout()
         # Vehicle information labels
-        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
         self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
         self.cursor_x = 3.86
         self.cursor_y = 3.62
@@ -432,14 +432,15 @@ class OpenCVGuiApp(QWidget):
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'car.jpg')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
         
-        self.road_msg_length = 6
+        self.road_msg_length = 7
         self.road_msg_dict = {
             'type': 0,
             'x': 1,
             'y': 2,
             'orientation': 3,
             'speed': 4,
-            'confidence': 5
+            'confidence': 5,
+            'z': 6
         }
         
         # ROS Services
@@ -849,7 +850,8 @@ class OpenCVGuiApp(QWidget):
             x = self.detected_data[0, self.road_msg_dict['x']]
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f})')
+            z = self.detected_data[0, self.road_msg_dict['z']]
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):

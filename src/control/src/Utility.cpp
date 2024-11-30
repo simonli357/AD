@@ -370,7 +370,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     lock.unlock();
     double x, y, yaw;
     get_states(x, y, yaw);
-    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0);
+    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height);
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -510,7 +510,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     m_chassis.getRPY(roll, pitch, yaw);
 
     if (real) yaw *= -1;
-    // ROS_INFO("yaw: %.3f", yaw * 180 / M_PI);
+    // ROS_INFO("yaw: %.3f, pitch: %.3f", yaw * 180 / M_PI, pitch * 180 / M_PI);
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
@@ -638,7 +638,7 @@ void Utility::publish_odom() {
 
     odomX += dx;
     odomY += dy;
-    height += dheight;
+    height -= dheight;
     // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     
     auto current_time = ros::Time::now();
@@ -655,7 +655,7 @@ void Utility::publish_odom() {
     odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
 
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, yaw);
+    quaternion.setRPY(0, pitch, yaw);
     odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
 
     odom_pub.publish(odom_msg);
@@ -665,7 +665,7 @@ void Utility::publish_odom() {
     state_offset_msg.data.push_back(y0);
     state_offset_pub.publish(state_offset_msg);
 
-    static bool publish_tf = false;
+    static bool publish_tf = true;
     if (publish_tf) {
         geometry_msgs::TransformStamped transformStamped;
         transformStamped.header.stamp = current_time;
@@ -674,9 +674,7 @@ void Utility::publish_odom() {
         transformStamped.transform.translation.x = odomX;
         transformStamped.transform.translation.y = odomY;
         transformStamped.transform.translation.z = 0.0;
-        tf2::Quaternion q;
-        q.setRPY(0, 0, yaw);
-        transformStamped.transform.rotation = tf2::toMsg(q);
+        transformStamped.transform.rotation = tf2::toMsg(quaternion);
         broadcaster.sendTransform(transformStamped);
     }
 }
@@ -778,7 +776,9 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     //     ROS_WARN("update_states_rk4(): dt is too large: %.3f", dt);
     //     return 0;
     // }
-
+    if (std::abs(pitch) <3 * M_PI / 180) {
+        pitch = 0;
+    }
     dheight = speed * dt * odomRatio * sin(pitch);
     speed *= cos(pitch);
     double magnitude = speed * dt * odomRatio;
@@ -868,7 +868,7 @@ void Utility::publish_static_transforms() {
     geometry_msgs::TransformStamped t_camera = add_static_link(0, 0, 0.2, 0, 0, 0, "chassis", "camera");
     static_transforms.push_back(t_camera);
 
-    geometry_msgs::TransformStamped t_laser = add_static_link(0, 0, 0.2, 0, 0, M_PI/2, "chassis", "laser");
+    geometry_msgs::TransformStamped t_laser = add_static_link(0, 0, 0.2, 0, 0, 0, "chassis", "laser");
     static_transforms.push_back(t_laser);
 
     geometry_msgs::TransformStamped t_imu0 = add_static_link(0, 0, 0, 0, 0, 0, "chassis", "imu0");

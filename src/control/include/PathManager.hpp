@@ -96,7 +96,6 @@ public:
         int total_points = end_index - start_index;
         // int ramp_length = static_cast<int>(density * VehicleConstants::CAR_LENGTH / 2);
         int ramp_length = static_cast<int>(density * 0.125);
-        std::cout << "ramp_length (#wpts): " << ramp_length << std::endl;
 
         // Define the start and end indices of the constant shift phase
         int ramp_up_end = start_index + ramp_length;

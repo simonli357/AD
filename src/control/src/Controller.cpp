@@ -409,7 +409,7 @@ public:
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
-                    std::cout << "stop sign detected at a distance of: " << dist << std::endl;
+                    utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
                     stopsign_flag = STOPSIGN_FLAGS::STOP;
@@ -420,7 +420,7 @@ public:
                 if(sign_index >= 0) {
                     double dist = utils.object_distance(sign_index);
                     if (dist < MAX_SIGN_DIST && dist > 0) {
-                        std::cout << "traffic light detected at a distance of: " << dist << std::endl;
+                        utils.debug("check_stop_sign(): traffic light detected at a distance of: " + std::to_string(dist), 2);
                         detected_dist = dist;
                         // if(lane) utils.reset_odom();
                         stopsign_flag = STOPSIGN_FLAGS::LIGHT;
@@ -432,7 +432,7 @@ public:
                 if(sign_index >= 0) {
                     double dist = utils.object_distance(sign_index);
                     if (dist < MAX_SIGN_DIST && dist > 0) {
-                        std::cout << "prio detected at a distance of: " << dist << std::endl;
+                        utils.debug("check_stop_sign(): priority detected at a distance of: " + std::to_string(dist), 2);
                         detected_dist = dist;
                         stopsign_flag = STOPSIGN_FLAGS::PRIO;
                     }
@@ -443,7 +443,7 @@ public:
                 if(sign_index >= 0) {
                     double dist = utils.object_distance(sign_index);
                     if (dist < MAX_SIGN_DIST && dist > 0) {
-                        std::cout << "roundabout detected at a distance of: " << dist << std::endl;
+                        utils.debug("check_stop_sign(): roundabout detected at a distance of: " + std::to_string(dist), 2);
                         detected_dist = dist;
                         stopsign_flag = STOPSIGN_FLAGS::RDB;
                     }
@@ -536,7 +536,8 @@ public:
         if (real) {
             detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
         } else {
-            detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
+            // detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
+            detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
         }
         if (detected) {
             mpc.reset_solver();
@@ -544,7 +545,8 @@ public:
                 if (real) {
                     detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
                 } else {
-                    detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
+                    // detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
+                    detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
                 }
                 if (detected) {
                     double dist;
@@ -799,7 +801,6 @@ public:
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                std::cout << "x y yaw: " << x << " " << y << " " << yaw << std::endl;
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, CAMERA_PARAMS);
                 // auto car_pose = utils.detected_cars[car_index];
                 utils.debug("check_car(): detected car at a distance of: " + std::to_string(dist) + ", at: " + std::to_string(car_pose[0]) + ", " + std::to_string(car_pose[1]), 2);
@@ -809,7 +810,35 @@ public:
                 // compute distance from car_pose to waypoint, find closest waypoint and distance
                 double min_dist_sq = 1000.;
                 int min_index = 0;
-                std::cout << "closest index: " << closest_idx << ", at: " << path_manager.state_refs(closest_idx, 0) << ", " << path_manager.state_refs(closest_idx, 1) << ", look ahead index: " << look_ahead_index << ", at: " << path_manager.state_refs(look_ahead_index, 0) << ", " << path_manager.state_refs(look_ahead_index, 1) << std::endl;
+                double min_dist_sq_adj = 1000.; // distance to adjacent lane
+                int min_index_adj = 0;
+                int idx = static_cast<int>(closest_idx + dist * path_manager.density * 0.75); // compute index of midpoint between detected car and ego car
+                bool right = false;
+                double start_dist = std::max(dist - CAM_TO_CAR_FRONT, MIN_DIST_TO_CAR) - MIN_DIST_TO_CAR;
+                double density = path_manager.density;
+                bool on_highway = false;
+                static double lane_offset = LANE_OFFSET * change_lane_offset_scaler ;
+                // if (attribute == path_manager.ATTRIBUTE::HIGHWAYRIGHT) { // if on right side of highway, overtake on left
+                path_manager.overtake_end_index_scaler = 1.15;
+                for (int i = idx; i < static_cast<int>(idx + 0.5 * path_manager.density); i++) {
+                    if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
+                        density *= 1/1.33;
+                        path_manager.overtake_end_index_scaler *= 1.5;
+                        on_highway = true;
+                        utils.debug("check_car(): detected car is on right side of highway, if overtake, on left", 2);
+                        break;
+                    }
+                    // else if (attribute == path_manager.ATTRIBUTE::HIGHWAYLEFT) { // if on left side of highway, overtake on right
+                    else if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
+                        right = true; 
+                        on_highway = true;
+                        density *= 1/1.33;
+                        path_manager.overtake_end_index_scaler *= 1.5;
+                        utils.debug("check_car(): detected car is on left side of highway, if overtake, on right", 2);
+                        break;
+                    }
+                }
+                
                 for (int i = closest_idx; i < look_ahead_index; i++) { // iterate over waypoints in front of car, compute distance to car
                     // double dist_sq = (car_pose.head(2) - path_manager.state_refs.row(i).head(2)).squaredNorm();
                     if (i >= path_manager.state_refs.rows()) {
@@ -821,18 +850,39 @@ public:
                         min_dist_sq = dist_sq;
                         min_index = i;
                     }
+                    int sign = right ? -1 : 1;
+                    Eigen::Vector2d adj_point = (path_manager.state_refs.block(i, 0, 1, 2).transpose().eval() 
+                            + (path_manager.normals.block(i, 0, 1, 2).transpose().eval() 
+                            * LANE_OFFSET * sign));
+                    double dist_sq_adj = std::pow(car_pose[0] - adj_point(0), 2) + std::pow(car_pose[1] - adj_point(1), 2);
+                    if (dist_sq_adj < min_dist_sq_adj) {
+                        min_dist_sq_adj = dist_sq_adj;
+                        min_index_adj = i;
+                    }
                 }
                 double min_dist = std::sqrt(min_dist_sq);
+                double min_dist_adj = std::sqrt(min_dist_sq_adj);
                 auto detected_car_state = DETECTED_CAR_STATE::NOT_SURE;
-                if (min_dist < LANE_OFFSET - CAR_WIDTH * 0.8) {
+                // if (min_dist < LANE_OFFSET - CAR_WIDTH * 0.8) {
+                //     detected_car_state = DETECTED_CAR_STATE::SAME_LANE;
+                // } else if (min_dist > LANE_OFFSET - CAR_WIDTH * 1.2) {
+                //     detected_car_state = DETECTED_CAR_STATE::ADJACENT_LANE;
+                // }
+                utils.debug("check_car(): min_dist: " + std::to_string(min_dist) + ", min_dist_adj: " + std::to_string(min_dist_adj), 2);
+                if (min_dist < LANE_OFFSET - CAR_WIDTH && min_dist < min_dist_adj) {
                     detected_car_state = DETECTED_CAR_STATE::SAME_LANE;
-                } else if (min_dist > LANE_OFFSET - CAR_WIDTH * 1.2) {
+                } else if (min_dist_adj < LANE_OFFSET - CAR_WIDTH && min_dist_adj < min_dist) {
                     detected_car_state = DETECTED_CAR_STATE::ADJACENT_LANE;
+                } else {
+                    if (on_highway && min_dist > LANE_OFFSET - CAR_WIDTH && min_dist_adj > LANE_OFFSET - CAR_WIDTH) {
+                        detected_car_state = DETECTED_CAR_STATE::OPPOSITE_LANE;
+                    } else {
+                        detected_car_state = DETECTED_CAR_STATE::NOT_SURE;
+                    }
                 }
                 utils.debug("check_car(): closest waypoint to detected car: " + std::to_string(min_index) + ", at " + std::to_string(path_manager.state_refs(min_index, 0)) + ", " + std::to_string(path_manager.state_refs(min_index, 1)), 3);
                 utils.debug("check_car(): min dist between car and closest waypoint: " + std::to_string(min_dist) + ", same lane: " + std::to_string(detected_car_state == DETECTED_CAR_STATE::SAME_LANE), 3);
                 if (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) {
-                    int idx = static_cast<int>(closest_idx + dist * path_manager.density * 0.75); // compute index of midpoint between detected car and ego car
                     if (idx < path_manager.state_refs.rows() && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED_CROSSWALK) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) {
                         if (dist < MAX_TAILING_DIST) {
                             mpc.reset_solver();
@@ -843,28 +893,6 @@ public:
                             utils.debug("check_car(): car on oneway pretty far and within safety margin, keep tailing: " + std::to_string(dist), 2);
                         }
                     } else { // if detected car is in dotted region or on highway, we can overtake
-                        double start_dist = std::max(dist - CAM_TO_CAR_FRONT, MIN_DIST_TO_CAR) - MIN_DIST_TO_CAR;
-                        bool right = false;
-                        double density = path_manager.density;
-                        static double lane_offset = LANE_OFFSET * change_lane_offset_scaler ;
-                        // if (attribute == path_manager.ATTRIBUTE::HIGHWAYRIGHT) { // if on right side of highway, overtake on left
-                        path_manager.overtake_end_index_scaler = 1.15;
-                        for (int i = idx; i < static_cast<int>(idx + 0.5 * path_manager.density); i++) {
-                            if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
-                                density *= 1/1.33;
-                                path_manager.overtake_end_index_scaler *= 1.5;
-                                utils.debug("check_car(): detected car is on right side of highway, overtake on left", 2);
-                                break;
-                            }
-                            // else if (attribute == path_manager.ATTRIBUTE::HIGHWAYLEFT) { // if on left side of highway, overtake on right
-                            else if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
-                                right = true; 
-                                density *= 1/1.33;
-                                path_manager.overtake_end_index_scaler *= 1.5;
-                                utils.debug("check_car(): detected car is on left side of highway, overtake on right", 2);
-                                break;
-                            }
-                        }
                         int start_index = closest_idx + static_cast<int>(start_dist * density);
                         if (start_index >= path_manager.state_refs.rows() || path_manager.overtake_end_index >= path_manager.state_refs.rows()) {
                             utils.debug("WARNING: check_car(): start or end index exceeds state_refs size, stopping...", 2);
@@ -875,7 +903,7 @@ public:
                         path_manager.change_lane(start_index, path_manager.overtake_end_index, right, lane_offset);
                         utils.debug("check_car(): changing lane to the " + std::string(right ? "right" : "left") + " in " + std::to_string(start_dist) + " meters. start pose: (" + std::to_string(path_manager.state_refs(start_index, 0)) + "," + std::to_string(path_manager.state_refs(start_index, 1)) + "), end: (" + std::to_string(path_manager.state_refs(path_manager.overtake_end_index, 0)) + ", " + std::to_string(path_manager.state_refs(path_manager.overtake_end_index, 1)) + "), cur: (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
                     }
-                } else if (detected_car_state == DETECTED_CAR_STATE::NOT_SURE){
+                } else if (detected_car_state == DETECTED_CAR_STATE::NOT_SURE) {
                     if (dist < MAX_TAILING_DIST) {
                         utils.debug("check_car(): not sure if detected car is on same lane, dist = " + std::to_string(dist) + ", stopping...", 2);
                         stop_for(20*T);
@@ -883,6 +911,8 @@ public:
                     } else {
                         utils.debug("check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: " + std::to_string(dist), 2);
                     }
+                } else if (detected_car_state == DETECTED_CAR_STATE::OPPOSITE_LANE) {
+                    return;
                 }
             }
         }
@@ -934,10 +964,11 @@ void StateMachine::update_mpc_states() {
 }
 void StateMachine::solve() {
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
-    // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    // for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 5, static_cast<int>(path_manager.state_refs.rows())); i++) {
-    //     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
-    // }
+    std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+    std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
+    for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 4, static_cast<int>(path_manager.state_refs.rows())); i++) {
+        std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
+    }
     int idx = path_manager.target_waypoint_index;
     if (idx > path_manager.state_refs.rows()-2) {
         idx = path_manager.state_refs.rows() - 2;
@@ -1093,7 +1124,7 @@ void StateMachine::run() {
             double offset_thresh = 0.1;
             double base_offset = detected_dist + PARKING_SPOT_LENGTH * 1.5 + offset_thresh;
             double offset = base_offset;
-            ROS_INFO("park sign detected at a distance of: %.3f, parking offset is: %.3f", detected_dist, offset);
+            utils.debug("park sign detected at a distance of: " + std::to_string(detected_dist) + ", parking offset is: " + std::to_string(offset), 2);
             // base_offset = 0;
             right_park = true;
             bool hard_code = true;
@@ -1228,7 +1259,7 @@ void StateMachine::run() {
         } else if (state == STATE::INIT) {
             // initialize();
             if (dashboard) {
-                utils.publish_cmd_vel(0, 0);
+                // utils.publish_cmd_vel(0, 0);
                 rate->sleep();
             } else {
                 initialize();
@@ -1240,9 +1271,9 @@ void StateMachine::run() {
             continue;
         } else if (state == STATE::KEYBOARD_CONTROL) {
             // Constants for steering and speed
-            const double STEERING_INCREMENT = 2;  
+            const double STEERING_INCREMENT = 1;  
             const double VELOCITY_INCREMENT = 0.05;   
-            const double MAX_VELOCITY = 0.45;     
+            const double MAX_VELOCITY = 1.45;     
             const double MIN_VELOCITY = -0.45;    
             const double HARD_MAX_STEERING = 25.0;
             const double STEERING_DECAY = 1.25;
