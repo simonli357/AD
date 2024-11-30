@@ -188,9 +188,14 @@ public:
         return 0;
     }
     int get_states(double &x_, double &y_, double &yaw_) {
+        if (subModel) {
+            x_ = gps_x;
+            y_ = gps_y;
+        } else {
+            x_ = odomX + x0;
+            y_ = odomY + y0;
+        }
         yaw_ = yaw;
-        x_ = odomX + x0;
-        y_ = odomY + y0;
         // if(useEkf) {
         //     // ROS_INFO("Using ekf: %.3f, %.3f", ekf_x, ekf_y);
         //     if (hasGps) {
@@ -213,7 +218,11 @@ public:
         return 0;
     }
     void update_states(Eigen::Vector3d& o_state) {
-        o_state << odomX + x0, odomY + y0, yaw;
+        if (subModel) {
+            o_state << gps_x, gps_y, yaw;
+        } else {
+            o_state << odomX + x0, odomY + y0, yaw;
+        }
     }
     int recalibrate_states(double x_offset, double y_offset) {
         if(useEkf) {

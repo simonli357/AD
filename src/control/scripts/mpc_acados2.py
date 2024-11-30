@@ -527,7 +527,7 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    running = False
+    running = True
 
     x0 = np.array([10, 13.29, np.pi])
     # mpc = Optimizer(x0=x0)
