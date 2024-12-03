@@ -5,7 +5,9 @@ src/perception/include/ncnn
 src/control/scripts/__pycache__
 src/planning/scripts/__pycache__
 src/perception/scripts/__pycache__
-
+rf2/
+rf3/
+testParkCar/
 vcpkg/
 devel/
 install/
