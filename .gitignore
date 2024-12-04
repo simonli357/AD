@@ -8,6 +8,8 @@ src/perception/scripts/__pycache__
 rf2/
 rf3/
 testParkCar/
+train640/
+
 vcpkg/
 devel/
 install/
