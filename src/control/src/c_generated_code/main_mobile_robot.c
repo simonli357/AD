@@ -43,7 +43,6 @@
 #include "blasfeo/include/blasfeo_d_aux_ext_dep.h"
 
 #define NX     MOBILE_ROBOT_NX
-#define NP     MOBILE_ROBOT_NP
 #define NU     MOBILE_ROBOT_NU
 #define NBX0   MOBILE_ROBOT_NBX0
 

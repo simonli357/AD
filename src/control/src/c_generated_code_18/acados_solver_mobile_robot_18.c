@@ -185,7 +185,7 @@ ocp_nlp_dims* mobile_robot_18_acados_create_2_create_and_set_dimensions(mobile_r
     /************************************************
     *  dimensions
     ************************************************/
-    #define NINTNP1MEMS 18
+    #define NINTNP1MEMS 17
     int* intNp1mem = (int*)malloc( (N+1)*sizeof(int)*NINTNP1MEMS );
 
     int* nx    = intNp1mem + (N+1)*0;
@@ -205,7 +205,6 @@ ocp_nlp_dims* mobile_robot_18_acados_create_2_create_and_set_dimensions(mobile_r
     int* ny    = intNp1mem + (N+1)*14;
     int* nr    = intNp1mem + (N+1)*15;
     int* nbxe  = intNp1mem + (N+1)*16;
-    int* np  = intNp1mem + (N+1)*17;
 
     for (int i = 0; i < N+1; i++)
     {
@@ -229,7 +228,6 @@ ocp_nlp_dims* mobile_robot_18_acados_create_2_create_and_set_dimensions(mobile_r
         nphi[i]   = NPHI;
         nr[i]     = NR;
         nbxe[i]   = 0;
-        np[i]     = NP;
     }
 
     // for initial state
@@ -271,7 +269,6 @@ ocp_nlp_dims* mobile_robot_18_acados_create_2_create_and_set_dimensions(mobile_r
     ocp_nlp_dims_set_opt_vars(nlp_config, nlp_dims, "nu", nu);
     ocp_nlp_dims_set_opt_vars(nlp_config, nlp_dims, "nz", nz);
     ocp_nlp_dims_set_opt_vars(nlp_config, nlp_dims, "ns", ns);
-    ocp_nlp_dims_set_opt_vars(nlp_config, nlp_dims, "np", np);
 
     for (int i = 0; i <= N; i++)
     {
@@ -361,8 +358,6 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     ocp_nlp_config* nlp_config = capsule->nlp_config;
     ocp_nlp_dims* nlp_dims = capsule->nlp_dims;
 
-    int tmp_int = 0;
-
     /************************************************
     *  nlp_in
     ************************************************/
@@ -377,7 +372,7 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
         mobile_robot_18_acados_update_time_steps(capsule, N, new_time_steps);
     }
     else
-    {double time_step = 0.125;
+    {double time_step = 0.05;
         for (int i = 0; i < N; i++)
         {
             ocp_nlp_in_set(nlp_config, nlp_dims, nlp_in, i, "Ts", &time_step);
@@ -404,7 +399,7 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     W_0[1+(NY0) * 1] = 2;
     W_0[2+(NY0) * 2] = 0.5;
     W_0[3+(NY0) * 3] = 1;
-    W_0[4+(NY0) * 4] = 0.1;
+    W_0[4+(NY0) * 4] = 0.2;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", W_0);
     free(W_0);
     double* Vx_0 = calloc(NY0*NX, sizeof(double));
@@ -434,7 +429,7 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     W[1+(NY) * 1] = 2;
     W[2+(NY) * 2] = 0.5;
     W[3+(NY) * 3] = 1;
-    W[4+(NY) * 4] = 0.1;
+    W[4+(NY) * 4] = 0.2;
 
     for (int i = 1; i < N; i++)
     {
@@ -535,8 +530,8 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     double* lbu = lubu;
     double* ubu = lubu + NBU;
     
-    lbu[0] = -0.4;
-    ubu[0] = 0.4;
+    lbu[0] = -1.8;
+    ubu[0] = 1.8;
     lbu[1] = -0.42;
     ubu[1] = 0.42;
 
@@ -565,10 +560,10 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     double* lbx = lubx;
     double* ubx = lubx + NBX;
     
-    lbx[0] = -1;
-    ubx[0] = 22;
-    lbx[1] = -1;
-    ubx[1] = 16;
+    lbx[0] = -100;
+    ubx[0] = 100;
+    lbx[1] = -100;
+    ubx[1] = 100;
 
     for (int i = 1; i < N; i++)
     {
@@ -617,13 +612,7 @@ void mobile_robot_18_acados_create_6_set_opts(mobile_robot_18_solver_capsule* ca
 
 int fixed_hess = 0;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "fixed_hess", &fixed_hess);
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "globalization", "fixed_step");int with_solution_sens_wrt_params = false;
-    ocp_nlp_solver_opts_set(nlp_config, capsule->nlp_opts, "with_solution_sens_wrt_params", &with_solution_sens_wrt_params);
-
-    int with_value_sens_wrt_params = false;
-    ocp_nlp_solver_opts_set(nlp_config, capsule->nlp_opts, "with_value_sens_wrt_params", &with_value_sens_wrt_params);
-
-    int full_step_dual = 0;
+    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "globalization", "fixed_step");int full_step_dual = 0;
     ocp_nlp_solver_opts_set(nlp_config, capsule->nlp_opts, "full_step_dual", &full_step_dual);
 
     // set collocation type (relevant for implicit integrators)
@@ -670,14 +659,6 @@ int fixed_hess = 0;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_hpipm_mode", "BALANCE");
 
 
-    int as_rti_iter = 1;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "as_rti_iter", &as_rti_iter);
-
-    int as_rti_level = 4;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "as_rti_level", &as_rti_level);
-
-    int rti_log_residuals = 0;
-    ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "rti_log_residuals", &rti_log_residuals);
 
     int qp_solver_iter_max = 50;
     ocp_nlp_solver_opts_set(nlp_config, nlp_opts, "qp_iter_max", &qp_solver_iter_max);
@@ -945,19 +926,6 @@ int mobile_robot_18_acados_solve(mobile_robot_18_solver_capsule* capsule)
     int solver_status = ocp_nlp_solve(capsule->nlp_solver, capsule->nlp_in, capsule->nlp_out);
 
     return solver_status;
-}
-
-
-void mobile_robot_18_acados_batch_solve(mobile_robot_18_solver_capsule ** capsules, int N_batch)
-{
-
-    for (int i = 0; i < N_batch; i++)
-    {
-        ocp_nlp_solve(capsules[i]->nlp_solver, capsules[i]->nlp_in, capsules[i]->nlp_out);
-    }
-
-
-    return;
 }
 
 

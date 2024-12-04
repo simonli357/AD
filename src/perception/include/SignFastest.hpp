@@ -36,27 +36,6 @@ std::string getSourceDirectory() {
     return "";  // Return empty string if path not found
 }
 
-typedef struct TrackingBox
-{
-	int frame;
-	int id;
-	cv::Rect_<float> box;
-    float confidence;
-    int class_id;
-}TrackingBox;
-
-// Computes IOU between two bounding boxes
-double GetIOU(Rect_<float> bb_test, Rect_<float> bb_gt)
-{
-	float in = (bb_test & bb_gt).area();
-	float un = bb_test.area() + bb_gt.area() - in;
-
-	if (un < DBL_EPSILON)
-		return 0;
-
-	return (double)(in / un);
-}
-
 class SignFastest {
     public:
         SignFastest(ros::NodeHandle& nh, bool real = false) : 
@@ -67,24 +46,32 @@ class SignFastest {
             if(!nh.param("confidence_thresholds", confidence_thresholds, std::vector<float>(13))) {
                 ROS_WARN("Failed to get 'confidence_thresholds' parameter.");
             } else {
-                std::cout << "confidence_thresholds: " << confidence_thresholds.size() << std::endl;
+                std::cout << "loaded confidence_thresholds size: " << confidence_thresholds.size() << std::endl;
+                // for (auto val : confidence_thresholds) {
+                //     ROS_INFO("Loaded confidence threshold: %f", val);
+                // }
             }
             if (!nh.param("max_distance_thresholds", distance_thresholds, std::vector<float>(13))) {
                 ROS_WARN("Failed to get 'max_distance_thresholds' parameter.");
             } else {
-                for (float val : distance_thresholds) {
-                    ROS_INFO("Loaded threshold: %f", val);
-                }
-                for(int i = 0; i < class_names.size(); i++) {
-                    ROS_INFO("class_names: %s, distance_thresholds: %f", class_names[i].c_str(), distance_thresholds[i]);
-                }
+                // for (float val : distance_thresholds) {
+                //     ROS_INFO("Loaded distance threshold: %f", val);
+                // }
+                // for(int i = 0; i < class_names.size(); i++) {
+                //     ROS_INFO("class_names: %s, distance_thresholds: %f", class_names[i].c_str(), distance_thresholds[i]);
+                // }
+                std::cout << "loaded distance_thresholds size: " << distance_thresholds.size() << std::endl;
             }
             if (!nh.param("counter_thresholds", counter_thresholds, std::vector<int>(13))) {
                 ROS_WARN("Failed to get 'counter_thresholds' parameter.");
             } else {
-                for (int val : counter_thresholds) {
-                    ROS_INFO("Loaded counter threshold: %d", val);
-                }
+                // for (int val : counter_thresholds) {
+                //     ROS_INFO("Loaded counter threshold: %d", val);
+                // }
+                std::cout << "loaded counter_thresholds size: " << counter_thresholds.size() << std::endl;
+            }
+            for(int i = 0; i < class_names.size(); i++) {
+                ROS_INFO("class_names: %s, confidence thresh: %.3f, distance_thresholds: %.3f, counter_thresholds: %d", class_names[i].c_str(), confidence_thresholds[i], distance_thresholds[i], counter_thresholds[i]);
             }
             std::string nodeName = ros::this_node::getName();
             nh.param(nodeName+"/showFlag", show, false);
@@ -291,9 +278,163 @@ class SignFastest {
             if (distance > expected_dist * 3 || distance < expected_dist * 1/3) return false;
             return true;
         }
+        bool detect_emergency_obstacle(const cv::Mat& depthImage) {
+            if (depthImage.empty() || depthImage.type() != CV_32FC1) {
+                std::cerr << "Invalid depth image!" << std::endl;
+                return false; // Return false for invalid input
+            }
+
+            // Define ROI: bottom 70% of the image and center 75% of the width
+            int roiHeight = static_cast<int>(depthImage.rows * 0.7);
+            int roiY = depthImage.rows - roiHeight; // Start from bottom 70%
+            int roiWidth = static_cast<int>(depthImage.cols * 0.75);
+            int roiX = (depthImage.cols - roiWidth) / 2; // Center the ROI horizontally
+            cv::Rect roi(roiX, roiY, roiWidth, roiHeight);
+            cv::Mat depthROI = depthImage(roi);
+
+            // Define safe distance threshold (meters)
+            const float safeDistance = 0.45 * 1000; // 0.45 meters in millimeters
+
+            // Create a binary mask for pixels below the safe distance
+            cv::Mat obstacleMask;
+            cv::threshold(depthROI, obstacleMask, safeDistance, 255, cv::THRESH_BINARY_INV);
+            obstacleMask.convertTo(obstacleMask, CV_8U); // Convert to 8-bit for contour detection
+
+            // Find contours in the binary mask
+            std::vector<std::vector<cv::Point>> contours;
+            cv::findContours(obstacleMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+            // Copy the depth image for visualization
+            cv::Mat visualization;
+            cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U); // Normalize depth for display
+            cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR); // Convert to BGR for colored overlays
+
+            // Draw the ROI on the visualization
+            cv::rectangle(visualization, roi, cv::Scalar(0, 255, 0), 2); // Green rectangle for ROI
+
+            // Evaluate contours to determine if there is an emergency obstacle
+            bool obstacleDetected = false;
+            for (const auto& contour : contours) {
+                double area = cv::contourArea(contour);
+                if (area > 500) { // Example area threshold for a significant obstacle
+                    obstacleDetected = true;
+                    // Draw the contour in red on the visualization
+                    cv::drawContours(visualization(roi), std::vector<std::vector<cv::Point>>{contour}, -1, cv::Scalar(0, 0, 255), 2);
+                }
+            }
+
+            // Display the visualization
+            cv::imshow("Depth Visualization", visualization);
+            cv::imshow("Obstacle Mask", obstacleMask);
+            cv::waitKey(1); // Use a small delay to update the display
+
+            return obstacleDetected;
+        }
+        bool isCircular(const std::vector<cv::Point>& contour) {
+            double area = cv::contourArea(contour);
+            cv::Rect bounding_rect = cv::boundingRect(contour);
+            double radius = bounding_rect.width / 2.0;
+            double circle_area = CV_PI * radius * radius;
+            return (area / circle_area) > 0.6; // Adjust threshold for circularity
+        }
+        std::string classifyTrafficLight(cv::Mat detected_light) {
+            // Convert to grayscale and HSV
+            cv::Mat gray_image, hsv_image, bright_mask;
+            cv::cvtColor(detected_light, gray_image, cv::COLOR_BGR2GRAY);
+            cv::cvtColor(detected_light, hsv_image, cv::COLOR_BGR2HSV);
+
+            // Threshold for brightness
+            cv::threshold(gray_image, bright_mask, 200, 255, cv::THRESH_BINARY);
+
+            // Find contours in the bright mask
+            std::vector<std::vector<cv::Point>> contours;
+            cv::findContours(bright_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+            // Iterate through contours to find circular regions
+            for (const auto& contour : contours) {
+                // if (isCircular(contour)) {
+                if (true) {
+                    // Get bounding box of the circular region
+                    cv::Rect circle_rect = cv::boundingRect(contour);
+                    cv::Mat circle_region = hsv_image(circle_rect);
+
+                    cv::Mat detected_with_circle = detected_light.clone();
+                    cv::rectangle(detected_with_circle, circle_rect, cv::Scalar(0, 255, 0), 2);
+
+                    // Define HSV ranges for red, green, yellow
+                    cv::Scalar lower_red1(0, 50, 50), upper_red1(10, 255, 255);
+                    cv::Scalar lower_red2(170, 50, 50), upper_red2(180, 255, 255);
+                    cv::Scalar lower_green(40, 50, 50), upper_green(90, 255, 255);
+                    cv::Scalar lower_yellow(15, 50, 50), upper_yellow(35, 255, 255);
+
+                    // Create masks for each color
+                    cv::Mat mask_red1, mask_red2, red_mask, green_mask, yellow_mask;
+                    cv::inRange(circle_region, lower_red1, upper_red1, mask_red1);
+                    cv::inRange(circle_region, lower_red2, upper_red2, mask_red2);
+                    cv::bitwise_or(mask_red1, mask_red2, red_mask);
+
+                    cv::inRange(circle_region, lower_green, upper_green, green_mask);
+                    cv::inRange(circle_region, lower_yellow, upper_yellow, yellow_mask);
+
+                    // Calculate the intensity of each color
+                    double red_area = cv::countNonZero(red_mask);
+                    double green_area = cv::countNonZero(green_mask);
+                    double yellow_area = cv::countNonZero(yellow_mask);
+                    double total_area = circle_region.rows * circle_region.cols;
+
+                    double red_ratio = red_area / total_area;
+                    double green_ratio = green_area / total_area;
+                    double yellow_ratio = yellow_area / total_area;
+
+                    std::cout << "Red Ratio: " << red_ratio << ", Green Ratio: " << green_ratio
+                      << ", Yellow Ratio: " << yellow_ratio << std::endl;
+                    // Determine the light color based on the dominant ratio
+                    if (red_ratio > green_ratio && red_ratio > yellow_ratio && red_ratio > 0.2) {
+                        return "RED";
+                    } else if (green_ratio > red_ratio && green_ratio > yellow_ratio && green_ratio > 0.2) {
+                        return "GREEN";
+                    } else if (yellow_ratio > red_ratio && yellow_ratio > green_ratio && yellow_ratio > 0.2) {
+                        return "YELLOW";
+                    }
+                }
+            }
+            return "UNDETERMINED";
+        }
+        bool is_red_light(const cv::Mat &detected_light) {
+            // Convert to HSV color space
+            cv::Mat hsv_image;
+            cv::cvtColor(detected_light, hsv_image, cv::COLOR_BGR2HSV);
+            
+            // Define HSV ranges for red color
+            cv::Scalar lower_red1(0, 50, 50);  // First red range
+            cv::Scalar upper_red1(10, 255, 255);
+            cv::Scalar lower_red2(170, 50, 50); // Second red range
+            cv::Scalar upper_red2(180, 255, 255);
+            
+            // Create masks for red
+            cv::Mat mask1, mask2, red_mask;
+            cv::inRange(hsv_image, lower_red1, upper_red1, mask1);
+            cv::inRange(hsv_image, lower_red2, upper_red2, mask2);
+
+            // Combine the masks
+            cv::bitwise_or(mask1, mask2, red_mask);
+
+            // Optional: Morphological operations to reduce noise
+            cv::erode(red_mask, red_mask, cv::Mat(), cv::Point(-1, -1), 2);
+            cv::dilate(red_mask, red_mask, cv::Mat(), cv::Point(-1, -1), 2);
+
+            // Analyze the red_mask
+            double red_area = cv::countNonZero(red_mask);
+            double total_area = detected_light.rows * detected_light.cols;
+
+            // Threshold for classification
+            double red_ratio = red_area / total_area;
+            return red_ratio > 0.2; // Return true if red occupies more than 20% of the area
+        }
         int populate_sign_msg(std_msgs::Float32MultiArray& sign_msg, const cv::Mat& image, const cv::Mat& depthImage, int class_id, float confidence, int x1, int y1, int x2, int y2) {
             if (confidence >= confidence_thresholds[class_id]) {
                 double distance;
+                bool emergency = false;
                 if(hasDepthImage) {
                     if (depthImage.empty()) {
                         ROS_ERROR("Depth image is empty");
@@ -301,6 +442,7 @@ class SignFastest {
                     } else {
                         distance = computeMedianDepth(depthImage, x1, y1, x2, y2)/1000; // in meters
                     }
+                    // emergency = detect_emergency_obstacle(depthImage);
                 } else {
                     distance = -1;
                 }
@@ -339,7 +481,6 @@ class SignFastest {
             static std::vector<int> detected_indices(OBJECT_COUNT, 0);
             std::fill(detected_indices.begin(), detected_indices.end(), 0);
 
-            vector<TrackingBox> detections;
             if (ncnn) {
                 api.detection(image, boxes);
                 for (const auto &box : boxes) {
@@ -352,12 +493,6 @@ class SignFastest {
                     int y1 = box.y1;
                     int x2 = box.x2;
                     int y2 = box.y2;
-                    // TrackingBox tmp;
-                    // tmp.box = cv::Rect_<float>(cv::Point_<float>(x1, y1), cv::Point_<float>(x2, y2));
-                    // tmp.class_id = class_id;
-                    // tmp.id = -1;
-                    // tmp.confidence = confidence;
-                    // detections.push_back(tmp);
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
             } else {
@@ -375,21 +510,17 @@ class SignFastest {
                     int y1 = box.rect.y;
                     int x2 = box.rect.x + box.rect.width;
                     int y2 = box.rect.y + box.rect.height;
-                    // TrackingBox tmp;
-                    // tmp.box = cv::Rect_<float>(cv::Point_<float>(x1, y1), cv::Point_<float>(x2, y2));
-                    // tmp.class_id = class_id;
-                    // tmp.id = -1;
-                    // tmp.confidence = confidence;
-                    // detections.push_back(tmp);
+                    if (class_id == OBJECT::LIGHTS) {
+                        cv::Mat detected_light = image(cv::Rect(x1, y1, x2 - x1, y2 - y1));
+                        if (is_red_light(detected_light)) {
+                            ROS_INFO("Red light detected");
+                        }
+                        std::string light_color = classifyTrafficLight(detected_light);
+                        std::cout << "Detected light color: " << light_color << std::endl;
+                    }
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
             }
-
-            // vector<TrackingBox> filtered_detections = filter(detections);
-            // for (auto &det : filtered_detections) {
-            //     printf("id: %d, class_id: %d, confidence: %.2f, x1: %.2f, y1: %.2f, x2: %.2f, y2: %.2f\n", det.id, det.class_id, det.confidence, det.box.x, det.box.y, det.box.x + det.box.width, det.box.y + det.box.height);
-            //     if (populate_sign_msg(sign_msg, image, depthImage, det.class_id, det.confidence, det.box.x, det.box.y, det.box.x + det.box.width, det.box.y + det.box.height)) hsy++;
-            // }
 
             for (int i = 0; i < OBJECT_COUNT; i++) {
                 if (!detected_indices[i]) {
@@ -551,183 +682,6 @@ class SignFastest {
                 return depths[index / 2];
             }
             return 0.5 * (depths[(index - 1) / 2] + depths[index / 2]);
-        }
-
-        vector<TrackingBox> filter(vector<TrackingBox>& detData) {
-            // 3. update across frames
-            static bool first_call = true;
-            static int frame_count = -1;
-            static int max_age = 1;
-            static int min_hits = 3;
-            static double iouThreshold = 0.3;
-            static vector<KalmanTracker> trackers;
-            if (first_call) {
-                KalmanTracker::kf_count = 0; // tracking id relies on this, so we have to reset it in each seq.
-                first_call = false;
-            }
-
-            // variables used in the for-loop
-            static vector<Rect_<float>> predictedBoxes;
-            static vector<vector<double>> iouMatrix;
-            static vector<int> assignment;
-            static set<int> unmatchedDetections;
-            static set<int> unmatchedTrajectories;
-            static set<int> allItems;
-            static set<int> matchedItems;
-            static vector<cv::Point> matchedPairs;
-            static vector<TrackingBox> frameTrackingResult;
-            static unsigned int trkNum = 0;
-            static unsigned int detNum = 0;
-
-            frame_count++;
-            vector<TrackingBox> out;
-            if (trackers.size() == 0) // the first frame met
-            {
-                // initialize kalman trackers using first detections.
-                for (unsigned int i = 0; i < detData.size(); i++)
-                {
-                    KalmanTracker trk = KalmanTracker(detData[i].box, detData[i].class_id, detData[i].confidence);
-                    trackers.push_back(trk);
-                }
-                // output the first frame detections
-                for (unsigned int id = 0; id < detData.size(); id++)
-                {
-                    TrackingBox tb = detData[id];
-                    out.push_back(tb);
-                }
-                return out;
-            }
-
-            ///////////////////////////////////////
-            // 3.1. get predicted locations from existing trackers.
-            predictedBoxes.clear();
-
-            for (auto it = trackers.begin(); it != trackers.end();)
-            {
-                Rect_<float> pBox = (*it).predict();
-                if (pBox.x >= 0 && pBox.y >= 0)
-                {
-                    predictedBoxes.push_back(pBox);
-                    it++;
-                }
-                else
-                {
-                    it = trackers.erase(it);
-                    //cerr << "Box invalid at frame: " << frame_count << endl;
-                }
-            }
-
-            ///////////////////////////////////////
-            // 3.2. associate detections to tracked object (both represented as bounding boxes)
-            trkNum = predictedBoxes.size();
-            detNum = detData.size();
-
-            iouMatrix.clear();
-            iouMatrix.resize(trkNum, vector<double>(detNum, 0));
-
-            for (unsigned int i = 0; i < trkNum; i++) // compute iou matrix as a distance matrix
-            {
-                for (unsigned int j = 0; j < detNum; j++)
-                {
-                    // use 1-iou because the hungarian algorithm computes a minimum-cost assignment.
-                    iouMatrix[i][j] = 1 - GetIOU(predictedBoxes[i], detData[j].box);
-                }
-            }
-
-            // solve the assignment problem using hungarian algorithm.
-            // the resulting assignment is [track(prediction) : detection], with len=preNum
-            HungarianAlgorithm HungAlgo;
-            assignment.clear();
-            HungAlgo.Solve(iouMatrix, assignment);
-
-            // find matches, unmatched_detections and unmatched_predictions
-            unmatchedTrajectories.clear();
-            unmatchedDetections.clear();
-            allItems.clear();
-            matchedItems.clear();
-
-            if (detNum > trkNum) //	there are unmatched detections
-            {
-                for (unsigned int n = 0; n < detNum; n++)
-                    allItems.insert(n);
-
-                for (unsigned int i = 0; i < trkNum; ++i)
-                    matchedItems.insert(assignment[i]);
-
-                set_difference(allItems.begin(), allItems.end(),
-                    matchedItems.begin(), matchedItems.end(),
-                    insert_iterator<set<int>>(unmatchedDetections, unmatchedDetections.begin()));
-            }
-            else if (detNum < trkNum) // there are unmatched trajectory/predictions
-            {
-                for (unsigned int i = 0; i < trkNum; ++i)
-                    if (assignment[i] == -1) // unassigned label will be set as -1 in the assignment algorithm
-                        unmatchedTrajectories.insert(i);
-            }
-            else
-                ;
-
-            // filter out matched with low IOU
-            matchedPairs.clear();
-            for (unsigned int i = 0; i < trkNum; ++i)
-            {
-                if (assignment[i] == -1) // pass over invalid values
-                    continue;
-                if (1 - iouMatrix[i][assignment[i]] < iouThreshold)
-                {
-                    unmatchedTrajectories.insert(i);
-                    unmatchedDetections.insert(assignment[i]);
-                }
-                else
-                    matchedPairs.push_back(cv::Point(i, assignment[i]));
-            }
-
-            ///////////////////////////////////////
-            // 3.3. updating trackers
-
-            // update matched trackers with assigned detections.
-            // each prediction is corresponding to a tracker
-            int detIdx, trkIdx;
-            for (unsigned int i = 0; i < matchedPairs.size(); i++)
-            {
-                trkIdx = matchedPairs[i].x;
-                detIdx = matchedPairs[i].y;
-                trackers[trkIdx].update(detData[detIdx].box);
-            }
-
-            // create and initialise new trackers for unmatched detections
-            for (auto umd : unmatchedDetections)
-            {
-                KalmanTracker tracker = KalmanTracker(detData[umd].box, detData[umd].class_id, detData[umd].confidence);
-                trackers.push_back(tracker);
-            }
-
-            // get trackers' output
-            frameTrackingResult.clear();
-            for (auto it = trackers.begin(); it != trackers.end();)
-            {
-                if (((*it).m_time_since_update < 1) &&
-                    ((*it).m_hit_streak >= min_hits || frame_count <= min_hits))
-                {
-                    TrackingBox res;
-                    res.box = (*it).get_state();
-                    res.id = (*it).m_id + 1;
-                    res.frame = frame_count;
-                    res.confidence = (*it).m_confidence;
-                    res.class_id = (*it).m_class_id;
-                    frameTrackingResult.push_back(res);
-                    it++;
-                }
-                else
-                    it++;
-
-                // remove dead tracklet
-                if (it != trackers.end() && (*it).m_time_since_update > max_age)
-                    it = trackers.erase(it);
-            }
-
-            for (auto tb : frameTrackingResult) out.push_back(tb);
-            return out;
         }
 
 };

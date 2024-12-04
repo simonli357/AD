@@ -214,19 +214,6 @@ int mobile_robot_acados_sim_solve(mobile_robot_sim_solver_capsule *capsule)
 }
 
 
-void mobile_robot_acados_sim_batch_solve(mobile_robot_sim_solver_capsule ** capsules, int N_batch)
-{
-
-    for (int i = 0; i < N_batch; i++)
-    {
-        sim_solve(capsules[i]->acados_sim_solver, capsules[i]->acados_sim_in, capsules[i]->acados_sim_out);
-    }
-
-
-    return;
-}
-
-
 int mobile_robot_acados_sim_free(mobile_robot_sim_solver_capsule *capsule)
 {
     // free memory

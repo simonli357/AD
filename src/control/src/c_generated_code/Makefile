@@ -70,8 +70,8 @@ OBJ+= $(OCP_OBJ)
 EXTERNAL_DIR=
 EXTERNAL_LIB=
 
-INCLUDE_PATH = /home/simonli/acados/include
-LIB_PATH = /home/simonli/acados/lib
+INCLUDE_PATH = /home/slsecret/acados/include
+LIB_PATH = /home/slsecret/acados/lib
 
 # preprocessor flags for make's implicit rules
 CPPFLAGS+= -I$(INCLUDE_PATH)
@@ -82,13 +82,11 @@ CPPFLAGS+= -I$(INCLUDE_PATH)/hpipm/include
 
 # define the c-compiler flags for make's implicit rules
 CFLAGS = -fPIC -std=c99   -O2#-fno-diagnostics-show-line-numbers -g
-
 # # Debugging
 # CFLAGS += -g3
 
 # linker flags
 LDFLAGS+= -L$(LIB_PATH)
-
 
 # link to libraries
 LDLIBS+= -lacados
@@ -134,7 +132,7 @@ ocp_cython_c: ocp_shared_lib
 	-o acados_ocp_solver_pyx.c \
 	-I $(INCLUDE_PATH)/../interfaces/acados_template/acados_template \
 	$(INCLUDE_PATH)/../interfaces/acados_template/acados_template/acados_ocp_solver_pyx.pyx \
-	-I /home/simonli/mpc/scripts/c_generated_code \
+	-I /home/slsecret/AD/src/planning/scripts/c_generated_code \
 
 ocp_cython_o: ocp_cython_c
 	$(CC) $(ACADOS_FLAGS) -c -O2 \
@@ -143,7 +141,7 @@ ocp_cython_o: ocp_cython_c
 	-I $(INCLUDE_PATH)/blasfeo/include/ \
 	-I $(INCLUDE_PATH)/hpipm/include/ \
 	-I $(INCLUDE_PATH) \
-	-I /usr/lib/python3/dist-packages/numpy/core/include \
+	-I /home/slsecret/.local/lib/python3.8/site-packages/numpy/core/include \
 	-I /usr/include/python3.8 \
 	acados_ocp_solver_pyx.c \
 
@@ -161,7 +159,7 @@ sim_cython_c: sim_shared_lib
 	-o acados_sim_solver_pyx.c \
 	-I $(INCLUDE_PATH)/../interfaces/acados_template/acados_template \
 	$(INCLUDE_PATH)/../interfaces/acados_template/acados_template/acados_sim_solver_pyx.pyx \
-	-I /home/simonli/mpc/scripts/c_generated_code \
+	-I /home/slsecret/AD/src/planning/scripts/c_generated_code \
 
 sim_cython_o: sim_cython_c
 	$(CC) $(ACADOS_FLAGS) -c -O2 \
@@ -170,7 +168,7 @@ sim_cython_o: sim_cython_c
 	-I $(INCLUDE_PATH)/blasfeo/include/ \
 	-I $(INCLUDE_PATH)/hpipm/include/ \
 	-I $(INCLUDE_PATH) \
-	-I /usr/lib/python3/dist-packages/numpy/core/include \
+	-I /home/slsecret/.local/lib/python3.8/site-packages/numpy/core/include \
 	-I /usr/include/python3.8 \
 	acados_sim_solver_pyx.c \
 

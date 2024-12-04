@@ -67,7 +67,7 @@ namespace VehicleConstants {
     static constexpr double LANE_CENTER_TO_EDGE = 0.0777;
     static constexpr int IMAGE_HEIGHT = 480;
     static constexpr int IMAGE_WIDTH = 640;
-    static constexpr double MAX_TAILING_DIST = 1.0;
+    static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
     // static constexpr double MAX_SIGN_DIST = 1.09;
     static constexpr double MAX_SIGN_DIST = 0.753;
@@ -92,12 +92,13 @@ namespace VehicleConstants {
     // static constexpr double FAST_SPEED = 0.4;
     static constexpr double SOFT_MAX_STEERING = 0.42 * 180 / M_PI;
     static constexpr double HARD_MAX_STEERING = 25.0;
+    static constexpr double INTERSECTION_DISTANCE_THRESHOLD = 0.753; // minimum distance between two intersections
 
     static constexpr double pole_size = 0.0514;
 
     // parking coordinates
-    static constexpr std::array<double, 2> PARKING_SPOT_RIGHT = {9.07365, 0.703 - INNER_LANE_OFFSET/2 + pole_size/2};
-    static constexpr std::array<double, 2> PARKING_SPOT_LEFT = {9.07365, 1.1527 + INNER_LANE_OFFSET/2 - pole_size/2};
+    static constexpr std::array<double, 2> PARKING_SPOT_RIGHT = {9.40, 0.56};
+    static constexpr std::array<double, 2> PARKING_SPOT_LEFT = {9.40, 1.30};
 
     static constexpr double ofs6 = INNER_LANE_OFFSET/2 - pole_size/2;
     static constexpr double hsw = pole_size/2;
@@ -171,27 +172,25 @@ namespace VehicleConstants {
         {{4.9156-ofs6*2-pole_size-sign_ofs1, 4.581664+sign_ofs2}},
         {{4.9143-ofs6*2-pole_size-sign_ofs1, 1.3+sign_ofs2}},
         {{2.667-ofs6*2-pole_size-sign_ofs1, 1.3+sign_ofs2}},
-        {{2.67-ofs6*2-pole_size-sign_ofs1, 4.584+sign_ofs2}},
         {{0.50684-ofs6*2-pole_size-sign_ofs1, 4.5849+sign_ofs2}},
         {{0.50684-ofs6*2-pole_size-sign_ofs1, 7.470675+sign_ofs2}},
         {{0.50684-ofs6*2-pole_size-sign_ofs1, 10.584+sign_ofs2}}
     };
+    
     static const std::vector<std::vector<double>> NORTH_FACING_SIGNS = {
         {{0.579612+ofs6*2+pole_size+sign_ofs1, 9.0727-sign_ofs2}},
         {{0.579612+ofs6*2+pole_size+sign_ofs1, 5.96247-sign_ofs2}},
         {{0.579612+ofs6*2+pole_size+sign_ofs1, 3.07145-sign_ofs2}},
-        {{2.744851+ofs6*2+pole_size+sign_ofs1, 3.07145-sign_ofs2}},
         {{2.744851+ofs6*2+pole_size+sign_ofs1, 5.9603-sign_ofs2}},
         {{4.9887+ofs6*2+pole_size+sign_ofs1, 5.958-sign_ofs2}},
         {{4.9887+ofs6*2+pole_size+sign_ofs1, 3.07-sign_ofs2}},
         {{6.4836+ofs6*2+pole_size+sign_ofs1, 3.44261-sign_ofs2}},
         // {{6.9, 3.425}},
     };
-
+    
     static const std::vector<std::vector<double>> WEST_FACING_SIGNS = {
         {{17.1571+sign_ofs2, 10.633+ofs6*2+pole_size+sign_ofs1}},
         {{1.296+sign_ofs2, 3.86375+ofs6*2+pole_size+sign_ofs1}},
-        {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1}},
         {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1}},
         {{5.708+sign_ofs2, 6.753+ofs6*2+pole_size+sign_ofs1}},
         {{3.4547+sign_ofs2, 6.7545+ofs6*2+pole_size+sign_ofs1}},
@@ -200,16 +199,27 @@ namespace VehicleConstants {
         {{3.45624+sign_ofs2, 0.58153+ofs6*2+pole_size+sign_ofs1}},
         {{16.2485+sign_ofs2, 3.8678+ofs6*2+pole_size+sign_ofs1}}
     };
-
+    
     static const std::vector<std::vector<double>> EAST_FACING_SIGNS = {
         {{1.95075-sign_ofs2, 0.503891-ofs6*2-pole_size-sign_ofs1}},
-        {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1}}, 
         {{1.95-sign_ofs2, 6.6816-ofs6*2-pole_size-sign_ofs1}}, 
         {{4.19476-sign_ofs2, 6.681-ofs6*2-pole_size-sign_ofs1}}, 
         {{4.19476-sign_ofs2, 3.79216-ofs6*2-pole_size-sign_ofs1}}, 
         {{4.194644-sign_ofs2, 0.503836-ofs6*2-pole_size-sign_ofs1}}, 
         {{14.7386-sign_ofs2, 1.07135-ofs6*2-pole_size-sign_ofs1}}, 
         // {{14.983-sign_ofs2, 10.5538-ofs6*2-pole_size-sign_ofs1}}
+    };
+    static const std::vector<std::vector<double>> SOUTH_FACING_LIGHTS = {
+        {{2.67-ofs6*2-pole_size-sign_ofs1, 4.584+sign_ofs2}},
+    };
+    static const std::vector<std::vector<double>> NORTH_FACING_LIGHTS = {
+        {{2.744851+ofs6*2+pole_size+sign_ofs1, 3.07145-sign_ofs2}},
+    };
+    static const std::vector<std::vector<double>> WEST_FACING_LIGHTS = {
+        {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1}},
+    };
+    static const std::vector<std::vector<double>> EAST_FACING_LIGHTS = {
+        {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1}}, 
     };
 
     // PARKING SIGN COORDINATES
