@@ -1,4 +1,4 @@
-name: mobile_robot_18
+name: mobile_robot
 # T: 0.1
 # N: 50
 # T: 0.05
@@ -15,10 +15,10 @@ constraints:
 
   delta_max: 0.42
   delta_min: -0.42
-  x_min: -100.0
-  x_max: 100.0
-  y_min: -100.0
-  y_max: 100.0
+  x_min: -50.0
+  x_max: 50.0
+  y_min: -50.0
+  y_max: 50.0
 
 costs:
   y_cost: 2

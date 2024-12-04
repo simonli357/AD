@@ -53,7 +53,7 @@ class Optimizer(object):
         self.gazebo = gazebo
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
-        name = 'path1'
+        name = 'run1'
         # name = 'speedrun'
         # name = 'path2'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
@@ -109,9 +109,12 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config18.yaml'):
+    def create_solver(self, config_path='config/mpc_config.yaml'):
         # extract the number from config_path (50 in this case)
-        self.v_ref_int = int(''.join(filter(str.isdigit, config_path)))
+        try:
+            self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
+        except:
+            self.v_ref_int = ''
         print("number: ", self.v_ref_int)
 
         print("creating solver...")
@@ -260,20 +263,20 @@ class Optimizer(object):
         return solver, integrator, T, N, t_horizon
     
     def update_and_solve(self):
-        cur_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(cur_path, 'paths')
-        os.makedirs(path, exist_ok=True)
-        # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
+        # cur_path = os.path.dirname(os.path.realpath(__file__))
+        # path = os.path.join(cur_path, 'paths')
+        # os.makedirs(path, exist_ok=True)
+        # # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
+        # # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
 
-        np.savetxt(os.path.join(path,'state_refs_'+self.path.name+str(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
-        print("stateref shape: ", self.state_refs.shape)
-        np.savetxt(os.path.join(path,'input_refs_'+self.path.name+str(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
-        np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+str(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
-        np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+str(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
+        # np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
+        # print("stateref shape: ", self.state_refs.shape)
+        # np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
+        # np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
+        # np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
 
-        # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
-        exit()
+        # # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
+        # exit()
 
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
@@ -568,5 +571,5 @@ if __name__ == '__main__':
         # mpc.park()
         # mpc.exit_park()
         print("done")
-        mpc.draw_result(stats, 0, 22, 0, 15)
+        mpc.draw_result(stats, -35, 35, -35, 35)
         # mpc.draw_result(stats, -1, 5, -1, 2)

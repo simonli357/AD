@@ -407,7 +407,7 @@ class OpenCVGuiApp(QWidget):
             6: "No Entry",
             7: "Highway Exit",
             8: "Priority",
-            9: "Traffic Light",
+            9: "Light",
             10: "Block",
             11: "Pedestrian",
             12: "Car",
@@ -834,6 +834,10 @@ class OpenCVGuiApp(QWidget):
                     if self.show_destinations:
                         size = int(0.15 / 20.696 * 800 * self.scale_factor)
                         cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
+                elif entity_type == 'Light':
+                    if self.show_signs:
+                        sign_index = self.get_key_from_value(entity_type)
+                        self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
                 else:
                     if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)

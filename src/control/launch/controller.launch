@@ -78,9 +78,9 @@
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
   <arg name = "debug_level" default="2"/>
   <param name="debug_level" value="$(arg debug_level)"/>
-  <rosparam command="load" file="$(find control)/scripts/config/mpc_config$(arg v).yaml" />
+  <rosparam command="load" file="$(find planning)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
-  <rosparam command="load" file="$(find control)/scripts/config/mpc_config_park.yaml" />
+  <rosparam command="load" file="$(find planning)/scripts/config/mpc_config_park.yaml" />
 
   <!-- <node pkg="control" type="path2.py" name="path_planner" output="screen"></node>  -->
   <node pkg="control" type="controller" name="$(anon mpc_controller)" output="screen"> 

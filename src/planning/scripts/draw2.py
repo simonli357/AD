@@ -10,7 +10,7 @@ import cv2
 
 class Draw_MPC_tracking(object):
     def __init__(self, u, robot_states: list, ref_states:list, init_state: np.array, export_fig=None
-                 , xmin=-1.0, xmax=15, ymin=-1, ymax=15, waypoints_x = None, waypoints_y = None, 
+                 , xmin=-40, xmax=40, ymin=-40, ymax=40, waypoints_x = None, waypoints_y = None, 
                   stats = None, costs = None, times=None, objects=None, car_states=None):
         self.objects = objects
         self.car_states = car_states
@@ -52,7 +52,7 @@ class Draw_MPC_tracking(object):
         # self.ax.legend(loc='center', frameon=True, bbox_to_anchor=(0.8, 0.1))
         plt.grid('--')
         if export_fig is not None:
-            self.ani.save(export_fig+'.gif', writer='imagemagick', fps=100)
+            self.ani.save(export_fig+'.gif', writer='pillow', fps=50)
         plt.show()
 
     def draw_static_objects(self):

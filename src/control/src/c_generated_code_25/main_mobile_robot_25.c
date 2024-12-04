@@ -43,34 +43,8 @@
 #include "blasfeo/include/blasfeo_d_aux_ext_dep.h"
 
 #define NX     MOBILE_ROBOT_25_NX
-#define NZ     MOBILE_ROBOT_25_NZ
 #define NU     MOBILE_ROBOT_25_NU
-#define NP     MOBILE_ROBOT_25_NP
-#define NBX    MOBILE_ROBOT_25_NBX
 #define NBX0   MOBILE_ROBOT_25_NBX0
-#define NBU    MOBILE_ROBOT_25_NBU
-#define NSBX   MOBILE_ROBOT_25_NSBX
-#define NSBU   MOBILE_ROBOT_25_NSBU
-#define NSH    MOBILE_ROBOT_25_NSH
-#define NSG    MOBILE_ROBOT_25_NSG
-#define NSPHI  MOBILE_ROBOT_25_NSPHI
-#define NSHN   MOBILE_ROBOT_25_NSHN
-#define NSGN   MOBILE_ROBOT_25_NSGN
-#define NSPHIN MOBILE_ROBOT_25_NSPHIN
-#define NSBXN  MOBILE_ROBOT_25_NSBXN
-#define NS     MOBILE_ROBOT_25_NS
-#define NSN    MOBILE_ROBOT_25_NSN
-#define NG     MOBILE_ROBOT_25_NG
-#define NBXN   MOBILE_ROBOT_25_NBXN
-#define NGN    MOBILE_ROBOT_25_NGN
-#define NY0    MOBILE_ROBOT_25_NY0
-#define NY     MOBILE_ROBOT_25_NY
-#define NYN    MOBILE_ROBOT_25_NYN
-#define NH     MOBILE_ROBOT_25_NH
-#define NPHI   MOBILE_ROBOT_25_NPHI
-#define NHN    MOBILE_ROBOT_25_NHN
-#define NPHIN  MOBILE_ROBOT_25_NPHIN
-#define NR     MOBILE_ROBOT_25_NR
 
 
 int main()
@@ -97,11 +71,6 @@ int main()
     void *nlp_opts = mobile_robot_25_acados_get_nlp_opts(acados_ocp_capsule);
 
     // initial condition
-    int idxbx0[NBX0];
-    idxbx0[0] = 0;
-    idxbx0[1] = 1;
-    idxbx0[2] = 2;
-
     double lbx0[NBX0];
     double ubx0[NBX0];
     lbx0[0] = 0;
@@ -111,7 +80,6 @@ int main()
     lbx0[2] = 0;
     ubx0[2] = 0;
 
-    ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "idxbx", idxbx0);
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "lbx", lbx0);
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "ubx", ubx0);
 
@@ -135,7 +103,6 @@ int main()
 
     double xtraj[NX * (N+1)];
     double utraj[NU * N];
-
 
     // solve ocp in loop
     int rti_phase = 0;
