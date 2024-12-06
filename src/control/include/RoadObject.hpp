@@ -23,8 +23,8 @@ public:
     };
 
     static int OBJECT_COUNT;
-    static const std::array<std::string, 13> OBJECT_NAMES;
-    static const std::array<std::array<double, 2>, 13> OBJECT_SIZE;
+    static const std::array<std::string, 16> OBJECT_NAMES;
+    static const std::array<std::array<double, 2>, 16> OBJECT_SIZE;
 
     RoadObject();
     ~RoadObject();

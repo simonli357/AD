@@ -389,8 +389,8 @@ class OpenCVGuiApp(QWidget):
         self.waypoints = None
         self.numObj = 0
         self.detected_objects = np.zeros(10)
-        self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car"]
-        self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75]
+        self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
+        self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
         
         self.COLOR_LIST = [
             (1, 1, 1), (0.098, 0.325, 0.850), (0.125, 0.694, 0.929), (0.556, 0.184, 0.494), (0.188, 0.674, 0.466),
@@ -407,11 +407,14 @@ class OpenCVGuiApp(QWidget):
             6: "No Entry",
             7: "Highway Exit",
             8: "Priority",
-            9: "Traffic Light",
+            9: "Light",
             10: "Block",
             11: "Pedestrian",
             12: "Car",
-            13: "Sign"
+            13: "Green Light",
+            14: "Yellow Light",
+            15: "Red Light",
+            16: "Sign"
         }
 
         self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
@@ -430,6 +433,9 @@ class OpenCVGuiApp(QWidget):
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'roadblock.png')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'pedestrian.png')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'car.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight_green.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight_yellow.png')))
+        self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight_red.png')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
         
         self.road_msg_length = 7
@@ -623,6 +629,7 @@ class OpenCVGuiApp(QWidget):
             try:
                 id = int(self.detected_objects[10 * i + 6])
             except:
+                print("Error in sign detection")
                 return
             if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
                 continue
@@ -834,6 +841,10 @@ class OpenCVGuiApp(QWidget):
                     if self.show_destinations:
                         size = int(0.15 / 20.696 * 800 * self.scale_factor)
                         cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
+                elif entity_type == 'Light':
+                    if self.show_signs:
+                        sign_index = self.get_key_from_value(entity_type)
+                        self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
                 else:
                     if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)

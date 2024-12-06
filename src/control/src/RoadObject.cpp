@@ -2,11 +2,11 @@
 
 int RoadObject::OBJECT_COUNT = 0;
 
-const std::array<std::string, 13> RoadObject::OBJECT_NAMES = {
-    "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car"
+const std::array<std::string, 16> RoadObject::OBJECT_NAMES = {
+    "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light",
 };
 
-const std::array<std::array<double, 2>, 13> RoadObject::OBJECT_SIZE = { // width, length
+const std::array<std::array<double, 2>, 16> RoadObject::OBJECT_SIZE = { // width, length
     std::array<double, 2>{0.1, 0.1}, 
     std::array<double, 2>{0.1,   0.1}, 
     std::array<double, 2>{0.1,  0.1}, 
@@ -19,7 +19,10 @@ const std::array<std::array<double, 2>, 13> RoadObject::OBJECT_SIZE = { // width
     std::array<double, 2>{0.12,   0.12}, 
     std::array<double, 2>{0.1,   0.1}, 
     std::array<double, 2>{0.1,   0.1}, 
-    std::array<double, 2>{0.464,   0.1885} 
+    std::array<double, 2>{0.464,   0.1885},
+    std::array<double, 2>{0.12,   0.12}, 
+    std::array<double, 2>{0.12,   0.12}, 
+    std::array<double, 2>{0.12,   0.12} 
 };
 
 RoadObject::~RoadObject() {

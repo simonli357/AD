@@ -219,10 +219,13 @@ class Path:
 
         runs1 = np.hstack(runs)
         runs = []
-        barca = np.array([[0,0], [1.33, -1.27], [2.55, -2.71], [3.26, -4.4], [3.07, -5.91], [1.9, -8.56], [-7.65, -24.357], 
-        [-8.62, -25.8], [-9, -25.7], [-8.5, -27.4], [-4.16, -26.6], [-2.1, -23.5], [-0.2, -22.3],
-        [2.15, -22.15]
-        ])
+        # barca = np.array([[0,0], [1.33, -1.27], [2.55, -2.71], [3.26, -4.4], [3.07, -5.91], [1.9, -8.56], [-7.65, -24.357], 
+        # [-8.62, -25.8], [-9, -25.7], [-8.5, -27.4], [-4.16, -26.6], [-2.1, -23.5], [-0.2, -22.3],
+        # [2.15, -22.15]
+        # ])
+        barca = np.loadtxt(os.path.join(current_path, 'track_barca.csv'), delimiter=',')
+        # keep only columns 1 and 2
+        barca = barca[:, 1:3]
         runs.append(barca.T)
         attributes = []
         attributes.append([0]*len(barca))
@@ -453,7 +456,7 @@ def handle_goto_service(req):
     vrefName = req.vrefName
     if int(vrefName) >30:
         vrefName = "50"
-    config_path='../../control/scripts/config/mpc_config' + vrefName + '.yaml'
+    config_path='../../planning/scripts/config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
         config = yaml.safe_load(f)
@@ -486,7 +489,7 @@ def handle_array_service(req):
     vrefName = req.vrefName
     if int(vrefName) >30:
         vrefName = "50"
-    config_path='../../control/scripts/config/mpc_config' + vrefName + '.yaml'
+    config_path='../../planning/scripts/config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -567,7 +570,7 @@ if __name__ == "__main__":
         
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     # print("current_dir: ", current_dir)
-    # config_path=os.path.join(current_dir, '../../control/scripts/config/mpc_config25.yaml')
+    # config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
     # print("config_path: ", config_path)
     # path = config_path
     # with open(path, 'r') as f:

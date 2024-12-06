@@ -7,7 +7,7 @@ data = pd.read_csv(file_path)
 filtered_data = data[data['Type'] != 'Intersection']
 filtered_data = filtered_data[data['Type'] != 'Lane']
 filtered_data = filtered_data[data['Type'] != 'Destination']
-sign_options = ["stop_sign/model.sdf", "traffic_light/model.sdf", "priority_sign/model.sdf"]
+sign_options = ["stop_sign/model.sdf", "priority_sign/model.sdf"]
 
 model_mapping = {
     "Sign": "sign/model.sdf",
@@ -17,7 +17,8 @@ model_mapping = {
     "Highway Entrance": "enter_highway_sign/model.sdf",
     "Highway Exit": "leave_highway_sign/model.sdf",
     "Oneway": "oneway_sign/model.sdf",
-    "Car": "rcCar_assembly_obstacle/model.sdf"
+    "Car": "rcCar_assembly_obstacle/model.sdf",
+    "Light": "traffic_light/model.sdf"
 }
 
 def generate_launch_file(data):

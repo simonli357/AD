@@ -63,7 +63,7 @@
 #define MOBILE_ROBOT_NY0    5
 #define MOBILE_ROBOT_NY     5
 #define MOBILE_ROBOT_NYN    3
-#define MOBILE_ROBOT_N      50
+#define MOBILE_ROBOT_N      40
 #define MOBILE_ROBOT_NH     0
 #define MOBILE_ROBOT_NHN    0
 #define MOBILE_ROBOT_NH0    0
@@ -145,7 +145,6 @@ ACADOS_SYMBOL_EXPORT int mobile_robot_acados_update_params(mobile_robot_solver_c
 ACADOS_SYMBOL_EXPORT int mobile_robot_acados_update_params_sparse(mobile_robot_solver_capsule * capsule, int stage, int *idx, double *p, int n_update);
 
 ACADOS_SYMBOL_EXPORT int mobile_robot_acados_solve(mobile_robot_solver_capsule * capsule);
-ACADOS_SYMBOL_EXPORT void mobile_robot_acados_batch_solve(mobile_robot_solver_capsule ** capsules, int N_batch);
 ACADOS_SYMBOL_EXPORT int mobile_robot_acados_free(mobile_robot_solver_capsule * capsule);
 ACADOS_SYMBOL_EXPORT void mobile_robot_acados_print_stats(mobile_robot_solver_capsule * capsule);
 ACADOS_SYMBOL_EXPORT int mobile_robot_acados_custom_update(mobile_robot_solver_capsule* capsule, double* data, int data_len);

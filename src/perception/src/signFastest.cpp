@@ -127,12 +127,6 @@ class signFastest {
                 ROS_ERROR("cv_bridge failed to convert image");
                 return;
             }
-            // try {
-            //     cv_ptr_depth = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
-            // } catch (cv_bridge::Exception &e) {
-            //     ROS_ERROR("cv_bridge exception: %s", e.what());
-            //     return;
-            // }
         }
         void publishSign(const cv::Mat& image, const cv::Mat& depthImage) {
             if(printDuration) start = high_resolution_clock::now();
@@ -251,103 +245,6 @@ class signFastest {
                 return;
             }
             publishSign(cv_ptr->image, cv_ptr_depth->image);
-            // api.detection(cv_ptr->image, boxes);
-            // std_msgs::Float32MultiArray sign_msg;
-            // sign_msg.layout.data_offset = 0;
-
-            // int hsy = 0;
-            // for (const auto &box : boxes) {
-            //     int class_id = box.cate;
-            //     float confidence = box.score;
-            //     if (confidence >= confidence_thresholds[class_id]) {
-            //         double distance;
-            //         if(hasDepthImage) {
-            //             distance = computeMedianDepth(cv_ptr_depth->image, box)/1000; // in meters
-            //         } else {
-            //             distance = -1;
-            //         }
-            //         if (!distance_makes_sense(distance, class_id, box.x1, box.y1, box.x2, box.y2)) continue;
-            //         sign_msg.data.push_back(box.x1);
-            //         sign_msg.data.push_back(box.y1);
-            //         sign_msg.data.push_back(box.x2);
-            //         sign_msg.data.push_back(box.y2);
-            //         sign_msg.data.push_back(distance);
-            //         sign_msg.data.push_back(confidence);
-            //         sign_msg.data.push_back(static_cast<float>(class_id));
-            //         hsy++;
-            //     }
-            // }
-            // if(hsy) {
-            //     std_msgs::MultiArrayDimension dim;
-            //     dim.label = "detections";
-            //     dim.size = hsy;
-            //     dim.stride = boxes.size() * 7;
-            //     sign_msg.layout.dim.push_back(dim); 
-            // }
-            // // Publish Sign message
-            // pub.publish(sign_msg);
-            // if(printDuration) {
-            //     stop = high_resolution_clock::now();
-            //     duration = duration_cast<microseconds>(stop - start);
-            //     ROS_INFO("sign durations: %ld", duration.count());
-            // }
-            // // for display
-            // if (show) {
-            //     // Normalize depth img
-            //     double maxVal;
-            //     double minVal;
-            //     if (hasDepthImage) {
-            //         cv::minMaxIdx(cv_ptr_depth->image, &minVal, &maxVal);
-            //         cv_ptr_depth->image.convertTo(normalizedDepthImage, CV_8U, 255.0 / (maxVal - minVal), -minVal * 255.0 / (maxVal - minVal));
-            //     }
-            //     for (int i = 0; i < boxes.size(); i++) {
-            //         char text[256];
-            //         int id = boxes[i].cate;
-            //         if(boxes[i].score < confidence_thresholds[id]) continue;
-            //         sprintf(text, "%s %.1f%%", class_names[id].c_str(), boxes[i].score * 100);
-            //         char text2[256];
-            //         if (hasDepthImage) {
-            //             double distance = computeMedianDepth(cv_ptr_depth->image, boxes[i])/1000; 
-            //             sprintf(text2, "%s %.1fm", class_names[id].c_str(), distance);
-            //         }
-            //         int baseLine = 0;
-            //         cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-
-            //         int x = boxes[i].x1;
-            //         int y = boxes[i].y1 - label_size.height - baseLine;
-            //         if (y < 0)
-            //             y = 0;
-            //         if (x + label_size.width > cv_ptr->image.cols)
-            //             x = cv_ptr->image.cols - label_size.width;
-
-            //         cv::rectangle(cv_ptr->image, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)),
-            //                     cv::Scalar(255, 255, 255), -1);
-            //         cv::putText(cv_ptr->image, text, cv::Point(x, y + label_size.height),
-            //                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
-            //         cv::rectangle (cv_ptr->image, cv::Point(boxes[i].x1, boxes[i].y1), 
-            //                     cv::Point(boxes[i].x2, boxes[i].y2), cv::Scalar(255, 255, 0), 2, 2, 0);
-            //         if(hasDepthImage) {
-            //             cv::rectangle(normalizedDepthImage, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)),
-            //                     cv::Scalar(255, 255, 255), -1);
-            //             cv::putText(normalizedDepthImage, text2, cv::Point(x, y + label_size.height),
-            //                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
-            //             cv::rectangle (normalizedDepthImage, cv::Point(boxes[i].x1, boxes[i].y1), 
-            //                     cv::Point(boxes[i].x2, boxes[i].y2), cv::Scalar(255, 255, 0), 2, 2, 0);
-            //         }
-            //     }
-            //     if(hasDepthImage) {
-            //         cv::imshow("normalized depth image", normalizedDepthImage);
-            //     }
-            //     cv::imshow("image", cv_ptr->image);
-            //     cv::waitKey(1);
-            // }
-            // if (print) {
-            //     for (int i = 0; i < boxes.size(); i++) {
-            //         double distance = computeMedianDepth(cv_ptr_depth->image, boxes[i])/1000;
-            //         std::cout<< "x1:" << boxes[i].x1<<", y1:"<<boxes[i].y1<<", x2:"<<boxes[i].x2<<", y2:"<<boxes[i].y2
-            //          <<", conf:"<<boxes[i].score<<", id:"<<boxes[i].cate<<", "<<class_names[boxes[i].cate]<<", dist:"<< distance <<", w:"<<boxes[i].x2-boxes[i].x1<<", h:"<<boxes[i].y2-boxes[i].y1<<std::endl;
-            //     }
-            // }
         }
         
     private:
@@ -430,50 +327,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-// dist:0.952, w:39, h:42
-// dist:0.499, w:66, h:74
-// dist:0.344, w:84, h:103
-// dist:1.121, w:29, h:38
-
-//stopsign
-// dist:1.037, w:32, h:31
-// dist:0.381, w:93, h:82
-// dist:0.366, w:83, h:85
-// dist:0.435, w:66, h:69
-// dist:0.549, w:52, h:53
-// dist:0.689, w:49, h:46
-// dist:0.844, w:41, h:45
-// dist:1.008, w:35, h:40
-// dist:1.143, w:28, h:30
-
-//light
-// dist:0.401, w:89, h:188
-// dist:0.459, w:79, h:201
-// dist:0.478, w:72, h:180
-// dist:0.562, w:81, h:213
-// dist:0.616, w:74, h:184
-// dist:0.675, w:73, h:176
-// dist:0.755, w:60, h:161
-// dist:0.865, w:73, h:147
-// dist:0.9725, w:52, h:125
-// dist:1.08, w:44, h:107
-// dist:1.219, w:44, h:99
-// dist:1.455, w:34, h:76
-
-// car
-// dist:0.573, w:362, h:149
-// dist:0.644, w:341, h:151
-// dist:0.704, w:344, h:134
-// dist:0.784, w:317, h:112
-// dist:0.873, w:284, h:100
-// dist:0.94, w:266, h:96
-// dist:1.067, w:239, h:89
-// dist:1.197, w:212, h:77
-// dist:1.256, w:202, h:69
-// dist:1.334, w:189, h:67
-// dist:1.435, w:167, h:55
-// dist:1.531, w:166, h:62
-// dist:1.627, w:155, h:52
-// dist:1.754, w:133, h:52
-// dist:1.933, w:143, h:44

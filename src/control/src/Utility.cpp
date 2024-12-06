@@ -368,6 +368,12 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         num_obj = 0;
     }
     lock.unlock();
+    if (num_obj == 1 && detected_objects[0] == -1.0) {
+        emergency = true;
+        return;
+    } else {
+        emergency = false;
+    }
     double x, y, yaw;
     get_states(x, y, yaw);
     road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height);
