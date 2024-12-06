@@ -22,32 +22,6 @@ import time
 import yaml
 import argparse
 
-def transform_point(pt, frame1, frame2):
-    # Unpack the frames and the point
-    x1, y1, theta1 = frame1
-    x2, y2, theta2 = frame2
-    x, y, psi = pt
-    # Step 1: Translate to the origin of frame1
-    x -= x1
-    y -= y1
-    # Step 2: Rotate to align frame1 with frame2
-    # First, compute the rotation needed
-    rotation_angle = theta2 - theta1
-    # Create the rotation matrix
-    rotation_matrix = np.array([
-        [np.cos(rotation_angle), -np.sin(rotation_angle)],
-        [np.sin(rotation_angle), np.cos(rotation_angle)]
-    ])
-    # Apply the rotation
-    rotated_xy = np.dot(np.array([x, y]), rotation_matrix.T)
-    # Update psi (yaw) and normalize
-    rotated_psi = (psi + rotation_angle) % (2 * np.pi)
-    # rotated_psi = np.arctan2(np.sin(rotated_psi), np.cos(rotated_psi))
-    # Step 3: Translate to the origin of frame2
-    transformed_xy = rotated_xy + np.array([x2, y2])
-    # Recombine into the complete array and return
-    return np.array([transformed_xy[0], transformed_xy[1], rotated_psi])
-
 class Optimizer(object):
     def __init__(self, gazebo = False, x0 = None):
         self.gazebo = gazebo
@@ -79,7 +53,7 @@ class Optimizer(object):
         self.rdb_circumference = 4.15
         import math
         self.limit = math.floor(self.rdb_circumference/(self.v_ref * self.T))
-        self.last_u = None
+
         self.t0 = 0
         self.init_state = x0 if x0 is not None else self.state_refs[0]
         self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
@@ -109,16 +83,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config.yaml'):
-        # extract the number from config_path (50 in this case)
-        try:
-            self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
-        except:
-            self.v_ref_int = ''
-        print("number: ", self.v_ref_int)
-
-        print("creating solver...")
-        t1 = timeit.default_timer()
+    def create_solver(self, config_path):
         model = AcadosModel() #  ca.types.SimpleNamespace()
         # control inputs
         v = ca.SX.sym('v')
@@ -149,19 +114,11 @@ class Optimizer(object):
         with open(path, 'r') as f:
             config = yaml.safe_load(f)
         model.name = config['name']
-        if "park" in config_path:
-            self.park_thresh = config['park_thresh']
-            self.exit_thresh = config['exit_thresh']
-        if "park" not in config_path:
-            T = config['T']
-            N = config['N']
-            constraint_name = 'constraints'
-            cost_name = 'costs'
-        else:
-            T = config['T_park']
-            N = config['N_park']
-            constraint_name = 'constraints_park'
-            cost_name = 'costs_park'
+
+        T = config['T']
+        N = config['N']
+        constraint_name = 'constraints'
+        cost_name = 'costs'
         t_horizon = T * N
 
         # constraints
@@ -174,7 +131,6 @@ class Optimizer(object):
         self.y_min = config[constraint_name]['y_min']
         self.y_max = config[constraint_name]['y_max']
         self.v_ref = config[constraint_name]['v_ref']
-        print("v_ref: ", self.v_ref)
         # costs
         self.x_cost = config[cost_name]['x_cost']
         self.y_cost = config[cost_name]['y_cost']
@@ -184,61 +140,45 @@ class Optimizer(object):
         self.delta_v_cost = config[cost_name]['delta_v_cost']
         self.delta_steer_cost = config[cost_name]['delta_steer_cost']
         self.costs = np.array([self.x_cost, self.yaw_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
-        # 代价函数
         Q = np.array([[self.x_cost, 0.0, 0.0],[0.0, self.y_cost, 0.0],[0.0, 0.0, self.yaw_cost]])*1
         R = np.array([[self.v_cost, 0.0], [0.0, self.steer_cost]])*1
 
-        # x状态数
         nx = model.x.size()[0]
-        # u状态数
         nu = model.u.size()[0]
-        # ny数为x与u之和，原因详见系统CasADi例子以及ACADOS构建优化问题PDF介绍
         ny = nx + nu
-        # 额外参数，本例中没有
         n_params = len(model.p)
 
-        # 设置环境变量
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        ## 获得系统中ACADOS的安装路径，请参照安装要求设置好
         acados_source_path = os.environ['ACADOS_SOURCE_DIR']
         sys.path.insert(0, acados_source_path)
-        # 构建OCP
         ocp = AcadosOcp()
-        ## 设置ACADOS系统引用以及库的路径（因为ACADOS最后将以C的形式运行，所以必须设置正确）
         ocp.acados_include_path = acados_source_path + '/include'
         ocp.acados_lib_path = acados_source_path + '/lib'
-        ## 设置模型
         ocp.model = model
         ocp.dims.N = N
         ocp.solver_options.tf = t_horizon
         ocp.dims.np = n_params
         ocp.parameter_values = np.zeros(n_params)
 
-        ## cost类型为线性
         ocp.cost.cost_type = 'LINEAR_LS'
         ocp.cost.cost_type_e = 'LINEAR_LS'
         ocp.cost.W = scipy.linalg.block_diag(Q, R)
         ocp.cost.W_e = Q
-        ## 这里V类矩阵的定义需要参考acados构建里面的解释，实际上就是定义一些映射关系
         ocp.cost.Vx = np.zeros((ny, nx))
         ocp.cost.Vx[:nx, :nx] = np.eye(nx)
         ocp.cost.Vu = np.zeros((ny, nu))
         ocp.cost.Vu[-nu:, -nu:] = np.eye(nu)
         ocp.cost.Vx_e = np.eye(nx)
 
-        # 约束条件设置
         ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
         ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
-        ## 这里是为了定义之前约束条件影响的index，它不需要像CasADi那样定义np.inf这种没有实际意义的约束。
         ocp.constraints.idxbu = np.array([0, 1])
         ocp.constraints.lbx = np.array([self.x_min, self.y_min])
         ocp.constraints.ubx = np.array([self.x_max, self.y_max])
         ocp.constraints.idxbx = np.array([0, 1])
 
-        # 一些状态的值，在实际仿真中可以重新给定，所里这里就定义一些空值
         x_ref = np.zeros(nx)
         u_ref = np.zeros(nu)
-        ## 将给定值设定，注意到这里不需要像之前那样给所有N-1设定ref值，ACADOS会默认进行设置
         ocp.constraints.x0 = x_ref
         ### 0--N-1
         ocp.cost.yref = np.concatenate((x_ref, u_ref))
@@ -246,12 +186,9 @@ class Optimizer(object):
         ocp.cost.yref_e = x_ref # yref_e means the reference for the last stage
 
         ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-        # ocp.solver_options.qp_solver = 'FULL_CONDENSING_HPIPM'
-        # ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
         ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
         ocp.solver_options.integrator_type = 'ERK'
         ocp.solver_options.print_level = 0
-        # ocp.solver_options.nlp_solver_type = 'SQP'
         ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
         json_file = os.path.join('./'+model.name+'_acados_ocp.json')
@@ -259,25 +196,9 @@ class Optimizer(object):
         solver = AcadosOcpSolver(ocp, json_file=json_file)
         print("initialize_solver_time: ", timeit.default_timer() - initialize_solver_time)
         integrator = AcadosSimSolver(ocp, json_file=json_file)
-        print("done creating solver, time: ", timeit.default_timer() - t1)
         return solver, integrator, T, N, t_horizon
     
     def update_and_solve(self):
-        # cur_path = os.path.dirname(os.path.realpath(__file__))
-        # path = os.path.join(cur_path, 'paths')
-        # os.makedirs(path, exist_ok=True)
-        # # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
-        # # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
-
-        # np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
-        # print("stateref shape: ", self.state_refs.shape)
-        # np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
-
-        # # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
-        # exit()
-
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
         self.next_trajectories = self.state_refs[idx:idx + self.N + 1]
@@ -286,30 +207,20 @@ class Optimizer(object):
         xs = self.state_refs[idx]
         self.solver.set(self.N, 'yref', xs)
         for j in range(self.N):
-            if self.target_waypoint_index+j >= self.state_refs.shape[0]:
+            if idx+j >= self.state_refs.shape[0]:
                 self.solver.set(j, 'yref', np.concatenate((self.state_refs[-1], np.zeros(2))))
             else:
                 self.solver.set(j, 'yref', np.concatenate((self.next_trajectories[j], self.next_controls[j])))# 设置当前循环x0 (stage 0)
-        if self.last_u is None:
-            self.last_u = np.zeros(2)
-        self.last_u[0] = self.next_controls[0, 0]
-        self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u)))
-        # 设置当前循环x0 (stage 0)
         self.solver.set(0, 'lbx', self.current_state)
         self.solver.set(0, 'ubx', self.current_state)
-        # 求解
         status = self.solver.solve()
         if status != 0 :
             print('ERROR!!! acados acados_ocp_solver returned status {}. Exiting.'.format(status))
             return None
-        # 得到下个时刻最优控制
         next_u = self.solver.get(0, 'u')
-        # std::cout << "x_cur: " << x_current[0] << ", " << x_current[1] << ", " << x_current[2] << ", ref: " << state_refs(idx, 0) << ", " << state_refs(idx, 1) << ", " << state_refs(idx, 2) << ", u: " << u_current[0] << ", " << u_current[1] << ", error: " << error << std::endl;
-        # print x_cur, ref, u_cur, error
         self.counter += 1
-        # print(self.counter, ") cur: ", np.around(self.current_state, 2), ", ref: ", np.around(self.next_trajectories[0, :], 2), ", ctrl: ", np.around(next_u, 2), ", idx: ", self.target_waypoint_index)
-        self.last_u = next_u
         return next_u
+    
     def integrate_next_states(self, u_res=None):
         # 以下纯粹为了仿真
         # 仿真器获得当前位置和控制指令
@@ -576,28 +487,5 @@ if __name__ == '__main__':
         # mpc.park()
         # mpc.exit_park()
         print("done")
-        # mpc.draw_result(stats, -35, 35, -35, 35)
-        mpc.draw_result(stats, -2, 22, -2, 16)
+        mpc.draw_result(stats, -35, 35, -35, 35)
         # mpc.draw_result(stats, -1, 5, -1, 2)
-
-# mean solve time:  0.000547633899913563 max:  0.0007941722869873047 min:  0.00040841102600097656 std:  6.495536205623692e-05 median:  0.0005583763122558594
-# 0.0005843510756363997
-# average kappa:  0.711998927789088
-# Average speed: 1.0142 m/s
-# Average steer angle: 0.0634 rad
-# Average change in speed: 0.0417 m/s²
-# Average change in steer angle: 0.0311 rad/s
-# Average x error: 0.0460 m
-# Average y error: 0.0429 m
-# Average yaw error: 0.0898 rad
-
-# mean solve time:  0.0005373664192862801 max:  0.0008776187896728516 min:  0.0003986358642578125 std:  6.203874916996816e-05 median:  0.0005426406860351562
-# 0.0005724191903829813
-# average kappa:  0.711998927789088
-# Average speed: 1.0143 m/s
-# Average steer angle: 0.0650 rad
-# Average change in speed: 0.0439 m/s²
-# Average change in steer angle: 0.0357 rad/s
-# Average x error: 0.0464 m
-# Average y error: 0.0418 m
-# Average yaw error: 0.0881 rad

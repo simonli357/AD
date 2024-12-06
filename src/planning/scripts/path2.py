@@ -417,6 +417,7 @@ class Path:
         # print("vrefs: ", self.v_refs[0:100])
         k_steer = 0 #0.4/np.amax(np.abs(self.kappa))
         self.steer_ref = k_steer * self.kappa
+        # self.steer_ref = np.arctan(0.27 * self.kappa)
         # Extend waypoints and reference values by N
         self.waypoints_x = np.pad(self.waypoints_x, (0,self.N+4), 'edge')
         self.waypoints_y = np.pad(self.waypoints_y, (0,self.N+4), 'edge')
