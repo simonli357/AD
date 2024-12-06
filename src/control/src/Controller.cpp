@@ -426,7 +426,15 @@ public:
             }
         }
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
-            sign_index = utils.object_index(OBJECT::LIGHTS);
+            bool is_red = false;
+            sign_index = utils.object_index(OBJECT::REDLIGHT);
+            if(sign_index >= 0) {
+                is_red = true;
+            } else {
+                sign_index = utils.object_index(OBJECT::LIGHTS);
+            }
+            if (sign_index < 0) sign_index = utils.object_index(OBJECT::GREENLIGHT);
+            if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
@@ -435,6 +443,10 @@ public:
                     // if(lane) utils.reset_odom();
                     stopsign_flag = STOPSIGN_FLAGS::LIGHT;
                 }
+            }
+            if (is_red) {
+                mpc.reset_solver();
+                wait_for_green();
             }
         }
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
@@ -558,6 +570,21 @@ public:
         update_mpc_states(x_current[0], x_current[1], x_current[2]);
         int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
         return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
+    }
+    void check_emergency_stop() {
+        if (utils.emergency) {
+            utils.debug("check_emergency_stop(): emergency stop triggered", 1);
+            while (utils.emergency) {
+                stop_for(T);
+                rate->sleep();
+            }
+            stop_for(stop_duration);
+            while (utils.emergency) { // double check
+                stop_for(T);
+                rate->sleep();
+            }
+            utils.debug("check_emergency_stop(): emergency stop released", 1);
+        }
     }
     void pedestrian_detected() {
         int pedestrian_count = 0;
@@ -762,10 +789,26 @@ public:
                 utils.y0 = total_y / n - utils.odomY;
             }
             return;
-        } else {
-            utils.debug("wait_for_green(): no light detector, waiting for " + std::to_string(stop_duration) + "s...", 2);
-            stop_for(stop_duration);
+        } else if (real) {
+            utils.debug("wait_for_green(): red light detected, waiting for " + std::to_string(stop_duration * 2) + "s or until light turns green", 2);
+            auto expiring_time = ros::Time::now() + ros::Duration(stop_duration * 2);
+            while (true) {
+                if (ros::Time::now() > expiring_time) {
+                    utils.debug("wait_for_green(): timer expired, proceeding...", 2);
+                    return;
+                }
+                int sign_index = utils.object_index(OBJECT::GREENLIGHT);
+                if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+                if (sign_index >= 0) {
+                    utils.debug("wait_for_green(): green light detected, proceeding...", 2);
+                    return;
+                }
+                stop_for(T);
+            }
             return;
+        } else {
+            utils.debug("wait_for_green(): light detected, but in simulation, proceeding ", 2);
+            // stop_for(stop_duration);
         }
     }
     void publish_waypoints() {
@@ -832,7 +875,6 @@ public:
                 utils.get_states(x, y, yaw);
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, CAMERA_PARAMS);
                 // auto car_pose = utils.detected_cars[car_index];
-                utils.debug("check_car(): detected car at a distance of: " + std::to_string(dist) + ", at: " + std::to_string(car_pose[0]) + ", " + std::to_string(car_pose[1]), 2);
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
@@ -898,7 +940,7 @@ public:
                 // } else if (min_dist > LANE_OFFSET - CAR_WIDTH * 1.2) {
                 //     detected_car_state = DETECTED_CAR_STATE::ADJACENT_LANE;
                 // }
-                utils.debug("check_car(): min_dist: " + std::to_string(min_dist) + ", min_dist_adj: " + std::to_string(min_dist_adj), 2);
+                utils.debug("check_car(): min_dist: " + std::to_string(min_dist) + ", min_dist_adj: " + std::to_string(min_dist_adj), 4);
                 if (min_dist < LANE_OFFSET - CAR_WIDTH && min_dist < min_dist_adj) {
                     detected_car_state = DETECTED_CAR_STATE::SAME_LANE;
                 } else if (min_dist_adj < LANE_OFFSET - CAR_WIDTH && min_dist_adj < min_dist) {
@@ -1046,6 +1088,7 @@ void StateMachine::run() {
         if (sign) {
             pedestrian_detected();
             exit_detected();
+            check_emergency_stop();
         }
         if (state == STATE::MOVING) {
             if(intersection_reached()) {
@@ -1057,9 +1100,7 @@ void StateMachine::run() {
                         mpc.reset_solver();
                         stop_for(stop_duration);
                     } else if (stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
-                        utils.debug("traffic light detected, stopping until it's green...", 2);
-                        mpc.reset_solver();
-                        wait_for_green();
+                        utils.debug("traffic light was detected, clearing stopsign flag...", 2);
                     }
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                 } else if(stopsign_flag == STOPSIGN_FLAGS::PRIO) {
@@ -1185,6 +1226,7 @@ void StateMachine::run() {
                 while(1) {
                     pedestrian_detected();
                     exit_detected();
+                    check_emergency_stop();
                     // check utils.recent_car_indices
                     // std::cout << "recent car indices size: " << utils.recent_car_indices.size() << std::endl;
                     std::list<int> cars = utils.recent_car_indices;
@@ -1194,7 +1236,7 @@ void StateMachine::run() {
                     bool car_in_spot = false;
                     while(1) {
                         for (int i : cars) {
-                            utils.debug("PARKING(): checking car: (" + std::to_string(utils.detected_cars[i][0]) + ", " + std::to_string(utils.detected_cars[i][1]) + "), error: " + std::to_string((utils.detected_cars[i] - PARKING_SPOTS[target_spot]).norm()), 2);
+                            utils.debug("PARKING(): checking car: (" + std::to_string(utils.detected_cars[i][0]) + ", " + std::to_string(utils.detected_cars[i][1]) + "), error: " + std::to_string((utils.detected_cars[i] - PARKING_SPOTS[target_spot]).norm()), 5);
                             Eigen::Vector2d world_pose = utils.detected_cars[i];
                             Eigen::Vector2d spot = PARKING_SPOTS[target_spot];
                             double error_sq = (world_pose - spot).squaredNorm();
@@ -1261,6 +1303,7 @@ void StateMachine::run() {
                     x_error = x - PARKING_SPOTS[target_spot][0];
                     pedestrian_detected();
                     exit_detected();
+                    check_emergency_stop();
                     utils.get_states(x, y, yaw);
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
                     if (x_error > 0 && x_error < 0.05 || x_error < 0 && x_error > -0.05)

@@ -79,7 +79,7 @@ class Optimizer(object):
         self.rdb_circumference = 4.15
         import math
         self.limit = math.floor(self.rdb_circumference/(self.v_ref * self.T))
-
+        self.last_u = None
         self.t0 = 0
         self.init_state = x0 if x0 is not None else self.state_refs[0]
         self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
@@ -290,6 +290,10 @@ class Optimizer(object):
                 self.solver.set(j, 'yref', np.concatenate((self.state_refs[-1], np.zeros(2))))
             else:
                 self.solver.set(j, 'yref', np.concatenate((self.next_trajectories[j], self.next_controls[j])))# 设置当前循环x0 (stage 0)
+        if self.last_u is None:
+            self.last_u = np.zeros(2)
+        self.last_u[0] = self.next_controls[0, 0]
+        self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u)))
         # 设置当前循环x0 (stage 0)
         self.solver.set(0, 'lbx', self.current_state)
         self.solver.set(0, 'ubx', self.current_state)
@@ -304,6 +308,7 @@ class Optimizer(object):
         # print x_cur, ref, u_cur, error
         self.counter += 1
         # print(self.counter, ") cur: ", np.around(self.current_state, 2), ", ref: ", np.around(self.next_trajectories[0, :], 2), ", ctrl: ", np.around(next_u, 2), ", idx: ", self.target_waypoint_index)
+        self.last_u = next_u
         return next_u
     def integrate_next_states(self, u_res=None):
         # 以下纯粹为了仿真
@@ -571,5 +576,28 @@ if __name__ == '__main__':
         # mpc.park()
         # mpc.exit_park()
         print("done")
-        mpc.draw_result(stats, -35, 35, -35, 35)
+        # mpc.draw_result(stats, -35, 35, -35, 35)
+        mpc.draw_result(stats, -2, 22, -2, 16)
         # mpc.draw_result(stats, -1, 5, -1, 2)
+
+# mean solve time:  0.000547633899913563 max:  0.0007941722869873047 min:  0.00040841102600097656 std:  6.495536205623692e-05 median:  0.0005583763122558594
+# 0.0005843510756363997
+# average kappa:  0.711998927789088
+# Average speed: 1.0142 m/s
+# Average steer angle: 0.0634 rad
+# Average change in speed: 0.0417 m/s²
+# Average change in steer angle: 0.0311 rad/s
+# Average x error: 0.0460 m
+# Average y error: 0.0429 m
+# Average yaw error: 0.0898 rad
+
+# mean solve time:  0.0005373664192862801 max:  0.0008776187896728516 min:  0.0003986358642578125 std:  6.203874916996816e-05 median:  0.0005426406860351562
+# 0.0005724191903829813
+# average kappa:  0.711998927789088
+# Average speed: 1.0143 m/s
+# Average steer angle: 0.0650 rad
+# Average change in speed: 0.0439 m/s²
+# Average change in steer angle: 0.0357 rad/s
+# Average x error: 0.0464 m
+# Average y error: 0.0418 m
+# Average yaw error: 0.0881 rad

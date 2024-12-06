@@ -5,8 +5,6 @@
 #include <array>
 
 namespace VehicleConstants {
-    const std::array<std::string, 3> MANEUVER_DIRECTIONS = {"left", "straight", "right"};
-
     const std::array<std::string, 12> state_names = {
         "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
         "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD"
@@ -46,8 +44,11 @@ namespace VehicleConstants {
         BLOCK,
         PEDESTRIAN,
         CAR,
+        GREENLIGHT,
+        YELLOWLIGHT,
+        REDLIGHT
     };
-    const std::array<std::string, 13> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car" };
+    const std::array<std::string, 16> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light" };
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,

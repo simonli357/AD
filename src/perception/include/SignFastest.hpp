@@ -19,8 +19,6 @@
 #include "yolov8.h"
 #include <memory>
 #include <eigen3/Eigen/Dense>
-#include "Hungarian.h"
-#include "KalmanTracker.h"
 
 using namespace std::chrono;
 
@@ -47,27 +45,15 @@ class SignFastest {
                 ROS_WARN("Failed to get 'confidence_thresholds' parameter.");
             } else {
                 std::cout << "loaded confidence_thresholds size: " << confidence_thresholds.size() << std::endl;
-                // for (auto val : confidence_thresholds) {
-                //     ROS_INFO("Loaded confidence threshold: %f", val);
-                // }
             }
             if (!nh.param("max_distance_thresholds", distance_thresholds, std::vector<float>(13))) {
                 ROS_WARN("Failed to get 'max_distance_thresholds' parameter.");
             } else {
-                // for (float val : distance_thresholds) {
-                //     ROS_INFO("Loaded distance threshold: %f", val);
-                // }
-                // for(int i = 0; i < class_names.size(); i++) {
-                //     ROS_INFO("class_names: %s, distance_thresholds: %f", class_names[i].c_str(), distance_thresholds[i]);
-                // }
                 std::cout << "loaded distance_thresholds size: " << distance_thresholds.size() << std::endl;
             }
             if (!nh.param("counter_thresholds", counter_thresholds, std::vector<int>(13))) {
                 ROS_WARN("Failed to get 'counter_thresholds' parameter.");
             } else {
-                // for (int val : counter_thresholds) {
-                //     ROS_INFO("Loaded counter threshold: %d", val);
-                // }
                 std::cout << "loaded counter_thresholds size: " << counter_thresholds.size() << std::endl;
             }
             for(int i = 0; i < class_names.size(); i++) {
@@ -81,6 +67,7 @@ class SignFastest {
             nh.param(nodeName+"/real", real, false);
             nh.param(nodeName+"/pub", publish, false);
             nh.param(nodeName+"/ncnn", ncnn, false);
+            nh.param(nodeName+"/min_ground_distance", min_ground_distance, 429.0);
 
             std::string model;
             nh.param("ncnn_model", model, std::string("sissi753-opt"));
@@ -117,6 +104,12 @@ class SignFastest {
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
         
+        enum LightColor {
+            RED,
+            GREEN,
+            YELLOW,
+            UNDETERMINED
+        };
         static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240}; // fx, fy, cx, cy
         static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
         static constexpr double parallel_w2h_ratio = 1.30;
@@ -125,6 +118,7 @@ class SignFastest {
         static constexpr double CAR_HEIGHT = 0.1155;
         static constexpr double CAR_LENGTH = 0.464;
         static constexpr std::array<double, 3> CAMERA_POSE = {0.095, 0, 0.165};
+        double min_ground_distance = 429; // in mm
         Eigen::Vector3d object_pose_body_frame;
         
         static void estimate_object_pose2d(Eigen::Vector3d &out, double x1, double y1, double x2, double y2,
@@ -214,6 +208,9 @@ class SignFastest {
             BLOCK,
             PEDESTRIAN,
             CAR,
+            GREENLIGHT,
+            YELLOWLIGHT,
+            REDLIGHT
         };
         static constexpr int OBJECT_COUNT = 13;
         // private:
@@ -270,7 +267,7 @@ class SignFastest {
             double height = y2 - y1;
             if (class_id == OBJECT::CAR) {
                 expected_dist =  CAR_H2D_RATIO / height;
-            } else if (class_id == OBJECT::LIGHTS) {
+            } else if (class_id == OBJECT::LIGHTS || class_id == OBJECT::GREENLIGHT || class_id == OBJECT::YELLOWLIGHT || class_id == OBJECT::REDLIGHT) {
                 expected_dist = LIGHT_W2D_RATIO / width;
             } else { // sign
                 expected_dist = SIGN_H2D_RATIO / height;
@@ -284,51 +281,45 @@ class SignFastest {
                 return false; // Return false for invalid input
             }
 
-            // Define ROI: bottom 70% of the image and center 75% of the width
-            int roiHeight = static_cast<int>(depthImage.rows * 0.7);
-            int roiY = depthImage.rows - roiHeight; // Start from bottom 70%
-            int roiWidth = static_cast<int>(depthImage.cols * 0.75);
-            int roiX = (depthImage.cols - roiWidth) / 2; // Center the ROI horizontally
+            int roiWidth = static_cast<int>(depthImage.cols * 0.4); // 40% of the width
+            int roiHeight = static_cast<int>(depthImage.rows * 0.5); // 50% of the height
+            int roiX = (depthImage.cols - roiWidth) / 2; // Center horizontally
+            int roiY = static_cast<int>(depthImage.rows * 0.6) - (roiHeight / 2);
             cv::Rect roi(roiX, roiY, roiWidth, roiHeight);
             cv::Mat depthROI = depthImage(roi);
 
-            // Define safe distance threshold (meters)
-            const float safeDistance = 0.45 * 1000; // 0.45 meters in millimeters
+            // Find min and max values in the ROI
+            double minVal, maxVal;
+            cv::Point minLoc, maxLoc;
+            cv::minMaxLoc(depthROI, &minVal, &maxVal, &minLoc, &maxLoc);
+            cv::Point minLocGlobal(minLoc.x + roiX, minLoc.y + roiY);
 
-            // Create a binary mask for pixels below the safe distance
-            cv::Mat obstacleMask;
-            cv::threshold(depthROI, obstacleMask, safeDistance, 255, cv::THRESH_BINARY_INV);
-            obstacleMask.convertTo(obstacleMask, CV_8U); // Convert to 8-bit for contour detection
+            // Define threshold: 80% of the minimum value
+            float thresholdValue = static_cast<float>(std::max(minVal, 30.0)) * 1.2f;
 
-            // Find contours in the binary mask
-            std::vector<std::vector<cv::Point>> contours;
-            cv::findContours(obstacleMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+            // Count pixels below the threshold
+            cv::Mat belowThresholdMask;
+            cv::threshold(depthROI, belowThresholdMask, thresholdValue, 255, cv::THRESH_BINARY_INV);
+            belowThresholdMask.convertTo(belowThresholdMask, CV_8U); // Convert to 8-bit for counting
+            int belowThresholdCount = cv::countNonZero(belowThresholdMask);
 
-            // Copy the depth image for visualization
-            cv::Mat visualization;
-            cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U); // Normalize depth for display
-            cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR); // Convert to BGR for colored overlays
+            // cv::Mat visualization;
+            // cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U); // Normalize depth for display
+            // cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR); // Convert to BGR for colored overlays
+            // cv::rectangle(visualization, roi, cv::Scalar(0, 255, 0), 2); // Green rectangle for ROI
+            // cv::circle(visualization, minLocGlobal, 5, cv::Scalar(0, 0, 255), -1); // Red filled circle
+            // std::ostringstream overlayText;
+            // overlayText << "Min: " << minVal << " mm, Max: " << maxVal << " mm, Below 120% Min: " << belowThresholdCount;
+            // cv::putText(visualization, overlayText.str(), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
+            // std::cout << "min: " << minVal << ", max: " << maxVal << ", below 80% min: " << belowThresholdCount << std::endl;
+            // cv::imshow("Depth Visualization", visualization);
+            // cv::waitKey(1); // Use a small delay to update the display
 
-            // Draw the ROI on the visualization
-            cv::rectangle(visualization, roi, cv::Scalar(0, 255, 0), 2); // Green rectangle for ROI
-
-            // Evaluate contours to determine if there is an emergency obstacle
-            bool obstacleDetected = false;
-            for (const auto& contour : contours) {
-                double area = cv::contourArea(contour);
-                if (area > 500) { // Example area threshold for a significant obstacle
-                    obstacleDetected = true;
-                    // Draw the contour in red on the visualization
-                    cv::drawContours(visualization(roi), std::vector<std::vector<cv::Point>>{contour}, -1, cv::Scalar(0, 0, 255), 2);
-                }
+            if (minVal < min_ground_distance - 37 && belowThresholdCount > 0.1 * roiWidth * roiHeight) {
+                return true;
             }
 
-            // Display the visualization
-            cv::imshow("Depth Visualization", visualization);
-            cv::imshow("Obstacle Mask", obstacleMask);
-            cv::waitKey(1); // Use a small delay to update the display
-
-            return obstacleDetected;
+            return false;
         }
         bool isCircular(const std::vector<cv::Point>& contour) {
             double area = cv::contourArea(contour);
@@ -337,7 +328,7 @@ class SignFastest {
             double circle_area = CV_PI * radius * radius;
             return (area / circle_area) > 0.6; // Adjust threshold for circularity
         }
-        std::string classifyTrafficLight(cv::Mat detected_light) {
+        LightColor classifyTrafficLight(cv::Mat detected_light) {
             // Convert to grayscale and HSV
             cv::Mat gray_image, hsv_image, bright_mask;
             cv::cvtColor(detected_light, gray_image, cv::COLOR_BGR2GRAY);
@@ -386,19 +377,18 @@ class SignFastest {
                     double green_ratio = green_area / total_area;
                     double yellow_ratio = yellow_area / total_area;
 
-                    std::cout << "Red Ratio: " << red_ratio << ", Green Ratio: " << green_ratio
-                      << ", Yellow Ratio: " << yellow_ratio << std::endl;
-                    // Determine the light color based on the dominant ratio
+                    // std::cout << "Red Ratio: " << red_ratio << ", Green Ratio: " << green_ratio
+                    //   << ", Yellow Ratio: " << yellow_ratio << std::endl;
                     if (red_ratio > green_ratio && red_ratio > yellow_ratio && red_ratio > 0.2) {
-                        return "RED";
+                        return LightColor::RED;
                     } else if (green_ratio > red_ratio && green_ratio > yellow_ratio && green_ratio > 0.2) {
-                        return "GREEN";
+                        return LightColor::GREEN;
                     } else if (yellow_ratio > red_ratio && yellow_ratio > green_ratio && yellow_ratio > 0.2) {
-                        return "YELLOW";
+                        return LightColor::YELLOW;
                     }
                 }
             }
-            return "UNDETERMINED";
+            return LightColor::UNDETERMINED;
         }
         bool is_red_light(const cv::Mat &detected_light) {
             // Convert to HSV color space
@@ -442,7 +432,6 @@ class SignFastest {
                     } else {
                         distance = computeMedianDepth(depthImage, x1, y1, x2, y2)/1000; // in meters
                     }
-                    // emergency = detect_emergency_obstacle(depthImage);
                 } else {
                     distance = -1;
                 }
@@ -467,7 +456,11 @@ class SignFastest {
             return 0;
         }
         void publish_sign(const cv::Mat& image, const cv::Mat& depthImage) {
-            
+            if (hasDepthImage && depthImage.empty()) {
+                ROS_ERROR("Depth image is empty");
+                return;
+            }
+
             if(image.empty()) {
                 ROS_WARN("empty image received in sign detector");
                 return;
@@ -475,6 +468,16 @@ class SignFastest {
             if(printDuration) start = high_resolution_clock::now();
             std_msgs::Float32MultiArray sign_msg;
             sign_msg.layout.data_offset = 0;
+
+            bool emergency = detect_emergency_obstacle(depthImage);
+            if (emergency) {
+                for (int i = 0; i < 10; i++) {
+                    sign_msg.data.push_back(-1.0);
+                }
+                if(publish) pub.publish(sign_msg);
+                if (print) ROS_INFO("Emergency obstacle detected");
+                return;
+            }
 
             int hsy = 0;
             
@@ -512,11 +515,13 @@ class SignFastest {
                     int y2 = box.rect.y + box.rect.height;
                     if (class_id == OBJECT::LIGHTS) {
                         cv::Mat detected_light = image(cv::Rect(x1, y1, x2 - x1, y2 - y1));
-                        if (is_red_light(detected_light)) {
-                            ROS_INFO("Red light detected");
+                        // if (is_red_light(detected_light)) {
+                        //     ROS_INFO("Red light detected");
+                        // }
+                        auto light_color = classifyTrafficLight(detected_light);
+                        if (light_color != LightColor::UNDETERMINED) {
+                            class_id = light_color == LightColor::RED ? OBJECT::REDLIGHT : light_color == LightColor::GREEN ? OBJECT::GREENLIGHT : OBJECT::YELLOWLIGHT;
                         }
-                        std::string light_color = classifyTrafficLight(detected_light);
-                        std::cout << "Detected light color: " << light_color << std::endl;
                     }
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
