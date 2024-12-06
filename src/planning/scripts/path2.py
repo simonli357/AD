@@ -11,10 +11,6 @@ import rospy
 from std_msgs.msg import Float32MultiArray
 from utils.srv import waypoints, waypointsResponse, go_to, go_toResponse
 
-barca = np.array([[0,0], [1.33, -1.27], [2.55, -2.71], [3.26, -4.4], [3.07, -5.91], [1.9, -8.56], [-7.65, -24.357], 
-[-8.62, -25.8], [-9, -25.7], [-8.5, -27.4], [-4.16, -26.6], [-2.1, -23.5], [-0.2, -22.3],
-[2.15, -22.15]
-])
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
 
@@ -222,10 +218,6 @@ class Path:
                 attributes.append(attribute)
 
         runs1 = np.hstack(runs)
-        runs = []
-        runs.append(barca.T)
-        attributes = []
-        attributes.append([0]*len(barca))
         
         # for undetected in self.undetectable_areas:
         #     print("undetected: ", len(undetected))
@@ -425,6 +417,7 @@ class Path:
         # print("vrefs: ", self.v_refs[0:100])
         k_steer = 0 #0.4/np.amax(np.abs(self.kappa))
         self.steer_ref = k_steer * self.kappa
+        # self.steer_ref = np.arctan(0.27 * self.kappa)
         # Extend waypoints and reference values by N
         self.waypoints_x = np.pad(self.waypoints_x, (0,self.N+4), 'edge')
         self.waypoints_y = np.pad(self.waypoints_y, (0,self.N+4), 'edge')
@@ -488,7 +481,7 @@ def handle_goto_service(req):
     vrefName = req.vrefName
     if int(vrefName) >30:
         vrefName = "50"
-    config_path='../../control/scripts/config/mpc_config' + vrefName + '.yaml'
+    config_path='config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
         config = yaml.safe_load(f)
@@ -521,7 +514,7 @@ def handle_array_service(req):
     vrefName = req.vrefName
     if int(vrefName) >30:
         vrefName = "50"
-    config_path='../../control/scripts/config/mpc_config' + vrefName + '.yaml'
+    config_path='config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -602,7 +595,7 @@ if __name__ == "__main__":
         
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     # print("current_dir: ", current_dir)
-    # config_path=os.path.join(current_dir, '../../control/scripts/config/mpc_config25.yaml')
+    # config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
     # print("config_path: ", config_path)
     # path = config_path
     # with open(path, 'r') as f:

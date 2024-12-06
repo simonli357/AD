@@ -62,6 +62,7 @@ public:
         double z;
     } const CAMERA_POSE = {0.095, 0, 0.165};
 
+    bool emergency = false;
     int num_obj = 0;
     std::mutex lock;
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;

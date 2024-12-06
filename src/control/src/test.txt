@@ -1,427 +1,668 @@
-current state: x: 0.704, y: 9.76, yaw: 10.1
-i: 4107, x: 0.672, y: 9.77, yaw: 10.2
-i: 4108, x: 0.653, y: 9.75, yaw: 10.2
-i: 4109, x: 0.634, y: 9.74, yaw: 10.2
-i: 4110, x: 0.616, y: 9.72, yaw: 10.3
-i: 4111, x: 0.599, y: 9.7, yaw: 10.3
-current state: x: 0.685, y: 9.74, yaw: 10.2
-i: 4108, x: 0.653, y: 9.75, yaw: 10.2
-i: 4109, x: 0.634, y: 9.74, yaw: 10.2
-i: 4110, x: 0.616, y: 9.72, yaw: 10.3
-i: 4111, x: 0.599, y: 9.7, yaw: 10.3
-i: 4112, x: 0.582, y: 9.68, yaw: 10.3
-current state: x: 0.666, y: 9.72, yaw: 10.2
-i: 4109, x: 0.634, y: 9.74, yaw: 10.2
-i: 4110, x: 0.616, y: 9.72, yaw: 10.3
-i: 4111, x: 0.599, y: 9.7, yaw: 10.3
-i: 4112, x: 0.582, y: 9.68, yaw: 10.3
-i: 4113, x: 0.565, y: 9.67, yaw: 10.3
-current state: x: 0.648, y: 9.7, yaw: 10.2
-i: 4110, x: 0.616, y: 9.72, yaw: 10.3
-i: 4111, x: 0.599, y: 9.7, yaw: 10.3
-i: 4112, x: 0.582, y: 9.68, yaw: 10.3
-i: 4113, x: 0.565, y: 9.67, yaw: 10.3
-i: 4114, x: 0.549, y: 9.65, yaw: 10.4
-current state: x: 0.63, y: 9.68, yaw: 10.3
-i: 4111, x: 0.599, y: 9.7, yaw: 10.3
-i: 4112, x: 0.582, y: 9.68, yaw: 10.3
-i: 4113, x: 0.565, y: 9.67, yaw: 10.3
-i: 4114, x: 0.549, y: 9.65, yaw: 10.4
-i: 4115, x: 0.534, y: 9.63, yaw: 10.4
-current state: x: 0.613, y: 9.67, yaw: 10.3
-i: 4112, x: 0.582, y: 9.68, yaw: 10.3
-i: 4113, x: 0.565, y: 9.67, yaw: 10.3
-i: 4114, x: 0.549, y: 9.65, yaw: 10.4
-i: 4115, x: 0.534, y: 9.63, yaw: 10.4
-i: 4116, x: 0.52, y: 9.61, yaw: 10.4
-current state: x: 0.597, y: 9.65, yaw: 10.3
-i: 4114, x: 0.549, y: 9.65, yaw: 10.4
-i: 4115, x: 0.534, y: 9.63, yaw: 10.4
-i: 4116, x: 0.52, y: 9.61, yaw: 10.4
-i: 4117, x: 0.506, y: 9.59, yaw: 10.5
-i: 4118, x: 0.493, y: 9.57, yaw: 10.5
-current state: x: 0.579, y: 9.62, yaw: 10.3
-i: 4115, x: 0.534, y: 9.63, yaw: 10.4
-i: 4116, x: 0.52, y: 9.61, yaw: 10.4
-i: 4117, x: 0.506, y: 9.59, yaw: 10.5
-i: 4118, x: 0.493, y: 9.57, yaw: 10.5
-i: 4119, x: 0.48, y: 9.54, yaw: 10.5
-current state: x: 0.561, y: 9.6, yaw: 10.4
-i: 4116, x: 0.52, y: 9.61, yaw: 10.4
-i: 4117, x: 0.506, y: 9.59, yaw: 10.5
-i: 4118, x: 0.493, y: 9.57, yaw: 10.5
-i: 4119, x: 0.48, y: 9.54, yaw: 10.5
-i: 4120, x: 0.468, y: 9.52, yaw: 10.5
-current state: x: 0.545, y: 9.58, yaw: 10.4
-i: 4117, x: 0.506, y: 9.59, yaw: 10.5
-i: 4118, x: 0.493, y: 9.57, yaw: 10.5
-i: 4119, x: 0.48, y: 9.54, yaw: 10.5
-i: 4120, x: 0.468, y: 9.52, yaw: 10.5
-i: 4121, x: 0.457, y: 9.5, yaw: 10.6
-current state: x: 0.53, y: 9.55, yaw: 10.4
-i: 4118, x: 0.493, y: 9.57, yaw: 10.5
-i: 4119, x: 0.48, y: 9.54, yaw: 10.5
-i: 4120, x: 0.468, y: 9.52, yaw: 10.5
-i: 4121, x: 0.457, y: 9.5, yaw: 10.6
-i: 4122, x: 0.447, y: 9.48, yaw: 10.6
-current state: x: 0.516, y: 9.53, yaw: 10.5
-i: 4119, x: 0.48, y: 9.54, yaw: 10.5
-i: 4120, x: 0.468, y: 9.52, yaw: 10.5
-i: 4121, x: 0.457, y: 9.5, yaw: 10.6
-i: 4122, x: 0.447, y: 9.48, yaw: 10.6
-i: 4123, x: 0.437, y: 9.45, yaw: 10.6
-current state: x: 0.503, y: 9.51, yaw: 10.5
-i: 4120, x: 0.468, y: 9.52, yaw: 10.5
-i: 4121, x: 0.457, y: 9.5, yaw: 10.6
-i: 4122, x: 0.447, y: 9.48, yaw: 10.6
-i: 4123, x: 0.437, y: 9.45, yaw: 10.6
-i: 4124, x: 0.427, y: 9.43, yaw: 10.6
-current state: x: 0.491, y: 9.48, yaw: 10.5
-i: 4121, x: 0.457, y: 9.5, yaw: 10.6
-i: 4122, x: 0.447, y: 9.48, yaw: 10.6
-i: 4123, x: 0.437, y: 9.45, yaw: 10.6
-i: 4124, x: 0.427, y: 9.43, yaw: 10.6
-i: 4125, x: 0.419, y: 9.41, yaw: 10.7
-current state: x: 0.48, y: 9.46, yaw: 10.6
-i: 4122, x: 0.447, y: 9.48, yaw: 10.6
-i: 4123, x: 0.437, y: 9.45, yaw: 10.6
-i: 4124, x: 0.427, y: 9.43, yaw: 10.6
-i: 4125, x: 0.419, y: 9.41, yaw: 10.7
-i: 4126, x: 0.41, y: 9.38, yaw: 10.7
-current state: x: 0.469, y: 9.44, yaw: 10.6
-i: 4124, x: 0.427, y: 9.43, yaw: 10.6
-i: 4125, x: 0.419, y: 9.41, yaw: 10.7
-i: 4126, x: 0.41, y: 9.38, yaw: 10.7
-i: 4127, x: 0.403, y: 9.36, yaw: 10.7
-i: 4128, x: 0.395, y: 9.33, yaw: 10.7
-current state: x: 0.457, y: 9.41, yaw: 10.6
-i: 4125, x: 0.419, y: 9.41, yaw: 10.7
-i: 4126, x: 0.41, y: 9.38, yaw: 10.7
-i: 4127, x: 0.403, y: 9.36, yaw: 10.7
-i: 4128, x: 0.395, y: 9.33, yaw: 10.7
-i: 4129, x: 0.389, y: 9.31, yaw: 10.8
-current state: x: 0.447, y: 9.38, yaw: 10.6
-i: 4126, x: 0.41, y: 9.38, yaw: 10.7
-i: 4127, x: 0.403, y: 9.36, yaw: 10.7
-i: 4128, x: 0.395, y: 9.33, yaw: 10.7
-i: 4129, x: 0.389, y: 9.31, yaw: 10.8
-i: 4130, x: 0.383, y: 9.28, yaw: 10.8
-current state: x: 0.437, y: 9.36, yaw: 10.7
-i: 4127, x: 0.403, y: 9.36, yaw: 10.7
-i: 4128, x: 0.395, y: 9.33, yaw: 10.7
-i: 4129, x: 0.389, y: 9.31, yaw: 10.8
-i: 4130, x: 0.383, y: 9.28, yaw: 10.8
-i: 4131, x: 0.377, y: 9.26, yaw: 10.8
-current state: x: 0.428, y: 9.33, yaw: 10.7
-i: 4128, x: 0.395, y: 9.33, yaw: 10.7
-i: 4129, x: 0.389, y: 9.31, yaw: 10.8
-i: 4130, x: 0.383, y: 9.28, yaw: 10.8
-i: 4131, x: 0.377, y: 9.26, yaw: 10.8
-i: 4132, x: 0.372, y: 9.23, yaw: 10.8
-current state: x: 0.42, y: 9.3, yaw: 10.7
-i: 4129, x: 0.389, y: 9.31, yaw: 10.8
-i: 4130, x: 0.383, y: 9.28, yaw: 10.8
-i: 4131, x: 0.377, y: 9.26, yaw: 10.8
-i: 4132, x: 0.372, y: 9.23, yaw: 10.8
-i: 4133, x: 0.367, y: 9.21, yaw: 10.8
-current state: x: 0.413, y: 9.28, yaw: 10.7
-i: 4130, x: 0.383, y: 9.28, yaw: 10.8
-i: 4131, x: 0.377, y: 9.26, yaw: 10.8
-i: 4132, x: 0.372, y: 9.23, yaw: 10.8
-i: 4133, x: 0.367, y: 9.21, yaw: 10.8
-i: 4134, x: 0.363, y: 9.18, yaw: 10.8
-current state: x: 0.405, y: 9.25, yaw: 10.7
-i: 4131, x: 0.377, y: 9.26, yaw: 10.8
-i: 4132, x: 0.372, y: 9.23, yaw: 10.8
-i: 4133, x: 0.367, y: 9.21, yaw: 10.8
-i: 4134, x: 0.363, y: 9.18, yaw: 10.8
-i: 4135, x: 0.359, y: 9.16, yaw: 10.9
-current state: x: 0.399, y: 9.23, yaw: 10.8
-i: 4132, x: 0.372, y: 9.23, yaw: 10.8
-i: 4133, x: 0.367, y: 9.21, yaw: 10.8
-i: 4134, x: 0.363, y: 9.18, yaw: 10.8
-i: 4135, x: 0.359, y: 9.16, yaw: 10.9
-i: 4136, x: 0.355, y: 9.13, yaw: 10.9
-current state: x: 0.394, y: 9.2, yaw: 10.8
-i: 4134, x: 0.363, y: 9.18, yaw: 10.8
-i: 4135, x: 0.359, y: 9.16, yaw: 10.9
-i: 4136, x: 0.355, y: 9.13, yaw: 10.9
-i: 4137, x: 0.352, y: 9.11, yaw: 10.9
-i: 4138, x: 0.35, y: 9.08, yaw: 10.9
-current state: x: 0.387, y: 9.17, yaw: 10.8
-i: 4135, x: 0.359, y: 9.16, yaw: 10.9
-i: 4136, x: 0.355, y: 9.13, yaw: 10.9
-i: 4137, x: 0.352, y: 9.11, yaw: 10.9
-i: 4138, x: 0.35, y: 9.08, yaw: 10.9
-i: 4139, x: 0.347, y: 9.06, yaw: 10.9
-current state: x: 0.382, y: 9.15, yaw: 10.8
-i: 4136, x: 0.355, y: 9.13, yaw: 10.9
-i: 4137, x: 0.352, y: 9.11, yaw: 10.9
-i: 4138, x: 0.35, y: 9.08, yaw: 10.9
-i: 4139, x: 0.347, y: 9.06, yaw: 10.9
-i: 4140, x: 0.346, y: 9.03, yaw: 10.9
-current state: x: 0.377, y: 9.12, yaw: 10.8
-i: 4137, x: 0.352, y: 9.11, yaw: 10.9
-i: 4138, x: 0.35, y: 9.08, yaw: 10.9
-i: 4139, x: 0.347, y: 9.06, yaw: 10.9
-i: 4140, x: 0.346, y: 9.03, yaw: 10.9
-i: 4141, x: 0.344, y: 9.01, yaw: 10.9
-current state: x: 0.373, y: 9.09, yaw: 10.9
-i: 4138, x: 0.35, y: 9.08, yaw: 10.9
-i: 4139, x: 0.347, y: 9.06, yaw: 10.9
-i: 4140, x: 0.346, y: 9.03, yaw: 10.9
-i: 4141, x: 0.344, y: 9.01, yaw: 10.9
-i: 4142, x: 0.343, y: 8.98, yaw: 11
-current state: x: 0.37, y: 9.07, yaw: 10.9
-i: 4139, x: 0.347, y: 9.06, yaw: 10.9
-i: 4140, x: 0.346, y: 9.03, yaw: 10.9
-i: 4141, x: 0.344, y: 9.01, yaw: 10.9
-i: 4142, x: 0.343, y: 8.98, yaw: 11
-i: 4143, x: 0.342, y: 8.96, yaw: 11
-current state: x: 0.366, y: 9.04, yaw: 10.9
-i: 4140, x: 0.346, y: 9.03, yaw: 10.9
-i: 4141, x: 0.344, y: 9.01, yaw: 10.9
-i: 4142, x: 0.343, y: 8.98, yaw: 11
-i: 4143, x: 0.342, y: 8.96, yaw: 11
-i: 4144, x: 0.341, y: 8.93, yaw: 11
-current state: x: 0.363, y: 9.01, yaw: 10.9
-i: 4141, x: 0.344, y: 9.01, yaw: 10.9
-i: 4142, x: 0.343, y: 8.98, yaw: 11
-i: 4143, x: 0.342, y: 8.96, yaw: 11
-i: 4144, x: 0.341, y: 8.93, yaw: 11
-i: 4145, x: 0.34, y: 8.91, yaw: 11
-current state: x: 0.361, y: 8.99, yaw: 10.9
-i: 4142, x: 0.343, y: 8.98, yaw: 11
-i: 4143, x: 0.342, y: 8.96, yaw: 11
-i: 4144, x: 0.341, y: 8.93, yaw: 11
-i: 4145, x: 0.34, y: 8.91, yaw: 11
-i: 4146, x: 0.34, y: 8.88, yaw: 11
-current state: x: 0.359, y: 8.96, yaw: 10.9
-i: 4144, x: 0.341, y: 8.93, yaw: 11
-i: 4145, x: 0.34, y: 8.91, yaw: 11
-i: 4146, x: 0.34, y: 8.88, yaw: 11
-i: 4147, x: 0.34, y: 8.86, yaw: 11
-i: 4148, x: 0.339, y: 8.83, yaw: 11
-current state: x: 0.356, y: 8.93, yaw: 10.9
-i: 4145, x: 0.34, y: 8.91, yaw: 11
-i: 4146, x: 0.34, y: 8.88, yaw: 11
-i: 4147, x: 0.34, y: 8.86, yaw: 11
-i: 4148, x: 0.339, y: 8.83, yaw: 11
-i: 4149, x: 0.339, y: 8.81, yaw: 11
-current state: x: 0.354, y: 8.9, yaw: 10.9
-i: 4146, x: 0.34, y: 8.88, yaw: 11
-i: 4147, x: 0.34, y: 8.86, yaw: 11
-i: 4148, x: 0.339, y: 8.83, yaw: 11
-i: 4149, x: 0.339, y: 8.81, yaw: 11
-i: 4150, x: 0.34, y: 8.78, yaw: 11
-current state: x: 0.353, y: 8.88, yaw: 10.9
-i: 4147, x: 0.34, y: 8.86, yaw: 11
-i: 4148, x: 0.339, y: 8.83, yaw: 11
-i: 4149, x: 0.339, y: 8.81, yaw: 11
-i: 4150, x: 0.34, y: 8.78, yaw: 11
-i: 4151, x: 0.34, y: 8.76, yaw: 11
-current state: x: 0.352, y: 8.85, yaw: 11
-i: 4148, x: 0.339, y: 8.83, yaw: 11
-i: 4149, x: 0.339, y: 8.81, yaw: 11
-i: 4150, x: 0.34, y: 8.78, yaw: 11
-i: 4151, x: 0.34, y: 8.76, yaw: 11
-i: 4152, x: 0.34, y: 8.73, yaw: 11
-current state: x: 0.35, y: 8.82, yaw: 11
-i: 4149, x: 0.339, y: 8.81, yaw: 11
-i: 4150, x: 0.34, y: 8.78, yaw: 11
-i: 4151, x: 0.34, y: 8.76, yaw: 11
-i: 4152, x: 0.34, y: 8.73, yaw: 11
-i: 4153, x: 0.34, y: 8.71, yaw: 11
-current state: x: 0.349, y: 8.8, yaw: 11
-i: 4150, x: 0.34, y: 8.78, yaw: 11
-i: 4151, x: 0.34, y: 8.76, yaw: 11
-i: 4152, x: 0.34, y: 8.73, yaw: 11
-i: 4153, x: 0.34, y: 8.71, yaw: 11
-i: 4154, x: 0.34, y: 8.68, yaw: 11
-current state: x: 0.349, y: 8.77, yaw: 11
-i: 4151, x: 0.34, y: 8.76, yaw: 11
-i: 4152, x: 0.34, y: 8.73, yaw: 11
-i: 4153, x: 0.34, y: 8.71, yaw: 11
-i: 4154, x: 0.34, y: 8.68, yaw: 11
-i: 4155, x: 0.34, y: 8.66, yaw: 11
-current state: x: 0.348, y: 8.74, yaw: 11
-i: 4152, x: 0.34, y: 8.73, yaw: 11
-i: 4153, x: 0.34, y: 8.71, yaw: 11
-i: 4154, x: 0.34, y: 8.68, yaw: 11
-i: 4155, x: 0.34, y: 8.66, yaw: 11
-i: 4156, x: 0.34, y: 8.63, yaw: 11
-current state: x: 0.347, y: 8.72, yaw: 11
-i: 4154, x: 0.34, y: 8.68, yaw: 11
-i: 4155, x: 0.34, y: 8.66, yaw: 11
-i: 4156, x: 0.34, y: 8.63, yaw: 11
-i: 4157, x: 0.34, y: 8.61, yaw: 11
-i: 4158, x: 0.34, y: 8.58, yaw: 11
-current state: x: 0.347, y: 8.69, yaw: 11
-i: 4155, x: 0.34, y: 8.66, yaw: 11
-i: 4156, x: 0.34, y: 8.63, yaw: 11
-i: 4157, x: 0.34, y: 8.61, yaw: 11
-i: 4158, x: 0.34, y: 8.58, yaw: 11
-i: 4159, x: 0.34, y: 8.56, yaw: 11
-current state: x: 0.346, y: 8.66, yaw: 11
-i: 4156, x: 0.34, y: 8.63, yaw: 11
-i: 4157, x: 0.34, y: 8.61, yaw: 11
-i: 4158, x: 0.34, y: 8.58, yaw: 11
-i: 4159, x: 0.34, y: 8.56, yaw: 11
-i: 4160, x: 0.34, y: 8.53, yaw: 11
-current state: x: 0.346, y: 8.63, yaw: 11
-i: 4157, x: 0.34, y: 8.61, yaw: 11
-i: 4158, x: 0.34, y: 8.58, yaw: 11
-i: 4159, x: 0.34, y: 8.56, yaw: 11
-i: 4160, x: 0.34, y: 8.53, yaw: 11
-i: 4161, x: 0.34, y: 8.51, yaw: 11
-current state: x: 0.345, y: 8.6, yaw: 11
-i: 4158, x: 0.34, y: 8.58, yaw: 11
-i: 4159, x: 0.34, y: 8.56, yaw: 11
-i: 4160, x: 0.34, y: 8.53, yaw: 11
-i: 4161, x: 0.34, y: 8.51, yaw: 11
-i: 4162, x: 0.34, y: 8.48, yaw: 11
-current state: x: 0.345, y: 8.58, yaw: 11
-i: 4159, x: 0.34, y: 8.56, yaw: 11
-i: 4160, x: 0.34, y: 8.53, yaw: 11
-i: 4161, x: 0.34, y: 8.51, yaw: 11
-i: 4162, x: 0.34, y: 8.48, yaw: 11
-i: 4163, x: 0.34, y: 8.46, yaw: 11
-current state: x: 0.344, y: 8.55, yaw: 11
-i: 4160, x: 0.34, y: 8.53, yaw: 11
-i: 4161, x: 0.34, y: 8.51, yaw: 11
-i: 4162, x: 0.34, y: 8.48, yaw: 11
-i: 4163, x: 0.34, y: 8.46, yaw: 11
-i: 4164, x: 0.34, y: 8.43, yaw: 11
-current state: x: 0.344, y: 8.52, yaw: 11
-i: 4161, x: 0.34, y: 8.51, yaw: 11
-i: 4162, x: 0.34, y: 8.48, yaw: 11
-i: 4163, x: 0.34, y: 8.46, yaw: 11
-i: 4164, x: 0.34, y: 8.43, yaw: 11
-i: 4165, x: 0.34, y: 8.41, yaw: 11
-prio detected at a distance of: 0.741
-current state: x: 0.429, y: 8.35, yaw: 11
-i: 4162, x: 0.34, y: 8.48, yaw: 11
-i: 4163, x: 0.34, y: 8.46, yaw: 11
-i: 4164, x: 0.34, y: 8.43, yaw: 11
-i: 4165, x: 0.34, y: 8.41, yaw: 11
-i: 4166, x: 0.34, y: 8.38, yaw: 11
-current state: x: 0.429, y: 8.35, yaw: 11
-i: 4168, x: 0.34, y: 8.33, yaw: 11
-i: 4169, x: 0.34, y: 8.31, yaw: 11
-i: 4170, x: 0.34, y: 8.28, yaw: 11
-i: 4171, x: 0.34, y: 8.26, yaw: 11
-i: 4172, x: 0.34, y: 8.23, yaw: 11
-current state: x: 0.428, y: 8.32, yaw: 11
-i: 4169, x: 0.34, y: 8.31, yaw: 11
-i: 4170, x: 0.34, y: 8.28, yaw: 11
-i: 4171, x: 0.34, y: 8.26, yaw: 11
-i: 4172, x: 0.34, y: 8.23, yaw: 11
-i: 4173, x: 0.34, y: 8.21, yaw: 11
-current state: x: 0.428, y: 8.3, yaw: 11
-i: 4170, x: 0.34, y: 8.28, yaw: 11
-i: 4171, x: 0.34, y: 8.26, yaw: 11
-i: 4172, x: 0.34, y: 8.23, yaw: 11
-i: 4173, x: 0.34, y: 8.21, yaw: 11
-i: 4174, x: 0.34, y: 8.18, yaw: 11
-current state: x: 0.427, y: 8.28, yaw: 10.9
-i: 4171, x: 0.34, y: 8.26, yaw: 11
-i: 4172, x: 0.34, y: 8.23, yaw: 11
-i: 4173, x: 0.34, y: 8.21, yaw: 11
-i: 4174, x: 0.34, y: 8.18, yaw: 11
-i: 4175, x: 0.34, y: 8.16, yaw: 11
-current state: x: 0.426, y: 8.26, yaw: 10.9
-i: 4172, x: 0.34, y: 8.23, yaw: 11
-i: 4173, x: 0.34, y: 8.21, yaw: 11
-i: 4174, x: 0.34, y: 8.18, yaw: 11
-i: 4175, x: 0.34, y: 8.16, yaw: 11
-i: 4176, x: 0.34, y: 8.13, yaw: 11
-current state: x: 0.424, y: 8.24, yaw: 10.9
-i: 4173, x: 0.34, y: 8.21, yaw: 11
-i: 4174, x: 0.34, y: 8.18, yaw: 11
-i: 4175, x: 0.34, y: 8.16, yaw: 11
-i: 4176, x: 0.34, y: 8.13, yaw: 11
-i: 4177, x: 0.34, y: 8.11, yaw: 11
-current state: x: 0.423, y: 8.22, yaw: 10.9
-i: 4174, x: 0.34, y: 8.18, yaw: 11
-i: 4175, x: 0.34, y: 8.16, yaw: 11
-i: 4176, x: 0.34, y: 8.13, yaw: 11
-i: 4177, x: 0.34, y: 8.11, yaw: 11
-i: 4178, x: 0.34, y: 8.08, yaw: 11
-current state: x: 0.422, y: 8.21, yaw: 10.9
-i: 4175, x: 0.34, y: 8.16, yaw: 11
-i: 4176, x: 0.34, y: 8.13, yaw: 11
-i: 4177, x: 0.34, y: 8.11, yaw: 11
-i: 4178, x: 0.34, y: 8.08, yaw: 11
-i: 4179, x: 0.34, y: 8.06, yaw: 11
-current state: x: 0.421, y: 8.2, yaw: 10.9
-i: 4176, x: 0.34, y: 8.13, yaw: 11
-i: 4177, x: 0.34, y: 8.11, yaw: 11
-i: 4178, x: 0.34, y: 8.08, yaw: 11
-i: 4179, x: 0.34, y: 8.06, yaw: 11
-i: 4180, x: 0.34, y: 8.03, yaw: 11
-current state: x: 0.42, y: 8.19, yaw: 10.9
-i: 4177, x: 0.34, y: 8.11, yaw: 11
-i: 4178, x: 0.34, y: 8.08, yaw: 11
-i: 4179, x: 0.34, y: 8.06, yaw: 11
-i: 4180, x: 0.34, y: 8.03, yaw: 11
-i: 4181, x: 0.34, y: 8.01, yaw: 11
-current state: x: 0.417, y: 8.17, yaw: 10.8
-i: 4178, x: 0.34, y: 8.08, yaw: 11
-i: 4179, x: 0.34, y: 8.06, yaw: 11
-i: 4180, x: 0.34, y: 8.03, yaw: 11
-i: 4181, x: 0.34, y: 8.01, yaw: 11
-i: 4182, x: 0.34, y: 7.98, yaw: 11
-current state: x: 0.414, y: 8.15, yaw: 10.8
-i: 4179, x: 0.34, y: 8.06, yaw: 11
-i: 4180, x: 0.34, y: 8.03, yaw: 11
-i: 4181, x: 0.34, y: 8.01, yaw: 11
-i: 4182, x: 0.34, y: 7.98, yaw: 11
-i: 4183, x: 0.34, y: 7.96, yaw: 11
-current state: x: 0.41, y: 8.13, yaw: 10.8
-i: 4180, x: 0.34, y: 8.03, yaw: 11
-i: 4181, x: 0.34, y: 8.01, yaw: 11
-i: 4182, x: 0.34, y: 7.98, yaw: 11
-i: 4183, x: 0.34, y: 7.96, yaw: 11
-i: 4184, x: 0.34, y: 7.93, yaw: 11
-current state: x: 0.406, y: 8.11, yaw: 10.8
-i: 4181, x: 0.34, y: 8.01, yaw: 11
-i: 4182, x: 0.34, y: 7.98, yaw: 11
-i: 4183, x: 0.34, y: 7.96, yaw: 11
-i: 4184, x: 0.34, y: 7.93, yaw: 11
-i: 4185, x: 0.34, y: 7.91, yaw: 11
-current state: x: 0.401, y: 8.09, yaw: 10.7
-i: 4182, x: 0.34, y: 7.98, yaw: 11
-i: 4183, x: 0.34, y: 7.96, yaw: 11
-i: 4184, x: 0.34, y: 7.93, yaw: 11
-i: 4185, x: 0.34, y: 7.91, yaw: 11
-i: 4186, x: 0.341, y: 7.88, yaw: 11
-current state: x: 0.396, y: 8.07, yaw: 10.7
-i: 4183, x: 0.34, y: 7.96, yaw: 11
-i: 4184, x: 0.34, y: 7.93, yaw: 11
-i: 4185, x: 0.34, y: 7.91, yaw: 11
-i: 4186, x: 0.341, y: 7.88, yaw: 11
-i: 4187, x: 0.341, y: 7.86, yaw: 11
-current state: x: 0.389, y: 8.05, yaw: 10.7
-i: 4184, x: 0.34, y: 7.93, yaw: 11
-i: 4185, x: 0.34, y: 7.91, yaw: 11
-i: 4186, x: 0.341, y: 7.88, yaw: 11
-i: 4187, x: 0.341, y: 7.86, yaw: 11
-i: 4188, x: 0.341, y: 7.83, yaw: 11
-current state: x: 0.383, y: 8.04, yaw: 10.6
-i: 4185, x: 0.34, y: 7.91, yaw: 11
-i: 4186, x: 0.341, y: 7.88, yaw: 11
-i: 4187, x: 0.341, y: 7.86, yaw: 11
-i: 4188, x: 0.341, y: 7.83, yaw: 11
-i: 4189, x: 0.341, y: 7.81, yaw: 11
-current state: x: 0.375, y: 8.02, yaw: 10.6
-i: 4186, x: 0.341, y: 7.88, yaw: 11
-i: 4187, x: 0.341, y: 7.86, yaw: 11
-i: 4188, x: 0.341, y: 7.83, yaw: 11
-i: 4189, x: 0.341, y: 7.81, yaw: 11
-i: 4190, x: 0.342, y: 7.78, yaw: 11
-current state: x: 0.368, y: 8, yaw: 10.6
-i: 4187, x: 0.341, y: 7.86, yaw: 11
-i: 4188, x: 0.341, y: 7.83, yaw: 11
-i: 4189, x: 0.341, y: 7.81, yaw: 11
-i: 4190, x: 0.342, y: 7.78, yaw: 11
-i: 4191, x: 0.342, y: 7.76, yaw: 11
+ROS_MASTER_URI=http://localhost:11311
+
+process[mpc_controller_slsecret_Alienware_x15_R2_40612_2099642115521683321-1]: started with pid [40645]
+node name: /mpc_controller_slsecret_Alienware_x15_R2_40612_2099642115521683321
+Successfully loaded parameters
+ekf: 0, sign: 1, T: 0.1, N: 40, vref: 0.25, real: 0
+Utility constructor
+[ INFO] [1733436813.340292125]: ERROR: set pose service call failed
+[ INFO] [1733436813.341556756]: imu topic: /car1/imu
+[ INFO] [1733436813.341567539]: waiting for Imu message
+received message from Imu
+waiting for sign message
+received message from sign
+Path Manager Constructor
+v ref: 0.25, int:25
+MPC Constructor
+reference speed is 25 cm/s
+[ INFO] [1733436813.822579152, 4693.735000000]: mode: sim
+rate: 10
+[ INFO] [1733436813.826448095, 4693.739000000]: start_bool server ready, mpc time step T = 0.100000
+[ INFO] [1733436813.826475880, 4693.739000000]: state machine initialized
+[ INFO] [1733436813.826571317, 4693.739000000]: Utility node spinning at a rate of 300.000000
+imu initialized, intial yaw is -90.1 degrees
+[ INFO] [1733436813.826642257, 4693.739000000]: initialized in imu callback
+[ INFO] [1733436819.630205289, 4699.533000000]: start(): x=4.760000, y=2.706000, yaw=-1.572035
+[ INFO] [1733436819.630950579, 4699.534000000]: waypoints service found
+[ INFO] [1733436819.869656694, 4699.773000000]: initialize(): Received waypoints of size 7141
+[ INFO] [1733436820.017808057, 4699.921000000]: Python node notified successfully.
+[ INFO] [1733436820.017860989, 4699.921000000]: initialize(): start: 4.760000, 2.706000
+[ INFO] [1733436820.017870847, 4699.921000000]: initialize(): destination: 3.850000, 3.676000
+[ INFO] [1733436820.023260403, 4699.926000000]: Changing from INIT to MOVING
+[ INFO] [1733436822.541443339, 4702.439000000]: check_stop_sign(): priority detected at a distance of: 0.722000
+[ INFO] [1733436822.541486737, 4702.439000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (4.476707, 1.273261), actual: (4.511800, 1.351000), error: (0.035093, 0.077739), error norm: 0.085293, threshold: 0.750000
+[ INFO] [1733436822.541500252, 4702.439000000]: sign_based_relocalization(PRIORITY SOUTH): relative estimated pose to car: (-0.283651, -0.814734)
+[ INFO] [1733436823.950658992, 4703.844000000]: intersection_reached(): setting last intersection point to (4.769512, 1.731302)
+[ INFO] [1733436823.950707135, 4703.844000000]: intersection reached
+[ INFO] [1733436823.950764199, 4703.844000000]: priority detected, proceeding...
+[ INFO] [1733436829.154004973, 4709.038000000]: check_stop_sign(): stop sign detected at a distance of: 0.451000
+[ INFO] [1733436829.154089649, 4709.039000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (3.575448, 0.938657), actual: (3.507240, 0.984030), error: (-0.068208, 0.045373), error norm: 0.081921, threshold: 0.750000
+[ INFO] [1733436829.154123861, 4709.039000000]: sign_based_relocalization(STOPSIGN WEST): relative estimated pose to car: (-0.545866, 0.289807)
+[ INFO] [1733436829.659208302, 4709.543000000]: intersection_reached(): setting last intersection point to (3.895744, 0.709932)
+[ INFO] [1733436829.659238681, 4709.543000000]: intersection reached
+[ INFO] [1733436829.659247320, 4709.543000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733436847.086396490, 4726.938000000]: check_stop_sign(): priority detected at a distance of: 0.729000
+[ INFO] [1733436847.086450972, 4726.938000000]: sign_based_relocalization(PRIORITY NORTH): SUCCESS: estimated sign pose: (0.948107, 2.946742), actual: (0.982112, 3.020450), error: (0.034005, 0.073708), error norm: 0.081174, threshold: 0.750000
+[ INFO] [1733436847.086476546, 4726.938000000]: sign_based_relocalization(PRIORITY NORTH): relative estimated pose to car: (0.211188, 0.826495)
+[ INFO] [1733436848.692926323, 4728.543000000]: intersection_reached(): setting last intersection point to (0.751415, 2.589446)
+[ INFO] [1733436848.692955026, 4728.543000000]: intersection reached
+[ INFO] [1733436848.692961730, 4728.543000000]: priority detected, proceeding...
+[ INFO] [1733436857.703996087, 4737.538000000]: check_stop_sign(): priority detected at a distance of: 0.737000
+[ INFO] [1733436857.704051584, 4737.538000000]: sign_based_relocalization(PRIORITY NORTH): SUCCESS: estimated sign pose: (0.987629, 5.818102), actual: (0.982112, 5.911470), error: (-0.005517, 0.093368), error norm: 0.093531, threshold: 0.750000
+[ INFO] [1733436857.704074518, 4737.538000000]: sign_based_relocalization(PRIORITY NORTH): relative estimated pose to car: (0.254633, 0.825529)
+[ INFO] [1733436870.933358573, 4750.744000000]: intersection_reached(): setting last intersection point to (0.727264, 8.578166)
+[ INFO] [1733436870.933406907, 4750.744000000]: intersection reached
+[ INFO] [1733436870.933434499, 4750.745000000]: priority detected, proceeding...
+[ INFO] [1733436909.102896777, 4788.838000000]: check_car(): detected car at a distance of: 1.371000, at: 9.799799, 11.654251
+[ INFO] [1733436909.102932743, 4788.838000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.103133186, 4788.838000000]: check_car(): min_dist: 0.319545, min_dist_adj: 0.712650
+[ INFO] [1733436909.202856407, 4788.938000000]: check_car(): detected car at a distance of: 1.346000, at: 9.811285, 11.654483
+[ INFO] [1733436909.202894274, 4788.938000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.203065070, 4788.938000000]: check_car(): min_dist: 0.324611, min_dist_adj: 0.717990
+[ INFO] [1733436909.303830281, 4789.038000000]: check_car(): detected car at a distance of: 1.283000, at: 9.786141, 11.657110
+[ INFO] [1733436909.303858028, 4789.038000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.303966492, 4789.038000000]: check_car(): min_dist: 0.315883, min_dist_adj: 0.709331
+[ INFO] [1733436909.404176892, 4789.138000000]: check_car(): detected car at a distance of: 1.281000, at: 9.823499, 11.659404
+[ INFO] [1733436909.404261111, 4789.138000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.404412920, 4789.138000000]: check_car(): min_dist: 0.334223, min_dist_adj: 0.727692
+[ INFO] [1733436909.504519539, 4789.239000000]: check_car(): detected car at a distance of: 1.218500, at: 9.798174, 11.662088
+[ INFO] [1733436909.504559662, 4789.239000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.504724802, 4789.239000000]: check_car(): min_dist: 0.325721, min_dist_adj: 0.718988
+[ INFO] [1733436909.603422326, 4789.338000000]: check_car(): detected car at a distance of: 1.211000, at: 9.827765, 11.661606
+[ INFO] [1733436909.603463619, 4789.338000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.603622586, 4789.338000000]: check_car(): min_dist: 0.338070, min_dist_adj: 0.731504
+[ INFO] [1733436909.703586157, 4789.438000000]: check_car(): detected car at a distance of: 1.130500, at: 9.784429, 11.667137
+[ INFO] [1733436909.703630838, 4789.438000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.703786688, 4789.438000000]: check_car(): min_dist: 0.324217, min_dist_adj: 0.717714
+[ INFO] [1733436909.803819440, 4789.538000000]: check_car(): detected car at a distance of: 1.088500, at: 9.779249, 11.668200
+[ INFO] [1733436909.803849692, 4789.538000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.803954522, 4789.538000000]: check_car(): min_dist: 0.323053, min_dist_adj: 0.716544
+[ INFO] [1733436909.904730778, 4789.639000000]: check_car(): detected car at a distance of: 1.079000, at: 9.805712, 11.670035
+[ INFO] [1733436909.904770606, 4789.639000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436909.904995000, 4789.639000000]: check_car(): min_dist: 0.336255, min_dist_adj: 0.729427
+[ INFO] [1733436910.005263362, 4789.738000000]: check_car(): detected car at a distance of: 1.041000, at: 9.810867, 11.669126
+[ INFO] [1733436910.005304439, 4789.738000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.005449216, 4789.738000000]: check_car(): min_dist: 0.337861, min_dist_adj: 0.730887
+[ INFO] [1733436910.105677167, 4789.838000000]: check_car(): detected car at a distance of: 1.002500, at: 9.814003, 11.671489
+[ INFO] [1733436910.105717717, 4789.838000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.105870919, 4789.839000000]: check_car(): min_dist: 0.341270, min_dist_adj: 0.734400
+[ INFO] [1733436910.205463865, 4789.939000000]: check_car(): detected car at a distance of: 0.945000, at: 9.797268, 11.674890
+[ INFO] [1733436910.205508156, 4789.939000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.205638521, 4789.939000000]: check_car(): min_dist: 0.336742, min_dist_adj: 0.730154
+[ INFO] [1733436910.305182261, 4790.038000000]: check_car(): detected car at a distance of: 0.908000, at: 9.800823, 11.677845
+[ INFO] [1733436910.305222546, 4790.038000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.305356154, 4790.038000000]: check_car(): min_dist: 0.340968, min_dist_adj: 0.734344
+[ INFO] [1733436910.404858381, 4790.138000000]: check_car(): detected car at a distance of: 0.877000, at: 9.810001, 11.680401
+[ INFO] [1733436910.404901171, 4790.138000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.405031940, 4790.138000000]: check_car(): min_dist: 0.347426, min_dist_adj: 0.740624
+[ INFO] [1733436910.507040519, 4790.239000000]: check_car(): detected car at a distance of: 0.835000, at: 9.805414, 11.680714
+[ INFO] [1733436910.507083477, 4790.239000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.507214313, 4790.239000000]: check_car(): min_dist: 0.345597, min_dist_adj: 0.738911
+[ INFO] [1733436910.607419148, 4790.339000000]: check_car(): detected car at a distance of: 0.820500, at: 9.833829, 11.688053
+[ INFO] [1733436910.607460853, 4790.339000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.607593053, 4790.339000000]: check_car(): min_dist: 0.364530, min_dist_adj: 0.758021
+[ INFO] [1733436910.706829199, 4790.438000000]: check_car(): detected car at a distance of: 0.771000, at: 9.823840, 11.694139
+[ INFO] [1733436910.706872140, 4790.438000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.706990012, 4790.438000000]: check_car(): min_dist: 0.365963, min_dist_adj: 0.759060
+[ INFO] [1733436910.805883185, 4790.538000000]: check_car(): detected car at a distance of: 0.726500, at: 9.814275, 11.684320
+[ INFO] [1733436910.805919911, 4790.538000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.806032290, 4790.538000000]: check_car(): min_dist: 0.352888, min_dist_adj: 0.746022
+[ INFO] [1733436910.906528467, 4790.639000000]: check_car(): detected car at a distance of: 0.676000, at: 9.796486, 11.669885
+[ INFO] [1733436910.906561178, 4790.639000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436910.906655803, 4790.639000000]: check_car(): min_dist: 0.331910, min_dist_adj: 0.725294
+[ INFO] [1733436911.005927272, 4790.738000000]: check_car(): detected car at a distance of: 0.679000, at: 9.834905, 11.658379
+[ INFO] [1733436911.005966473, 4790.738000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436911.006069556, 4790.738000000]: check_car(): min_dist: 0.338419, min_dist_adj: 0.731690
+[ INFO] [1733436911.106950913, 4790.839000000]: check_car(): detected car at a distance of: 0.621000, at: 9.806820, 11.643996
+[ INFO] [1733436911.106985953, 4790.839000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436911.107051975, 4790.839000000]: check_car(): min_dist: 0.313215, min_dist_adj: 0.706619
+[ INFO] [1733436911.206612486, 4790.938000000]: check_car(): detected car at a distance of: 0.618500, at: 9.840612, 11.633119
+[ INFO] [1733436911.206641119, 4790.938000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436911.206705655, 4790.938000000]: check_car(): min_dist: 0.318590, min_dist_adj: 0.711669
+[ INFO] [1733436911.307721508, 4791.039000000]: check_car(): detected car at a distance of: 0.582500, at: 9.836577, 11.620078
+[ INFO] [1733436911.307763656, 4791.039000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436911.307856456, 4791.039000000]: check_car(): min_dist: 0.305058, min_dist_adj: 0.698234
+[ INFO] [1733436911.406498862, 4791.138000000]: check_car(): detected car at a distance of: 0.560000, at: 9.846748, 11.608043
+[ INFO] [1733436911.406529849, 4791.138000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436911.406601447, 4791.138000000]: check_car(): min_dist: 0.298764, min_dist_adj: 0.692070
+[ INFO] [1733436912.008023759, 4791.738000000]: check_car(): detected car at a distance of: 1.382000, at: 10.671443, 10.833558
+[ INFO] [1733436912.008065837, 4791.738000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733436912.008249831, 4791.738000000]: check_car(): min_dist: 0.023576, min_dist_adj: 0.371162
+[ INFO] [1733436912.008272841, 4791.738000000]: check_car(): start idx: 993, end idx: 1038
+[ INFO] [1733436912.008320141, 4791.738000000]: check_car(): changing lane to the right in 0.872000 meters. start pose: (10.072239,11.031894), end: (11.484689, 10.514726), cur: (9.339243, 11.484568)
+[ INFO] [1733436926.034274800, 4805.738000000]: check_stop_sign(): roundabout detected at a distance of: 0.732500
+[ INFO] [1733436926.034327489, 4805.738000000]: sign_based_relocalization(ROUNDABOUT EAST): SUCCESS: estimated sign pose: (14.839012, 10.121465), actual: (14.924090, 10.155166), error: (0.085078, 0.033701), error norm: 0.091509, threshold: 0.750000
+[ INFO] [1733436926.034355101, 4805.738000000]: sign_based_relocalization(ROUNDABOUT EAST): relative estimated pose to car: (0.849847, -0.254066)
+[ INFO] [1733436927.741642874, 4807.443000000]: intersection_reached(): setting last intersection point to (14.534257, 10.392265)
+[ INFO] [1733436927.741674028, 4807.443000000]: intersection reached
+[ INFO] [1733436942.160926150, 4821.838000000]: check_car(): detected car at a distance of: 1.384000, at: 19.562936, 10.525917
+[ INFO] [1733436942.161090530, 4821.838000000]: check_car(): min_dist: 0.083600, min_dist_adj: 0.309896
+[ INFO] [1733436942.161103880, 4821.838000000]: check_car(): start idx: 1329, end idx: 1390
+[ INFO] [1733436942.161145714, 4821.838000000]: check_car(): changing lane to the left in 0.874000 meters. start pose: (18.927089,10.523702), end: (20.225130, 10.984606), cur: (18.085210, 10.410810)
+[ INFO] [1733436974.817377476, 4854.439000000]: check_stop_sign(): roundabout detected at a distance of: 0.735000
+[ INFO] [1733436974.817436823, 4854.439000000]: sign_based_relocalization(ROUNDABOUT SOUTH): SUCCESS: estimated sign pose: (15.782904, 11.861741), actual: (15.629166, 11.744351), error: (-0.153738, -0.117390), error norm: 0.193432, threshold: 0.750000
+[ INFO] [1733436974.817465631, 4854.439000000]: sign_based_relocalization(ROUNDABOUT SOUTH): relative estimated pose to car: (-0.206789, -0.807808)
+[ INFO] [1733436976.425180108, 4856.044000000]: intersection_reached(): setting last intersection point to (15.812848, 12.109387)
+[ INFO] [1733436976.425211173, 4856.044000000]: intersection reached
+[ INFO] [1733436994.050051233, 4873.639000000]: check_car(): detected car at a distance of: 1.351000, at: 15.644114, 6.191969
+[ INFO] [1733436994.050255495, 4873.640000000]: check_car(): min_dist: 0.343495, min_dist_adj: 0.050024
+[ INFO] [1733436994.148369431, 4873.738000000]: check_car(): detected car at a distance of: 1.317500, at: 15.646966, 6.184807
+[ INFO] [1733436994.148507676, 4873.738000000]: check_car(): min_dist: 0.345981, min_dist_adj: 0.048394
+[ INFO] [1733436994.249253341, 4873.838000000]: check_car(): detected car at a distance of: 1.291000, at: 15.652494, 6.169624
+[ INFO] [1733436994.249441641, 4873.838000000]: check_car(): min_dist: 0.350855, min_dist_adj: 0.042712
+[ INFO] [1733436994.348766207, 4873.938000000]: check_car(): detected car at a distance of: 1.272000, at: 15.655002, 6.148412
+[ INFO] [1733436994.348893662, 4873.938000000]: check_car(): min_dist: 0.352543, min_dist_adj: 0.041755
+[ INFO] [1733436994.448869380, 4874.038000000]: check_car(): detected car at a distance of: 1.200500, at: 15.659390, 6.187215
+[ INFO] [1733436994.448993062, 4874.038000000]: check_car(): min_dist: 0.358497, min_dist_adj: 0.035762
+[ INFO] [1733436994.549603052, 4874.138000000]: check_car(): detected car at a distance of: 1.173000, at: 15.660949, 6.177274
+[ INFO] [1733436994.549853486, 4874.138000000]: check_car(): min_dist: 0.359742, min_dist_adj: 0.035023
+[ INFO] [1733436994.649779033, 4874.238000000]: check_car(): detected car at a distance of: 1.176000, at: 15.654574, 6.140969
+[ INFO] [1733436994.649972263, 4874.238000000]: check_car(): min_dist: 0.351612, min_dist_adj: 0.041889
+[ INFO] [1733437002.863429892, 4882.438000000]: check_stop_sign(): stop sign detected at a distance of: 0.732000
+[ INFO] [1733437002.863498276, 4882.438000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (14.989475, 4.637439), actual: (15.057500, 4.631000), error: (0.068025, -0.006439), error norm: 0.068329, threshold: 0.750000
+[ INFO] [1733437002.863521464, 4882.438000000]: sign_based_relocalization(STOPSIGN SOUTH): relative estimated pose to car: (-0.306005, -0.816365)
+[ INFO] [1733437004.372146678, 4883.944000000]: intersection_reached(): setting last intersection point to (15.321820, 5.030940)
+[ INFO] [1733437004.372178491, 4883.944000000]: intersection reached
+[ INFO] [1733437004.372191327, 4883.944000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437011.890897998, 4891.444000000]: crosswalk detected at a distance of: 0.330000
+[ INFO] [1733437011.890943229, 4891.444000000]: sign_based_relocalization(CROSSWALK SOUTH): SUCCESS: estimated sign pose: (15.076377, 3.037602), actual: (15.086600, 3.035000), error: (0.010223, -0.002602), error norm: 0.010549, threshold: 0.750000
+[ INFO] [1733437011.890954171, 4891.444000000]: sign_based_relocalization(CROSSWALK SOUTH): relative estimated pose to car: (-0.214413, -0.424735)
+[ INFO] [1733437016.995575451, 4896.538000000]: check_stop_sign(): priority detected at a distance of: 0.671000
+[ INFO] [1733437016.995636818, 4896.538000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (15.070241, 1.590251), actual: (15.057976, 1.548200), error: (-0.012265, -0.042051), error norm: 0.043804, threshold: 0.750000
+[ INFO] [1733437016.995653895, 4896.538000000]: sign_based_relocalization(PRIORITY SOUTH): relative estimated pose to car: (-0.228080, -0.760818)
+[ INFO] [1733437041.742490184, 4921.244000000]: intersection_reached(): setting last intersection point to (16.749054, 3.864746)
+[ INFO] [1733437041.742524086, 4921.244000000]: intersection reached
+[ INFO] [1733437041.742542308, 4921.244000000]: priority detected, proceeding...
+[ INFO] [1733437045.943024224, 4925.438000000]: check_car(): detected car at a distance of: 1.064500, at: 15.741311, 5.686869
+[ INFO] [1733437045.943205418, 4925.438000000]: check_car(): min_dist: 0.082787, min_dist_adj: 0.475847
+[ INFO] [1733437045.943229778, 4925.438000000]: check_car(): start idx: 2436, end idx: 2497
+[ INFO] [1733437045.943281094, 4925.438000000]: check_car(): changing lane to the left in 0.554500 meters. start pose: (15.551476,4.903311), end: (15.673319, 6.428484), cur: (15.789284, 4.379188)
+[ INFO] [1733437061.367758188, 4940.838000000]: check_stop_sign(): roundabout detected at a distance of: 0.732000
+[ INFO] [1733437061.367830889, 4940.838000000]: sign_based_relocalization(ROUNDABOUT NORTH): SUCCESS: estimated sign pose: (16.569149, 9.305850), actual: (16.507834, 9.466390), error: (-0.061315, 0.160540), error norm: 0.171850, threshold: 0.750000
+[ INFO] [1733437061.367856701, 4940.838000000]: sign_based_relocalization(ROUNDABOUT NORTH): relative estimated pose to car: (0.331394, 0.823366)
+[ INFO] [1733437063.278435052, 4942.744000000]: intersection_reached(): setting last intersection point to (16.213679, 9.064327)
+[ INFO] [1733437063.278481352, 4942.744000000]: intersection reached
+[ INFO] [1733437093.520756744, 4972.938000000]: check_car(): detected car at a distance of: 1.384000, at: 19.688847, 10.786991
+[ INFO] [1733437093.520970107, 4972.938000000]: check_car(): min_dist: 0.088232, min_dist_adj: 0.305627
+[ INFO] [1733437093.520995795, 4972.938000000]: check_car(): start idx: 2971, end idx: 3032
+[ INFO] [1733437093.521049734, 4972.938000000]: check_car(): changing lane to the left in 0.874000 meters. start pose: (20.052162,11.443155), end: (18.810581, 10.764986), cur: (19.932363, 12.291545)
+[ INFO] [1733437105.442650901, 4984.839000000]: check_stop_sign(): roundabout detected at a distance of: 0.744500
+[ INFO] [1733437105.442722931, 4984.839000000]: sign_based_relocalization(ROUNDABOUT WEST): SUCCESS: estimated sign pose: (17.088923, 10.974087), actual: (17.217610, 11.035834), error: (0.128687, 0.061747), error norm: 0.142735, threshold: 0.750000
+[ INFO] [1733437105.442739615, 4984.839000000]: sign_based_relocalization(ROUNDABOUT WEST): relative estimated pose to car: (-0.826397, 0.233026)
+[ INFO] [1733437106.649652899, 4986.044000000]: intersection_reached(): setting last intersection point to (17.619055, 10.793607)
+[ INFO] [1733437106.649684019, 4986.044000000]: intersection reached
+[ INFO] [1733437125.476992698, 5004.838000000]: check_car(): detected car at a distance of: 1.399000, at: 11.020796, 10.698316
+[ INFO] [1733437125.477020057, 5004.838000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437125.477139808, 5004.838000000]: check_car(): min_dist: 0.445217, min_dist_adj: 0.838669
+[ INFO] [1733437125.677602082, 5005.039000000]: check_car(): detected car at a distance of: 1.271500, at: 11.072093, 10.699895
+[ INFO] [1733437125.677641742, 5005.039000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437125.677825331, 5005.039000000]: check_car(): min_dist: 0.424438, min_dist_adj: 0.817938
+[ INFO] [1733437125.776074979, 5005.138000000]: check_car(): detected car at a distance of: 1.342500, at: 10.962149, 10.687937
+[ INFO] [1733437125.776115436, 5005.138000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437125.776294925, 5005.138000000]: check_car(): min_dist: 0.477531, min_dist_adj: 0.870899
+[ INFO] [1733437125.876399656, 5005.238000000]: check_car(): detected car at a distance of: 1.270500, at: 10.997226, 10.690908
+[ INFO] [1733437125.876441151, 5005.238000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437125.876611316, 5005.238000000]: check_car(): min_dist: 0.461159, min_dist_adj: 0.854614
+[ INFO] [1733437125.976275618, 5005.338000000]: check_car(): detected car at a distance of: 1.205500, at: 11.025380, 10.692036
+[ INFO] [1733437125.976326821, 5005.338000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437125.976451047, 5005.338000000]: check_car(): min_dist: 0.449260, min_dist_adj: 0.842756
+[ INFO] [1733437126.076866824, 5005.438000000]: check_car(): detected car at a distance of: 1.180000, at: 11.013939, 10.691358
+[ INFO] [1733437126.076894978, 5005.438000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.077019836, 5005.438000000]: check_car(): min_dist: 0.454312, min_dist_adj: 0.847722
+[ INFO] [1733437126.176538715, 5005.538000000]: check_car(): detected car at a distance of: 1.132500, at: 11.025066, 10.693089
+[ INFO] [1733437126.176567026, 5005.538000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.176675175, 5005.538000000]: check_car(): min_dist: 0.448403, min_dist_adj: 0.841897
+[ INFO] [1733437126.277178681, 5005.638000000]: check_car(): detected car at a distance of: 1.162000, at: 10.957109, 10.678803
+[ INFO] [1733437126.277208068, 5005.638000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.277313383, 5005.638000000]: check_car(): min_dist: 0.487864, min_dist_adj: 0.881253
+[ INFO] [1733437126.376661304, 5005.738000000]: check_car(): detected car at a distance of: 1.071000, at: 11.013017, 10.686533
+[ INFO] [1733437126.376707251, 5005.738000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.376865447, 5005.738000000]: check_car(): min_dist: 0.459107, min_dist_adj: 0.852530
+[ INFO] [1733437126.477685512, 5005.838000000]: check_car(): detected car at a distance of: 1.091000, at: 10.954699, 10.673536
+[ INFO] [1733437126.477728319, 5005.838000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.477886901, 5005.838000000]: check_car(): min_dist: 0.493647, min_dist_adj: 0.887040
+[ INFO] [1733437126.578531839, 5005.939000000]: check_car(): detected car at a distance of: 0.997000, at: 11.014150, 10.682891
+[ INFO] [1733437126.578559108, 5005.939000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.578651021, 5005.939000000]: check_car(): min_dist: 0.462012, min_dist_adj: 0.855463
+[ INFO] [1733437126.677396107, 5006.038000000]: check_car(): detected car at a distance of: 0.969000, at: 11.005338, 10.681148
+[ INFO] [1733437126.677427679, 5006.038000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.677519193, 5006.038000000]: check_car(): min_dist: 0.467115, min_dist_adj: 0.860465
+[ INFO] [1733437126.777851506, 5006.138000000]: check_car(): detected car at a distance of: 0.958500, at: 10.978648, 10.672941
+[ INFO] [1733437126.777894095, 5006.138000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.777998135, 5006.138000000]: check_car(): min_dist: 0.484741, min_dist_adj: 0.878241
+[ INFO] [1733437126.878812722, 5006.238000000]: check_car(): detected car at a distance of: 0.915500, at: 10.987479, 10.686176
+[ INFO] [1733437126.878842964, 5006.238000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.878925856, 5006.238000000]: check_car(): min_dist: 0.469147, min_dist_adj: 0.862645
+[ INFO] [1733437126.978410695, 5006.338000000]: check_car(): detected car at a distance of: 0.820000, at: 11.049859, 10.700681
+[ INFO] [1733437126.978451058, 5006.338000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437126.978569707, 5006.338000000]: check_car(): min_dist: 0.432245, min_dist_adj: 0.825495
+[ INFO] [1733437127.078432233, 5006.438000000]: check_car(): detected car at a distance of: 0.771000, at: 11.061022, 10.718328
+[ INFO] [1733437127.078472485, 5006.438000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.078605794, 5006.439000000]: check_car(): min_dist: 0.411596, min_dist_adj: 0.804921
+[ INFO] [1733437127.179304252, 5006.538000000]: check_car(): detected car at a distance of: 0.835500, at: 10.953669, 10.712140
+[ INFO] [1733437127.179336602, 5006.538000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.179420414, 5006.538000000]: check_car(): min_dist: 0.458260, min_dist_adj: 0.851760
+[ INFO] [1733437127.279086099, 5006.638000000]: check_car(): detected car at a distance of: 0.767000, at: 10.986667, 10.733719
+[ INFO] [1733437127.279127881, 5006.638000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.279247717, 5006.638000000]: check_car(): min_dist: 0.425796, min_dist_adj: 0.819142
+[ INFO] [1733437127.379680490, 5006.738000000]: check_car(): detected car at a distance of: 0.741000, at: 10.976723, 10.752498
+[ INFO] [1733437127.379724271, 5006.738000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.379842960, 5006.738000000]: check_car(): min_dist: 0.412136, min_dist_adj: 0.805622
+[ INFO] [1733437127.479660321, 5006.839000000]: check_car(): detected car at a distance of: 0.698000, at: 10.982730, 10.761116
+[ INFO] [1733437127.479701172, 5006.839000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.479809119, 5006.839000000]: check_car(): min_dist: 0.401891, min_dist_adj: 0.795360
+[ INFO] [1733437127.879631842, 5007.238000000]: check_car(): detected car at a distance of: 0.649500, at: 10.883748, 10.796058
+[ INFO] [1733437127.879666114, 5007.238000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.879730615, 5007.238000000]: check_car(): min_dist: 0.409240, min_dist_adj: 0.802598
+[ INFO] [1733437127.980486444, 5007.339000000]: check_car(): detected car at a distance of: 0.633500, at: 10.863598, 10.805413
+[ INFO] [1733437127.980523094, 5007.339000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437127.980586742, 5007.339000000]: check_car(): min_dist: 0.408968, min_dist_adj: 0.802440
+[ INFO] [1733437128.080046774, 5007.438000000]: check_car(): detected car at a distance of: 0.613500, at: 10.847944, 10.815555
+[ INFO] [1733437128.080082348, 5007.438000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437128.080158940, 5007.439000000]: check_car(): min_dist: 0.406089, min_dist_adj: 0.799501
+[ INFO] [1733437128.179918334, 5007.538000000]: check_car(): detected car at a distance of: 0.605000, at: 10.819677, 10.822395
+[ INFO] [1733437128.179968920, 5007.538000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437128.180066869, 5007.538000000]: check_car(): min_dist: 0.411865, min_dist_adj: 0.805110
+[ INFO] [1733437128.279584134, 5007.638000000]: check_car(): detected car at a distance of: 1.393000, at: 10.163968, 11.546657
+[ INFO] [1733437128.279625348, 5007.638000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1733437128.279807588, 5007.638000000]: check_car(): min_dist: 0.084810, min_dist_adj: 0.477188
+[ INFO] [1733437128.279828041, 5007.638000000]: check_car(): start idx: 3338, end idx: 3383
+[ INFO] [1733437128.279869446, 5007.638000000]: check_car(): changing lane to the right in 0.883000 meters. start pose: (10.792670,11.411533), end: (9.416415, 12.020433), cur: (11.554627, 10.993352)
+[ INFO] [1733437167.866726171, 5047.138000000]: check_stop_sign(): priority detected at a distance of: 0.735500
+[ INFO] [1733437167.866780213, 5047.138000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (0.049272, 10.702302), actual: (0.104340, 10.635000), error: (0.055068, -0.067302), error norm: 0.086960, threshold: 0.750000
+[ INFO] [1733437167.866801052, 5047.138000000]: sign_based_relocalization(PRIORITY SOUTH): relative estimated pose to car: (-0.388282, -0.741178)
+[ INFO] [1733437169.275334016, 5048.544000000]: intersection_reached(): setting last intersection point to (0.386098, 11.031207)
+[ INFO] [1733437169.275365264, 5048.544000000]: intersection reached
+[ INFO] [1733437169.275372818, 5048.544000000]: priority detected, proceeding...
+[ INFO] [1733437174.284592546, 5053.545000000]: crosswalk detected at a distance of: 0.454500
+[ INFO] [1733437174.284637950, 5053.545000000]: sign_based_relocalization(CROSSWALK EAST): SUCCESS: estimated sign pose: (1.087690, 9.278589), actual: (1.171000, 9.347600), error: (0.083310, 0.069011), error norm: 0.108181, threshold: 0.750000
+[ INFO] [1733437174.284666982, 5053.545000000]: sign_based_relocalization(CROSSWALK EAST): relative estimated pose to car: (0.291890, -0.556461)
+[ INFO] [1733437178.385076400, 5057.638000000]: check_car(): detected car at a distance of: 1.370000, at: 3.255637, 9.773552
+[ INFO] [1733437178.385213944, 5057.638000000]: check_car(): min_dist: 0.063713, min_dist_adj: 0.456496
+[ INFO] [1733437178.385228918, 5057.638000000]: check_car(): start idx: 3881, end idx: 3942
+[ INFO] [1733437178.385259034, 5057.638000000]: check_car(): changing lane to the left in 0.860000 meters. start pose: (2.333952,9.859891), end: (3.847703, 9.627355), cur: (1.788341, 9.655199)
+[ INFO] [1733437188.405923496, 5067.639000000]: check_car(): detected car at a distance of: 0.621000, at: 4.942629, 9.093646
+[ INFO] [1733437188.406028558, 5067.639000000]: check_car(): min_dist: 0.405267, min_dist_adj: 0.012164
+[ INFO] [1733437194.214208545, 5073.438000000]: check_car(): detected car at a distance of: 1.387000, at: 4.103606, 6.716550
+[ INFO] [1733437194.214439130, 5073.439000000]: check_car(): min_dist: 0.188564, min_dist_adj: 0.204999
+[ INFO] [1733437194.214463412, 5073.439000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.387000
+[ INFO] [1733437194.314192452, 5073.538000000]: check_car(): detected car at a distance of: 1.384500, at: 4.100563, 6.703454
+[ INFO] [1733437194.314353748, 5073.538000000]: check_car(): min_dist: 0.201301, min_dist_adj: 0.192202
+[ INFO] [1733437194.413658758, 5073.638000000]: check_car(): detected car at a distance of: 1.380000, at: 4.099304, 6.692149
+[ INFO] [1733437194.413906749, 5073.638000000]: check_car(): min_dist: 0.212465, min_dist_adj: 0.181080
+[ INFO] [1733437194.514939229, 5073.738000000]: check_car(): detected car at a distance of: 1.351500, at: 4.108017, 6.705047
+[ INFO] [1733437194.515148071, 5073.738000000]: check_car(): min_dist: 0.200504, min_dist_adj: 0.193236
+[ INFO] [1733437194.614748810, 5073.838000000]: check_car(): detected car at a distance of: 1.330000, at: 4.113107, 6.710528
+[ INFO] [1733437194.614957918, 5073.839000000]: check_car(): min_dist: 0.195782, min_dist_adj: 0.198503
+[ INFO] [1733437194.614997906, 5073.839000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.330000
+[ INFO] [1733437194.713998992, 5073.938000000]: check_car(): detected car at a distance of: 1.314500, at: 4.116186, 6.708044
+[ INFO] [1733437194.714213589, 5073.938000000]: check_car(): min_dist: 0.198726, min_dist_adj: 0.195581
+[ INFO] [1733437194.814337253, 5074.038000000]: check_car(): detected car at a distance of: 1.308000, at: 4.116960, 6.695357
+[ INFO] [1733437194.814484532, 5074.039000000]: check_car(): min_dist: 0.211370, min_dist_adj: 0.182960
+[ INFO] [1733437194.914965530, 5074.138000000]: check_car(): detected car at a distance of: 1.289000, at: 4.121112, 6.696109
+[ INFO] [1733437194.915103984, 5074.139000000]: check_car(): min_dist: 0.211025, min_dist_adj: 0.182987
+[ INFO] [1733437195.016057273, 5074.238000000]: check_car(): detected car at a distance of: 1.266000, at: 4.128528, 6.701140
+[ INFO] [1733437195.016208954, 5074.238000000]: check_car(): min_dist: 0.206582, min_dist_adj: 0.186941
+[ INFO] [1733437195.115538801, 5074.338000000]: check_car(): detected car at a distance of: 1.253000, at: 4.130273, 6.696104
+[ INFO] [1733437195.115680928, 5074.338000000]: check_car(): min_dist: 0.211766, min_dist_adj: 0.181739
+[ INFO] [1733437195.215001058, 5074.438000000]: check_car(): detected car at a distance of: 1.257000, at: 4.125411, 6.673970
+[ INFO] [1733437195.215146024, 5074.438000000]: check_car(): min_dist: 0.233398, min_dist_adj: 0.160447
+[ INFO] [1733437195.315358379, 5074.538000000]: check_car(): detected car at a distance of: 1.209500, at: 4.138309, 6.707662
+[ INFO] [1733437195.315506518, 5074.538000000]: check_car(): min_dist: 0.201295, min_dist_adj: 0.192555
+[ INFO] [1733437195.416097060, 5074.638000000]: check_car(): detected car at a distance of: 1.232000, at: 4.122088, 6.673982
+[ INFO] [1733437195.416279133, 5074.638000000]: check_car(): min_dist: 0.233171, min_dist_adj: 0.161012
+[ INFO] [1733437195.515940487, 5074.738000000]: check_car(): detected car at a distance of: 1.234000, at: 4.114630, 6.661417
+[ INFO] [1733437195.516147648, 5074.739000000]: check_car(): min_dist: 0.244620, min_dist_adj: 0.149369
+[ INFO] [1733437195.615710071, 5074.838000000]: check_car(): detected car at a distance of: 1.236000, at: 4.105938, 6.646794
+[ INFO] [1733437195.615913385, 5074.838000000]: check_car(): min_dist: 0.258214, min_dist_adj: 0.135287
+[ INFO] [1733437195.717324287, 5074.938000000]: check_car(): detected car at a distance of: 1.237000, at: 4.106753, 6.626601
+[ INFO] [1733437195.717536596, 5074.939000000]: check_car(): min_dist: 0.278401, min_dist_adj: 0.115112
+[ INFO] [1733437195.816352623, 5075.038000000]: check_car(): detected car at a distance of: 1.217000, at: 4.117758, 6.622834
+[ INFO] [1733437195.816521993, 5075.038000000]: check_car(): min_dist: 0.283291, min_dist_adj: 0.110736
+[ INFO] [1733437195.915894103, 5075.138000000]: check_car(): detected car at a distance of: 1.191500, at: 4.128925, 6.624340
+[ INFO] [1733437195.916036353, 5075.138000000]: check_car(): min_dist: 0.283151, min_dist_adj: 0.110960
+[ INFO] [1733437196.016668665, 5075.238000000]: check_car(): detected car at a distance of: 1.188000, at: 4.127850, 6.604827
+[ INFO] [1733437196.016809380, 5075.238000000]: check_car(): min_dist: 0.302498, min_dist_adj: 0.092154
+[ INFO] [1733437196.118468129, 5075.339000000]: check_car(): detected car at a distance of: 1.154000, at: 4.141294, 6.616672
+[ INFO] [1733437196.118603421, 5075.339000000]: check_car(): min_dist: 0.291921, min_dist_adj: 0.101597
+[ INFO] [1733437196.217282312, 5075.438000000]: check_car(): detected car at a distance of: 1.137000, at: 4.147483, 6.612096
+[ INFO] [1733437196.217480339, 5075.438000000]: check_car(): min_dist: 0.297213, min_dist_adj: 0.096652
+[ INFO] [1733437196.317276160, 5075.539000000]: check_car(): detected car at a distance of: 1.112000, at: 4.155441, 6.615948
+[ INFO] [1733437196.317409036, 5075.539000000]: check_car(): min_dist: 0.294552, min_dist_adj: 0.100070
+[ INFO] [1733437196.416689861, 5075.638000000]: check_car(): detected car at a distance of: 1.121000, at: 4.145791, 6.585845
+[ INFO] [1733437196.416823921, 5075.638000000]: check_car(): min_dist: 0.323059, min_dist_adj: 0.070510
+[ INFO] [1733437196.517123726, 5075.738000000]: check_car(): detected car at a distance of: 1.091000, at: 4.155776, 6.592589
+[ INFO] [1733437196.517308363, 5075.738000000]: check_car(): min_dist: 0.317686, min_dist_adj: 0.077282
+[ INFO] [1733437196.617534093, 5075.839000000]: check_car(): detected car at a distance of: 1.047500, at: 4.172566, 6.613279
+[ INFO] [1733437196.617657836, 5075.839000000]: check_car(): min_dist: 0.299350, min_dist_adj: 0.094164
+[ INFO] [1733437197.518792697, 5076.738000000]: check_car(): detected car at a distance of: 0.885000, at: 4.174336, 6.619133
+[ INFO] [1733437197.518945238, 5076.738000000]: check_car(): min_dist: 0.293778, min_dist_adj: 0.099822
+[ INFO] [1733437197.619039845, 5076.838000000]: check_car(): detected car at a distance of: 0.874000, at: 4.165494, 6.620767
+[ INFO] [1733437197.619189697, 5076.838000000]: check_car(): min_dist: 0.291088, min_dist_adj: 0.102558
+[ INFO] [1733437197.719298353, 5076.939000000]: check_car(): detected car at a distance of: 0.873000, at: 4.149073, 6.613795
+[ INFO] [1733437197.719406783, 5076.939000000]: check_car(): min_dist: 0.295741, min_dist_adj: 0.098315
+[ INFO] [1733437197.818794012, 5077.038000000]: check_car(): detected car at a distance of: 0.869000, at: 4.131790, 6.611496
+[ INFO] [1733437197.818897130, 5077.038000000]: check_car(): min_dist: 0.296173, min_dist_adj: 0.097805
+[ INFO] [1733437197.920353154, 5077.138000000]: check_car(): detected car at a distance of: 0.863000, at: 4.115270, 6.612322
+[ INFO] [1733437197.920548827, 5077.139000000]: check_car(): min_dist: 0.293442, min_dist_adj: 0.100277
+[ INFO] [1733437198.019594077, 5077.238000000]: check_car(): detected car at a distance of: 0.834000, at: 4.114017, 6.633031
+[ INFO] [1733437198.019745913, 5077.239000000]: check_car(): min_dist: 0.272723, min_dist_adj: 0.121017
+[ INFO] [1733437198.119262347, 5077.338000000]: check_car(): detected car at a distance of: 0.847500, at: 4.085157, 6.616943
+[ INFO] [1733437198.119399193, 5077.339000000]: check_car(): min_dist: 0.286219, min_dist_adj: 0.107515
+[ INFO] [1733437198.219527445, 5077.438000000]: check_car(): detected car at a distance of: 0.849500, at: 4.062563, 6.611128
+[ INFO] [1733437198.219681572, 5077.439000000]: check_car(): min_dist: 0.290695, min_dist_adj: 0.103845
+[ INFO] [1733437198.320409614, 5077.539000000]: check_car(): detected car at a distance of: 0.829000, at: 4.055971, 6.623055
+[ INFO] [1733437198.320510563, 5077.539000000]: check_car(): min_dist: 0.278201, min_dist_adj: 0.115578
+[ INFO] [1733437198.419841017, 5077.638000000]: check_car(): detected car at a distance of: 0.823000, at: 4.049156, 6.619184
+[ INFO] [1733437198.420062262, 5077.638000000]: check_car(): min_dist: 0.281572, min_dist_adj: 0.111929
+[ INFO] [1733437198.522235188, 5077.739000000]: check_car(): detected car at a distance of: 0.813500, at: 4.055403, 6.609176
+[ INFO] [1733437198.522340262, 5077.739000000]: check_car(): min_dist: 0.291987, min_dist_adj: 0.101702
+[ INFO] [1733437198.621038128, 5077.838000000]: check_car(): detected car at a distance of: 0.811500, at: 4.053169, 6.593755
+[ INFO] [1733437198.621152800, 5077.838000000]: check_car(): min_dist: 0.307203, min_dist_adj: 0.086332
+[ INFO] [1733437198.721014279, 5077.939000000]: check_car(): detected car at a distance of: 0.792500, at: 4.058515, 6.591986
+[ INFO] [1733437198.721152455, 5077.939000000]: check_car(): min_dist: 0.309373, min_dist_adj: 0.084540
+[ INFO] [1733437198.820158744, 5078.038000000]: check_car(): detected car at a distance of: 0.726500, at: 4.096865, 6.619998
+[ INFO] [1733437198.820253582, 5078.038000000]: check_car(): min_dist: 0.284330, min_dist_adj: 0.110066
+[ INFO] [1733437198.920746208, 5078.139000000]: check_car(): detected car at a distance of: 0.750500, at: 4.071384, 6.581101
+[ INFO] [1733437198.921073853, 5078.139000000]: check_car(): min_dist: 0.321031, min_dist_adj: 0.073374
+[ INFO] [1733437199.022572203, 5078.239000000]: check_car(): detected car at a distance of: 0.689500, at: 4.102339, 6.603572
+[ INFO] [1733437199.022693467, 5078.239000000]: check_car(): min_dist: 0.301038, min_dist_adj: 0.092907
+[ INFO] [1733437199.122086223, 5078.338000000]: check_car(): detected car at a distance of: 0.672000, at: 4.103320, 6.591412
+[ INFO] [1733437199.122228092, 5078.339000000]: check_car(): min_dist: 0.313236, min_dist_adj: 0.080771
+[ INFO] [1733437199.222236183, 5078.439000000]: check_car(): detected car at a distance of: 0.637000, at: 4.106238, 6.585657
+[ INFO] [1733437199.222327283, 5078.439000000]: check_car(): min_dist: 0.319178, min_dist_adj: 0.074589
+[ INFO] [1733437199.320931573, 5078.538000000]: check_car(): detected car at a distance of: 0.591000, at: 4.118383, 6.583855
+[ INFO] [1733437199.321048609, 5078.538000000]: check_car(): min_dist: 0.322080, min_dist_adj: 0.071754
+[ INFO] [1733437199.422061004, 5078.638000000]: check_car(): detected car at a distance of: 0.552000, at: 4.125440, 6.576222
+[ INFO] [1733437199.422334577, 5078.639000000]: check_car(): min_dist: 0.330497, min_dist_adj: 0.064485
+[ INFO] [1733437199.522229720, 5078.738000000]: check_car(): detected car at a distance of: 0.512000, at: 4.112359, 6.590546
+[ INFO] [1733437199.522419163, 5078.739000000]: check_car(): min_dist: 0.314812, min_dist_adj: 0.078694
+[ INFO] [1733437199.622442202, 5078.838000000]: check_car(): detected car at a distance of: 0.500000, at: 4.081834, 6.587334
+[ INFO] [1733437199.622518786, 5078.838000000]: check_car(): min_dist: 0.315432, min_dist_adj: 0.078070
+[ INFO] [1733437199.722187023, 5078.938000000]: check_car(): detected car at a distance of: 0.439000, at: 4.082431, 6.625761
+[ INFO] [1733437199.722313350, 5078.939000000]: check_car(): min_dist: 0.277186, min_dist_adj: 0.116411
+[ INFO] [1733437199.922423613, 5079.138000000]: check_car(): detected car at a distance of: 0.418000, at: 4.025333, 6.616618
+[ INFO] [1733437199.922536516, 5079.138000000]: check_car(): min_dist: 0.283162, min_dist_adj: 0.110480
+[ INFO] [1733437201.231193300, 5080.445000000]: intersection_reached(): setting last intersection point to (4.026523, 6.932357)
+[ INFO] [1733437201.231223607, 5080.445000000]: intersection reached
+[ INFO] [1733437208.740586497, 5087.938000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437211.948521564, 5091.138000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437213.550826521, 5092.738000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437215.154094845, 5094.338000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437216.859791151, 5096.038000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437218.465937525, 5097.638000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437220.070795919, 5099.238000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437221.673072092, 5100.838000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437223.279257395, 5102.439000000]: wait_for_green(): red light detected, but in simulation, waiting for 1.500000s...
+[ INFO] [1733437226.299790972, 5105.452000000]: intersection_reached(): setting last intersection point to (2.519039, 5.016455)
+[ INFO] [1733437226.299992186, 5105.453000000]: intersection reached
+[ INFO] [1733437231.100294663, 5110.245000000]: intersection_reached(): setting last intersection point to (1.840669, 4.059733)
+[ INFO] [1733437231.100363806, 5110.245000000]: intersection reached
+[ INFO] [1733437249.924278932, 5129.038000000]: check_stop_sign(): stop sign detected at a distance of: 0.737000
+[ INFO] [1733437249.924324754, 5129.038000000]: sign_based_relocalization(STOPSIGN EAST): SUCCESS: estimated sign pose: (1.881216, 0.042108), actual: (1.899750, 0.101391), error: (0.018534, 0.059283), error norm: 0.062113, threshold: 0.750000
+[ INFO] [1733437249.924334836, 5129.038000000]: sign_based_relocalization(STOPSIGN EAST): relative estimated pose to car: (0.747992, -0.389876)
+[ INFO] [1733437251.233296519, 5130.344000000]: intersection_reached(): setting last intersection point to (1.504876, 0.403390)
+[ INFO] [1733437251.233327995, 5130.344000000]: intersection reached
+[ INFO] [1733437251.233337416, 5130.344000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437259.540346311, 5138.638000000]: check_stop_sign(): priority detected at a distance of: 0.747000
+[ INFO] [1733437259.540401473, 5138.638000000]: sign_based_relocalization(PRIORITY EAST): SUCCESS: estimated sign pose: (4.122312, 0.057585), actual: (4.143644, 0.101336), error: (0.021332, 0.043751), error norm: 0.048675, threshold: 0.750000
+[ INFO] [1733437259.540423565, 5138.638000000]: sign_based_relocalization(PRIORITY EAST): relative estimated pose to car: (0.830718, -0.334765)
+[ INFO] [1733437261.149340498, 5140.243000000]: intersection_reached(): setting last intersection point to (3.742280, 0.402443)
+[ INFO] [1733437261.149372301, 5140.243000000]: intersection reached
+[ INFO] [1733437261.149382247, 5140.243000000]: priority detected, proceeding...
+[ INFO] [1733437276.670910370, 5155.739000000]: check_car(): detected car at a distance of: 1.395000, at: 9.137630, 1.368824
+[ INFO] [1733437276.671113277, 5155.739000000]: check_car(): min_dist: 0.444063, min_dist_adj: 0.051180
+[ INFO] [1733437276.770118299, 5155.838000000]: check_car(): detected car at a distance of: 1.373500, at: 9.146557, 1.374314
+[ INFO] [1733437276.770307174, 5155.839000000]: check_car(): min_dist: 0.449551, min_dist_adj: 0.056060
+[ INFO] [1733437276.874819041, 5155.943000000]: crosswalk detected at a distance of: 0.330000
+[ INFO] [1733437276.874864980, 5155.943000000]: sign_based_relocalization(CROSSWALK EAST): SUCCESS: estimated sign pose: (8.142966, 0.710854), actual: (8.142500, 0.703300), error: (-0.000466, -0.007554), error norm: 0.007569, threshold: 0.750000
+[ INFO] [1733437276.874877356, 5155.943000000]: sign_based_relocalization(CROSSWALK EAST): relative estimated pose to car: (0.428927, -0.219802)
+[ INFO] [1733437277.276383670, 5156.344000000]: Changing from MOVING to PARKING
+[ INFO] [1733437278.071511360, 5157.138000000]: park sign detected at a distance of: 0.984000, parking offset is: 2.168500
+[ INFO] [1733437278.071553745, 5157.138000000]: orientation: 0.000
+[ INFO] [1733437278.071592680, 5157.138000000]: sign_based_relocalization(PARKING): SUCCESS: estimated sign pose: (8.897980, 1.223140), actual: (8.936750, 1.161200), error: (0.038770, -0.061940), error norm: 0.073073, threshold: 0.750000
+[ INFO] [1733437278.071617286, 5157.138000000]: sign_based_relocalization(PARKING): relative estimated pose to car: (1.074217, 0.298076)
+[ INFO] [1733437278.071637995, 5157.138000000]: PARKING(): target spot: 0
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.1, 0.56
+parking spot 3: 10.1, 1.3
+parking spot 4: 10.8, 0.56
+parking spot 5: 10.8, 1.3
+parking spot 6: 11.6, 0.56
+parking spot 7: 11.6, 1.3
+parking spot 8: 12.3, 0.56
+parking spot 9: 12.3, 1.3
+[ INFO] [1733437278.071700326, 5157.138000000]: PARKING(): car detected in spot: 0, error: 0.096137
+[ INFO] [1733437278.071724015, 5157.138000000]: PARKING(): car detected in spot: 1, error: 0.146756
+[ INFO] [1733437278.071750848, 5157.138000000]: car in spot, changing to target spot 2 at (10.123, 0.560), right: true
+[ INFO] [1733437291.353056065, 5170.398000000]: x offset reached: (10.72, 0.87), ready for parking maneuver...
+[ INFO] [1733437292.955903357, 5171.998000000]: parking_maneuver_hardcode(): initial y error: -0.052793, initial yaw error: -0.000776, base yaw target: 0.285663pi
+[ INFO] [1733437292.955934803, 5171.998000000]: parking_maneuver_hardcode(): park right: true, exit: 0
+targets: 0.897     0     0, steerings:  25 -25  25, speeds: -0.2 -0.2  0.2, thresholds:    0.1    0.1 0.0333
+[ INFO] [1733437292.955969515, 5171.998000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.897438, 0.000000
+[ INFO] [1733437292.955977979, 5171.998000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1733437297.971608430, 5176.998000000]: maneuver completed
+[ INFO] [1733437297.971652764, 5176.998000000]: parked but x offset too large: -0.177, adjusting... orientation: 0.000
+[ INFO] [1733437298.556689700, 5177.586000000]: parking spot reached, stopping...
+[ INFO] [1733437298.556749262, 5177.586000000]: Changing from PARKING to PARKED
+[ INFO] [1733437300.060498674, 5179.086000000]: Changing from PARKED to EXITING_PARKING
+[ INFO] [1733437300.060551513, 5179.086000000]: parking_maneuver_hardcode(): initial y error: 0.000000, initial yaw error: 0.000000, base yaw target: 0.290000pi
+[ INFO] [1733437300.060573796, 5179.087000000]: parking_maneuver_hardcode(): park right: true, exit: 1
+targets: 0.866 0.866     0, steerings:  25 -25  25, speeds: -0.2  0.2  0.2, thresholds: 0.766   0.1   0.1
+[ INFO] [1733437300.060619037, 5179.087000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.865509, 0.865509
+[ INFO] [1733437300.060630850, 5179.087000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1733437304.619874930, 5183.637000000]: maneuver completed
+exiting_park(): target waypoint index: 4873, at (10.7, 0.946)
+exiting_park(): closest waypoint index: 4742, at (7.79, 0.936)
+exiting_park(): current state: x: 10.7, y: 0.839, yaw: 0.0976
+[ INFO] [1733437304.625483571, 5183.643000000]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1733437304.826149907, 5183.844000000]: check_car(): detected car at a distance of: 1.365000, at: 12.289076, 0.607575
+[ INFO] [1733437304.826369565, 5183.844000000]: check_car(): min_dist: 0.348358, min_dist_adj: 0.741851
+[ INFO] [1733437304.826400654, 5183.844000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.365000
+[ INFO] [1733437305.028075498, 5184.045000000]: check_car(): detected car at a distance of: 1.283000, at: 12.293540, 0.581096
+[ INFO] [1733437305.028287204, 5184.045000000]: check_car(): min_dist: 0.374802, min_dist_adj: 0.768301
+[ INFO] [1733437305.028317112, 5184.045000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.283000
+[ INFO] [1733437305.328100958, 5184.344000000]: check_car(): detected car at a distance of: 1.194000, at: 12.293207, 0.584081
+[ INFO] [1733437305.328320595, 5184.344000000]: check_car(): min_dist: 0.371818, min_dist_adj: 0.765317
+[ INFO] [1733437305.328364185, 5184.344000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.194000
+[ INFO] [1733437305.528527113, 5184.545000000]: check_car(): detected car at a distance of: 1.144000, at: 12.294274, 0.582914
+[ INFO] [1733437305.528702017, 5184.545000000]: check_car(): min_dist: 0.372985, min_dist_adj: 0.766481
+[ INFO] [1733437305.528717932, 5184.545000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.144000
+[ INFO] [1733437305.628244926, 5184.644000000]: check_car(): detected car at a distance of: 1.119500, at: 12.294440, 0.584203
+[ INFO] [1733437305.628444172, 5184.645000000]: check_car(): min_dist: 0.371696, min_dist_adj: 0.765192
+[ INFO] [1733437305.628475507, 5184.645000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.119500
+[ INFO] [1733437305.728313767, 5184.744000000]: check_car(): detected car at a distance of: 1.131000, at: 12.330550, 0.578871
+[ INFO] [1733437305.728496990, 5184.745000000]: check_car(): min_dist: 0.377270, min_dist_adj: 0.770645
+[ INFO] [1733437305.728525285, 5184.745000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.131000
+[ INFO] [1733437305.828510478, 5184.844000000]: check_car(): detected car at a distance of: 1.083000, at: 12.306705, 0.587529
+[ INFO] [1733437305.828684296, 5184.844000000]: check_car(): min_dist: 0.368589, min_dist_adj: 0.761938
+[ INFO] [1733437305.828708304, 5184.844000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.083000
+[ INFO] [1733437307.631109281, 5186.644000000]: check_car(): detected car at a distance of: 0.683000, at: 12.355746, 0.635373
+[ INFO] [1733437307.631212616, 5186.644000000]: check_car(): min_dist: 0.320893, min_dist_adj: 0.714237
+[ INFO] [1733437307.631227707, 5186.644000000]: check_car(): not sure if detected car is on same lane, dist = 0.683000, stopping...
+[ INFO] [1733437309.735547478, 5188.744000000]: check_car(): detected car at a distance of: 0.647000, at: 12.347996, 0.647791
+[ INFO] [1733437309.735699898, 5188.744000000]: check_car(): min_dist: 0.308286, min_dist_adj: 0.701757
+[ INFO] [1733437309.735728908, 5188.744000000]: check_car(): not sure if detected car is on same lane, dist = 0.647000, stopping...
+[ INFO] [1733437311.941681777, 5190.945000000]: check_car(): detected car at a distance of: 0.581000, at: 12.335249, 0.668409
+[ INFO] [1733437311.941766532, 5190.945000000]: check_car(): min_dist: 0.287777, min_dist_adj: 0.681196
+[ INFO] [1733437311.941779610, 5190.945000000]: check_car(): not sure if detected car is on same lane, dist = 0.581000, stopping...
+[ INFO] [1733437314.746633669, 5193.744000000]: check_car(): detected car at a distance of: 0.671500, at: 12.614519, 0.560798
+[ INFO] [1733437314.746780246, 5193.744000000]: check_car(): min_dist: 0.396032, min_dist_adj: 0.789528
+[ INFO] [1733437314.746804091, 5193.744000000]: check_car(): not sure if detected car is on same lane, dist = 0.671500, stopping...
+[ INFO] [1733437316.851064769, 5195.844000000]: check_car(): detected car at a distance of: 0.702000, at: 12.673530, 0.538081
+[ INFO] [1733437316.851197498, 5195.844000000]: check_car(): min_dist: 0.418412, min_dist_adj: 0.811886
+[ INFO] [1733437316.851259415, 5195.845000000]: check_car(): not sure if detected car is on same lane, dist = 0.702000, stopping...
+[ INFO] [1733437326.065401732, 5205.044000000]: check_stop_sign(): priority detected at a distance of: 0.735000
+[ INFO] [1733437326.065443672, 5205.044000000]: sign_based_relocalization(PRIORITY EAST): SUCCESS: estimated sign pose: (14.600758, 0.603658), actual: (14.687600, 0.668850), error: (0.086842, 0.065192), error norm: 0.108589, threshold: 0.750000
+[ INFO] [1733437326.065460291, 5205.044000000]: sign_based_relocalization(PRIORITY EAST): relative estimated pose to car: (0.830775, -0.342474)
+[ INFO] [1733437327.876312059, 5206.852000000]: intersection_reached(): setting last intersection point to (14.295152, 0.982711)
+[ INFO] [1733437327.876359637, 5206.852000000]: intersection reached
+[ INFO] [1733437327.876379923, 5206.852000000]: priority detected, proceeding...
+[ INFO] [1733437349.906005088, 5228.844000000]: check_stop_sign(): stop sign detected at a distance of: 0.734000
+[ INFO] [1733437349.906064049, 5228.845000000]: sign_based_relocalization(STOPSIGN NORTH): FAILURE: error too large: 9.517369, threshold: 0.750000
+[ INFO] [1733437351.213016320, 5230.149000000]: intersection_reached(): setting last intersection point to (16.723271, 3.885888)
+[ INFO] [1733437351.213045848, 5230.149000000]: intersection reached
+[ INFO] [1733437351.213055528, 5230.149000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437363.428559163, 5242.345000000]: check_car(): detected car at a distance of: 1.379000, at: 12.441754, 4.086377
+[ INFO] [1733437363.428704968, 5242.345000000]: check_car(): min_dist: 0.051381, min_dist_adj: 0.444109
+[ INFO] [1733437363.428716140, 5242.345000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.379000
+[ INFO] [1733437363.528983919, 5242.445000000]: check_car(): detected car at a distance of: 1.366500, at: 12.428066, 4.088271
+[ INFO] [1733437363.529217628, 5242.445000000]: check_car(): min_dist: 0.052328, min_dist_adj: 0.445792
+[ INFO] [1733437363.529243917, 5242.445000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.366500
+[ INFO] [1733437363.628220195, 5242.544000000]: check_car(): detected car at a distance of: 1.331000, at: 12.434243, 4.088088
+[ INFO] [1733437363.628431729, 5242.544000000]: check_car(): min_dist: 0.052723, min_dist_adj: 0.445652
+[ INFO] [1733437363.628456297, 5242.544000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.331000
+[ INFO] [1733437363.728547072, 5242.644000000]: check_car(): detected car at a distance of: 1.302000, at: 12.435340, 4.087835
+[ INFO] [1733437363.728700021, 5242.644000000]: check_car(): min_dist: 0.052652, min_dist_adj: 0.445416
+[ INFO] [1733437363.728717335, 5242.644000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.302000
+[ INFO] [1733437363.830471690, 5242.744000000]: check_car(): detected car at a distance of: 1.284000, at: 12.424105, 4.089497
+[ INFO] [1733437363.830612169, 5242.744000000]: check_car(): min_dist: 0.053566, min_dist_adj: 0.447037
+[ INFO] [1733437363.830629431, 5242.744000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.284000
+[ INFO] [1733437363.930394303, 5242.844000000]: check_car(): detected car at a distance of: 1.265000, at: 12.415296, 4.087509
+[ INFO] [1733437363.930544775, 5242.844000000]: check_car(): min_dist: 0.052686, min_dist_adj: 0.445087
+[ INFO] [1733437363.930557065, 5242.844000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.265000
+[ INFO] [1733437364.030315727, 5242.944000000]: check_car(): detected car at a distance of: 1.213000, at: 12.440674, 4.088069
+[ INFO] [1733437364.030521219, 5242.945000000]: check_car(): min_dist: 0.053249, min_dist_adj: 0.445768
+[ INFO] [1733437364.030546466, 5242.945000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.213000
+[ INFO] [1733437364.130439487, 5243.045000000]: check_car(): detected car at a distance of: 1.196000, at: 12.429619, 4.088551
+[ INFO] [1733437364.130639184, 5243.045000000]: check_car(): min_dist: 0.052685, min_dist_adj: 0.446075
+[ INFO] [1733437364.130670780, 5243.045000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.196000
+[ INFO] [1733437364.231390907, 5243.144000000]: check_car(): detected car at a distance of: 1.181000, at: 12.418592, 4.087975
+[ INFO] [1733437364.231588154, 5243.144000000]: check_car(): min_dist: 0.052562, min_dist_adj: 0.445598
+[ INFO] [1733437364.231619751, 5243.144000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.181000
+[ INFO] [1733437364.332344982, 5243.244000000]: check_car(): detected car at a distance of: 1.140500, at: 12.432390, 4.088672
+[ INFO] [1733437364.332537692, 5243.245000000]: check_car(): min_dist: 0.053054, min_dist_adj: 0.446214
+[ INFO] [1733437364.332569733, 5243.245000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.140500
+[ INFO] [1733437364.431325049, 5243.344000000]: check_car(): detected car at a distance of: 1.115000, at: 12.430619, 4.087613
+[ INFO] [1733437364.431514857, 5243.344000000]: check_car(): min_dist: 0.051824, min_dist_adj: 0.445142
+[ INFO] [1733437364.431541252, 5243.344000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.115000
+[ INFO] [1733437364.531232390, 5243.444000000]: check_car(): detected car at a distance of: 1.095000, at: 12.424428, 4.088849
+[ INFO] [1733437364.531405974, 5243.445000000]: check_car(): min_dist: 0.052906, min_dist_adj: 0.446385
+[ INFO] [1733437364.531432131, 5243.445000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.095000
+[ INFO] [1733437364.630589627, 5243.544000000]: check_car(): detected car at a distance of: 1.077000, at: 12.416396, 4.089077
+[ INFO] [1733437364.630765182, 5243.544000000]: check_car(): min_dist: 0.054010, min_dist_adj: 0.446687
+[ INFO] [1733437364.630788773, 5243.544000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.077000
+[ INFO] [1733437364.731057430, 5243.644000000]: check_car(): detected car at a distance of: 1.041500, at: 12.426004, 4.088574
+[ INFO] [1733437364.731249697, 5243.645000000]: check_car(): min_dist: 0.052601, min_dist_adj: 0.446101
+[ INFO] [1733437364.731307686, 5243.645000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.041500
+[ INFO] [1733437364.831744440, 5243.745000000]: check_car(): detected car at a distance of: 1.008000, at: 12.433728, 4.087032
+[ INFO] [1733437364.831925360, 5243.745000000]: check_car(): min_dist: 0.051602, min_dist_adj: 0.444589
+[ INFO] [1733437364.831956853, 5243.745000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.008000
+[ INFO] [1733437364.932285691, 5243.844000000]: check_car(): detected car at a distance of: 0.988000, at: 12.428043, 4.088051
+[ INFO] [1733437364.932407982, 5243.844000000]: check_car(): min_dist: 0.052108, min_dist_adj: 0.445573
+[ INFO] [1733437364.932419673, 5243.844000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.988000
+[ INFO] [1733437365.031822596, 5243.944000000]: check_car(): detected car at a distance of: 0.961500, at: 12.428951, 4.087735
+[ INFO] [1733437365.032012989, 5243.945000000]: check_car(): min_dist: 0.051831, min_dist_adj: 0.445257
+[ INFO] [1733437365.032047735, 5243.945000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.961500
+[ INFO] [1733437365.132025997, 5244.044000000]: check_car(): detected car at a distance of: 0.937000, at: 12.427927, 4.089326
+[ INFO] [1733437365.132159576, 5244.044000000]: check_car(): min_dist: 0.053379, min_dist_adj: 0.446848
+[ INFO] [1733437365.132174746, 5244.044000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.937000
+[ INFO] [1733437365.231567570, 5244.144000000]: check_car(): detected car at a distance of: 0.912500, at: 12.426976, 4.088972
+[ INFO] [1733437365.231701009, 5244.144000000]: check_car(): min_dist: 0.053003, min_dist_adj: 0.446496
+[ INFO] [1733437365.231717796, 5244.144000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.912500
+[ INFO] [1733437365.332381005, 5244.245000000]: check_car(): detected car at a distance of: 0.893500, at: 12.420585, 4.087975
+[ INFO] [1733437365.332507886, 5244.245000000]: check_car(): min_dist: 0.052308, min_dist_adj: 0.445560
+[ INFO] [1733437365.332528776, 5244.245000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.893500
+[ INFO] [1733437365.432013497, 5244.345000000]: check_car(): detected car at a distance of: 0.867500, at: 12.417939, 4.089215
+[ INFO] [1733437365.432120569, 5244.345000000]: check_car(): min_dist: 0.053886, min_dist_adj: 0.446852
+[ INFO] [1733437365.432131158, 5244.345000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.867500
+[ INFO] [1733437365.532689554, 5244.444000000]: check_car(): detected car at a distance of: 0.831000, at: 12.426284, 4.088144
+[ INFO] [1733437365.532845301, 5244.444000000]: check_car(): min_dist: 0.052170, min_dist_adj: 0.445670
+[ INFO] [1733437365.532868859, 5244.444000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.831000
+[ INFO] [1733437365.632255737, 5244.544000000]: check_car(): detected car at a distance of: 0.807000, at: 12.422532, 4.088418
+[ INFO] [1733437365.632368932, 5244.544000000]: check_car(): min_dist: 0.052576, min_dist_adj: 0.445974
+[ INFO] [1733437365.632381305, 5244.544000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.807000
+[ INFO] [1733437365.732616269, 5244.645000000]: check_car(): detected car at a distance of: 0.776500, at: 12.425646, 4.089096
+[ INFO] [1733437365.732765663, 5244.645000000]: check_car(): min_dist: 0.053126, min_dist_adj: 0.446625
+[ INFO] [1733437365.732789142, 5244.645000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.776500
+[ INFO] [1733437365.832186472, 5244.744000000]: check_car(): detected car at a distance of: 0.748500, at: 12.426520, 4.088985
+[ INFO] [1733437365.832341956, 5244.744000000]: check_car(): min_dist: 0.053012, min_dist_adj: 0.446510
+[ INFO] [1733437365.832399125, 5244.744000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.748500, stopping...
+[ INFO] [1733437368.037056269, 5246.945000000]: check_car(): detected car at a distance of: 0.741000, at: 12.460625, 4.089334
+[ INFO] [1733437368.037157260, 5246.945000000]: check_car(): min_dist: 0.054260, min_dist_adj: 0.447006
+[ INFO] [1733437368.037207602, 5246.945000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.741000, stopping...
+[ INFO] [1733437370.240795796, 5249.145000000]: check_car(): detected car at a distance of: 0.760000, at: 12.475037, 4.089087
+[ INFO] [1733437370.240931323, 5249.145000000]: check_car(): min_dist: 0.053282, min_dist_adj: 0.446774
+[ INFO] [1733437370.240955249, 5249.145000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.760000
+[ INFO] [1733437370.339437598, 5249.244000000]: check_car(): detected car at a distance of: 0.779000, at: 12.417246, 4.087869
+[ INFO] [1733437370.339577213, 5249.244000000]: check_car(): min_dist: 0.052671, min_dist_adj: 0.445506
+[ INFO] [1733437370.339600085, 5249.244000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.779000
+[ INFO] [1733437370.439646011, 5249.344000000]: check_car(): detected car at a distance of: 0.773500, at: 12.382095, 4.091131
+[ INFO] [1733437370.439744058, 5249.344000000]: check_car(): min_dist: 0.055227, min_dist_adj: 0.448427
+[ INFO] [1733437370.439754308, 5249.344000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.773500
+[ INFO] [1733437370.539282214, 5249.444000000]: check_car(): detected car at a distance of: 0.724000, at: 12.395311, 4.089706
+[ INFO] [1733437370.539377485, 5249.444000000]: check_car(): min_dist: 0.053944, min_dist_adj: 0.447181
+[ INFO] [1733437370.539417117, 5249.444000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.724000, stopping...
+[ INFO] [1733437372.643917850, 5251.545000000]: check_car(): detected car at a distance of: 0.709500, at: 12.445560, 4.088839
+[ INFO] [1733437372.644059086, 5251.545000000]: check_car(): min_dist: 0.053261, min_dist_adj: 0.446514
+[ INFO] [1733437372.644123183, 5251.545000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.709500, stopping...
+[ INFO] [1733437392.977345778, 5271.845000000]: check_stop_sign(): priority detected at a distance of: 0.733000
+[ INFO] [1733437392.977401038, 5271.845000000]: sign_based_relocalization(PRIORITY WEST): SUCCESS: estimated sign pose: (7.815912, 4.363892), actual: (7.619552, 4.269900), error: (-0.196360, -0.093992), error norm: 0.217696, threshold: 0.750000
+[ INFO] [1733437392.977417715, 5271.845000000]: sign_based_relocalization(PRIORITY WEST): relative estimated pose to car: (-0.828208, 0.327308)
+[ INFO] [1733437394.987973505, 5273.851000000]: intersection_reached(): setting last intersection point to (8.006966, 3.988040)
+[ INFO] [1733437394.988018925, 5273.851000000]: intersection reached
+[ INFO] [1733437394.988039177, 5273.851000000]: priority detected, proceeding...
+[ INFO] [1733437400.089838753, 5278.945000000]: check_stop_sign(): stop sign detected at a distance of: 0.751000
+[ INFO] [1733437400.089878657, 5278.945000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (5.786161, 4.253524), actual: (5.761000, 4.268600), error: (-0.025161, 0.015076), error norm: 0.029332, threshold: 0.750000
+[ INFO] [1733437400.089887784, 5278.945000000]: sign_based_relocalization(STOPSIGN WEST): relative estimated pose to car: (-0.843699, 0.213781)
+[ INFO] [1733437410.127382377, 5288.959000000]: intersection_reached(): setting last intersection point to (3.952228, 4.043243)
+[ INFO] [1733437410.127437207, 5288.959000000]: intersection reached
+[ INFO] [1733437410.127456044, 5288.959000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437422.138279354, 5300.944000000]: check_stop_sign(): priority detected at a distance of: 0.739000
+[ INFO] [1733437422.138342493, 5300.944000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (2.189141, 1.407912), actual: (2.264500, 1.351000), error: (0.075359, -0.056912), error norm: 0.094435, threshold: 0.750000
+[ INFO] [1733437422.138365840, 5300.944000000]: sign_based_relocalization(PRIORITY SOUTH): relative estimated pose to car: (-0.328742, -0.835475)
+[ INFO] [1733437423.747602607, 5302.551000000]: intersection_reached(): setting last intersection point to (2.554228, 1.750279)
+[ INFO] [1733437423.747632102, 5302.551000000]: intersection reached
+[ INFO] [1733437423.747676320, 5302.551000000]: priority detected, proceeding...
+[ INFO] [1733437430.050545409, 5308.844000000]: check_stop_sign(): priority detected at a distance of: 0.747000
+[ INFO] [1733437430.050611487, 5308.845000000]: sign_based_relocalization(PRIORITY EAST): SUCCESS: estimated sign pose: (4.109311, 0.019650), actual: (4.143644, 0.101336), error: (0.034333, 0.081686), error norm: 0.088608, threshold: 0.750000
+[ INFO] [1733437430.050627862, 5308.845000000]: sign_based_relocalization(PRIORITY EAST): relative estimated pose to car: (0.775732, -0.403267)
+[ INFO] [1733437431.459013015, 5310.250000000]: intersection_reached(): setting last intersection point to (3.751725, 0.430276)
+[ INFO] [1733437431.459050537, 5310.250000000]: intersection reached
+[ INFO] [1733437431.459060889, 5310.250000000]: priority detected, proceeding...
+[ INFO] [1733437449.085004701, 5327.844000000]: check_stop_sign(): stop sign detected at a distance of: 0.742000
+[ INFO] [1733437449.085062378, 5327.844000000]: sign_based_relocalization(STOPSIGN NORTH): SUCCESS: estimated sign pose: (6.990735, 3.325823), actual: (6.886100, 3.391610), error: (-0.104635, 0.065787), error norm: 0.123597, threshold: 0.750000
+[ INFO] [1733437449.085081998, 5327.844000000]: sign_based_relocalization(STOPSIGN NORTH): relative estimated pose to car: (0.364181, 0.834252)
+[ INFO] [1733437450.693646658, 5329.450000000]: intersection_reached(): setting last intersection point to (6.573110, 2.998961)
+[ INFO] [1733437450.693678152, 5329.450000000]: intersection reached
+[ INFO] [1733437450.693702247, 5329.450000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437468.118360257, 5346.844000000]: check_stop_sign(): stop sign detected at a distance of: 0.725000
+[ INFO] [1733437468.118419327, 5346.844000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (5.771793, 7.207310), actual: (5.759000, 7.155500), error: (-0.012793, -0.051810), error norm: 0.053366, threshold: 0.750000
+[ INFO] [1733437468.118444218, 5346.844000000]: sign_based_relocalization(STOPSIGN WEST): relative estimated pose to car: (-0.748342, 0.350001)
+[ INFO] [1733437469.427124879, 5348.150000000]: intersection_reached(): setting last intersection point to (6.158177, 6.884585)
+[ INFO] [1733437469.427181963, 5348.150000000]: intersection reached
+[ INFO] [1733437469.427196202, 5348.150000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437473.127232254, 5351.844000000]: check_car(): detected car at a distance of: 1.392500, at: 4.135170, 6.566446
+[ INFO] [1733437473.127442392, 5351.844000000]: check_car(): min_dist: 1.255626, min_dist_adj: 0.862861
+[ INFO] [1733437473.127475656, 5351.844000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.392500
+[ INFO] [1733437473.226890591, 5351.944000000]: check_car(): detected car at a distance of: 1.354000, at: 4.124373, 6.561006
+[ INFO] [1733437473.227092721, 5351.944000000]: check_car(): min_dist: 1.267710, min_dist_adj: 0.874948
+[ INFO] [1733437473.227115446, 5351.944000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.354000
+[ INFO] [1733437476.031911668, 5354.744000000]: check_car(): detected car at a distance of: 1.374000, at: 4.855768, 8.956306
+[ INFO] [1733437476.032145866, 5354.744000000]: check_car(): min_dist: 0.057267, min_dist_adj: 0.336512
+[ INFO] [1733437476.032172462, 5354.744000000]: check_car(): start idx: 6487, end idx: 6548
+[ INFO] [1733437476.032228947, 5354.745000000]: check_car(): changing lane to the left in 0.864000 meters. start pose: (5.018109,8.159979), end: (4.531919, 9.545400), cur: (5.152191, 7.515256)
+[ INFO] [1733437505.582672716, 5384.244000000]: check_stop_sign(): stop sign detected at a distance of: 0.748000
+[ INFO] [1733437505.582733603, 5384.244000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (-0.007676, 7.647460), actual: (0.104340, 7.521675), error: (0.112016, -0.125785), error norm: 0.168432, threshold: 0.750000
+[ INFO] [1733437505.582758949, 5384.245000000]: sign_based_relocalization(STOPSIGN SOUTH): relative estimated pose to car: (-0.350863, -0.839096)
+[ INFO] [1733437507.291095481, 5385.951000000]: intersection_reached(): setting last intersection point to (0.395853, 7.899835)
+[ INFO] [1733437507.291184147, 5385.951000000]: intersection reached
+[ INFO] [1733437507.291204780, 5385.951000000]: stop sign detected, stopping for 1.500000 seconds...
+[ INFO] [1733437517.905288140, 5396.544000000]: check_stop_sign(): priority detected at a distance of: 0.746000
+[ INFO] [1733437517.905348297, 5396.544000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (0.117000, 4.665490), actual: (0.104340, 4.635900), error: (-0.012660, -0.029590), error norm: 0.032185, threshold: 0.750000
+[ INFO] [1733437517.905374702, 5396.544000000]: sign_based_relocalization(PRIORITY SOUTH): relative estimated pose to car: (-0.227694, -0.839140)
+[ INFO] [1733437519.613540763, 5398.250000000]: intersection_reached(): setting last intersection point to (0.340949, 5.025315)
+[ INFO] [1733437519.613574606, 5398.250000000]: intersection reached
+[ INFO] [1733437519.613583520, 5398.250000000]: priority detected, proceeding...
+[ INFO] [1733437525.917856503, 5404.544000000]: check_stop_sign(): traffic light detected at a distance of: 0.740000
+[ INFO] [1733437525.917912357, 5404.544000000]: sign_based_relocalization(LIGHTS EAST): SUCCESS: estimated sign pose: (1.907102, 3.313609), actual: (1.899750, 3.391500), error: (-0.007352, 0.077891), error norm: 0.078237, threshold: 0.750000
+[ INFO] [1733437525.917932773, 5404.544000000]: sign_based_relocalization(LIGHTS EAST): relative estimated pose to car: (0.761727, -0.406638)
+[ INFO] [1733437527.326012211, 5405.950000000]: intersection_reached(): setting last intersection point to (1.525990, 3.720851)
+[ INFO] [1733437527.326046087, 5405.950000000]: intersection reached
+[ INFO] [1733437527.326066354, 5405.950000000]: traffic light was detected, clearing stopsign flag...
+[ INFO] [1733437533.630904746, 5412.244000000]: check_stop_sign(): stop sign detected at a distance of: 0.752000
+[ INFO] [1733437533.630953210, 5412.244000000]: sign_based_relocalization(STOPSIGN EAST): SUCCESS: estimated sign pose: (4.073394, 3.359995), actual: (4.143760, 3.389660), error: (0.070366, 0.029665), error norm: 0.076364, threshold: 0.750000
+[ INFO] [1733437533.630965577, 5412.244000000]: sign_based_relocalization(STOPSIGN EAST): relative estimated pose to car: (0.848912, -0.317302)
+[ INFO] [1733437535.439553578, 5414.050000000]: Changing from MOVING to DONE
+[ INFO] [1733437543.148057648, 5421.744000000]: Changing from DONE to INIT

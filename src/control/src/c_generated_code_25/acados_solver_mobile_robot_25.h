@@ -46,13 +46,16 @@
 #define MOBILE_ROBOT_25_NSBX   0
 #define MOBILE_ROBOT_25_NSBU   0
 #define MOBILE_ROBOT_25_NSH    0
+#define MOBILE_ROBOT_25_NSH0   0
 #define MOBILE_ROBOT_25_NSG    0
 #define MOBILE_ROBOT_25_NSPHI  0
 #define MOBILE_ROBOT_25_NSHN   0
 #define MOBILE_ROBOT_25_NSGN   0
 #define MOBILE_ROBOT_25_NSPHIN 0
+#define MOBILE_ROBOT_25_NSPHI0 0
 #define MOBILE_ROBOT_25_NSBXN  0
 #define MOBILE_ROBOT_25_NS     0
+#define MOBILE_ROBOT_25_NS0    0
 #define MOBILE_ROBOT_25_NSN    0
 #define MOBILE_ROBOT_25_NG     0
 #define MOBILE_ROBOT_25_NBXN   0
@@ -62,8 +65,10 @@
 #define MOBILE_ROBOT_25_NYN    3
 #define MOBILE_ROBOT_25_N      40
 #define MOBILE_ROBOT_25_NH     0
-#define MOBILE_ROBOT_25_NPHI   0
 #define MOBILE_ROBOT_25_NHN    0
+#define MOBILE_ROBOT_25_NH0    0
+#define MOBILE_ROBOT_25_NPHI0  0
+#define MOBILE_ROBOT_25_NPHI   0
 #define MOBILE_ROBOT_25_NPHIN  0
 #define MOBILE_ROBOT_25_NR     0
 
@@ -105,6 +110,9 @@ typedef struct mobile_robot_25_solver_capsule
 
 
     // constraints
+
+
+
 
 
 

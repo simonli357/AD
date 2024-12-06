@@ -145,7 +145,6 @@ ACADOS_SYMBOL_EXPORT int mobile_robot_18_acados_update_params(mobile_robot_18_so
 ACADOS_SYMBOL_EXPORT int mobile_robot_18_acados_update_params_sparse(mobile_robot_18_solver_capsule * capsule, int stage, int *idx, double *p, int n_update);
 
 ACADOS_SYMBOL_EXPORT int mobile_robot_18_acados_solve(mobile_robot_18_solver_capsule * capsule);
-ACADOS_SYMBOL_EXPORT void mobile_robot_18_acados_batch_solve(mobile_robot_18_solver_capsule ** capsules, int N_batch);
 ACADOS_SYMBOL_EXPORT int mobile_robot_18_acados_free(mobile_robot_18_solver_capsule * capsule);
 ACADOS_SYMBOL_EXPORT void mobile_robot_18_acados_print_stats(mobile_robot_18_solver_capsule * capsule);
 ACADOS_SYMBOL_EXPORT int mobile_robot_18_acados_custom_update(mobile_robot_18_solver_capsule* capsule, double* data, int data_len);

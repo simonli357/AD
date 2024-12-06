@@ -124,7 +124,6 @@ south_facing_signs = [
     [4.9156 - ofs6 * 2 - pole_size - sign_ofs1, 4.581664 + sign_ofs2, "Sign", "SOUTH"],
     [4.9143 - ofs6 * 2 - pole_size - sign_ofs1, 1.3 + sign_ofs2, "Sign", "SOUTH"],
     [2.667 - ofs6 * 2 - pole_size - sign_ofs1, 1.3 + sign_ofs2, "Sign", "SOUTH"],
-    [2.67 - ofs6 * 2 - pole_size - sign_ofs1, 4.584 + sign_ofs2, "Sign", "SOUTH"],
     [0.50684 - ofs6 * 2 - pole_size - sign_ofs1, 4.5849 + sign_ofs2, "Sign", "SOUTH"],
     [0.50684 - ofs6 * 2 - pole_size - sign_ofs1, 7.470675 + sign_ofs2, "Sign", "SOUTH"],
     [0.50684 - ofs6 * 2 - pole_size - sign_ofs1, 10.584 + sign_ofs2, "Sign", "SOUTH"]
@@ -134,7 +133,6 @@ north_facing_signs = [
     [0.579612 + ofs6 * 2 + pole_size + sign_ofs1, 9.0727 - sign_ofs2, "Sign", "NORTH"],
     [0.579612 + ofs6 * 2 + pole_size + sign_ofs1, 5.96247 - sign_ofs2, "Sign", "NORTH"],
     [0.579612 + ofs6 * 2 + pole_size + sign_ofs1, 3.07145 - sign_ofs2, "Sign", "NORTH"],
-    [2.744851 + ofs6 * 2 + pole_size + sign_ofs1, 3.07145 - sign_ofs2, "Sign", "NORTH"],
     [2.744851 + ofs6 * 2 + pole_size + sign_ofs1, 5.9603 - sign_ofs2, "Sign", "NORTH"],
     [4.9887 + ofs6 * 2 + pole_size + sign_ofs1, 5.958 - sign_ofs2, "Sign", "NORTH"],
     [4.9887 + ofs6 * 2 + pole_size + sign_ofs1, 3.07 - sign_ofs2, "Sign", "NORTH"],
@@ -145,7 +143,6 @@ north_facing_signs = [
 west_facing_signs = [
     [17.1571 + sign_ofs2, 10.633 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [1.296 + sign_ofs2, 3.86375 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
-    [3.4543 + sign_ofs2, 3.865637 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [5.71 + sign_ofs2, 3.8661 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [5.708 + sign_ofs2, 6.753 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [3.4547 + sign_ofs2, 6.7545 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
@@ -157,13 +154,25 @@ west_facing_signs = [
 
 east_facing_signs = [
     [1.95075 - sign_ofs2, 0.503891 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
-    [1.95075 - sign_ofs2, 3.794 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     [1.95 - sign_ofs2, 6.6816 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     [4.19476 - sign_ofs2, 6.681 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     [4.19476 - sign_ofs2, 3.79216 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     [4.194644 - sign_ofs2, 0.503836 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     [14.7386 - sign_ofs2, 1.07135 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"],
     # [14.983 - sign_ofs2, 10.5538 - ofs6 * 2 - pole_size - sign_ofs1, "Sign", "EAST"]
+]
+
+south_facing_lights = [
+    [2.67 - ofs6 * 2 - pole_size - sign_ofs1, 4.584 + sign_ofs2, "Light", "SOUTH"],
+]
+north_facing_lights = [
+    [2.744851 + ofs6 * 2 + pole_size + sign_ofs1, 3.07145 - sign_ofs2, "Light", "NORTH"],
+]
+west_facing_lights = [
+    [3.4543 + sign_ofs2, 3.865637 + ofs6 * 2 + pole_size + sign_ofs1, "Light", "WEST"],
+]
+east_facing_lights = [
+    [1.95075 - sign_ofs2, 3.794 - ofs6 * 2 - pole_size - sign_ofs1, "Light", "EAST"],
 ]
 
 park_ofs1_left = 0.009
@@ -252,6 +261,10 @@ data.extend(store_coordinates_with_context(south_facing_signs, 3 * math.pi / 2))
 data.extend(store_coordinates_with_context(north_facing_signs, math.pi / 2))
 data.extend(store_coordinates_with_context(west_facing_signs, math.pi))
 data.extend(store_coordinates_with_context(east_facing_signs, 0))
+data.extend(store_coordinates_with_context(south_facing_lights, 3 * math.pi / 2))
+data.extend(store_coordinates_with_context(north_facing_lights, math.pi / 2))
+data.extend(store_coordinates_with_context(west_facing_lights, math.pi))
+data.extend(store_coordinates_with_context(east_facing_lights, 0))
 data.extend(store_coordinates_with_context(parking_signs, 0))
 data.extend(store_coordinates_with_context(east_facing_roundabout, 0))
 data.extend(store_coordinates_with_context(north_facing_roundabout, math.pi / 2))

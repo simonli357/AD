@@ -4,19 +4,19 @@
       name  = "sign_66"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_66 -x 15.057500000000005 -y 4.631 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_66 -x 15.057500000000005 -y 4.631 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_67"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_67 -x 15.057976000000002 -y 1.5482 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_67 -x 15.057976000000002 -y 1.5482 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_68"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_68 -x 4.5131000000000006 -y 4.632664 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_68 -x 4.5131000000000006 -y 4.632664 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_69"
@@ -28,181 +28,181 @@
       name  = "sign_70"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_70 -x 2.2644999999999995 -y 1.351 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_70 -x 2.2644999999999995 -y 1.351 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_71"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_71 -x 2.2675 -y 4.635 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_71 -x 0.1043399999999999 -y 4.6359 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_72"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_72 -x 0.1043399999999999 -y 4.6359 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_72 -x 0.1043399999999999 -y 7.521675 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_73"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_73 -x 0.1043399999999999 -y 7.521675 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_73 -x 0.1043399999999999 -y 10.635 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
 
   <node
       name  = "sign_74"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_74 -x 0.1043399999999999 -y 10.635 -z 0.078998 -R 0 -P 0 -Y 4.71238898038469"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_74 -x 0.982112 -y 9.0217 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_75"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_75 -x 0.982112 -y 9.0217 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_75 -x 0.982112 -y 5.91147 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_76"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_76 -x 0.982112 -y 5.91147 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_76 -x 0.982112 -y 3.02045 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_77"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_77 -x 0.982112 -y 3.02045 -z 0 -R 0 -P 0 -Y 4.712386326794896"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_77 -x 3.1473510000000005 -y 5.9093 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_78"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_78 -x 3.1473510000000005 -y 3.02045 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_78 -x 5.3912 -y 5.907 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_79"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_79 -x 3.1473510000000005 -y 5.9093 -z 0 -R 0 -P 0 -Y 4.712386326794896"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_79 -x 5.3912 -y 3.019 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_80"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_80 -x 5.3912 -y 5.907 -z 0 -R 0 -P 0 -Y 4.712386326794896"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_80 -x 6.8861 -y 3.39161 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
 
   <node
       name  = "sign_81"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_81 -x 5.3912 -y 3.019 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_81 -x 17.208099999999998 -y 11.035499999999995 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_82"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_82 -x 6.8861 -y 3.39161 -z 0.078998 -R 0 -P 0 -Y 1.5707963267948966"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_82 -x 1.347 -y 4.26625 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_83"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_83 -x 17.208099999999998 -y 11.035499999999995 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_83 -x 5.761 -y 4.2686 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_84"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_84 -x 1.347 -y 4.26625 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_84 -x 5.759 -y 7.1555 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_85"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_85 -x 3.5053 -y 4.268137 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_85 -x 3.5057 -y 7.157 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_86"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_86 -x 5.761 -y 4.2686 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_86 -x 1.347 -y 7.157254 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_87"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_87 -x 5.759 -y 7.1555 -z 0 -R 0 -P 0 -Y 2.6535897932333796e-06"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_87 -x 7.619552 -y 4.2699 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_88"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_88 -x 3.5057 -y 7.157 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_88 -x 3.5072400000000004 -y 0.98403 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_89"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_89 -x 1.347 -y 7.157254 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_89 -x 16.2995 -y 4.2703 -z 0.078998 -R 0 -P 0 -Y 3.141592653589793"/>
 
   <node
       name  = "sign_90"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_90 -x 7.619552 -y 4.2699 -z 0 -R 0 -P 0 -Y 2.6535897932333796e-06"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_90 -x 1.89975 -y 0.101391 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_91"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_91 -x 3.5072400000000004 -y 0.98403 -z 0 -R 0 -P 0 -Y 2.6535897932333796e-06"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_91 -x 1.899 -y 6.279100000000001 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_92"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_92 -x 16.2995 -y 4.2703 -z 0 -R 0 -P 0 -Y 2.6535897932333796e-06"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_92 -x 4.143759999999999 -y 6.2785 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_93"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_93 -x 1.89975 -y 0.101391 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_93 -x 4.143759999999999 -y 3.38966 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_94"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_94 -x 1.89975 -y 3.3915 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_94 -x 4.143644 -y 0.1013359999999999 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_95"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_95 -x 1.899 -y 6.279100000000001 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_95 -x 14.6876 -y 0.6688500000000001 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
 
   <node
       name  = "sign_96"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_96 -x 4.143759999999999 -y 6.2785 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_96 -x 2.2675 -y 4.635 -z 0 -R 0 -P 0 -Y 1.5707989803846898"/>
 
   <node
       name  = "sign_97"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/priority_sign/model.sdf -sdf -model sign_97 -x 4.143759999999999 -y 3.38966 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_97 -x 3.1473510000000005 -y 3.02045 -z 0 -R 0 -P 0 -Y 4.712386326794896"/>
 
   <node
       name  = "sign_98"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_98 -x 4.143644 -y 0.1013359999999999 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_98 -x 3.5053 -y 4.268137 -z 0 -R 0 -P 0 -Y 2.6535897932333796e-06"/>
 
   <node
       name  = "sign_99"
       pkg   = "gazebo_ros"
       type  = "spawn_model"
-      args  = "-file $(find models_pkg)/stop_sign/model.sdf -sdf -model sign_99 -x 14.6876 -y 0.6688500000000001 -z 0.078998 -R 0 -P 0 -Y 0.0"/>
+      args  = "-file $(find models_pkg)/traffic_light/model.sdf -sdf -model sign_99 -x 1.89975 -y 3.3915 -z 0 -R 0 -P 0 -Y 3.14159"/>
 
   <node
       name  = "sign_100"
