@@ -1019,7 +1019,11 @@ public:
     }
     
     bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res) {
-        utils.set_states(req.x, req.y);
+        if (req.x >= 0 && req.y >= 0) {
+            utils.set_states(req.x, req.y);
+        } else {
+            utils.reset_yaw();
+        }
         res.success = true;
         return true;
     }
