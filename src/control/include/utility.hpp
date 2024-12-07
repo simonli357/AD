@@ -420,6 +420,9 @@ public:
         return {world_x, world_y, world_yaw};
     }
 
+    void reset_yaw() {
+        initial_yaw = yaw;
+    }
     static double nearest_direction(double yaw) {
         yaw = yaw_mod(yaw, M_PI);
 

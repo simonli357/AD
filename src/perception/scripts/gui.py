@@ -71,7 +71,9 @@ class OpenCVGuiApp(QWidget):
         self.toggle_button_layout.addWidget(self.toggle_gt_button)
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
         self.set_states_button = QPushButton('Set States')
+        self.reset_yaw_button = QPushButton('Set Yaw')
         self.toggle_button_layout.addWidget(self.set_states_button)
+        self.toggle_button_layout.addWidget(self.reset_yaw_button)
         
         self.left_panel_layout.addLayout(self.toggle_button_layout)
         
@@ -93,6 +95,7 @@ class OpenCVGuiApp(QWidget):
         self.start_button.clicked.connect(self.start)
         self.goto_button.clicked.connect(self.goto)
         self.set_states_button.clicked.connect(self.set_states)
+        self.reset_yaw_button.clicked.connect(self.reset_yaw)
         
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
@@ -296,6 +299,7 @@ class OpenCVGuiApp(QWidget):
             }
         """
         self.set_states_button.setStyleSheet(gradient_button_style_red)
+        self.reset_yaw_button.setStyleSheet(gradient_button_style_red)
         circular_button_style = """
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -540,6 +544,8 @@ class OpenCVGuiApp(QWidget):
         self.call_goto_service(self.cursor_x, self.cursor_y)
     def set_states(self):
         self.call_set_states_service(self.cursor_x, self.cursor_y)
+    def reset_yaw(self):
+        self.call_set_states_service()
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
         rospy.wait_for_service('goto_command', timeout=5)
@@ -558,15 +564,19 @@ class OpenCVGuiApp(QWidget):
             print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
-    def call_set_states_service(self, x, y):
+    def call_set_states_service(self, x=None, y=None):
         print("set states service called, waiting for service...")
         rospy.wait_for_service('set_states', timeout=5)
         print("service found, calling service...")
         try:
             set_states_service = rospy.ServiceProxy('set_states', set_states)
             req = set_statesRequest()
-            req.x = x
-            req.y = y
+            if x is not None and y is not None:
+                req.x = x
+                req.y = y
+            else:
+                req.x = -200
+                req.y = -200
             res = set_states_service(req)
             if not res.success:
                 print("Failed to send set states command")
