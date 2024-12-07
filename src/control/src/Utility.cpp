@@ -515,7 +515,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 
     m_chassis.getRPY(roll, pitch, yaw);
 
-    if (real) yaw *= -1;
+    // if (real) yaw *= -1;
     // ROS_INFO("yaw: %.3f, pitch: %.3f", yaw * 180 / M_PI, pitch * 180 / M_PI);
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
@@ -527,6 +527,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
         initializationFlag = true;
         debug("initialized in imu callback", 2);
     }
+    if (real) yaw = yaw - initial_yaw;
     // yaw = yaw - initial_yaw + yaw0;
     yaw = yaw_mod(yaw);
     lock.unlock();
