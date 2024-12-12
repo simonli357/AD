@@ -76,7 +76,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = 1/mpc.T;
+        double rateVal = rateVal;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
@@ -194,6 +194,7 @@ public:
         }
     }
     int parking_maneuver_hardcode(bool right=true, bool exit=false, double rate_val=20, double initial_y_error = 0, double initial_yaw_error = 0) {
+        // rate_val = 1/mpc.T;
         Eigen::VectorXd targets(3);
         Eigen::VectorXd steerings(3);
         Eigen::VectorXd speeds(3);

@@ -37,7 +37,7 @@
 #define MOBILE_ROBOT_NX     3
 #define MOBILE_ROBOT_NZ     0
 #define MOBILE_ROBOT_NU     2
-#define MOBILE_ROBOT_NP     0
+#define MOBILE_ROBOT_NP     7
 
 #ifdef __cplusplus
 extern "C" {

@@ -15,7 +15,7 @@ extern "C" {
   #define _CASADI_NAMESPACE_CONCAT(NS, ID) NS ## ID
   #define CASADI_PREFIX(ID) CASADI_NAMESPACE_CONCAT(CODEGEN_PREFIX, ID)
 #else
-  #define CASADI_PREFIX(ID) mobile_robot_expl_vde_adj_ ## ID
+  #define CASADI_PREFIX(ID) mobile_robot_cost_y_fun_ ## ID
 #endif
 
 #include <math.h>
@@ -34,7 +34,6 @@ extern "C" {
 #define casadi_s1 CASADI_PREFIX(s1)
 #define casadi_s2 CASADI_PREFIX(s2)
 #define casadi_s3 CASADI_PREFIX(s3)
-#define casadi_sq CASADI_PREFIX(sq)
 
 /* Symbol visibility in DLLs */
 #ifndef CASADI_SYMBOL_EXPORT
@@ -51,136 +50,127 @@ extern "C" {
   #endif
 #endif
 
-casadi_real casadi_sq(casadi_real x) { return x*x;}
-
 static const casadi_int casadi_s0[7] = {3, 1, 0, 3, 0, 1, 2};
 static const casadi_int casadi_s1[6] = {2, 1, 0, 2, 0, 1};
-static const casadi_int casadi_s2[11] = {7, 1, 0, 7, 0, 1, 2, 3, 4, 5, 6};
-static const casadi_int casadi_s3[9] = {5, 1, 0, 5, 0, 1, 2, 3, 4};
+static const casadi_int casadi_s2[3] = {0, 0, 0};
+static const casadi_int casadi_s3[11] = {7, 1, 0, 7, 0, 1, 2, 3, 4, 5, 6};
 
-/* mobile_robot_expl_vde_adj:(i0[3],i1[3],i2[2],i3[7])->(o0[5]) */
+/* mobile_robot_cost_y_fun:(i0[3],i1[2],i2[],i3[],i4[7])->(o0[7]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
-  casadi_real a0, a1, a2, a3, a4, a5, a6, a7;
-  a0=0.;
+  casadi_real a0, a1, a2;
+  a0=arg[0]? arg[0][0] : 0;
+  a1=arg[4]? arg[4][0] : 0;
+  a0=(a0-a1);
   if (res[0]!=0) res[0][0]=a0;
+  a0=arg[0]? arg[0][1] : 0;
+  a1=arg[4]? arg[4][1] : 0;
+  a0=(a0-a1);
   if (res[0]!=0) res[0][1]=a0;
   a0=arg[0]? arg[0][2] : 0;
-  a1=cos(a0);
-  a2=arg[2]? arg[2][0] : 0;
-  a3=arg[1]? arg[1][1] : 0;
-  a4=(a2*a3);
-  a1=(a1*a4);
-  a4=sin(a0);
-  a5=arg[1]? arg[1][0] : 0;
-  a6=(a2*a5);
-  a4=(a4*a6);
-  a1=(a1-a4);
-  if (res[0]!=0) res[0][2]=a1;
-  a1=3.7037037037037033e+00;
-  a4=arg[2]? arg[2][1] : 0;
-  a6=tan(a4);
-  a7=arg[1]? arg[1][2] : 0;
-  a6=(a6*a7);
-  a1=(a1*a6);
-  a6=sin(a0);
-  a6=(a6*a3);
-  a1=(a1+a6);
-  a0=cos(a0);
-  a0=(a0*a5);
-  a1=(a1+a0);
+  a1=arg[4]? arg[4][2] : 0;
+  a0=(a0-a1);
+  if (res[0]!=0) res[0][2]=a0;
+  a0=arg[1]? arg[1][0] : 0;
+  a1=arg[4]? arg[4][3] : 0;
+  a1=(a0-a1);
   if (res[0]!=0) res[0][3]=a1;
-  a1=2.7000000000000002e-01;
-  a2=(a2/a1);
-  a2=(a2*a7);
-  a4=cos(a4);
-  a4=casadi_sq(a4);
-  a2=(a2/a4);
+  a1=arg[1]? arg[1][1] : 0;
+  a2=arg[4]? arg[4][4] : 0;
+  a2=(a1-a2);
   if (res[0]!=0) res[0][4]=a2;
+  a2=arg[4]? arg[4][5] : 0;
+  a0=(a0-a2);
+  if (res[0]!=0) res[0][5]=a0;
+  a0=arg[4]? arg[4][6] : 0;
+  a1=(a1-a0);
+  if (res[0]!=0) res[0][6]=a1;
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem){
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem){
   return casadi_f0(arg, res, iw, w, mem);
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj_alloc_mem(void) {
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun_alloc_mem(void) {
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj_init_mem(int mem) {
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun_init_mem(int mem) {
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT void mobile_robot_expl_vde_adj_free_mem(int mem) {
+CASADI_SYMBOL_EXPORT void mobile_robot_cost_y_fun_free_mem(int mem) {
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj_checkout(void) {
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun_checkout(void) {
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT void mobile_robot_expl_vde_adj_release(int mem) {
+CASADI_SYMBOL_EXPORT void mobile_robot_cost_y_fun_release(int mem) {
 }
 
-CASADI_SYMBOL_EXPORT void mobile_robot_expl_vde_adj_incref(void) {
+CASADI_SYMBOL_EXPORT void mobile_robot_cost_y_fun_incref(void) {
 }
 
-CASADI_SYMBOL_EXPORT void mobile_robot_expl_vde_adj_decref(void) {
+CASADI_SYMBOL_EXPORT void mobile_robot_cost_y_fun_decref(void) {
 }
 
-CASADI_SYMBOL_EXPORT casadi_int mobile_robot_expl_vde_adj_n_in(void) { return 4;}
+CASADI_SYMBOL_EXPORT casadi_int mobile_robot_cost_y_fun_n_in(void) { return 5;}
 
-CASADI_SYMBOL_EXPORT casadi_int mobile_robot_expl_vde_adj_n_out(void) { return 1;}
+CASADI_SYMBOL_EXPORT casadi_int mobile_robot_cost_y_fun_n_out(void) { return 1;}
 
-CASADI_SYMBOL_EXPORT casadi_real mobile_robot_expl_vde_adj_default_in(casadi_int i) {
+CASADI_SYMBOL_EXPORT casadi_real mobile_robot_cost_y_fun_default_in(casadi_int i) {
   switch (i) {
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT const char* mobile_robot_expl_vde_adj_name_in(casadi_int i) {
+CASADI_SYMBOL_EXPORT const char* mobile_robot_cost_y_fun_name_in(casadi_int i) {
   switch (i) {
     case 0: return "i0";
     case 1: return "i1";
     case 2: return "i2";
     case 3: return "i3";
+    case 4: return "i4";
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT const char* mobile_robot_expl_vde_adj_name_out(casadi_int i) {
+CASADI_SYMBOL_EXPORT const char* mobile_robot_cost_y_fun_name_out(casadi_int i) {
   switch (i) {
     case 0: return "o0";
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_expl_vde_adj_sparsity_in(casadi_int i) {
+CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_cost_y_fun_sparsity_in(casadi_int i) {
   switch (i) {
     case 0: return casadi_s0;
-    case 1: return casadi_s0;
-    case 2: return casadi_s1;
+    case 1: return casadi_s1;
+    case 2: return casadi_s2;
     case 3: return casadi_s2;
+    case 4: return casadi_s3;
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_expl_vde_adj_sparsity_out(casadi_int i) {
+CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_cost_y_fun_sparsity_out(casadi_int i) {
   switch (i) {
     case 0: return casadi_s3;
     default: return 0;
   }
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
-  if (sz_arg) *sz_arg = 4;
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
+  if (sz_arg) *sz_arg = 5;
   if (sz_res) *sz_res = 1;
   if (sz_iw) *sz_iw = 0;
   if (sz_w) *sz_w = 0;
   return 0;
 }
 
-CASADI_SYMBOL_EXPORT int mobile_robot_expl_vde_adj_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
-  if (sz_arg) *sz_arg = 4*sizeof(const casadi_real*);
+CASADI_SYMBOL_EXPORT int mobile_robot_cost_y_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w) {
+  if (sz_arg) *sz_arg = 5*sizeof(const casadi_real*);
   if (sz_res) *sz_res = 1*sizeof(casadi_real*);
   if (sz_iw) *sz_iw = 0*sizeof(casadi_int);
   if (sz_w) *sz_w = 0*sizeof(casadi_real);
