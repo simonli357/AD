@@ -61,8 +61,8 @@ class CameraNode {
 
                 cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
                 cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
-                cfg.enable_stream(RS2_STREAM_GYRO);
-                cfg.enable_stream(RS2_STREAM_ACCEL);
+                cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
+                cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
                 pipe.start(cfg);
 
                 std::cout.precision(4);
@@ -247,6 +247,10 @@ class CameraNode {
             imu_msg.linear_acceleration.x = accel_data[0];
             imu_msg.linear_acceleration.y = accel_data[1];
             imu_msg.linear_acceleration.z = accel_data[2];
+
+            float[] accel_angle = {0, 0, 0};
+            accel_angle[2] = atan2(accel_data[1], accel_data[2]);
+            accel_angle[0] = atan2(accel_data[0], sqrt(accel_data[1] * accel_data[1] + accel_data[2] * accel_data[2]));
             imu_pub.publish(imu_msg);
 
             if (!useRosTimer) {
