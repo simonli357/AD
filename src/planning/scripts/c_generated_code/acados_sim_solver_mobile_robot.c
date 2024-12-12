@@ -166,6 +166,13 @@ int mobile_robot_acados_sim_create(mobile_robot_sim_solver_capsule * capsule)
     capsule->acados_sim_solver = mobile_robot_sim_solver;
 
 
+    /* initialize parameter values */
+    double* p = calloc(np, sizeof(double));
+    
+
+    mobile_robot_acados_sim_update_params(capsule, p, np);
+    free(p);
+
 
     /* initialize input */
     // x
