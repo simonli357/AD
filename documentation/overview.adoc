@@ -1,0 +1,184 @@
+= Autonomous Driving Pipeline
+
+For Bosch Future Mobility Challenge: https://boschfuturemobility.com/
+
+== Description
+
+This document outlines the setup and usage of the Autonomous Driving (AD) Pipeline for the Bosch Future Mobility Challenge. The pipeline includes various modules for control, localization, perception, planning, and utility functions to enable autonomous vehicle functionalities.
+
+== Structure
+
+- **control**: Handles vehicle actuation and movement control.
+- **localization**: Determines the vehicle’s position.
+- **perception**: Processes sensor data for environment understanding.
+- **planning**: Plans paths and maneuvers for the vehicle.
+- **utils**: Contains custom messages (msgs) and services (srvs) used by the other packages.
+
+== Dependencies
+
+=== ROS
+
+==== Installation:
+Follow the instructions at: http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html
+
+=== OpenCV (version 4.6.0 or above)
+
+==== Installation:
+
+1. Visit: https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
+2. Follow the "Build with opencv_contrib" instructions.
+3. Build `cv_bridge`:
+    ```bash
+    cd
+    git clone https://github.com/slsecrets357/AD.git
+    cd ~/AD
+    catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
+    ```
+    Replace `/path/to/opencv-4.9.0` with the actual path to your OpenCV installation.
+
+=== Python Libraries
+
+==== Installation:
+
+```bash
+pip install -r ~/AD/requirements.txt
+```
+
+=== robot_localization
+
+==== Installation:
+
+```bash
+sudo apt update
+sudo apt install ros-noetic-robot-localization
+```
+
+=== ncnn
+
+==== Installation:
+
+1. Visit: https://github.com/Tencent/ncnn/wiki/how-to-build
+2. Follow the installation instructions for your machine.
+3. Create a folder named `ncnn` in `src/perception/include`, then copy the `bin`, `include`, and `lib` folders from the installed ncnn directory into this folder.
+
+=== TensorRT
+
+==== Installation:
+
+1. Follow the instructions in `Cuda&TrtInstall.md`.
+2. Add these lines to `CMakeLists.txt` to resolve errors related to `NvInfer.h` and `cuda_runtime.h`. Replace with the actual paths to your TensorRT and CUDA directories:
+    ```bash
+    include_directories(/home/{user}/TensorRT-8.6.1.6/include)
+    link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
+    include_directories(/usr/local/cuda/targets/x86_64-linux/include)
+    link_directories(/usr/local/cuda/targets/x86_64-linux/lib)
+    ```
+
+=== Librealsense
+
+==== Installation:
+
+1. Install dependencies:
+    ```bash
+    sudo apt-get update
+    sudo apt-get install autoconf libudev-dev
+    ```
+2. Install `vcpkg` and `librealsense2`:
+    ```bash
+    cd ~/AD
+    git clone https://github.com/Microsoft/vcpkg.git
+    cd vcpkg
+    ./bootstrap-vcpkg.sh
+    ./vcpkg integrate install
+    ./vcpkg install realsense2
+    ```
+
+=== Acados
+
+==== Installation:
+
+1. Clone the Acados repository and initialize submodules:
+    ```bash
+    git clone https://github.com/acados/acados.git
+    cd acados
+    git submodule update --recursive --init
+    ```
+2. Create a build directory and run `cmake`:
+    ```bash
+    mkdir -p build
+    cd build
+    cmake .. -DACADOS_WITH_QPOASES=ON -DACADOS_EXAMPLES=ON -DHPIPM_TARGET=GENERIC -DBLASFEO_TARGET=ARMV8A_ARM_CORTEX_A57
+    ```
+    Replace `ARMV8A_ARM_CORTEX_A57` with your device's architecture or use `GENERIC` if unsure.
+3. Update the `Makefile`:
+    ```bash
+    # Set in <acados_root_folder>/Makefile.rule
+    BLASFEO_TARGET = ARMV8A_ARM_CORTEX_A57
+    ACADOS_WITH_QPOASES = 1
+    ```
+4. Build and install Acados:
+    ```bash
+    make -j4
+    sudo make install -j4
+    cd ..
+    make shared_library
+    ```
+5. Install the Python interface:
+    ```bash
+    pip3 install -e /home/{user}/acados/interfaces/acados_template
+    ```
+6. Update `.bashrc` and source it:
+    ```bash
+    echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/home/{user}/acados/lib"' >> ~/.bashrc
+    echo 'export ACADOS_SOURCE_DIR="/home/{user}/acados"' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+7. If issues occur with `t_renderer`, compile it natively:
+    ```bash
+    git clone https://github.com/acados/tera_renderer.git
+    cd tera_renderer
+    cargo build --verbose --release
+    ```
+    Replace `<acados_root_dir>/bin/t_renderer` with the compiled version from `<tera_renderer_dir>/target/release/t_renderer`.
+
+=== Other Dependencies
+
+Install the following packages:
+```bash
+sudo apt install nlohmann-json3-dev
+sudo apt-get install libncurses5-dev libncursesw5-dev
+```
+
+== Build
+
+1. Build the packages:
+    ```bash
+    catkin_make --pkg utils
+    catkin_make
+    ```
+
+== Usage
+
+1. Run the simulation.
+2. Start the path planner server:
+    ```bash
+    source devel/setup.bash
+    rosrun planning path2.py
+    ```
+3. Start the camera node in a new terminal:
+    ```bash
+    source devel/setup.bash
+    roslaunch perception cameraNode.launch newlane:=false
+    ```
+4. Start the control node in a new terminal:
+    ```bash
+    source devel/setup.bash
+    roslaunch control controller.launch sign:=true v:=25
+    ```
+5. Start the GUI in a new terminal:
+    ```bash
+    source devel/setup.bash
+    roslaunch perception gui.py
+    ```
+    Press "Start" to follow the planned path. To change the path, double-click a destination on the map, then press the "Goto" button.
+
