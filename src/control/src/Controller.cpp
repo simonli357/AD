@@ -55,6 +55,7 @@ public:
         success = success && nh.getParam("/" + mode + "/use_lane", use_lane);
         success = success && nh.getParam("/" + mode + "/has_light", has_light);
         success = success && nh.getParam("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
+        success = success && nh.getParam("/emergency", emergency);
         success = success && nh.getParam("/pub_wpts", pubWaypoints);
         success = success && nh.getParam("/kb", keyboardControl);
         if (keyboardControl) {
@@ -76,7 +77,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = rateVal;
+        double rateVal =  1/mpc.T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
@@ -97,7 +98,7 @@ public:
             intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
             change_lane_speed=0.2, change_lane_thresh=0.05, intersection_localization_orientation_threshold = 15, NORMAL_SPEED = 0.175,
             FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
-    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false;
+    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false, emergency = false;
     bool initialized = false;
     int pedestrian_count_thresh = 8;
 
@@ -573,6 +574,7 @@ public:
         return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
     }
     void check_emergency_stop() {
+        if (!emergency) return;
         if (utils.emergency) {
             utils.debug("check_emergency_stop(): emergency stop triggered", 1);
             while (utils.emergency) {
