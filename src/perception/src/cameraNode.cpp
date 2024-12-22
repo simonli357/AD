@@ -248,9 +248,9 @@ class CameraNode {
             imu_msg.linear_acceleration.y = accel_data[1];
             imu_msg.linear_acceleration.z = accel_data[2];
 
-            float[] accel_angle = {0, 0, 0};
-            accel_angle[2] = atan2(accel_data[1], accel_data[2]);
-            accel_angle[0] = atan2(accel_data[0], sqrt(accel_data[1] * accel_data[1] + accel_data[2] * accel_data[2]));
+            // float[] accel_angle = {0, 0, 0};
+            // accel_angle[2] = atan2(accel_data[1], accel_data[2]);
+            // accel_angle[0] = atan2(accel_data[0], sqrt(accel_data[1] * accel_data[1] + accel_data[2] * accel_data[2]));
             imu_pub.publish(imu_msg);
 
             if (!useRosTimer) {
