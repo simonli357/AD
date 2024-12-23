@@ -1,0 +1,4 @@
+export PATH=/home/antoinedeng/Downloads/cmake-3.29.0-rc3-linux-x86_64/bin:$PATH
+mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM
+mbed-tools compile -m NUCLEO_F401RE -t GCC_ARM
+g++ -o test test.cpp
