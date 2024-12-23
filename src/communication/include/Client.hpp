@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <netinet/in.h>
 #include <sensor_msgs/Image.h>
 #include <thread>
@@ -9,7 +10,7 @@
 class Client {
 public:
   // Constructor
-  Client(const char *receiver_ip, const uint16_t receiver_port);
+  Client(const char *server_ip, const uint16_t server_port);
   Client(Client &&) = default;
   Client(const Client &) = delete;
   Client &operator=(Client &&) = delete;
@@ -17,7 +18,7 @@ public:
   ~Client();
   // Methods
   void initialize();
-  void sendImage(const sensor_msgs::Image &img);
+  void send_string(const std::string& str);
 
 private:
   // Fields
@@ -26,7 +27,11 @@ private:
   int client_socket;
   sockaddr_in address;
   std::thread receive;
+  bool alive = true;
+  std::map<uint8_t, std::function<void(Client*, std::vector<uint8_t>&)>> data_actions;
+  std::vector<uint8_t> data_types;
   // Methods
-  std::vector<uint8_t> serializeImage(const sensor_msgs::Image &img);
   void listen();
+  void parse_string(std::vector<uint8_t>& data);
+  // std::vector<uint8_t> serialize_image(const sensor_msgs::Image &img);
 };
