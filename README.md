@@ -186,7 +186,7 @@ http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-z
 4. Run the gui a new terminal:
     ```bash
     source devel/setup.bash
-    roslaunch perception gui.py
+    rosrun perception gui.py
     ```
     Press start to follow the planned path as illustrated. To change the path, double click on a desired destination on the map, then press the goto button.
 
