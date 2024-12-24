@@ -2,6 +2,8 @@ import threading
 import struct
 from collections import OrderedDict
 from sensor_msgs.msg import Image
+from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String
 
 
 class Connection:
@@ -9,11 +11,15 @@ class Connection:
         self.socket = client_socket
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
-            b'\x02': self.parse_image
+            b'\x02': self.parse_image,
+            b'\x03': self.parse_float32_multi_array,
+            b'\x04': self.parse_message,
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
         self.images = []
+        self.arrays = []
+        self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
 
     def recvall(self, length):
@@ -57,5 +63,21 @@ class Connection:
             img_msg = Image()
             img_msg.deserialize(data)
             self.images.append(img_msg)
+        except Exception as e:
+            print(e)
+
+    def parse_float32_multi_array(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.arrays.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_message(self, data):
+        try:
+            msg = String()
+            msg.deserialize(data)
+            self.messages.append(msg)
         except Exception as e:
             print(e)

@@ -16,4 +16,11 @@ while True:
         print(f"Received Image - Height: {img_msg.height}, Width: {img_msg.width}")
         cv_image = bridge.imgmsg_to_cv2(img_msg)
         cv2.imwrite("./image.png", cv_image)
+    if server.get_client().arrays:
+        arr_msg = server.get_client().arrays.pop(0)
+        print("Received array")
+    if server.get_client().messages:
+        msg = server.get_client().messages.pop(0)
+        print(f"{msg.data}")
+
     time.sleep(1)
