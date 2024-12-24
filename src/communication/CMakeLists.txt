@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DEXT_DEP -fdiagnostics-show-option")
 
+find_package(OpenCV REQUIRED)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -18,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
@@ -125,6 +128,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -159,7 +163,9 @@ target_link_libraries(demo
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
   ${roscpp_LIBRARIES}
+  ${OpenCV_LIBRARIES}
   pthread
+  cv_bridge
 )
 
 #############

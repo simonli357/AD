@@ -1,49 +1,36 @@
-#include "ros/time.h"
 #include <Client.hpp>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <unistd.h>
+#include <opencv2/opencv.hpp>
+#include <cv_bridge/cv_bridge.h>
 
-sensor_msgs::Image create_fake_image(int width, int height) {
-	// Create an empty image
-	sensor_msgs::Image img;
+sensor_msgs::Image create_image(const std::string& image_file) {
+    // Load the image using OpenCV (BGR format by default)
+    cv::Mat cv_image = cv::imread(image_file, cv::IMREAD_COLOR);  // Read the image as BGR
 
-	// Use std::chrono to generate a timestamp (in seconds)
-	auto now = std::chrono::system_clock::now();
-	auto duration = now.time_since_epoch();
-	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    if (cv_image.empty()) {
+        throw std::runtime_error("Failed to load image");
+    }
 
-	img.header.stamp = ros::Time(timestamp / 1000.0); // Convert to ros::Time
-	img.header.frame_id = "camera_frame";			  // Frame of reference
-	img.height = height;
-	img.width = width;
-	img.encoding = sensor_msgs::image_encodings::RGB8; // RGB image encoding
-	img.is_bigendian = true;						   // Little endian
-	img.step = width * 3;							   // 3 bytes per pixel for RGB8 encoding
-	img.data.resize(width * height * 3);			   // Total number of bytes
+    // Use CvBridge to convert cv::Mat to sensor_msgs::Image
+    cv_bridge::CvImage img_bridge;
+    img_bridge.header.frame_id = "camera_frame"; // Set frame id
+    img_bridge.encoding = sensor_msgs::image_encodings::BGR8; // Set encoding
+    img_bridge.image = cv_image;  // Set the cv::Mat image
 
-	// Fill the image with some test data (e.g., alternating red and green pixels)
-	for (int i = 0; i < width * height; ++i) {
-		// Example: RGB pattern with alternating red and green pixels
-		if (i % 2 == 0) {
-			img.data[i * 3] = 255;	 // Red (R)
-			img.data[i * 3 + 1] = 0; // Green (G)
-			img.data[i * 3 + 2] = 0; // Blue (B)
-		} else {
-			img.data[i * 3] = 0;	   // Red (R)
-			img.data[i * 3 + 1] = 255; // Green (G)
-			img.data[i * 3 + 2] = 0;   // Blue (B)
-		}
-	}
+    // Convert to sensor_msgs::Image message
+    sensor_msgs::Image img_msg;
+    img_bridge.toImageMsg(img_msg);  // Convert to ROS Image message
 
-	return img;
+    return img_msg;
 }
 
 int main(int argc, char *argv[]) {
 	Client client("127.0.0.1", 49153, 10485760);
 	client.initialize();
 	client.send_string("TEST"); // String test
-	client.send_image(create_fake_image(800, 800));
+	client.send_image(create_image("./image.png")); // Image test
 	while (true) {
 		if (!client.get_strings().empty()) {
 			std::cout << client.get_strings().front() << std::endl;
