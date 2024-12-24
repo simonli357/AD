@@ -158,6 +158,7 @@ add_executable(demo src/ClientDemo.cpp)
 target_link_libraries(demo
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
+  ${roscpp_LIBRARIES}
   pthread
 )
 
