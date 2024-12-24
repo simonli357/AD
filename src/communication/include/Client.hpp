@@ -1,5 +1,7 @@
 #pragma once
 
+#include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/String.h"
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
@@ -22,6 +24,8 @@ class Client {
 	std::queue<std::string> &get_strings();
 	void send_string(const std::string &str);
 	void send_image(const sensor_msgs::Image &img);
+    void send_float32_multi_array(const std_msgs::Float32MultiArray &array);
+    void send_message(const std_msgs::String &msg);
 
   private:
 	// Fields

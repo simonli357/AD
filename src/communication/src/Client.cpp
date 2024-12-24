@@ -1,6 +1,8 @@
 #include "Client.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
+#include "std_msgs/String.h"
+#include "std_msgs/Float32MultiArray.h"
 #include <arpa/inet.h>
 #include <cstdint>
 #include <cstring>
@@ -8,16 +10,18 @@
 #include <sys/socket.h>
 #include <thread>
 #include <vector>
+#include "utils/Lane2.h"
 
 Client::Client(const char *server_ip, const uint16_t server_port, const size_t buffer_size) : buffer_size(buffer_size) {
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
 	address.sin_port = htons(server_port);
 	inet_pton(AF_INET, server_ip, &address.sin_addr);
-	data_types.push_back(0x01); // String
+	data_types.push_back(0x01); // std::string
 	data_types.push_back(0x02); // Image
 	data_types.push_back(0x03); // Float32MultiArray
-	data_types.push_back(0x04); // Lane2
+    data_types.push_back(0x04); // String
+	data_types.push_back(0x05); // Lane2
 	data_actions[data_types[0]] = &Client::parse_string;
 }
 
@@ -98,6 +102,34 @@ void Client::send_image(const sensor_msgs::Image &img) {
 	full_message[4] = data_types[1];
 	std::memcpy(full_message.data() + header_size, image.data(), length);
 	send(client_socket, full_message.data(), full_message.size(), 0);
+}
+
+void Client::send_float32_multi_array(const std_msgs::Float32MultiArray &array) {
+    uint32_t length = ros::serialization::serializationLength(array);
+    std::vector<uint8_t> arr(length);
+    ros::serialization::OStream stream(arr.data(), length);
+    ros::serialization::serialize(stream, array);
+    uint32_t big_endian_length = htonl(length);
+    size_t total_size = header_size + length;
+    std::vector<uint8_t> full_message(total_size);
+    std::memcpy(full_message.data(), &big_endian_length, message_size);
+    full_message[4] = data_types[2];
+    std::memcpy(full_message.data() + header_size, arr.data(), length);
+    send(client_socket, full_message.data(), full_message.size(), 0);
+}
+
+void Client::send_message(const std_msgs::String &msg) {
+    uint32_t length = ros::serialization::serializationLength(msg);
+    std::vector<uint8_t> message(length);
+    ros::serialization::OStream stream(message.data(), length);
+    ros::serialization::serialize(stream, msg);
+    uint32_t big_endian_length = htonl(length);
+    size_t total_size = header_size + length;
+    std::vector<uint8_t> full_message(total_size);
+    std::memcpy(full_message.data(), &big_endian_length, message_size);
+    full_message[4] = data_types[3];
+    std::memcpy(full_message.data() + header_size, message.data(), length);
+    send(client_socket, full_message.data(), full_message.size(), 0);
 }
 
 void Client::parse_string(std::vector<uint8_t> &data) {
