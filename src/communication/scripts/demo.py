@@ -6,7 +6,6 @@ from cv_bridge import CvBridge
 # Initialize server
 server = Server(49153)
 server.initialize()
-server.get_client().send_string("TEST")  # String test
 bridge = CvBridge()
 
 while True:
@@ -15,7 +14,7 @@ while True:
 
     if server.get_client().images:
         img_msg = server.get_client().images.pop(0)
-        print(f"Received Image - Height: {img_msg.height}, Width: {img_msg.width}")
+        #print(f"Received Image - Height: {img_msg.height}, Width: {img_msg.width}")
 
         cv_image = bridge.imgmsg_to_cv2(img_msg)
 
@@ -32,7 +31,6 @@ while True:
         msg = server.get_client().messages.pop(0)
         print(f"{msg.data}")
 
-    time.sleep(1)
+    time.sleep(0.05)
 
 cv2.destroyAllWindows()
-
