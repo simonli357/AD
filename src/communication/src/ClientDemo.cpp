@@ -1,4 +1,6 @@
+#include "opencv2/videoio.hpp"
 #include <Client.hpp>
+#include <chrono>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <unistd.h>
@@ -26,17 +28,33 @@ sensor_msgs::Image create_image(const std::string& image_file) {
     return img_msg;
 }
 
+sensor_msgs::Image image_from_frame(cv::Mat& frame) {
+    cv_bridge::CvImage img_bridge;
+    img_bridge.header.frame_id = "camera_frame"; // Set frame id
+    img_bridge.encoding = sensor_msgs::image_encodings::BGR8; // Set encoding
+    img_bridge.image = frame;  // Set the cv::Mat image
+    // Convert to sensor_msgs::Image message
+    sensor_msgs::Image img_msg;
+    img_bridge.toImageMsg(img_msg);  // Convert to ROS Image message
+    return img_msg;
+}
+
 int main(int argc, char *argv[]) {
 	Client client("127.0.0.1", 49153, 10485760);
 	client.initialize();
-	client.send_string("TEST"); // String test
-	client.send_image(create_image("./image.png")); // Image test
+    cv::VideoCapture cap(0);
+    if(!cap.isOpened()) {
+        std::cerr << "Error: Could not open camera." << std::endl;
+    }
+    cv::Mat frame;
 	while (true) {
+        cap >> frame;
+        client.send_image(image_from_frame(frame));
 		if (!client.get_strings().empty()) {
 			std::cout << client.get_strings().front() << std::endl;
 			client.get_strings().pop();
 		}
-		sleep(1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 	return 0;
 }
