@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <thread>
 #include <vector>
-#include "utils/Lane2.h"
 
 Client::Client(const char *server_ip, const uint16_t server_port, const size_t buffer_size) : buffer_size(buffer_size) {
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -102,6 +101,7 @@ void Client::send_image(const sensor_msgs::Image &img) {
 	full_message[4] = data_types[1];
 	std::memcpy(full_message.data() + header_size, image.data(), length);
 	send(client_socket, full_message.data(), full_message.size(), 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
 }
 
 void Client::send_float32_multi_array(const std_msgs::Float32MultiArray &array) {

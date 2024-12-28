@@ -25,7 +25,7 @@ class Connection:
     def recvall(self, length):
         data = b""
         while len(data) < length:
-            chunk = self.socket.recv(min(1024, length - len(data)))
+            chunk = self.socket.recv(min(8192, length - len(data)))
             if not chunk:
                 raise ConnectionError("Connection lost")
             data += chunk

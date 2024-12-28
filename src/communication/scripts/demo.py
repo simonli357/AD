@@ -14,7 +14,6 @@ while True:
 
     if server.get_client().images:
         img_msg = server.get_client().images.pop(0)
-        #print(f"Received Image - Height: {img_msg.height}, Width: {img_msg.width}")
 
         cv_image = bridge.imgmsg_to_cv2(img_msg)
 
@@ -31,6 +30,6 @@ while True:
         msg = server.get_client().messages.pop(0)
         print(f"{msg.data}")
 
-    time.sleep(0.05)
+    time.sleep(0.01)
 
 cv2.destroyAllWindows()

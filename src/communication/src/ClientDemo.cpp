@@ -1,6 +1,8 @@
-#include "opencv2/videoio.hpp"
+#include "image_transport/image_transport.h"
+#include "image_transport/subscriber.h"
+#include "ros/console.h"
+#include "ros/node_handle.h"
 #include <Client.hpp>
-#include <chrono>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <unistd.h>
@@ -39,22 +41,31 @@ sensor_msgs::Image image_from_frame(cv::Mat& frame) {
     return img_msg;
 }
 
+
 int main(int argc, char *argv[]) {
-	Client client("127.0.0.1", 49153, 10485760);
+    ros::init(argc, argv, "camera_subscriber_node");
+    ros::NodeHandle nh;
+	Client client("10.121.105.18", 49153, 10485760);
 	client.initialize();
-    cv::VideoCapture cap(0);
-    if(!cap.isOpened()) {
-        std::cerr << "Error: Could not open camera." << std::endl;
-    }
-    cv::Mat frame;
-	while (true) {
-        cap >> frame;
-        client.send_image(image_from_frame(frame));
-		if (!client.get_strings().empty()) {
-			std::cout << client.get_strings().front() << std::endl;
-			client.get_strings().pop();
-		}
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	}
+
+    image_transport::ImageTransport it(nh);
+    image_transport::Subscriber image_sub = it.subscribe("/camera/color/image_raw", 1, [&client](const sensor_msgs::ImageConstPtr& msg) {
+        client.send_image(*msg);
+    });
+    
+    ros::spin();
+    /* cv::VideoCapture cap(0); */
+    /* if(!cap.isOpened()) { */
+    /*     std::cerr << "Error: Could not open camera." << std::endl; */
+    /* } */
+    /* cv::Mat frame; */
+	/* while (true) { */
+    /*     cap >> frame; */
+    /*     client.send_image(image_from_frame(frame)); */
+		/* if (!client.get_strings().empty()) { */
+			/* std::cout << client.get_strings().front() << std::endl; */
+			/* client.get_strings().pop(); */
+		/* } */
+	/* } */
 	return 0;
 }
