@@ -17,23 +17,24 @@ from utils.msg import Lane2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
+
 class OpenCVGuiApp(QWidget):
     def __init__(self):
         super().__init__()
         self.current_zoom = 1.0
         self.min_zoom = 1.0
-        
+
         self.scale_factor = 1.5
         self.image_width_real = 20.696
         self.image_height_real = 13.786
         self.image_width = int(800 * self.scale_factor)
         self.image_height = int(533 * self.scale_factor)
-        
+
         self.setWindowTitle('BFMC Dashboard')
         self.setGeometry(100, 100, 1500, 800)
 
         self.layout = QHBoxLayout()
-        
+
         # Left Panel - Map Display
         self.left_panel_layout = QVBoxLayout()
         self.left_panel_widget = QWidget()
@@ -53,7 +54,7 @@ class OpenCVGuiApp(QWidget):
         self.graphics_view.setScene(self.scene)
         self.map_item = QGraphicsPixmapItem()
         self.scene.addItem(self.map_item)
-        
+
         # Set up buttons
         self.toggle_button_layout = QHBoxLayout()
         self.toggle_signs_button = QPushButton('Toggle Signs')
@@ -74,9 +75,9 @@ class OpenCVGuiApp(QWidget):
         self.reset_yaw_button = QPushButton('Set Yaw')
         self.toggle_button_layout.addWidget(self.set_states_button)
         self.toggle_button_layout.addWidget(self.reset_yaw_button)
-        
+
         self.left_panel_layout.addLayout(self.toggle_button_layout)
-        
+
         self.control_button_layout = QHBoxLayout()
         self.start_button = QPushButton('Start')
         self.goto_button = QPushButton('Go to')
@@ -96,24 +97,24 @@ class OpenCVGuiApp(QWidget):
         self.goto_button.clicked.connect(self.goto)
         self.set_states_button.clicked.connect(self.set_states)
         self.reset_yaw_button.clicked.connect(self.reset_yaw)
-        
+
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
         self.sign_size_slider.setRange(5, 100)
         self.sign_size_slider.setValue(20)
         # self.left_panel_layout.addWidget(self.sign_size_slider)
-        
+
         # Add left panel to main layout
         self.layout.addWidget(self.left_panel_widget)
-        
+
         # Right Panel - Camera Feed and Vehicle Info
         self.right_panel_layout = QVBoxLayout()
         self.right_panel_widget = QWidget()
-        self.camera_w = int(640 /640 * 500)
+        self.camera_w = int(640 / 640 * 500)
         self.camera_h = int(480 / 640 * 500)
         self.right_panel_widget.setFixedSize(self.camera_w, 800)
         self.right_panel_widget.setLayout(self.right_panel_layout)
-        
+
         # Camera feed label
         self.camera_label = QLabel(self)
         self.camera_label.setFixedSize(self.camera_w, self.camera_h)
@@ -130,7 +131,7 @@ class OpenCVGuiApp(QWidget):
         self.text_layout.addWidget(self.cursor_label)
         self.text_layout.addWidget(self.speed_label)
         self.text_time_layout.addLayout(self.text_layout)
-        #timer label
+        # timer label
         self.timer_label = QLabel('00:00:00')
         self.timer_label.setAlignment(Qt.AlignCenter)
         self.timer_label.setStyleSheet(
@@ -148,28 +149,28 @@ class OpenCVGuiApp(QWidget):
         self.time_timer.timeout.connect(self.update_stopwatch)
         # self.time_timer.start(10)  # Update every 10 ms
         self.text_time_layout.addWidget(self.timer_label)
-        
+
         self.right_panel_layout.addLayout(self.text_time_layout)
         self.right_panel_layout.addLayout(self.control_button_layout)
-        
+
         # Add a text area for status messages
         self.message_display = QTextEdit()
         self.message_display.setReadOnly(True)
         self.right_panel_layout.addWidget(self.message_display)
         self.message_history = []
-        
+
         # Add right panel to main layout
         self.layout.addWidget(self.right_panel_widget)
         self.setLayout(self.layout)
-        
+
         # Timer to update the map display
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_map)
-        self.timer.start(100) # Update every 100 ms
-        
+        self.timer.start(100)  # Update every 100 ms
+
         # Mouse events for zoom
         self.graphics_view.viewport().installEventFilter(self)
-        
+
         dark_style = """
             QWidget {
                 background-color: #1E1E1E;  /* Dark background */
@@ -247,7 +248,7 @@ class OpenCVGuiApp(QWidget):
         """
         self.left_panel_widget.setStyleSheet(panel_border_style)
         self.right_panel_widget.setStyleSheet(panel_border_style)
-        
+
         gradient_button_style = """
             QPushButton {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -354,7 +355,7 @@ class OpenCVGuiApp(QWidget):
             }
         """
         self.goto_button.setStyleSheet(gradient_button_style2)
-        
+
         # Button related attributes
         self.show_signs = False
         self.show_lanes = False
@@ -373,16 +374,16 @@ class OpenCVGuiApp(QWidget):
         assets_dir = os.path.join(self.current_dir, 'assets')
         self.map_image = cv2.imread(os.path.join(assets_dir, 'map1.png'))
         self.map_image = cv2.resize(self.map_image, (self.image_width, self.image_height))
-        
+
         self.data = pd.read_csv(os.path.join(assets_dir, 'coordinates_with_context.csv'))
 
         rospy.init_node('visualizer', anonymous=True)
-        x_init = rospy.get_param('/x_init', default = 3)
-        y_init = rospy.get_param('/y_init', default = 3)
-        yaw_init = rospy.get_param('/yaw_init', default = 0)
+        x_init = rospy.get_param('/x_init', default=3)
+        y_init = rospy.get_param('/y_init', default=3)
+        yaw_init = rospy.get_param('/yaw_init', default=0)
         path_name = rospy.get_param('/pathName', default='run1')
         self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
-        
+
         # Objects
         # Lane
         self.center = None
@@ -395,7 +396,7 @@ class OpenCVGuiApp(QWidget):
         self.detected_objects = np.zeros(10)
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
-        
+
         self.COLOR_LIST = [
             (1, 1, 1), (0.098, 0.325, 0.850), (0.125, 0.694, 0.929), (0.556, 0.184, 0.494), (0.188, 0.674, 0.466),
             (0.933, 0.745, 0.301), (0.184, 0.078, 0.635), (0.300, 0.300, 0.300), (0.600, 0.600, 0.600), (0.000, 0.000, 1.000),
@@ -422,7 +423,7 @@ class OpenCVGuiApp(QWidget):
         }
 
         self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
-        
+
         self.sign_images = []
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'oneway.jpg')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'highway_entrance.jpg')))
@@ -441,7 +442,7 @@ class OpenCVGuiApp(QWidget):
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight_yellow.png')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'trafficlight_red.png')))
         self.sign_images.append(cv2.imread(os.path.join(assets_dir, 'stopsign.jpg')))
-        
+
         self.road_msg_length = 7
         self.road_msg_dict = {
             'type': 0,
@@ -452,10 +453,10 @@ class OpenCVGuiApp(QWidget):
             'confidence': 5,
             'z': 6
         }
-        
+
         # ROS Services
         self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
-        
+
         # ROS Subscribers
         self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
         self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
@@ -477,16 +478,17 @@ class OpenCVGuiApp(QWidget):
             self.attributes_np = np.array(state_attributes)
 
             print("state ref shape: ", self.state_refs_np.shape)
-            #print first 3 rows
+            # print first 3 rows
             print("state ref: ", self.state_refs_np.T[:, :3])
             path = os.path.dirname(os.path.abspath(__file__))
-            np.savetxt(os.path.join(path,'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+            np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
             print("saved state refs")
             rospy.loginfo("Parameters updated successfully.")
             return TriggerResponse(success=True, message="Parameters updated")
         except Exception as e:
             rospy.logerr(f"Failed to update parameters: {e}")
             return TriggerResponse(success=False, message=f"Failed to update: {e}")
+
     def start(self):
         self.call_start_service(not self.started)
         if not self.started:
@@ -540,12 +542,16 @@ class OpenCVGuiApp(QWidget):
             """)
             self.start_button.setText("Start")
         self.started = not self.started
+
     def goto(self):
         self.call_goto_service(self.cursor_x, self.cursor_y)
+
     def set_states(self):
         self.call_set_states_service(self.cursor_x, self.cursor_y)
+
     def reset_yaw(self):
         self.call_set_states_service()
+
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
         rospy.wait_for_service('goto_command', timeout=5)
@@ -564,6 +570,7 @@ class OpenCVGuiApp(QWidget):
             print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
+
     def call_set_states_service(self, x=None, y=None):
         print("set states service called, waiting for service...")
         rospy.wait_for_service('set_states', timeout=5)
@@ -583,6 +590,7 @@ class OpenCVGuiApp(QWidget):
             print("Set_states service call successful. shape: ", self.state_refs_np.shape)
         except rospy.ServiceException as e:
             rospy.logerr(f"Service call failed: {e}")
+
     def call_start_service(self, start):
         print("service call")
         rospy.wait_for_service("/start_bool", timeout=5)
@@ -599,23 +607,27 @@ class OpenCVGuiApp(QWidget):
                 rospy.logerr("Service call failed!")
         except rospy.ServiceException as e:
             print("Service call failed:", e)
-            
+
     # ROS callback functions
     def lane_callback(self, msg):
         self.center = msg.center
         self.crosswalk = msg.crosswalk
         self.stopline = msg.stopline
+
     def sign_callback(self, sign):
         if sign.data:
             self.numObj = len(sign.data) // 10
             if self.numObj > 0:
-                self.detected_objects = np.array(sign.data)#.reshape(-1, 7).T
+                self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
         else:
             self.numObj = 0
+
     def waypoint_callback(self, data):
         self.waypoints = data.data
+
     def road_objects_callback(self, msg):
         self.detected_data = np.array(msg.data).reshape(-1, self.road_msg_length)
+
     def add_lane_detection_to_image(self, image):
         if self.center is None:
             return image
@@ -624,13 +636,13 @@ class OpenCVGuiApp(QWidget):
 
         # Add text if stopline or crosswalk is detected
         if self.stopline > 0:
-            cv2.putText(image, "Stopline detected!", 
-                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.3)), 
+            cv2.putText(image, "Stopline detected!",
+                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.3)),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         if self.crosswalk:
-            cv2.putText(image, "Crosswalk detected!", 
-                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.4)), 
+            cv2.putText(image, "Crosswalk detected!",
+                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.4)),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         return image
 
@@ -669,13 +681,14 @@ class OpenCVGuiApp(QWidget):
             x = x1
             if x + label_size[0] > image.shape[1]:
                 x = image.shape[1] - label_size[0]
-            
+
             txt_bk_color = tuple(int(c * 0.7) for c in color)
             cv2.rectangle(image, (x, y), (x + label_size[0], y + label_size[1] + baseLine), txt_bk_color, -1)
 
             cv2.putText(image, text, (x, y + label_size[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
 
         return image
+
     def camera_callback(self, msg):
         if self.show_depth:
             return
@@ -689,6 +702,7 @@ class OpenCVGuiApp(QWidget):
         qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
         self.camera_label.setPixmap(pixmap)
+
     def depth_callback(self, msg):
         if not self.show_depth:
             return
@@ -705,18 +719,19 @@ class OpenCVGuiApp(QWidget):
         qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
         self.camera_label.setPixmap(pixmap)
+
     def message_callback(self, msg):
         self.message_history.append(msg.data)
         if len(self.message_history) > 6:
             self.message_history.pop(0)
-    
+
     def update_stopwatch(self):
         self.centiseconds += 1
         minutes = (self.centiseconds // 6000) % 60
         seconds = (self.centiseconds // 100) % 60
         centiseconds = self.centiseconds % 100
         self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
-            
+
     def toggle_visibility(self):
         self.show_signs = not self.show_signs
 
@@ -731,13 +746,13 @@ class OpenCVGuiApp(QWidget):
 
     def toggle_path(self):
         self.show_path = not self.show_path
-    
+
     def toggle_gt(self):
         self.show_gt = not self.show_gt
-    
+
     def toggle_depth(self):
         self.show_depth = not self.show_depth
-        
+
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
         rospy.wait_for_service('waypoint_path', timeout=5)
         try:
@@ -760,7 +775,7 @@ class OpenCVGuiApp(QWidget):
     def illustrate_path(self, image):
         if self.state_refs_np is None or self.attributes_np is None:
             return image
-        
+
         image_copy = image.copy()
         ATTRIBUTES = {
             "normal": (0, 255, 255),        # Yellow
@@ -774,12 +789,12 @@ class OpenCVGuiApp(QWidget):
             "dotted": (180, 130, 70),         # Steel blue
             "dotted_crosswalk": (128, 0, 128),    # Purple
         }
-        
+
         for i in range(0, self.state_refs_np.shape[1], 8):
             radius = 2
             color = (0, 255, 255)  # Default color for normal
             attr = self.attributes_np[i]
-            
+
             # Assign colors based on attributes
             if attr == 0 or attr == 100:
                 color = ATTRIBUTES["normal"]
@@ -801,34 +816,35 @@ class OpenCVGuiApp(QWidget):
                 color = ATTRIBUTES["dotted"]
             elif attr == 9 or attr == 109:
                 color = ATTRIBUTES["dotted_crosswalk"]
-            
+
             # if attr == 7 or attr == 107:
             #     color = ATTRIBUTES["stopline"]
             # else:
             #     color = (0, 0, 0)
-            
+
             cv2.circle(image_copy, (int(self.state_refs_np[0, i] / 20.696 * image.shape[1]),
                                     int((13.786 - self.state_refs_np[1, i]) / 13.786 * image.shape[0])),
-                    radius=radius, color=color, thickness=-1)
-        
+                       radius=radius, color=color, thickness=-1)
+
         # Add legend to the image
         legend_x, legend_y = image.shape[1] // 2 - 150, image.shape[0] // 2 - 150  # Center of the image
         legend_height = 20  # Height of each legend row
         padding = 10
-        
+
         for i, (label, color) in enumerate(ATTRIBUTES.items()):
             rect_y = legend_y + i * (legend_height + padding)
             cv2.rectangle(image_copy, (legend_x, rect_y),
-                        (legend_x + 20, rect_y + legend_height), color, -1)
+                          (legend_x + 20, rect_y + legend_height), color, -1)
             cv2.putText(image_copy, label, (legend_x + 30, rect_y + legend_height - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-        
+
         return image_copy
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
+
     def draw_objects(self, image):
-        
+
         if self.show_gt:
             for index, row in self.data.iterrows():
                 x, y, entity_type, orientation = row['X'], row['Y'], row['Type'], row['Orientation']
@@ -859,12 +875,12 @@ class OpenCVGuiApp(QWidget):
                     if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)
                         self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
-                        
+
     def draw_detected_objects(self, image):
         if True:
             if self.waypoints is not None:
-                for i in range(0, len(self.waypoints)-1, 8):
-                    center = (int(self.waypoints[i]/20.696*image.shape[1]),int((13.786-self.waypoints[i+1])/13.786*image.shape[0]))
+                for i in range(0, len(self.waypoints) - 1, 8):
+                    center = (int(self.waypoints[i] / 20.696 * image.shape[1]), int((13.786 - self.waypoints[i + 1]) / 13.786 * image.shape[0]))
                     cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
             if self.detected_data is None:
                 return
@@ -886,7 +902,7 @@ class OpenCVGuiApp(QWidget):
                 pixel_y = int((13.786 - y) * (image.shape[0] / 13.786))
                 # orientation = 2 * np.pi - orientation
                 orientation = - orientation
-                
+
                 if self.object_dict[obj_type] == 'Car':
                     if i == 0:
                         self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2, car_color=(0, 0, 255))
@@ -896,13 +912,13 @@ class OpenCVGuiApp(QWidget):
                     self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, obj_type)
 
     def draw_car(self, image, x, y, yaw, steer=23.0, car_color=(0, 255, 255), wheel_color=(0, 0, 0)):
-        LENGTH = 4.5*0.108 *800*self.scale_factor/20.696 # Car length
-        WIDTH = 2.0*0.108  *800*self.scale_factor/20.696 # Car width
-        BACKTOWHEEL = 1.0*0.108 *800*self.scale_factor/20.696 # Distance from back to the wheel
-        WHEEL_LEN = 0.6*0.108 *800*self.scale_factor/20.696 # Length of the wheel
-        WHEEL_WIDTH = 0.2*0.108 *800*self.scale_factor/20.696 # Width of the wheel
-        TREAD = 0.7*0.108 *800*self.scale_factor/20.696 # Distance between left and right wheels
-        WB = 0.27 *800*self.scale_factor/20.696 # Wheelbase: distance between the front and rear wheels
+        LENGTH = 4.5 * 0.108 * 800 * self.scale_factor / 20.696  # Car length
+        WIDTH = 2.0 * 0.108 * 800 * self.scale_factor / 20.696  # Car width
+        BACKTOWHEEL = 1.0 * 0.108 * 800 * self.scale_factor / 20.696  # Distance from back to the wheel
+        WHEEL_LEN = 0.6 * 0.108 * 800 * self.scale_factor / 20.696  # Length of the wheel
+        WHEEL_WIDTH = 0.2 * 0.108 * 800 * self.scale_factor / 20.696  # Width of the wheel
+        TREAD = 0.7 * 0.108 * 800 * self.scale_factor / 20.696  # Distance between left and right wheels
+        WB = 0.27 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
         half_length = LENGTH / 2
         half_width = WIDTH / 2
         # yaw = np.pi * 0.25
@@ -910,31 +926,31 @@ class OpenCVGuiApp(QWidget):
         # outline = np.array([[-BACKTOWHEEL, (LENGTH - BACKTOWHEEL), (LENGTH - BACKTOWHEEL), -BACKTOWHEEL, -BACKTOWHEEL],
         #                     [WIDTH / 2, WIDTH / 2, - WIDTH / 2, -WIDTH / 2, WIDTH / 2]])
         outline = np.array([[-half_length, half_length, half_length, -half_length, -half_length],
-                    [half_width, half_width, -half_width, -half_width, half_width]])
-        
+                            [half_width, half_width, -half_width, -half_width, half_width]])
+
         fr_wheel = np.array([[WHEEL_LEN, -WHEEL_LEN, -WHEEL_LEN, WHEEL_LEN, WHEEL_LEN],
                             [-WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD]])
         rr_wheel = np.copy(fr_wheel)
         fl_wheel = np.copy(fr_wheel)
         rl_wheel = np.copy(fr_wheel)
-        
+
         fl_wheel[1, :] *= -1  # Flip the y-coordinates for the left wheels
         rl_wheel[1, :] *= -1
-        
+
         Rot1 = np.array([[math.cos(yaw), math.sin(yaw)], [-math.sin(yaw), math.cos(yaw)]])
         Rot2 = np.array([[math.cos(steer), math.sin(steer)], [-math.sin(steer), math.cos(steer)]])
-        
+
         fr_wheel = (fr_wheel.T.dot(Rot2)).T
         fl_wheel = (fl_wheel.T.dot(Rot2)).T
         fr_wheel[0, :] += WB  # Translate front wheels forward
         fl_wheel[0, :] += WB
-        
+
         fr_wheel = (fr_wheel.T.dot(Rot1)).T
         fl_wheel = (fl_wheel.T.dot(Rot1)).T
         rr_wheel = (rr_wheel.T.dot(Rot1)).T
         rl_wheel = (rl_wheel.T.dot(Rot1)).T
         outline = (outline.T.dot(Rot1)).T
-        
+
         outline[0, :] += x
         outline[1, :] += y
         fr_wheel[0, :] += x
@@ -945,21 +961,21 @@ class OpenCVGuiApp(QWidget):
         fl_wheel[1, :] += y
         rl_wheel[0, :] += x
         rl_wheel[1, :] += y
-        
+
         def to_int_coords(shape):
             return np.array(shape.T, dtype=np.int32).reshape((-1, 1, 2))
 
         cv2.polylines(image, [to_int_coords(outline)], isClosed=True, color=car_color, thickness=2)
-        
+
         cv2.polylines(image, [to_int_coords(fr_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(rr_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(fl_wheel)], isClosed=True, color=wheel_color, thickness=2)
         cv2.polylines(image, [to_int_coords(rl_wheel)], isClosed=True, color=wheel_color, thickness=2)
 
-        cv2.circle(image, (int(x), int(y)), int(WIDTH/2.5), (143, 28, 90), -1)
-        
+        cv2.circle(image, (int(x), int(y)), int(WIDTH / 2.5), (143, 28, 90), -1)
+
         self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
-        
+
     def draw_intersection(self, image, x, y, orientation, size):
         x, y = int(x), int(y)
         length = max(1, size)
@@ -1018,7 +1034,7 @@ class OpenCVGuiApp(QWidget):
             sign_y_end = y_end - y_start
 
             image[y_start:y_end, x_start:x_end] = img[:sign_y_end, :sign_x_end]
-            
+
     def update_map(self):
         display_image = self.map_image.copy()
 
@@ -1028,7 +1044,7 @@ class OpenCVGuiApp(QWidget):
         self.draw_objects(display_image)
         self.draw_detected_objects(display_image)
         self.message_display.setPlainText("\n".join(self.message_history))
-        
+
         display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)
         height, width, channel = display_image.shape
         step = channel * width
@@ -1058,10 +1074,10 @@ class OpenCVGuiApp(QWidget):
             self.current_zoom = new_zoom
 
         return super().eventFilter(source, event)
-            
+
     def closeEvent(self, event):
         event.accept()
-    
+
     def mousePressEvent(self, event):
         # Get the position of the mouse click in the scene coordinates
         scene_position = self.graphics_view.mapToScene(event.pos())
@@ -1077,7 +1093,7 @@ class OpenCVGuiApp(QWidget):
             self.scene.removeItem(self.cursor_marker_x1)
         if hasattr(self, 'cursor_marker_x2') and self.cursor_marker_x2:
             self.scene.removeItem(self.cursor_marker_x2)
-            
+
         # Check if the click is within the bounds of the image
         if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
             # Convert the pixel coordinates to real-world coordinates
@@ -1105,6 +1121,8 @@ class OpenCVGuiApp(QWidget):
                 image_x + marker_size / 2, image_y - marker_size / 2,
                 pen
             )
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = OpenCVGuiApp()
