@@ -113,6 +113,42 @@ namespace brain{
         }
     }
 
+    /**
+     * @brief Callback function to have direct PWM value input
+     *   - Uses same computation for speed
+     *   - For speed, takes as input a straight PWM value that it directly writes to the output pin
+     */
+    void CRobotStateMachine::serialCallbackPWMcommand(char const * a, char * b)
+    {
+        float l_speed;
+        float l_angle;
+        uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
+        if (2 == l_res)
+        {
+            if( !m_speedingControl.inRange(l_speed)){ // Check the received reference speed is within range
+                sprintf(b,"The reference speed command is too high");
+                return;
+            }
+
+            // if( !m_steeringControl.inRange(l_angle)){ // Check the received steering angle
+            //     sprintf(b,"The steering angle command is too high");
+            //     return;
+            // }
+
+            m_state = 1;
+
+            m_speedingControl.setSpeed(-l_speed); // Set the reference speed
+            // m_steeringControl.setAngle(l_angle); // control the steering angle
+            m_steeringControl.PWMAngle(l_angle); 
+
+            sprintf(b,a);
+        }
+        else
+        {
+            sprintf(b,"syntax error");
+        }
+    }
+
     /** \brief  Serial callback method for speed command
      *
      * Serial callback method setting controller to value received for dc motor control values. 

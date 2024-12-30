@@ -139,6 +139,22 @@ namespace drivers{
         m_pwm_pin.write(conversion(f_angle));
     };
 
+    /**
+     * MODIFIED FUNCTION BY MALO
+     * @brief Takes as input a PWM value to set the servo to a specified position
+     * @param f_PWM PWM value to be given, AKA duty cycle
+     *  */    
+        void CSteeringMotor::PWMAngle(float f_PWM)
+    {
+        // std::pair<float, float> interpolationResult;
+
+        // interpolationResult = interpolate(f_angle, steeringValueP, steeringValueN, stepValues, zeroDefaultValues, 2);
+        // step_value = interpolationResult.first;
+        // zero_default = interpolationResult.second;
+
+        m_pwm_pin.write(f_PWM);
+    };
+
     /** @brief  It converts angle degree to duty cycle for pwm signal. 
      * 
      *  @param f_angle    angle degree
