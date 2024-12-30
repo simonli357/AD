@@ -46,6 +46,7 @@ namespace drivers
         public:
             virtual void setAngle(float f_angle) = 0 ;
             virtual bool inRange(float f_angle) = 0 ;
+            virtual void PWMAngle(float f_PWM) = 0 ;
     };
 
 
@@ -70,6 +71,8 @@ namespace drivers
             void setAngle(float f_angle); 
             /* Check if angle in range */
             bool inRange(float f_angle);
+            void PWMAngle( float f_PWM);
+            
         private:
             /** @brief PWM output pin */
             PwmOut m_pwm_pin;
