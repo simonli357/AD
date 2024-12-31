@@ -47,6 +47,7 @@ namespace drivers
             virtual void setSpeed(float f_speed) = 0 ;
             virtual bool inRange(float f_speed) = 0 ;
             virtual void setBrake() = 0 ;
+            virtual void PWMSpeed(float f_PWM) = 0 ;
     };
 
     /**  
@@ -72,6 +73,8 @@ namespace drivers
             bool inRange(float f_speed);
             /* Set brake */
             void setBrake(); 
+            // PWM Speed Set
+            void PWMSpeed(float f_PWM);
 
         private:
             /** @brief PWM output pin */

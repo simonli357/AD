@@ -34,6 +34,7 @@
 
 #include <mbed.h>
 #include <utility>
+#include <cmath>
 
 namespace drivers
 {
@@ -47,6 +48,7 @@ namespace drivers
             virtual void setAngle(float f_angle) = 0 ;
             virtual bool inRange(float f_angle) = 0 ;
             virtual void PWMAngle(float f_PWM) = 0 ;
+            virtual void CalculateAngle(float f_angle) = 0 ;
     };
 
 
@@ -72,6 +74,7 @@ namespace drivers
             /* Check if angle in range */
             bool inRange(float f_angle);
             void PWMAngle( float f_PWM);
+            void CalculateAngle(float f_anlge);
             
         private:
             /** @brief PWM output pin */

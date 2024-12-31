@@ -29,6 +29,7 @@
 */
 
 #include <drivers/steeringmotor.hpp>
+#include <cmath>
 
 
 namespace drivers{
@@ -146,13 +147,50 @@ namespace drivers{
      *  */    
         void CSteeringMotor::PWMAngle(float f_PWM)
     {
-        // std::pair<float, float> interpolationResult;
-
-        // interpolationResult = interpolate(f_angle, steeringValueP, steeringValueN, stepValues, zeroDefaultValues, 2);
-        // step_value = interpolationResult.first;
-        // zero_default = interpolationResult.second;
-
+        // Writes the PWM value to the PIN
         m_pwm_pin.write(f_PWM);
+    };
+
+    /**
+     * MODIFIED FUNCTION BY MALO
+     * @brief Takes as input an angle to set the servo to a specified position
+     * @param f_angle angle to be given
+     * Computes the angle based on quadratic function, experimentally defined
+     *  */    
+        void CSteeringMotor::CalculateAngle(float f_angle)
+    {
+        // dutyCycle output value to the pin
+        float dutyCycle = zero_default;
+        // Quadratic function parameters
+        float alpha = 0;
+        float beta = 0;
+        float gamma = 0;
+        // Function to calculate the positive angle (LEFT TURN)
+        if(f_angle > 0)
+        {
+            // Update quadratic function parameters
+            alpha = -20697;
+            beta = 1815.5;
+            gamma = -17.982;
+            // Compute the dutyCycle 
+            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
+        }
+        // Function to calculate the negative angles (RIGHT TURN)
+        if(f_angle < 0)
+        {
+            // Update quadratic function parameters
+            alpha = -22406;
+            beta = 4884.5;
+            gamma = -245.36;
+            // Compute the dutyCycle 
+            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
+        }
+        if(f_angle = 0)
+        {
+            dutyCycle = 0.07799;
+        }
+        // Write the output to the pin
+        m_pwm_pin.write(dutyCycle);
     };
 
     /** @brief  It converts angle degree to duty cycle for pwm signal. 
@@ -169,10 +207,10 @@ namespace drivers{
      * @brief It verifies whether a number is in a given range
      * 
      * @param f_angle value 
-     * @return true means, that the value is in the range
+     * @return true means, that the value is in the rangem_inf_limit
      * @return false means, that the value isn't in the range
      */
     bool CSteeringMotor::inRange(float f_angle){
         return m_inf_limit<=f_angle && f_angle<=m_sup_limit;
-    };
+    };  
 }; // namespace hardware::drivers
