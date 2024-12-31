@@ -65,6 +65,7 @@ namespace brain
             void serialCallbackSPEEDcommand(char const * a, char * b);
             void serialCallbackBOTHcommand(char const * a, char * b);
             void serialCallbackPWMcommand(char const * a, char * b);
+            void serialCallbackComputecommand(char const * a, char * b);
             /* Serial callback method for Steering */ 
             void serialCallbackSTEERcommand(char const * a, char * b);
             /* Serial callback method for braking */

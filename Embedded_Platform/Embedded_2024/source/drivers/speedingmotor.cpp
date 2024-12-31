@@ -64,6 +64,16 @@ namespace drivers{
      *
      *  @param f_speed      speed in m/s, where the positive value means forward direction and negative value the backward direction. 
      */
+    void CSpeedingMotor::PWMSpeed(float f_PWM)
+    {
+        m_pwm_pin.write(f_PWM);
+    };
+
+    /** 
+     * MODIFIED FUNCTION BY MALO
+     * @brief  Computes the speed of the car based on experimentally determined values
+     *  @param f_PWM PWM value to be input to the motor
+     **/
     void CSpeedingMotor::setSpeed(float f_speed)
     {
         step_value = interpolate(-f_speed, speedValuesP, speedValuesN, stepValues, 25);
