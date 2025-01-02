@@ -35,6 +35,9 @@
 /* The mbed library */
 #include <mbed.h>
 
+/* cmath library for calculating the square root*/
+#include <cmath>
+
 namespace drivers
 {
     /**
@@ -48,6 +51,7 @@ namespace drivers
             virtual bool inRange(float f_speed) = 0 ;
             virtual void setBrake() = 0 ;
             virtual void PWMSpeed(float f_PWM) = 0 ;
+            virtual void CalculateSpeed(float f_speed) = 0;
     };
 
     /**  
@@ -75,6 +79,8 @@ namespace drivers
             void setBrake(); 
             // PWM Speed Set
             void PWMSpeed(float f_PWM);
+            // Calculate Speed from Equation
+            void CalculateSpeed(float f_speed);
 
         private:
             /** @brief PWM output pin */
