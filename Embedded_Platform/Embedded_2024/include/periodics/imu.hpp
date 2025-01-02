@@ -75,6 +75,8 @@ namespace periodics
             s32 bno055_data_readout_template(void);
             /* Run method */
             virtual void    _run();
+            // YAW retrieval method
+            virtual float getYaw();
 
             /*----------------------------------------------------------------------------*
             *  struct bno055_t parameters can be accessed by using BNO055
