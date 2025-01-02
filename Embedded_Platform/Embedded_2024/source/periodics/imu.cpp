@@ -750,6 +750,30 @@ namespace periodics{
         snprintf(buffer, sizeof(buffer), "@7:%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
             converted_euler_r_deg, converted_euler_p_deg, converted_euler_h_deg, converted_linear_accelX, converted_linear_accelY, converted_linear_accelZ, converted_gyro_rps_x, converted_gyro_rps_y, converted_gyro_rps_z);
         m_serial.write(buffer,strlen(buffer));
+
+    }
+
+    /**
+     * FUNCTION ADDED BY MALO
+     * @brief returns the current YAW measured by the IMU
+     */
+    float CImu::getYaw()
+    {
+        if(!m_isActive) return;
+        char buffer[256];
+        s32 comres = BNO055_SUCCESS;
+
+        float converted_euler_h_deg = BNO055_INIT_VALUE;
+
+        comres += bno055_convert_float_euler_h_deg(&converted_euler_h_deg);
+        converted_euler_h_deg -= init_euler_h_deg;
+
+        if(comres != BNO055_SUCCESS)
+        {
+            return;
+        }
+
+        return converted_euler_h_deg;
     }
 
 }; // namespace periodics

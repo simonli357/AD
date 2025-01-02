@@ -161,10 +161,16 @@ namespace drivers{
     {
         // dutyCycle output value to the pin
         float dutyCycle = zero_default;
+        // Previous input angle
+        static float prev_angle =0;
         // Quadratic function parameters
         float alpha = 0;
         float beta = 0;
         float gamma = 0;
+        // Zero default when returning from a left turn
+        ZD_left = 0.0779;
+        // Zero default when returning from a right turn
+        ZD_right = 0.0763;
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle > 0)
         {
@@ -185,10 +191,21 @@ namespace drivers{
             // Compute the dutyCycle 
             dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
-        if(f_angle = 0)
+        // Special case if we want to reset to 0 and set the car to go straight
+        if(f_angle == 0)
         {
-            dutyCycle = 0.07799;
+            if(prev_angle >= 0) // Zero default for returning from LEFT turns
+            {
+                dutyCycle = ZD_left;
+            }
+            
+            if(prev_angle < 0) // Zero default for returning from RIGHT turns
+            {
+                dutyCycle = ZD_right;
+            }
         }
+        //Update the angle to remember
+        prev_angle = f_angle;
         // Write the output to the pin
         m_pwm_pin.write(dutyCycle);
     };

@@ -92,6 +92,12 @@ namespace drivers
             /* convert angle degree to duty cycle for pwm signal */
             float conversion(float f_angle); //angle to duty cycle
 
+            // Values added by MALO
+            // Zero default value for when returning from a LEFT Turn
+            float ZD_left = 0.0779;
+            // Zero default value for when returning from a RIGHT Turn
+            float ZD_right = 0.0763;
+
             /* interpolate the step value and the zero default based on the steering value */
             std::pair<float, float> interpolate(float steering, const float steeringValueP[], const float steeringValueN[], const float stepValues[], const float zeroDefaultValues[], int size);
 
