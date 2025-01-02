@@ -29,6 +29,7 @@
 */
 
 #include <drivers/speedingmotor.hpp>
+#include <cmath>
 
 namespace drivers{
     /**
@@ -59,11 +60,61 @@ namespace drivers{
     CSpeedingMotor::~CSpeedingMotor()
     {
     };
+    
+    /** 
+     * MODIFIED FUNCTION BY MALO
+     * @brief  Computes the speed of the car based on experimentally determined values
+     *  @param f_PWM PWM value to be input to the motor
+     **/ 
+     void CSpeedingMotor::PWMSpeed(float f_PWM)
+    {
+        m_pwm_pin.write(f_PWM);
+    };
+
+    /**
+     * @brief   Calculates the speed of the car based on experimentally defined equation
+     * @param   f_speed speed the car will go at in cm/s
+     */
+    void CSpeedingMotor::CalculateSpeed(float f_speed)
+    {
+        // dutyCycle output value to the pin
+        float dutyCycle = zero_default;
+        // Quadratic function parameters
+        float alpha = 0;
+        float beta = 0;
+        float gamma = 0;
+        if(f_speed > 0 )
+        {
+            // Update quadratic function parameters
+            alpha = 1798545.44;
+            beta = -258826.54;
+            gamma = 9311.76;
+            // Compute the dutyCycle 
+            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
+        }
+
+        if(f_speed < 0 )
+        {
+            // Update quadratic function parameters
+            alpha = 1798545.44;
+            beta = -258826.54;
+            gamma = 9311.76;
+            // Compute the dutyCycle 
+            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
+        }
+        if(f_speed == 0)
+        {
+            dutyCycle = zero_default;
+        }
+        // Write the appropriate dutyCycle to the pin
+        m_pwm_pin.write(dutyCycle);
+    }
 
     /** @brief  It modifies the speed reference of the brushless motor, which controls the speed of the wheels. 
      *
      *  @param f_speed      speed in m/s, where the positive value means forward direction and negative value the backward direction. 
      */
+
     void CSpeedingMotor::setSpeed(float f_speed)
     {
         step_value = interpolate(-f_speed, speedValuesP, speedValuesN, stepValues, 25);
