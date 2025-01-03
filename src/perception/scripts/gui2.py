@@ -1139,7 +1139,7 @@ def callbacks(gui):
             msg = server.get_client().images_depth.pop(0)
             gui.depth_callback(msg)
         # Road object
-        if server.get_client().arrays:
+        if server.get_client().road_objects:
             msg = server.get_client().road_objects.pop(0)
             gui.road_objects_callback(msg)
         # Waypoints
