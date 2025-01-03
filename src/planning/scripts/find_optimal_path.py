@@ -459,26 +459,25 @@ def main():
     distance_matrix = create_graph_distance_matrix(graph, destinations)
     hop_matrix = create_graph_hop_matrix(graph, destinations)
     
-    # print("solving...")
-    # t1 = time.time()
-    # # best_path, best_distance = solve_nn(distance_matrix, destinations)
-    # # best_path, best_distance = solve_nn(hop_matrix, destinations)
-    # # best_path, best_distance = simulated_annealing_tsp(distance_matrix, destinations)
-    # # best_path, best_distance = simulated_annealing_tsp_with_pruning(graph, destinations)
+    print("solving...")
+    t1 = time.time()
+    # best_path, best_distance = solve_nn(distance_matrix, destinations)
+    # best_path, best_distance = solve_nn(hop_matrix, destinations)
+    best_path, best_distance = simulated_annealing_tsp(distance_matrix, destinations)
     # reduced_distance_matrix, reduced_destinations, fixed_sequence_mapping = reduce_with_fixed_sequences(
     #     distance_matrix, destinations, fixed_sequences
     # )
     # max_destinations, best_path = max_destinations_with_reduced_problem(
     #     reduced_distance_matrix, max_distance, reduced_destinations, fixed_sequence_mapping
     # )
-    # print(f"Maximum number of destinations within {max_distance} distance: {max_destinations}")
-    # print(f"Best path: {best_path}")
-    # print("time:", time.time()-t1)
-    # # print("best distance:", best_distance)
+    print(f"Maximum number of destinations within {max_distance} distance: {max_destinations}")
+    print(f"Best path: {best_path}")
+    print("time:", time.time()-t1)
+    # print("best distance:", best_distance)
     
     # save_path_to_file(best_path, "paths/dp1.txt")
     
-    best_path = load_path_from_file("paths/manual1.txt")
+    # best_path = load_path_from_file("paths/manual1.txt")
     if best_path:
         print("Best Path (order of node indices):", best_path)
         # Print the distances between consecutive nodes and the total distance

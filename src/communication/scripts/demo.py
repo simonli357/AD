@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from server import Server
 import time
 import cv2
@@ -17,6 +18,7 @@ while True:
         #print(f"Received Image - Height: {img_msg.height}, Width: {img_msg.width}")
 
         cv_image = bridge.imgmsg_to_cv2(img_msg)
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
         cv2.imshow("Received Image", cv_image)
         cv2.waitKey(1)
@@ -31,6 +33,6 @@ while True:
         msg = server.get_client().messages.pop(0)
         print(f"{msg.data}")
 
-    time.sleep(0.05)
+    time.sleep(0.01)
 
 cv2.destroyAllWindows()

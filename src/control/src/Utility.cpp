@@ -67,7 +67,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::string nodeName = ros::this_node::getName();
     nh.param<double>(nodeName + "/rate", rateVal, 500);
     rate = new ros::Rate(rateVal);
-    wheelbase = 0.27;
+    wheelbase = 0.258;
     odomRatio = 1.0;
     maxspeed = 1.5;
     center = -1;

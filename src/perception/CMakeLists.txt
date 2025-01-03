@@ -106,8 +106,8 @@ include_directories(
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
-include_directories(~/Applications/TensorRT-8.6.1.6/include)
-link_directories(~/Applications/TensorRT-8.6.1.6/lib)
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
 
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
 link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
