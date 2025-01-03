@@ -13,14 +13,18 @@ class Connection:
             b'\x01': self.parse_string,
             b'\x02': self.parse_image_rgb,
             b'\x03': self.parse_image_depth,
-            b'\x04': self.parse_float32_multi_array,
-            b'\x05': self.parse_message,
+            b'\x04': self.parse_road_object,
+            b'\x05': self.parse_waypoint,
+            b'\x06': self.parse_sign,
+            b'\x07': self.parse_message,
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
         self.images_rgb = []
         self.images_depth = []
-        self.arrays = []
+        self.road_objects = []
+        self.waypoints = []
+        self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
 
@@ -76,11 +80,27 @@ class Connection:
         except Exception as e:
             print(e)
 
-    def parse_float32_multi_array(self, data):
+    def parse_road_object(self, data):
         try:
             float32_array = Float32MultiArray()
             float32_array.deserialize(data)
-            self.arrays.append(float32_array)
+            self.road_objects.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_waypoint(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.waypoints.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_sign(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.signs.append(float32_array)
         except Exception as e:
             print(e)
 

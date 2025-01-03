@@ -459,13 +459,13 @@ class OpenCVGuiApp(QWidget):
         self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
 
         # ROS Subscribers
-        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
+        # self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
         # self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
         # self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
-        self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
-        self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
+        # self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
+        # self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
         self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
-        self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
+        # self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
     # ROS service calls
@@ -1123,28 +1123,40 @@ class OpenCVGuiApp(QWidget):
                 pen
             )
 
+
 def callbacks(gui):
     import time
     while True:
-        # Check for string messages
+        # Strings
         if server.get_client().strings:
             print(server.get_client().strings.pop(0))
-        # Check for images
+        # Image rgb
         if server.get_client().images_rgb:
-            img_msg = server.get_client().images_rgb.pop(0)
-            gui.camera_callback(img_msg)
+            msg = server.get_client().images_rgb.pop(0)
+            gui.camera_callback(msg)
+        # Image depth
         if server.get_client().images_depth:
-            img_msg = server.get_client().images_depth.pop(0)
-            gui.depth_callback(img_msg)
-        # Check for array messages
+            msg = server.get_client().images_depth.pop(0)
+            gui.depth_callback(msg)
+        # Road object
         if server.get_client().arrays:
-            arr_msg = server.get_client().arrays.pop(0)
-            print("Received array")
+            msg = server.get_client().road_objects.pop(0)
+            gui.road_objects_callback(msg)
+        # Waypoints
+        if server.get_client().waypoints:
+            msg = server.get_client().waypoints.pop(0)
+            gui.waypoint_callback(msg)
+        # Signs
+        if server.get_client().signs:
+            msg = server.get_client().signs.pop(0)
+            gui.sign_callback(msg)
         # Check for std_msg::String messages
         if server.get_client().messages:
             msg = server.get_client().messages.pop(0)
-            print(f"{msg.data}")
+            gui.message_callback(msg)
+
         time.sleep(0.01)
+
 
 if __name__ == '__main__':
     import threading
