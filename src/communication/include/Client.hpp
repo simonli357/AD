@@ -25,7 +25,9 @@ class Client {
 	void send_string(const std::string &str);
 	void send_image_rgb(const sensor_msgs::Image &img);
 	void send_image_depth(const sensor_msgs::Image &img);
-    void send_float32_multi_array(const std_msgs::Float32MultiArray &array);
+    void send_road_object(const std_msgs::Float32MultiArray &array);
+    void send_waypoint(const std_msgs::Float32MultiArray &array);
+    void send_sign(const std_msgs::Float32MultiArray &array);
     void send_message(const std_msgs::String &msg);
 
   private:

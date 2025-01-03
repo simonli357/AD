@@ -19,9 +19,10 @@ Client::Client(const char *server_ip, const uint16_t server_port, const size_t b
 	data_types.push_back(0x01); // std::string
 	data_types.push_back(0x02); // Image rgb
 	data_types.push_back(0x03); // Image depth
-	data_types.push_back(0x04); // Float32MultiArray
-	data_types.push_back(0x05); // String
-	data_types.push_back(0x06); // Lane2
+	data_types.push_back(0x04); // Road Objects
+	data_types.push_back(0x05); // Waypoints
+	data_types.push_back(0x06); // Signs
+	data_types.push_back(0x07); // Messages
 	data_actions[data_types[0]] = &Client::parse_string;
 }
 
@@ -120,7 +121,7 @@ void Client::send_image_depth(const sensor_msgs::Image &img) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(30));
 }
 
-void Client::send_float32_multi_array(const std_msgs::Float32MultiArray &array) {
+void Client::send_road_object(const std_msgs::Float32MultiArray &array) {
 	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
@@ -129,7 +130,35 @@ void Client::send_float32_multi_array(const std_msgs::Float32MultiArray &array) 
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> full_message(total_size);
 	std::memcpy(full_message.data(), &big_endian_length, message_size);
-	full_message[4] = data_types[2];
+	full_message[4] = data_types[3];
+	std::memcpy(full_message.data() + header_size, arr.data(), length);
+	send(client_socket, full_message.data(), full_message.size(), 0);
+}
+
+void Client::send_waypoint(const std_msgs::Float32MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> arr(length);
+	ros::serialization::OStream stream(arr.data(), length);
+	ros::serialization::serialize(stream, array);
+	uint32_t big_endian_length = htonl(length);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> full_message(total_size);
+	std::memcpy(full_message.data(), &big_endian_length, message_size);
+	full_message[4] = data_types[4];
+	std::memcpy(full_message.data() + header_size, arr.data(), length);
+	send(client_socket, full_message.data(), full_message.size(), 0);
+}
+
+void Client::send_sign(const std_msgs::Float32MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> arr(length);
+	ros::serialization::OStream stream(arr.data(), length);
+	ros::serialization::serialize(stream, array);
+	uint32_t big_endian_length = htonl(length);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> full_message(total_size);
+	std::memcpy(full_message.data(), &big_endian_length, message_size);
+	full_message[4] = data_types[5];
 	std::memcpy(full_message.data() + header_size, arr.data(), length);
 	send(client_socket, full_message.data(), full_message.size(), 0);
 }
@@ -143,7 +172,7 @@ void Client::send_message(const std_msgs::String &msg) {
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> full_message(total_size);
 	std::memcpy(full_message.data(), &big_endian_length, message_size);
-	full_message[4] = data_types[3];
+	full_message[4] = data_types[6];
 	std::memcpy(full_message.data() + header_size, message.data(), length);
 	send(client_socket, full_message.data(), full_message.size(), 0);
 }
