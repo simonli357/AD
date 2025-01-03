@@ -1134,7 +1134,7 @@ def callbacks(gui):
             img_msg = server.get_client().images_rgb.pop(0)
             gui.camera_callback(img_msg)
         if server.get_client().images_depth:
-            img_msg = server.get_client().images_rgb.pop(0)
+            img_msg = server.get_client().images_depth.pop(0)
             gui.depth_callback(img_msg)
         # Check for array messages
         if server.get_client().arrays:
