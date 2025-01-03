@@ -8,24 +8,29 @@ server = Server(49153)
 server.initialize()
 bridge = CvBridge()
 
+image = None
+
 while True:
+    # Check for string messages
     if server.get_client().strings:
         print(server.get_client().strings.pop(0))
-
+    # Check for images
     if server.get_client().images:
         img_msg = server.get_client().images.pop(0)
 
         cv_image = bridge.imgmsg_to_cv2(img_msg)
+        image = cv_image
 
         cv2.imshow("Received Image", cv_image)
         cv2.waitKey(1)
-
+    if image is not None:
+        cv2.imshow("Received Image", cv_image)
+        cv2.waitKey(1)
     # Check for array messages
     if server.get_client().arrays:
         arr_msg = server.get_client().arrays.pop(0)
         print("Received array")
-
-    # Check for other messages
+    # Check for std_msg::String messages
     if server.get_client().messages:
         msg = server.get_client().messages.pop(0)
         print(f"{msg.data}")
