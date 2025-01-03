@@ -1124,33 +1124,34 @@ class OpenCVGuiApp(QWidget):
             )
 
 def callbacks(gui):
+    import time
     while True:
-    # Check for string messages
-    if server.get_client().strings:
-        print(server.get_client().strings.pop(0))
-    # Check for images
-    if server.get_client().images_rgb:
-        img_msg = server.get_client().images_rgb.pop(0)
-        gui.camera_callback(img_msg)
-    if server.get_client().images_depth:
-        img_msg = server.get_client().images_rgb.pop(0)
-        gui.depth_callback(img_msg)
-    # Check for array messages
-    if server.get_client().arrays:
-        arr_msg = server.get_client().arrays.pop(0)
-        print("Received array")
-    # Check for std_msg::String messages
-    if server.get_client().messages:
-        msg = server.get_client().messages.pop(0)
-        print(f"{msg.data}")
-    time.sleep(0.01)
-
+        # Check for string messages
+        if server.get_client().strings:
+            print(server.get_client().strings.pop(0))
+        # Check for images
+        if server.get_client().images_rgb:
+            img_msg = server.get_client().images_rgb.pop(0)
+            gui.camera_callback(img_msg)
+        if server.get_client().images_depth:
+            img_msg = server.get_client().images_depth.pop(0)
+            gui.depth_callback(img_msg)
+        # Check for array messages
+        if server.get_client().arrays:
+            arr_msg = server.get_client().arrays.pop(0)
+            print("Received array")
+        # Check for std_msg::String messages
+        if server.get_client().messages:
+            msg = server.get_client().messages.pop(0)
+            print(f"{msg.data}")
+        time.sleep(0.01)
 
 if __name__ == '__main__':
+    import threading
     server = Server(49153)
     server.initialize()
     app = QApplication(sys.argv)
     window = OpenCVGuiApp()
-    threading.Thread(target=callbacks, args=(app,), daemon=True).start()
+    threading.Thread(target=callbacks, args=(window,), daemon=True).start()
     window.show()
     sys.exit(app.exec_())
