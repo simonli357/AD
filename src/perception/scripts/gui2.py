@@ -1131,10 +1131,10 @@ def callbacks(gui):
     # Check for images
     if server.get_client().images_rgb:
         img_msg = server.get_client().images_rgb.pop(0)
-        gui.camera_callback(img_msg);
+        gui.camera_callback(img_msg)
     if server.get_client().images_depth:
         img_msg = server.get_client().images_rgb.pop(0)
-        gui.depth_callback(img_msg);
+        gui.depth_callback(img_msg)
     # Check for array messages
     if server.get_client().arrays:
         arr_msg = server.get_client().arrays.pop(0)
