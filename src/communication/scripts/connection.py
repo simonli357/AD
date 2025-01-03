@@ -11,13 +11,15 @@ class Connection:
         self.socket = client_socket
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
-            b'\x02': self.parse_image,
-            b'\x03': self.parse_float32_multi_array,
-            b'\x04': self.parse_message,
+            b'\x02': self.parse_image_rgb,
+            b'\x03': self.parse_image_depth,
+            b'\x04': self.parse_float32_multi_array,
+            b'\x05': self.parse_message,
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
-        self.images = []
+        self.images_rgb = []
+        self.images_depth = []
         self.arrays = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
@@ -58,11 +60,19 @@ class Connection:
     def parse_string(self, data):
         self.strings.append(data.decode('utf-8'))
 
-    def parse_image(self, data):
+    def parse_image_rgb(self, data):
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.images.append(img_msg)
+            self.images_rgb.append(img_msg)
+        except Exception as e:
+            print(e)
+
+    def parse_image_depth(self, data):
+        try:
+            img_msg = Image()
+            img_msg.deserialize(data)
+            self.images_depth.append(img_msg)
         except Exception as e:
             print(e)
 

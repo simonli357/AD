@@ -23,7 +23,8 @@ class Client {
 	void initialize();
 	std::queue<std::string> &get_strings();
 	void send_string(const std::string &str);
-	void send_image(const sensor_msgs::Image &img);
+	void send_image_rgb(const sensor_msgs::Image &img);
+	void send_image_depth(const sensor_msgs::Image &img);
     void send_float32_multi_array(const std_msgs::Float32MultiArray &array);
     void send_message(const std_msgs::String &msg);
 
