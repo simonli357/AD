@@ -41,12 +41,12 @@
         "idxsphi_0": [],
         "idxsphi_e": [],
         "lbu": [
-            -1.8,
-            -0.42
+            -0.25,
+            -0.3578
         ],
         "lbx": [
-            -50.0,
-            -50.0
+            -2.0,
+            -2.0
         ],
         "lbx_0": [
             0.0,
@@ -74,12 +74,12 @@
         "lsphi_0": [],
         "lsphi_e": [],
         "ubu": [
-            1.8,
-            0.42
+            0.375,
+            0.3578
         ],
         "ubx": [
-            50.0,
-            50.0
+            22.0,
+            16.0
         ],
         "ubx_0": [
             0.0,
@@ -108,11 +108,121 @@
         "usphi_e": []
     },
     "cost": {
-        "Vu": [],
-        "Vu_0": [],
-        "Vx": [],
-        "Vx_0": [],
-        "Vx_e": [],
+        "Vu": [
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ]
+        ],
+        "Vu_0": [
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ]
+        ],
+        "Vx": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ]
+        ],
+        "Vx_0": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ]
+        ],
+        "Vx_e": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
         "Vz": [],
         "Vz_0": [],
         "W": [
@@ -121,15 +231,11 @@
                 0.0,
                 0.0,
                 0.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
                 0.0,
                 2.0,
-                0.0,
-                0.0,
                 0.0,
                 0.0,
                 0.0
@@ -139,8 +245,6 @@
                 0.0,
                 0.5,
                 0.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
@@ -148,8 +252,6 @@
                 0.0,
                 0.0,
                 1.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
@@ -157,27 +259,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.2,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.25,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.5
+                0.1
             ]
         ],
         "W_0": [
@@ -186,15 +268,11 @@
                 0.0,
                 0.0,
                 0.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
                 0.0,
                 2.0,
-                0.0,
-                0.0,
                 0.0,
                 0.0,
                 0.0
@@ -204,8 +282,6 @@
                 0.0,
                 0.5,
                 0.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
@@ -213,8 +289,6 @@
                 0.0,
                 0.0,
                 1.0,
-                0.0,
-                0.0,
                 0.0
             ],
             [
@@ -222,27 +296,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.2,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.25,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.5
+                0.1
             ]
         ],
         "W_e": [
@@ -271,12 +325,10 @@
         "cost_ext_fun_type": "casadi",
         "cost_ext_fun_type_0": "casadi",
         "cost_ext_fun_type_e": "casadi",
-        "cost_type": "NONLINEAR_LS",
-        "cost_type_0": "NONLINEAR_LS",
-        "cost_type_e": "NONLINEAR_LS",
+        "cost_type": "LINEAR_LS",
+        "cost_type_0": "LINEAR_LS",
+        "cost_type_e": "LINEAR_LS",
         "yref": [
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -284,8 +336,6 @@
             0.0
         ],
         "yref_0": [
-            0.0,
-            0.0,
             0.0,
             0.0,
             0.0,
@@ -309,7 +359,7 @@
         "/usr/include/python3.8"
     ],
     "dims": {
-        "N": 40,
+        "N": 50,
         "nbu": 2,
         "nbx": 2,
         "nbx_0": 3,
@@ -320,7 +370,7 @@
         "nh": 0,
         "nh_0": 0,
         "nh_e": 0,
-        "np": 7,
+        "np": 0,
         "nphi": 0,
         "nphi_0": 0,
         "nphi_e": 0,
@@ -343,8 +393,8 @@
         "nsphi_e": 0,
         "nu": 2,
         "nx": 3,
-        "ny": 7,
-        "ny_0": 7,
+        "ny": 5,
+        "ny_0": 5,
         "ny_e": 3,
         "nz": 0
     },
@@ -377,24 +427,24 @@
         "cost_r_in_psi_expr": null,
         "cost_r_in_psi_expr_0": null,
         "cost_r_in_psi_expr_e": null,
-        "cost_y_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahpfbdegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaadaaaaaaaahpfcdegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaadaaaaaaaahpfddegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegpcaaaaaaaaaaaaaadaaaaaaaahpfedegcaaaaaaaaaaaaaaachkaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpffdegcaaaaaaaaaaaaaaachnaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfgd",
-        "cost_y_expr_0": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahpfbdegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaadaaaaaaaahpfcdegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaadaaaaaaaahpfddegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegpcaaaaaaaaaaaaaadaaaaaaaahpfedegcaaaaaaaaaaaaaaachkaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpffdegcaaaaaaaaaaaaaaachnaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfgd",
-        "cost_y_expr_e": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahpfbdegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaadaaaaaaaahpfcd",
+        "cost_y_expr": null,
+        "cost_y_expr_0": null,
+        "cost_y_expr_e": null,
         "disc_dyn_expr": null,
         "dyn_disc_fun": null,
         "dyn_disc_fun_jac": null,
         "dyn_disc_fun_jac_hess": null,
         "dyn_ext_fun_type": "casadi",
         "dyn_generic_source": null,
-        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachiebokhebokhebnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
-        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachiebokhebokhebnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
+        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
+        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
         "gnsf": {
             "nontrivial_f_LO": 1,
             "purely_linear": 0
         },
         "name": "mobile_robot",
         "nu_original": null,
-        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegpcaaaaaaaaaaaaaadaaaaaaaahpfbdegpcaaaaaaaaaaaaaadaaaaaaaahpfcdegpcaaaaaaaaaaaaaadaaaaaaaahpfddegpcaaaaaaaaaaaaaadaaaaaaaahpfedegpcaaaaaaaaaaaaaadaaaaaaaahpffdegpcaaaaaaaaaaaaaadaaaaaaaahpfgd",
+        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "t": [],
         "u": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
         "x": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
@@ -402,15 +452,7 @@
         "z": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     "name": "mobile_robot",
-    "parameter_values": [
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0
-    ],
+    "parameter_values": [],
     "problem_class": "OCP",
     "shared_lib_ext": ".so",
     "solver_options": {
@@ -503,9 +545,29 @@
             1.850000000000001,
             1.900000000000001,
             1.950000000000001,
-            2.000000000000001
+            2.000000000000001,
+            2.0500000000000007,
+            2.1000000000000005,
+            2.1500000000000004,
+            2.2,
+            2.25,
+            2.3,
+            2.3499999999999996,
+            2.3999999999999995,
+            2.4499999999999993,
+            2.499999999999999
         ],
         "sim_method_jac_reuse": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
             0,
             0,
             0,
@@ -589,6 +651,16 @@
             4,
             4,
             4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
             4
         ],
         "sim_method_num_steps": [
@@ -631,10 +703,30 @@
             1,
             1,
             1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
             1
         ],
-        "tf": 2.0,
+        "tf": 2.5,
         "time_steps": [
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
+            0.05,
             0.05,
             0.05,
             0.05,

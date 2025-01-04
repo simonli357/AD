@@ -96,7 +96,7 @@ BACKTOWHEEL = 1.0*0.108 *800*scale_factor/20.696 # Distance from back to the whe
 WHEEL_LEN = 0.6*0.108 *800*scale_factor/20.696 # Length of the wheel
 WHEEL_WIDTH = 0.2*0.108 *800*scale_factor/20.696 # Width of the wheel
 TREAD = 0.7*0.108 *800*scale_factor/20.696 # Distance between left and right wheels
-WB = 0.27 *800*scale_factor/20.696 # Wheelbase: distance between the front and rear wheels
+WB = 0.258 *800*scale_factor/20.696 # Wheelbase: distance between the front and rear wheels
 
 def draw_car(image, x, y, yaw, steer=0.0, car_color=(0, 255, 255), wheel_color=(0, 0, 0)):
     # Define the outline of the car

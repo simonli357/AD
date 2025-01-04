@@ -1,4 +1,4 @@
 = useful commands
 
 == webm to mp4
-ffmpeg -i input.webm output.mp4
+ffmpeg -i screen-capture.webm output.mp4
