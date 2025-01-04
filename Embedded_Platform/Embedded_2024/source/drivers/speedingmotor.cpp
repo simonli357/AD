@@ -40,6 +40,7 @@ namespace drivers{
      * @param f_sup_limit         superior limit
      * 
      */
+
     CSpeedingMotor::CSpeedingMotor(
             PinName f_pwm_pin, 
             float f_inf_limit, 
@@ -53,6 +54,8 @@ namespace drivers{
         m_pwm_pin.period_ms(ms_period); 
         // Set position to zero   
         m_pwm_pin.write(zero_default);
+        m_currentSpeed = 0;
+        m_currentDutyCycle = zero_default;
     };
 
     /** @brief  CSpeedingMotor class destructor
@@ -69,7 +72,17 @@ namespace drivers{
      void CSpeedingMotor::PWMSpeed(float f_PWM)
     {
         m_pwm_pin.write(f_PWM);
+        m_currentDutyCycle = f_PWM;
     };
+
+    /** 
+     * MODIFIED FUNCTION BY MALO
+     * @brief  Returns the current speed of the motor
+     **/ 
+    float CSpeedingMotor::getSpeed()
+    {
+        return m_currentSpeed;
+    }
 
     /**
      * @brief   Calculates the speed of the car based on experimentally defined equation
@@ -108,6 +121,8 @@ namespace drivers{
         }
         // Write the appropriate dutyCycle to the pin
         m_pwm_pin.write(dutyCycle);
+        m_currentDutyCycle = dutyCycle;
+        m_currentSpeed = f_speed;
     }
 
     /** @brief  It modifies the speed reference of the brushless motor, which controls the speed of the wheels. 
