@@ -1126,34 +1126,31 @@ class OpenCVGuiApp(QWidget):
 
 def callbacks(gui):
     import time
+    rgb_images = server.camera_node_client.images_rgb
+    depth_images = server.camera_node_client.images_depth
+    road_objects = server.utility_client.road_objects
+    waypoints = server.utility_client.waypoints
+    signs = server.signs_node_client.signs
+    messages = server.utility_client.messages
     while True:
-        # Strings
-        if server.get_client().strings:
-            print(server.get_client().strings.pop(0))
         # Image rgb
-        if server.get_client().images_rgb:
-            msg = server.get_client().images_rgb.pop(0)
-            gui.camera_callback(msg)
+        if rgb_images:
+            gui.camera_callback(rgb_images.pop(0))
         # Image depth
-        if server.get_client().images_depth:
-            msg = server.get_client().images_depth.pop(0)
-            gui.depth_callback(msg)
+        if depth_images:
+            gui.depth_callback(depth_images.pop(0))
         # Road object
-        if server.get_client().road_objects:
-            msg = server.get_client().road_objects.pop(0)
-            gui.road_objects_callback(msg)
+        if road_objects:
+            gui.road_objects_callback(road_objects.pop(0))
         # Waypoints
-        if server.get_client().waypoints:
-            msg = server.get_client().waypoints.pop(0)
-            gui.waypoint_callback(msg)
+        if waypoints:
+            gui.waypoint_callback(waypoints.pop(0))
         # Signs
-        if server.get_client().signs:
-            msg = server.get_client().signs.pop(0)
-            gui.sign_callback(msg)
-        # Check for std_msg::String messages
-        if server.get_client().messages:
-            msg = server.get_client().messages.pop(0)
-            gui.message_callback(msg)
+        if signs:
+            gui.sign_callback(signs.pop(0))
+        # Messages
+        if messages:
+            gui.message_callback(messages.pop(0))
 
         time.sleep(0.01)
 
