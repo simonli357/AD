@@ -149,11 +149,47 @@ namespace brain{
         }
     }
 
+    void CRobotStateMachine::serialCallbackPIDcommand(char const *a, char *b){
+        float pid_active;
 
+        uint32_t l_res = sscanf(a, "%f:%f:%f:%f"
+        , &pid_active
+        , &m_steeringControl.m_proportional
+        , &m_steeringControl.m_integral
+        , &m_steeringControl.m_derivative
+        );
+        if (1 == l_res)
+        {
+            if(pid_active == 0){
+                m_steeringControl.m_pidActive = false;
+                sprintf(b,"ack -- PID inactive");
+            }
+            else if(pid_active == 1){
+                // Activate the PID
+                m_steeringControl.m_pidActive = true;
+                sprintf(b,"ack -- PID active");
+            }
+            else{
+                sprintf(b,"The PID command is not valid");
+                return;
+            }
+        }
+        else
+        {
+            sprintf(b,"syntax error");
+        }
+    }
+
+    /**
+     * Modified function by Malo
+     * @brief function to compute the steering angle and speed based on experimentally defined parameteres
+     */
     void CRobotStateMachine::serialCallbackComputecommand(char const * a, char * b)
     {
         float l_speed;
         float l_angle;
+        float pwmValue = m_steeringControl.zero_default;
+
         uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
         if (2 == l_res)
         {
@@ -171,7 +207,9 @@ namespace brain{
 
             m_speedingControl.setSpeed(-l_speed); // Set the reference speed
             // m_steeringControl.setAngle(l_angle); // control the steering angle
-            m_steeringControl.CalculateAngle(l_angle); 
+            pwmValue = m_steeringControl.CalculateAngle(l_angle);
+            m_steeringControl.PWMAngle(pwmValue);
+            m_steeringControl.m_desiredSteer = l_angle;
 
             sprintf(b,a);
         }
