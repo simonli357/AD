@@ -377,7 +377,6 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     lock.unlock();
     if (num_obj == 1 && detected_objects[0] == -1.0) {
         emergency = true;
-        return;
     } else {
         emergency = false;
     }
