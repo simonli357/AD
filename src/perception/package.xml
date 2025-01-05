@@ -37,6 +37,7 @@
   <exec_depend>message_runtime</exec_depend>
   <build_depend>utils</build_depend>
   <exec_depend>utils</exec_depend>
+  <depend>communication</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

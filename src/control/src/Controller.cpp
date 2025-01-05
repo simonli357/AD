@@ -823,7 +823,8 @@ public:
             msg.data.push_back(waypoints(i, 0)); // x
             msg.data.push_back(waypoints(i, 1)); // y
         }
-        utils.waypoints_pub.publish(msg);
+        // utils.waypoints_pub.publish(msg);
+        utils.client.send_waypoint(msg);
     }
     void lane_follow(double speed = -2) {
         if (speed < -1) speed = NORMAL_SPEED;

@@ -80,6 +80,7 @@
   <exec_depend>message_runtime</exec_depend>
   <depend>utils</depend>
   <depend>perception</depend>
+  <depend>communication</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

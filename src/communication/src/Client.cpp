@@ -26,6 +26,22 @@ Client::Client(const char *server_ip, const uint16_t server_port, const size_t b
 	data_actions[data_types[0]] = &Client::parse_string;
 }
 
+Client::Client(const size_t buffer_size, const char *server_type) : buffer_size(buffer_size) {
+	client_socket = socket(AF_INET, SOCK_STREAM, 0);
+	address.sin_family = AF_INET;
+	address.sin_port = htons(49153); // Default port
+	inet_pton(AF_INET, "127.0.0.1", &address.sin_addr); // Default address
+	data_types.push_back(0x01); // std::string
+	data_types.push_back(0x02); // Image rgb
+	data_types.push_back(0x03); // Image depth
+	data_types.push_back(0x04); // Road Objects
+	data_types.push_back(0x05); // Waypoints
+	data_types.push_back(0x06); // Signs
+	data_types.push_back(0x07); // Messages
+	data_actions[data_types[0]] = &Client::parse_string;
+    send_string(server_type);
+}
+
 Client::~Client() {
 	alive = false;
 	if (client_socket != -1) {

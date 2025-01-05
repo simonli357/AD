@@ -1126,12 +1126,23 @@ class OpenCVGuiApp(QWidget):
 
 def callbacks(gui):
     import time
-    rgb_images = server.camera_node_client.images_rgb
-    depth_images = server.camera_node_client.images_depth
-    road_objects = server.utility_client.road_objects
-    waypoints = server.utility_client.waypoints
-    signs = server.signs_node_client.signs
-    messages = server.utility_client.messages
+    road_objects = []
+    rgb_images = []
+    depth_images = []
+    waypoints = []
+    signs = []
+    messages = []
+
+    if server.utility_client:
+        road_objects = server.utility_client.road_objects
+        waypoints = server.utility_client.waypoints
+        messages = server.utility_client.messages
+    if server.camera_node_client:
+        rgb_images = server.camera_node_client.images_rgb
+        depth_images = server.camera_node_client.images_depth
+    if server.signs_node_client:
+        signs = server.signs_node_client.signs
+
     while True:
         # Image rgb
         if rgb_images:

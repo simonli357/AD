@@ -18,6 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include "Client.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -97,14 +98,17 @@ public:
     tf2_ros::TransformBroadcaster broadcaster;
     tf2_ros::Buffer tfBuffer;
 
+    // Client
+    Client client = Client(10485760, "signs_node_client");
+
     // publishers
     ros::Publisher odom_pub;
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
     // ros::Publisher road_object_pub;
-    ros::Publisher message_pub;
+    // ros::Publisher message_pub;
     ros::Publisher pose_pub;
-    ros::Publisher waypoints_pub;
+    // ros::Publisher waypoints_pub;
     ros::Publisher detected_cars_pub;
     ros::Publisher state_offset_pub;
 
@@ -491,7 +495,8 @@ public:
     void debug(const std::string& message, int level) {
         if (debugLevel >= level) {
             debug_msg.data = message;
-            message_pub.publish(debug_msg);
+            // message_pub.publish(debug_msg);
+            client.send_message(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
     }
