@@ -1,8 +1,10 @@
 import pandas as pd
 import random
-
+import os 
 # Load the CSV file
-file_path = 'assets/coordinates_with_context.csv'  # Update with your actual CSV file path
+
+current_dir = os.path.dirname(os.path.realpath(__file__))
+file_path = os.path.join(current_dir, 'assets/coordinates_with_context.csv')
 data = pd.read_csv(file_path)
 filtered_data = data[data['Type'] != 'Intersection']
 filtered_data = filtered_data[data['Type'] != 'Lane']
@@ -67,7 +69,7 @@ def generate_launch_file(data):
 launch_file_content_filtered = generate_launch_file(filtered_data)
 
 # Write the generated launch file content to a file
-output_file_path = 'assets/spawn_signs.launch'  # Update with your desired output file path
+output_file_path = os.path.join(current_dir, 'assets/spawn_signs.launch')
 with open(output_file_path, 'w') as file:
     file.write(launch_file_content_filtered)
 
