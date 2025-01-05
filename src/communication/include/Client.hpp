@@ -12,11 +12,12 @@
 
 class Client {
   public:
-	// Constructor
+	// Constructors
 	Client(const char *server_ip, const uint16_t server_port, const size_t buffer_size);
+    Client(const size_t buffer_size, const char *client_type);
 	Client(Client &&) = default;
 	Client(const Client &) = delete;
-	Client &operator=(Client &&) = delete;
+    Client &operator=(Client &&) = delete;
 	Client &operator=(const Client &) = delete;
 	~Client();
 	// Methods

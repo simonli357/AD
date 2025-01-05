@@ -10,7 +10,6 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.utility_client = None
         self.camera_node_client = None
-        self.controller_node_client = None
         self.signs_node_client = None
 
     def initialize(self):

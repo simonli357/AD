@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <Client.hpp>
 #include "utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -45,7 +46,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         exit(1);
     }
 
-    message_pub = nh.advertise<std_msgs::String>("/message", 10);
+    // message_pub = nh.advertise<std_msgs::String>("/message", 10);
     if (real) {
         serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
         serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
@@ -146,7 +147,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     //     robot_name = "/" + robot_name;
     // }
     cmd_vel_pub = nh.advertise<std_msgs::String>("/" + robot_name + "/command", 8);
-    waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/waypoints", 3);
+    // waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/waypoints", 3);
     detected_cars_pub = nh.advertise<std_msgs::Float32MultiArray>("/detected_cars", 3);
     state_offset_pub = nh.advertise<std_msgs::Float32MultiArray>("/state_offset", 3);
     
@@ -409,6 +410,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     static bool publish_objects = true;
     if(publish_objects) {
         // road_object_pub.publish(road_object_msg);
+        client.send_road_object(road_object_msg);
     }
     
     static bool populate_car_pose = true;
