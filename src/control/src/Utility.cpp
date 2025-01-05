@@ -199,7 +199,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
         std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
-        road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
+        // road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
         car_pose_msg.data.push_back(0.0);
         road_objects.push_back(std::make_shared<RoadObject>(RoadObject::ObjectType::CAR, x0, y0, yaw, velocity_command, 0.0));
@@ -408,7 +408,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     auto road_object_msg = RoadObject::create_msg(road_objects);
     static bool publish_objects = true;
     if(publish_objects) {
-        road_object_pub.publish(road_object_msg);
+        // road_object_pub.publish(road_object_msg);
     }
     
     static bool populate_car_pose = true;

@@ -101,7 +101,7 @@ public:
     ros::Publisher odom_pub;
     ros::Publisher cmd_vel_pub;
     ros::Publisher car_pose_pub;
-    ros::Publisher road_object_pub;
+    // ros::Publisher road_object_pub;
     ros::Publisher message_pub;
     ros::Publisher pose_pub;
     ros::Publisher waypoints_pub;
