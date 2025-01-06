@@ -21,7 +21,7 @@ using namespace std::chrono;
 
 class CameraNode {
   public:
-    CameraNode(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
+	CameraNode(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 		depthImage = cv::Mat::zeros(480, 640, CV_16UC1);
 		colorImage = cv::Mat::zeros(480, 640, CV_8UC3);
 		std::string nodeName = ros::this_node::getName();
@@ -66,8 +66,8 @@ class CameraNode {
 			std::cout.precision(4);
 			imu_pub = nh.advertise<sensor_msgs::Imu>("/camera/imu", 2);
 			if (pubImage) {
-				// color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
-				// depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
+				color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
+				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
 		}
@@ -111,9 +111,12 @@ class CameraNode {
 			loopRate.sleep();
 		}
 	}
+
+    Client client = Client(10485760, "camera_node_client");
+
 	SignFastest Sign;
 	LaneDetector Lane;
-
+    
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
 	image_transport::Subscriber sub;
@@ -132,9 +135,7 @@ class CameraNode {
 
 	// rs
 	ros::Publisher imu_pub;
-    
-    Client client = Client(10485760, "camera_node_client");
-	// ros::Publisher color_pub, depth_pub;
+	ros::Publisher color_pub, depth_pub;
 
 	rs2::pipeline pipe;
 	rs2::config cfg;
@@ -155,6 +156,7 @@ class CameraNode {
 			return;
 		}
 		depthImage = cv_ptr_depth->image;
+        client.send_image_depth(*msg);
 		// mutex.unlock();
 	}
 	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
@@ -175,6 +177,7 @@ class CameraNode {
 		} else {
 			colorImage = cv_ptr->image;
 		}
+        client.send_image_rgb(*msg);
 		// mutex.unlock();
 	}
 
@@ -260,10 +263,8 @@ class CameraNode {
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-			// color_pub.publish(color_msg);
-			// depth_pub.publish(depth_msg);
-            client.send_image_rgb(*color_msg);
-            client.send_image_depth(*depth_msg);
+			color_pub.publish(color_msg);
+			depth_pub.publish(depth_msg);
 		}
 	}
 };

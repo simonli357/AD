@@ -9,6 +9,7 @@ from std_msgs.msg import String
 class Connection:
     def __init__(self, client_socket):
         self.socket = client_socket
+        self.socket.settimeout(None)
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
             b'\x02': self.parse_image_rgb,
@@ -20,13 +21,14 @@ class Connection:
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
-        self.images_rgb = []
-        self.images_depth = []
+        self.rgb_images = []
+        self.depth_images = []
         self.road_objects = []
         self.waypoints = []
         self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
+        self.send_string("ack")
 
     def recvall(self, length):
         data = b""
@@ -68,7 +70,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.images_rgb.append(img_msg)
+            self.rgb_images.append(img_msg)
         except Exception as e:
             print(e)
 
@@ -76,7 +78,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.images_depth.append(img_msg)
+            self.depth_images.append(img_msg)
         except Exception as e:
             print(e)
 
