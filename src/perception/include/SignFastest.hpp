@@ -99,7 +99,7 @@ class SignFastest {
                 yolov8 = std::make_unique<YoloV8>(modelPath, config);
             }
 
-            // pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
+            pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
             // std::cout <<"pub created" << std::endl;
 
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
@@ -218,7 +218,7 @@ class SignFastest {
         yoloFastestv2 api;
     
         Client client = Client(10485760, "signs_node_client");
-        // ros::Publisher pub;
+        ros::Publisher pub;
         ros::Publisher processed_image_pub;
         sensor_msgs::ImagePtr processed_image_msg;
         bool show;
@@ -476,7 +476,7 @@ class SignFastest {
                 for (int i = 0; i < 10; i++) {
                     sign_msg.data.push_back(-1.0);
                 }
-                // if(publish) pub.publish(sign_msg);
+                if(publish) pub.publish(sign_msg);
                 if (publish) {
                     client.send_sign(sign_msg);
                 }
@@ -546,7 +546,7 @@ class SignFastest {
                 sign_msg.layout.dim.push_back(dim); 
             }
             // Publish Sign message
-            // if(publish) pub.publish(sign_msg);
+            if(publish) pub.publish(sign_msg);
             if (publish) {
                 client.send_sign(sign_msg);
             }

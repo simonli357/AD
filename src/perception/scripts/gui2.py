@@ -1126,50 +1126,33 @@ class OpenCVGuiApp(QWidget):
 
 def callbacks(gui):
     import time
-    road_objects = []
-    rgb_images = []
-    depth_images = []
-    waypoints = []
-    signs = []
-    messages = []
-
-    if server.utility_client:
-        road_objects = server.utility_client.road_objects
-        waypoints = server.utility_client.waypoints
-        messages = server.utility_client.messages
-    if server.camera_node_client:
-        rgb_images = server.camera_node_client.images_rgb
-        depth_images = server.camera_node_client.images_depth
-    if server.signs_node_client:
-        signs = server.signs_node_client.signs
-
+    server = Server(49153)
+    server.initialize()
     while True:
         # Image rgb
-        if rgb_images:
-            gui.camera_callback(rgb_images.pop(0))
+        if server.camera_node_client.rgb_images:
+            gui.camera_callback(server.camera_node_client.rgb_images.pop(0))
         # Image depth
-        if depth_images:
-            gui.depth_callback(depth_images.pop(0))
+        if server.camera_node_client.depth_images:
+            gui.depth_callback(server.camera_node_client.depth_images.pop(0))
         # Road object
-        if road_objects:
-            gui.road_objects_callback(road_objects.pop(0))
+        if server.utility_node_client.road_objects:
+            gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
         # Waypoints
-        if waypoints:
-            gui.waypoint_callback(waypoints.pop(0))
+        if server.utility_node_client.waypoints:
+            gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
         # Signs
-        if signs:
-            gui.sign_callback(signs.pop(0))
+        if server.signs_node_client.signs:
+            gui.sign_callback(server.signs_node_client.signs.pop(0))
         # Messages
-        if messages:
-            gui.message_callback(messages.pop(0))
+        if server.utility_node_client.messages:
+            gui.message_callback(server.utility_node_client.messages.pop(0))
 
         time.sleep(0.01)
 
 
 if __name__ == '__main__':
     import threading
-    server = Server(49153)
-    server.initialize()
     app = QApplication(sys.argv)
     window = OpenCVGuiApp()
     threading.Thread(target=callbacks, args=(window,), daemon=True).start()
