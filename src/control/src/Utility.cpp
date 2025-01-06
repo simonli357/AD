@@ -47,9 +47,16 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
-    if (real) {
-        serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-        serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
+    if (true) {
+        try {
+            // Attempt to open /dev/ttyACM0
+            serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
+            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
+            debug("Utility constructor: Serial port opened successfully.", 1);
+        }
+        catch (const boost::system::system_error &e) {
+            debug("Utility constructor: ERROR: Failed to open serial port: " + std::string(e.what()), 1);
+        }
     }
     q_transform.setRPY(REALSENSE_TF[3], REALSENSE_TF[4], REALSENSE_TF[5]); // 3 values are roll, pitch, yaw of the imu
     // q_transform.setRPY(0, 0.0, 0);
@@ -68,7 +75,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::string nodeName = ros::this_node::getName();
     nh.param<double>(nodeName + "/rate", rateVal, 500);
     rate = new ros::Rate(rateVal);
-    wheelbase = 0.27;
+    wheelbase = 0.258;
     odomRatio = 1.0;
     maxspeed = 1.5;
     center = -1;
@@ -838,7 +845,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
 
     lock.unlock();
     float steer = steering_angle;
-    if(real) {
+    if(true) {
         send_speed_and_steer(vel, steer);
     }
     msg2.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(steer) + "}";
