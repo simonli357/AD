@@ -109,7 +109,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config.yaml'):
+    def create_solver(self, config_path='config/mpc_config50.yaml'):
         # extract the number from config_path (50 in this case)
         try:
             self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
@@ -129,7 +129,7 @@ class Optimizer(object):
         y = ca.SX.sym('y')
         psi = ca.SX.sym('psi')
         states = ca.vertcat(x, y, psi)
-        self.L = 0.27
+        self.L = 0.258
         rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta)]
 
         f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
@@ -247,20 +247,20 @@ class Optimizer(object):
         return solver, integrator, T, N, t_horizon
     
     def update_and_solve(self):
-        # cur_path = os.path.dirname(os.path.realpath(__file__))
-        # path = os.path.join(cur_path, 'paths')
-        # os.makedirs(path, exist_ok=True)
-        # # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
-        # # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
+        cur_path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(cur_path, 'paths')
+        os.makedirs(path, exist_ok=True)
+        # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
+        # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
 
-        # np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
-        # print("stateref shape: ", self.state_refs.shape)
-        # np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
+        np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
+        print("stateref shape: ", self.state_refs.shape)
+        np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
+        np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
+        np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
 
-        # # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
-        # exit()
+        # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
+        exit()
 
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index

@@ -532,8 +532,8 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
     
     lbu[0] = -0.4;
     ubu[0] = 0.4;
-    lbu[1] = -0.42;
-    ubu[1] = 0.42;
+    lbu[1] = -0.3578;
+    ubu[1] = 0.3578;
 
     for (int i = 0; i < N; i++)
     {

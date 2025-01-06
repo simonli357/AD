@@ -24,7 +24,7 @@ namespace drivers{
     {
         float speed, steer, time;
 
-        int parsed = sscanf(message, "%f;%f;%f", &speed, &time, &steer);
+        int parsed = sscanf(message, "%f:%f:%f", &speed, &steer, &time);
 
         m_targetTime = time;
 
@@ -37,8 +37,8 @@ namespace drivers{
 
             m_targetTime = time;
 
-            m_steeringControl.setAngle(steer);
-            m_speedingControl.setSpeed(-speed);
+            m_steeringControl.CalculateAngle(steer);
+            m_speedingControl.PWMSpeed(speed);
         }
         else
         {
@@ -55,7 +55,7 @@ namespace drivers{
         if(m_ticksRun >= m_targetTime+0.1)
         {
             m_speedingControl.setSpeed(0.0);
-            m_steeringControl.setAngle(0.0);
+            m_steeringControl.CalculateAngle(0.0);
             m_isActive = false;
         }
         else

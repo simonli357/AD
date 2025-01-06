@@ -49,7 +49,7 @@ class Utility:
         self.SIGN_VALUES = {"x1": 0, "y1": 1, "x2": 2, "y2": 3, "distance": 4, "confidence": 5, "id": 6}
 
         # Parameters
-        self.wheelbase = 0.27
+        self.wheelbase = 0.258
         self.odomRatio = 1
         self.maxspeed = 1.0
         self.center = -1
