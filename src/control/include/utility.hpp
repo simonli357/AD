@@ -18,6 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include "Client.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -96,6 +97,9 @@ public:
     tf2_ros::StaticTransformBroadcaster static_broadcaster;
     tf2_ros::TransformBroadcaster broadcaster;
     tf2_ros::Buffer tfBuffer;
+
+    // Client
+    Client client = Client(10485760, "utility_node_client");
 
     // publishers
     ros::Publisher odom_pub;
@@ -492,6 +496,7 @@ public:
         if (debugLevel >= level) {
             debug_msg.data = message;
             message_pub.publish(debug_msg);
+            client.send_message(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
     }

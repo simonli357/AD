@@ -41,6 +41,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   utils
+  communication
 )
 
 find_package(CUDA REQUIRED)
@@ -94,6 +95,7 @@ catkin_package(
   image_transport
   cv_bridge
   sensor_msgs
+  communication
 )
 
 include_directories(
@@ -129,6 +131,7 @@ add_executable(signFastest
 target_link_libraries(signFastest
   ${catkin_LIBRARIES}
   ncnn ${OpenCV_LIBS}
+  communication
 )
 
 add_executable(videoDetector
@@ -157,6 +160,7 @@ target_link_libraries(cameraNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
+  communication
 )
 add_executable(testNode
   src/testNode.cpp
@@ -175,6 +179,7 @@ target_link_libraries(testNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
+  communication
 )
 
 install(DIRECTORY include/

@@ -1,4 +1,5 @@
 .vscode/
+.cache/
 
 .cache/
 src/perception/models/trt/*.engine

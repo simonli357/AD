@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Client.hpp"
 #include "ros/ros.h"
 #include "yolo-fastestv2.h"
 #include <opencv2/opencv.hpp>
@@ -99,7 +100,7 @@ class SignFastest {
             }
 
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
-            std::cout <<"pub created" << std::endl;
+            // std::cout <<"pub created" << std::endl;
 
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
@@ -215,7 +216,8 @@ class SignFastest {
         static constexpr int OBJECT_COUNT = 13;
         // private:
         yoloFastestv2 api;
-
+    
+        Client client = Client(10485760, "signs_node_client");
         ros::Publisher pub;
         ros::Publisher processed_image_pub;
         sensor_msgs::ImagePtr processed_image_msg;
@@ -475,6 +477,9 @@ class SignFastest {
                     sign_msg.data.push_back(-1.0);
                 }
                 if(publish) pub.publish(sign_msg);
+                if (publish) {
+                    client.send_sign(sign_msg);
+                }
                 if (print) ROS_INFO("Emergency obstacle detected");
                 return;
             }
@@ -542,6 +547,9 @@ class SignFastest {
             }
             // Publish Sign message
             if(publish) pub.publish(sign_msg);
+            if (publish) {
+                client.send_sign(sign_msg);
+            }
             if(printDuration) {
                 stop = high_resolution_clock::now();
                 duration = duration_cast<microseconds>(stop - start);
