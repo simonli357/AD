@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <Client.hpp>
 #include "utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -415,6 +416,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     static bool publish_objects = true;
     if(publish_objects) {
         road_object_pub.publish(road_object_msg);
+        client.send_road_object(road_object_msg);
     }
     
     static bool populate_car_pose = true;
