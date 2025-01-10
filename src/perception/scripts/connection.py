@@ -9,23 +9,31 @@ from std_msgs.msg import String
 class Connection:
     def __init__(self, client_socket):
         self.socket = client_socket
+        self.socket.settimeout(None)
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
-            b'\x02': self.parse_image,
-            b'\x03': self.parse_float32_multi_array,
-            b'\x04': self.parse_message,
+            b'\x02': self.parse_image_rgb,
+            b'\x03': self.parse_image_depth,
+            b'\x04': self.parse_road_object,
+            b'\x05': self.parse_waypoint,
+            b'\x06': self.parse_sign,
+            b'\x07': self.parse_message,
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
-        self.images = []
-        self.arrays = []
+        self.rgb_images = []
+        self.depth_images = []
+        self.road_objects = []
+        self.waypoints = []
+        self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
+        self.send_string("ack")
 
     def recvall(self, length):
         data = b""
         while len(data) < length:
-            chunk = self.socket.recv(min(900000, length - len(data)))
+            chunk = self.socket.recv(min(8192, length - len(data)))
             if not chunk:
                 raise ConnectionError("Connection lost")
             data += chunk
@@ -58,19 +66,43 @@ class Connection:
     def parse_string(self, data):
         self.strings.append(data.decode('utf-8'))
 
-    def parse_image(self, data):
+    def parse_image_rgb(self, data):
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.images.append(img_msg)
+            self.rgb_images.append(img_msg)
         except Exception as e:
             print(e)
 
-    def parse_float32_multi_array(self, data):
+    def parse_image_depth(self, data):
+        try:
+            img_msg = Image()
+            img_msg.deserialize(data)
+            self.depth_images.append(img_msg)
+        except Exception as e:
+            print(e)
+
+    def parse_road_object(self, data):
         try:
             float32_array = Float32MultiArray()
             float32_array.deserialize(data)
-            self.arrays.append(float32_array)
+            self.road_objects.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_waypoint(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.waypoints.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_sign(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.signs.append(float32_array)
         except Exception as e:
             print(e)
 
