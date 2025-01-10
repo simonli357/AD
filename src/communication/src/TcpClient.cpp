@@ -1,4 +1,4 @@
-#include "Client.hpp"
+#include "TcpClient.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
 #include "std_msgs/Float32MultiArray.h"
@@ -12,7 +12,7 @@
 #include <thread>
 #include <vector>
 
-Client::Client(const char *server_ip, const uint16_t server_port, const size_t buffer_size) : buffer_size(buffer_size) {
+TcpClient::TcpClient(const char *server_ip, const uint16_t server_port, const size_t buffer_size) : buffer_size(buffer_size) {
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
 	address.sin_port = htons(server_port);
@@ -24,11 +24,11 @@ Client::Client(const char *server_ip, const uint16_t server_port, const size_t b
 	data_types.push_back(0x05); // Waypoints
 	data_types.push_back(0x06); // Signs
 	data_types.push_back(0x07); // Messages
-	data_actions[data_types[0]] = &Client::parse_string;
-	receive = std::thread(&Client::initialize, this);
+	data_actions[data_types[0]] = &TcpClient::parse_string;
+	receive = std::thread(&TcpClient::initialize, this);
 }
 
-Client::Client(const size_t buffer_size, const char *client_type) : buffer_size(buffer_size), client_type(client_type) {
+TcpClient::TcpClient(const size_t buffer_size, const char *client_type) : buffer_size(buffer_size), client_type(client_type) {
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
 	address.sin_port = htons(49153);					// Default port
@@ -40,11 +40,11 @@ Client::Client(const size_t buffer_size, const char *client_type) : buffer_size(
 	data_types.push_back(0x05);							// Waypoints
 	data_types.push_back(0x06);							// Signs
 	data_types.push_back(0x07);							// Messages
-	data_actions[data_types[0]] = &Client::parse_string;
-	receive = std::thread(&Client::initialize, this);
+	data_actions[data_types[0]] = &TcpClient::parse_string;
+	receive = std::thread(&TcpClient::initialize, this);
 }
 
-Client::~Client() {
+TcpClient::~TcpClient() {
 	alive = false;
 	if (client_socket != -1) {
 		close(client_socket);
@@ -54,7 +54,7 @@ Client::~Client() {
 	}
 }
 
-void Client::initialize() {
+void TcpClient::initialize() {
 	std::cout << "Connecting to GUI \n" << std::endl;
 	while (true) {
 		if (connect(client_socket, (struct sockaddr *)&address, sizeof(address)) != -1) {
@@ -69,7 +69,7 @@ void Client::initialize() {
 	listen();
 }
 
-void Client::listen() {
+void TcpClient::listen() {
 	std::vector<uint8_t> buffer(buffer_size);
 	while (alive) {
 		uint8_t type;
@@ -105,9 +105,9 @@ void Client::listen() {
 	}
 }
 
-std::queue<std::string> &Client::get_strings() { return strings; }
+std::queue<std::string> &TcpClient::get_strings() { return strings; }
 
-void Client::send_type(const std::string &str) {
+void TcpClient::send_type(const std::string &str) {
     uint32_t length = str.size();
     uint32_t big_endian_length = htonl(length);
     size_t total_size = header_size + length;
@@ -118,7 +118,7 @@ void Client::send_type(const std::string &str) {
     send(client_socket, full_message.data(), full_message.size(), 0);
 }
 
-void Client::send_string(const std::string &str) {
+void TcpClient::send_string(const std::string &str) {
 	if (canSend) {
 		uint32_t length = str.size();
 		uint32_t big_endian_length = htonl(length);
@@ -131,7 +131,7 @@ void Client::send_string(const std::string &str) {
 	}
 }
 
-void Client::send_image_rgb(const sensor_msgs::Image &img) {
+void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(img);
 		std::vector<uint8_t> image(length);
@@ -148,7 +148,7 @@ void Client::send_image_rgb(const sensor_msgs::Image &img) {
 	}
 }
 
-void Client::send_image_depth(const sensor_msgs::Image &img) {
+void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(img);
 		std::vector<uint8_t> image(length);
@@ -165,7 +165,7 @@ void Client::send_image_depth(const sensor_msgs::Image &img) {
 	}
 }
 
-void Client::send_road_object(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -181,7 +181,7 @@ void Client::send_road_object(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void Client::send_waypoint(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -197,7 +197,7 @@ void Client::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void Client::send_sign(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -213,7 +213,7 @@ void Client::send_sign(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void Client::send_message(const std_msgs::String &msg) {
+void TcpClient::send_message(const std_msgs::String &msg) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(msg);
 		std::vector<uint8_t> message(length);
@@ -229,7 +229,7 @@ void Client::send_message(const std_msgs::String &msg) {
 	}
 }
 
-void Client::parse_string(std::vector<uint8_t> &data) {
+void TcpClient::parse_string(std::vector<uint8_t> &data) {
 	std::string decoded_string(data.begin(), data.end());
 	if (decoded_string == "ack") {
 		canSend = true;

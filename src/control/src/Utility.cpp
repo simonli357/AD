@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <Client.hpp>
+#include "TcpClient.hpp"
 #include "utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -29,6 +29,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 {
     std::cout << "Utility constructor" << std::endl;
     
+    tcp_client = std::make_unique<TcpClient>(10485760, "utility_node_client");
     // tunables
     // For odometry
     double sigma_v = 0.1;
@@ -416,7 +417,10 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     static bool publish_objects = true;
     if(publish_objects) {
         road_object_pub.publish(road_object_msg);
-        client.send_road_object(road_object_msg);
+        // safety check
+        if (tcp_client != nullptr) {
+            tcp_client->send_road_object(road_object_msg);
+        }
     }
     
     static bool populate_car_pose = true;

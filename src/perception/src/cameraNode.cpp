@@ -1,4 +1,4 @@
-#include "Client.hpp"
+#include "TcpClient.hpp"
 #include "LaneDetector.hpp"
 #include "SignFastest.hpp"
 #include "cv_bridge/cv_bridge.h"
@@ -112,8 +112,6 @@ class CameraNode {
 		}
 	}
 
-    Client client = Client(10485760, "camera_node_client");
-
 	SignFastest Sign;
 	LaneDetector Lane;
     
@@ -156,7 +154,9 @@ class CameraNode {
 			return;
 		}
 		depthImage = cv_ptr_depth->image;
-        client.send_image_depth(*msg);
+		if (Sign.tcp_client != nullptr) {
+        	Sign.tcp_client->send_image_depth(*msg);
+		}
 		// mutex.unlock();
 	}
 	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
@@ -177,7 +177,9 @@ class CameraNode {
 		} else {
 			colorImage = cv_ptr->image;
 		}
-        client.send_image_rgb(*msg);
+		if (Sign.tcp_client != nullptr) {
+        	Sign.tcp_client->send_image_rgb(*msg);
+		}
 		// mutex.unlock();
 	}
 
