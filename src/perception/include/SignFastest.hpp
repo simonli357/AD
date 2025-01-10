@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Client.hpp"
+#include "TcpClient.hpp"
 #include "ros/ros.h"
 #include "yolo-fastestv2.h"
 #include <opencv2/opencv.hpp>
@@ -41,6 +41,7 @@ class SignFastest {
             real(real), object_pose_body_frame(Eigen::Vector3d(0, 0, 0))
         {
             std::cout.precision(4);
+            tcp_client = std::make_unique<TcpClient>(10485760, "sign_node_client");
             nh.param("class_names", class_names, std::vector<std::string>());
             if(!nh.param("confidence_thresholds", confidence_thresholds, std::vector<float>(13))) {
                 ROS_WARN("Failed to get 'confidence_thresholds' parameter.");
@@ -217,7 +218,8 @@ class SignFastest {
         // private:
         yoloFastestv2 api;
     
-        Client client = Client(10485760, "signs_node_client");
+        std::unique_ptr<TcpClient> tcp_client;
+
         ros::Publisher pub;
         ros::Publisher processed_image_pub;
         sensor_msgs::ImagePtr processed_image_msg;
@@ -478,7 +480,7 @@ class SignFastest {
                 }
                 if(publish) pub.publish(sign_msg);
                 if (publish) {
-                    client.send_sign(sign_msg);
+                    tcp_client->send_sign(sign_msg);
                 }
                 if (print) ROS_INFO("Emergency obstacle detected");
                 return;
@@ -548,7 +550,7 @@ class SignFastest {
             // Publish Sign message
             if(publish) pub.publish(sign_msg);
             if (publish) {
-                client.send_sign(sign_msg);
+                tcp_client->send_sign(sign_msg);
             }
             if(printDuration) {
                 stop = high_resolution_clock::now();

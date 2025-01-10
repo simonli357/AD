@@ -10,16 +10,16 @@
 #include <thread>
 #include <vector>
 
-class Client {
+class TcpClient {
   public:
 	// Constructors
-	Client(const char *server_ip, const uint16_t server_port, const size_t buffer_size);
-	Client(const size_t buffer_size, const char *client_type);
-	Client(Client &&) = default;
-	Client(const Client &) = delete;
-	Client &operator=(Client &&) = delete;
-	Client &operator=(const Client &) = delete;
-	~Client();
+	TcpClient(const char *server_ip, const uint16_t server_port, const size_t buffer_size);
+	TcpClient(const size_t buffer_size, const char *client_type);
+	TcpClient(TcpClient &&) = default;
+	TcpClient(const TcpClient &) = delete;
+	TcpClient &operator=(TcpClient &&) = delete;
+	TcpClient &operator=(const TcpClient &) = delete;
+	~TcpClient();
 	// Methods
 	void initialize();
 	std::queue<std::string> &get_strings();
@@ -43,7 +43,7 @@ class Client {
 	sockaddr_in address;
 	int client_socket;
 	std::thread receive;
-	std::map<uint8_t, std::function<void(Client *, std::vector<uint8_t> &)>> data_actions;
+	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> data_actions;
 	std::vector<uint8_t> data_types;
 	std::queue<std::string> strings;
 	// Methods
