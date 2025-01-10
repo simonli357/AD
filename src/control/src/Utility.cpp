@@ -27,9 +27,23 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real)
 {
-    std::cout << "Utility constructor" << std::endl;
-    
-    tcp_client = std::make_unique<TcpClient>(10485760, "utility_node_client");
+    // debug("Utility constructor", 1);  
+    std::cout << "Utility constructor" << std::endl;  
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
+    bool use_tcp = false;
+    if(!nh.getParam("/use_tcp", use_tcp)) {
+        debug("Utility constructor: WARNING: Failed to get 'use_tcp' parameter. Defaulting to false.", 1);
+        use_tcp = false;
+    }
+    if(use_tcp) {
+        debug("Utility constructor: Attempting to create TCP client...", 1);
+        tcp_client = std::make_unique<TcpClient>(10485760, "utility_node_client");
+        debug("Utility constructor: TCP client created successfully.", 1);
+    } else {
+        tcp_client = nullptr;
+        debug("Utility constructor: TCP client not created.", 1);
+    }
+
     // tunables
     // For odometry
     double sigma_v = 0.1;
@@ -47,7 +61,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         exit(1);
     }
 
-    message_pub = nh.advertise<std_msgs::String>("/message", 10);
     if (true) {
         try {
             // Attempt to open /dev/ttyACM0

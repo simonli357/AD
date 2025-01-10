@@ -17,8 +17,12 @@
 <arg name="sign_rate" default="30"/>
 <arg name="pubImage" default="true"/>
 <arg name="thread" default="true"/>
+<arg name="use_tcp" default="false"/>
+<param name="use_tcp" value="$(arg use_tcp)"/>
+<arg name="use_emergency" default="false"/>
 
 <node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true">
+    <param name="/use_emergency" value="$(arg use_emergency)"/>
     <param name="/showFlag" value="$(arg show)"/>
     <param name="/printFlag" value="$(arg print)"/>
     <param name="/printDuration" value="$(arg print_duration)"/>
