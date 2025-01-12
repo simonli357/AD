@@ -66,10 +66,10 @@ class CameraNode {
                 pipe.start(cfg);
 
                 std::cout.precision(4);
-                imu_pub = nh.advertise<sensor_msgs::Imu>("/camera/imu", 2);
+                imu_pub = nh.advertise<sensor_msgs::Imu>("/realsense/imu", 2);
                 if (pubImage) {
                     color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
-                    depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
+                    depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
                     std::cout <<"pub created" << std::endl; 
                 }
             }
@@ -105,12 +105,15 @@ class CameraNode {
                 // }
             }
             ros::Rate loopRate(this->mainLoopRate);
+            std::cout << "looprate:" << this->mainLoopRate << std::endl;
             while(ros::ok()) {
                 ros::spinOnce();
                 if(realsense) {
                     get_frame();
                 }
+                std::cout << "sleep" << std::endl;
                 loopRate.sleep();
+                std::cout << "sleep done" << std::endl;
             }
         }
         SignFastest Sign;
@@ -223,6 +226,7 @@ class CameraNode {
             }
         }
         void get_frame() {
+            // std::cout << "got frame" << std::endl;
             data = pipe.wait_for_frames();
             auto aligned_frames = align_to_color->process(data);
             color_frame = aligned_frames.get_color_frame();
@@ -263,6 +267,7 @@ class CameraNode {
                 color_pub.publish(color_msg);
                 depth_pub.publish(depth_msg);
             }
+            // std::cout << "done1" << std::endl;
         }
 };
 
