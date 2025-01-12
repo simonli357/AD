@@ -144,7 +144,6 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 		full_message[4] = data_types[1];
 		std::memcpy(full_message.data() + header_size, image.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
-		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
 }
 
@@ -161,7 +160,6 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 		full_message[4] = data_types[2];
 		std::memcpy(full_message.data() + header_size, image.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
-		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
 }
 
