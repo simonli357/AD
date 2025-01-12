@@ -32,7 +32,7 @@ TcpClient::TcpClient(const size_t buffer_size, const char *client_type) : buffer
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
 	address.sin_port = htons(49153);					// Default port
-	inet_pton(AF_INET, "127.0.0.1", &address.sin_addr); // Default address
+	inet_pton(AF_INET, "10.121.105.18", &address.sin_addr); // Default address
 	data_types.push_back(0x01);							// std::string
 	data_types.push_back(0x02);							// Image rgb
 	data_types.push_back(0x03);							// Image depth
