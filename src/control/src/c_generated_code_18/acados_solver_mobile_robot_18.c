@@ -532,8 +532,8 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     
     lbu[0] = -1.8;
     ubu[0] = 1.8;
-    lbu[1] = -0.42;
-    ubu[1] = 0.42;
+    lbu[1] = -0.3578;
+    ubu[1] = 0.3578;
 
     for (int i = 0; i < N; i++)
     {
@@ -560,10 +560,10 @@ void mobile_robot_18_acados_create_5_set_nlp_in(mobile_robot_18_solver_capsule* 
     double* lbx = lubx;
     double* ubx = lubx + NBX;
     
-    lbx[0] = -100;
-    ubx[0] = 100;
-    lbx[1] = -100;
-    ubx[1] = 100;
+    lbx[0] = -50;
+    ubx[0] = 50;
+    lbx[1] = -50;
+    ubx[1] = 50;
 
     for (int i = 1; i < N; i++)
     {

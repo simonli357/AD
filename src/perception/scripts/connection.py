@@ -1,0 +1,128 @@
+import threading
+import time
+import struct
+from collections import OrderedDict
+from sensor_msgs.msg import Image
+from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String
+
+
+class Connection:
+    def __init__(self, client_socket):
+        self.socket = client_socket
+        self.socket.settimeout(None)
+        self.data_actions = OrderedDict({
+            b'\x01': self.parse_string,
+            b'\x02': self.parse_image_rgb,
+            b'\x03': self.parse_image_depth,
+            b'\x04': self.parse_road_object,
+            b'\x05': self.parse_waypoint,
+            b'\x06': self.parse_sign,
+            b'\x07': self.parse_message,
+        })
+        self.types = list(self.data_actions.keys())
+        self.strings = []
+        self.rgb_images = []
+        self.depth_images = []
+        self.road_objects = []
+        self.waypoints = []
+        self.signs = []
+        self.messages = []
+        threading.Thread(target=self.receive, daemon=True).start()
+        threading.Thread(target=self.garbageCollect, daemon=True).start()
+        self.send_string("ack")
+
+    def garbageCollect(self):
+        while True:
+            self.strings.clear()
+            self.rgb_images.clear()
+            self.depth_images.clear()
+            self.road_objects.clear()
+            self.waypoints.clear()
+            self.signs.clear()
+            self.messages.clear()
+            time.sleep(10)
+
+    def recvall(self, length):
+        data = b""
+        while len(data) < length:
+            chunk = self.socket.recv(min(307200, length - len(data)))
+            if not chunk:
+                raise ConnectionError("Connection lost")
+            data += chunk
+        return data
+
+    def receive(self):
+        header_size = 5
+        message_size = 4
+        while True:
+            # Receive the header (5 bytes)
+            while True:
+                header = self.socket.recv(header_size)
+                if len(header) < header_size:
+                    continue
+                break
+            length = struct.unpack('>I', header[:message_size])[0]
+            message_type = header[message_size:header_size]
+            # Receive the data based on the length from the header
+            data = self.recvall(length)
+            # Process the data
+            if message_type in self.data_actions:
+                self.data_actions[message_type](data)
+
+    def send_string(self, str):
+        data = str.encode('utf-8')
+        length = struct.pack('>I', len(str))
+        bytes = length + self.types[0] + data
+        self.socket.sendall(bytes)
+
+    def parse_string(self, data):
+        self.strings.append(data.decode('utf-8'))
+
+    def parse_image_rgb(self, data):
+        try:
+            img_msg = Image()
+            img_msg.deserialize(data)
+            self.rgb_images.append(img_msg)
+        except Exception as e:
+            print(e)
+
+    def parse_image_depth(self, data):
+        try:
+            img_msg = Image()
+            img_msg.deserialize(data)
+            self.depth_images.append(img_msg)
+        except Exception as e:
+            print(e)
+
+    def parse_road_object(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.road_objects.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_waypoint(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.waypoints.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_sign(self, data):
+        try:
+            float32_array = Float32MultiArray()
+            float32_array.deserialize(data)
+            self.signs.append(float32_array)
+        except Exception as e:
+            print(e)
+
+    def parse_message(self, data):
+        try:
+            msg = String()
+            msg.deserialize(data)
+            self.messages.append(msg)
+        except Exception as e:
+            print(e)

@@ -1,5 +1,7 @@
 .vscode/
+.cache/
 
+.cache/
 src/perception/models/trt/*.engine
 src/perception/include/ncnn
 src/control/scripts/__pycache__

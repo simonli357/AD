@@ -55,6 +55,7 @@ public:
         success = success && nh.getParam("/" + mode + "/use_lane", use_lane);
         success = success && nh.getParam("/" + mode + "/has_light", has_light);
         success = success && nh.getParam("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
+        success = success && nh.getParam("/emergency", emergency);
         success = success && nh.getParam("/pub_wpts", pubWaypoints);
         success = success && nh.getParam("/kb", keyboardControl);
         if (keyboardControl) {
@@ -76,7 +77,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = 1/mpc.T;
+        double rateVal =  1/mpc.T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
@@ -97,7 +98,7 @@ public:
             intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
             change_lane_speed=0.2, change_lane_thresh=0.05, intersection_localization_orientation_threshold = 15, NORMAL_SPEED = 0.175,
             FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
-    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false;
+    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, use_lane = false, has_light = false, emergency = false;
     bool initialized = false;
     int pedestrian_count_thresh = 8;
 
@@ -169,6 +170,7 @@ public:
             change_state(STATE::INIT);
             res.success = true;
             res.message = "Stopped";
+            stop_for(10*T);
         }
         return true;
         
@@ -194,6 +196,7 @@ public:
         }
     }
     int parking_maneuver_hardcode(bool right=true, bool exit=false, double rate_val=20, double initial_y_error = 0, double initial_yaw_error = 0) {
+        // rate_val = 1/mpc.T;
         Eigen::VectorXd targets(3);
         Eigen::VectorXd steerings(3);
         Eigen::VectorXd speeds(3);
@@ -317,6 +320,46 @@ public:
         return 0;
     }
 
+    bool near_intersection() {
+        double yaw = utils.get_yaw();
+        double nearest_direction = Utility::nearest_direction(yaw);
+        double yaw_error = nearest_direction - yaw;
+        if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
+        else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
+        if(std::abs(yaw_error) > 45 * M_PI / 180) {
+            utils.debug("near_intersection(): FAILURE: yaw error too large: " + std::to_string(yaw_error), 2);
+            return false;
+        }
+
+        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
+        const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
+                                          (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
+                                          (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
+                                                                        SOUTH_FACING_INTERSECTIONS;
+        
+        static Eigen::Vector2d estimated_position(0, 0);
+        utils.get_states(estimated_position(0), estimated_position(1), yaw);
+        estimated_position[0] += constant_distance_to_intersection_at_detection * cos(yaw);
+        estimated_position[1] += constant_distance_to_intersection_at_detection * sin(yaw);
+
+        double min_error_sq = std::numeric_limits<double>::max();
+        int min_index = 0;
+        for (size_t i = 0; i < direction_intersections.size(); ++i) {
+            double error_sq = std::pow(estimated_position[0] - direction_intersections[i][0], 2) + std::pow(estimated_position[1] - direction_intersections[i][1], 2);
+            if (error_sq < min_error_sq) {
+                min_error_sq = error_sq;
+                min_index = static_cast<int>(i);
+            }
+        }
+        // exit(0);
+        if (min_error_sq < 0.3 * 0.3) {
+            utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
+            return true;
+        } else {
+            utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
+            return false;
+        }
+    }
     bool intersection_reached() {
         static double lookahead_dist = 0.15;
         static int num_index = static_cast<int>(lookahead_dist * path_manager.density);
@@ -325,36 +368,38 @@ public:
             {
                 utils.update_states(x_current);
                 update_mpc_states(x_current[0], x_current[1], x_current[2]);
-                int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
-                // utils.debug("intersection_reached(): using lane, stopline detected, closest index: " + std::to_string(closest_idx) + " at " + std::to_string(path_manager.state_refs(closest_idx, 0)) + ", " + std::to_string(path_manager.state_refs(closest_idx, 1)), 2);
-                int num_index = static_cast<int>(0.15 * path_manager.density);
-                for (int i = closest_idx; i < closest_idx + num_index; i++) {
-                    if (i >= path_manager.state_refs.rows()) break;
-                    if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::CROSSWALK) || path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::DOTTED_CROSSWALK)) {
-                        utils.debug("intersection_reached(): waypoint attribute is crosswalk, ignoring...", 4);
-                        return false;
-                    }
-                }
+                // int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+                // int num_index = static_cast<int>(0.15 * path_manager.density);
+                // for (int i = closest_idx; i < closest_idx + num_index; i++) {
+                //     if (i >= path_manager.state_refs.rows()) break;
+                //     if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::CROSSWALK) || path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::DOTTED_CROSSWALK)) {
+                //         utils.debug("intersection_reached(): waypoint attribute is crosswalk, ignoring...", 2);
+                //         return false;
+                //     }
+                // }
                 if(check_crosswalk() > 0) {
-                    utils.debug("intersection_reached(): detected crosswalk, ignoring...", 4);
+                    utils.debug("intersection_reached(): detected crosswalk, ignoring...", 2);
                     return false;
                 }
                 bool found = false;
-                lookahead_dist = 0.8;
-                double lookbehind_dist = 0.3;
-                num_index = static_cast<int>(lookahead_dist * path_manager.density);
-                int lookbehind_index = static_cast<int>(lookbehind_dist * path_manager.density);
-                for (int i = -lookbehind_index; i < num_index; i++) {
-                    if (closest_idx + i >= path_manager.state_refs.rows()) {
-                        utils.debug("intersection_reached(): closest idx + i = " + std::to_string(closest_idx + i) + " exceeds path_manager.state_refs.rows(): " + std::to_string(path_manager.state_refs.rows()), 2);
-                        break;
-                    }
-                    if (closest_idx + i < 0) continue;
-                    // ROS_INFO("checking index %d at (%.2f, %.2f)", closest_idx + i, path_manager.state_refs(closest_idx + i, 0), path_manager.state_refs(closest_idx + i, 1));
-                    if(path_manager.attribute_cmp(closest_idx+i, path_manager.ATTRIBUTE::STOPLINE)) {
-                        found = true;
-                        break;
-                    }
+                // lookahead_dist = 0.8;
+                // double lookbehind_dist = 0.3;
+                // num_index = static_cast<int>(lookahead_dist * path_manager.density);
+                // int lookbehind_index = static_cast<int>(lookbehind_dist * path_manager.density);
+                // for (int i = -lookbehind_index; i < num_index; i++) {
+                //     if (closest_idx + i >= path_manager.state_refs.rows()) {
+                //         utils.debug("intersection_reached(): closest idx + i = " + std::to_string(closest_idx + i) + " exceeds path_manager.state_refs.rows(): " + std::to_string(path_manager.state_refs.rows()), 2);
+                //         break;
+                //     }
+                //     if (closest_idx + i < 0) continue;
+                //     // ROS_INFO("checking index %d at (%.2f, %.2f)", closest_idx + i, path_manager.state_refs(closest_idx + i, 0), path_manager.state_refs(closest_idx + i, 1));
+                //     if(path_manager.attribute_cmp(closest_idx+i, path_manager.ATTRIBUTE::STOPLINE)) {
+                //         found = true;
+                //         break;
+                //     }
+                // }
+                if (near_intersection()) {
+                    found = true;
                 }
                 if (found) {
                     double &x = x_current[0];
@@ -572,6 +617,7 @@ public:
         return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
     }
     void check_emergency_stop() {
+        if (!emergency) return;
         if (utils.emergency) {
             utils.debug("check_emergency_stop(): emergency stop triggered", 1);
             while (utils.emergency) {
@@ -645,7 +691,7 @@ public:
             utils.debug("sign_based_relocalization(" + sign_type + "): SUCCESS: estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + "), actual: (" + std::to_string(EMPIRICAL_POSES[min_index][0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1]) + "), error: (" + std::to_string(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold), 2);
             double x,y,yaw;
             utils.get_states(x, y, yaw);
-            utils.debug("sign_based_relocalization(" + sign_type + "): relative estimated pose to car: (" + std::to_string(estimated_sign_pose[0] - x) + ", " + std::to_string(estimated_sign_pose[1] - y) + ")", 2);
+            utils.debug("sign_based_relocalization(" + sign_type + "): relative estimated pose to car: (" + std::to_string(estimated_sign_pose[0] - x) + ", " + std::to_string(estimated_sign_pose[1] - y) + ")", 3);
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
         }
         // mpc.reset_solver();
@@ -821,6 +867,7 @@ public:
             msg.data.push_back(waypoints(i, 1)); // y
         }
         utils.waypoints_pub.publish(msg);
+        if (utils.tcp_client != nullptr) utils.tcp_client->send_waypoint(msg);
     }
     void lane_follow(double speed = -2) {
         if (speed < -1) speed = NORMAL_SPEED;
@@ -1096,22 +1143,21 @@ void StateMachine::run() {
         }
         if (state == STATE::MOVING) {
             if(intersection_reached()) {
-                utils.debug("intersection reached", 2);
                 if(stopsign_flag == STOPSIGN_FLAGS::STOP || stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
                     // change_state(STATE::WAITING_FOR_STOPSIGN);
                     if (stopsign_flag == STOPSIGN_FLAGS::STOP) {
-                        utils.debug("stop sign detected, stopping for " + std::to_string(stop_duration) + " seconds...", 2);
+                        utils.debug("intersection reached: CASE STOP SIGN, stopping for " + std::to_string(stop_duration) + " seconds...", 2);
                         mpc.reset_solver();
                         stop_for(stop_duration);
                     } else if (stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
-                        utils.debug("traffic light was detected, clearing stopsign flag...", 2);
+                        utils.debug("intersection reached: CASE TRAFFIC LIGHT, clearing stopsign flag...", 2);
                     }
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                 } else if(stopsign_flag == STOPSIGN_FLAGS::PRIO) {
-                    utils.debug("priority detected, proceeding...", 2);
+                    utils.debug("intersection reached: CASE PRIORITY, proceeding...", 2);
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                 } else if(stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                    utils.debug("roundabout detected, using mpc...", 3);
+                    utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 3);
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                     if (use_lane) {
                         update_mpc_states(x_current[0], x_current[1], x_current[2]);
@@ -1121,7 +1167,7 @@ void StateMachine::run() {
                     }
                 } else {
                     if (use_lane) {
-                        ROS_WARN("intersection reached but no sign detected, using mpc...");
+                        ROS_WARN("intersection reached: CASE NO SIGN, proceeding...");
                         stopsign_flag = STOPSIGN_FLAGS::NONE;
                         update_mpc_states(x_current[0], x_current[1], x_current[2]);
                         solve();

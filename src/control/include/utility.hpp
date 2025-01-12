@@ -18,6 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include "TcpClient.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -96,6 +97,9 @@ public:
     tf2_ros::StaticTransformBroadcaster static_broadcaster;
     tf2_ros::TransformBroadcaster broadcaster;
     tf2_ros::Buffer tfBuffer;
+
+    // Client
+    std::unique_ptr<TcpClient> tcp_client;
 
     // publishers
     ros::Publisher odom_pub;
@@ -400,7 +404,7 @@ public:
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         if (serial == nullptr) {
-            debug("send_speed_and_steer: Serial is null", 2);
+            debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
         if(f_angle > 3.0) f_angle+=4.0;
@@ -493,6 +497,7 @@ public:
         if (debugLevel >= level) {
             debug_msg.data = message;
             message_pub.publish(debug_msg);
+            if (tcp_client != nullptr) tcp_client->send_message(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TcpClient.hpp"
 #include "ros/ros.h"
 #include "yolo-fastestv2.h"
 #include <opencv2/opencv.hpp>
@@ -40,6 +41,25 @@ class SignFastest {
             real(real), object_pose_body_frame(Eigen::Vector3d(0, 0, 0))
         {
             std::cout.precision(4);
+
+            if (!nh.getParam("/use_emergency", use_emergency)) {
+                ROS_WARN("Failed to get 'use_emergency' parameter. Defaulting to false.");
+                use_emergency = false;
+            }
+            bool use_tcp = false;
+            if (!nh.getParam("/use_tcp", use_tcp)) {
+                ROS_WARN("Failed to get 'use_tcp' parameter. Defaulting to false.");
+                use_tcp = false;
+            }
+            if(use_tcp) {
+                ROS_INFO("Attempting to create TCP client...");
+                tcp_client = std::make_unique<TcpClient>(10485760, "sign_node_client");
+                ROS_INFO("TCP client created successfully.");
+            } else {
+                tcp_client = nullptr;
+                ROS_INFO("TCP client not created.");
+            }
+
             nh.param("class_names", class_names, std::vector<std::string>());
             if(!nh.param("confidence_thresholds", confidence_thresholds, std::vector<float>(13))) {
                 ROS_WARN("Failed to get 'confidence_thresholds' parameter.");
@@ -99,7 +119,7 @@ class SignFastest {
             }
 
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
-            std::cout <<"pub created" << std::endl;
+            // std::cout <<"pub created" << std::endl;
 
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
@@ -215,6 +235,8 @@ class SignFastest {
         static constexpr int OBJECT_COUNT = 13;
         // private:
         yoloFastestv2 api;
+    
+        std::unique_ptr<TcpClient> tcp_client;
 
         ros::Publisher pub;
         ros::Publisher processed_image_pub;
@@ -226,6 +248,7 @@ class SignFastest {
         bool real;
         bool publish;
         bool ncnn;
+        bool use_emergency = false;
 
         cv::Mat normalizedDepthImage;
         cv::Mat croppedDepth;
@@ -276,8 +299,10 @@ class SignFastest {
             return true;
         }
         bool detect_emergency_obstacle(const cv::Mat& depthImage) {
-            if (depthImage.empty()) {
-                std::cerr << "Empty depth image!" << std::endl;
+            if (!use_emergency) return false;
+            if (depthImage.empty() || depthImage.type() != CV_32FC1) {
+                std::cerr << "Invalid depth image!" << std::endl;
+
                 return false; // Return false for invalid input
             }
             // if (depthImage.type() != CV_32FC1) {
@@ -480,7 +505,10 @@ class SignFastest {
                 for (int i = 0; i < 10; i++) {
                     sign_msg.data.push_back(-1.0);
                 }
-                if(publish) pub.publish(sign_msg);
+                if (publish) {
+                    pub.publish(sign_msg);
+                    if (tcp_client != nullptr) tcp_client->send_sign(sign_msg);
+                }
                 if (print) ROS_INFO("Emergency obstacle detected");
                 return;
             }
@@ -547,7 +575,10 @@ class SignFastest {
                 sign_msg.layout.dim.push_back(dim); 
             }
             // Publish Sign message
-            if(publish) pub.publish(sign_msg);
+            if (publish) {
+                pub.publish(sign_msg);
+                if (tcp_client != nullptr) tcp_client->send_sign(sign_msg);
+            }
             if(printDuration) {
                 stop = high_resolution_clock::now();
                 duration = duration_cast<microseconds>(stop - start);

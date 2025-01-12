@@ -109,7 +109,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config.yaml'):
+    def create_solver(self, config_path='config/mpc_config50.yaml'):
         # extract the number from config_path (50 in this case)
         try:
             self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
@@ -129,7 +129,7 @@ class Optimizer(object):
         y = ca.SX.sym('y')
         psi = ca.SX.sym('psi')
         states = ca.vertcat(x, y, psi)
-        self.L = 0.27
+        self.L = 0.258
         rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta)]
 
         f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
@@ -184,61 +184,45 @@ class Optimizer(object):
         self.delta_v_cost = config[cost_name]['delta_v_cost']
         self.delta_steer_cost = config[cost_name]['delta_steer_cost']
         self.costs = np.array([self.x_cost, self.yaw_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
-        # 代价函数
         Q = np.array([[self.x_cost, 0.0, 0.0],[0.0, self.y_cost, 0.0],[0.0, 0.0, self.yaw_cost]])*1
         R = np.array([[self.v_cost, 0.0], [0.0, self.steer_cost]])*1
 
-        # x状态数
         nx = model.x.size()[0]
-        # u状态数
         nu = model.u.size()[0]
-        # ny数为x与u之和，原因详见系统CasADi例子以及ACADOS构建优化问题PDF介绍
         ny = nx + nu
-        # 额外参数，本例中没有
         n_params = len(model.p)
 
-        # 设置环境变量
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        ## 获得系统中ACADOS的安装路径，请参照安装要求设置好
         acados_source_path = os.environ['ACADOS_SOURCE_DIR']
         sys.path.insert(0, acados_source_path)
-        # 构建OCP
         ocp = AcadosOcp()
-        ## 设置ACADOS系统引用以及库的路径（因为ACADOS最后将以C的形式运行，所以必须设置正确）
         ocp.acados_include_path = acados_source_path + '/include'
         ocp.acados_lib_path = acados_source_path + '/lib'
-        ## 设置模型
         ocp.model = model
         ocp.dims.N = N
         ocp.solver_options.tf = t_horizon
         ocp.dims.np = n_params
         ocp.parameter_values = np.zeros(n_params)
 
-        ## cost类型为线性
         ocp.cost.cost_type = 'LINEAR_LS'
         ocp.cost.cost_type_e = 'LINEAR_LS'
         ocp.cost.W = scipy.linalg.block_diag(Q, R)
         ocp.cost.W_e = Q
-        ## 这里V类矩阵的定义需要参考acados构建里面的解释，实际上就是定义一些映射关系
         ocp.cost.Vx = np.zeros((ny, nx))
         ocp.cost.Vx[:nx, :nx] = np.eye(nx)
         ocp.cost.Vu = np.zeros((ny, nu))
         ocp.cost.Vu[-nu:, -nu:] = np.eye(nu)
         ocp.cost.Vx_e = np.eye(nx)
 
-        # 约束条件设置
         ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
         ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
-        ## 这里是为了定义之前约束条件影响的index，它不需要像CasADi那样定义np.inf这种没有实际意义的约束。
         ocp.constraints.idxbu = np.array([0, 1])
         ocp.constraints.lbx = np.array([self.x_min, self.y_min])
         ocp.constraints.ubx = np.array([self.x_max, self.y_max])
         ocp.constraints.idxbx = np.array([0, 1])
 
-        # 一些状态的值，在实际仿真中可以重新给定，所里这里就定义一些空值
         x_ref = np.zeros(nx)
         u_ref = np.zeros(nu)
-        ## 将给定值设定，注意到这里不需要像之前那样给所有N-1设定ref值，ACADOS会默认进行设置
         ocp.constraints.x0 = x_ref
         ### 0--N-1
         ocp.cost.yref = np.concatenate((x_ref, u_ref))
@@ -263,20 +247,20 @@ class Optimizer(object):
         return solver, integrator, T, N, t_horizon
     
     def update_and_solve(self):
-        # cur_path = os.path.dirname(os.path.realpath(__file__))
-        # path = os.path.join(cur_path, 'paths')
-        # os.makedirs(path, exist_ok=True)
-        # # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
-        # # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
+        cur_path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(cur_path, 'paths')
+        os.makedirs(path, exist_ok=True)
+        # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
+        # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
 
-        # np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
-        # print("stateref shape: ", self.state_refs.shape)
-        # np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
+        np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
+        print("stateref shape: ", self.state_refs.shape)
+        np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
+        np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
+        np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
 
-        # # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
-        # exit()
+        # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
+        exit()
 
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
