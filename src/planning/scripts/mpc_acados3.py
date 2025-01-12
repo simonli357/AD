@@ -79,7 +79,7 @@ class Optimizer(object):
         self.rdb_circumference = 4.15
         import math
         self.limit = math.floor(self.rdb_circumference/(self.v_ref * self.T))
-
+        self.last_u = None
         self.t0 = 0
         self.init_state = x0 if x0 is not None else self.state_refs[0]
         self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
@@ -109,7 +109,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config.yaml', u_prev=np.zeros(2)):
+    def create_solver(self, config_path='config/mpc_config.yaml'):
         # extract the number from config_path (50 in this case)
         try:
             self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
@@ -124,29 +124,27 @@ class Optimizer(object):
         v = ca.SX.sym('v')
         delta = ca.SX.sym('delta')
         controls = ca.vertcat(v, delta)
-        
-        v_prev = ca.SX.sym('v_prev')
-        delta_prev = ca.SX.sym('delta_prev')
-        
+                
         # model states
         x = ca.SX.sym('x')
         y = ca.SX.sym('y')
         psi = ca.SX.sym('psi')
-        states = ca.vertcat(x, y, psi, v_prev, delta_prev)
-        self.L = 0.27
-        rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta), v, delta]
+        states = ca.vertcat(x, y, psi)
+        self.L = 0.258
+        rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta)]
 
         f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
         # acados model
         x_dot = ca.SX.sym('x_dot', len(rhs))
-        f_impl = x_dot  - f(states, controls)
+        f_impl = x_dot - f(states, controls)
 
         model.f_expl_expr = f(states, controls)
         model.f_impl_expr = f_impl
         model.x = states
         model.xdot = x_dot
         model.u = controls
-        model.p = []
+        p = ca.SX.sym('p', 3+2+2)
+        model.p = p
 
         current_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(current_path, config_path)
@@ -189,14 +187,13 @@ class Optimizer(object):
         self.delta_steer_cost = config[cost_name]['delta_steer_cost']
         self.costs = np.array([self.x_cost, self.yaw_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
         Q = np.array([[self.x_cost, 0.0, 0.0],[0.0, self.y_cost, 0.0],[0.0, 0.0, self.yaw_cost]])*1
-        Q = np.array([[self.x_cost, 0.0, 0.0, 0.0, 0.0],[0.0, self.y_cost, 0.0, 0.0, 0.0],[0.0, 0.0, self.yaw_cost, 0.0, 0.0], [0.0, 0.0, 0.0, self.delta_v_cost, 0.0], [0.0, 0.0, 0.0, 0.0, self.delta_steer_cost]])*1
         R = np.array([[self.v_cost, 0.0], [0.0, self.steer_cost]])*1
-        R_change = np.diag([self.delta_v_cost, self.delta_steer_cost])
-        
+        R_du = np.diag([self.delta_v_cost, self.delta_steer_cost])
+
         nx = model.x.size()[0]
         nu = model.u.size()[0]
         ny = nx + nu
-        n_params = len(model.p)
+        n_params = model.p.size()[0]
 
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
         acados_source_path = os.environ['ACADOS_SOURCE_DIR']
@@ -210,26 +207,29 @@ class Optimizer(object):
         ocp.dims.np = n_params
         ocp.parameter_values = np.zeros(n_params)
 
-        ocp.cost.cost_type = 'LINEAR_LS'
-        ocp.cost.cost_type_e = 'LINEAR_LS'
-        ocp.cost.W = scipy.linalg.block_diag(Q, R_change)
-        ocp.cost.W_e = Q[:nx, :nx]
-        # ocp.cost.W = scipy.linalg.block_diag(Q, R)
-        # ocp.cost.W_e = Q
+        ocp.cost.cost_type = 'NONLINEAR_LS'
+        ocp.cost.cost_type_e = 'NONLINEAR_LS'
+        ocp.cost.W = scipy.linalg.block_diag(Q, R, R_du)
+        ocp.cost.W_e = Q
         
-        Vx = np.zeros((nx + nu, nx))
-        Vx[0:3, 0:3] = np.eye(3)  # Penalize the original states
-        Vx[3:5, 3:5] = np.eye(2)
-        ocp.cost.Vx = Vx
-        # ocp.cost.Vx = np.zeros((ny, nx))
-        ocp.cost.Vx[:nx, :nx] = np.eye(nx)
+        X_ref_p = p[0:3]
+        U_ref_p = p[3:5]
+        u_prev_p = p[5:7]
+
+        # y_expr = [x - X_ref; u - U_ref; u - u_prev]
+        y_expr = ca.vertcat(states - X_ref_p,
+                            controls - U_ref_p,
+                            controls - u_prev_p)
+        y_expr_e = states - X_ref_p
         
-        Vu = np.zeros((nx + nu, nu))
-        Vu[3:5, :] = -np.eye(2)
-        ocp.cost.Vu = Vu
-        # ocp.cost.Vu = np.zeros((ny, nu))
-        # ocp.cost.Vu[-nu:, -nu:] = np.eye(nu)
-        ocp.cost.Vx_e = np.eye(nx)
+        ocp.model.cost_y_expr = y_expr
+        ocp.model.cost_y_expr_e = y_expr_e
+        
+        x_ref = np.zeros(nx)
+        u_ref = np.zeros(nu)
+        ocp.cost.yref = np.concatenate([x_ref, u_ref, u_ref])
+        ocp.cost.yref_e = x_ref
+        ocp.constraints.x0 = x_ref
 
         ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
         ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
@@ -237,22 +237,12 @@ class Optimizer(object):
         ocp.constraints.lbx = np.array([self.x_min, self.y_min])
         ocp.constraints.ubx = np.array([self.x_max, self.y_max])
         ocp.constraints.idxbx = np.array([0, 1])
-
-        x_ref = np.zeros(nx)
-        u_ref = np.zeros(nu)
-        ocp.constraints.x0 = x_ref
-        ### 0--N-1
-        ocp.cost.yref = np.concatenate((x_ref, u_ref))
-        ### N
-        ocp.cost.yref_e = x_ref[:nx] # yref_e means the reference for the last stage
+        
 
         ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-        # ocp.solver_options.qp_solver = 'FULL_CONDENSING_HPIPM'
-        # ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
         ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
         ocp.solver_options.integrator_type = 'ERK'
         ocp.solver_options.print_level = 0
-        # ocp.solver_options.nlp_solver_type = 'SQP'
         ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
         json_file = os.path.join('./'+model.name+'_acados_ocp.json')
@@ -263,43 +253,36 @@ class Optimizer(object):
         print("done creating solver, time: ", timeit.default_timer() - t1)
         return solver, integrator, T, N, t_horizon
     
-    def update_and_solve(self, u_prev):
-        # cur_path = os.path.dirname(os.path.realpath(__file__))
-        # path = os.path.join(cur_path, 'paths')
-        # os.makedirs(path, exist_ok=True)
-        # # np.savetxt(os.path.join(path,'straight_states25.txt'), self.state_refs, fmt='%.8f')
-        # # np.savetxt(os.path.join(path,'straight_inputs25.txt'), self.input_refs, fmt='%.8f')
-
-        # np.savetxt(os.path.join(path,'state_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.state_refs, fmt='%.8f')
-        # print("stateref shape: ", self.state_refs.shape)
-        # np.savetxt(os.path.join(path,'input_refs_'+self.path.name+(self.v_ref_int)+'.txt'), self.input_refs, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_normals_'+self.path.name+(self.v_ref_int)+'.txt'), self.wp_normals, fmt='%.8f')
-        # np.savetxt(os.path.join(path,'wp_attributes_'+self.path.name+(self.v_ref_int)+'.txt'), self.path.attributes, fmt='%.8f')
-
-        # # np.savetxt(os.path.join(path,'kappa2.txt'), self.kappa, fmt='%.8f')
-        # exit()
-
+    def update_and_solve(self):
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
         self.next_trajectories = self.state_refs[idx:idx + self.N + 1]
         self.next_controls = self.input_refs[idx:idx + self.N]
-        # xs = self.state_refs[idx+ self.N]
         
-        if (idx + self.N) < self.state_refs.shape[0]:
-            terminal_state_ref = self.state_refs[idx + self.N]
-        else:
-            terminal_state_ref = self.state_refs[-1]
-        y_ref_e = np.concatenate((terminal_state_ref, np.zeros(2)))
-        self.solver.set(self.N, 'yref', y_ref_e)
-        
-        # xs = self.state_refs[idx]
-        # self.solver.set(self.N, 'yref', xs)
-        
+        xs = self.state_refs[idx]
+        us = self.input_refs[idx] if idx < self.input_refs.shape[0] else np.zeros(2)
+        u_prev = self.last_applied_u if hasattr(self, 'last_applied_u') else np.zeros(2)
+
         for j in range(self.N):
-            if self.target_waypoint_index+j >= self.state_refs.shape[0]:
-                self.solver.set(j, 'yref', np.concatenate((self.state_refs[-1], np.zeros(2))))
+            if idx + j >= self.state_refs.shape[0]:
+                x_ref_stage = self.state_refs[-1]
+                u_ref_stage = np.zeros(2)
             else:
-                self.solver.set(j, 'yref', np.concatenate((self.next_trajectories[j], self.next_controls[j])))# 设置当前循环x0 (stage 0)
+                x_ref_stage = self.next_trajectories[j]
+                u_ref_stage = self.next_controls[j]
+
+            p = np.concatenate([x_ref_stage, u_ref_stage, u_prev])
+            self.solver.set(j, 'p', p)
+            # update the references in yref to match x_ref_stage & u_ref_stage
+            self.solver.set(j, 'yref', np.concatenate((x_ref_stage, u_ref_stage, u_ref_stage)))
+
+        # terminal stage parameters
+        p_terminal = np.concatenate([self.state_refs[idx+self.N] if idx+self.N < self.state_refs.shape[0] else self.state_refs[-1],
+                                    np.zeros(2),  # terminal U_ref if needed
+                                    u_prev])
+        self.solver.set(self.N, 'p', p_terminal)
+        self.solver.set(self.N, 'yref', self.state_refs[idx+self.N] if idx+self.N < self.state_refs.shape[0] else self.state_refs[-1])
+
         self.solver.set(0, 'lbx', self.current_state)
         self.solver.set(0, 'ubx', self.current_state)
         status = self.solver.solve()
@@ -307,7 +290,9 @@ class Optimizer(object):
             print('ERROR!!! acados acados_ocp_solver returned status {}. Exiting.'.format(status))
             return None
         next_u = self.solver.get(0, 'u')
+        self.last_applied_u = next_u
         self.counter += 1
+        self.last_u = next_u
         return next_u
     def integrate_next_states(self, u_res=None):
         # 以下纯粹为了仿真
@@ -542,7 +527,6 @@ if __name__ == '__main__':
     
     if running:
         mpc.target_waypoint_index = 0
-        u_prev = np.zeros(2)
         while True:
             if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > 1000:
             # if mpc.target_waypoint_index >= 375:
@@ -554,9 +538,8 @@ if __name__ == '__main__':
             mpc.yaw_errors.append(mpc.current_state[2] - mpc.next_trajectories[0, 2])
             # print("cur: ", np.around(mpc.current_state, decimals=2), ", ref: ", np.around(mpc.next_trajectories[0, :], decimals=2), ", ctrl: ", np.around(mpc.next_controls[0, :], decimals=2), ", idx: ", mpc.target_waypoint_index)
             t_ = time.time()
-            u_res = mpc.update_and_solve(u_prev)
+            u_res = mpc.update_and_solve()
             t2 = time.time()- t_
-            u_prev = u_res
             if u_res is None:
                 break
             mpc.index_t.append(t2)
@@ -577,5 +560,28 @@ if __name__ == '__main__':
         # mpc.park()
         # mpc.exit_park()
         print("done")
-        mpc.draw_result(stats, -35, 35, -35, 35)
+        # mpc.draw_result(stats, -35, 35, -35, 35)
+        mpc.draw_result(stats, -2, 22, -2, 16)
         # mpc.draw_result(stats, -1, 5, -1, 2)
+
+# mean solve time:  0.000547633899913563 max:  0.0007941722869873047 min:  0.00040841102600097656 std:  6.495536205623692e-05 median:  0.0005583763122558594
+# 0.0005843510756363997
+# average kappa:  0.711998927789088
+# Average speed: 1.0142 m/s
+# Average steer angle: 0.0634 rad
+# Average change in speed: 0.0417 m/s²
+# Average change in steer angle: 0.0311 rad/s
+# Average x error: 0.0460 m
+# Average y error: 0.0429 m
+# Average yaw error: 0.0898 rad
+
+# mean solve time:  0.0005373664192862801 max:  0.0008776187896728516 min:  0.0003986358642578125 std:  6.203874916996816e-05 median:  0.0005426406860351562
+# 0.0005724191903829813
+# average kappa:  0.711998927789088
+# Average speed: 1.0143 m/s
+# Average steer angle: 0.0650 rad
+# Average change in speed: 0.0439 m/s²
+# Average change in steer angle: 0.0357 rad/s
+# Average x error: 0.0464 m
+# Average y error: 0.0418 m
+# Average yaw error: 0.0881 rad

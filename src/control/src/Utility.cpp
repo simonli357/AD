@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include "TcpClient.hpp"
 #include "utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -26,8 +27,23 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real)
 {
-    std::cout << "Utility constructor" << std::endl;
-    
+    // debug("Utility constructor", 1);  
+    std::cout << "Utility constructor" << std::endl;  
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
+    bool use_tcp = false;
+    if(!nh.getParam("/use_tcp", use_tcp)) {
+        debug("Utility constructor: WARNING: Failed to get 'use_tcp' parameter. Defaulting to false.", 1);
+        use_tcp = false;
+    }
+    if(use_tcp) {
+        debug("Utility constructor: Attempting to create TCP client...", 1);
+        tcp_client = std::make_unique<TcpClient>(10485760, "utility_node_client");
+        debug("Utility constructor: TCP client created successfully.", 1);
+    } else {
+        tcp_client = nullptr;
+        debug("Utility constructor: TCP client not created.", 1);
+    }
+
     // tunables
     // For odometry
     double sigma_v = 0.1;
@@ -45,10 +61,16 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         exit(1);
     }
 
-    message_pub = nh.advertise<std_msgs::String>("/message", 10);
-    if (real) {
-        serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-        serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
+    if (true) {
+        try {
+            // Attempt to open /dev/ttyACM0
+            serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
+            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
+            debug("Utility constructor: Serial port opened successfully.", 1);
+        }
+        catch (const boost::system::system_error &e) {
+            debug("Utility constructor: ERROR: Failed to open serial port: " + std::string(e.what()), 1);
+        }
     }
     q_transform.setRPY(REALSENSE_TF[3], REALSENSE_TF[4], REALSENSE_TF[5]); // 3 values are roll, pitch, yaw of the imu
     // q_transform.setRPY(0, 0.0, 0);
@@ -67,7 +89,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::string nodeName = ros::this_node::getName();
     nh.param<double>(nodeName + "/rate", rateVal, 500);
     rate = new ros::Rate(rateVal);
-    wheelbase = 0.27;
+    wheelbase = 0.258;
     odomRatio = 1.0;
     maxspeed = 1.5;
     center = -1;
@@ -370,7 +392,6 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     lock.unlock();
     if (num_obj == 1 && detected_objects[0] == -1.0) {
         emergency = true;
-        return;
     } else {
         emergency = false;
     }
@@ -409,6 +430,10 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     static bool publish_objects = true;
     if(publish_objects) {
         road_object_pub.publish(road_object_msg);
+        // safety check
+        if (tcp_client != nullptr) {
+            tcp_client->send_road_object(road_object_msg);
+        }
     }
     
     static bool populate_car_pose = true;
@@ -836,7 +861,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
 
     lock.unlock();
     float steer = steering_angle;
-    if(real) {
+    if(true) {
         send_speed_and_steer(vel, steer);
     }
     msg2.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(steer) + "}";

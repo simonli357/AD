@@ -41,6 +41,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   utils
+  communication
 )
 
 find_package(CUDA REQUIRED)
@@ -94,6 +95,7 @@ catkin_package(
   image_transport
   cv_bridge
   sensor_msgs
+  communication
 )
 
 include_directories(
@@ -129,6 +131,7 @@ add_executable(signFastest
 target_link_libraries(signFastest
   ${catkin_LIBRARIES}
   ncnn ${OpenCV_LIBS}
+  communication
 )
 
 add_executable(videoDetector
@@ -145,14 +148,11 @@ add_executable(cameraNode
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp
-  include/sort/KalmanTracker.cpp
-  include/sort/Hungarian.cpp
 )
 target_link_libraries(cameraNode
   ${catkin_LIBRARIES}
   ncnn
   ${OpenCV_LIBS}
-  # ${realsense2_LIBRARY}
   realsense2::realsense2
   ${CUDA_LIBRARIES}
   nvinfer
@@ -160,15 +160,13 @@ target_link_libraries(cameraNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
-  # ${realsense2_LIBRARY}
+  communication
 )
 add_executable(testNode
   src/testNode.cpp
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp
-  include/sort/KalmanTracker.cpp
-  include/sort/Hungarian.cpp
 )
 target_link_libraries(testNode
   ${catkin_LIBRARIES}
@@ -181,6 +179,7 @@ target_link_libraries(testNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
+  communication
 )
 
 install(DIRECTORY include/
