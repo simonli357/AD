@@ -154,7 +154,8 @@ public:
         return 1;
     }
     int start() {
-        change_state(STATE::MOVING);
+        // change_state(STATE::MOVING);
+        change_state(STATE::TESTING);
         return 1;
     }
     bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
@@ -327,7 +328,7 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         if(std::abs(yaw_error) > 45 * M_PI / 180) {
-            utils.debug("near_intersection(): FAILURE: yaw error too large: " + std::to_string(yaw_error), 2);
+            utils.debug("near_intersection(): FAILURE: yaw error too large: " + std::to_string(yaw_error), 4);
             return false;
         }
 
@@ -353,10 +354,10 @@ public:
         }
         // exit(0);
         if (min_error_sq < 0.3 * 0.3) {
-            utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
+            utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
             return true;
         } else {
-            utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
+            utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
             return false;
         }
     }
@@ -458,7 +459,10 @@ public:
             // distance to last intersection too close
             return;
         }
-        int sign_index = utils.object_index(OBJECT::STOPSIGN);
+        
+        int sign_index;
+
+        sign_index = utils.object_index(OBJECT::STOPSIGN);
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) { // if no sign detected
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
@@ -1486,6 +1490,52 @@ void StateMachine::run() {
             endwin();
             utils.stop_car();
             change_state(STATE::INIT);
+        } else if (state == STATE::TESTING) {
+            std::cout << "testing" << std::endl;
+            int sign_index = utils.object_index(OBJECT::STOPSIGN);
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::REDLIGHT);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::LIGHTS);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::GREENLIGHT);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::PRIORITY);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::ROUNDABOUT);
+            }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::CAR);
+            }
+            if (sign_index < 0) {
+                std::cout << "No sign detected, stopping..." << std::endl;
+                continue;
+            }
+            double detected_dist1 = utils.object_distance(sign_index);
+            std::cout << "detected_dist: " << detected_dist1 << std::endl;
+            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS);
+            ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
+            ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
+            // estimated: (4.49, 1.30), actual: (4.51, 1.35)
+            // estimated: (4.49, 1.57), actual: (4.51, 1.62)
+            // estimated: (4.8, 1.57), actual: (4.8, 1.62)
+            // estimated: (4.96, 1.36), actual: (4.954, 1.4)
+            // estimated: (5.04, 1.98), actual: (5, 2.05)
+
+            // new
+            // estimated: (4.5, 1.39), actual: (4.52, 1.47)
+            // estimated: (4.8, 1.54), actual: (4.8, 1.62)
+            auto sign_pose_new = utils.estimate_object_pose2d_new(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS);
+            ROS_INFO("sign_pose_new: (%.2f, %.2f)", sign_pose_new[0], sign_pose_new[1]);
+            rate->sleep();
+            continue;
         }
     }
 }
