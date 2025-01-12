@@ -86,6 +86,8 @@
   <param name="debug_level" value="$(arg debug_level)"/>
   <arg name = "emergency" default="false"/>
   <param name="emergency" value="$(arg emergency)"/>
+  <arg name="use_tcp" default="false"/>
+  <param name="use_tcp" value="$(arg use_tcp)"/>
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config_park.yaml" />
