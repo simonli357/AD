@@ -265,6 +265,10 @@ class CameraNode {
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
+			if (tcp_client != nullptr) {
+				tcp_client->send_image_rgb(*color_msg);
+				tcp_client->send_image_depth(*depth_msg);
+			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);
 		}

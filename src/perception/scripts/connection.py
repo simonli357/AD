@@ -29,7 +29,7 @@ class Connection:
         self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
-        threading.Thread(target=self.garbageCollect, daemon=True).start()
+        # threading.Thread(target=self.garbageCollect, daemon=True).start()
         self.send_string("ack")
 
     def garbageCollect(self):
