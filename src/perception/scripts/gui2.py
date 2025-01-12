@@ -1130,11 +1130,11 @@ def callbacks(gui):
     server.initialize()
     while True:
         # Image rgb
-        if server.camera_node_client.rgb_images:
-            gui.camera_callback(server.camera_node_client.rgb_images.pop())
+        if server.signs_node_client.rgb_images:
+            gui.camera_callback(server.signs_node_client.rgb_images.pop())
         # Image depth
-        if server.camera_node_client.depth_images:
-            gui.depth_callback(server.camera_node_client.depth_images.pop())
+        if server.signs_node_client.depth_images:
+            gui.depth_callback(server.signs_node_client.depth_images.pop())
         # Road object
         if server.utility_node_client.road_objects:
             gui.road_objects_callback(server.utility_node_client.road_objects.pop())
