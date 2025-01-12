@@ -10,19 +10,18 @@ class Server:
         self.port = port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.utility_node_client = None
-        self.camera_node_client = None
         self.signs_node_client = None
 
     def initialize(self):
         self.server_socket.bind(('', self.port))
-        self.server_socket.listen(3)
+        self.server_socket.listen(2)
         num_clients = 0
         while True:
             client_socket, client_address = self.server_socket.accept()
             threading.Thread(target=self.process_client, args=(client_socket,), daemon=True).start()
             num_clients += 1
-            if num_clients == 3:
-                while not (self.utility_node_client and self.camera_node_client and self.signs_node_client):
+            if num_clients == 2:
+                while not (self.utility_node_client and self.signs_node_client):
                     time.sleep(0.1)
                 break
         print("All clients are connected.")
@@ -47,10 +46,7 @@ class Server:
         if client_type == "utility_node_client":
             print("Utility Client connected")
             self.utility_node_client = Connection(client_socket)
-        elif client_type == "camera_node_client":
-            print("Camera Node Client connected")
-            self.camera_node_client = Connection(client_socket)
-        elif client_type == "signs_node_client":
+        elif client_type == "sign_node_client":
             print("Signs Node Client connected")
             self.signs_node_client = Connection(client_socket)
         else:
