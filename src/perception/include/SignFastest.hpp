@@ -132,6 +132,7 @@ class SignFastest {
         };
         static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240}; // fx, fy, cx, cy
         static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
+        // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
         static constexpr double parallel_w2h_ratio = 1.30;
         static constexpr double perpendicular_w2h_ratio = 2.88;
         static constexpr double CAR_WIDTH = 0.1885;
