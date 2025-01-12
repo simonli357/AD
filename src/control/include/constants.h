@@ -5,9 +5,10 @@
 #include <array>
 
 namespace VehicleConstants {
-    const std::array<std::string, 12> state_names = {
+    const std::array<std::string, 13> state_names = {
         "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
-        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD"
+        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", 
+        "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD", "TESTING"
     };
     enum STATE {
         INIT,
@@ -21,7 +22,8 @@ namespace VehicleConstants {
         DONE,
         LANE_FOLLOWING,
         INTERSECTION_MANEUVERING,
-        KEYBOARD_CONTROL
+        KEYBOARD_CONTROL,
+        TESTING
     };
     enum STOPSIGN_FLAGS {
         NONE,
@@ -254,8 +256,8 @@ namespace VehicleConstants {
         EKF
     };
     static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240};
-    //   <pose>0 0.05 0.2 0 0.2617 -0.</pose>
     static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
+    // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
 #endif // VEHICLE_CONSTANTS_H
