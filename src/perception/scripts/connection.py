@@ -8,6 +8,7 @@ from std_msgs.msg import String
 
 class Connection:
     def __init__(self, client_socket):
+        self.max_list_size = 25
         self.socket = client_socket
         self.socket.settimeout(None)
         self.data_actions = OrderedDict({
@@ -28,12 +29,30 @@ class Connection:
         self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
+        threading.Thread(target=self.garbageCollect, daemon=True).start()
         self.send_string("ack")
+
+    def garbageCollect(self):
+        while True:
+            if len(self.strings) > self.max_list_size:
+                self.strings.clear()
+            if len(self.rgb_images) > self.max_list_size:
+                self.rgb_images.clear()
+            if len(self.depth_images) > self.max_list_size:
+                self.depth_images.clear()
+            if len(self.road_objects) > self.max_list_size:
+                self.road_objects.clear()
+            if len(self.waypoints) > self.max_list_size:
+                self.waypoints.clear()
+            if len(self.signs) > self.max_list_size:
+                self.signs.clear()
+            if len(self.messages) > self.max_list_size:
+                self.messages.clear()
 
     def recvall(self, length):
         data = b""
         while len(data) < length:
-            chunk = self.socket.recv(min(8192, length - len(data)))
+            chunk = self.socket.recv(min(307200, length - len(data)))
             if not chunk:
                 raise ConnectionError("Connection lost")
             data += chunk
