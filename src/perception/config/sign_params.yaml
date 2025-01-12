@@ -8,3 +8,11 @@ ncnn_model: "sissi753-opt"
 # v8_model: "citycocov2lgtclab_20"
 v8_model: "0517track20"
 min_ground_distance: 429 #mm
+
+madgwick:
+  frequency: 100                 # IMU data frequency (adjust based on your sensor)
+  gain: 0.1                      # Filter gain, controls responsiveness (lower = smoother, higher = faster)
+  world_frame: enu               # Frame convention ('enu' or 'ned')
+  use_magnetic_field_msg: false  # Set to true if using magnetometer data
+  publish_tf: false 
+  use_magnetic_field_msg: false

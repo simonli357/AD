@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node" output="screen">
+    <param name="use_sim_time" value="false"/>
+    <remap from="/imu/data_raw" to="/camera/imu"/> <!-- Raw IMU topic from your node -->
+    <remap from="/imu/data" to="/realsense/imu"/> <!-- Filtered output topic -->
+  </node>
+</launch>
