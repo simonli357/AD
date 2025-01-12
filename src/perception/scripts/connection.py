@@ -1,4 +1,5 @@
 import threading
+import time
 import struct
 from collections import OrderedDict
 from sensor_msgs.msg import Image
@@ -28,12 +29,24 @@ class Connection:
         self.signs = []
         self.messages = []
         threading.Thread(target=self.receive, daemon=True).start()
+        threading.Thread(target=self.garbageCollect, daemon=True).start()
         self.send_string("ack")
+
+    def garbageCollect(self):
+        while True:
+            self.strings.clear()
+            self.rgb_images.clear()
+            self.depth_images.clear()
+            self.road_objects.clear()
+            self.waypoints.clear()
+            self.signs.clear()
+            self.messages.clear()
+            time.sleep(10)
 
     def recvall(self, length):
         data = b""
         while len(data) < length:
-            chunk = self.socket.recv(min(8192, length - len(data)))
+            chunk = self.socket.recv(min(307200, length - len(data)))
             if not chunk:
                 raise ConnectionError("Connection lost")
             data += chunk
