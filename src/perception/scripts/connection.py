@@ -1,4 +1,5 @@
 import threading
+import time
 import struct
 from collections import OrderedDict
 from sensor_msgs.msg import Image
@@ -8,7 +9,6 @@ from std_msgs.msg import String
 
 class Connection:
     def __init__(self, client_socket):
-        self.max_list_size = 25
         self.socket = client_socket
         self.socket.settimeout(None)
         self.data_actions = OrderedDict({
@@ -34,20 +34,14 @@ class Connection:
 
     def garbageCollect(self):
         while True:
-            if len(self.strings) > self.max_list_size:
-                self.strings.clear()
-            if len(self.rgb_images) > self.max_list_size:
-                self.rgb_images.clear()
-            if len(self.depth_images) > self.max_list_size:
-                self.depth_images.clear()
-            if len(self.road_objects) > self.max_list_size:
-                self.road_objects.clear()
-            if len(self.waypoints) > self.max_list_size:
-                self.waypoints.clear()
-            if len(self.signs) > self.max_list_size:
-                self.signs.clear()
-            if len(self.messages) > self.max_list_size:
-                self.messages.clear()
+            self.strings.clear()
+            self.rgb_images.clear()
+            self.depth_images.clear()
+            self.road_objects.clear()
+            self.waypoints.clear()
+            self.signs.clear()
+            self.messages.clear()
+            time.sleep(10)
 
     def recvall(self, length):
         data = b""
