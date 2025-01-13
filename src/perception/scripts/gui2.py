@@ -1130,23 +1130,23 @@ def callbacks(gui):
     server.initialize()
     while True:
         # Image rgb
-        if server.signs_node_client.rgb_images:
-            gui.camera_callback(server.signs_node_client.rgb_images.pop())
+        if server.signs_node_client.rgb_image is not None:
+            gui.camera_callback(server.signs_node_client.rgb_image)
         # Image depth
-        if server.signs_node_client.depth_images:
-            gui.depth_callback(server.signs_node_client.depth_images.pop())
+        if server.signs_node_client.depth_image is not None:
+            gui.depth_callback(server.signs_node_client.depth_image)
         # Road object
         if server.utility_node_client.road_objects:
-            gui.road_objects_callback(server.utility_node_client.road_objects.pop())
+            gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
         # Waypoints
         if server.utility_node_client.waypoints:
-            gui.waypoint_callback(server.utility_node_client.waypoints.pop())
+            gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
         # Signs
         if server.signs_node_client.signs:
-            gui.sign_callback(server.signs_node_client.signs.pop())
+            gui.sign_callback(server.signs_node_client.signs.pop(0))
         # Messages
         if server.utility_node_client.messages:
-            gui.message_callback(server.utility_node_client.messages.pop())
+            gui.message_callback(server.utility_node_client.messages.pop(0))
 
         time.sleep(0.01)
 
