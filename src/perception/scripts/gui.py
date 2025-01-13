@@ -112,7 +112,7 @@ class OpenCVGuiApp(QWidget):
         self.right_panel_widget = QWidget()
         self.camera_w = int(640 / 640 * 500)
         self.camera_h = int(480 / 640 * 500)
-        self.right_panel_widget.setFixedSize(self.camera_w, 800)
+        # self.right_panel_widget.setFixedSize(self.camera_w, 800)
         self.right_panel_widget.setLayout(self.right_panel_layout)
 
         # Camera feed label
@@ -306,11 +306,12 @@ class OpenCVGuiApp(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
                 border: 2px solid #28A745;  /* Green border */
-                border-radius: 40px;  /* Circular shape (80px diameter) */
+                border-radius: 30px;  /* Circular shape (80px diameter) */
                 color: white;
                 font-size: 14px;
-                width: 80px;
-                height: 80px;
+                font-weight: bold;
+                width: 60px;
+                height: 60px;
                 padding: 10px;
             }
             
@@ -335,11 +336,11 @@ class OpenCVGuiApp(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 #00FFFF, stop:1 #28A745);
                 border: 2px solid #28A745;  /* Green border */
-                border-radius: 40px;  /* Circular shape (80px diameter) */
+                border-radius: 30px;  /* Circular shape (80px diameter) */
                 color: white;
                 font-size: 14px;
-                width: 80px;
-                height: 80px;
+                width: 60px;
+                height: 60px;
                 padding: 10px;
                 font-weight: bold;
                 font-size: 14px;
@@ -498,11 +499,11 @@ class OpenCVGuiApp(QWidget):
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #DC3545, stop:1 #00FF00);
                     border: 2px solid #DC3545;  
-                    border-radius: 40px;  /* Circular shape (80px diameter) */
+                    border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
-                    width: 80px;
-                    height: 80px;
+                    width: 60px;
+                    height: 60px;
                     padding: 10px;
                 }
                 QPushButton:hover {
@@ -523,11 +524,11 @@ class OpenCVGuiApp(QWidget):
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
                     border: 2px solid #28A745;  /* Green border */
-                    border-radius: 40px;  /* Circular shape (80px diameter) */
+                    border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
-                    width: 80px;
-                    height: 80px;
+                    width: 60px;
+                    height: 60px;
                     padding: 10px;
                 }
                 QPushButton:hover {
@@ -633,7 +634,9 @@ class OpenCVGuiApp(QWidget):
             return image
         # Draw the center line
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
-
+        cv2.putText(image, f"center: {self.center}",
+                    (int(image.shape[1] * 0.5), int(image.shape[0] * 0.1)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # Add text if stopline or crosswalk is detected
         if self.stopline > 0:
             cv2.putText(image, "Stopline detected!",
@@ -722,7 +725,7 @@ class OpenCVGuiApp(QWidget):
 
     def message_callback(self, msg):
         self.message_history.append(msg.data)
-        if len(self.message_history) > 6:
+        if len(self.message_history) > 12:
             self.message_history.pop(0)
 
     def update_stopwatch(self):
@@ -918,7 +921,7 @@ class OpenCVGuiApp(QWidget):
         WHEEL_LEN = 0.6 * 0.108 * 800 * self.scale_factor / 20.696  # Length of the wheel
         WHEEL_WIDTH = 0.2 * 0.108 * 800 * self.scale_factor / 20.696  # Width of the wheel
         TREAD = 0.7 * 0.108 * 800 * self.scale_factor / 20.696  # Distance between left and right wheels
-        WB = 0.27 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
+        WB = 0.258 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
         half_length = LENGTH / 2
         half_width = WIDTH / 2
         # yaw = np.pi * 0.25

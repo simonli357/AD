@@ -154,8 +154,8 @@ class GlobalPlanner:
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
-                    x = prev_x + vec1[0] / mag1 * 0.15#0.001
-                    y = prev_y + vec1[1] / mag1 * 0.15#0.001
+                    x = prev_x + vec1[0] / mag1 * 0.0015#0.001
+                    y = prev_y + vec1[1] / mag1 * 0.0015#0.001
                     # adjust with vec2
                     # x += vec2[0] / mag2 * 0.0005 #15
                     # y += vec2[1] / mag2 * 0.0005 #15

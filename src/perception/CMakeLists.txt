@@ -41,6 +41,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   utils
+  communication
 )
 
 find_package(CUDA REQUIRED)
@@ -94,6 +95,7 @@ catkin_package(
   image_transport
   cv_bridge
   sensor_msgs
+  communication
 )
 
 include_directories(
@@ -106,8 +108,8 @@ include_directories(
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
-include_directories(~/Applications/TensorRT-8.6.1.6/include)
-link_directories(~/Applications/TensorRT-8.6.1.6/lib)
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
 
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
 link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
@@ -129,6 +131,7 @@ add_executable(signFastest
 target_link_libraries(signFastest
   ${catkin_LIBRARIES}
   ncnn ${OpenCV_LIBS}
+  communication
 )
 
 add_executable(videoDetector
@@ -157,6 +160,7 @@ target_link_libraries(cameraNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
+  communication
 )
 add_executable(testNode
   src/testNode.cpp
@@ -175,6 +179,7 @@ target_link_libraries(testNode
   nvonnxparser
   alglib
   ${Python3_LIBRARIES}
+  communication
 )
 
 install(DIRECTORY include/

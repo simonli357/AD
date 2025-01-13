@@ -131,7 +131,7 @@ class Optimizer(object):
         v_prev = ca.SX.sym('v_prev')
         delta_prev = ca.SX.sym('delta_prev')
         states = ca.vertcat(x, y, psi, v_prev, delta_prev)
-        self.L = 0.27
+        self.L = 0.258
         rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta), v, delta]
 
         f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
