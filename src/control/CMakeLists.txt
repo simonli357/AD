@@ -88,6 +88,7 @@ file(GLOB sim_solver18
         )
 
 find_package(Curses REQUIRED)
+find_package(communication REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
@@ -144,6 +145,7 @@ src/RoadObject.cpp
 )
 target_link_libraries(utility
 ${catkin_LIBRARIES}
+communication
 )
 
 add_executable(controller 
@@ -156,4 +158,5 @@ ocp_shared_lib
 sim_shared_lib
 ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
+communication
 )

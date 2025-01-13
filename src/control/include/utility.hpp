@@ -18,6 +18,7 @@
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
+#include "TcpClient.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -96,6 +97,9 @@ public:
     tf2_ros::StaticTransformBroadcaster static_broadcaster;
     tf2_ros::TransformBroadcaster broadcaster;
     tf2_ros::Buffer tfBuffer;
+
+    // Client
+    std::unique_ptr<TcpClient> tcp_client;
 
     // publishers
     ros::Publisher odom_pub;
@@ -302,6 +306,124 @@ public:
         static double parallel_w2h_ratio = 1.30;
         static double perpendicular_w2h_ratio = 2.70;
 
+        std::cout << "object_distance1: " << object_distance << std::endl;
+        if (is_car) {
+            double car_pixel_w2h_ratio = std::abs((x2 - x1) / (y2 - y1));
+            // std::cout << "car_pixel_w2h_ratio: " << car_pixel_w2h_ratio << std::endl;
+
+            // Normalize the ratio to a scale of 0 (parallel) to 1 (perpendicular)
+            double normalized_ratio_parallel = std::max((car_pixel_w2h_ratio / parallel_w2h_ratio), 1.0);
+            double normalized_ratio_perpendicular = std::min(car_pixel_w2h_ratio / perpendicular_w2h_ratio, 1.0);
+            // std::cout << "normalized_ratio_parallel: " << normalized_ratio_parallel << std::endl;
+            // std::cout << "normalized_ratio_perpendicular: " << normalized_ratio_perpendicular << std::endl;
+
+            double parallel_diff = std::abs(normalized_ratio_parallel - 1);
+            double perpendicular_diff = std::abs(normalized_ratio_perpendicular - 1);
+            double dist;
+            if (car_pixel_w2h_ratio < 2.0 || parallel_diff < perpendicular_diff) { // Parallel to the camera
+                // std::cout << "Parallel to the camera" << std::endl;
+                dist = CAR_LENGTH / 2 / normalized_ratio_parallel;
+            } else { // Perpendicular to the camera
+                dist = CAR_WIDTH / 2 / normalized_ratio_perpendicular;
+            }
+            
+            // std::cout << "dist: " << dist << std::endl;
+            object_distance += dist;
+        }
+        std::cout << "object_distance2: " << object_distance << std::endl;
+
+        // Extract camera parameters
+        double fx = camera_params[0];
+        double fy = camera_params[1];
+        double cx = camera_params[2];
+        double cy = camera_params[3];
+
+        // Compute bounding box center in image coordinates
+        double bbox_center_x = (x1 + x2) / 2;
+        double bbox_center_y = (y1 + y2) / 2;
+
+        // Convert image coordinates to normalized coordinates
+        double x_norm = (bbox_center_x - cx) / fx;
+        double y_norm = (bbox_center_y - cy) / fy;
+
+        // Add distance from camera to robot center
+        object_distance += CAMERA_POSE.x;
+        // object_distance -= (0.07 + 0.05);
+
+        // Estimate 3D coordinates in the camera frame
+        double X_c = x_norm * object_distance;
+        double Y_c = y_norm * object_distance;
+        double Z_c = object_distance;
+
+        // 3D point in the camera frame
+        Eigen::Vector3d P_c(X_c, Y_c, Z_c);
+
+        // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
+        Eigen::Vector3d P_v(Z_c, -X_c, 0);
+
+        // Rotation matrix from vehicle to world coordinates
+        Eigen::Matrix2d R_vw;
+        R_vw << std::cos(yaw), -std::sin(yaw),
+                std::sin(yaw), std::cos(yaw);
+
+        // Translate to world coordinates
+        Eigen::Vector2d vehicle_pos(x, y);
+        Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+        Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
+
+        return world_coordinates;
+    }
+    Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, const std::array<double, 4>& bounding_box, double object_distance, const std::array<double, 4>& camera_params, bool is_car = false) {
+        double x1 = bounding_box[0];
+        double y1 = bounding_box[1];
+        double x2 = bounding_box[2];
+        double y2 = bounding_box[3];
+        return estimate_object_pose2d(x, y, yaw, x1, y1, x2, y2, object_distance, camera_params, is_car);
+    }
+
+    Eigen::Matrix3d euler2rot(double roll, double pitch, double yaw)
+    {
+        Eigen::AngleAxisd rollAngle(roll,   Eigen::Vector3d::UnitX());
+        Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+        Eigen::AngleAxisd yawAngle(yaw,     Eigen::Vector3d::UnitZ());
+
+        // Depending on your convention, verify the rotation order:
+        // For example, if you want R = Rz * Ry * Rx:
+        Eigen::Matrix3d R = yawAngle.toRotationMatrix() *
+                            pitchAngle.toRotationMatrix() *
+                            rollAngle.toRotationMatrix();
+        return R;
+    }
+
+    Eigen::Affine3d buildCameraToVehicleTF(const std::array<double, 6>& tf)
+    {
+        // tf = {tx, ty, tz, roll, pitch, yaw}
+        double tx    = tf[0];
+        double ty    = tf[1];
+        double tz    = tf[2];
+        double roll  = tf[3];
+        double pitch = tf[4];
+        double yaw   = tf[5];
+
+        Eigen::Matrix3d R_cv = euler2rot(roll, pitch, yaw);
+        Eigen::Vector3d t_cv(tx, ty, tz);
+
+        // Construct an Affine3d
+        Eigen::Affine3d T_cv = Eigen::Affine3d::Identity();
+        T_cv.linear() = R_cv;
+        T_cv.translation() = t_cv;
+
+        return T_cv;
+    }
+    Eigen::Vector2d estimate_object_pose2d_new(double x, double y, double yaw,
+                                       double x1, double y1, double x2, double y2,
+                                       double object_distance,
+                                       const std::array<double, 4>& camera_params,
+                                       bool is_car = false)
+    {
+        static double parallel_w2h_ratio = 1.30;
+        static double perpendicular_w2h_ratio = 2.70;
+
         if (is_car) {
             double car_pixel_w2h_ratio = std::abs((x2 - x1) / (y2 - y1));
             // std::cout << "car_pixel_w2h_ratio: " << car_pixel_w2h_ratio << std::endl;
@@ -339,38 +461,35 @@ public:
         double x_norm = (bbox_center_x - cx) / fx;
         double y_norm = (bbox_center_y - cy) / fy;
 
-        // Add distance from camera to robot center
-        object_distance += CAMERA_POSE.x;
-
         // Estimate 3D coordinates in the camera frame
         double X_c = x_norm * object_distance;
         double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
-
-        // 3D point in the camera frame
+        
         Eigen::Vector3d P_c(X_c, Y_c, Z_c);
+        // 3) Transform from camera frame to vehicle frame using REALSENSE_TF
+        static const auto T_cv = buildCameraToVehicleTF(REALSENSE_TF);
+        Eigen::Vector3d P_v = T_cv.linear() * P_c + T_cv.translation();
 
-        // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
-        Eigen::Vector3d P_v(Z_c, -X_c, 0);
-
-        // Rotation matrix from vehicle to world coordinates
+        // 4) Convert from vehicle frame to world frame (2D)
+        //    We only keep (x, y) for a ground-plane assumption.
+        //    (P_v[0], P_v[1]) is the vehicle x-y plane in your chosen forward/left coordinate system
         Eigen::Matrix2d R_vw;
         R_vw << std::cos(yaw), -std::sin(yaw),
-                std::sin(yaw), std::cos(yaw);
+                std::sin(yaw),  std::cos(yaw);
 
-        // Translate to world coordinates
         Eigen::Vector2d vehicle_pos(x, y);
         Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
-        Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
 
+        Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
         return world_coordinates;
     }
-    Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, const std::array<double, 4>& bounding_box, double object_distance, const std::array<double, 4>& camera_params, bool is_car = false) {
+    Eigen::Vector2d estimate_object_pose2d_new(double x, double y, double yaw, const std::array<double, 4>& bounding_box, double object_distance, const std::array<double, 4>& camera_params, bool is_car = false) {
         double x1 = bounding_box[0];
         double y1 = bounding_box[1];
         double x2 = bounding_box[2];
         double y2 = bounding_box[3];
-        return estimate_object_pose2d(x, y, yaw, x1, y1, x2, y2, object_distance, camera_params, is_car);
+        return estimate_object_pose2d_new(x, y, yaw, x1, y1, x2, y2, object_distance, camera_params, is_car);
     }
     
     void send_speed(float f_velocity) {
@@ -400,9 +519,10 @@ public:
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         if (serial == nullptr) {
-            debug("send_speed_and_steer: Serial is null", 2);
+            debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
+        if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
@@ -492,6 +612,7 @@ public:
         if (debugLevel >= level) {
             debug_msg.data = message;
             message_pub.publish(debug_msg);
+            if (tcp_client != nullptr) tcp_client->send_message(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
     }
