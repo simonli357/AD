@@ -145,26 +145,31 @@ namespace drivers{
         const float MAX_ERROR = 50.0f;  // degrees
 
         // Retrieve current speed in m/s
-        float c_speed = 0.01f * m_speedingControl.getSpeed();
+        float c_speed = 0.01 * m_speedingControl.getSpeed();
 
         // Calculate time step
         PID_timer.stop();
-        auto raw_elapsed_time = PID_timer.elapsed_time(); // Raw time in nanoseconds
-        printf("Raw elapsed time: %lld ns\n", raw_elapsed_time.count());
+        auto raw_elapsed_time = PID_timer.elapsed_time(); // Raw time in microoseconds
+        printf("Raw elapsed time: %lld us\n", raw_elapsed_time.count());
 
-        float time_step = raw_elapsed_time.count() * 1e-9; // Convert nanoseconds to seconds
+        float time_step = raw_elapsed_time.count() * 1e-6; // Convert microoseconds to seconds
         printf("Time step: %f seconds\n", time_step);
 
         PID_timer.reset();
         PID_timer.start();
 
-        printf("Time step: %f\n", time_step);
-
         // Compute yaw rate and cumulative yaw
-        float yaw_rate = (c_speed / WHEELBASE) * tan(m_desiredSteer * M_PI / 180.0f);
+        float yaw_rate = (c_speed / WHEELBASE) * (tan(m_desiredSteer * M_PI / 180.0f) * 180 / M_PI);
+        printf("Yaw rate: %f\n", yaw_rate);
         yaw_calc += yaw_rate * time_step;
+
+        // Keep the yaw beteween 0 and 360
         if(yaw_calc > 360.0f) yaw_calc -= 360.0f;
+        if(yaw_calc < 0.0f) yaw_calc += 360.0f;
+
+        printf("Current speed : %f\n", c_speed);
         printf("Yaw calc: %f\n", yaw_calc);
+        printf("Yaw IMU: %f\n", imu_yaw);
 
         // Compute error
         float error = yaw_calc - imu_yaw;
@@ -184,8 +189,10 @@ namespace drivers{
         previous_error = error;
 
         // Adjust steering
-        newSteer = - (m_desiredSteer + m_proportional * error + m_integral * integral + m_derivative * derivative);
+        newSteer =  m_desiredSteer + (m_proportional * error + m_integral * integral + m_derivative * derivative);
+
         m_currentSteer = newSteer;
+
         printf("Current Steer: %f\n", newSteer);
         printf("Desired Steer: %f\n", m_desiredSteer);
 
@@ -230,24 +237,24 @@ namespace drivers{
         // Zero default when returning from a right turn
         ZD_right = 0.0763;
         // Function to calculate the positive angle (LEFT TURN)
-        if(f_angle > 0)
+        if(f_angle < 0)
         {
             // Update quadratic function parameters
             alpha = -20697;
             beta = 1815.5;
             gamma = -17.982;
             // Compute the dutyCycle 
-            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
+            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
         // Function to calculate the negative angles (RIGHT TURN)
-        if(f_angle < 0)
+        if(f_angle > 0)
         {
             // Update quadratic function parameters
             alpha = -22406;
             beta = 4884.5;
             gamma = -245.36;
             // Compute the dutyCycle 
-            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
+            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
         }
         // Special case if we want to reset to 0 and set the car to go straight
         if(f_angle == 0)
