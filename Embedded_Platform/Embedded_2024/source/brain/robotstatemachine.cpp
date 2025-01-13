@@ -205,7 +205,7 @@ namespace brain{
 
             m_state = 1;
 
-            m_speedingControl.setSpeed(-l_speed); // Set the reference speed
+            m_speedingControl.CalculateSpeed(l_speed); // Set the reference speed
             // m_steeringControl.setAngle(l_angle); // control the steering angle
             pwmValue = m_steeringControl.CalculateAngle(l_angle);
             m_steeringControl.PWMAngle(pwmValue);

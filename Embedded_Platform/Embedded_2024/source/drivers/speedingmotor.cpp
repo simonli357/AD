@@ -84,7 +84,8 @@ namespace drivers{
         return m_currentSpeed;
     }
 
-    /**
+    /** 
+     * MODIFIED FUNCTION BY MALO
      * @brief   Calculates the speed of the car based on experimentally defined equation
      * @param   f_speed speed the car will go at in cm/s
      */
@@ -123,6 +124,7 @@ namespace drivers{
         m_pwm_pin.write(dutyCycle);
         m_currentDutyCycle = dutyCycle;
         m_currentSpeed = f_speed;
+        printf("Speed has been set: %f\n", m_currentSpeed);
     }
 
     /** @brief  It modifies the speed reference of the brushless motor, which controls the speed of the wheels. 
