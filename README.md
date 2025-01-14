@@ -19,6 +19,10 @@ tbd
 #### Installation:
 http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html
 
+### Gazebo Simulator With RC Car and Track:
+#### Installation:
+https://github.com/simonli357/Simulator
+
 ### opencv (version 4.6.0 or above)
 #### Installation:
 
