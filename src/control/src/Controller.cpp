@@ -154,8 +154,8 @@ public:
         return 1;
     }
     int start() {
-        // change_state(STATE::MOVING);
-        change_state(STATE::TESTING);
+        change_state(STATE::MOVING);
+        // change_state(STATE::TESTING);
         return 1;
     }
     bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
@@ -1511,8 +1511,10 @@ void StateMachine::run() {
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             }
+            bool is_car = false;
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::CAR);
+                is_car = true;
             }
             if (sign_index < 0) {
                 std::cout << "No sign detected, stopping..." << std::endl;
@@ -1520,9 +1522,10 @@ void StateMachine::run() {
             }
             double detected_dist1 = utils.object_distance(sign_index);
             std::cout << "detected_dist: " << detected_dist1 << std::endl;
-            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS);
+            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS, is_car);
             ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
             ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
+            ROS_INFO("Relative pose: (%.2f, %.2f)", sign_pose1[0] - x_current[0], sign_pose1[1] - x_current[1]);
             // estimated: (4.49, 1.30), actual: (4.51, 1.35)
             // estimated: (4.49, 1.57), actual: (4.51, 1.62)
             // estimated: (4.8, 1.57), actual: (4.8, 1.62)
@@ -1532,8 +1535,6 @@ void StateMachine::run() {
             // new
             // estimated: (4.5, 1.39), actual: (4.52, 1.47)
             // estimated: (4.8, 1.54), actual: (4.8, 1.62)
-            auto sign_pose_new = utils.estimate_object_pose2d_new(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS);
-            ROS_INFO("sign_pose_new: (%.2f, %.2f)", sign_pose_new[0], sign_pose_new[1]);
             rate->sleep();
             continue;
         }
