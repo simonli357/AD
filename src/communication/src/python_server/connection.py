@@ -71,7 +71,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.rgb_images = img_msg
+            self.rgb_image = img_msg
         except Exception as e:
             print(e)
 
@@ -79,7 +79,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.depth_images = img_msg
+            self.depth_image = img_msg
         except Exception as e:
             print(e)
 

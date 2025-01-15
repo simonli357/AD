@@ -6,7 +6,7 @@ import numpy as np
 import os
 import math
 import rospy
-from server import Server
+from python_server.server import Server
 from std_srvs.srv import Trigger, TriggerResponse
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
 from PyQt5.QtCore import Qt, QTimer, QPointF
