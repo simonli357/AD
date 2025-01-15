@@ -39,7 +39,7 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	bool alive = true;
-    bool canSend = false;
+	bool canSend = false;
 	sockaddr_in address;
 	int client_socket;
 	std::thread receive;
