@@ -48,7 +48,8 @@ include_directories(
 
 ## Declare a C++ library
 file(GLOB SOURCES src/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES})
+file(GLOB SERVICES src/service_calls/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES})
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/communication.cpp
 # )
