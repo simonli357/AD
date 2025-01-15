@@ -2,7 +2,7 @@ import socket
 import time
 import struct
 import threading
-from connection import Connection
+from python_server.connection import Connection
 
 
 class Server:
@@ -21,6 +21,7 @@ class Server:
             threading.Thread(target=self.process_client, args=(client_socket,), daemon=True).start()
             num_clients += 1
             if num_clients == 2:
+                # while not (self.signs_node_client):
                 while not (self.utility_node_client and self.signs_node_client):
                     time.sleep(0.1)
                 break

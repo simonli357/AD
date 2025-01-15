@@ -25,6 +25,8 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
 )
 
+catkin_python_setup()
+
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES communication
@@ -87,10 +89,10 @@ add_library(${PROJECT_NAME} ${SOURCES})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/server.py
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+  src/python_server/server.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
