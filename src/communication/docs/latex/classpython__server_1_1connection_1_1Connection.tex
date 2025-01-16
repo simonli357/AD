@@ -1,0 +1,97 @@
+\doxysection{python\+\_\+server.\+connection.\+Connection Class Reference}
+\hypertarget{classpython__server_1_1connection_1_1Connection}{}\label{classpython__server_1_1connection_1_1Connection}\index{python\_server.connection.Connection@{python\_server.connection.Connection}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_ae211951217801bd7b131b457922d198b}\label{classpython__server_1_1connection_1_1Connection_ae211951217801bd7b131b457922d198b} 
+{\bfseries \+\_\+\+\_\+init\+\_\+\+\_\+} (self, client\+\_\+socket)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a7fc4069658142700583c054d50e8bb53}\label{classpython__server_1_1connection_1_1Connection_a7fc4069658142700583c054d50e8bb53} 
+{\bfseries recvall} (self, length)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_aaf5a92972077648b3e56ff917d4c0d33}\label{classpython__server_1_1connection_1_1Connection_aaf5a92972077648b3e56ff917d4c0d33} 
+{\bfseries receive} (self)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a2c6b445b3749cd7fd25ebf5763856fd1}\label{classpython__server_1_1connection_1_1Connection_a2c6b445b3749cd7fd25ebf5763856fd1} 
+{\bfseries send\+\_\+string} (self, str)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a5e66fba1feaf3c4b6adee6337a9451ed}\label{classpython__server_1_1connection_1_1Connection_a5e66fba1feaf3c4b6adee6337a9451ed} 
+{\bfseries parse\+\_\+string} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_aa94bff74463966266a41f683f8fa5195}\label{classpython__server_1_1connection_1_1Connection_aa94bff74463966266a41f683f8fa5195} 
+{\bfseries parse\+\_\+image\+\_\+rgb} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_ae0121affde08b5ad263df6a9554c2cc1}\label{classpython__server_1_1connection_1_1Connection_ae0121affde08b5ad263df6a9554c2cc1} 
+{\bfseries parse\+\_\+image\+\_\+depth} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a881d58df04c74f7a2c61c6257dd64892}\label{classpython__server_1_1connection_1_1Connection_a881d58df04c74f7a2c61c6257dd64892} 
+{\bfseries parse\+\_\+road\+\_\+object} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a24f2398a30c4d4097a48420f700f7708}\label{classpython__server_1_1connection_1_1Connection_a24f2398a30c4d4097a48420f700f7708} 
+{\bfseries parse\+\_\+waypoint} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a026a9fa4bf261eb54f4e0fd58fbb4b04}\label{classpython__server_1_1connection_1_1Connection_a026a9fa4bf261eb54f4e0fd58fbb4b04} 
+{\bfseries parse\+\_\+sign} (self, data)
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a324a3c53279f91a410e5e21abcd95924}\label{classpython__server_1_1connection_1_1Connection_a324a3c53279f91a410e5e21abcd95924} 
+{\bfseries parse\+\_\+message} (self, data)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a84c4415f12ff6f664a9b400f3b7c74a7}\label{classpython__server_1_1connection_1_1Connection_a84c4415f12ff6f664a9b400f3b7c74a7} 
+{\bfseries socket} = client\+\_\+socket
+\item 
+\mbox{\hyperlink{classpython__server_1_1connection_1_1Connection_a6aa6307dda561119552d60e18664dcc2}{data\+\_\+actions}}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_aa6bb9ae36c7adfcbd24bbe7710d9a3e1}\label{classpython__server_1_1connection_1_1Connection_aa6bb9ae36c7adfcbd24bbe7710d9a3e1} 
+{\bfseries types} = list(self.\+data\+\_\+actions.\+keys())
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_abc9c03a5de17268f07ec8bb6ca6e3ea8}\label{classpython__server_1_1connection_1_1Connection_abc9c03a5de17268f07ec8bb6ca6e3ea8} 
+list {\bfseries strings} = \mbox{[}$\,$\mbox{]}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_ae93b476caa5cddd09fc8667f4a057cd1}\label{classpython__server_1_1connection_1_1Connection_ae93b476caa5cddd09fc8667f4a057cd1} 
+{\bfseries rgb\+\_\+image} = None
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a93dabc35ae52e3a3785f6809e16e8658}\label{classpython__server_1_1connection_1_1Connection_a93dabc35ae52e3a3785f6809e16e8658} 
+{\bfseries depth\+\_\+image} = None
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a975700a0799dbda86fe758b31b693340}\label{classpython__server_1_1connection_1_1Connection_a975700a0799dbda86fe758b31b693340} 
+list {\bfseries road\+\_\+objects} = \mbox{[}$\,$\mbox{]}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a01a90c4fde6460fe6cdda9c8f643d118}\label{classpython__server_1_1connection_1_1Connection_a01a90c4fde6460fe6cdda9c8f643d118} 
+list {\bfseries waypoints} = \mbox{[}$\,$\mbox{]}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_aa5c0cdb849a711d791bd693f74cd8583}\label{classpython__server_1_1connection_1_1Connection_aa5c0cdb849a711d791bd693f74cd8583} 
+list {\bfseries signs} = \mbox{[}$\,$\mbox{]}
+\item 
+\Hypertarget{classpython__server_1_1connection_1_1Connection_ac0ffea04eb8a2d6f8001efe41c15974e}\label{classpython__server_1_1connection_1_1Connection_ac0ffea04eb8a2d6f8001efe41c15974e} 
+list {\bfseries messages} = \mbox{[}$\,$\mbox{]}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Data Documentation}
+\Hypertarget{classpython__server_1_1connection_1_1Connection_a6aa6307dda561119552d60e18664dcc2}\index{python\_server.connection.Connection@{python\_server.connection.Connection}!data\_actions@{data\_actions}}
+\index{data\_actions@{data\_actions}!python\_server.connection.Connection@{python\_server.connection.Connection}}
+\doxysubsubsection{\texorpdfstring{data\_actions}{data\_actions}}
+{\footnotesize\ttfamily \label{classpython__server_1_1connection_1_1Connection_a6aa6307dda561119552d60e18664dcc2} 
+python\+\_\+server.\+connection.\+Connection.\+data\+\_\+actions}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=\ \ OrderedDict(\{}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x01'}:\ self.parse\_string,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x02'}:\ self.parse\_image\_rgb,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x03'}:\ self.parse\_image\_depth,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x04'}:\ self.parse\_road\_object,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x05'}:\ self.parse\_waypoint,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x06'}:\ self.parse\_sign,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \ \ \ \ b\textcolor{stringliteral}{'\(\backslash\)x07'}:\ self.parse\_message,}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \})}
+
+\end{DoxyCode}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+src/python\+\_\+server/connection.\+py\end{DoxyCompactItemize}

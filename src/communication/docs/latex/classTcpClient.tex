@@ -1,0 +1,59 @@
+\doxysection{Tcp\+Client Class Reference}
+\hypertarget{classTcpClient}{}\label{classTcpClient}\index{TcpClient@{TcpClient}}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{classTcpClient_a183163c9840b66e9a3ee6cdb84149112}\label{classTcpClient_a183163c9840b66e9a3ee6cdb84149112} 
+{\bfseries Tcp\+Client} (const char \texorpdfstring{$\ast$}{*}server\+\_\+ip, const uint16\+\_\+t server\+\_\+port, const size\+\_\+t buffer\+\_\+size)
+\item 
+\Hypertarget{classTcpClient_a6b0706df97ba66680e8bc938869ee7cf}\label{classTcpClient_a6b0706df97ba66680e8bc938869ee7cf} 
+{\bfseries Tcp\+Client} (const size\+\_\+t buffer\+\_\+size, const char \texorpdfstring{$\ast$}{*}client\+\_\+type)
+\item 
+\Hypertarget{classTcpClient_ab04a6686ef3921553fe62dd3caf1d4cc}\label{classTcpClient_ab04a6686ef3921553fe62dd3caf1d4cc} 
+{\bfseries Tcp\+Client} (\mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \&\&)=default
+\item 
+\Hypertarget{classTcpClient_a95a206edbfae444885ea84dcf2219d8f}\label{classTcpClient_a95a206edbfae444885ea84dcf2219d8f} 
+{\bfseries Tcp\+Client} (const \mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \&)=delete
+\item 
+\Hypertarget{classTcpClient_ac34bf31f7d830df8bc99c909866884b1}\label{classTcpClient_ac34bf31f7d830df8bc99c909866884b1} 
+\mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \& {\bfseries operator=} (\mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \&\&)=delete
+\item 
+\Hypertarget{classTcpClient_ad721fd4248d5b6ded15ba827d96a7c86}\label{classTcpClient_ad721fd4248d5b6ded15ba827d96a7c86} 
+\mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \& {\bfseries operator=} (const \mbox{\hyperlink{classTcpClient}{Tcp\+Client}} \&)=delete
+\item 
+\Hypertarget{classTcpClient_a5439dfeebca0865fd1f7128eaf4286fe}\label{classTcpClient_a5439dfeebca0865fd1f7128eaf4286fe} 
+void {\bfseries initialize} ()
+\item 
+\Hypertarget{classTcpClient_a2f7ce5e68dac5ae8da2fa6b626f4f491}\label{classTcpClient_a2f7ce5e68dac5ae8da2fa6b626f4f491} 
+std\+::queue$<$ std\+::string $>$ \& {\bfseries get\+\_\+strings} ()
+\item 
+\Hypertarget{classTcpClient_a240f2b886c81730941cd06d1ccf97bc6}\label{classTcpClient_a240f2b886c81730941cd06d1ccf97bc6} 
+void {\bfseries send\+\_\+type} (const std\+::string \&str)
+\item 
+\Hypertarget{classTcpClient_af030911b073ae0ad1fc3e7e3eac11af9}\label{classTcpClient_af030911b073ae0ad1fc3e7e3eac11af9} 
+void {\bfseries send\+\_\+string} (const std\+::string \&str)
+\item 
+\Hypertarget{classTcpClient_a7bb906a8f10d25addf4aca003e796524}\label{classTcpClient_a7bb906a8f10d25addf4aca003e796524} 
+void {\bfseries send\+\_\+image\+\_\+rgb} (const sensor\+\_\+msgs\+::\+Image \&img)
+\item 
+\Hypertarget{classTcpClient_a401bb77f2f3a4379ef5e86e9d9c31d09}\label{classTcpClient_a401bb77f2f3a4379ef5e86e9d9c31d09} 
+void {\bfseries send\+\_\+image\+\_\+depth} (const sensor\+\_\+msgs\+::\+Image \&img)
+\item 
+\Hypertarget{classTcpClient_a3cbe2ff11243a6fd875a07b4e6c5877e}\label{classTcpClient_a3cbe2ff11243a6fd875a07b4e6c5877e} 
+void {\bfseries send\+\_\+road\+\_\+object} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\item 
+\Hypertarget{classTcpClient_ab34bba75628a4300bcc62c6afc291a4b}\label{classTcpClient_ab34bba75628a4300bcc62c6afc291a4b} 
+void {\bfseries send\+\_\+waypoint} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\item 
+\Hypertarget{classTcpClient_a6b1074db64eb9ee2fe7a485ca7b4e9fe}\label{classTcpClient_a6b1074db64eb9ee2fe7a485ca7b4e9fe} 
+void {\bfseries send\+\_\+sign} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\item 
+\Hypertarget{classTcpClient_ab7dc7b88bae9f955718e9109fd970d10}\label{classTcpClient_ab7dc7b88bae9f955718e9109fd970d10} 
+void {\bfseries send\+\_\+message} (const std\+\_\+msgs\+::\+String \&msg)
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Tcp\+Client.\+hpp\item 
+src/Tcp\+Client.\+cpp\end{DoxyCompactItemize}
