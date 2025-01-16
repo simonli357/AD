@@ -1,0 +1,31 @@
+\doxysection{Encoder.\+hpp}
+\hypertarget{Encoder_8hpp_source}{}\label{Encoder_8hpp_source}\index{include/Encoder.hpp@{include/Encoder.hpp}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#include\ "{}std\_msgs/Float32MultiArray.h"{}}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classEncoder}{Encoder}}\ \{}
+\DoxyCodeLine{00006\ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00007\ \ \ \ \ \mbox{\hyperlink{classEncoder}{Encoder}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00008\ \ \ \ \ \mbox{\hyperlink{classEncoder}{Encoder}}(\mbox{\hyperlink{classEncoder}{Encoder}}\ \&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00009\ \ \ \ \ \mbox{\hyperlink{classEncoder}{Encoder}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classEncoder}{Encoder}}\ \&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00010\ \ \ \ \ \mbox{\hyperlink{classEncoder}{Encoder}}\ \&operator=(\mbox{\hyperlink{classEncoder}{Encoder}}\ \&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00011\ \ \ \ \ \mbox{\hyperlink{classEncoder}{Encoder}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{classEncoder}{Encoder}}\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{classEncoder}{\string~Encoder}}()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \ \ \ \ std::vector<uint8\_t>\ serialize();}
+\DoxyCodeLine{00015\ \ \ \ \ std::vector<uint8\_t>\ serializeFloat32MultiArray(std\_msgs::Float32MultiArray\ \&array);}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00018\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ header\_size\ =\ 5;}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ message\_size\ =\ 4;}
+\DoxyCodeLine{00020\ \ \ \ \ uint8\_t\ data\_type;}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{virtual}\ uint32\_t\ compute\_lengths\_length();\ \textcolor{comment}{//\ Size\ of\ lengths\ array}}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{virtual}\ uint32\_t\ compute\_data\_length();\ \ \ \ \textcolor{comment}{//\ Size\ of\ data}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{virtual}\ std::vector<uint8\_t>\ get\_lengths();}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keyword}{virtual}\ std::vector<uint8\_t>\ get\_data();}
+\DoxyCodeLine{00025\ \};}
+
+\end{DoxyCode}
