@@ -5,12 +5,14 @@
 #include <netinet/in.h>
 #include <vector>
 
+Encoder::Encoder(uint8_t &data_type) : data_type(data_type) {}
+
 std::vector<uint8_t> Encoder::serializeFloat32MultiArray(std_msgs::Float32MultiArray &array) {
-    uint32_t length = ros::serialization::serializationLength(array);
+	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> data(length);
 	ros::serialization::OStream stream(data.data(), length);
 	ros::serialization::serialize(stream, array);
-    return data;
+	return data;
 }
 
 std::vector<uint8_t> Encoder::serialize() {

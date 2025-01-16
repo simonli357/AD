@@ -1,10 +1,12 @@
+#pragma once
+
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
 #include <vector>
 
 class Encoder {
   public:
-	Encoder() = default;
+	Encoder(uint8_t &data_type);
 	Encoder(Encoder &&) = default;
 	Encoder(const Encoder &) = default;
 	Encoder &operator=(Encoder &&) = delete;
