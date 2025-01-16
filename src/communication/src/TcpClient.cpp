@@ -1,6 +1,10 @@
 #include "TcpClient.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
+#include "service_calls/GoToCmdSrvResponse.hpp"
+#include "service_calls/GoToSrvResponse.hpp"
+#include "service_calls/SrvRequest.hpp"
+#include "service_calls/WaypointsSrvResponse.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
 #include <arpa/inet.h>
@@ -17,30 +21,18 @@ TcpClient::TcpClient(const char *server_ip, const uint16_t server_port, const si
 	address.sin_family = AF_INET;
 	address.sin_port = htons(server_port);
 	inet_pton(AF_INET, server_ip, &address.sin_addr);
-	data_types.push_back(0x01); // std::string
-	data_types.push_back(0x02); // Image rgb
-	data_types.push_back(0x03); // Image depth
-	data_types.push_back(0x04); // Road Objects
-	data_types.push_back(0x05); // Waypoints
-	data_types.push_back(0x06); // Signs
-	data_types.push_back(0x07); // Messages
-	data_actions[data_types[0]] = &TcpClient::parse_string;
+	set_data_types();
+	set_data_actions();
 	receive = std::thread(&TcpClient::initialize, this);
 }
 
 TcpClient::TcpClient(const size_t buffer_size, const char *client_type) : buffer_size(buffer_size), client_type(client_type) {
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
-	address.sin_port = htons(49153);					// Default port
+	address.sin_port = htons(49153); // Default port
+	set_data_types();
+	set_data_actions();
 	inet_pton(AF_INET, "127.0.0.1", &address.sin_addr); // Default address
-	data_types.push_back(0x01);							// std::string
-	data_types.push_back(0x02);							// Image rgb
-	data_types.push_back(0x03);							// Image depth
-	data_types.push_back(0x04);							// Road Objects
-	data_types.push_back(0x05);							// Waypoints
-	data_types.push_back(0x06);							// Signs
-	data_types.push_back(0x07);							// Messages
-	data_actions[data_types[0]] = &TcpClient::parse_string;
 	receive = std::thread(&TcpClient::initialize, this);
 }
 
@@ -52,6 +44,28 @@ TcpClient::~TcpClient() {
 	if (receive.joinable()) {
 		receive.join();
 	}
+}
+
+void TcpClient::set_data_types() {
+	data_types.push_back(0x01); // std::string
+	data_types.push_back(0x02); // Image rgb
+	data_types.push_back(0x03); // Image depth
+	data_types.push_back(0x04); // Road Objects
+	data_types.push_back(0x05); // Waypoints
+	data_types.push_back(0x06); // Signs
+	data_types.push_back(0x07); // Messages
+	data_types.push_back(0x08); // GoToSrv
+	data_types.push_back(0x09); // GoToCmdSrv
+	data_types.push_back(0x0A); // SetStatesSrv
+	data_types.push_back(0x0B); // WaypointsSrv
+}
+
+void TcpClient::set_data_actions() {
+	data_actions[data_types[0]] = &TcpClient::parse_string;			// std::string
+	data_actions[data_types[7]] = &TcpClient::parse_go_to_srv;		// GoToSrv
+	data_actions[data_types[8]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
+	data_actions[data_types[9]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
+	data_actions[data_types[10]] = &TcpClient::parse_waypoints_srv; // SetStatesSrv
 }
 
 void TcpClient::initialize() {
@@ -105,17 +119,29 @@ void TcpClient::listen() {
 	}
 }
 
+// ------------------- //
+// Data Storage
+// ------------------- //
+
 std::queue<std::string> &TcpClient::get_strings() { return strings; }
+std::queue<SrvRequest::GoToSrv> &TcpClient::get_go_to_srv_msgs() { return go_to_srv_msgs; }
+std::queue<SrvRequest::GoToCmdSrv> &TcpClient::get_go_to_cmd_srv_msgs() { return go_to_cmd_srv_msgs; }
+std::queue<SrvRequest::SetStatesSrv> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
+std::queue<SrvRequest::WaypointsSrv> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
+
+// ------------------- //
+// Encoding
+// ------------------- //
 
 void TcpClient::send_type(const std::string &str) {
-    uint32_t length = str.size();
-    uint32_t big_endian_length = htonl(length);
-    size_t total_size = header_size + length;
-    std::vector<uint8_t> full_message(total_size);
-    std::memcpy(full_message.data(), &big_endian_length, message_size);
-    full_message[4] = data_types[0];
-    std::memcpy(full_message.data() + header_size, str.data(), length);
-    send(client_socket, full_message.data(), full_message.size(), 0);
+	uint32_t length = str.size();
+	uint32_t big_endian_length = htonl(length);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> full_message(total_size);
+	std::memcpy(full_message.data(), &big_endian_length, message_size);
+	full_message[4] = data_types[0];
+	std::memcpy(full_message.data() + header_size, str.data(), length);
+	send(client_socket, full_message.data(), full_message.size(), 0);
 }
 
 void TcpClient::send_string(const std::string &str) {
@@ -227,12 +253,66 @@ void TcpClient::send_message(const std_msgs::String &msg) {
 	}
 }
 
-void TcpClient::parse_string(std::vector<uint8_t> &data) {
-	std::string decoded_string(data.begin(), data.end());
+void TcpClient::send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {
+	if (canSend) {
+		std::vector<uint8_t> bytes = GoToSrvResponse(data_types[7], state_refs, input_refs, wp_attributes, wp_normals).serialize();
+		send(client_socket, bytes.data(), bytes.size(), 0);
+	}
+}
+
+void TcpClient::send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success) {
+	if (canSend) {
+		std::vector<uint8_t> bytes = GoToCmdSrvResponse(data_types[8], state_refs, input_refs, wp_attributes, wp_normals, success).serialize();
+		send(client_socket, bytes.data(), bytes.size(), 0);
+	}
+}
+
+void TcpClient::send_set_states_srv(bool success) {
+	if (canSend) {
+		uint32_t length = sizeof(success);
+		uint32_t big_endian_length = htonl(length);
+		size_t total_size = header_size + length;
+		std::vector<uint8_t> full_message(total_size);
+		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		full_message[4] = data_types[9];
+		full_message[5] = static_cast<uint8_t>(success);
+		send(client_socket, full_message.data(), full_message.size(), 0);
+	}
+}
+
+void TcpClient::send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {
+	if (canSend) {
+		std::vector<uint8_t> bytes = WaypointsSrvResponse(data_types[10], state_refs, input_refs, wp_attributes, wp_normals).serialize();
+		send(client_socket, bytes.data(), bytes.size(), 0);
+	}
+}
+
+// ------------------- //
+// Decoding
+// ------------------- //
+
+void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
+	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "ack") {
 		canSend = true;
-        std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
+		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}
 	strings.push(decoded_string);
+}
+
+void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) {
+    go_to_srv_msgs.push(SrvRequest(bytes).parse_go_to_srv());
+}
+
+void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
+    go_to_cmd_srv_msgs.push(SrvRequest(bytes).parse_go_to_cmd_srv());
+}
+
+void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
+    set_states_srv_msgs.push(SrvRequest(bytes).parse_set_states_srv());
+}
+
+void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
+    waypoints_srv_msgs.push(SrvRequest(bytes).parse_waypoints_srv());
 }
