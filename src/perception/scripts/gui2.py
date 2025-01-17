@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import threading
+import time
 import sys
 import cv2
 import pandas as pd
@@ -8,20 +10,19 @@ import math
 import rospy
 from python_server.server import Server
 from std_srvs.srv import Trigger, TriggerResponse
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
-from PyQt5.QtCore import Qt, QTimer, QPointF
-from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
-from std_msgs.msg import Float32MultiArray, String
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
 from std_srvs.srv import SetBool, SetBoolRequest
 from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandRequest, set_states, set_statesRequest
 from utils.msg import Lane2
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
 
 
 class OpenCVGuiApp(QWidget):
-    def __init__(self):
+    def __init__(self, server):
         super().__init__()
+        self.server = server
         self.current_zoom = 1.0
         self.min_zoom = 1.0
 
@@ -1124,10 +1125,7 @@ class OpenCVGuiApp(QWidget):
             )
 
 
-def callbacks(gui):
-    import time
-    server = Server(49153)
-    server.initialize()
+def callbacks(gui, server):
     while True:
         # Image rgb
         if server.signs_node_client.rgb_image is not None:
@@ -1152,9 +1150,10 @@ def callbacks(gui):
 
 
 if __name__ == '__main__':
-    import threading
+    server = Server(49153)
+    server.initialize()
     app = QApplication(sys.argv)
-    window = OpenCVGuiApp()
-    threading.Thread(target=callbacks, args=(window,), daemon=True).start()
+    window = OpenCVGuiApp(server)
+    threading.Thread(target=callbacks, args=(window, server,), daemon=True).start()
     window.show()
     sys.exit(app.exec_())
