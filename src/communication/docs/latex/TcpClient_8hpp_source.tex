@@ -4,55 +4,83 @@
 \begin{DoxyCode}{0}
 \DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
 \DoxyCodeLine{00002\ }
-\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}std\_msgs/Float32MultiArray.h"{}}}
-\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}std\_msgs/String.h"{}}}
-\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <cstdint>}}
-\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <functional>}}
-\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <netinet/in.h>}}
-\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <queue>}}
-\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <sensor\_msgs/Image.h>}}
-\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <thread>}}
-\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <vector>}}
-\DoxyCodeLine{00012\ }
-\DoxyCodeLine{00013\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \{}
-\DoxyCodeLine{00014\ \ \ \textcolor{keyword}{public}:}
-\DoxyCodeLine{00015\ \ \ \ \ \textcolor{comment}{//\ Constructors}}
-\DoxyCodeLine{00016\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *server\_ip,\ \textcolor{keyword}{const}\ uint16\_t\ server\_port,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size);}
-\DoxyCodeLine{00017\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *client\_type);}
-\DoxyCodeLine{00018\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&\&)\ =\ \textcolor{keywordflow}{default};}
-\DoxyCodeLine{00019\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&)\ =\ \textcolor{keyword}{delete};}
-\DoxyCodeLine{00020\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&operator=(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&\&)\ =\ \textcolor{keyword}{delete};}
-\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&)\ =\ \textcolor{keyword}{delete};}
-\DoxyCodeLine{00022\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{\string~TcpClient}}();}
-\DoxyCodeLine{00023\ \ \ \ \ \textcolor{comment}{//\ Methods}}
-\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{void}\ initialize();}
-\DoxyCodeLine{00025\ \ \ \ \ std::queue<std::string>\ \&get\_strings();}
-\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_type(\textcolor{keyword}{const}\ std::string\ \&str);}
-\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_string(\textcolor{keyword}{const}\ std::string\ \&str);}
-\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_image\_rgb(\textcolor{keyword}{const}\ sensor\_msgs::Image\ \&img);}
-\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_image\_depth(\textcolor{keyword}{const}\ sensor\_msgs::Image\ \&img);}
-\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_road\_object(\textcolor{keyword}{const}\ std\_msgs::Float32MultiArray\ \&array);}
-\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_waypoint(\textcolor{keyword}{const}\ std\_msgs::Float32MultiArray\ \&array);}
-\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_sign(\textcolor{keyword}{const}\ std\_msgs::Float32MultiArray\ \&array);}
-\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_message(\textcolor{keyword}{const}\ std\_msgs::String\ \&msg);}
-\DoxyCodeLine{00034\ }
-\DoxyCodeLine{00035\ \ \ \textcolor{keyword}{private}:}
-\DoxyCodeLine{00036\ \ \ \ \ \textcolor{comment}{//\ Fields}}
-\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *client\_type\ =\ \textcolor{keyword}{nullptr};}
-\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size;}
-\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ header\_size\ =\ 5;}
-\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ message\_size\ =\ 4;}
-\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{bool}\ alive\ =\ \textcolor{keyword}{true};}
-\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{bool}\ canSend\ =\ \textcolor{keyword}{false};}
-\DoxyCodeLine{00043\ \ \ \ \ sockaddr\_in\ address;}
-\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{int}\ client\_socket;}
-\DoxyCodeLine{00045\ \ \ \ \ std::thread\ receive;}
-\DoxyCodeLine{00046\ \ \ \ \ std::map<uint8\_t,\ std::function<void(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ *,\ std::vector<uint8\_t>\ \&)>>\ data\_actions;}
-\DoxyCodeLine{00047\ \ \ \ \ std::vector<uint8\_t>\ data\_types;}
-\DoxyCodeLine{00048\ \ \ \ \ std::queue<std::string>\ strings;}
-\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//\ Methods}}
-\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{void}\ listen();}
-\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_string(std::vector<uint8\_t>\ \&data);}
-\DoxyCodeLine{00052\ \};}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}service\_calls/SrvRequest.hpp"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}std\_msgs/Float32MultiArray.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}std\_msgs/String.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <cstdint>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <netinet/in.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <queue>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <sensor\_msgs/Image.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <sys/types.h>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <thread>}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{using\ }sensor\_msgs::Image;}
+\DoxyCodeLine{00016\ \textcolor{keyword}{using\ }std\_msgs::Float32MultiArray;}
+\DoxyCodeLine{00017\ \textcolor{keyword}{using\ }std\_msgs::String;}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \{}
+\DoxyCodeLine{00020\ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{comment}{//\ Constructors}}
+\DoxyCodeLine{00022\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *server\_ip,\ \textcolor{keyword}{const}\ uint16\_t\ server\_port,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size);}
+\DoxyCodeLine{00023\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *client\_type);}
+\DoxyCodeLine{00024\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&\&)\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00025\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&operator=(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&\&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00027\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&operator=(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTcpClient}{TcpClient}}\ \&)\ =\ \textcolor{keyword}{delete};}
+\DoxyCodeLine{00028\ \ \ \ \ \mbox{\hyperlink{classTcpClient}{\string~TcpClient}}();}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ Methods}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{void}\ initialize();}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ Storage}}
+\DoxyCodeLine{00032\ \ \ \ \ std::queue<std::string>\ \&get\_strings();}
+\DoxyCodeLine{00033\ \ \ \ \ std::queue<SrvRequest::GoToSrv>\ \&get\_go\_to\_srv\_msgs();}
+\DoxyCodeLine{00034\ \ \ \ \ std::queue<SrvRequest::GoToCmdSrv>\ \&get\_go\_to\_cmd\_srv\_msgs();}
+\DoxyCodeLine{00035\ \ \ \ \ std::queue<SrvRequest::SetStatesSrv>\ \&get\_set\_states\_srv\_msgs();}
+\DoxyCodeLine{00036\ \ \ \ \ std::queue<SrvRequest::WaypointsSrv>\ \&get\_waypoints\_srv\_msgs();}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{comment}{//\ Encode}}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_type(\textcolor{keyword}{const}\ std::string\ \&str);}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_string(\textcolor{keyword}{const}\ std::string\ \&str);}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_image\_rgb(\textcolor{keyword}{const}\ Image\ \&img);}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_image\_depth(\textcolor{keyword}{const}\ Image\ \&img);}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_road\_object(\textcolor{keyword}{const}\ Float32MultiArray\ \&array);}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_waypoint(\textcolor{keyword}{const}\ Float32MultiArray\ \&array);}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_sign(\textcolor{keyword}{const}\ Float32MultiArray\ \&array);}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_message(\textcolor{keyword}{const}\ String\ \&msg);}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_go\_to\_srv(Float32MultiArray\ \&state\_refs,\ Float32MultiArray\ \&input\_refs,\ Float32MultiArray\ \&wp\_attributes,\ Float32MultiArray\ \&wp\_normals);}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_go\_to\_cmd\_srv(Float32MultiArray\ \&state\_refs,\ Float32MultiArray\ \&input\_refs,\ Float32MultiArray\ \&wp\_attributes,\ Float32MultiArray\ \&wp\_normals,\ \textcolor{keywordtype}{bool}\ success);}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_set\_states\_srv(\textcolor{keywordtype}{bool}\ success);}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{void}\ send\_waypoints\_srv(Float32MultiArray\ \&state\_refs,\ Float32MultiArray\ \&input\_refs,\ Float32MultiArray\ \&wp\_attributes,\ Float32MultiArray\ \&wp\_normals);}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{comment}{//\ Fields}}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *client\_type\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ buffer\_size;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ header\_size\ =\ 5;}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{size\_t}\ message\_size\ =\ 4;}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordtype}{bool}\ alive\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{bool}\ canSend\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00059\ \ \ \ \ sockaddr\_in\ address;}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{int}\ client\_socket;}
+\DoxyCodeLine{00061\ \ \ \ \ std::thread\ receive;}
+\DoxyCodeLine{00062\ \ \ \ \ std::map<uint8\_t,\ std::function<void(\mbox{\hyperlink{classTcpClient}{TcpClient}}\ *,\ std::vector<uint8\_t>\ \&)>>\ data\_actions;}
+\DoxyCodeLine{00063\ \ \ \ \ std::vector<uint8\_t>\ data\_types;}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{comment}{//\ Storage}}
+\DoxyCodeLine{00065\ \ \ \ \ std::queue<std::string>\ strings;}
+\DoxyCodeLine{00066\ \ \ \ \ std::queue<SrvRequest::GoToSrv>\ go\_to\_srv\_msgs;}
+\DoxyCodeLine{00067\ \ \ \ \ std::queue<SrvRequest::GoToCmdSrv>\ go\_to\_cmd\_srv\_msgs;}
+\DoxyCodeLine{00068\ \ \ \ \ std::queue<SrvRequest::SetStatesSrv>\ set\_states\_srv\_msgs;}
+\DoxyCodeLine{00069\ \ \ \ \ std::queue<SrvRequest::WaypointsSrv>\ waypoints\_srv\_msgs;}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{comment}{//\ Methods}}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keywordtype}{void}\ set\_data\_types();}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{void}\ set\_data\_actions();}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{void}\ listen();}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{comment}{//\ Decode}}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_string(std::vector<uint8\_t>\ \&bytes);}
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_go\_to\_srv(std::vector<uint8\_t>\ \&bytes);}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_go\_to\_cmd\_srv(std::vector<uint8\_t>\ \&bytes);}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_set\_states\_srv(std::vector<uint8\_t>\ \&bytes);}
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keywordtype}{void}\ parse\_waypoints\_srv(std::vector<uint8\_t>\ \&bytes);}
+\DoxyCodeLine{00080\ \};}
 
 \end{DoxyCode}

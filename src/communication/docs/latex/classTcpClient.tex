@@ -27,29 +27,53 @@ void {\bfseries initialize} ()
 \Hypertarget{classTcpClient_a2f7ce5e68dac5ae8da2fa6b626f4f491}\label{classTcpClient_a2f7ce5e68dac5ae8da2fa6b626f4f491} 
 std\+::queue$<$ std\+::string $>$ \& {\bfseries get\+\_\+strings} ()
 \item 
+\Hypertarget{classTcpClient_ab492d3bcb12459b0eeaaed1c0a0525a6}\label{classTcpClient_ab492d3bcb12459b0eeaaed1c0a0525a6} 
+std\+::queue$<$ \mbox{\hyperlink{structSrvRequest_1_1GoToSrv}{Srv\+Request\+::\+Go\+To\+Srv}} $>$ \& {\bfseries get\+\_\+go\+\_\+to\+\_\+srv\+\_\+msgs} ()
+\item 
+\Hypertarget{classTcpClient_a0d09ea2ba5170747a89fda4193fff3c6}\label{classTcpClient_a0d09ea2ba5170747a89fda4193fff3c6} 
+std\+::queue$<$ \mbox{\hyperlink{structSrvRequest_1_1GoToCmdSrv}{Srv\+Request\+::\+Go\+To\+Cmd\+Srv}} $>$ \& {\bfseries get\+\_\+go\+\_\+to\+\_\+cmd\+\_\+srv\+\_\+msgs} ()
+\item 
+\Hypertarget{classTcpClient_a9bdd964ce65ac165335a923955d49179}\label{classTcpClient_a9bdd964ce65ac165335a923955d49179} 
+std\+::queue$<$ \mbox{\hyperlink{structSrvRequest_1_1SetStatesSrv}{Srv\+Request\+::\+Set\+States\+Srv}} $>$ \& {\bfseries get\+\_\+set\+\_\+states\+\_\+srv\+\_\+msgs} ()
+\item 
+\Hypertarget{classTcpClient_acdae5e5c277561234c72635f205f3c81}\label{classTcpClient_acdae5e5c277561234c72635f205f3c81} 
+std\+::queue$<$ \mbox{\hyperlink{structSrvRequest_1_1WaypointsSrv}{Srv\+Request\+::\+Waypoints\+Srv}} $>$ \& {\bfseries get\+\_\+waypoints\+\_\+srv\+\_\+msgs} ()
+\item 
 \Hypertarget{classTcpClient_a240f2b886c81730941cd06d1ccf97bc6}\label{classTcpClient_a240f2b886c81730941cd06d1ccf97bc6} 
 void {\bfseries send\+\_\+type} (const std\+::string \&str)
 \item 
 \Hypertarget{classTcpClient_af030911b073ae0ad1fc3e7e3eac11af9}\label{classTcpClient_af030911b073ae0ad1fc3e7e3eac11af9} 
 void {\bfseries send\+\_\+string} (const std\+::string \&str)
 \item 
-\Hypertarget{classTcpClient_a7bb906a8f10d25addf4aca003e796524}\label{classTcpClient_a7bb906a8f10d25addf4aca003e796524} 
-void {\bfseries send\+\_\+image\+\_\+rgb} (const sensor\+\_\+msgs\+::\+Image \&img)
+\Hypertarget{classTcpClient_a1946419baae9254e7e02c9a1a061918b}\label{classTcpClient_a1946419baae9254e7e02c9a1a061918b} 
+void {\bfseries send\+\_\+image\+\_\+rgb} (const Image \&img)
 \item 
-\Hypertarget{classTcpClient_a401bb77f2f3a4379ef5e86e9d9c31d09}\label{classTcpClient_a401bb77f2f3a4379ef5e86e9d9c31d09} 
-void {\bfseries send\+\_\+image\+\_\+depth} (const sensor\+\_\+msgs\+::\+Image \&img)
+\Hypertarget{classTcpClient_ab5f27e310f7c75b38ce3211196e575d3}\label{classTcpClient_ab5f27e310f7c75b38ce3211196e575d3} 
+void {\bfseries send\+\_\+image\+\_\+depth} (const Image \&img)
 \item 
-\Hypertarget{classTcpClient_a3cbe2ff11243a6fd875a07b4e6c5877e}\label{classTcpClient_a3cbe2ff11243a6fd875a07b4e6c5877e} 
-void {\bfseries send\+\_\+road\+\_\+object} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\Hypertarget{classTcpClient_abf137691b8152ebfa3a4792d94ada90b}\label{classTcpClient_abf137691b8152ebfa3a4792d94ada90b} 
+void {\bfseries send\+\_\+road\+\_\+object} (const Float32\+Multi\+Array \&array)
 \item 
-\Hypertarget{classTcpClient_ab34bba75628a4300bcc62c6afc291a4b}\label{classTcpClient_ab34bba75628a4300bcc62c6afc291a4b} 
-void {\bfseries send\+\_\+waypoint} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\Hypertarget{classTcpClient_a019ada2ffc33eefcaf3e732e588b441c}\label{classTcpClient_a019ada2ffc33eefcaf3e732e588b441c} 
+void {\bfseries send\+\_\+waypoint} (const Float32\+Multi\+Array \&array)
 \item 
-\Hypertarget{classTcpClient_a6b1074db64eb9ee2fe7a485ca7b4e9fe}\label{classTcpClient_a6b1074db64eb9ee2fe7a485ca7b4e9fe} 
-void {\bfseries send\+\_\+sign} (const std\+\_\+msgs\+::\+Float32\+Multi\+Array \&array)
+\Hypertarget{classTcpClient_a11655dd623dc1cdbb8063f6857427a20}\label{classTcpClient_a11655dd623dc1cdbb8063f6857427a20} 
+void {\bfseries send\+\_\+sign} (const Float32\+Multi\+Array \&array)
 \item 
-\Hypertarget{classTcpClient_ab7dc7b88bae9f955718e9109fd970d10}\label{classTcpClient_ab7dc7b88bae9f955718e9109fd970d10} 
-void {\bfseries send\+\_\+message} (const std\+\_\+msgs\+::\+String \&msg)
+\Hypertarget{classTcpClient_a45ff1cb286838c883c8bbf9e1eaa7184}\label{classTcpClient_a45ff1cb286838c883c8bbf9e1eaa7184} 
+void {\bfseries send\+\_\+message} (const String \&msg)
+\item 
+\Hypertarget{classTcpClient_a79390bd804e89e769136edc3acc07296}\label{classTcpClient_a79390bd804e89e769136edc3acc07296} 
+void {\bfseries send\+\_\+go\+\_\+to\+\_\+srv} (Float32\+Multi\+Array \&state\+\_\+refs, Float32\+Multi\+Array \&input\+\_\+refs, Float32\+Multi\+Array \&wp\+\_\+attributes, Float32\+Multi\+Array \&wp\+\_\+normals)
+\item 
+\Hypertarget{classTcpClient_acb26e880ae2c2dd9d79b4cc2ae168fd5}\label{classTcpClient_acb26e880ae2c2dd9d79b4cc2ae168fd5} 
+void {\bfseries send\+\_\+go\+\_\+to\+\_\+cmd\+\_\+srv} (Float32\+Multi\+Array \&state\+\_\+refs, Float32\+Multi\+Array \&input\+\_\+refs, Float32\+Multi\+Array \&wp\+\_\+attributes, Float32\+Multi\+Array \&wp\+\_\+normals, bool success)
+\item 
+\Hypertarget{classTcpClient_ae7e649185f0fc1516f4bcd3a2cdadbbd}\label{classTcpClient_ae7e649185f0fc1516f4bcd3a2cdadbbd} 
+void {\bfseries send\+\_\+set\+\_\+states\+\_\+srv} (bool success)
+\item 
+\Hypertarget{classTcpClient_ad300787c63cfe02b3bf2331880305339}\label{classTcpClient_ad300787c63cfe02b3bf2331880305339} 
+void {\bfseries send\+\_\+waypoints\+\_\+srv} (Float32\+Multi\+Array \&state\+\_\+refs, Float32\+Multi\+Array \&input\+\_\+refs, Float32\+Multi\+Array \&wp\+\_\+attributes, Float32\+Multi\+Array \&wp\+\_\+normals)
 \end{DoxyCompactItemize}
 
 

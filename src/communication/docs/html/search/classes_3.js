@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['server_0',['Server',['../classpython__server_1_1server_1_1Server.html',1,'python_server::server']]],
-  ['srvresponse_1',['SrvResponse',['../classSrvResponse.html',1,'']]]
+  ['gotocmdsrv_0',['GoToCmdSrv',['../classgo__to__cmd__srv_1_1GoToCmdSrv.html',1,'go_to_cmd_srv.GoToCmdSrv'],['../structSrvRequest_1_1GoToCmdSrv.html',1,'SrvRequest::GoToCmdSrv']]],
+  ['gotocmdsrvresponse_1',['GoToCmdSrvResponse',['../classGoToCmdSrvResponse.html',1,'']]],
+  ['gotosrv_2',['GoToSrv',['../classgo__to__srv_1_1GoToSrv.html',1,'go_to_srv.GoToSrv'],['../structSrvRequest_1_1GoToSrv.html',1,'SrvRequest::GoToSrv']]],
+  ['gotosrvresponse_3',['GoToSrvResponse',['../classGoToSrvResponse.html',1,'']]]
 ];
