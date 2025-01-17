@@ -2,7 +2,7 @@ import encoder
 import struct
 
 
-class GoToSrv:
+class SetStatesSrv:
     def __init__(self, data_type):
         self.bytes_length = 4
         self.num_elements = 2
