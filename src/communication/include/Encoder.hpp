@@ -11,7 +11,7 @@ class Encoder {
 	Encoder(const Encoder &) = default;
 	Encoder &operator=(Encoder &&) = delete;
 	Encoder &operator=(const Encoder &) = delete;
-	~Encoder() = default;
+	virtual ~Encoder() = default;
 
 	std::vector<uint8_t> serialize();
 	std::vector<uint8_t> serializeFloat32MultiArray(std_msgs::Float32MultiArray &array);

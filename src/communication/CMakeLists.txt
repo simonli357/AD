@@ -42,6 +42,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  include/service_calls
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )

@@ -41,3 +41,11 @@ std::vector<uint8_t> Encoder::serialize() {
 
 	return full_message;
 }
+
+uint32_t Encoder::compute_lengths_length() { return 0; }
+
+uint32_t Encoder::compute_data_length() { return 0; }
+
+std::vector<uint8_t> Encoder::get_lengths() { return {}; }
+
+std::vector<uint8_t> Encoder::get_data() { return {}; }

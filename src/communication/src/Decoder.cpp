@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <vector>
 
+Decoder::Decoder(std::vector<uint8_t> &bytes): bytes(bytes) {}
+
 std::vector<std::vector<uint8_t>> Decoder::split() {
 	uint32_t lengths_length = 0;
 	std::memcpy(&lengths_length, &bytes[0], bytes_length);
