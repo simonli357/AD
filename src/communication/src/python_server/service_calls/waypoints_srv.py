@@ -4,7 +4,7 @@ import struct
 from std_msgs.msg import Float32MultiArray
 
 
-class GoToSrv:
+class WaypointsSrv:
     def __init__(self, data_type):
         self.bytes_length = 4
         self.num_elements = 5

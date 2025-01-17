@@ -1,10 +1,13 @@
 import threading
-import time
 import struct
 from collections import OrderedDict
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
+from service_calls.go_to_srv import GoToSrv
+from service_calls.go_to_cmd_srv import GoToCmdSrv
+from service_calls.set_states_srv import SetStatesSrv
+from service_calls.waypoints_srv import WaypointsSrv
 
 
 class Connection:
@@ -19,6 +22,10 @@ class Connection:
             b'\x05': self.parse_waypoint,
             b'\x06': self.parse_sign,
             b'\x07': self.parse_message,
+            b'\x08': self.parse_go_to_srv,
+            b'\x09': self.parse_go_to_cmd_srv,
+            b'\x0A': self.parse_set_states_srv,
+            b'\x0B': self.parse_waypoints_srv
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
@@ -28,6 +35,10 @@ class Connection:
         self.waypoints = []
         self.signs = []
         self.messages = []
+        self.go_to_srv_msg = GoToSrv(b'\x08')
+        self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
+        self.set_states_srv_msg = SetStatesSrv(b'\x0A')
+        self.waypoints_srv_msg = WaypointsSrv(b'\x0B')
         threading.Thread(target=self.receive, daemon=True).start()
         self.send_string("ack")
 
@@ -64,53 +75,93 @@ class Connection:
         bytes = length + self.types[0] + data
         self.socket.sendall(bytes)
 
-    def parse_string(self, data):
-        self.strings.append(data.decode('utf-8'))
+    def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
+        bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
+        self.socket.sendall(bytes)
 
-    def parse_image_rgb(self, data):
+    def send_go_to_cmd_srv(self, dest_x, dest_y):
+        bytes = self.go_to_cmd_srv_msg.encode(dest_x, dest_y)
+        self.socket.sendall(bytes)
+
+    def send_set_states_srv(self, x, y):
+        bytes = self.set_states_srv_msg.encode(x, y)
+        self.socket.sendall(bytes)
+
+    def send_waypoints_srv(self, pathName, vrefName, x0, y0, yaw0):
+        bytes = self.waypoints_srv_msg.encode(pathName, vrefName, x0, y0, yaw0)
+        self.socket.sendall(bytes)
+
+    def parse_string(self, bytes):
+        self.strings.append(bytes.decode('utf-8'))
+
+    def parse_image_rgb(self, bytes):
         try:
             img_msg = Image()
-            img_msg.deserialize(data)
+            img_msg.deserialize(bytes)
             self.rgb_image = img_msg
         except Exception as e:
             print(e)
 
-    def parse_image_depth(self, data):
+    def parse_image_depth(self, bytes):
         try:
             img_msg = Image()
-            img_msg.deserialize(data)
+            img_msg.deserialize(bytes)
             self.depth_image = img_msg
         except Exception as e:
             print(e)
 
-    def parse_road_object(self, data):
+    def parse_road_object(self, bytes):
         try:
             float32_array = Float32MultiArray()
-            float32_array.deserialize(data)
+            float32_array.deserialize(bytes)
             self.road_objects.append(float32_array)
         except Exception as e:
             print(e)
 
-    def parse_waypoint(self, data):
+    def parse_waypoint(self, bytes):
         try:
             float32_array = Float32MultiArray()
-            float32_array.deserialize(data)
+            float32_array.deserialize(bytes)
             self.waypoints.append(float32_array)
         except Exception as e:
             print(e)
 
-    def parse_sign(self, data):
+    def parse_sign(self, bytes):
         try:
             float32_array = Float32MultiArray()
-            float32_array.deserialize(data)
+            float32_array.deserialize(bytes)
             self.signs.append(float32_array)
         except Exception as e:
             print(e)
 
-    def parse_message(self, data):
+    def parse_message(self, bytes):
         try:
             msg = String()
-            msg.deserialize(data)
+            msg.deserialize(bytes)
             self.messages.append(msg)
+        except Exception as e:
+            print(e)
+
+    def parse_go_to_srv(self, bytes):
+        try:
+            self.go_to_srv_msg.decode(bytes)
+        except Exception as e:
+            print(e)
+
+    def parse_go_to_cmd_srv(self, bytes):
+        try:
+            self.go_to_cmd_srv_msg.decode(bytes)
+        except Exception as e:
+            print(e)
+
+    def parse_set_states_srv(self, bytes):
+        try:
+            self.set_states_srv_msg.decode(bytes)
+        except Exception as e:
+            print(e)
+
+    def parse_waypoints_srv(self, bytes):
+        try:
+            self.waypoints_srv_msg.decode(bytes)
         except Exception as e:
             print(e)
