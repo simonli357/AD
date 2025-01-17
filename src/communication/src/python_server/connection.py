@@ -4,10 +4,10 @@ from collections import OrderedDict
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
-from service_calls.go_to_srv import GoToSrv
-from service_calls.go_to_cmd_srv import GoToCmdSrv
-from service_calls.set_states_srv import SetStatesSrv
-from service_calls.waypoints_srv import WaypointsSrv
+from python_server.service_calls.go_to_srv import GoToSrv
+from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
+from python_server.service_calls.set_states_srv import SetStatesSrv
+from python_server.service_calls.waypoints_srv import WaypointsSrv
 
 
 class Connection:

@@ -1,4 +1,4 @@
-import encoder
+from python_server import encoder
 import struct
 
 
