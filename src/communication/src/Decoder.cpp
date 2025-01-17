@@ -17,10 +17,10 @@ std::vector<std::vector<uint8_t>> Decoder::split() {
 		// Get the size of the element
 		size_t s = (i + 1) * bytes_length;
 		uint32_t size = 0;
-		std::memcpy(&size, &bytes[s], bytes_length);
+		std::memcpy(&size, &bytes[s - 1], bytes_length);
 		size = ntohl(size);
 		// Read the data and append
-		size_t start = lengths_length + offset;
+		size_t start = lengths_length - 1 + offset;
 		std::vector<uint8_t> split(size);
 		std::memcpy(split.data(), &bytes[start], size);
 		splits[i] = std::move(split);
