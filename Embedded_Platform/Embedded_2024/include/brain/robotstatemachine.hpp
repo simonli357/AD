@@ -70,6 +70,7 @@ namespace brain
             void serialCallbackSTEERcommand(char const * a, char * b);
             /* Serial callback method for braking */
             void serialCallbackBRAKEcommand(char const * a, char * b);
+            void serialCallbackPIDcommand(char const * a, char * b);
 
         private:
             /* Contains the state machine, which control the lower level drivers (motor and steering) based the current state. */
