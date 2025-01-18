@@ -23,7 +23,7 @@ periodics::CImu g_imu(0.1 / g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
 drivers::CSpeedingMotor g_speedingDriver(D3, -50.0, 50.0); //speed in cm/s
 
 //PIN for angle in servo degrees, inferior and superior limit
-drivers::CSteeringMotor g_steeringDriver(D4, -25.0, 25.0, g_imu);
+drivers::CSteeringMotor g_steeringDriver(0.1 / g_baseTick, g_rpi, D4, -25.0, 25.0, g_imu, g_speedingDriver);
 
 // Task responsible for configuring the vehicle's speed and steering over a specified duration.
 drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
@@ -45,7 +45,8 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     {"9",mbed::callback(&g_velocityControlDuration, &drivers::CVelocityControlDuration::serialCallbackVCDCommand)},
     // Callback for the PWM input command
     {"10",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPWMcommand)},
-    {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)}
+    {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
+    {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)}
 };
 
 // Create the serial monitor object, which decodes, redirects the messages and transmits the responses.
@@ -59,7 +60,8 @@ utils::CTask* g_taskList[] = {
     &g_imu,
     &g_robotstatemachine,
     &g_velocityControlDuration,
-    &g_serialMonitor
+    &g_serialMonitor,
+    &g_steeringDriver
 }; 
 
 // Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 
