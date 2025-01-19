@@ -559,19 +559,16 @@ class OpenCVGuiApp(QWidget):
         rospy.wait_for_service('goto_command', timeout=5)
         print("service found, calling service...")
         try:
-            goto_service = rospy.ServiceProxy('goto_command', goto_command)
-            req = goto_commandRequest()
-            req.dest_x = x
-            req.dest_y = y
-
-            res = goto_service(req)
-            if not res.success:
-                print("Failed to send goto command")
-            self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
-            self.attributes_np = np.array(res.wp_attributes.data)
-            print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+            self.server.utility_node_client.send_go_to_cmd_srv(x, y)
+            while (True):
+                if (len(self.server.utility_node_client.go_to_cmd_srv_msg.state_refs.data) > 0):
+                    res = self.server.utility_node_client.go_to_cmd_srv_msg
+                    self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+                    self.attributes_np = np.array(res.wp_attributes.data)
+                    break
+                time.sleep(0.01)
+        except Exception as e:
+            raise e
 
     def call_set_states_service(self, x=None, y=None):
         print("set states service called, waiting for service...")
