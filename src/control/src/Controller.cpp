@@ -85,6 +85,7 @@ public:
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
         utils.debug("state machine initialized", 2);
+
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -126,7 +127,22 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {0, 0};
 
-
+    void receive_go_to_cmd() {
+        while(true) {
+            if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
+                double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_x;
+                double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_y;
+                utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
+                utils::goto_command::Request req;
+                utils::goto_command::Response res;
+                req.dest_x = x;
+                req.dest_y = y;
+                goto_command_callback(req, res);
+                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
@@ -1531,6 +1547,7 @@ int main(int argc, char **argv) {
     if(vref>30) vref = 35.;
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
+    std::thread t(&StateMachine::receive_go_to_cmd, &sm);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
