@@ -530,7 +530,7 @@ public:
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
-        strs << "#" << "8" << ":" << buff;
+        strs << "#" << "11" << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }
