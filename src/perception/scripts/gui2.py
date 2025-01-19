@@ -560,13 +560,17 @@ class OpenCVGuiApp(QWidget):
         print("service found, calling service...")
         try:
             self.server.utility_node_client.send_go_to_cmd_srv(x, y)
-            while (True):
+            max_retries = 50
+            retries = 0
+            while (retries < max_retries):
                 if (len(self.server.utility_node_client.go_to_cmd_srv_msg.state_refs.data) > 0):
                     res = self.server.utility_node_client.go_to_cmd_srv_msg
                     self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.attributes_np = np.array(res.wp_attributes.data)
-                    break
-                time.sleep(0.01)
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to send go to cmd")
         except Exception as e:
             raise e
 
@@ -575,20 +579,20 @@ class OpenCVGuiApp(QWidget):
         rospy.wait_for_service('set_states', timeout=5)
         print("service found, calling service...")
         try:
-            set_states_service = rospy.ServiceProxy('set_states', set_states)
-            req = set_statesRequest()
             if x is not None and y is not None:
-                req.x = x
-                req.y = y
+                self.server.utility_node_client.send_set_states_srv(x, y)
             else:
-                req.x = -200
-                req.y = -200
-            res = set_states_service(req)
-            if not res.success:
-                print("Failed to send set states command")
-            print("Set_states service call successful. shape: ", self.state_refs_np.shape)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+                self.server.utility_node_client.send_set_states_srv(-200, -200)
+            max_retries = 50
+            retries = 0
+            while (retries < max_retries):
+                if self.server.utility_node_client.set_states_srv_msg.success:
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to set states")
+        except Exception as e:
+            raise e
 
     def call_start_service(self, start):
         print("service call")
