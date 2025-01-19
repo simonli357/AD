@@ -1,4 +1,6 @@
 import socket
+import signal
+import sys
 import time
 import struct
 import threading
@@ -13,6 +15,7 @@ class Server:
         self.signs_node_client = None
 
     def initialize(self):
+        signal.signal(signal.SIGINT, self.handle_signal)
         self.server_socket.bind(('', self.port))
         self.server_socket.listen(2)
         num_clients = 0
@@ -26,6 +29,12 @@ class Server:
                     time.sleep(0.1)
                 break
         print("All clients are connected.")
+
+    def handle_signal(self, signal, frame):
+        print("Caught SIGINT (Ctrl+C), closing socket...")
+        if self.server_socket:
+            self.server_socket.close()
+        sys.exit(0)
 
     def get_client_type(self, socket):
         header_size = 5

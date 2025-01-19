@@ -127,7 +127,7 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {0, 0};
 
-    void receive_go_to_cmd() {
+    void receive_services() {
         while(true) {
             if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_x;
@@ -139,6 +139,17 @@ public:
                 req.dest_y = y;
                 goto_command_callback(req, res);
                 utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+            }
+            if(utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
+                double x = utils.tcp_client->get_set_states_srv_msgs().front().x;
+                double y = utils.tcp_client->get_set_states_srv_msgs().front().y;
+                utils.tcp_client->get_set_states_srv_msgs().pop();
+                utils::set_states::Request req;
+                utils::set_states::Response res;
+                req.x = x;
+                req.y = y;
+                set_states_callback(req, res);
+                utils.tcp_client->send_set_states_srv(true);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -1547,7 +1558,7 @@ int main(int argc, char **argv) {
     if(vref>30) vref = 35.;
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
-    std::thread t(&StateMachine::receive_go_to_cmd, &sm);
+    std::thread t(&StateMachine::receive_services, &sm);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
