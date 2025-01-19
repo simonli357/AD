@@ -22,6 +22,7 @@ class Server:
             num_clients += 1
             if num_clients == 2:
                 while not (self.utility_node_client and self.signs_node_client):
+                # while not (self.signs_node_client):
                     time.sleep(0.1)
                 break
         print("All clients are connected.")

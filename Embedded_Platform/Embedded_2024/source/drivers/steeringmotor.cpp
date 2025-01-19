@@ -1,7 +1,10 @@
 #include <drivers/steeringmotor.hpp>
 #include <periodics/imu.hpp>
 #include <cmath>
-
+#include <mbed.h>
+#include <speedingmotor.hpp>
+#include <utils/task.hpp>
+#include <chrono>
 
 namespace drivers{
     /**
@@ -12,23 +15,33 @@ namespace drivers{
      * @param f_sup_limit         superior limit
      * 
      */
+
+    // Create timer for timing time_step on PID task
+    Timer PID_timer;
+
     CSteeringMotor::CSteeringMotor(
+            uint32_t f_period,
+            UnbufferedSerial&  f_serialPort,
             PinName f_pwm_pin, 
             float f_inf_limit, 
             float f_sup_limit,
-            periodics::CImu& f_imu
+            periodics::CImu& f_imu,
+            drivers::CSpeedingMotor& f_speedingControl
+
         )
-        :m_pwm_pin(f_pwm_pin)
-        ,m_inf_limit(f_inf_limit)
-        ,m_sup_limit(f_sup_limit)
-        ,m_imu(f_imu)
+        : utils::CTask(f_period)
+        , m_serialPort(f_serialPort)
+        , m_pwm_pin(f_pwm_pin)
+        , m_inf_limit(f_inf_limit)
+        , m_sup_limit(f_sup_limit)
+        , m_imu(f_imu)
+        , m_speedingControl(f_speedingControl)
     {
         // Set the ms_period on the pwm_pin
         m_pwm_pin.period_ms(ms_period); 
         // Set position to zero   
         m_pwm_pin.write(zero_default);
     };
-
 
     /** @brief  CSteeringMotor class destructor
      */
@@ -55,7 +68,8 @@ namespace drivers{
         // If steering is within the bounds of the first positive and negative reference values
         if(steering <= steeringValueP[0]){
             if (steering >= steeringValueN[0])
-            {
+            {const float g_baseTick = 0.0001; // seconds
+
                 return {stepValues[0], zeroDefaultValues[0]};
             }
             else{
@@ -102,6 +116,7 @@ namespace drivers{
      *
      *  @param f_angle      angle degree, where the positive value means right direction and negative value the left direction. 
      */
+
     void CSteeringMotor::setAngle(float f_angle)
     {
         std::pair<float, float> interpolationResult;
@@ -111,7 +126,83 @@ namespace drivers{
         zero_default = interpolationResult.second;
 
         m_pwm_pin.write(conversion(f_angle));
+        m_desiredSteer = f_angle;
+        m_currentDutyCycle = conversion(f_angle);
     };
+
+    /**
+     * MODIFIED FUNCTION BY MALO
+     * @brief PID to adjust steering angle using feedback from IMU
+     */
+    void CSteeringMotor::steerPID() {
+        static float yaw_calc = 0.0f;
+        static float integral = 0.0f;
+        static float previous_error = 0.0f;
+        float newSteer = 0.0f;
+        float newDutyCycle = 0.0f;
+
+        const float WHEELBASE = 0.260f; // meters
+        const float MAX_ERROR = 50.0f;  // degrees
+
+        // Retrieve current speed in m/s
+        float c_speed = 0.01 * m_speedingControl.getSpeed();
+
+        // Calculate time step
+        PID_timer.stop();
+        auto raw_elapsed_time = PID_timer.elapsed_time(); // Raw time in microoseconds
+        printf("Raw elapsed time: %lld us\n", raw_elapsed_time.count());
+
+        float time_step = raw_elapsed_time.count() * 1e-6; // Convert microoseconds to seconds
+        printf("Time step: %f seconds\n", time_step);
+
+        PID_timer.reset();
+        PID_timer.start();
+
+        // Compute yaw rate and cumulative yaw
+        float yaw_rate = (c_speed / WHEELBASE) * (tan(m_desiredSteer * M_PI / 180.0f) * 180 / M_PI);
+        printf("Yaw rate: %f\n", yaw_rate);
+        yaw_calc += yaw_rate * time_step;
+
+        // Keep the yaw beteween 0 and 360
+        if(yaw_calc > 360.0f) yaw_calc -= 360.0f;
+        if(yaw_calc < 0.0f) yaw_calc += 360.0f;
+
+        printf("Current speed : %f\n", c_speed);
+        printf("Yaw calc: %f\n", yaw_calc);
+        printf("Yaw IMU: %f\n", imu_yaw);
+
+        // Compute error
+        float error = yaw_calc - imu_yaw;
+        if(error > 180.0f) error -= 360.0f;
+        if(error < -180.0f) error += 360.0f;
+
+        printf("Error: %f\n", error);
+        // sprintf("Error: %f\n", error);
+        // if (std::abs(error) > MAX_ERROR) {
+        //     m_serialPort.write("Steering error too high\n", 24);
+        //     return;
+        // }
+
+        // PID control
+        integral += error * time_step;
+        float derivative = (error - previous_error) / time_step;
+        previous_error = error;
+
+        // Adjust steering
+        newSteer =  m_desiredSteer + (m_proportional * error + m_integral * integral + m_derivative * derivative);
+
+        m_currentSteer = newSteer;
+
+        printf("Current Steer: %f\n", newSteer);
+        printf("Desired Steer: %f\n", m_desiredSteer);
+
+        // Actuate steering
+        newDutyCycle = CalculateAngle(newSteer);
+        PWMAngle(newDutyCycle);
+
+        printf("Sent duty cycle: %f\n", newDutyCycle);
+
+    }
 
     /**
      * MODIFIED FUNCTION BY MALO
@@ -122,20 +213,21 @@ namespace drivers{
     {
         // Writes the PWM value to the PIN
         m_pwm_pin.write(f_PWM);
+        m_currentDutyCycle = f_PWM;
     };
 
     /**
      * MODIFIED FUNCTION BY MALO
-     * @brief Takes as input an angle to set the servo to a specified position
-     * @param f_angle angle to be given
+     * @brief Takes as input an angle and returns the PWM value to set servo to that position
+     * @param f_angle angle to be givenc
      * Computes the angle based on quadratic function, experimentally defined
      *  */    
-        void CSteeringMotor::CalculateAngle(float f_angle)
+        float CSteeringMotor::CalculateAngle(float f_angle)
     {
         // dutyCycle output value to the pin
         float dutyCycle = zero_default;
         // Previous input angle
-        static float prev_angle =0;
+        static float prev_angle = 0;
         // Quadratic function parameters
         float alpha = 0;
         float beta = 0;
@@ -145,24 +237,24 @@ namespace drivers{
         // Zero default when returning from a right turn
         ZD_right = 0.0763;
         // Function to calculate the positive angle (LEFT TURN)
-        if(f_angle > 0)
+        if(f_angle < 0)
         {
             // Update quadratic function parameters
             alpha = -20697;
             beta = 1815.5;
             gamma = -17.982;
             // Compute the dutyCycle 
-            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
+            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
         // Function to calculate the negative angles (RIGHT TURN)
-        if(f_angle < 0)
+        if(f_angle > 0)
         {
             // Update quadratic function parameters
             alpha = -22406;
             beta = 4884.5;
             gamma = -245.36;
             // Compute the dutyCycle 
-            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
+            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
         }
         // Special case if we want to reset to 0 and set the car to go straight
         if(f_angle == 0)
@@ -179,10 +271,20 @@ namespace drivers{
         }
         //Update the angle to remember
         prev_angle = f_angle;
-        // Write the output to the pin
-        m_pwm_pin.write(dutyCycle);
+        // Return the computed dutyCycle
+        return dutyCycle;
     };
 
+    /**
+     * MODIFIED FUNCTION by Malo
+     * @brief Sets the servo to a specified position
+     * @param f_dutyCycle Duty Cycle to set the servo position
+     */
+    void CSteeringMotor::setDutyCycle(float f_dutyCycle)
+    {
+        m_pwm_pin.write(f_dutyCycle);
+
+    }
     /** @brief  It converts angle degree to duty cycle for pwm signal. 
      * 
      *  @param f_angle    angle degree
@@ -192,7 +294,7 @@ namespace drivers{
     {
         return (step_value * f_angle + zero_default);
     };
-//
+
     /**
      * @brief It verifies whether a number is in a given range
      * 
@@ -205,6 +307,17 @@ namespace drivers{
     };
 
     void CSteeringMotor::setYaw(){
-        yaw = m_imu.getYaw();
+        imu_yaw = m_imu.getYaw();
     };
+
+    void CSteeringMotor::_run()
+    {
+        // Check to see if the PID is active, if not exit the function
+        if(!m_pidActive) return;
+        // Retrieve the yaw/heading value
+        setYaw();
+        // Call the PID function to adjust the steering angle
+        steerPID();
+        return;
+    }
 }; // namespace hardware::drivers
