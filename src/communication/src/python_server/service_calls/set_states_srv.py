@@ -10,7 +10,8 @@ class SetStatesSrv:
         self.success = False
 
     def decode(self, bytes):
-        self.success = struct.unpack('>?', bytes)
+        if bytes.decode('utf-8') == "true":
+            self.success = True
 
     def encode(self, x, y):
         data_bytes = []

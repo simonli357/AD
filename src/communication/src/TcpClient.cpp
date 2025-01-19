@@ -268,16 +268,11 @@ void TcpClient::send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiAr
 }
 
 void TcpClient::send_set_states_srv(bool success) {
-	if (canSend) {
-		uint32_t length = sizeof(success);
-		uint32_t big_endian_length = htonl(length);
-		size_t total_size = header_size + length;
-		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
-		full_message[4] = data_types[9];
-		full_message[5] = static_cast<uint8_t>(success);
-		send(client_socket, full_message.data(), full_message.size(), 0);
-	}
+    if(success) {
+        send_string("true");
+    } else {
+        send_string("false");
+    }
 }
 
 void TcpClient::send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {
