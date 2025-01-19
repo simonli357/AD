@@ -306,7 +306,7 @@ public:
         static double parallel_w2h_ratio = 1.30;
         static double perpendicular_w2h_ratio = 2.70;
 
-        std::cout << "object_distance1: " << object_distance << std::endl;
+        // std::cout << "object_distance1: " << object_distance << std::endl;
         if (is_car) {
             double car_pixel_w2h_ratio = std::abs((x2 - x1) / (y2 - y1));
             // std::cout << "car_pixel_w2h_ratio: " << car_pixel_w2h_ratio << std::endl;
@@ -330,7 +330,7 @@ public:
             // std::cout << "dist: " << dist << std::endl;
             object_distance += dist;
         }
-        std::cout << "object_distance2: " << object_distance << std::endl;
+        // std::cout << "object_distance2: " << object_distance << std::endl;
 
         // Extract camera parameters
         double fx = camera_params[0];
@@ -348,7 +348,9 @@ public:
 
         // Add distance from camera to robot center
         object_distance += CAMERA_POSE.x;
-        // object_distance -= (0.07 + 0.05);
+        // std::cout << "object_distance3: " << object_distance << std::endl;
+        object_distance -= (0.07 + 0.05);
+        if (is_car) object_distance += 0.05;
 
         // Estimate 3D coordinates in the camera frame
         double X_c = x_norm * object_distance;
@@ -369,6 +371,8 @@ public:
         // Translate to world coordinates
         Eigen::Vector2d vehicle_pos(x, y);
         Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+        // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;
+        // std::cout << "relative position: " << P_v_2d[0] << ", " << P_v_2d[1] << ", yaw:" << yaw<< std::endl;
         Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
 
         return world_coordinates;
@@ -526,7 +530,7 @@ public:
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
-        strs << "#" << "8" << ":" << buff;
+        strs << "#" << "11" << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }

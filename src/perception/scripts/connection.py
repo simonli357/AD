@@ -22,8 +22,8 @@ class Connection:
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
-        self.rgb_images = []
-        self.depth_images = []
+        self.rgb_images = None
+        self.depth_images = None
         self.road_objects = []
         self.waypoints = []
         self.signs = []
@@ -83,7 +83,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.rgb_images.append(img_msg)
+            self.rgb_images = img_msg
         except Exception as e:
             print(e)
 
@@ -91,7 +91,7 @@ class Connection:
         try:
             img_msg = Image()
             img_msg.deserialize(data)
-            self.depth_images.append(img_msg)
+            self.depth_images = img_msg
         except Exception as e:
             print(e)
 

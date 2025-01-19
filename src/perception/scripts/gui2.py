@@ -1130,23 +1130,25 @@ def callbacks(gui):
     server.initialize()
     while True:
         # Image rgb
-        if server.signs_node_client.rgb_images:
-            gui.camera_callback(server.signs_node_client.rgb_images.pop())
-        # Image depth
-        if server.signs_node_client.depth_images:
-            gui.depth_callback(server.signs_node_client.depth_images.pop())
-        # Road object
-        if server.utility_node_client.road_objects:
-            gui.road_objects_callback(server.utility_node_client.road_objects.pop())
-        # Waypoints
-        if server.utility_node_client.waypoints:
-            gui.waypoint_callback(server.utility_node_client.waypoints.pop())
-        # Signs
-        if server.signs_node_client.signs:
-            gui.sign_callback(server.signs_node_client.signs.pop())
-        # Messages
-        if server.utility_node_client.messages:
-            gui.message_callback(server.utility_node_client.messages.pop())
+        if server.signs_node_client is not None:
+            if server.signs_node_client.rgb_images is not None:
+                gui.camera_callback(server.signs_node_client.rgb_images)
+            # Image depth
+            if server.signs_node_client.depth_images is not None:
+                gui.depth_callback(server.signs_node_client.depth_images)
+            # Signs
+            if server.signs_node_client.signs is not None and len(server.signs_node_client.signs) > 0:
+                gui.sign_callback(server.signs_node_client.signs.pop())
+        if server.utility_node_client is not None:
+            # Road object
+            if server.utility_node_client.road_objects is not None and len(server.utility_node_client.road_objects) > 0:
+                gui.road_objects_callback(server.utility_node_client.road_objects.pop())
+            # Waypoints
+            if server.utility_node_client.waypoints is not None and len(server.utility_node_client.waypoints) > 0:
+                gui.waypoint_callback(server.utility_node_client.waypoints.pop())
+            # Messages
+            if server.utility_node_client.messages is not None and len(server.utility_node_client.messages) > 0:
+                gui.message_callback(server.utility_node_client.messages.pop())
 
         time.sleep(0.01)
 

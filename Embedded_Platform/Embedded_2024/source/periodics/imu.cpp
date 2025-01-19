@@ -756,11 +756,11 @@ namespace periodics{
     /**
      * FUNCTION ADDED BY MALO
      * @brief returns the current YAW measured by the IMU
+     * Return value of 500 means there was an error
      */
     float CImu::getYaw()
     {
-        if(!m_isActive) return;
-        char buffer[256];
+        if(!m_isActive) return 500;
         s32 comres = BNO055_SUCCESS;
 
         float converted_euler_h_deg = BNO055_INIT_VALUE;
@@ -770,7 +770,7 @@ namespace periodics{
 
         if(comres != BNO055_SUCCESS)
         {
-            return;
+            return 500;
         }
 
         return converted_euler_h_deg;

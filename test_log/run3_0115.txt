@@ -1,0 +1,483 @@
+roslaunch control controller.launch sign:=true lane:=true v:=25 
+... logging to /home/slsecret/.ros/log/55303f28-d3a8-11ef-8dff-f12b3cdd4cb2/roslaunch-slsecret-Alienware-x15-R2-556808.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+
+started roslaunch server http://localhost:34753/
+
+SUMMARY
+========
+
+PARAMETERS
+ * /N: 40
+ * /N_park: 49
+ * /T: 0.1
+ * /T_park: 0.05
+ * /constraints/delta_max: 0.3578
+ * /constraints/delta_min: -0.3578
+ * /constraints/v_max: 0.4
+ * /constraints/v_min: -0.4
+ * /constraints/v_ref: 0.25
+ * /constraints/x_max: 22.0
+ * /constraints/x_min: -1.0
+ * /constraints/y_max: 16.0
+ * /constraints/y_min: -1.0
+ * /constraints_park/delta_max: 0.4
+ * /constraints_park/delta_min: -0.4
+ * /constraints_park/v_max: 0.5
+ * /constraints_park/v_min: -0.5
+ * /constraints_park/v_ref: -0.5
+ * /constraints_park/x_max: 4
+ * /constraints_park/x_min: -4
+ * /constraints_park/y_max: 4
+ * /constraints_park/y_min: -4
+ * /costs/delta_steer_cost: 0.5
+ * /costs/delta_v_cost: 0.25
+ * /costs/steer_cost: 0.1
+ * /costs/v_cost: 1
+ * /costs/x_cost: 2
+ * /costs/y_cost: 2
+ * /costs/yaw_cost: 0.5
+ * /costs_park/delta_steer_cost: 0.0
+ * /costs_park/delta_v_cost: 0.0
+ * /costs_park/steer_cost: 0.05
+ * /costs_park/v_cost: 0.5
+ * /costs_park/x_cost: 1
+ * /costs_park/y_cost: 7
+ * /costs_park/yaw_cost: 1
+ * /dashboard: True
+ * /debug_level: 2
+ * /emergency: False
+ * /exit_thresh: 0.1
+ * /gps: False
+ * /hw: 1.33
+ * /kb: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/ekf: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/lane: True
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/name: car1
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/rate: 300
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/real: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/robot_name: car1
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/sign: True
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/subModel: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/vref: 0.25
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/x0: 4.76
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/y0: 2.706
+ * /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865/yaw0: -1.5708
+ * /name: mobile_robot_25
+ * /parallel_park: offset_x = 0.63 o...
+ * /park_thresh: 0.1
+ * /pathName: run3easy
+ * /pub_wpts: True
+ * /real/FAST_SPEED: 0.4
+ * /real/NORMAL_SPEED: 0.175
+ * /real/change_lane_offset_scaler: 0.9
+ * /real/change_lane_speed: 0.2
+ * /real/change_lane_thresh: 0.05
+ * /real/change_lane_yaw: 0.29
+ * /real/constant_distance_to_intersection_at_detection: 0.3725
+ * /real/cw_speed_ratio: 0.85
+ * /real/has_light: False
+ * /real/hw_speed_ratio: 1.25
+ * /real/intersection_localization_orientation_threshold: 15.0
+ * /real/intersection_localization_threshold: 0.753
+ * /real/intersection_relocalize: False
+ * /real/lane_localization_orientation_threshold: 7.53
+ * /real/lane_localization_threshold: 0.9
+ * /real/lane_relocalize: False
+ * /real/odom_rate: 50
+ * /real/parking_base_speed: -0.2
+ * /real/parking_base_thresh: 0.1
+ * /real/parking_base_yaw_target: 0.23
+ * /real/pedestrian_count_thresh: 8
+ * /real/pixel_center_offset: -30
+ * /real/sigma_delta: 10
+ * /real/sigma_v: 0.075
+ * /real/sign_localization_threshold: 0.753
+ * /real/sign_relocalize: False
+ * /real/stop_duration: 3.0
+ * /real/use_lane: False
+ * /real/use_stopline: True
+ * /realsense_imu: False
+ * /rosdistro: noetic
+ * /rosversion: 1.17.0
+ * /sim/FAST_SPEED: 0.4
+ * /sim/NORMAL_SPEED: 0.23
+ * /sim/change_lane_offset_scaler: 1.3
+ * /sim/change_lane_speed: 0.2
+ * /sim/change_lane_thresh: 0.05
+ * /sim/change_lane_yaw: 0.25
+ * /sim/constant_distance_to_intersection_at_detection: 0.3725
+ * /sim/cw_speed_ratio: 0.7143
+ * /sim/has_light: False
+ * /sim/hw_speed_ratio: 1.33
+ * /sim/intersection_localization_orientation_threshold: 15.0
+ * /sim/intersection_localization_threshold: 1.5
+ * /sim/intersection_relocalize: False
+ * /sim/lane_localization_orientation_threshold: 7.53
+ * /sim/lane_localization_threshold: 0.1
+ * /sim/lane_relocalize: False
+ * /sim/odom_rate: 50
+ * /sim/parking_base_speed: -0.2
+ * /sim/parking_base_thresh: 0.1
+ * /sim/parking_base_yaw_target: 0.29
+ * /sim/pedestrian_count_thresh: 8
+ * /sim/pixel_center_offset: -30
+ * /sim/sigma_delta: 10
+ * /sim/sigma_v: 0.075
+ * /sim/sign_localization_threshold: 0.75
+ * /sim/sign_relocalize: True
+ * /sim/stop_duration: 1.5
+ * /sim/use_lane: False
+ * /sim/use_stopline: True
+ * /use_tcp: False
+ * /vrefInt: 25
+ * /x0: 4.76
+ * /y0: 2.706
+ * /yaw0: -1.5708
+
+NODES
+  /
+    mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865 (control/controller)
+
+ROS_MASTER_URI=http://localhost:11311
+
+process[mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865-1]: started with pid [556853]
+node name: /mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865
+Successfully loaded parameters
+ekf: 0, sign: 1, T: 0.1, N: 40, vref: 0.25, real: 0
+Utility constructor
+[ INFO] [1736990572.386146410]: Utility constructor: TCP client not created.
+[ INFO] [1736990572.387201081]: Utility constructor: ERROR: Failed to open serial port: open: No such file or directory
+[ INFO] [1736990572.387950372]: ERROR: set pose service call failed
+[ INFO] [1736990572.389170425]: imu topic: /car1/imu
+[ INFO] [1736990572.389183053]: waiting for Imu message
+received message from Imu
+waiting for sign message
+received message from sign
+Path Manager Constructor
+v ref: 0.25, int:25
+MPC Constructor
+reference speed is 25 cm/s
+[ INFO] [1736990572.865769421, 4623.549000000]: mode: sim
+rate: 10
+[ INFO] [1736990572.870629652, 4623.553000000]: start_bool server ready, mpc time step T = 0.100000
+[ INFO] [1736990572.870657610, 4623.553000000]: state machine initialized
+[ INFO] [1736990572.870750935, 4623.554000000]: Utility node spinning at a rate of 300.000000
+imu initialized, intial yaw is -90 degrees
+[ INFO] [1736990572.870835758, 4623.554000000]: initialized in imu callback
+[ INFO] [1736990594.010393129, 4644.658000000]: start(): x=4.760000, y=2.706000, yaw=-1.571346
+[ INFO] [1736990594.011145147, 4644.658000000]: waypoints service found
+[ INFO] [1736990594.288391259, 4644.935000000]: initialize(): Received waypoints of size 6852
+[ INFO] [1736990594.451200353, 4645.098000000]: Python node notified successfully.
+[ INFO] [1736990594.451257341, 4645.098000000]: initialize(): start: 4.760000, 2.706000
+[ INFO] [1736990594.451285273, 4645.098000000]: initialize(): destination: 3.850000, 3.676000
+[ INFO] [1736990594.456891808, 4645.103000000]: Changing from INIT to MOVING
+[ INFO] [1736990597.211893037, 4647.853000000]: check_stop_sign(): priority detected at a distance of: 0.746000
+[ INFO] [1736990597.211946918, 4647.853000000]: sign_based_relocalization(PRIORITY SOUTH): SUCCESS: estimated sign pose: (4.520194, 1.317884), actual: (4.511800, 1.351000), error: (-0.008394, 0.033116), error norm: 0.034163, threshold: 0.750000
+[ INFO] [1736990598.715135127, 4649.353000000]: intersection_reached(): setting last intersection point to (4.743556, 1.642324)
+[ INFO] [1736990598.715178799, 4649.353000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736990603.522223376, 4654.153000000]: check_stop_sign(): stop sign detected at a distance of: 0.494000
+[ INFO] [1736990603.522283614, 4654.153000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (3.574975, 0.852167), actual: (3.507240, 0.984030), error: (-0.067735, 0.131863), error norm: 0.148243, threshold: 0.750000
+[ INFO] [1736990604.124436267, 4654.753000000]: intersection_reached(): setting last intersection point to (3.803402, 0.765597)
+[ INFO] [1736990604.124466780, 4654.753000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990621.653119357, 4672.253000000]: check_stop_sign(): stop sign detected at a distance of: 0.730000
+[ INFO] [1736990621.653189721, 4672.254000000]: sign_based_relocalization(STOPSIGN NORTH): SUCCESS: estimated sign pose: (0.901198, 2.943077), actual: (0.982112, 3.020450), error: (0.080914, 0.077373), error norm: 0.111954, threshold: 0.750000
+[ INFO] [1736990623.256204898, 4673.854000000]: intersection_reached(): setting last intersection point to (0.777582, 2.721767)
+[ INFO] [1736990623.256285902, 4673.854000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990633.874615303, 4684.453000000]: check_stop_sign(): stop sign detected at a distance of: 0.749000
+[ INFO] [1736990633.874685405, 4684.454000000]: sign_based_relocalization(STOPSIGN NORTH): SUCCESS: estimated sign pose: (0.974704, 5.841927), actual: (0.982112, 5.911470), error: (0.007408, 0.069543), error norm: 0.069936, threshold: 0.750000
+[ INFO] [1736990635.677953748, 4686.254000000]: intersection_reached(): setting last intersection point to (0.737660, 5.636126)
+[ INFO] [1736990635.678009747, 4686.254000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990647.196360864, 4697.753000000]: check_stop_sign(): stop sign detected at a distance of: 0.731000
+[ INFO] [1736990647.196430941, 4697.753000000]: sign_based_relocalization(STOPSIGN NORTH): SUCCESS: estimated sign pose: (0.981939, 8.974181), actual: (0.982112, 9.021700), error: (0.000173, 0.047519), error norm: 0.047519, threshold: 0.750000
+[ INFO] [1736990648.900160695, 4699.453000000]: intersection_reached(): setting last intersection point to (0.726743, 8.744579)
+[ INFO] [1736990648.900205898, 4699.454000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990688.165909160, 4738.653000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.265737604, 4738.753000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.367871959, 4738.854000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.467517297, 4738.953000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.566712667, 4739.053000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.667637333, 4739.154000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.767203925, 4739.253000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.867356865, 4739.354000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990688.967832698, 4739.454000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.067730456, 4739.554000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.169525528, 4739.653000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.268911514, 4739.754000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.367655694, 4739.853000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.468200532, 4739.953000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.567660130, 4740.053000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.667645844, 4740.153000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.769108751, 4740.254000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.870456068, 4740.354000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990689.970004066, 4740.454000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990690.069629519, 4740.553000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990690.169127077, 4740.654000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990691.171130455, 4741.654000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990691.171299202, 4741.654000000]: check_car(): start idx: 991, end idx: 1036
+[ INFO] [1736990691.171328386, 4741.654000000]: check_car(): changing lane to the right in 0.845500 meters. start pose: (10.131260,11.002736), end: (11.548175, 10.494644), cur: (9.415783, 11.454865)
+[ INFO] [1736990705.193618796, 4755.653000000]: check_stop_sign(): roundabout detected at a distance of: 0.746000
+[ INFO] [1736990705.193682267, 4755.653000000]: sign_based_relocalization(ROUNDABOUT EAST): SUCCESS: estimated sign pose: (14.787780, 10.249532), actual: (14.924090, 10.155166), error: (0.136310, -0.094366), error norm: 0.165787, threshold: 0.750000
+[ INFO] [1736990706.997589019, 4757.454000000]: intersection_reached(): setting last intersection point to (14.664489, 10.334178)
+[ INFO] [1736990706.997639942, 4757.454000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1736990720.931601005, 4771.353000000]: check_car(): start idx: 1329, end idx: 1390
+[ INFO] [1736990720.931666109, 4771.353000000]: check_car(): changing lane to the left in 0.871500 meters. start pose: (19.051973,10.519215), end: (20.274149, 11.100190), cur: (18.198825, 10.413523)
+[ INFO] [1736990753.686500165, 4804.053000000]: check_stop_sign(): roundabout detected at a distance of: 0.721000
+[ INFO] [1736990753.686542040, 4804.053000000]: sign_based_relocalization(ROUNDABOUT SOUTH): SUCCESS: estimated sign pose: (15.820314, 11.870239), actual: (15.629166, 11.744351), error: (-0.191148, -0.125888), error norm: 0.228879, threshold: 0.750000
+[ INFO] [1736990755.590152131, 4805.953000000]: intersection_reached(): setting last intersection point to (15.775643, 11.976017)
+[ INFO] [1736990755.590201004, 4805.954000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1736990778.330214935, 4828.654000000]: check_car(): start idx: 1930, end idx: 1991
+[ INFO] [1736990778.330271409, 4828.654000000]: check_car(): changing lane to the left in 0.000000 meters. start pose: (15.402120,6.202240), end: (15.288572, 4.668223), cur: (15.303520, 6.207906)
+[ INFO] [1736990783.237260221, 4833.553000000]: check_stop_sign(): stop sign detected at a distance of: 0.509500
+[ INFO] [1736990783.237315345, 4833.553000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (15.292651, 4.349754), actual: (15.057500, 4.631000), error: (-0.235151, 0.281246), error norm: 0.366600, threshold: 0.750000
+[ INFO] [1736990783.537510227, 4833.853000000]: intersection_reached(): setting last intersection point to (15.449860, 4.849609)
+[ INFO] [1736990783.537558569, 4833.853000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990788.549995260, 4838.854000000]: check_stop_sign(): crosswalk detected at a distance of: 0.739000
+[ INFO] [1736990788.550066188, 4838.854000000]: sign_based_relocalization(CROSSWALK SOUTH): SUCCESS: estimated sign pose: (15.039337, 3.042630), actual: (15.086600, 3.035000), error: (0.047263, -0.007630), error norm: 0.047875, threshold: 0.750000
+[ INFO] [1736990790.049898230, 4840.354000000]: intersection_reached(): setting last intersection point to (15.319646, 3.336237)
+[ INFO] [1736990790.049938640, 4840.354000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736990795.057793506, 4845.353000000]: check_stop_sign(): stop sign detected at a distance of: 0.736000
+[ INFO] [1736990795.057871352, 4845.354000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (15.057941, 1.581807), actual: (15.057976, 1.548200), error: (0.000035, -0.033607), error norm: 0.033607, threshold: 0.750000
+[ INFO] [1736990797.461826081, 4847.753000000]: intersection_reached(): setting last intersection point to (15.284577, 1.839112)
+[ INFO] [1736990797.461877398, 4847.753000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990809.186040306, 4859.453000000]: check_stop_sign(): crosswalk detected at a distance of: 0.746500
+[ INFO] [1736990809.186102857, 4859.453000000]: sign_based_relocalization(CROSSWALK NORTH): SUCCESS: estimated sign pose: (17.288313, 2.055471), actual: (17.332400, 2.288000), error: (0.044087, 0.232529), error norm: 0.236671, threshold: 0.750000
+[ INFO] [1736990810.489392690, 4860.753000000]: intersection_reached(): setting last intersection point to (17.143507, 1.979763)
+[ INFO] [1736990810.489435086, 4860.753000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736990819.603751894, 4869.853000000]: check_stop_sign(): priority detected at a distance of: 0.706500
+[ INFO] [1736990819.603811261, 4869.853000000]: sign_based_relocalization(PRIORITY NORTH): FAILURE: error too large: 9.582146, threshold: 0.750000
+[ INFO] [1736990824.617877201, 4874.853000000]: check_car(): start idx: 2439, end idx: 2500
+[ INFO] [1736990824.617952046, 4874.853000000]: check_car(): changing lane to the left in 0.710500 meters. start pose: (15.561207,5.129783), end: (15.662271, 6.657591), cur: (15.765912, 4.450657)
+[ INFO] [1736990842.046990363, 4892.253000000]: intersection_reached(): setting last intersection point to (16.244216, 9.138748)
+[ INFO] [1736990842.047034407, 4892.253000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736990872.099366206, 4922.253000000]: check_car(): start idx: 2970, end idx: 3031
+[ INFO] [1736990872.099459758, 4922.253000000]: check_car(): changing lane to the left in 0.882000 meters. start pose: (20.043309,11.306741), end: (18.685320, 10.765860), cur: (19.933798, 12.196180)
+[ INFO] [1736990883.320067951, 4933.453000000]: check_stop_sign(): roundabout detected at a distance of: 0.725000
+[ INFO] [1736990883.320282006, 4933.454000000]: sign_based_relocalization(ROUNDABOUT WEST): SUCCESS: estimated sign pose: (17.327896, 11.116694), actual: (17.217610, 11.035834), error: (-0.110286, -0.080860), error norm: 0.136753, threshold: 0.750000
+[ INFO] [1736990884.822432148, 4934.954000000]: intersection_reached(): setting last intersection point to (17.534246, 10.709230)
+[ INFO] [1736990884.822473909, 4934.954000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1736990903.255274490, 4953.353000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.355054401, 4953.453000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.453266868, 4953.553000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.554731942, 4953.653000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.654359444, 4953.753000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.753629729, 4953.854000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.853021564, 4953.953000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990903.953479306, 4954.053000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.053045773, 4954.153000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.154414801, 4954.254000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.253459627, 4954.353000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.354091866, 4954.453000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.453745054, 4954.553000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.554999134, 4954.654000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.655753170, 4954.753000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.755342752, 4954.853000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.854657327, 4954.953000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990904.955379062, 4955.053000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.055624982, 4955.153000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.158369786, 4955.254000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.257297653, 4955.353000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.356269146, 4955.453000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.456424531, 4955.553000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.557101023, 4955.653000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.657801283, 4955.754000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990905.958863260, 4956.053000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990906.058192045, 4956.154000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990906.157223699, 4956.253000000]: check_car(): detected car is on left side of highway, if overtake, on right
+[ INFO] [1736990906.157517546, 4956.254000000]: check_car(): start idx: 3333, end idx: 3378
+[ INFO] [1736990906.157576450, 4956.254000000]: check_car(): changing lane to the right in 0.878500 meters. start pose: (10.761511,11.428512), end: (9.385660, 12.033354), cur: (11.503698, 11.006734)
+[ INFO] [1736990945.626679546, 4995.653000000]: check_stop_sign(): stop sign detected at a distance of: 0.747000
+[ INFO] [1736990945.626735994, 4995.653000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (0.117978, 10.772616), actual: (0.104340, 10.635000), error: (-0.013638, -0.137616), error norm: 0.138290, threshold: 0.750000
+[ INFO] [1736990947.330062481, 4997.353000000]: intersection_reached(): setting last intersection point to (0.349375, 10.919564)
+[ INFO] [1736990947.330104341, 4997.353000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990958.747912309, 5008.753000000]: check_stop_sign(): stop sign detected at a distance of: 0.743000
+[ INFO] [1736990958.747956777, 5008.753000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (0.065509, 7.565819), actual: (0.104340, 7.521675), error: (0.038831, -0.044144), error norm: 0.058792, threshold: 0.750000
+[ INFO] [1736990960.553457596, 5010.553000000]: intersection_reached(): setting last intersection point to (0.364234, 7.801051)
+[ INFO] [1736990960.553515451, 5010.554000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990971.171738010, 5021.153000000]: check_stop_sign(): stop sign detected at a distance of: 0.750000
+[ INFO] [1736990971.171800286, 5021.153000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (0.104929, 4.676323), actual: (0.104340, 4.635900), error: (-0.000589, -0.040423), error norm: 0.040427, threshold: 0.750000
+[ INFO] [1736990972.874171292, 5022.853000000]: intersection_reached(): setting last intersection point to (0.346397, 4.932000)
+[ INFO] [1736990972.874204336, 5022.853000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736990992.608051467, 5042.553000000]: check_stop_sign(): stop sign detected at a distance of: 0.725000
+[ INFO] [1736990992.608117367, 5042.553000000]: sign_based_relocalization(STOPSIGN EAST): SUCCESS: estimated sign pose: (1.788742, 0.082429), actual: (1.899750, 0.101391), error: (0.111008, 0.018962), error norm: 0.112616, threshold: 0.750000
+[ INFO] [1736990994.110984355, 5044.054000000]: intersection_reached(): setting last intersection point to (1.618613, 0.388102)
+[ INFO] [1736990994.111038881, 5044.054000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991002.323528590, 5052.253000000]: check_stop_sign(): priority detected at a distance of: 0.743000
+[ INFO] [1736991002.323591757, 5052.253000000]: sign_based_relocalization(PRIORITY EAST): SUCCESS: estimated sign pose: (4.108011, 0.076959), actual: (4.143644, 0.101336), error: (0.035633, 0.024377), error norm: 0.043174, threshold: 0.750000
+[ INFO] [1736991004.027418194, 5053.953000000]: intersection_reached(): setting last intersection point to (3.874290, 0.390639)
+[ INFO] [1736991004.027466831, 5053.953000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736991017.850063798, 5067.754000000]: check_stop_sign(): crosswalk detected at a distance of: 0.741000
+[ INFO] [1736991017.850108114, 5067.754000000]: sign_based_relocalization(CROSSWALK EAST): SUCCESS: estimated sign pose: (8.119100, 0.703817), actual: (8.142500, 0.703300), error: (0.023400, -0.000517), error norm: 0.023406, threshold: 0.750000
+[ INFO] [1736991018.750838661, 5068.653000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.297000
+[ INFO] [1736991018.852254481, 5068.754000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.270000
+[ INFO] [1736991018.951782515, 5068.853000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.242000
+[ INFO] [1736991019.452797191, 5069.354000000]: intersection_reached(): setting last intersection point to (7.837499, 0.932674)
+[ INFO] [1736991019.452839639, 5069.354000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736991019.754160819, 5069.654000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.312000
+[ INFO] [1736991019.853097405, 5069.753000000]: Changing from MOVING to PARKING
+[ INFO] [1736991020.654870525, 5070.553000000]: park sign detected at a distance of: 0.996000, parking offset is: 2.180500
+[ INFO] [1736991020.654908877, 5070.553000000]: orientation: 6.283
+[ INFO] [1736991020.654946876, 5070.553000000]: sign_based_relocalization(PARKING): SUCCESS: estimated sign pose: (8.915231, 0.683949), actual: (8.936750, 0.687367), error: (0.021519, 0.003418), error norm: 0.021789, threshold: 0.750000
+[ INFO] [1736991020.654962700, 5070.553000000]: PARKING(): target spot: 0
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.1, 0.56
+parking spot 3: 10.1, 1.3
+parking spot 4: 10.8, 0.56
+parking spot 5: 10.8, 1.3
+parking spot 6: 11.6, 0.56
+parking spot 7: 11.6, 1.3
+parking spot 8: 12.3, 0.56
+parking spot 9: 12.3, 1.3
+[ INFO] [1736991030.073211549, 5079.953000000]: x offset reached: (10.13, 0.93), ready for parking maneuver...
+[ INFO] [1736991031.675464327, 5081.555000000]: parking_maneuver_hardcode(): initial y error: 0.012041, initial yaw error: -0.000870, base yaw target: 0.290989pi
+[ INFO] [1736991031.675495616, 5081.555000000]: parking_maneuver_hardcode(): park right: true, exit: 0
+targets: 0.914     0     0, steerings:  21 -21  21, speeds: -0.2 -0.2  0.2, thresholds:    0.1    0.1 0.0333
+[ INFO] [1736991031.675532651, 5081.555000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.914169, 0.000000
+[ INFO] [1736991031.675540231, 5081.555000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1736991039.039235334, 5088.905000000]: maneuver completed
+[ INFO] [1736991039.039269242, 5088.905000000]: parked but x offset too large: -0.420, adjusting... orientation: 0.000
+[ INFO] [1736991040.668032750, 5090.531000000]: parking spot reached, stopping...
+[ INFO] [1736991040.668075656, 5090.531000000]: Changing from PARKING to PARKED
+[ INFO] [1736991042.171705301, 5092.032000000]: Changing from PARKED to EXITING_PARKING
+[ INFO] [1736991042.171751820, 5092.032000000]: parking_maneuver_hardcode(): initial y error: 0.000000, initial yaw error: 0.000000, base yaw target: 0.290000pi
+[ INFO] [1736991042.171776290, 5092.032000000]: parking_maneuver_hardcode(): park right: true, exit: 1
+targets: 0.866 0.866     0, steerings:  21 -21  21, speeds: -0.2  0.2  0.2, thresholds: 0.766   0.1   0.1
+[ INFO] [1736991042.171836691, 5092.032000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.865509, 0.865509
+[ INFO] [1736991042.171856269, 5092.032000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1736991047.583717791, 5097.432000000]: maneuver completed
+exiting_park(): target waypoint index: 4564, at (10.1, 0.938)
+exiting_park(): closest waypoint index: 4460, at (7.92, 0.933)
+exiting_park(): current state: x: 10.1, y: 0.701, yaw: 0.0838
+[ INFO] [1736991047.591476784, 5097.439000000]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1736991047.591958540, 5097.440000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.595000, stopping...
+[ INFO] [1736991050.395690498, 5100.240000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.417000, stopping...
+[ INFO] [1736991053.602052180, 5103.441000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.335500
+[ INFO] [1736991053.801552984, 5103.640000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.240000
+[ INFO] [1736991053.903056979, 5103.741000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.254000
+[ INFO] [1736991054.002359000, 5103.840000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.216500
+[ INFO] [1736991054.104092901, 5103.940000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.237000
+[ INFO] [1736991054.204066330, 5104.040000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.182500
+[ INFO] [1736991054.304599813, 5104.141000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.134000
+[ INFO] [1736991054.404278066, 5104.241000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.111500
+[ INFO] [1736991054.503939950, 5104.341000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.112000
+[ INFO] [1736991054.604224952, 5104.441000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.094000
+[ INFO] [1736991054.704191502, 5104.541000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.130000
+[ INFO] [1736991054.803920262, 5104.641000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.045000
+[ INFO] [1736991054.904309297, 5104.740000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.996500
+[ INFO] [1736991055.004063445, 5104.840000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.975000
+[ INFO] [1736991055.104823299, 5104.941000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.020000
+[ INFO] [1736991055.204878918, 5105.041000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.030000
+[ INFO] [1736991055.304826867, 5105.140000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 1.008000
+[ INFO] [1736991055.405276295, 5105.240000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.943000
+[ INFO] [1736991055.505764633, 5105.341000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.936000
+[ INFO] [1736991055.605965466, 5105.441000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.929000
+[ INFO] [1736991055.705550309, 5105.540000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.891000
+[ INFO] [1736991055.805906420, 5105.641000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.851000
+[ INFO] [1736991055.905285267, 5105.740000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.911500
+[ INFO] [1736991056.005832536, 5105.840000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.828000
+[ INFO] [1736991056.106352898, 5105.941000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.811000
+[ INFO] [1736991056.206746684, 5106.041000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.793000
+[ INFO] [1736991056.307615256, 5106.141000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.763000
+[ INFO] [1736991056.407271061, 5106.240000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.763000
+[ INFO] [1736991056.507031817, 5106.340000000]: check_car(): not sure if detected car is on same lane, dist = 0.739000, stopping...
+[ INFO] [1736991058.611413426, 5108.440000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.932000
+[ INFO] [1736991058.712412289, 5108.541000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.916000
+[ INFO] [1736991058.811068418, 5108.640000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.912000
+[ INFO] [1736991058.911033378, 5108.741000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.875000
+[ INFO] [1736991059.010384969, 5108.840000000]: check_car(): not sure if detected car is on same lane, but pretty far and within safety margin, keep tailing: 0.898000
+[ INFO] [1736991066.926415950, 5116.740000000]: check_stop_sign(): stop sign detected at a distance of: 0.735000
+[ INFO] [1736991066.926461000, 5116.740000000]: sign_based_relocalization(STOPSIGN EAST): SUCCESS: estimated sign pose: (14.507298, 0.630194), actual: (14.687600, 0.668850), error: (0.180302, 0.038656), error norm: 0.184399, threshold: 0.750000
+[ INFO] [1736991068.828370003, 5118.640000000]: intersection_reached(): setting last intersection point to (14.402394, 0.970246)
+[ INFO] [1736991068.828400453, 5118.640000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991081.451553041, 5131.240000000]: check_stop_sign(): crosswalk detected at a distance of: 0.742000
+[ INFO] [1736991081.451610846, 5131.240000000]: sign_based_relocalization(CROSSWALK NORTH): SUCCESS: estimated sign pose: (17.392386, 2.178226), actual: (17.332400, 2.288000), error: (-0.059986, 0.109774), error norm: 0.125095, threshold: 0.750000
+[ INFO] [1736991082.753733367, 5132.540000000]: intersection_reached(): setting last intersection point to (17.038371, 2.007269)
+[ INFO] [1736991082.753766685, 5132.540000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736991091.870236126, 5141.640000000]: check_stop_sign(): priority detected at a distance of: 0.736500
+[ INFO] [1736991091.870278601, 5141.640000000]: sign_based_relocalization(PRIORITY NORTH): FAILURE: error too large: 9.578463, threshold: 0.750000
+[ INFO] [1736991092.969668093, 5142.740000000]: intersection_reached(): setting last intersection point to (16.655705, 3.927082)
+[ INFO] [1736991092.969707043, 5142.740000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736991103.588340126, 5153.341000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.385500
+[ INFO] [1736991103.687553618, 5153.440000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.366000
+[ INFO] [1736991103.787398511, 5153.540000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.335000
+[ INFO] [1736991103.888484205, 5153.640000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.313000
+[ INFO] [1736991103.988620240, 5153.740000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.304000
+[ INFO] [1736991104.088405264, 5153.840000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.266000
+[ INFO] [1736991104.191281874, 5153.941000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.237000
+[ INFO] [1736991104.290997624, 5154.041000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.208500
+[ INFO] [1736991104.389596158, 5154.140000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.172500
+[ INFO] [1736991104.490915599, 5154.240000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.169000
+[ INFO] [1736991104.591910325, 5154.340000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.127000
+[ INFO] [1736991104.691661762, 5154.441000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.118500
+[ INFO] [1736991104.790129574, 5154.540000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.073000
+[ INFO] [1736991104.891112106, 5154.641000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.052500
+[ INFO] [1736991104.992798760, 5154.741000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 1.020000
+[ INFO] [1736991105.090728474, 5154.840000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.994000
+[ INFO] [1736991105.190603237, 5154.940000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.973500
+[ INFO] [1736991105.291727232, 5155.041000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.941000
+[ INFO] [1736991105.391141910, 5155.140000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.914000
+[ INFO] [1736991105.491726711, 5155.240000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.884000
+[ INFO] [1736991105.591728536, 5155.340000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.857500
+[ INFO] [1736991105.692375930, 5155.441000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.831000
+[ INFO] [1736991105.792010026, 5155.541000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.811000
+[ INFO] [1736991105.892044123, 5155.641000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.782500
+[ INFO] [1736991105.991415577, 5155.740000000]: check_car(): car on oneway pretty far and within safety margin, keep tailing: 0.752000
+[ INFO] [1736991106.092071457, 5155.840000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.745000, stopping...
+[ INFO] [1736991108.197503538, 5157.940000000]: check_car(): detetected car is in one way or non-dotted region, dist = 0.714500, stopping...
+[ INFO] [1736991120.217912166, 5169.940000000]: check_stop_sign(): crosswalk detected at a distance of: 0.747000
+[ INFO] [1736991120.217975787, 5169.940000000]: sign_based_relocalization(CROSSWALK WEST): SUCCESS: estimated sign pose: (9.764271, 4.336878), actual: (9.546000, 4.236400), error: (-0.218271, -0.100478), error norm: 0.240288, threshold: 0.750000
+[ INFO] [1736991122.221203716, 5171.940000000]: intersection_reached(): setting last intersection point to (9.830732, 3.984469)
+[ INFO] [1736991122.221250091, 5171.940000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736991129.234891415, 5178.940000000]: check_stop_sign(): stop sign detected at a distance of: 0.740000
+[ INFO] [1736991129.234956394, 5178.940000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (7.641388, 4.271074), actual: (7.619552, 4.269900), error: (-0.021836, -0.001174), error norm: 0.021867, threshold: 0.750000
+[ INFO] [1736991130.836094790, 5180.540000000]: intersection_reached(): setting last intersection point to (7.922988, 4.035042)
+[ INFO] [1736991130.836152766, 5180.540000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991137.748498992, 5187.440000000]: check_stop_sign(): stop sign detected at a distance of: 0.740000
+[ INFO] [1736991137.748549864, 5187.440000000]: sign_based_relocalization(STOPSIGN WEST): SUCCESS: estimated sign pose: (5.791859, 4.268621), actual: (5.761000, 4.268600), error: (-0.030859, -0.000021), error norm: 0.030859, threshold: 0.750000
+[ INFO] [1736991139.551225750, 5189.240000000]: intersection_reached(): setting last intersection point to (6.020012, 4.045004)
+[ INFO] [1736991139.551258195, 5189.240000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991147.865043503, 5197.540000000]: check_stop_sign(): traffic light detected at a distance of: 0.721500
+[ INFO] [1736991147.865083868, 5197.540000000]: sign_based_relocalization(LIGHTS WEST): SUCCESS: estimated sign pose: (3.510138, 4.259091), actual: (3.505300, 4.268137), error: (-0.004838, 0.009046), error norm: 0.010258, threshold: 0.750000
+[ INFO] [1736991149.368296369, 5199.040000000]: intersection_reached(): setting last intersection point to (3.804531, 4.049743)
+[ INFO] [1736991149.368336074, 5199.040000000]: intersection reached: CASE TRAFFIC LIGHT, clearing stopsign flag...
+[ INFO] [1736991159.287301717, 5208.940000000]: check_stop_sign(): stop sign detected at a distance of: 0.738000
+[ INFO] [1736991159.287356250, 5208.940000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (2.176823, 1.496431), actual: (2.264500, 1.351000), error: (0.087677, -0.145431), error norm: 0.169816, threshold: 0.750000
+[ INFO] [1736991161.189001558, 5210.840000000]: intersection_reached(): setting last intersection point to (2.562870, 1.625969)
+[ INFO] [1736991161.189047075, 5210.840000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991168.804097147, 5218.441000000]: check_stop_sign(): priority detected at a distance of: 0.731000
+[ INFO] [1736991168.804177111, 5218.441000000]: sign_based_relocalization(PRIORITY EAST): SUCCESS: estimated sign pose: (4.020696, 0.002832), actual: (4.143644, 0.101336), error: (0.122948, 0.098504), error norm: 0.157541, threshold: 0.750000
+[ INFO] [1736991170.508877293, 5220.140000000]: intersection_reached(): setting last intersection point to (3.899251, 0.438753)
+[ INFO] [1736991170.508923546, 5220.141000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736991187.635927611, 5237.240000000]: check_stop_sign(): stop sign detected at a distance of: 0.748000
+[ INFO] [1736991187.635971634, 5237.240000000]: sign_based_relocalization(STOPSIGN NORTH): SUCCESS: estimated sign pose: (6.975596, 3.238248), actual: (6.886100, 3.391610), error: (-0.089496, 0.153362), error norm: 0.177565, threshold: 0.750000
+[ INFO] [1736991189.638986799, 5239.240000000]: intersection_reached(): setting last intersection point to (6.576564, 3.118971)
+[ INFO] [1736991189.639021186, 5239.240000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991206.468886810, 5256.041000000]: check_stop_sign(): priority detected at a distance of: 0.710000
+[ INFO] [1736991206.468931514, 5256.041000000]: sign_based_relocalization(PRIORITY WEST): SUCCESS: estimated sign pose: (5.871436, 7.217668), actual: (5.759000, 7.155500), error: (-0.112436, -0.062168), error norm: 0.128479, threshold: 0.750000
+[ INFO] [1736991207.870195837, 5257.440000000]: intersection_reached(): setting last intersection point to (6.031970, 6.873820)
+[ INFO] [1736991207.870228413, 5257.440000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1736991212.580873630, 5262.140000000]: check_car(): start idx: 6203, end idx: 6264
+[ INFO] [1736991212.580930693, 5262.140000000]: check_car(): changing lane to the left in 0.861000 meters. start pose: (5.005791,8.275098), end: (4.442350, 9.633577), cur: (5.157865, 7.629693)
+[ INFO] [1736991228.004024016, 5277.540000000]: check_stop_sign(): crosswalk detected at a distance of: 0.752000
+[ INFO] [1736991228.004078870, 5277.540000000]: sign_based_relocalization(CROSSWALK WEST): SUCCESS: estimated sign pose: (1.774752, 10.338730), actual: (1.785000, 10.239400), error: (0.010248, -0.099330), error norm: 0.099857, threshold: 0.750000
+[ INFO] [1736991230.210066655, 5279.741000000]: intersection_reached(): setting last intersection point to (2.103998, 10.029202)
+[ INFO] [1736991230.210100235, 5279.741000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1736991242.132960987, 5291.641000000]: check_stop_sign(): stop sign detected at a distance of: 0.743000
+[ INFO] [1736991242.133026968, 5291.641000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (0.009224, 7.643596), actual: (0.104340, 7.521675), error: (0.095116, -0.121921), error norm: 0.154634, threshold: 0.750000
+[ INFO] [1736991243.736390401, 5293.240000000]: intersection_reached(): setting last intersection point to (0.392352, 7.804547)
+[ INFO] [1736991243.736446266, 5293.240000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991254.353722704, 5303.840000000]: check_stop_sign(): stop sign detected at a distance of: 0.731000
+[ INFO] [1736991254.353783374, 5303.840000000]: sign_based_relocalization(STOPSIGN SOUTH): SUCCESS: estimated sign pose: (0.101305, 4.666229), actual: (0.104340, 4.635900), error: (0.003035, -0.030329), error norm: 0.030481, threshold: 0.750000
+[ INFO] [1736991255.956489298, 5305.440000000]: intersection_reached(): setting last intersection point to (0.351914, 4.926701)
+[ INFO] [1736991255.956554864, 5305.440000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1736991263.467724902, 5312.940000000]: check_stop_sign(): traffic light detected at a distance of: 0.726000
+[ INFO] [1736991263.467766058, 5312.940000000]: sign_based_relocalization(LIGHTS EAST): SUCCESS: estimated sign pose: (1.817241, 3.322323), actual: (1.899750, 3.391500), error: (0.082509, 0.069177), error norm: 0.107672, threshold: 0.750000
+[ INFO] [1736991272.785636608, 5322.240000000]: Changing from MOVING to DONE
+^C[mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865-1] killing on exit
+[mpc_controller_slsecret_Alienware_x15_R2_556808_70276847303075865-1] escalating to SIGTERM
+shutting down processing monitor...
+... shutting down processing monitor complete
+done

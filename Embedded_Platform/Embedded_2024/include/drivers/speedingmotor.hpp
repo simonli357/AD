@@ -60,6 +60,8 @@ namespace drivers
      * It is used to control the Brushless motor (more precisely the ESC), which is connected to driving shaft. The reference speed can be accessed through 'setSpeed' method. 
      * 
      */
+
+
     class CSpeedingMotor: public ISpeedingCommand
     {
         public:
@@ -81,6 +83,8 @@ namespace drivers
             void PWMSpeed(float f_PWM);
             // Calculate Speed from Equation
             void CalculateSpeed(float f_speed);
+            // Return current speed
+            float getSpeed();
 
         private:
             /** @brief PWM output pin */
@@ -95,6 +99,10 @@ namespace drivers
             const float m_inf_limit;
             /** @brief Superior limit */
             const float m_sup_limit;
+            // Class variable that keeps track of current speed, initialized at 0
+            float m_currentSpeed = 0;
+            float m_currentDutyCycle;
+
 
             /* interpolate the step value based on the speed value */
             float interpolate(float speed, const float speedValuesP[], const float speedValuesN[], const float stepValues[], int size);
