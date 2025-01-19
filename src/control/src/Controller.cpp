@@ -378,10 +378,12 @@ public:
                 //         return false;
                 //     }
                 // }
-                if(check_crosswalk() > 0) {
-                    utils.debug("intersection_reached(): detected crosswalk, ignoring...", 2);
-                    return false;
-                }
+
+                // if(check_crosswalk() > 0) {
+                //     utils.debug("intersection_reached(): detected crosswalk, ignoring...", 2);
+                //     return false;
+                // }
+
                 bool found = false;
                 // lookahead_dist = 0.8;
                 // double lookbehind_dist = 0.3;
@@ -462,6 +464,7 @@ public:
         
         int sign_index;
 
+        // check for stop sign
         sign_index = utils.object_index(OBJECT::STOPSIGN);
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) { // if no sign detected
             if(sign_index >= 0) {
@@ -474,6 +477,8 @@ public:
                 }
             }
         }
+
+        // check for traffic light
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
             bool is_red = false;
             sign_index = utils.object_index(OBJECT::REDLIGHT);
@@ -498,6 +503,8 @@ public:
                 wait_for_green();
             }
         }
+        
+        // check for priority sign
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
             sign_index = utils.object_index(OBJECT::PRIORITY);
             if(sign_index >= 0) {
@@ -509,6 +516,8 @@ public:
                 }
             }
         }
+
+        // check for roundabout sign
         if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
             sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             if(sign_index >= 0) {
@@ -520,6 +529,21 @@ public:
                 }
             }
         }
+        
+        // check for crosswalk
+        if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
+            sign_index = utils.object_index(OBJECT::CROSSWALK);
+            if(sign_index >= 0) {
+                double dist = utils.object_distance(sign_index);
+                if (dist < MAX_SIGN_DIST && dist > 0) {
+                    utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + std::to_string(dist), 2);
+                    detected_dist = dist;
+                    stopsign_flag = STOPSIGN_FLAGS::CW;
+                }
+            }
+        }
+
+        // relocalize based on sign
         if (sign_relocalize && stopsign_flag != STOPSIGN_FLAGS::NONE) {
         // if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
             auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
@@ -544,6 +568,17 @@ public:
                                         (nearestDirectionIndex == 1) ? "LIGHTS NORTH" :
                                         (nearestDirectionIndex == 2) ? "LIGHTS WEST" :
                                                                     "LIGHTS SOUTH";
+                sign_based_relocalization(sign_pose, intersection_signs, sign_type);
+            } else if (stopsign_flag == STOPSIGN_FLAGS::CW) {
+                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
+                const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
+                                        (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
+                                        (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
+                                                                    SOUTH_FACING_CROSSWALKS;
+                std::string sign_type = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
+                                        (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
+                                        (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
+                                                                    "CROSSWALK SOUTH";
                 sign_based_relocalization(sign_pose, intersection_signs, sign_type);
             } else {
                 int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
@@ -1091,12 +1126,12 @@ void StateMachine::update_mpc_states() {
 }
 void StateMachine::solve() {
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
-    // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    // std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
-    // std::cout << "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl;
-    // for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 4, static_cast<int>(path_manager.state_refs.rows())); i++) {
-    //     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
-    // }
+    std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+    std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
+    std::cout << "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl;
+    for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 4, static_cast<int>(path_manager.state_refs.rows())); i++) {
+        std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
+    }
     int idx = path_manager.target_waypoint_index;
     if (idx > path_manager.state_refs.rows()-2) {
         idx = path_manager.state_refs.rows() - 2;
@@ -1160,8 +1195,11 @@ void StateMachine::run() {
                 } else if(stopsign_flag == STOPSIGN_FLAGS::PRIO) {
                     utils.debug("intersection reached: CASE PRIORITY, proceeding...", 2);
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
+                } else if(stopsign_flag == STOPSIGN_FLAGS::CW) {
+                    utils.debug("intersection reached: CASE CROSSWALK, proceeding...", 2);
+                    stopsign_flag = STOPSIGN_FLAGS::NONE;
                 } else if(stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                    utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 3);
+                    utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 2);
                     stopsign_flag = STOPSIGN_FLAGS::NONE;
                     if (use_lane) {
                         update_mpc_states(x_current[0], x_current[1], x_current[2]);
