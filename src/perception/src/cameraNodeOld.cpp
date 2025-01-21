@@ -76,7 +76,6 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
-			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
 		}
 
 		if (!doLane) {
@@ -109,26 +108,14 @@ class CameraNode {
 			//     t2.detach();
 			// }
 		}
-	}
-
-	~CameraNode() {
-			// Signal the camera thread to exit and join it
-			cameraThreadRunning = false;
-			if (cameraThread.joinable()) {
-					cameraThread.join();
+		ros::Rate loopRate(this->mainLoopRate);
+		while (ros::ok()) {
+			ros::spinOnce();
+			if (realsense) {
+				get_frame();
 			}
-	}
-
-	void spin() {
-			ros::Rate loopRate(mainLoopRate);
-			while (ros::ok()) {
-					ros::spinOnce();
-					if (!realsense && !useRosTimer) {
-							// If not using realsense or timers, 
-							// detection might happen in imageCallback.
-					}
-					loopRate.sleep();
-			}
+			loopRate.sleep();
+		}
 	}
 
 	SignFastest Sign;
@@ -148,16 +135,7 @@ class CameraNode {
 	int mainLoopRate;
 
 	// lock
-	std::thread cameraThread;
-	bool cameraThreadRunning;
 	std::mutex mutex;
-	void cameraThreadFunc() {
-			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
-			while (ros::ok() && cameraThreadRunning) {
-					get_frame();
-					cameraRate.sleep();
-			}
-	}
 
 	// rs
 	ros::Publisher imu_pub;
@@ -181,10 +159,7 @@ class CameraNode {
 			// mutex.unlock();
 			return;
 		}
-		{
-			std::lock_guard<std::mutex> lock(mutex);
-			depthImage = cv_ptr_depth->image.clone();
-		}
+		depthImage = cv_ptr_depth->image;
 		if (Sign.tcp_client != nullptr) {
         	Sign.tcp_client->send_image_depth(*msg);
 		}
@@ -206,8 +181,7 @@ class CameraNode {
 				Sign.publish_sign(cv_ptr->image, cv_ptr_depth->image);
 			}
 		} else {
-			std::lock_guard<std::mutex> lock(mutex);
-      colorImage = cv_ptr->image.clone();
+			colorImage = cv_ptr->image;
 		}
 		if (Sign.tcp_client != nullptr) {
         	Sign.tcp_client->send_image_rgb(*msg);
@@ -313,8 +287,7 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "object_detector2");
 	ros::NodeHandle nh;
 
-	CameraNode cameraNode(nh);
-	cameraNode.spin();
+	CameraNode CameraNode(nh);
 
 	return 0;
 }
