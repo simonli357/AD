@@ -3,15 +3,15 @@ import struct
 
 def split(bytes):
     bytes_length = 4
-    lengths_length = struct.unpack('>I', bytes[:4])
+    lengths_length = struct.unpack('<I', bytes[:4])
     num_elements = (lengths_length - bytes_length) / bytes_length
     splits = []
-    offset = 0
+    size_offset = bytes_length
+    data_offset = lengths_length
     for i in range(num_elements):
-        s = (i + 1) * bytes_length
-        size = struct.unpack('>I', bytes[s - 1:s + bytes_length])
-        start = lengths_length - 1 + offset
-        split = bytes[start:start + size]
+        size = struct.unpack('<I', bytes[size_offset:size_offset + bytes_length])
+        size_offset += bytes_length
+        split = bytes[data_offset:data_offset + size]
         splits.append(split)
-        offset += size
+        data_offset += size
     return splits

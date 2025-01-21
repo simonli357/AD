@@ -47,5 +47,5 @@ class SrvRequest : public Decoder {
 	WaypointsSrv parse_waypoints_srv();
 
   private:
-	void double_from_bytes(double &value, std::vector<uint8_t> &bytes);
+	double double_from_bytes(std::vector<uint8_t> &bytes);
 };

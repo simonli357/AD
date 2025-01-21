@@ -56,8 +56,8 @@ void TcpClient::set_data_types() {
 	data_types.push_back(0x07); // Messages
 	data_types.push_back(0x08); // GoToSrv
 	data_types.push_back(0x09); // GoToCmdSrv
-	data_types.push_back(0x0A); // SetStatesSrv
-	data_types.push_back(0x0B); // WaypointsSrv
+	data_types.push_back(0x0a); // SetStatesSrv
+	data_types.push_back(0x0b); // WaypointsSrv
 }
 
 void TcpClient::set_data_actions() {
@@ -98,7 +98,6 @@ void TcpClient::listen() {
 		}
 		std::memcpy(&length, buffer.data(), 4);
 		type = buffer[4];
-		length = ntohl(length);
 		// Receive the actual data based on the length from header
 		std::vector<uint8_t> data(length);
 		size_t total_bytes_received = 0;
@@ -135,10 +134,9 @@ std::queue<SrvRequest::WaypointsSrv> &TcpClient::get_waypoints_srv_msgs() { retu
 
 void TcpClient::send_type(const std::string &str) {
 	uint32_t length = str.size();
-	uint32_t big_endian_length = htonl(length);
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> full_message(total_size);
-	std::memcpy(full_message.data(), &big_endian_length, message_size);
+	std::memcpy(full_message.data(), &length, message_size);
 	full_message[4] = data_types[0];
 	std::memcpy(full_message.data() + header_size, str.data(), length);
 	send(client_socket, full_message.data(), full_message.size(), 0);
@@ -147,10 +145,9 @@ void TcpClient::send_type(const std::string &str) {
 void TcpClient::send_string(const std::string &str) {
 	if (canSend) {
 		uint32_t length = str.size();
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[0];
 		std::memcpy(full_message.data() + header_size, str.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -163,10 +160,9 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 		std::vector<uint8_t> image(length);
 		ros::serialization::OStream stream(image.data(), length);
 		ros::serialization::serialize(stream, img);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[1];
 		std::memcpy(full_message.data() + header_size, image.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -179,10 +175,9 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 		std::vector<uint8_t> image(length);
 		ros::serialization::OStream stream(image.data(), length);
 		ros::serialization::serialize(stream, img);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[2];
 		std::memcpy(full_message.data() + header_size, image.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -195,10 +190,9 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
 		ros::serialization::serialize(stream, array);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[3];
 		std::memcpy(full_message.data() + header_size, arr.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -211,10 +205,9 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
 		ros::serialization::serialize(stream, array);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[4];
 		std::memcpy(full_message.data() + header_size, arr.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -227,10 +220,9 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
 		ros::serialization::serialize(stream, array);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[5];
 		std::memcpy(full_message.data() + header_size, arr.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -243,10 +235,9 @@ void TcpClient::send_message(const std_msgs::String &msg) {
 		std::vector<uint8_t> message(length);
 		ros::serialization::OStream stream(message.data(), length);
 		ros::serialization::serialize(stream, msg);
-		uint32_t big_endian_length = htonl(length);
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &big_endian_length, message_size);
+		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = data_types[6];
 		std::memcpy(full_message.data() + header_size, message.data(), length);
 		send(client_socket, full_message.data(), full_message.size(), 0);
@@ -268,11 +259,15 @@ void TcpClient::send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiAr
 }
 
 void TcpClient::send_set_states_srv(bool success) {
-    if(success) {
-        send_string("true");
-    } else {
-        send_string("false");
-    }
+	if (canSend) {
+		uint32_t length = 1;
+		size_t total_size = header_size + length;
+		std::vector<uint8_t> full_message(total_size);
+		std::memcpy(full_message.data(), &length, message_size);
+		full_message[4] = data_types[9];
+        full_message[5] = static_cast<uint8_t>(success);
+		send(client_socket, full_message.data(), full_message.size(), 0);
+	}
 }
 
 void TcpClient::send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {

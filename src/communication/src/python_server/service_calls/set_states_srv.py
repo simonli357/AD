@@ -10,17 +10,17 @@ class SetStatesSrv:
         self.success = False
 
     def decode(self, bytes):
-        if bytes.decode('utf-8') == "true":
+        if bytes == b'\x01':
             self.success = True
 
     def encode(self, x, y):
         data_bytes = []
-        data_bytes.append(struct.pack('>d', x))
-        data_bytes.append(struct.pack('>d', y))
+        data_bytes.append(str(x).encode('utf-8'))
+        data_bytes.append(str(y).encode('utf-8'))
         data_lengths = [len(element) for element in data_bytes]
         data_length = sum(data_lengths)
         lengths_length = (self.num_elements + 1) * self.bytes_length
-        lengths_length_bytes = struct.pack('>I', lengths_length)
-        lengths_bytes = lengths_length_bytes + b''.join([struct.pack('>I', element) for element in data_lengths])
+        lengths_length_bytes = struct.pack('<I', lengths_length)
+        lengths_bytes = lengths_length_bytes + b''.join([struct.pack('<I', element) for element in data_lengths])
         data_bytes = b''.join(data_bytes)
         return encoder.serialize(self.data_type, lengths_length, data_length, lengths_bytes, data_bytes)
