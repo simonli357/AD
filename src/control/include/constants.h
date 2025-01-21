@@ -95,7 +95,7 @@ namespace VehicleConstants {
     // static constexpr double NORMAL_SPEED = 0.175;
     // static constexpr double FAST_SPEED = 0.4;
     static constexpr double SOFT_MAX_STEERING = 0.3578 * 180 / M_PI;
-    static constexpr double HARD_MAX_STEERING = 21.0;
+    static constexpr double HARD_MAX_STEERING = 0.3578 * 180 / M_PI;
     static constexpr double INTERSECTION_DISTANCE_THRESHOLD = 0.753; // minimum distance between two intersections
 
     static constexpr double pole_size = 0.0514;
