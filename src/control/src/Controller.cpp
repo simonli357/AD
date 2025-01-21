@@ -153,9 +153,10 @@ public:
                 utils.tcp_client->send_set_states_srv(true);
             }
             if(utils.tcp_client->get_start_srv_msgs().size() > 0) {
-                utils.tcp_client->get_start_srv_msgs().pop();
                 std_srvs::SetBool::Request req;
                 std_srvs::SetBool::Response res;
+                req.data = utils.tcp_client->get_start_srv_msgs().front();
+                utils.tcp_client->get_start_srv_msgs().pop();
                 start_bool_callback(req, res);
                 utils.tcp_client->send_start_srv(true);
             }

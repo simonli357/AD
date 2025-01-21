@@ -613,7 +613,7 @@ class OpenCVGuiApp(QWidget):
         # except rospy.ServiceException as e:
         #     print("Service call failed:", e)
         try:
-            self.server.utility_node_client.send_start_srv()
+            self.server.utility_node_client.send_start_srv(not self.started)
             max_retries = 50
             retries = 0
             while (retries < max_retries):
