@@ -323,5 +323,10 @@ void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
-    start_srv_msgs.push(true);
+	std::string decoded_string(bytes.begin(), bytes.end());
+	if (decoded_string == "start") {
+        start_srv_msgs.push(true);
+	} else if(decoded_string == "stop") {
+        start_srv_msgs.push(false);
+    }
 }

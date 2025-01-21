@@ -93,8 +93,8 @@ class Connection:
         bytes = self.waypoints_srv_msg.encode(pathName, vrefName, x0, y0, yaw0)
         self.socket.sendall(bytes)
 
-    def send_start_srv(self):
-        str = "start"
+    def send_start_srv(self, start):
+        str = "start" if start else "stop"
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
         bytes = length + self.types[11] + data
