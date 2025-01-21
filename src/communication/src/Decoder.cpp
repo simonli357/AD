@@ -4,29 +4,28 @@
 #include <netinet/in.h>
 #include <vector>
 
-Decoder::Decoder(std::vector<uint8_t> &bytes): bytes(bytes) {}
+Decoder::Decoder(std::vector<uint8_t> &bytes) : bytes(bytes) {}
 
 std::vector<std::vector<uint8_t>> Decoder::split() {
 	uint32_t lengths_length = 0;
 	std::memcpy(&lengths_length, &bytes[0], bytes_length);
-	lengths_length = ntohl(lengths_length);
 
 	size_t num_elements = (lengths_length - bytes_length) / bytes_length;
 	std::vector<std::vector<uint8_t>> splits(num_elements);
+	size_t num_bytes = bytes.size();
 
-	size_t offset = 0;
+	size_t size_offset = bytes_length;
+	size_t data_offset = lengths_length;
 	for (size_t i = 0; i < num_elements; i++) {
 		// Get the size of the element
-		size_t s = (i + 1) * bytes_length;
 		uint32_t size = 0;
-		std::memcpy(&size, &bytes[s - 1], bytes_length);
-		size = ntohl(size);
+		std::memcpy(&size, &bytes[size_offset], bytes_length);
+		size_offset += bytes_length;
 		// Read the data and append
-		size_t start = lengths_length - 1 + offset;
 		std::vector<uint8_t> split(size);
-		std::memcpy(split.data(), &bytes[start], size);
+		std::memcpy(split.data(), &bytes[data_offset], size);
 		splits[i] = std::move(split);
-		offset += size;
+		data_offset += size;
 	}
 
 	return splits;

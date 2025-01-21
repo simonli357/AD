@@ -567,6 +567,7 @@ class OpenCVGuiApp(QWidget):
                     res = self.server.utility_node_client.go_to_cmd_srv_msg
                     self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.attributes_np = np.array(res.wp_attributes.data)
+                    print("Successful goto_service call")
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -582,11 +583,12 @@ class OpenCVGuiApp(QWidget):
             if x is not None and y is not None:
                 self.server.utility_node_client.send_set_states_srv(x, y)
             else:
-                self.server.utility_node_client.send_set_states_srv(-200, -200)
+                self.server.utility_node_client.send_set_states_srv(-200.0, -200.0)
             max_retries = 50
             retries = 0
             while (retries < max_retries):
                 if self.server.utility_node_client.set_states_srv_msg.success:
+                    print("Successful set_states service call")
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -1147,7 +1149,7 @@ def callbacks(gui, server):
         if server.utility_node_client.messages:
             gui.message_callback(server.utility_node_client.messages.pop(0))
 
-        time.sleep(0.01)
+        time.sleep(0.016)
 
 
 if __name__ == '__main__':

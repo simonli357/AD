@@ -18,19 +18,12 @@ uint32_t GoToCmdSrvResponse::compute_data_length() { return data_length; }
 std::vector<uint8_t> GoToCmdSrvResponse::get_lengths() {
 	std::vector<uint8_t> lengths(lengths_length);
 
-	uint32_t big_endian_state_refs_length = htonl(state_refs_length);
-	uint32_t big_endian_input_refs_length = htonl(input_refs_length);
-	uint32_t big_endian_wp_attributes_length = htonl(wp_attributes_length);
-	uint32_t big_endian_wp_normals_length = htonl(wp_normals_length);
-	uint32_t big_endian_lengths_length = htonl(lengths_length);
-	uint32_t big_endian_success_length = htonl(success_length);
-
-	std::memcpy(lengths.data(), &big_endian_lengths_length, length_bytes);
-	std::memcpy(lengths.data() + length_bytes, &big_endian_state_refs_length, length_bytes);
-	std::memcpy(lengths.data() + length_bytes * 2, &big_endian_input_refs_length, length_bytes);
-	std::memcpy(lengths.data() + length_bytes * 3, &big_endian_wp_attributes_length, length_bytes);
-	std::memcpy(lengths.data() + length_bytes * 4, &big_endian_wp_normals_length, length_bytes);
-	std::memcpy(lengths.data() + length_bytes * 5, &big_endian_success_length, length_bytes);
+	std::memcpy(lengths.data(), &lengths_length, length_bytes);
+	std::memcpy(lengths.data() + length_bytes, &state_refs_length, length_bytes);
+	std::memcpy(lengths.data() + length_bytes * 2, &input_refs_length, length_bytes);
+	std::memcpy(lengths.data() + length_bytes * 3, &wp_attributes_length, length_bytes);
+	std::memcpy(lengths.data() + length_bytes * 4, &wp_normals_length, length_bytes);
+	std::memcpy(lengths.data() + length_bytes * 5, &success_length, length_bytes);
 
 	return lengths;
 }

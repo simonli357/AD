@@ -45,7 +45,7 @@ class Server:
                 if len(header) < header_size:
                     continue
                 break
-            length = struct.unpack('>I', header[:message_size])[0]
+            length = struct.unpack('<I', header[:message_size])[0]
             message_type = header[message_size:header_size]
             data = socket.recv(length)
             if message_type == b'\x01':

@@ -19,7 +19,6 @@ std::vector<uint8_t> Encoder::serialize() {
 	uint32_t lengths_length = compute_lengths_length();
 	uint32_t data_length = compute_data_length();
 	uint32_t size = lengths_length + data_length;
-	uint32_t big_endian_size = htonl(size);
 	std::vector<uint8_t> lengths = get_lengths();
 	std::vector<uint8_t> data = get_data();
 
@@ -28,7 +27,7 @@ std::vector<uint8_t> Encoder::serialize() {
 	std::vector<uint8_t> full_message(total_size);
 
 	// Header
-	std::memcpy(full_message.data(), &big_endian_size, message_size);
+	std::memcpy(full_message.data(), &size, message_size);
 
 	// Data Type
 	full_message[4] = data_type;

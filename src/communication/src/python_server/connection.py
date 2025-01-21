@@ -24,8 +24,8 @@ class Connection:
             b'\x07': self.parse_message,
             b'\x08': self.parse_go_to_srv,
             b'\x09': self.parse_go_to_cmd_srv,
-            b'\x0A': self.parse_set_states_srv,
-            b'\x0B': self.parse_waypoints_srv
+            b'\x0a': self.parse_set_states_srv,
+            b'\x0b': self.parse_waypoints_srv
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
@@ -37,8 +37,8 @@ class Connection:
         self.messages = []
         self.go_to_srv_msg = GoToSrv(b'\x08')
         self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
-        self.set_states_srv_msg = SetStatesSrv(b'\x0A')
-        self.waypoints_srv_msg = WaypointsSrv(b'\x0B')
+        self.set_states_srv_msg = SetStatesSrv(b'\x0a')
+        self.waypoints_srv_msg = WaypointsSrv(b'\x0b')
         threading.Thread(target=self.receive, daemon=True).start()
         self.send_string("ack")
 
@@ -61,7 +61,7 @@ class Connection:
                 if len(header) < header_size:
                     continue
                 break
-            length = struct.unpack('>I', header[:message_size])[0]
+            length = struct.unpack('<I', header[:message_size])[0]
             message_type = header[message_size:header_size]
             # Receive the data based on the length from the header
             data = self.recvall(length)
@@ -71,7 +71,7 @@ class Connection:
 
     def send_string(self, str):
         data = str.encode('utf-8')
-        length = struct.pack('>I', len(str))
+        length = struct.pack('<I', len(str))
         bytes = length + self.types[0] + data
         self.socket.sendall(bytes)
 
