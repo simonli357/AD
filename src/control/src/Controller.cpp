@@ -1154,11 +1154,16 @@ void StateMachine::solve() {
     publish_commands();
 }
 void StateMachine::publish_commands() {
+    static int count = 0;
     if(pubWaypoints) {
         publish_waypoints();
     }
     double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
+    // if (count <3) {
+    //     steer = 0;
+    //     count++;
+    // }
     std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
     utils.publish_cmd_vel(steer, speed);
 }
