@@ -109,7 +109,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         self.obstacle = []
         
-    def create_solver(self, config_path='config/mpc_config50.yaml'):
+    def create_solver(self, config_path='config/mpc_config25.yaml'):
         # extract the number from config_path (50 in this case)
         try:
             self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
