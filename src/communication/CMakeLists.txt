@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DEXT_DEP -fdiagnostics-show-option")
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.5 REQUIRED)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -30,7 +30,7 @@ catkin_python_setup()
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES communication
-   CATKIN_DEPENDS message_runtime nav_msgs roscpp rospy sensor_msgs std_msgs utils image_transport
+   CATKIN_DEPENDS message_runtime nav_msgs roscpp rospy sensor_msgs std_msgs utils image_transport cv_bridge
 #  DEPENDS system_lib
 )
 
@@ -76,11 +76,11 @@ add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}
-#   ${catkin_LIBRARIES}
-#   ${roscpp_LIBRARIES}
-#   pthread
-# )
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
 #############
 ## Install ##

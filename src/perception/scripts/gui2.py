@@ -1144,11 +1144,11 @@ class OpenCVGuiApp(QWidget):
 def callbacks(gui, server):
     while True:
         # Image rgb
-        if server.signs_node_client.rgb_image is not None:
-            gui.camera_callback(server.signs_node_client.rgb_image)
+        if server.rgb_stream.frame is not None:
+            gui.camera_callback(server.rgb_stream.frame)
         # Image depth
-        if server.signs_node_client.depth_image is not None:
-            gui.depth_callback(server.signs_node_client.depth_image)
+        if server.depth_stream.frame is not None:
+            gui.depth_callback(server.depth_stream.frame)
         # Road object
         if server.utility_node_client.road_objects:
             gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
@@ -1156,8 +1156,8 @@ def callbacks(gui, server):
         if server.utility_node_client.waypoints:
             gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
         # Signs
-        if server.signs_node_client.signs:
-            gui.sign_callback(server.signs_node_client.signs.pop(0))
+        if server.sign_node_client.signs:
+            gui.sign_callback(server.sign_node_client.signs.pop(0))
         # Messages
         if server.utility_node_client.messages:
             gui.message_callback(server.utility_node_client.messages.pop(0))
@@ -1166,7 +1166,7 @@ def callbacks(gui, server):
 
 
 if __name__ == '__main__':
-    server = Server(49153)
+    server = Server()
     server.initialize()
     app = QApplication(sys.argv)
     window = OpenCVGuiApp(server)

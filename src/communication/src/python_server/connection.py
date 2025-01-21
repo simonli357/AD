@@ -11,38 +11,38 @@ from python_server.service_calls.waypoints_srv import WaypointsSrv
 
 
 class Connection:
-    def __init__(self, client_socket):
-        self.socket = client_socket
-        self.socket.settimeout(None)
-        self.data_actions = OrderedDict({
-            b'\x01': self.parse_string,
-            b'\x02': self.parse_image_rgb,
-            b'\x03': self.parse_image_depth,
-            b'\x04': self.parse_road_object,
-            b'\x05': self.parse_waypoint,
-            b'\x06': self.parse_sign,
-            b'\x07': self.parse_message,
-            b'\x08': self.parse_go_to_srv,
-            b'\x09': self.parse_go_to_cmd_srv,
-            b'\x0a': self.parse_set_states_srv,
-            b'\x0b': self.parse_waypoints_srv,
-            b'\x0c': self.parse_start_srv
-        })
-        self.types = list(self.data_actions.keys())
-        self.strings = []
-        self.rgb_image = None
-        self.depth_image = None
-        self.road_objects = []
-        self.waypoints = []
-        self.signs = []
-        self.messages = []
-        self.go_to_srv_msg = GoToSrv(b'\x08')
-        self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
-        self.set_states_srv_msg = SetStatesSrv(b'\x0a')
-        self.waypoints_srv_msg = WaypointsSrv(b'\x0b')
-        self.start_srv_msg = False
-        threading.Thread(target=self.receive, daemon=True).start()
-        self.send_string("ack")
+    def __init__(self, client_socket=None):
+        if client_socket is not None:
+            self.socket = client_socket
+            self.data_actions = OrderedDict({
+                b'\x01': self.parse_string,
+                b'\x02': self.parse_image_rgb,
+                b'\x03': self.parse_image_depth,
+                b'\x04': self.parse_road_object,
+                b'\x05': self.parse_waypoint,
+                b'\x06': self.parse_sign,
+                b'\x07': self.parse_message,
+                b'\x08': self.parse_go_to_srv,
+                b'\x09': self.parse_go_to_cmd_srv,
+                b'\x0a': self.parse_set_states_srv,
+                b'\x0b': self.parse_waypoints_srv,
+                b'\x0c': self.parse_start_srv
+            })
+            self.types = list(self.data_actions.keys())
+            self.strings = []
+            self.rgb_image = None
+            self.depth_image = None
+            self.road_objects = []
+            self.waypoints = []
+            self.signs = []
+            self.messages = []
+            self.go_to_srv_msg = GoToSrv(b'\x08')
+            self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
+            self.set_states_srv_msg = SetStatesSrv(b'\x0a')
+            self.waypoints_srv_msg = WaypointsSrv(b'\x0b')
+            self.start_srv_msg = False
+            threading.Thread(target=self.receive, daemon=True).start()
+            self.send_string("ack")
 
     def recvall(self, length):
         data = b""

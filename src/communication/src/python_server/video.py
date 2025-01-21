@@ -1,0 +1,57 @@
+import threading
+import time
+from sensor_msgs.msg import Image
+from collections import OrderedDict
+
+
+class VideoConnection:
+    def __init__(self, client_socket=None):
+        if client_socket is not None:
+            self.socket = client_socket
+            self.frame = None
+            self.MAX_DGRAM = 65507
+            self.MAX_SIZE = 921667
+            self.REST = self.MAX_SIZE - ((self.MAX_DGRAM - 1) * 14)
+            self.bytes_table = OrderedDict({
+                15: b'',
+                14: b'',
+                13: b'',
+                12: b'',
+                11: b'',
+                10: b'',
+                9: b'',
+                8: b'',
+                7: b'',
+                6: b'',
+                5: b'',
+                4: b'',
+                3: b'',
+                2: b'',
+                1: b'',
+            })
+            threading.Thread(target=self.receive, daemon=True).start()
+            threading.Thread(target=self.update, daemon=True).start()
+
+    def receive(self):
+        while True:
+            seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
+            seg_num = seg[0]
+            bytes = b''
+            bytes = seg[1:]
+            self.bytes_table[seg_num] = bytes
+
+    def update(self):
+        while True:
+            bytes = b''
+            for key, value in self.bytes_table.items():
+                bytes += value
+            self.frame = self.parse_image_rgb(bytes)
+            time.sleep(0.016)
+
+    def parse_image_rgb(self, bytes):
+        try:
+            if len(bytes) != 0:
+                return Image().deserialize(bytes)
+            return None
+        except Exception as e:
+            print(e)

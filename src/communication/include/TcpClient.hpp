@@ -19,8 +19,7 @@ using std_msgs::String;
 class TcpClient {
   public:
 	// Constructors
-	TcpClient(const char *server_ip, const uint16_t server_port, const size_t buffer_size);
-	TcpClient(const size_t buffer_size, const char *client_type);
+	TcpClient(const size_t buffer_size, const std::string client_type);
 	TcpClient(TcpClient &&) = default;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
@@ -52,14 +51,20 @@ class TcpClient {
 
   private:
 	// Fields
-	const char *client_type = nullptr;
+    const std::string server_address = "127.0.0.1";
+	const std::string client_type;
 	const size_t buffer_size;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
+	const uint32_t MAX_IMAGE_DGRAM = 65507;
 	bool alive = true;
 	bool canSend = false;
-	sockaddr_in address;
-	int client_socket;
+	sockaddr_in tcp_address;
+    sockaddr_in udp_rgb_address;
+    sockaddr_in udp_depth_address;
+	int tcp_socket;
+    int udp_rgb_socket;
+    int udp_depth_socket;
 	std::thread receive;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> data_actions;
 	std::vector<uint8_t> data_types;
