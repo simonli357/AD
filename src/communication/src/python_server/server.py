@@ -5,35 +5,41 @@ import time
 import struct
 import threading
 from python_server.connection import Connection
+from python_server.video import VideoConnection
 
 
 class Server:
-    def __init__(self, port):
-        self.port = port
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.utility_node_client = None
-        self.signs_node_client = None
+    def __init__(self):
+        self.tcp_port = 49153
+        self.udp_rgb_port = 49154
+        self.udp_depth_port = 49155
+        self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.udp_rgb_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_depth_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.utility_node_client = Connection()
+        self.sign_node_client = Connection()
+        self.rgb_stream = VideoConnection(self.udp_rgb_socket)
+        self.depth_stream = VideoConnection(self.udp_depth_socket)
 
     def initialize(self):
         signal.signal(signal.SIGINT, self.handle_signal)
-        self.server_socket.bind(('', self.port))
-        self.server_socket.listen(2)
-        num_clients = 0
+        self.tcp_socket.bind(('', self.tcp_port))
+        self.tcp_socket.listen(2)
+        self.udp_rgb_socket.bind(('', self.udp_rgb_port))
+        self.udp_depth_socket.bind(('', self.udp_depth_port))
+        threading.Thread(target=self.listen, daemon=True).start()
+
+    def listen(self):
         while True:
-            client_socket, client_address = self.server_socket.accept()
-            threading.Thread(target=self.process_client, args=(client_socket,), daemon=True).start()
-            num_clients += 1
-            if num_clients == 2:
-                # while not (self.signs_node_client):
-                while not (self.utility_node_client and self.signs_node_client):
-                    time.sleep(0.1)
-                break
-        print("All clients are connected.")
+            client_tcp_socket, _ = self.tcp_socket.accept()
+            threading.Thread(target=self.process_client, args=(client_tcp_socket,), daemon=True).start()
 
     def handle_signal(self, signal, frame):
-        print("Caught SIGINT (Ctrl+C), closing socket...")
-        if self.server_socket:
-            self.server_socket.close()
+        print("Caught SIGINT (Ctrl+C), closing sockets...")
+        if self.tcp_socket:
+            self.tcp_socket.close()
+            self.udp_rgb_socket.close()
+            self.udp_depth_socket.close()
         sys.exit(0)
 
     def get_client_type(self, socket):
@@ -58,6 +64,6 @@ class Server:
             self.utility_node_client = Connection(client_socket)
         elif client_type == "sign_node_client":
             print("Signs Node Client connected")
-            self.signs_node_client = Connection(client_socket)
+            self.sign_node_client = Connection(client_socket)
         else:
             raise ConnectionError("Invalid client type")
