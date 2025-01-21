@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include "std_srvs/SetBoolRequest.h"
 #include "utility.hpp"
 #include "PathManager.hpp"
 #include "MPC.hpp"
@@ -150,6 +151,13 @@ public:
                 req.y = y;
                 set_states_callback(req, res);
                 utils.tcp_client->send_set_states_srv(true);
+            }
+            if(utils.tcp_client->get_start_srv_msgs().size() > 0) {
+                utils.tcp_client->get_start_srv_msgs().pop();
+                std_srvs::SetBool::Request req;
+                std_srvs::SetBool::Response res;
+                start_bool_callback(req, res);
+                utils.tcp_client->send_start_srv(true);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }

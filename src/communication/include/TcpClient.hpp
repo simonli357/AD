@@ -34,6 +34,7 @@ class TcpClient {
 	std::queue<SrvRequest::GoToCmdSrv> &get_go_to_cmd_srv_msgs();
 	std::queue<SrvRequest::SetStatesSrv> &get_set_states_srv_msgs();
 	std::queue<SrvRequest::WaypointsSrv> &get_waypoints_srv_msgs();
+    std::queue<bool> &get_start_srv_msgs();
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
@@ -47,6 +48,7 @@ class TcpClient {
 	void send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
 	void send_set_states_srv(bool success);
 	void send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
+    void send_start_srv(bool started);
 
   private:
 	// Fields
@@ -67,6 +69,7 @@ class TcpClient {
 	std::queue<SrvRequest::GoToCmdSrv> go_to_cmd_srv_msgs;
 	std::queue<SrvRequest::SetStatesSrv> set_states_srv_msgs;
 	std::queue<SrvRequest::WaypointsSrv> waypoints_srv_msgs;
+    std::queue<bool> start_srv_msgs;
 	// Methods
 	void set_data_types();
 	void set_data_actions();
@@ -77,4 +80,5 @@ class TcpClient {
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);
 	void parse_waypoints_srv(std::vector<uint8_t> &bytes);
+    void parse_start_srv(std::vector<uint8_t> &bytes);
 };
