@@ -562,12 +562,12 @@ class OpenCVGuiApp(QWidget):
             self.server.utility_node_client.send_go_to_cmd_srv(x, y)
             max_retries = 50
             retries = 0
+            res = self.server.utility_node_client.go_to_cmd_srv_msg
             while (retries < max_retries):
-                if (len(self.server.utility_node_client.go_to_cmd_srv_msg.state_refs.data) > 0):
-                    res = self.server.utility_node_client.go_to_cmd_srv_msg
+                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
                     self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.attributes_np = np.array(res.wp_attributes.data)
-                    print("Successful goto_service call")
+                    print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
                     return
                 retries += 1
                 time.sleep(0.1)
