@@ -1150,7 +1150,7 @@ def callbacks(gui):
             if server.utility_node_client.messages is not None and len(server.utility_node_client.messages) > 0:
                 gui.message_callback(server.utility_node_client.messages.pop())
 
-        time.sleep(0.01)
+        time.sleep(0.016)
 
 
 if __name__ == '__main__':

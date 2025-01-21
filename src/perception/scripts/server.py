@@ -20,9 +20,10 @@ class Server:
             client_socket, client_address = self.server_socket.accept()
             threading.Thread(target=self.process_client, args=(client_socket,), daemon=True).start()
             num_clients += 1
-            if num_clients == 2:
-                while not (self.utility_node_client and self.signs_node_client):
-                # while not (self.signs_node_client):
+            # if num_clients == 2:
+            if True:
+                # while not (self.utility_node_client and self.signs_node_client):
+                while not (self.signs_node_client):
                     time.sleep(0.1)
                 break
         print("All clients are connected.")
