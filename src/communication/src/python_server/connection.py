@@ -25,7 +25,8 @@ class Connection:
             b'\x08': self.parse_go_to_srv,
             b'\x09': self.parse_go_to_cmd_srv,
             b'\x0a': self.parse_set_states_srv,
-            b'\x0b': self.parse_waypoints_srv
+            b'\x0b': self.parse_waypoints_srv,
+            b'\x0c': self.parse_start_srv
         })
         self.types = list(self.data_actions.keys())
         self.strings = []
@@ -39,6 +40,7 @@ class Connection:
         self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
         self.set_states_srv_msg = SetStatesSrv(b'\x0a')
         self.waypoints_srv_msg = WaypointsSrv(b'\x0b')
+        self.start_srv_msg = False
         threading.Thread(target=self.receive, daemon=True).start()
         self.send_string("ack")
 
@@ -89,6 +91,13 @@ class Connection:
 
     def send_waypoints_srv(self, pathName, vrefName, x0, y0, yaw0):
         bytes = self.waypoints_srv_msg.encode(pathName, vrefName, x0, y0, yaw0)
+        self.socket.sendall(bytes)
+
+    def send_start_srv(self):
+        str = "start"
+        data = str.encode('utf-8')
+        length = struct.pack('<I', len(str))
+        bytes = length + self.types[11] + data
         self.socket.sendall(bytes)
 
     def parse_string(self, bytes):
@@ -163,5 +172,11 @@ class Connection:
     def parse_waypoints_srv(self, bytes):
         try:
             self.waypoints_srv_msg.decode(bytes)
+        except Exception as e:
+            print(e)
+
+    def parse_start_srv(self, bytes):
+        try:
+            self.start_srv_msg = bytes == b'\x01'
         except Exception as e:
             print(e)

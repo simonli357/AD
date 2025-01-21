@@ -58,6 +58,7 @@ void TcpClient::set_data_types() {
 	data_types.push_back(0x09); // GoToCmdSrv
 	data_types.push_back(0x0a); // SetStatesSrv
 	data_types.push_back(0x0b); // WaypointsSrv
+    data_types.push_back(0x0c); // StartSrv
 }
 
 void TcpClient::set_data_actions() {
@@ -66,6 +67,7 @@ void TcpClient::set_data_actions() {
 	data_actions[data_types[8]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
 	data_actions[data_types[9]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
 	data_actions[data_types[10]] = &TcpClient::parse_waypoints_srv; // SetStatesSrv
+    data_actions[data_types[11]] = &TcpClient::parse_start_srv;     // StartSrv
 }
 
 void TcpClient::initialize() {
@@ -127,6 +129,7 @@ std::queue<SrvRequest::GoToSrv> &TcpClient::get_go_to_srv_msgs() { return go_to_
 std::queue<SrvRequest::GoToCmdSrv> &TcpClient::get_go_to_cmd_srv_msgs() { return go_to_cmd_srv_msgs; }
 std::queue<SrvRequest::SetStatesSrv> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
 std::queue<SrvRequest::WaypointsSrv> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
+std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
 
 // ------------------- //
 // Encoding
@@ -277,6 +280,18 @@ void TcpClient::send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiAr
 	}
 }
 
+void TcpClient::send_start_srv(bool started) {
+	if (canSend) {
+		uint32_t length = 1;
+		size_t total_size = header_size + length;
+		std::vector<uint8_t> full_message(total_size);
+		std::memcpy(full_message.data(), &length, message_size);
+		full_message[4] = data_types[11];
+        full_message[5] = static_cast<uint8_t>(started);
+		send(client_socket, full_message.data(), full_message.size(), 0);
+	}
+}
+
 // ------------------- //
 // Decoding
 // ------------------- //
@@ -305,4 +320,8 @@ void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
 
 void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
     waypoints_srv_msgs.push(SrvRequest(bytes).parse_waypoints_srv());
+}
+
+void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
+    start_srv_msgs.push(true);
 }

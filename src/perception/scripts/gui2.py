@@ -597,21 +597,34 @@ class OpenCVGuiApp(QWidget):
             raise e
 
     def call_start_service(self, start):
-        print("service call")
-        rospy.wait_for_service("/start_bool", timeout=5)
+        # print("service call")
+        # rospy.wait_for_service("/start_bool", timeout=5)
+        # try:
+        #     # Create a service proxy
+        #     service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
+        #     request = SetBoolRequest()
+        #     request.data = start
+        #     # Call the service
+        #     response = service_proxy(request)
+        #     if response.success:
+        #         rospy.loginfo("Service call succeeded!")
+        #     else:
+        #         rospy.logerr("Service call failed!")
+        # except rospy.ServiceException as e:
+        #     print("Service call failed:", e)
         try:
-            # Create a service proxy
-            service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
-            request = SetBoolRequest()
-            request.data = start
-            # Call the service
-            response = service_proxy(request)
-            if response.success:
-                rospy.loginfo("Service call succeeded!")
-            else:
-                rospy.logerr("Service call failed!")
-        except rospy.ServiceException as e:
-            print("Service call failed:", e)
+            self.server.utility_node_client.send_start_srv()
+            max_retries = 50
+            retries = 0
+            while (retries < max_retries):
+                if self.server.utility_node_client.start_srv_msg:
+                    print("Successful start/stop service call")
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to start/stop")
+        except Exception as e:
+            raise e
 
     # ROS callback functions
     def lane_callback(self, msg):
