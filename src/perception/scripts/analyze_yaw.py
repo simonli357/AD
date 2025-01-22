@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 def analyze_yaw_outliers(waypoints, yaw_threshold=1.5):
     """
@@ -55,6 +56,8 @@ def analyze_yaw_outliers(waypoints, yaw_threshold=1.5):
     }
 
 # Load waypoints from a text file
-waypoints = np.loadtxt("state_refs.txt")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# waypoints = np.loadtxt("state_refs1.txt")
+waypoints = np.loadtxt(os.path.join(current_dir, "state_refs1.txt"))
 
 yaw_outliers = analyze_yaw_outliers(waypoints)

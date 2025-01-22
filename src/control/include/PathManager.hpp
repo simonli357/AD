@@ -143,10 +143,10 @@ public:
         static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
         static int lookahead = 1;
         if (v_ref > 0.375) lookahead = 1;
-        static Eigen::Vector3d last_state = i_current_state;
-        double distance_travelled_sq = (i_current_state.head(2) - last_state.head(2)).squaredNorm();
-
-        last_state = i_current_state;
+        
+        // static Eigen::Vector3d last_state = i_current_state;
+        // double distance_travelled_sq = (i_current_state.head(2) - last_state.head(2)).squaredNorm();
+        // last_state = i_current_state;
 
         static int count = 0;
         closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
@@ -194,6 +194,10 @@ public:
             }
         }
         return closest;
+    }
+
+    void reset_target_waypoint_index(const Eigen::Vector3d &x_current) {
+        target_waypoint_index = find_closest_waypoint(x_current);
     }
     
     bool call_waypoint_service(double x, double y, double yaw) {

@@ -1,0 +1,44 @@
+= Project Management Documentation
+
+== Description
+The following are the links to the ressources and tools for the current development of the project. These tools are used actively and should only be accessed and modified by members of the team.
+
+== Structure
+Google drive is used to store the team documents. The main drive is divided into sections that should be rather intuitive.
+
+The link to the google drive is the following : https://drive.google.com/drive/folders/15AXHOEDQOWgCqDl9pLGVtM6eMEDU_5aI?usp=drive_link
+
+The first level of separation concerns the year of the project.
+
+ - 2023
+ - 2024
+ - 2025
+
+There is also another folders containing documents for training, which can be used to onboard new members on the project.
+
+This year, the organization of documents follows the following structure :
+ 1 - Execution
+ 2 - Engineering
+ 3 - Deliverables
+ 4 to 6 - Individual work folders
+ 7 - Media
+
+=== Execution
+This folder contains the information related to project management. This includes meeting planning and notes, budget tracking covering expenses and receipts, as well as team member information.
+
+=== Engineering
+This folder contains documentation for all things engineering related. This includes documents following the status of individual components, the issues and solutions we have with them. It also contains all necessary interconnection diagrams, data sheets and manuals for the equipment that is being used on the project.
+
+=== Deliverables
+This folder contains documents that need to be submitted and delivered to the competition. These are organized in terms of status reports and should be finalized versions of documents contained elsewhere on the drive or on the github.
+
+=== Individual Work folders
+Contains documents relative to work in progress for particular experimentations or progress that aren't yet ready to be put in one of the other folders above.
+
+=== Media
+Contains videos, photos and other ressources that can be used to share what the project is about.
+
+== Other ressources
+While our documentation is stored on google drive, microsoft's excel is much more useful and well rounded for structuring and organizing spreadsheets. As such, the master planning documents is stored in an .xlsm file.
+
+The master planning can be found here : https://mcgill-my.sharepoint.com/:x:/g/personal/malo_salmon_mail_mcgill_ca/EUrYaHtTYTRBiP7Jw77DM40BA4Cq4Rd3pJT0zWYsqyR3fg?e=xNxh5b

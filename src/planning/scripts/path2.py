@@ -410,7 +410,7 @@ class Path:
         # self.v_refs = self.v_ref * (K/(abs(self.kappa) + epsilon))**0.5
         num_ramp_waypoints = int(1 * self.density) # 1 meters
         num_ramp_waypoints = min(num_ramp_waypoints, len(self.v_refs))
-        # Linearly increase the reference speed from 0 to v_ref over the first 2 meters
+        # Linearly increase the reference speed from 0 to v_ref over the first 1 meters
         self.v_refs[:num_ramp_waypoints] = np.linspace(0, self.v_ref, num_ramp_waypoints)
         self.v_refs[-2:] = 0 # stop at the end
         # print("v_ref: ", self.v_ref)

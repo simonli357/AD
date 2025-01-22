@@ -5,9 +5,10 @@
 #include <array>
 
 namespace VehicleConstants {
-    const std::array<std::string, 12> state_names = {
+    const std::array<std::string, 13> state_names = {
         "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
-        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD"
+        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", 
+        "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD", "TESTING"
     };
     enum STATE {
         INIT,
@@ -21,14 +22,16 @@ namespace VehicleConstants {
         DONE,
         LANE_FOLLOWING,
         INTERSECTION_MANEUVERING,
-        KEYBOARD_CONTROL
+        KEYBOARD_CONTROL,
+        TESTING
     };
     enum STOPSIGN_FLAGS {
         NONE,
         STOP,
         LIGHT,
         PRIO,
-        RDB
+        RDB,
+        CW
     };
     enum OBJECT {
         ONEWAY,
@@ -92,7 +95,7 @@ namespace VehicleConstants {
     // static constexpr double NORMAL_SPEED = 0.175;
     // static constexpr double FAST_SPEED = 0.4;
     static constexpr double SOFT_MAX_STEERING = 0.3578 * 180 / M_PI;
-    static constexpr double HARD_MAX_STEERING = 21.0;
+    static constexpr double HARD_MAX_STEERING = 0.3578 * 180 / M_PI;
     static constexpr double INTERSECTION_DISTANCE_THRESHOLD = 0.753; // minimum distance between two intersections
 
     static constexpr double pole_size = 0.0514;
@@ -116,7 +119,6 @@ namespace VehicleConstants {
     
     // intersection coordinates
     static const std::vector<std::vector<double>> SOUTH_FACING_INTERSECTIONS = {
-        {{16.075438-ofs6, 11.684077-hsw}},
         {{15.46-ofs6, 4.58-hsw}},
         {{15.165376+ofs6, 1.4972-hsw}},
         {{4.9156-ofs6, 4.581664-hsw}},
@@ -125,7 +127,12 @@ namespace VehicleConstants {
         {{2.67-ofs6, 4.584-hsw}},
         {{0.50684-ofs6, 4.5849-hsw}},
         {{0.50684-ofs6, 7.470675-hsw}},
-        {{0.50684-ofs6, 10.584-hsw}}
+        {{0.50684-ofs6, 10.584-hsw}},
+        // roundabout intersections
+        {{16.075438-ofs6, 11.684077-hsw}},
+        // crosswalk intersections
+        {{15.3, 3}},
+        {{4.75, 7.92}},
     };
     static const std::vector<std::vector<double>> NORTH_FACING_INTERSECTIONS = {
         {{0.579612+ofs6, 9.0727+hsw}},
@@ -136,10 +143,13 @@ namespace VehicleConstants {
         {{4.9887+ofs6, 5.958+hsw}},
         {{4.9887+ofs6, 3.07+hsw}},
         {{6.77784-ofs6, 3.44261+hsw}},
-        {{16.104+ofs6, 9.5053+hsw}}
+        // roundabout intersections
+        {{16.104+ofs6, 9.5053+hsw}},
+        // crosswalk intersections
+        {{17.11, 2.367}},
+        {{5.15, 7.38}},
     };
     static const std::vector<std::vector<double>> WEST_FACING_INTERSECTIONS = {
-        {{17.1571-hsw, 10.633+ofs6}},
         {{1.296-hsw, 3.86375+ofs6}},
         {{3.4543-hsw, 3.865637+ofs6}},
         {{5.71-hsw, 3.8661+ofs6}},
@@ -148,7 +158,12 @@ namespace VehicleConstants {
         {{1.296-hsw, 6.754754+ofs6}},
         {{7.568552-hsw, 3.8674+ofs6}},
         {{3.45624-hsw, 0.58153+ofs6}},
-        {{16.2485-hsw, 3.8678+ofs6}}
+        {{16.2485-hsw, 3.8678+ofs6}},
+        // roundabout intersections
+        {{17.1571-hsw, 10.633+ofs6}},
+        // crosswalk intersections
+        {{9.5, 4}},
+        {{1.74, 10}},
     };
     static const std::vector<std::vector<double>> EAST_FACING_INTERSECTIONS = {
         {{1.95075+hsw, 0.503891-ofs6}},
@@ -159,7 +174,11 @@ namespace VehicleConstants {
         {{4.194644+hsw, 0.503836-ofs6}}, 
         // {{6.0735+hsw, 0.5949+ofs6}}, 
         {{14.7386+hsw, 1.07135-ofs6}}, 
-        {{14.983+hsw, 10.5538-ofs6}}
+        // roundabout intersections
+        {{14.983+hsw, 10.5538-ofs6}},
+        // crosswalk intersections
+        {{8.2, 0.92}},
+        {{1.22, 9.62}},
     };
 
     static constexpr double ofs7 = 0.445;
@@ -190,7 +209,7 @@ namespace VehicleConstants {
     };
     
     static const std::vector<std::vector<double>> WEST_FACING_SIGNS = {
-        {{17.1571+sign_ofs2, 10.633+ofs6*2+pole_size+sign_ofs1}},
+        // {{17.1571+sign_ofs2, 10.633+ofs6*2+pole_size+sign_ofs1}},
         {{1.296+sign_ofs2, 3.86375+ofs6*2+pole_size+sign_ofs1}},
         {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1}},
         {{5.708+sign_ofs2, 6.753+ofs6*2+pole_size+sign_ofs1}},
@@ -254,8 +273,8 @@ namespace VehicleConstants {
         EKF
     };
     static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240};
-    //   <pose>0 0.05 0.2 0 0.2617 -0.</pose>
     static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
+    // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
 #endif // VEHICLE_CONSTANTS_H

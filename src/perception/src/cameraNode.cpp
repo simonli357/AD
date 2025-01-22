@@ -35,9 +35,15 @@ class CameraNode {
 		if (!realsense) {
 			if (Sign.hasDepthImage) {
 				std::string topic;
-				if (Sign.real) {
+				bool is_real;
+				if (!nh.getParam(nodeName + "/real", is_real)) {
+					ROS_WARN("Failed to get 'real' parameter. Defaulting to false.");
+				}
+				if (is_real) {
+					std::cout << "real, depth topic is /camera/aligned_depth_to_color/image_raw" << std::endl;
 					topic = "/camera/aligned_depth_to_color/image_raw";
 				} else {
+					std::cout << "not real, depth topic is /camera/depth/image_raw" << std::endl;
 					topic = "/camera/depth/image_raw";
 				}
 				depth_sub = it.subscribe(topic, 3, &CameraNode::depthCallback, this);
@@ -70,6 +76,7 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
+			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
 		}
 
 		if (!doLane) {
@@ -102,14 +109,26 @@ class CameraNode {
 			//     t2.detach();
 			// }
 		}
-		ros::Rate loopRate(this->mainLoopRate);
-		while (ros::ok()) {
-			ros::spinOnce();
-			if (realsense) {
-				get_frame();
+	}
+
+	~CameraNode() {
+			// Signal the camera thread to exit and join it
+			cameraThreadRunning = false;
+			if (cameraThread.joinable()) {
+					cameraThread.join();
 			}
-			loopRate.sleep();
-		}
+	}
+
+	void spin() {
+			ros::Rate loopRate(mainLoopRate);
+			while (ros::ok()) {
+					ros::spinOnce();
+					if (!realsense && !useRosTimer) {
+							// If not using realsense or timers, 
+							// detection might happen in imageCallback.
+					}
+					loopRate.sleep();
+			}
 	}
 
 	SignFastest Sign;
@@ -129,7 +148,16 @@ class CameraNode {
 	int mainLoopRate;
 
 	// lock
+	std::thread cameraThread;
+	bool cameraThreadRunning;
 	std::mutex mutex;
+	void cameraThreadFunc() {
+			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
+			while (ros::ok() && cameraThreadRunning) {
+					get_frame();
+					cameraRate.sleep();
+			}
+	}
 
 	// rs
 	ros::Publisher imu_pub;
@@ -153,7 +181,10 @@ class CameraNode {
 			// mutex.unlock();
 			return;
 		}
-		depthImage = cv_ptr_depth->image;
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			depthImage = cv_ptr_depth->image.clone();
+		}
 		if (Sign.tcp_client != nullptr) {
         	Sign.tcp_client->send_image_depth(*msg);
 		}
@@ -175,7 +206,8 @@ class CameraNode {
 				Sign.publish_sign(cv_ptr->image, cv_ptr_depth->image);
 			}
 		} else {
-			colorImage = cv_ptr->image;
+			std::lock_guard<std::mutex> lock(mutex);
+      colorImage = cv_ptr->image.clone();
 		}
 		if (Sign.tcp_client != nullptr) {
         	Sign.tcp_client->send_image_rgb(*msg);
@@ -265,6 +297,10 @@ class CameraNode {
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
+			if (Sign.tcp_client != nullptr) {
+				Sign.tcp_client->send_image_rgb(*color_msg);
+				Sign.tcp_client->send_image_depth(*depth_msg);
+			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);
 		}
@@ -277,7 +313,8 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "object_detector2");
 	ros::NodeHandle nh;
 
-	CameraNode CameraNode(nh);
+	CameraNode cameraNode(nh);
+	cameraNode.spin();
 
 	return 0;
 }
