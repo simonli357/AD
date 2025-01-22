@@ -53,7 +53,7 @@ class SignFastest {
             }
             if(use_tcp) {
                 ROS_INFO("Attempting to create TCP client...");
-                tcp_client = std::make_unique<TcpClient>(10485760, "sign_node_client");
+                tcp_client = std::make_unique<TcpClient>(1024, "sign_node_client");
                 ROS_INFO("TCP client created successfully.");
             } else {
                 tcp_client = nullptr;
