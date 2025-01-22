@@ -3,32 +3,19 @@ import time
 import numpy as np
 import cv2
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
 from collections import OrderedDict
 
 
 class VideoConnection:
-    def __init__(self, client_socket=None):
+    def __init__(self, client_socket=None, encoding=None):
         if client_socket is not None:
             self.socket = client_socket
+            self.encoding = encoding
             self.frame = None
             self.MAX_DGRAM = 65507
             self.MAX_SIZE = 921667
             self.REST = self.MAX_SIZE - ((self.MAX_DGRAM - 1) * 14)
             self.bytes_table = OrderedDict({
-                15: b'',
-                14: b'',
-                13: b'',
-                12: b'',
-                11: b'',
-                10: b'',
-                9: b'',
-                8: b'',
-                7: b'',
-                6: b'',
-                5: b'',
-                4: b'',
-                3: b'',
                 2: b'',
                 1: b'',
             })
@@ -48,16 +35,22 @@ class VideoConnection:
             bytes = b''
             for key, value in self.bytes_table.items():
                 bytes += value
-            self.frame = self.parse_image_rgb(bytes)
+            self.frame = self.parse_image(bytes)
             time.sleep(0.016)
 
-    def parse_image_rgb(self, bytes):
+    def parse_image(self, bytes):
         try:
-            if len(bytes) != 0:
+            if len(bytes) != 0 and self.encoding == 'bgr8':
                 np_array = np.frombuffer(bytes, dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
                 bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding="bgr8")
+                return bridge.cv2_to_imgmsg(cv_image, encoding=self.encoding)
+            elif len(bytes) != 0 and self.encoding == '32FC1':
+                np_array = np.frombuffer(bytes, dtype=np.uint8)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
+                cv_image = cv_image.astype(np.float32)
+                bridge = CvBridge()
+                return bridge.cv2_to_imgmsg(cv_image, encoding='32FC1')
             return None
         except Exception as e:
             print(e)

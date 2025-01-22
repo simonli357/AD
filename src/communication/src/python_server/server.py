@@ -18,8 +18,8 @@ class Server:
         self.udp_depth_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.utility_node_client = Connection()
         self.sign_node_client = Connection()
-        self.rgb_stream = VideoConnection(self.udp_rgb_socket)
-        self.depth_stream = VideoConnection(self.udp_depth_socket)
+        self.rgb_stream = VideoConnection(self.udp_rgb_socket, 'bgr8')
+        self.depth_stream = VideoConnection(self.udp_depth_socket, '32FC1')
 
     def initialize(self):
         signal.signal(signal.SIGINT, self.handle_signal)

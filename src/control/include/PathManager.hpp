@@ -200,7 +200,7 @@ public:
         target_waypoint_index = find_closest_waypoint(x_current);
     }
     
-    bool call_waypoint_service(double x, double y, double yaw) {
+    utils::waypoints call_waypoint_service(double x, double y, double yaw) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -218,7 +218,7 @@ public:
             ROS_INFO("waypoints service found");
         } else {
             ROS_INFO("waypoints service not found after 5 seconds");
-            return false;
+            return srv;
         }
         if(waypoints_client.call(srv)) {
             std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
@@ -234,10 +234,10 @@ public:
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
             set_params();
-            return true;
+            return srv;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-            return false;
+            return srv;
         }
     }
     
