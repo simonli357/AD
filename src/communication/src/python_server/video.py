@@ -1,5 +1,8 @@
 import threading
 import time
+import numpy as np
+import cv2
+from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from collections import OrderedDict
 
@@ -51,7 +54,10 @@ class VideoConnection:
     def parse_image_rgb(self, bytes):
         try:
             if len(bytes) != 0:
-                return Image().deserialize(bytes)
+                np_array = np.frombuffer(bytes, dtype=np.uint8)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+                bridge = CvBridge()
+                return bridge.cv2_to_imgmsg(cv_image, encoding="bgr8")
             return None
         except Exception as e:
             print(e)

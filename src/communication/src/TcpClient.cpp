@@ -1,6 +1,9 @@
 #include "TcpClient.hpp"
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/opencv.hpp>
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
+#include "sensor_msgs/image_encodings.h"
 #include "service_calls/GoToCmdSrvResponse.hpp"
 #include "service_calls/GoToSrvResponse.hpp"
 #include "service_calls/SrvRequest.hpp"
@@ -157,10 +160,10 @@ void TcpClient::send_string(const std::string &str) {
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
-	uint32_t length = ros::serialization::serializationLength(img);
-	std::vector<uint8_t> image(length);
-	ros::serialization::OStream stream(image.data(), length);
-	ros::serialization::serialize(stream, img);
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+    std::vector<uchar> image;
+    cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 90});
+	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_IMAGE_DGRAM);
 	uint8_t current_segment = total_segments;
 	uint32_t array_pos_start = 0;
@@ -177,10 +180,10 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 }
 
 void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
-	uint32_t length = ros::serialization::serializationLength(img);
-	std::vector<uint8_t> image(length);
-	ros::serialization::OStream stream(image.data(), length);
-	ros::serialization::serialize(stream, img);
+    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_32FC1);
+    std::vector<uchar> image;
+    cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 100});
+	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_IMAGE_DGRAM);
 	uint8_t current_segment = total_segments;
 	uint32_t array_pos_start = 0;
