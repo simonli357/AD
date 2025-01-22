@@ -160,6 +160,14 @@ public:
                 start_bool_callback(req, res);
                 utils.tcp_client->send_start_srv(true);
             }
+            if(utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
+                double x0 = utils.tcp_client->get_waypoints_srv_msgs().front().x0;
+                double y0 = utils.tcp_client->get_waypoints_srv_msgs().front().y0;
+                double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front().yaw0;
+                utils::waypoints srv = path_manager.call_waypoint_service(x0, y0, yaw0);
+                utils.tcp_client->get_waypoints_srv_msgs().pop();
+                utils.tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }

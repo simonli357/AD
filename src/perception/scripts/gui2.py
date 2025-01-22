@@ -597,21 +597,6 @@ class OpenCVGuiApp(QWidget):
             raise e
 
     def call_start_service(self, start):
-        # print("service call")
-        # rospy.wait_for_service("/start_bool", timeout=5)
-        # try:
-        #     # Create a service proxy
-        #     service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
-        #     request = SetBoolRequest()
-        #     request.data = start
-        #     # Call the service
-        #     response = service_proxy(request)
-        #     if response.success:
-        #         rospy.loginfo("Service call succeeded!")
-        #     else:
-        #         rospy.logerr("Service call failed!")
-        # except rospy.ServiceException as e:
-        #     print("Service call failed:", e)
         try:
             self.server.utility_node_client.send_start_srv(not self.started)
             max_retries = 50
@@ -772,23 +757,40 @@ class OpenCVGuiApp(QWidget):
         self.show_depth = not self.show_depth
 
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
-        rospy.wait_for_service('waypoint_path', timeout=5)
+        # rospy.wait_for_service('waypoint_path', timeout=5)
+        # try:
+        #     waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
+        #     req = waypointsRequest()
+        #     req.vrefName = vref_name
+        #     req.pathName = path_name
+        #     req.x0 = x0
+        #     req.y0 = y0
+        #     req.yaw0 = yaw0
+
+        #     res = waypoint_path_service(req)
+
+        #     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+        #     self.attributes_np = np.array(res.wp_attributes.data)
+        #     print("Service call successful.")
+        # except rospy.ServiceException as e:
+        #     rospy.logerr(f"Service call failed: {e}")
         try:
-            waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
             req = waypointsRequest()
-            req.vrefName = vref_name
-            req.pathName = path_name
-            req.x0 = x0
-            req.y0 = y0
-            req.yaw0 = yaw0
-
-            res = waypoint_path_service(req)
-
-            self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-            self.attributes_np = np.array(res.wp_attributes.data)
-            print("Service call successful.")
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+            self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
+            max_retries = 50
+            retries = 0
+            res = self.server.utility_node_client.waypoints_srv_msg
+            while (retries < max_retries):
+                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
+                    self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                    self.attributes_np = np.array(res.wp_attributes.data)
+                    print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to send waypoints service call")
+        except Exception as e:
+            raise e
 
     def illustrate_path(self, image):
         if self.state_refs_np is None or self.attributes_np is None:
