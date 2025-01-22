@@ -73,8 +73,10 @@ class OpenCVGuiApp(QWidget):
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
         self.set_states_button = QPushButton('Set States')
         self.reset_yaw_button = QPushButton('Set Yaw')
+        self.save_path_button = QPushButton('Save Path')
         self.toggle_button_layout.addWidget(self.set_states_button)
         self.toggle_button_layout.addWidget(self.reset_yaw_button)
+        self.toggle_button_layout.addWidget(self.save_path_button)
 
         self.left_panel_layout.addLayout(self.toggle_button_layout)
 
@@ -97,6 +99,7 @@ class OpenCVGuiApp(QWidget):
         self.goto_button.clicked.connect(self.goto)
         self.set_states_button.clicked.connect(self.set_states)
         self.reset_yaw_button.clicked.connect(self.reset_yaw)
+        self.save_path_button.clicked.connect(self.save_path)
 
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
@@ -552,6 +555,11 @@ class OpenCVGuiApp(QWidget):
 
     def reset_yaw(self):
         self.call_set_states_service()
+    
+    def save_path(self):
+        path = os.path.dirname(os.path.abspath(__file__))
+        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
+        print("saved state refs")
 
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
@@ -633,6 +641,8 @@ class OpenCVGuiApp(QWidget):
         if self.center is None:
             return image
         # Draw the center line
+        if image is None:
+            return image
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
         cv2.putText(image, f"center: {self.center}",
                     (int(image.shape[1] * 0.5), int(image.shape[0] * 0.1)),

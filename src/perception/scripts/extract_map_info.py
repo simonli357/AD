@@ -141,7 +141,7 @@ north_facing_signs = [
 ]
 
 west_facing_signs = [
-    [17.1571 + sign_ofs2, 10.633 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
+    # [17.1571 + sign_ofs2, 10.633 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [1.296 + sign_ofs2, 3.86375 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [5.71 + sign_ofs2, 3.8661 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
     [5.708 + sign_ofs2, 6.753 + ofs6 * 2 + pole_size + sign_ofs1, "Sign", "WEST"],
@@ -305,4 +305,5 @@ for node_number in destinations:
 
 # Create DataFrame and save it as a CSV
 df = pd.DataFrame(data, columns=['X', 'Y', 'Type', 'Orientation'])
-df.to_csv('assets/coordinates_with_context.csv', index=False)
+df.to_csv(os.path.join(current_path, 'assets', 'coordinates_with_context.csv'), index=False)
+# df.to_csv('assets/coordinates_with_context.csv', index=False)
