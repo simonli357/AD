@@ -58,6 +58,7 @@ class TcpClient {
 	const size_t message_size = 4;
 	const uint32_t MAX_IMAGE_DGRAM = 65507;
 	bool alive = true;
+    bool connected = false;
 	bool canSend = false;
 	sockaddr_in tcp_address;
     sockaddr_in udp_rgb_address;
@@ -66,6 +67,7 @@ class TcpClient {
     int udp_rgb_socket;
     int udp_depth_socket;
 	std::thread receive;
+    std::thread poll;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> data_actions;
 	std::vector<uint8_t> data_types;
 	// Storage
@@ -76,8 +78,10 @@ class TcpClient {
 	std::queue<SrvRequest::WaypointsSrv> waypoints_srv_msgs;
     std::queue<bool> start_srv_msgs;
 	// Methods
+    void create_tcp_socket();
 	void set_data_types();
 	void set_data_actions();
+    void poll_connection();
 	void listen();
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);

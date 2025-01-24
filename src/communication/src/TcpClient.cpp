@@ -22,9 +22,6 @@
 #include <vector>
 
 TcpClient::TcpClient(const size_t buffer_size, const std::string client_type) : buffer_size(buffer_size), client_type(client_type) {
-	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-	tcp_address.sin_family = AF_INET;
-	tcp_address.sin_port = htons(49153);
 	udp_rgb_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	udp_rgb_address.sin_family = AF_INET;
 	udp_rgb_address.sin_port = htons(49154);
@@ -33,20 +30,32 @@ TcpClient::TcpClient(const size_t buffer_size, const std::string client_type) : 
 	udp_depth_address.sin_port = htons(49155);
 	set_data_types();
 	set_data_actions();
-	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);		 // Default server address
 	inet_pton(AF_INET, server_address.c_str(), &udp_rgb_address.sin_addr);	 // Default server address
 	inet_pton(AF_INET, server_address.c_str(), &udp_depth_address.sin_addr); // Default server address
 	receive = std::thread(&TcpClient::initialize, this);
+    poll = std::thread(&TcpClient::poll_connection, this);
 }
 
 TcpClient::~TcpClient() {
 	alive = false;
+    connected = false;
 	if (tcp_socket != -1) {
 		close(tcp_socket);
 	}
 	if (receive.joinable()) {
 		receive.join();
 	}
+    if (poll.joinable()) {
+        poll.join();
+    }
+
+}
+
+void TcpClient::create_tcp_socket() {
+	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+	tcp_address.sin_family = AF_INET;
+	tcp_address.sin_port = htons(49153);
+	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
 }
 
 void TcpClient::set_data_types() {
@@ -74,6 +83,7 @@ void TcpClient::set_data_actions() {
 }
 
 void TcpClient::initialize() {
+    create_tcp_socket();
 	std::cout << "Connecting to GUI \n" << std::endl;
 	while (true) {
 		if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
@@ -81,6 +91,7 @@ void TcpClient::initialize() {
 		}
 	}
 	std::cout << "Connection request established with GUI\n" << std::endl;
+    connected = true;
 	std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	if (!client_type.empty()) {
 		send_type(client_type);
@@ -88,9 +99,26 @@ void TcpClient::initialize() {
 	listen();
 }
 
+void TcpClient::poll_connection() {
+    while (alive) {
+        char buffer[32];
+        if (connected && recv(tcp_socket, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) == 0) {
+            std::cout << "GUI disconnected\n" << std::endl;
+            connected = false;
+            pthread_cancel(receive.native_handle());
+            if (receive.joinable()) {
+                receive.join();
+            }
+            close(tcp_socket);
+            receive = std::thread(&TcpClient::initialize, this);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+}
+
 void TcpClient::listen() {
 	std::vector<uint8_t> buffer(buffer_size);
-	while (alive) {
+	while (connected) {
 		uint8_t type;
 		uint32_t length = 0;
 		// Receive the header
