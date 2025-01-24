@@ -20,8 +20,10 @@
 #include "yolov8.h"
 #include <memory>
 #include <eigen3/Eigen/Dense>
+#include "utils/constants.h"
 
 using namespace std::chrono;
+using namespace VehicleConstants;
 
 std::string getSourceDirectory() {
     std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
@@ -130,20 +132,14 @@ class SignFastest {
             YELLOW,
             UNDETERMINED
         };
-        static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240}; // fx, fy, cx, cy
-        static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
         // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
         static constexpr double parallel_w2h_ratio = 1.30;
         static constexpr double perpendicular_w2h_ratio = 2.88;
-        static constexpr double CAR_WIDTH = 0.1885;
-        static constexpr double CAR_HEIGHT = 0.1155;
-        static constexpr double CAR_LENGTH = 0.464;
-        static constexpr std::array<double, 3> CAMERA_POSE = {0.095, 0, 0.165};
         double min_ground_distance = 429; // in mm
         Eigen::Vector3d object_pose_body_frame;
         
         static void estimate_object_pose2d(Eigen::Vector3d &out, double x1, double y1, double x2, double y2,
-                                                double object_distance,
+                                                double object_distance, bool real,
                                                 bool is_car = false)
         {
             double yaw = 0;
@@ -185,6 +181,12 @@ class SignFastest {
             double fy = CAMERA_PARAMS[1];
             double cx = CAMERA_PARAMS[2];
             double cy = CAMERA_PARAMS[3];
+            if (real) {
+                fx = CAMERA_PARAMS_REAL[0];
+                fy = CAMERA_PARAMS_REAL[1];
+                cx = CAMERA_PARAMS_REAL[2];
+                cy = CAMERA_PARAMS_REAL[3];
+            }
 
             // Compute bounding box center in image coordinates
             double bbox_center_x = (x1 + x2) / 2;
@@ -194,9 +196,11 @@ class SignFastest {
             double x_norm = (bbox_center_x - cx) / fx;
             double y_norm = (bbox_center_y - cy) / fy;
 
-            // Add distance from camera to robot center
-            object_distance += CAMERA_POSE[0];
-
+            if (real) {
+                object_distance += REALSENSE_TF_REAL[0];
+            } else {
+                object_distance += REALSENSE_TF[0];
+            }
             // Estimate 3D coordinates in the camera frame
             double X_c = x_norm * object_distance;
             double Y_c = y_norm * object_distance;
@@ -206,33 +210,15 @@ class SignFastest {
         }
         static void estimate_object_pose2d(Eigen::Vector3d &out,
                                             const std::array<double, 4>& bounding_box, 
-                                            double object_distance, 
+                                            double object_distance, bool real, 
                                             bool is_car = false) {
             double x1 = bounding_box[0];
             double y1 = bounding_box[1];
             double x2 = bounding_box[2];
             double y2 = bounding_box[3];
-            estimate_object_pose2d(out, x1, y1, x2, y2, object_distance, is_car);
+            estimate_object_pose2d(out, x1, y1, x2, y2, object_distance, real, is_car);
         }
 
-        enum OBJECT {
-            ONEWAY,
-            HIGHWAYENTRANCE,
-            STOPSIGN,
-            ROUNDABOUT,
-            PARK,
-            CROSSWALK,
-            NOENTRY,
-            HIGHWAYEXIT,
-            PRIORITY,
-            LIGHTS,
-            BLOCK,
-            PEDESTRIAN,
-            CAR,
-            GREENLIGHT,
-            YELLOWLIGHT,
-            REDLIGHT
-        };
         static constexpr int OBJECT_COUNT = 13;
         // private:
         yoloFastestv2 api;
@@ -472,7 +458,8 @@ class SignFastest {
                 sign_msg.data.push_back(distance);
                 sign_msg.data.push_back(confidence);
                 sign_msg.data.push_back(static_cast<float>(class_id));
-                estimate_object_pose2d(object_pose_body_frame, x1, y1, x2, y2, distance, true);
+                bool is_car = class_id == OBJECT::CAR;
+                estimate_object_pose2d(object_pose_body_frame, x1, y1, x2, y2, distance, real, is_car);
                 sign_msg.data.push_back(object_pose_body_frame[0]);
                 sign_msg.data.push_back(object_pose_body_frame[1]);
                 sign_msg.data.push_back(object_pose_body_frame[2]);
