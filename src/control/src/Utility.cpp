@@ -452,7 +452,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
             double ymax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
             double x, y, yaw;
             get_states(x, y, yaw);
-            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, CAMERA_PARAMS, true);
+            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
             // std::cout << "world_pose: (" << world_pose[0] << ", " << world_pose[1] << "), self pose: (" << x << ", " << y << ")" << std::endl;
             // check error norm between x, y of detected car and the ones in the detected_cars vector
             // if error norm greater than threshold, add to detected_cars vector
@@ -906,10 +906,10 @@ void Utility::publish_static_transforms() {
     geometry_msgs::TransformStamped t_imu0 = add_static_link(0, 0, 0, 0, 0, 0, "chassis", "imu0");
     static_transforms.push_back(t_imu0);
 
-    geometry_msgs::TransformStamped t_imu_cam = add_static_link(CAMERA_POSE.x, CAMERA_POSE.y, CAMERA_POSE.z, 0, 0.15, 0, "chassis", "realsense");
+    geometry_msgs::TransformStamped t_imu_cam = add_static_link(REALSENSE_TF[0], REALSENSE_TF[1], REALSENSE_TF[2], 0, REALSENSE_TF[4], 0, "chassis", "realsense");
     static_transforms.push_back(t_imu_cam);
 
-    geometry_msgs::TransformStamped t_imu_cam2 = add_static_link(CAMERA_POSE.x, CAMERA_POSE.y, CAMERA_POSE.z, 0, 0.15, 0, "chassis", "camera_imu_optical_frame");
+    geometry_msgs::TransformStamped t_imu_cam2 = add_static_link(REALSENSE_TF[0], REALSENSE_TF[1], REALSENSE_TF[2], 0, REALSENSE_TF[4], 0, "chassis", "camera_imu_optical_frame");
     static_transforms.push_back(t_imu_cam2);
 
     static_broadcaster.sendTransform(static_transforms);
