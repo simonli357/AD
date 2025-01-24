@@ -1,7 +1,6 @@
 import socket
 import signal
 import sys
-import time
 import struct
 import threading
 from python_server.connection import Connection

@@ -559,6 +559,8 @@ class OpenCVGuiApp(QWidget):
         rospy.wait_for_service('goto_command', timeout=5)
         print("service found, calling service...")
         try:
+            if self.server.utility_node_client.socket is None:
+                return
             self.server.utility_node_client.send_go_to_cmd_srv(x, y)
             max_retries = 50
             retries = 0
@@ -580,6 +582,8 @@ class OpenCVGuiApp(QWidget):
         rospy.wait_for_service('set_states', timeout=5)
         print("service found, calling service...")
         try:
+            if self.server.utility_node_client.socket is None:
+                return
             if x is not None and y is not None:
                 self.server.utility_node_client.send_set_states_srv(x, y)
             else:
@@ -598,6 +602,8 @@ class OpenCVGuiApp(QWidget):
 
     def call_start_service(self, start):
         try:
+            if self.server.utility_node_client.socket is None:
+                return
             self.server.utility_node_client.send_start_srv(not self.started)
             max_retries = 50
             retries = 0
@@ -757,24 +763,9 @@ class OpenCVGuiApp(QWidget):
         self.show_depth = not self.show_depth
 
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
-        # rospy.wait_for_service('waypoint_path', timeout=5)
-        # try:
-        #     waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
-        #     req = waypointsRequest()
-        #     req.vrefName = vref_name
-        #     req.pathName = path_name
-        #     req.x0 = x0
-        #     req.y0 = y0
-        #     req.yaw0 = yaw0
-
-        #     res = waypoint_path_service(req)
-
-        #     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-        #     self.attributes_np = np.array(res.wp_attributes.data)
-        #     print("Service call successful.")
-        # except rospy.ServiceException as e:
-        #     rospy.logerr(f"Service call failed: {e}")
         try:
+            if self.server.utility_node_client.socket is None:
+                return
             req = waypointsRequest()
             self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
             max_retries = 50
@@ -1151,18 +1142,20 @@ def callbacks(gui, server):
         # Image depth
         if server.depth_stream.frame is not None:
             gui.depth_callback(server.depth_stream.frame)
-        # Road object
-        if server.utility_node_client.road_objects:
-            gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
-        # Waypoints
-        if server.utility_node_client.waypoints:
-            gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
-        # Signs
-        if server.sign_node_client.signs:
-            gui.sign_callback(server.sign_node_client.signs.pop(0))
-        # Messages
-        if server.utility_node_client.messages:
-            gui.message_callback(server.utility_node_client.messages.pop(0))
+        if server.sign_node_client.socket is not None:
+            # Signs
+            if server.sign_node_client.signs:
+                gui.sign_callback(server.sign_node_client.signs.pop(0))
+        if server.utility_node_client.socket is not None:
+            # Road object
+            if server.utility_node_client.road_objects:
+                gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
+            # Waypoints
+            if server.utility_node_client.waypoints:
+                gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
+            # Messages
+            if server.utility_node_client.messages:
+                gui.message_callback(server.utility_node_client.messages.pop(0))
 
         time.sleep(0.016)
 

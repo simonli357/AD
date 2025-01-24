@@ -12,8 +12,8 @@ from python_server.service_calls.waypoints_srv import WaypointsSrv
 
 class Connection:
     def __init__(self, client_socket=None):
+        self.socket = client_socket
         if client_socket is not None:
-            self.socket = client_socket
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
                 b'\x02': self.parse_image_rgb,
