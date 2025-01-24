@@ -78,6 +78,7 @@ namespace VehicleConstants {
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
     static constexpr double MAX_PARK_DIST = 1.;  // 1.0 - 0.21
     static constexpr double MAX_CROSSWALK_DIST = 0.79;  // 1.0 - 0.21
+    static constexpr double RECOMMENDED_HW_DIST = 1.1;  // 1.0 - 0.21
     static constexpr double PARKSIGN_TO_CAR = 0.51;
     static constexpr double PARK_OFFSET = 1.31;    // 1.1 + 0.21
     static constexpr double PARKING_SPOT_LENGTH = 0.723;
@@ -242,6 +243,20 @@ namespace VehicleConstants {
         {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1}}, 
     };
 
+    static const std::vector<std::vector<double>> WEST_FACING_HIGHWAYENTRANCES = {
+        {{14.35,11,03}},
+    };
+    static const std::vector<std::vector<double>> EAST_FACING_HIGHWAYENTRANCES = {
+        {{6.3477, 11.56}}, 
+    };
+    static const std::vector<std::vector<double>> WEST_FACING_HIGHWAYEXITS = {
+        {{7.0845, 12.9}},
+    };
+    static const std::vector<std::vector<double>> EAST_FACING_HIGHWAYEXITS = {
+        {{13.63, 9.7}}, 
+    };
+    static const std::vector<std::vector<double>> EMPTY = {};
+
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;
     static constexpr double park_ofs2 = 0.05325;
@@ -272,8 +287,20 @@ namespace VehicleConstants {
         ODOM,
         EKF
     };
-    static constexpr std::array<double, 4> CAMERA_PARAMS = {554.3826904296875, 554.3826904296875, 320, 240};
-    static constexpr std::array<double, 6> REALSENSE_TF = {0, 0.05, 0.2, 0, 0.2617, 0};
+    static constexpr std::array<double, 4> CAMERA_PARAMS = {
+        554.3826904296875, 
+        554.3826904296875, 
+        320, 
+        240
+    };
+    static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {
+        607.40564,  // fx
+        607.05829,  // fy
+        322.97223,  // cx
+        244.39398   // cy
+    };
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.12, 0.05, 0.25, 0, 0.2617, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 

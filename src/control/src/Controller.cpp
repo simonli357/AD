@@ -546,7 +546,7 @@ public:
         // relocalize based on sign
         if (sign_relocalize && stopsign_flag != STOPSIGN_FLAGS::NONE) {
         // if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
-            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
+            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
             if (stopsign_flag == STOPSIGN_FLAGS::RDB) {
                 int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
                 const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_ROUNDABOUT :
@@ -632,7 +632,7 @@ public:
                 if (sign_relocalize) {
                 // if (1) {
                     utils.update_states(x_current);
-                    auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist, CAMERA_PARAMS);
+                    auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist);
                     int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
                     const auto& direction_crosswalks = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
@@ -648,6 +648,47 @@ public:
             }
         }
         return -1;
+    }
+    bool check_highway_signs() {
+        static ros::Time hw_cooldown_timer = ros::Time::now();
+        static double detected_dist = -1;
+        if(hw_cooldown_timer > ros::Time::now()) {
+            // std::cout << "crosswalk detected previously, cd expire in " << (crosswalk_cooldown_timer - ros::Time::now()).toSec() << "s" << std::endl;
+            return false;
+        }
+        bool is_exit = false;
+        int hw_index = utils.object_index(OBJECT::HIGHWAYENTRANCE);
+        if (hw_index < 0) {
+            hw_index = utils.object_index(OBJECT::HIGHWAYEXIT);
+            is_exit = true;
+        }
+        if(hw_index >= 0) {
+            detected_dist = utils.object_distance(hw_index);
+            if (detected_dist < RECOMMENDED_HW_DIST && detected_dist > 0) {
+                double cd = (detected_dist + 4) / FAST_SPEED;
+                hw_cooldown_timer = ros::Time::now() + ros::Duration(cd);
+                std::string hw_type = is_exit ? "exit" : "entrance";
+                utils.debug("highway " + hw_type + " detected at a distance of: " + std::to_string(detected_dist), 2);
+                if (sign_relocalize) {
+                    utils.update_states(x_current);
+                    auto hw_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(hw_index), detected_dist);
+                    int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
+                    const auto& direction_highways = (nearestDirectionIndex == 0 && is_exit) ? EAST_FACING_HIGHWAYEXITS :
+                                            (nearestDirectionIndex == 0 && !is_exit) ? EAST_FACING_HIGHWAYENTRANCES :
+                                            (nearestDirectionIndex == 2 && is_exit) ? WEST_FACING_HIGHWAYEXITS :
+                                            (nearestDirectionIndex == 2 && !is_exit) ? WEST_FACING_HIGHWAYENTRANCES :
+                                                                        EMPTY;
+                    std::string sign_type = (nearestDirectionIndex == 0 && is_exit) ? "HIGHWAYEXIT EAST" :
+                                          (nearestDirectionIndex == 0 && !is_exit) ? "HIGHWAYENTRANCE EAST" :
+                                          (nearestDirectionIndex == 2 && is_exit) ? "HIGHWAYEXIT WEST" :
+                                          (nearestDirectionIndex == 2 && !is_exit) ? "HIGHWAYENTRANCE WEST" :
+                                                                        "HIGHWAY UNKNOWN";
+                    sign_based_relocalization(hw_pose, direction_highways, sign_type);
+                }
+                return true;
+            }
+        }
+        return false;
     }
     double check_highway() {
         utils.update_states(x_current);
@@ -961,7 +1002,7 @@ public:
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, CAMERA_PARAMS);
+                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
                 // auto car_pose = utils.detected_cars[car_index];
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
@@ -1228,6 +1269,7 @@ void StateMachine::run() {
             }
             if (sign) {
                 check_stop_sign();
+                check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {
                     auto x1 = PARKING_SIGN_POSES[0][0];
@@ -1316,7 +1358,7 @@ void StateMachine::run() {
                 }
                 // if (1) {
                 if (sign_relocalize) {
-                    auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist, CAMERA_PARAMS);
+                    auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist);
                     int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING");
                 }
                 utils.debug("PARKING(): target spot: " + std::to_string(target_spot), 2);
@@ -1537,7 +1579,6 @@ void StateMachine::run() {
             utils.stop_car();
             change_state(STATE::INIT);
         } else if (state == STATE::TESTING) {
-            std::cout << "testing" << std::endl;
             int sign_index = utils.object_index(OBJECT::STOPSIGN);
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::REDLIGHT);
@@ -1557,18 +1598,20 @@ void StateMachine::run() {
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::CROSSWALK);
+            }
             bool is_car = false;
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::CAR);
                 is_car = true;
             }
             if (sign_index < 0) {
-                std::cout << "No sign detected, stopping..." << std::endl;
                 continue;
             }
             double detected_dist1 = utils.object_distance(sign_index);
             std::cout << "detected_dist: " << detected_dist1 << std::endl;
-            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS, is_car);
+            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, is_car);
             ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
             ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
             ROS_INFO("Relative pose: (%.2f, %.2f)", sign_pose1[0] - x_current[0], sign_pose1[1] - x_current[1]);

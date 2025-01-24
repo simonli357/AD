@@ -6,6 +6,7 @@
 <arg name="print_duration" default="false"/>
 <arg name="depth" default="true"/>
 <arg name="real" default="false"/>
+<param name="/is_real" value="$(arg real)"/>
 <arg name="pub" default="true"/>
 <arg name="lane" default="true"/>
 <arg name="sign" default="true"/>
