@@ -5,6 +5,7 @@ ffmpeg -i ~/Downloads/screen-capture.webm ~/Downloads/output.mp4
 
 == simulator run
 - simulator:
+cd to the folder where the simulator is located
 ```bash
 roslaunch sim_pkg run3.launch
 ```
@@ -52,3 +53,61 @@ rosrun perception gui2.py # if using tcp
 ```bash
 roslaunch control controller.launch sign:=true lane:=true v:=25 real:=true use_tcp:=true
 ```
+
+== debugging gui
+
+```bash
+gdb --args python3 src/perception/scripts/gui.py
+run
+```
+
+== realsense params
+
+=== depth
+rostopic echo /camera/depth/camera_info
+header: 
+  seq: 25
+  stamp: 
+    secs: 1737595205
+    nsecs: 353224754
+  frame_id: "camera_depth_optical_frame"
+height: 480
+width: 640
+distortion_model: "plumb_bob"
+D: [0.0, 0.0, 0.0, 0.0, 0.0]
+K: [388.25311279296875, 0.0, 323.0739440917969, 0.0, 388.25311279296875, 237.99143981933594, 0.0, 0.0, 1.0]
+R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+P: [388.25311279296875, 0.0, 323.0739440917969, 0.0, 0.0, 388.25311279296875, 237.99143981933594, 0.0, 0.0, 0.0, 1.0, 0.0]
+binning_x: 0
+binning_y: 0
+roi: 
+  x_offset: 0
+  y_offset: 0
+  height: 0
+  width: 0
+  do_rectify: False
+---
+=== color
+rostopic echo /camera/color/camera_info
+header: 
+  seq: 0
+  stamp: 
+    secs: 1737595265
+    nsecs: 930911779
+  frame_id: "camera_color_optical_frame"
+height: 480
+width: 640
+distortion_model: "plumb_bob"
+D: [0.0, 0.0, 0.0, 0.0, 0.0]
+K: [607.4056396484375, 0.0, 322.97222900390625, 0.0, 607.0582885742188, 244.39398193359375, 0.0, 0.0, 1.0]
+R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+P: [607.4056396484375, 0.0, 322.97222900390625, 0.0, 0.0, 607.0582885742188, 244.39398193359375, 0.0, 0.0, 0.0, 1.0, 0.0]
+binning_x: 0
+binning_y: 0
+roi: 
+  x_offset: 0
+  y_offset: 0
+  height: 0
+  width: 0
+  do_rectify: False
+---
