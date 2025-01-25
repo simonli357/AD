@@ -66,6 +66,7 @@
   <param name="yaw0" value="$(arg yaw0)"/>
 
   <arg name="real" default="false"/>
+  <param name="/is_real" value="$(arg real)"/>
   <arg name="subModel" default="false"/>
   <arg name = "rate" default="300"/>
   <param name="pathName" value="$(arg path)"/>
@@ -88,6 +89,8 @@
   <param name="emergency" value="$(arg emergency)"/>
   <arg name="use_tcp" default="false"/>
   <param name="use_tcp" value="$(arg use_tcp)"/>
+  <arg name="ip" default="127.0.0.1"/>
+  <param name="ip" value="$(arg ip)"/>
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config_park.yaml" />
@@ -104,7 +107,6 @@
     <param name="y0" value="$(arg y0)"/>
     <param name="yaw0" value="$(arg yaw0)"/>
     <param name="real" value="$(arg real)"/>
-    <param name="/real" value="$(arg real)"/>
     <param name="subModel" value="$(arg subModel)"/>
     <param name="rate" value="$(arg rate)"/>
   </node>
