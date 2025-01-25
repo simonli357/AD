@@ -130,6 +130,10 @@ public:
 
     void receive_services() {
         while(true) {
+            if (utils.tcp_client == nullptr) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+                continue;
+            }
             if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_x;
                 double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_y;
@@ -1634,7 +1638,9 @@ int main(int argc, char **argv) {
     if(vref>30) vref = 35.;
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
-    std::thread t(&StateMachine::receive_services, &sm);
+    bool use_tcp = false;
+    nh.getParam("/use_tcp", use_tcp);
+    if (use_tcp) std::thread t1(&StateMachine::receive_services, &sm);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
