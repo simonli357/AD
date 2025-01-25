@@ -55,8 +55,14 @@ class SignFastest {
             }
             if(use_tcp) {
                 ROS_INFO("Attempting to create TCP client...");
-                tcp_client = std::make_unique<TcpClient>(1024, "sign_node_client");
-                ROS_INFO("TCP client created successfully.");
+                std::string ip_address;
+                if (!nh.getParam("/ip", ip_address)) {
+                    ROS_ERROR("Failed to get 'ip_address' parameter. TCP client not created.");
+                    tcp_client = nullptr;
+                } else {
+                    tcp_client = std::make_unique<TcpClient>(1024, "sign_node_client", ip_address);
+                    ROS_INFO("TCP client created successfully.");
+                }
             } else {
                 tcp_client = nullptr;
                 ROS_INFO("TCP client not created.");
