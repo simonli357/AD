@@ -154,8 +154,8 @@ public:
         return 1;
     }
     int start() {
-        // change_state(STATE::MOVING);
-        change_state(STATE::TESTING);
+        change_state(STATE::MOVING);
+        // change_state(STATE::TESTING);
         return 1;
     }
     bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
