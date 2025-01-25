@@ -25,14 +25,14 @@ namespace VehicleConstants {
         KEYBOARD_CONTROL,
         TESTING
     };
-    enum STOPSIGN_FLAGS {
-        NONE,
-        STOP,
-        LIGHT,
-        PRIO,
-        RDB,
-        CW
-    };
+    // enum STOPSIGN_FLAGS {
+    //     NONE,
+    //     STOP,
+    //     LIGHT,
+    //     PRIO,
+    //     RDB,
+    //     CW
+    // };
     enum OBJECT {
         ONEWAY,
         HIGHWAYENTRANCE,
@@ -49,7 +49,13 @@ namespace VehicleConstants {
         CAR,
         GREENLIGHT,
         YELLOWLIGHT,
-        REDLIGHT
+        REDLIGHT,
+        NONE
+    };
+    static const std::vector<OBJECT> KNOWN_STATIC_OBJECTS = { 
+        HIGHWAYENTRANCE, STOPSIGN, 
+        ROUNDABOUT, PARK, CROSSWALK, 
+        HIGHWAYEXIT, PRIORITY, LIGHTS
     };
     const std::array<std::string, 16> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light" };
     enum MANEUVER_DIRECTION {
@@ -91,7 +97,7 @@ namespace VehicleConstants {
     static constexpr double MIN_DIST_TO_CAR = 0.3;
     static constexpr double MAX_CAR_DIST = 3.0;
     static constexpr double SIGN_COOLDOWN = 1.0;
-    static constexpr double TOLERANCE_SQUARED = 0.01;
+    static constexpr double TOLERANCE_SQUARED = 0.15 * 0.15;
     // static constexpr double STOP_DURATION = 1.50;
     // static constexpr double NORMAL_SPEED = 0.175;
     // static constexpr double FAST_SPEED = 0.4;
