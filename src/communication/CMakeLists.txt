@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DEXT_DEP -fdiagnostics-show-option")
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.5 REQUIRED)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -25,10 +25,12 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
 )
 
+catkin_python_setup()
+
 catkin_package(
    INCLUDE_DIRS include
 #  LIBRARIES communication
-   CATKIN_DEPENDS message_runtime nav_msgs roscpp rospy sensor_msgs std_msgs utils image_transport
+   CATKIN_DEPENDS message_runtime nav_msgs roscpp rospy sensor_msgs std_msgs utils image_transport cv_bridge
 #  DEPENDS system_lib
 )
 
@@ -40,13 +42,15 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  include/service_calls
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 file(GLOB SOURCES src/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES})
+file(GLOB SERVICES src/service_calls/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES})
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/communication.cpp
 # )
@@ -72,11 +76,11 @@ add_library(${PROJECT_NAME} ${SOURCES})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}
-#   ${catkin_LIBRARIES}
-#   ${roscpp_LIBRARIES}
-#   pthread
-# )
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
 #############
 ## Install ##
@@ -87,10 +91,10 @@ add_library(${PROJECT_NAME} ${SOURCES})
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/server.py
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+catkin_install_python(PROGRAMS
+  src/python_server/server.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
