@@ -75,8 +75,10 @@ class OpenCVGuiApp(QWidget):
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
         self.set_states_button = QPushButton('Set States')
         self.reset_yaw_button = QPushButton('Set Yaw')
+        self.save_path_button = QPushButton('Save Path')
         self.toggle_button_layout.addWidget(self.set_states_button)
         self.toggle_button_layout.addWidget(self.reset_yaw_button)
+        self.toggle_button_layout.addWidget(self.save_path_button)
 
         self.left_panel_layout.addLayout(self.toggle_button_layout)
 
