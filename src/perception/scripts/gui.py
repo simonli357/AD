@@ -705,21 +705,41 @@ class OpenCVGuiApp(QWidget):
     def camera_callback(self, msg):
         if self.show_depth:
             return
-        cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        cv_image = self.add_sign_detection_to_image(cv_image)
-        cv_image = self.add_lane_detection_to_image(cv_image)
-        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(qt_image)
-        self.camera_label.setPixmap(pixmap)
+
+        try:
+            # Convert ROS image message to OpenCV image
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+
+            # Check if the image is empty
+            if cv_image is None or cv_image.size == 0:
+                rospy.logerr("Received an empty image from the camera!")
+                return
+
+            # Continue with processing
+            cv_image = self.add_sign_detection_to_image(cv_image)
+            cv_image = self.add_lane_detection_to_image(cv_image)
+            
+            # Convert BGR to RGB
+            rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+            rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
+
+            # Convert to QImage for GUI display
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qt_image)
+            self.camera_label.setPixmap(pixmap)
+
+        except cv2.error as e:
+            rospy.logerr(f"OpenCV error: {e}")
+        except Exception as e:
+            rospy.logerr(f"Unexpected error in camera_callback: {e}")
 
     def depth_callback(self, msg):
         if not self.show_depth:
             return
         depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+        # depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
         # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
         # Apply normalization with a focus on closer objects
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)

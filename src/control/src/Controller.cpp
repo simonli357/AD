@@ -112,7 +112,7 @@ public:
     double detected_dist = 0;
     bool right_park = true;
     int park_count = 0;
-    int stopsign_flag = 0; // stopsign, traffic light, priority, roundabout
+    int stopsign_flag = OBJECT::NONE;
     Eigen::Vector2d destination;
     int state = 0;
     bool sign, ekf, lane, real, dashboard, keyboardControl, hasGps, pubWaypoints;
@@ -496,7 +496,7 @@ public:
         return false;
     }
     void check_stop_sign() {
-        if (stopsign_flag != STOPSIGN_FLAGS::NONE) return; // sign already detected 
+        if (stopsign_flag != OBJECT::NONE) return; // sign already detected 
         utils.update_states(x_current);
         double &x = x_current[0];
         double &y = x_current[1];
@@ -510,20 +510,20 @@ public:
 
         // check for stop sign
         sign_index = utils.object_index(OBJECT::STOPSIGN);
-        if (stopsign_flag == STOPSIGN_FLAGS::NONE) { // if no sign detected
+        if (stopsign_flag == OBJECT::NONE) { // if no sign detected
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
                     utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
-                    stopsign_flag = STOPSIGN_FLAGS::STOP;
+                    stopsign_flag = OBJECT::STOPSIGN;
                 }
             }
         }
 
         // check for traffic light
-        if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
+        if (stopsign_flag == OBJECT::NONE) {
             bool is_red = false;
             sign_index = utils.object_index(OBJECT::REDLIGHT);
             if(sign_index >= 0) {
@@ -539,7 +539,7 @@ public:
                     utils.debug("check_stop_sign(): traffic light detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
-                    stopsign_flag = STOPSIGN_FLAGS::LIGHT;
+                    stopsign_flag = OBJECT::LIGHTS;
                 }
             }
             if (is_red) {
@@ -549,103 +549,50 @@ public:
         }
         
         // check for priority sign
-        if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
+        if (stopsign_flag == OBJECT::NONE) {
             sign_index = utils.object_index(OBJECT::PRIORITY);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
                     utils.debug("check_stop_sign(): priority detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = STOPSIGN_FLAGS::PRIO;
+                    stopsign_flag = OBJECT::PRIORITY;
                 }
             }
         }
 
         // check for roundabout sign
-        if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
+        if (stopsign_flag == OBJECT::NONE) {
             sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
                     utils.debug("check_stop_sign(): roundabout detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = STOPSIGN_FLAGS::RDB;
+                    stopsign_flag = OBJECT::ROUNDABOUT;
                 }
             }
         }
         
         // check for crosswalk
-        if (stopsign_flag == STOPSIGN_FLAGS::NONE) {
+        if (stopsign_flag == OBJECT::NONE) {
             sign_index = utils.object_index(OBJECT::CROSSWALK);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > 0) {
                     utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = STOPSIGN_FLAGS::CW;
+                    stopsign_flag = OBJECT::CROSSWALK;
                 }
             }
         }
 
         // relocalize based on sign
-        if (sign_relocalize && stopsign_flag != STOPSIGN_FLAGS::NONE) {
-        // if (stopsign_flag != STOPSIGN_FLAGS::NONE) {
-            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist, CAMERA_PARAMS);
-            if (stopsign_flag == STOPSIGN_FLAGS::RDB) {
-                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_ROUNDABOUT :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_ROUNDABOUT :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_ROUNDABOUT :
-                                                                    SOUTH_FACING_ROUNDABOUT;
-                std::string sign_type = (nearestDirectionIndex == 0) ? "ROUNDABOUT EAST" :
-                                        (nearestDirectionIndex == 1) ? "ROUNDABOUT NORTH" :
-                                        (nearestDirectionIndex == 2) ? "ROUNDABOUT WEST" :
-                                                                    "ROUNDABOUT SOUTH";
-                sign_based_relocalization(sign_pose, intersection_signs, sign_type);
-            } else if (stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
-                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_LIGHTS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_LIGHTS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_LIGHTS :
-                                                                    SOUTH_FACING_LIGHTS;
-                std::string sign_type = (nearestDirectionIndex == 0) ? "LIGHTS EAST" :
-                                        (nearestDirectionIndex == 1) ? "LIGHTS NORTH" :
-                                        (nearestDirectionIndex == 2) ? "LIGHTS WEST" :
-                                                                    "LIGHTS SOUTH";
-                sign_based_relocalization(sign_pose, intersection_signs, sign_type);
-            } else if (stopsign_flag == STOPSIGN_FLAGS::CW) {
-                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
-                                                                    SOUTH_FACING_CROSSWALKS;
-                std::string sign_type = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
-                                        (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
-                                        (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
-                                                                    "CROSSWALK SOUTH";
-                sign_based_relocalization(sign_pose, intersection_signs, sign_type);
-            } else {
-                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                const auto& intersection_signs = (nearestDirectionIndex == 0) ? EAST_FACING_SIGNS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_SIGNS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_SIGNS :
-                                                                    SOUTH_FACING_SIGNS;
-                std::string sign_type;
-                if (stopsign_flag == STOPSIGN_FLAGS::STOP) {
-                sign_type = (nearestDirectionIndex == 0) ? "STOPSIGN EAST" :
-                                        (nearestDirectionIndex == 1) ? "STOPSIGN NORTH" :
-                                        (nearestDirectionIndex == 2) ? "STOPSIGN WEST" :
-                                                                    "STOPSIGN SOUTH";
-                } else if (stopsign_flag == STOPSIGN_FLAGS::PRIO) {
-                    sign_type = (nearestDirectionIndex == 0) ? "PRIORITY EAST" :
-                                        (nearestDirectionIndex == 1) ? "PRIORITY NORTH" :
-                                        (nearestDirectionIndex == 2) ? "PRIORITY WEST" :
-                                                                    "PRIORITY SOUTH";
-                } else {
-                    sign_type = "UNKNOWN";
-                }
-                sign_based_relocalization(sign_pose, intersection_signs, sign_type);
-            }
+        if (sign_relocalize && stopsign_flag != OBJECT::NONE) {
+            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
+            std::string sign_type;
+            const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
+            sign_based_relocalization(sign_pose, intersection_signs, sign_type);
         }
     }
     int park_sign_detected() {
@@ -676,22 +623,48 @@ public:
                 if (sign_relocalize) {
                 // if (1) {
                     utils.update_states(x_current);
-                    auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist, CAMERA_PARAMS);
+                    auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist);
+                    std::string sign_type;
+                    const auto& direction_crosswalks = utils.get_relevant_signs(OBJECT::CROSSWALK, sign_type);
                     int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                    const auto& direction_crosswalks = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
-                                          (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
-                                          (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
-                                                                        SOUTH_FACING_CROSSWALKS;
-                    std::string sign_type = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
-                                          (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
-                                          (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
-                                                                        "CROSSWALK SOUTH";
                     sign_based_relocalization(crosswalk_pose, direction_crosswalks, sign_type);
                 }
                 return detected_dist;
             }
         }
         return -1;
+    }
+    bool check_highway_signs() {
+        static ros::Time hw_cooldown_timer = ros::Time::now();
+        static double detected_dist = -1;
+        if(hw_cooldown_timer > ros::Time::now()) {
+            // std::cout << "crosswalk detected previously, cd expire in " << (crosswalk_cooldown_timer - ros::Time::now()).toSec() << "s" << std::endl;
+            return false;
+        }
+        bool is_exit = false;
+        int hw_index = utils.object_index(OBJECT::HIGHWAYENTRANCE);
+        if (hw_index < 0) {
+            hw_index = utils.object_index(OBJECT::HIGHWAYEXIT);
+            is_exit = true;
+        }
+        if(hw_index >= 0) {
+            detected_dist = utils.object_distance(hw_index);
+            if (detected_dist < RECOMMENDED_HW_DIST && detected_dist > 0) {
+                double cd = (detected_dist + 4) / FAST_SPEED;
+                hw_cooldown_timer = ros::Time::now() + ros::Duration(cd);
+                std::string hw_type = is_exit ? "exit" : "entrance";
+                utils.debug("highway " + hw_type + " detected at a distance of: " + std::to_string(detected_dist), 2);
+                if (sign_relocalize) {
+                    utils.update_states(x_current);
+                    auto hw_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(hw_index), detected_dist);
+                    std::string sign_type;
+                    const auto& direction_highways = utils.get_relevant_signs(is_exit ? OBJECT::HIGHWAYEXIT : OBJECT::HIGHWAYENTRANCE, sign_type);
+                    sign_based_relocalization(hw_pose, direction_highways, sign_type);
+                }
+                return true;
+            }
+        }
+        return false;
     }
     double check_highway() {
         utils.update_states(x_current);
@@ -757,25 +730,16 @@ public:
     }
     int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string& sign_type = "") {
         int min_index = 0;
-        double min_error_sq = 1000;
-        // utils.debug("sign_based_relocalization(): estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + ")", 5);
-        for (std::size_t i = 0; i < EMPIRICAL_POSES.size(); ++i) {
-            double error_sq = std::pow(estimated_sign_pose[0] - EMPIRICAL_POSES[i][0], 2) + std::pow(estimated_sign_pose[1] - EMPIRICAL_POSES[i][1], 2);
-            if (error_sq < min_error_sq) {
-                min_error_sq = error_sq;
-                min_index = static_cast<int>(i);
-            }
-        }
-        // exit(0);
-        if (min_error_sq > sign_localization_threshold * sign_localization_threshold) {
-            utils.debug("sign_based_relocalization(" + sign_type + "): FAILURE: error too large: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold), 2);
-            return 0;
-        } else {
+        double min_error_sq = 1000.0;
+        if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, sign_localization_threshold)) {
             utils.debug("sign_based_relocalization(" + sign_type + "): SUCCESS: estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + "), actual: (" + std::to_string(EMPIRICAL_POSES[min_index][0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1]) + "), error: (" + std::to_string(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold), 2);
             double x,y,yaw;
             utils.get_states(x, y, yaw);
             utils.debug("sign_based_relocalization(" + sign_type + "): relative estimated pose to car: (" + std::to_string(estimated_sign_pose[0] - x) + ", " + std::to_string(estimated_sign_pose[1] - y) + ")", 3);
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
+        } else {
+            utils.debug("sign_based_relocalization(" + sign_type + "): FAILURE: error too large: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold), 2);
+            return 0;
         }
         utils.update_states(x_current);
         path_manager.reset_target_waypoint_index(x_current);
@@ -1005,7 +969,7 @@ public:
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, CAMERA_PARAMS);
+                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
                 // auto car_pose = utils.detected_cars[car_index];
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
@@ -1172,9 +1136,9 @@ void StateMachine::update_mpc_states() {
 }
 void StateMachine::solve() {
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
-    std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
-    std::cout << "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl;
+    // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+    // std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
+    // std::cout << "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl;
     // for (int i = path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 6, static_cast<int>(path_manager.state_refs.rows())); i++) {
     //     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) << std::endl;
     // }
@@ -1204,11 +1168,7 @@ void StateMachine::publish_commands() {
     }
     double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
-    // if (count <3) {
-    //     steer = 0;
-    //     count++;
-    // }
-    std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
+    // std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
     utils.publish_cmd_vel(steer, speed);
 }
 void StateMachine::change_state(STATE new_state) {
@@ -1234,25 +1194,25 @@ void StateMachine::run() {
         }
         if (state == STATE::MOVING) {
             if(intersection_reached()) {
-                if(stopsign_flag == STOPSIGN_FLAGS::STOP || stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
+                if(stopsign_flag == OBJECT::STOPSIGN || stopsign_flag == OBJECT::LIGHTS) {
                     // change_state(STATE::WAITING_FOR_STOPSIGN);
-                    if (stopsign_flag == STOPSIGN_FLAGS::STOP) {
+                    if (stopsign_flag == OBJECT::STOPSIGN) {
                         utils.debug("intersection reached: CASE STOP SIGN, stopping for " + std::to_string(stop_duration) + " seconds...", 2);
                         mpc.reset_solver();
                         stop_for(stop_duration);
-                    } else if (stopsign_flag == STOPSIGN_FLAGS::LIGHT) {
+                    } else if (stopsign_flag == OBJECT::LIGHTS) {
                         utils.debug("intersection reached: CASE TRAFFIC LIGHT, clearing stopsign flag...", 2);
                     }
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                } else if(stopsign_flag == STOPSIGN_FLAGS::PRIO) {
+                    stopsign_flag = OBJECT::NONE;
+                } else if(stopsign_flag == OBJECT::PRIORITY) {
                     utils.debug("intersection reached: CASE PRIORITY, proceeding...", 2);
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                } else if(stopsign_flag == STOPSIGN_FLAGS::CW) {
+                    stopsign_flag = OBJECT::NONE;
+                } else if(stopsign_flag == OBJECT::CROSSWALK) {
                     utils.debug("intersection reached: CASE CROSSWALK, proceeding...", 2);
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
-                } else if(stopsign_flag == STOPSIGN_FLAGS::RDB) {
+                    stopsign_flag = OBJECT::NONE;
+                } else if(stopsign_flag == OBJECT::ROUNDABOUT) {
                     utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 2);
-                    stopsign_flag = STOPSIGN_FLAGS::NONE;
+                    stopsign_flag = OBJECT::NONE;
                     if (use_lane) {
                         update_mpc_states(x_current[0], x_current[1], x_current[2]);
                         solve();
@@ -1260,9 +1220,9 @@ void StateMachine::run() {
                         continue;
                     }
                 } else {
+                    ROS_WARN("intersection reached: CASE NO SIGN, proceeding...");
+                    stopsign_flag = OBJECT::NONE;
                     if (use_lane) {
-                        ROS_WARN("intersection reached: CASE NO SIGN, proceeding...");
-                        stopsign_flag = STOPSIGN_FLAGS::NONE;
                         update_mpc_states(x_current[0], x_current[1], x_current[2]);
                         solve();
                         rate->sleep();
@@ -1272,6 +1232,7 @@ void StateMachine::run() {
             }
             if (sign) {
                 check_stop_sign();
+                check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {
                     auto x1 = PARKING_SIGN_POSES[0][0];
@@ -1360,7 +1321,7 @@ void StateMachine::run() {
                 }
                 // if (1) {
                 if (sign_relocalize) {
-                    auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist, CAMERA_PARAMS);
+                    auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist);
                     int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING");
                 }
                 utils.debug("PARKING(): target spot: " + std::to_string(target_spot), 2);
@@ -1581,7 +1542,6 @@ void StateMachine::run() {
             utils.stop_car();
             change_state(STATE::INIT);
         } else if (state == STATE::TESTING) {
-            std::cout << "testing" << std::endl;
             int sign_index = utils.object_index(OBJECT::STOPSIGN);
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::REDLIGHT);
@@ -1601,18 +1561,20 @@ void StateMachine::run() {
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             }
+            if (sign_index < 0) {
+                sign_index = utils.object_index(OBJECT::CROSSWALK);
+            }
             bool is_car = false;
             if (sign_index < 0) {
                 sign_index = utils.object_index(OBJECT::CAR);
                 is_car = true;
             }
             if (sign_index < 0) {
-                std::cout << "No sign detected, stopping..." << std::endl;
                 continue;
             }
             double detected_dist1 = utils.object_distance(sign_index);
             std::cout << "detected_dist: " << detected_dist1 << std::endl;
-            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, CAMERA_PARAMS, is_car);
+            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, is_car);
             ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
             ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
             ROS_INFO("Relative pose: (%.2f, %.2f)", sign_pose1[0] - x_current[0], sign_pose1[1] - x_current[1]);
