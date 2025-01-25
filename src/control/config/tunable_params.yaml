@@ -8,7 +8,7 @@ real:
   change_lane_thresh: 0.05
   change_lane_speed: 0.2
   lane_relocalize: false
-  sign_relocalize: false
+  sign_relocalize: true
   intersection_relocalize: false
   use_lane: false
   has_light: false

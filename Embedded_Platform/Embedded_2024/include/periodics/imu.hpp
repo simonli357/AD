@@ -68,6 +68,9 @@ namespace periodics
             static void BNO055_delay_msek(u32 msek);
             /* Serial callback implementation */
             void ImuPublisherCommand(char const * a, char * b);
+            // YAW retrieval method
+            virtual float getYaw();
+            
         private:
             /*I2C init routine */
             virtual void I2C_routine(void);
@@ -75,8 +78,6 @@ namespace periodics
             s32 bno055_data_readout_template(void);
             /* Run method */
             virtual void    _run();
-            // YAW retrieval method
-            virtual float getYaw();
 
             /*----------------------------------------------------------------------------*
             *  struct bno055_t parameters can be accessed by using BNO055
