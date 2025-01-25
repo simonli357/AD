@@ -1,5 +1,5 @@
-pyqt
-opencv
+PyQt5
+opencv-python
 numpy
 matplotlib
 pandas
