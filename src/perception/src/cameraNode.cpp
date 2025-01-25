@@ -96,7 +96,10 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
+			std::cout << "creating camera thread" << std::endl;
+			cameraThreadRunning = true;
 			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
+			std::cout << "camera thread created" << std::endl;
 		}
 
 		if (!doLane) {
@@ -173,9 +176,10 @@ class CameraNode {
 	std::mutex mutex;
 	void cameraThreadFunc() {
 			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
+			std::cout << "starting loop" << std::endl;
 			while (ros::ok() && cameraThreadRunning) {
-					get_frame();
-					cameraRate.sleep();
+				get_frame();
+				cameraRate.sleep();
 			}
 	}
 
