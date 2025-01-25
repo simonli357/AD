@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <cmath>
-#include "constants.h"
+#include "utils/constants.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
 #include <std_srvs/Trigger.h>
@@ -143,10 +143,10 @@ public:
         static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
         static int lookahead = 1;
         if (v_ref > 0.375) lookahead = 1;
-        static Eigen::Vector3d last_state = i_current_state;
-        double distance_travelled_sq = (i_current_state.head(2) - last_state.head(2)).squaredNorm();
-
-        last_state = i_current_state;
+        
+        // static Eigen::Vector3d last_state = i_current_state;
+        // double distance_travelled_sq = (i_current_state.head(2) - last_state.head(2)).squaredNorm();
+        // last_state = i_current_state;
 
         static int count = 0;
         closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
@@ -195,8 +195,12 @@ public:
         }
         return closest;
     }
+
+    void reset_target_waypoint_index(const Eigen::Vector3d &x_current) {
+        target_waypoint_index = find_closest_waypoint(x_current);
+    }
     
-    bool call_waypoint_service(double x, double y, double yaw) {
+    utils::waypoints call_waypoint_service(double x, double y, double yaw) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -214,7 +218,7 @@ public:
             ROS_INFO("waypoints service found");
         } else {
             ROS_INFO("waypoints service not found after 5 seconds");
-            return false;
+            return srv;
         }
         if(waypoints_client.call(srv)) {
             std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
@@ -230,10 +234,10 @@ public:
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
             set_params();
-            return true;
+            return srv;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-            return false;
+            return srv;
         }
     }
     
