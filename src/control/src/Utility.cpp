@@ -37,7 +37,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
     if(use_tcp) {
         debug("Utility constructor: Attempting to create TCP client...", 1);
-        tcp_client = std::make_unique<TcpClient>(10485760, "utility_node_client");
+        tcp_client = std::make_unique<TcpClient>(1024, "utility_node_client");
         debug("Utility constructor: TCP client created successfully.", 1);
     } else {
         tcp_client = nullptr;

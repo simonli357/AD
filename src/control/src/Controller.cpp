@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include "std_srvs/SetBoolRequest.h"
 #include "utility.hpp"
 #include "PathManager.hpp"
 #include "MPC.hpp"
@@ -85,6 +86,7 @@ public:
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
         utils.debug("state machine initialized", 2);
+
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -126,7 +128,49 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {0, 0};
 
-
+    void receive_services() {
+        while(true) {
+            if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
+                double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_x;
+                double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_y;
+                utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
+                utils::goto_command::Request req;
+                utils::goto_command::Response res;
+                req.dest_x = x;
+                req.dest_y = y;
+                goto_command_callback(req, res);
+                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+            }
+            if(utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
+                double x = utils.tcp_client->get_set_states_srv_msgs().front().x;
+                double y = utils.tcp_client->get_set_states_srv_msgs().front().y;
+                utils.tcp_client->get_set_states_srv_msgs().pop();
+                utils::set_states::Request req;
+                utils::set_states::Response res;
+                req.x = x;
+                req.y = y;
+                set_states_callback(req, res);
+                utils.tcp_client->send_set_states_srv(true);
+            }
+            if(utils.tcp_client->get_start_srv_msgs().size() > 0) {
+                std_srvs::SetBool::Request req;
+                std_srvs::SetBool::Response res;
+                req.data = utils.tcp_client->get_start_srv_msgs().front();
+                utils.tcp_client->get_start_srv_msgs().pop();
+                start_bool_callback(req, res);
+                utils.tcp_client->send_start_srv(true);
+            }
+            if(utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
+                double x0 = utils.tcp_client->get_waypoints_srv_msgs().front().x0;
+                double y0 = utils.tcp_client->get_waypoints_srv_msgs().front().y0;
+                double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front().yaw0;
+                utils::waypoints srv = path_manager.call_waypoint_service(x0, y0, yaw0);
+                utils.tcp_client->get_waypoints_srv_msgs().pop();
+                utils.tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
@@ -1590,6 +1634,7 @@ int main(int argc, char **argv) {
     if(vref>30) vref = 35.;
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
+    std::thread t(&StateMachine::receive_services, &sm);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
