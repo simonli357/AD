@@ -26,8 +26,9 @@ class VideoConnection:
         while True:
             seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
             seg_num = seg[0]
-            bytes = b''
             bytes = seg[1:]
+            if len(bytes) == 0 or seg_num not in self.bytes_table.keys():
+                continue
             self.bytes_table[seg_num] = bytes
 
     def update(self):

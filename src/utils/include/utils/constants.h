@@ -79,8 +79,8 @@ namespace VehicleConstants {
     static constexpr int IMAGE_WIDTH = 640;
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
-    // static constexpr double MAX_SIGN_DIST = 1.09;
-    static constexpr double MAX_SIGN_DIST = 0.753;
+    static constexpr double MAX_SIGN_DIST = 1.09;
+    // static constexpr double MAX_SIGN_DIST = 0.753;
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
     static constexpr double MAX_PARK_DIST = 1.;  // 1.0 - 0.21
     static constexpr double MAX_CROSSWALK_DIST = 0.79;  // 1.0 - 0.21
@@ -306,7 +306,7 @@ namespace VehicleConstants {
         244.39398   // cy
     };
     static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0};
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.12, 0.05, 0.25, 0, 0.2617, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.12, 0.032, 0.25, 0, 0.2617, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
