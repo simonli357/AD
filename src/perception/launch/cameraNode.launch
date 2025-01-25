@@ -20,6 +20,8 @@
 <arg name="thread" default="true"/>
 <arg name="use_tcp" default="false"/>
 <param name="use_tcp" value="$(arg use_tcp)"/>
+<arg name="ip" default="127.0.0.1"/>
+<param name="ip" value="$(arg ip)"/>
 <arg name="use_emergency" default="false"/>
 
 <node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true">

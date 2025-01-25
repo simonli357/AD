@@ -37,8 +37,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
     if(use_tcp) {
         debug("Utility constructor: Attempting to create TCP client...", 1);
-        tcp_client = std::make_unique<TcpClient>(1024, "utility_node_client");
-        debug("Utility constructor: TCP client created successfully.", 1);
+        std::string ip_address;
+        if(!nh.getParam("/ip", ip_address)) {
+            debug("Utility constructor: ERROR: Failed to get 'ip_address' parameter. TCP client not created.", 1);
+            tcp_client = nullptr;
+        } else {
+            tcp_client = std::make_unique<TcpClient>(1024, "utility_node_client", ip_address);
+            debug("Utility constructor: TCP client created successfully.", 1);
+        }
     } else {
         tcp_client = nullptr;
         debug("Utility constructor: TCP client not created.", 1);

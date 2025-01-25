@@ -75,8 +75,10 @@ class OpenCVGuiApp(QWidget):
         self.toggle_button_layout.addWidget(self.toggle_depth_button)
         self.set_states_button = QPushButton('Set States')
         self.reset_yaw_button = QPushButton('Set Yaw')
+        self.save_path_button = QPushButton('Save Path')
         self.toggle_button_layout.addWidget(self.set_states_button)
         self.toggle_button_layout.addWidget(self.reset_yaw_button)
+        self.toggle_button_layout.addWidget(self.save_path_button)
 
         self.left_panel_layout.addLayout(self.toggle_button_layout)
 
@@ -99,6 +101,7 @@ class OpenCVGuiApp(QWidget):
         self.goto_button.clicked.connect(self.goto)
         self.set_states_button.clicked.connect(self.set_states)
         self.reset_yaw_button.clicked.connect(self.reset_yaw)
+        self.save_path_button.clicked.connect(self.save_path)
 
         # Add slider for sign size adjustment
         self.sign_size_slider = QSlider(Qt.Horizontal)
@@ -114,7 +117,7 @@ class OpenCVGuiApp(QWidget):
         self.right_panel_widget = QWidget()
         self.camera_w = int(640 / 640 * 500)
         self.camera_h = int(480 / 640 * 500)
-        self.right_panel_widget.setFixedSize(self.camera_w, 800)
+        # self.right_panel_widget.setFixedSize(self.camera_w, 800)
         self.right_panel_widget.setLayout(self.right_panel_layout)
 
         # Camera feed label
@@ -308,11 +311,12 @@ class OpenCVGuiApp(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
                 border: 2px solid #28A745;  /* Green border */
-                border-radius: 40px;  /* Circular shape (80px diameter) */
+                border-radius: 30px;  /* Circular shape (80px diameter) */
                 color: white;
                 font-size: 14px;
-                width: 80px;
-                height: 80px;
+                font-weight: bold;
+                width: 60px;
+                height: 60px;
                 padding: 10px;
             }
             
@@ -337,11 +341,11 @@ class OpenCVGuiApp(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                     stop:0 #00FFFF, stop:1 #28A745);
                 border: 2px solid #28A745;  /* Green border */
-                border-radius: 40px;  /* Circular shape (80px diameter) */
+                border-radius: 30px;  /* Circular shape (80px diameter) */
                 color: white;
                 font-size: 14px;
-                width: 80px;
-                height: 80px;
+                width: 60px;
+                height: 60px;
                 padding: 10px;
                 font-weight: bold;
                 font-size: 14px;
@@ -500,11 +504,11 @@ class OpenCVGuiApp(QWidget):
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #DC3545, stop:1 #00FF00);
                     border: 2px solid #DC3545;  
-                    border-radius: 40px;  /* Circular shape (80px diameter) */
+                    border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
-                    width: 80px;
-                    height: 80px;
+                    width: 60px;
+                    height: 60px;
                     padding: 10px;
                 }
                 QPushButton:hover {
@@ -525,11 +529,11 @@ class OpenCVGuiApp(QWidget):
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #28A745, stop:1 #00FF00);  /* Green gradient for Start */
                     border: 2px solid #28A745;  /* Green border */
-                    border-radius: 40px;  /* Circular shape (80px diameter) */
+                    border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
-                    width: 80px;
-                    height: 80px;
+                    width: 60px;
+                    height: 60px;
                     padding: 10px;
                 }
                 QPushButton:hover {
@@ -553,6 +557,11 @@ class OpenCVGuiApp(QWidget):
 
     def reset_yaw(self):
         self.call_set_states_service()
+    
+    def save_path(self):
+        path = os.path.dirname(os.path.abspath(__file__))
+        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
+        print("saved state refs")
 
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
@@ -641,8 +650,12 @@ class OpenCVGuiApp(QWidget):
         if self.center is None:
             return image
         # Draw the center line
+        if image is None:
+            return image
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
-
+        cv2.putText(image, f"center: {self.center}",
+                    (int(image.shape[1] * 0.5), int(image.shape[0] * 0.1)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # Add text if stopline or crosswalk is detected
         if self.stopline > 0:
             cv2.putText(image, "Stopline detected!",
@@ -701,17 +714,35 @@ class OpenCVGuiApp(QWidget):
     def camera_callback(self, msg):
         if self.show_depth:
             return
-        cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        cv_image = self.add_sign_detection_to_image(cv_image)
-        cv_image = self.add_lane_detection_to_image(cv_image)
-        rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
-        h, w, ch = rgb_image.shape
-        bytes_per_line = ch * w
-        qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(qt_image)
-        self.camera_label.setPixmap(pixmap)
 
+        try:
+            # Convert ROS image message to OpenCV image
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+
+            # Check if the image is empty
+            if cv_image is None or cv_image.size == 0:
+                rospy.logerr("Received an empty image from the camera!")
+                return
+
+            # Continue with processing
+            cv_image = self.add_sign_detection_to_image(cv_image)
+            cv_image = self.add_lane_detection_to_image(cv_image)
+            
+            # Convert BGR to RGB
+            rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+            rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
+
+            # Convert to QImage for GUI display
+            h, w, ch = rgb_image.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qt_image)
+            self.camera_label.setPixmap(pixmap)
+
+        except cv2.error as e:
+            rospy.logerr(f"OpenCV error: {e}")
+        except Exception as e:
+            rospy.logerr(f"Unexpected error in camera_callback: {e}")
     def depth_callback(self, msg):
         if not self.show_depth:
             return
@@ -731,7 +762,7 @@ class OpenCVGuiApp(QWidget):
 
     def message_callback(self, msg):
         self.message_history.append(msg.data)
-        if len(self.message_history) > 6:
+        if len(self.message_history) > 12:
             self.message_history.pop(0)
 
     def update_stopwatch(self):
@@ -929,7 +960,7 @@ class OpenCVGuiApp(QWidget):
         WHEEL_LEN = 0.6 * 0.108 * 800 * self.scale_factor / 20.696  # Length of the wheel
         WHEEL_WIDTH = 0.2 * 0.108 * 800 * self.scale_factor / 20.696  # Width of the wheel
         TREAD = 0.7 * 0.108 * 800 * self.scale_factor / 20.696  # Distance between left and right wheels
-        WB = 0.27 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
+        WB = 0.258 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
         half_length = LENGTH / 2
         half_width = WIDTH / 2
         # yaw = np.pi * 0.25

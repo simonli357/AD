@@ -21,7 +21,8 @@
 #include <thread>
 #include <vector>
 
-TcpClient::TcpClient(const size_t buffer_size, const std::string client_type) : buffer_size(buffer_size), client_type(client_type) {
+TcpClient::TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address) : 
+	buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
 	udp_rgb_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	udp_rgb_address.sin_family = AF_INET;
 	udp_rgb_address.sin_port = htons(49154);

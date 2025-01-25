@@ -19,7 +19,7 @@ using std_msgs::String;
 class TcpClient {
   public:
 	// Constructors
-	TcpClient(const size_t buffer_size, const std::string client_type);
+	TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address);
 	TcpClient(TcpClient &&) = default;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
@@ -51,7 +51,7 @@ class TcpClient {
 
   private:
 	// Fields
-    const std::string server_address = "127.0.0.1";
+  std::string server_address = "127.0.0.1";
 	const std::string client_type;
 	const size_t buffer_size;
 	const size_t header_size = 5;
