@@ -517,7 +517,7 @@ public:
         if (stopsign_flag == OBJECT::NONE) { // if no sign detected
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > 0) {
+                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
@@ -539,7 +539,7 @@ public:
             if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > 0) {
+                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): traffic light detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
@@ -557,7 +557,7 @@ public:
             sign_index = utils.object_index(OBJECT::PRIORITY);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > 0) {
+                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): priority detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     stopsign_flag = OBJECT::PRIORITY;
@@ -570,7 +570,7 @@ public:
             sign_index = utils.object_index(OBJECT::ROUNDABOUT);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > 0) {
+                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): roundabout detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     stopsign_flag = OBJECT::ROUNDABOUT;
@@ -583,7 +583,7 @@ public:
             sign_index = utils.object_index(OBJECT::CROSSWALK);
             if(sign_index >= 0) {
                 double dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > 0) {
+                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     stopsign_flag = OBJECT::CROSSWALK;
@@ -642,7 +642,6 @@ public:
         static ros::Time hw_cooldown_timer = ros::Time::now();
         static double detected_dist = -1;
         if(hw_cooldown_timer > ros::Time::now()) {
-            // std::cout << "crosswalk detected previously, cd expire in " << (crosswalk_cooldown_timer - ros::Time::now()).toSec() << "s" << std::endl;
             return false;
         }
         bool is_exit = false;
@@ -653,7 +652,7 @@ public:
         }
         if(hw_index >= 0) {
             detected_dist = utils.object_distance(hw_index);
-            if (detected_dist < RECOMMENDED_HW_DIST && detected_dist > 0) {
+            if (detected_dist < RECOMMENDED_HW_DIST && detected_dist > MIN_SIGN_DIST) {
                 double cd = (detected_dist + 4) / FAST_SPEED;
                 hw_cooldown_timer = ros::Time::now() + ros::Duration(cd);
                 std::string hw_type = is_exit ? "exit" : "entrance";
