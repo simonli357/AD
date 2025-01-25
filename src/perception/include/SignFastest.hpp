@@ -55,7 +55,7 @@ class SignFastest {
             }
             if(use_tcp) {
                 ROS_INFO("Attempting to create TCP client...");
-                tcp_client = std::make_unique<TcpClient>(10485760, "sign_node_client");
+                tcp_client = std::make_unique<TcpClient>(1024, "sign_node_client");
                 ROS_INFO("TCP client created successfully.");
             } else {
                 tcp_client = nullptr;
@@ -289,8 +289,14 @@ class SignFastest {
             if (!use_emergency) return false;
             if (depthImage.empty() || depthImage.type() != CV_32FC1) {
                 std::cerr << "Invalid depth image!" << std::endl;
+
                 return false; // Return false for invalid input
             }
+            // if (depthImage.type() != CV_32FC1) {
+            //     std::cerr << "not cv_32fc1!" << std::endl;
+            //     std::cout << "type is " << depthImage.type() << std::endl;
+            //     return false; // Return false for invalid input
+            // }
 
             int roiWidth = static_cast<int>(depthImage.cols * 0.4); // 40% of the width
             int roiHeight = static_cast<int>(depthImage.rows * 0.5); // 50% of the height
@@ -481,7 +487,8 @@ class SignFastest {
             std_msgs::Float32MultiArray sign_msg;
             sign_msg.layout.data_offset = 0;
 
-            bool emergency = detect_emergency_obstacle(depthImage);
+            // bool emergency = detect_emergency_obstacle(depthImage);
+            bool emergency = false;
             if (emergency) {
                 for (int i = 0; i < 10; i++) {
                     sign_msg.data.push_back(-1.0);
