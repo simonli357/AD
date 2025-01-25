@@ -18,7 +18,7 @@
 #include "acados_solver_mobile_robot_25.h"
 #include "acados_sim_solver_mobile_robot_18.h"
 #include "acados_solver_mobile_robot_18.h"
-#include "constants.h"
+#include "utils/constants.h"
 
 class MPC {
 public:

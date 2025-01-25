@@ -224,7 +224,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
         car_pose_msg.data.push_back(0.0);
-        road_objects.push_back(std::make_shared<RoadObject>(RoadObject::ObjectType::CAR, x0, y0, yaw, velocity_command, 0.0));
+        road_objects.push_back(std::make_shared<RoadObject>(OBJECT::CAR, x0, y0, yaw, velocity_command, 0.0));
     }
 
     timerodom = ros::Time::now();
@@ -397,7 +397,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height);
+    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height); // ego car
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -408,6 +408,8 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
         double y_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
         double yaw_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
         auto world_states = object_to_world(x_rel, y_rel, yaw_rel, x, y, yaw);
+        bool is_known_static = is_known_static_object(type);
+        
         if(type != OBJECT::CAR) {
             world_states[2] = nearest_direction(yaw);
         }
@@ -416,14 +418,28 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
             if(static_cast<int>(obj->type) == type) {
                 if (obj->is_same_object(world_states[0], world_states[1])) {
                     found_same = true;
-                    obj->merge(world_states[0], world_states[1], world_states[2], 0.0, confidence);
+                    if (!is_known_static) { // known static objects only need to be added once since we know their gt pose
+                        obj->merge(world_states[0], world_states[1], world_states[2], 0.0, confidence);
+                    }
                     break;
                 }
             }
         }
         if (!found_same) {
-            road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
-            debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + ")", 3);
+            if (is_known_static) {
+                std::string sign_name;
+                const auto& relevant_signs = get_relevant_signs(type, sign_name);
+                int min_index = 0;
+                double min_error_sq = 1000.0;
+                Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
+                if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
+                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
+                    debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                }
+            } else {
+                road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
+                debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+            }
         }
     }
     auto road_object_msg = RoadObject::create_msg(road_objects);
@@ -435,7 +451,6 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
             tcp_client->send_road_object(road_object_msg);
         }
     }
-    
     static bool populate_car_pose = true;
     if (!populate_car_pose) {
         return;
@@ -452,7 +467,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
             double ymax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
             double x, y, yaw;
             get_states(x, y, yaw);
-            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, CAMERA_PARAMS, true);
+            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
             // std::cout << "world_pose: (" << world_pose[0] << ", " << world_pose[1] << "), self pose: (" << x << ", " << y << ")" << std::endl;
             // check error norm between x, y of detected car and the ones in the detected_cars vector
             // if error norm greater than threshold, add to detected_cars vector
@@ -906,10 +921,10 @@ void Utility::publish_static_transforms() {
     geometry_msgs::TransformStamped t_imu0 = add_static_link(0, 0, 0, 0, 0, 0, "chassis", "imu0");
     static_transforms.push_back(t_imu0);
 
-    geometry_msgs::TransformStamped t_imu_cam = add_static_link(CAMERA_POSE.x, CAMERA_POSE.y, CAMERA_POSE.z, 0, 0.15, 0, "chassis", "realsense");
+    geometry_msgs::TransformStamped t_imu_cam = add_static_link(REALSENSE_TF[0], REALSENSE_TF[1], REALSENSE_TF[2], 0, REALSENSE_TF[4], 0, "chassis", "realsense");
     static_transforms.push_back(t_imu_cam);
 
-    geometry_msgs::TransformStamped t_imu_cam2 = add_static_link(CAMERA_POSE.x, CAMERA_POSE.y, CAMERA_POSE.z, 0, 0.15, 0, "chassis", "camera_imu_optical_frame");
+    geometry_msgs::TransformStamped t_imu_cam2 = add_static_link(REALSENSE_TF[0], REALSENSE_TF[1], REALSENSE_TF[2], 0, REALSENSE_TF[4], 0, "chassis", "camera_imu_optical_frame");
     static_transforms.push_back(t_imu_cam2);
 
     static_broadcaster.sendTransform(static_transforms);
