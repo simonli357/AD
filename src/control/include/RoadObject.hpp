@@ -2,39 +2,25 @@
 #include <string>
 #include <array>
 #include <std_msgs/Float32MultiArray.h>
+#include "utils/constants.h"
 
 #include <cmath>
+
+using namespace VehicleConstants;
 class RoadObject {
 public:
-    enum ObjectType {
-        ONEWAY,
-        HIGHWAYENTRANCE,
-        STOPSIGN,
-        ROUNDABOUT,
-        PARK,
-        CROSSWALK,
-        NOENTRY,
-        HIGHWAYEXIT,
-        PRIORITY,
-        LIGHTS,
-        BLOCK,
-        PEDESTRIAN,
-        CAR
-    };
-
     static int OBJECT_COUNT;
-    static const std::array<std::string, 16> OBJECT_NAMES;
     static const std::array<std::array<double, 2>, 16> OBJECT_SIZE;
 
     RoadObject();
     ~RoadObject();
 
-    RoadObject(ObjectType type, double x, double y, double yaw, double speed, double confidence);
+    RoadObject(OBJECT type, double x, double y, double yaw, double speed, double confidence);
 
     RoadObject(int type, double x, double y, double yaw, double speed, double confidence)
-    : RoadObject(static_cast<ObjectType>(type), x, y, yaw, speed, confidence) {}
+    : RoadObject(static_cast<OBJECT>(type), x, y, yaw, speed, confidence) {}
     
-    ObjectType type;
+    OBJECT type;
     void printRoadObject();
 
     int id;
@@ -46,10 +32,18 @@ public:
     std::string name;
     int detection_count = 0;
     double confidence;
+    ros::Time last_detection_time;
     
     bool is_same_object(double x, double y) {
         int type = static_cast<int>(this->type);
-        return (std::abs(this->x - x) < OBJECT_SIZE[type][0]*2 && std::abs(this->y - y) < OBJECT_SIZE[type][1]*2);
+        if (type == OBJECT::CAR) {
+            return (std::abs(this->x - x) < OBJECT_SIZE[type][0]*2 && std::abs(this->y - y) < OBJECT_SIZE[type][1]*2);
+        } else {
+            // compute squared distance
+            double dx = this->x - x;
+            double dy = this->y - y;
+            return (dx * dx + dy * dy < 0.537 * 0.537);
+        }
     }
     void merge(double x, double y, double yaw, double speed, double confidence, double z = 0) {
         if(confidence >= 1.) {
@@ -69,6 +63,7 @@ public:
         this->speed = (this->speed * this->detection_count + speed) / (this->detection_count + 1);
         this->confidence = (this->confidence * this->detection_count + confidence) / (this->detection_count + 1);
         this->detection_count++;
+        this->last_detection_time = ros::Time::now();
     }
     static std_msgs::Float32MultiArray create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) {
         if (OBJECT_COUNT < 1) {
