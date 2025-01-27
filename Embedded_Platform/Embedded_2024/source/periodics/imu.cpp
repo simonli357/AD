@@ -747,9 +747,13 @@ namespace periodics{
             return;
         }
 
-        snprintf(buffer, sizeof(buffer), "@7:%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
-            converted_euler_r_deg, converted_euler_p_deg, converted_euler_h_deg, converted_linear_accelX, converted_linear_accelY, converted_linear_accelZ, converted_gyro_rps_x, converted_gyro_rps_y, converted_gyro_rps_z);
-        m_serial.write(buffer,strlen(buffer));
+        // Keep values betweeen 0 and 360 degrees
+        if(converted_euler_h_deg > 360.0f) converted_euler_h_deg -= 360.0f;
+        if(converted_euler_h_deg < 0.0f) converted_euler_h_deg += 360.0f;
+
+        // snprintf(buffer, sizeof(buffer), "@7:%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
+        //     converted_euler_r_deg, converted_euler_p_deg, converted_euler_h_deg, converted_linear_accelX, converted_linear_accelY, converted_linear_accelZ, converted_gyro_rps_x, converted_gyro_rps_y, converted_gyro_rps_z);
+        // m_serial.write(buffer,strlen(buffer));
 
     }
 
@@ -772,6 +776,10 @@ namespace periodics{
         {
             return 500;
         }
+
+        // Keep values betweeen 0 and 360 degrees
+        if(converted_euler_h_deg > 360.0f) converted_euler_h_deg -= 360.0f;
+        if(converted_euler_h_deg < 0.0f) converted_euler_h_deg += 360.0f;
 
         return converted_euler_h_deg;
     }
