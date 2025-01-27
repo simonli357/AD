@@ -135,11 +135,6 @@ namespace drivers{
      * @brief PID to adjust steering angle using feedback from IMU
      */
     void CSteeringMotor::steerPID() {
-        static float yaw_calc = 0.0f;
-        static float integral = 0.0f;
-        static float previous_error = 0.0f;
-        float newSteer = 0.0f;
-        float newDutyCycle = 0.0f;
 
         const float WHEELBASE = 0.260f; // meters
         const float MAX_ERROR = 50.0f;  // degrees
@@ -150,38 +145,34 @@ namespace drivers{
         // Calculate time step
         PID_timer.stop();
         auto raw_elapsed_time = PID_timer.elapsed_time(); // Raw time in microoseconds
-        printf("Raw elapsed time: %lld us\n", raw_elapsed_time.count());
+        // printf("Raw elapsed time: %lld us\n", raw_elapsed_time.count());
 
-        float time_step = raw_elapsed_time.count() * 1e-6; // Convert microoseconds to seconds
+        float time_step = raw_elapsed_time.count() * 1e-6; // Convert microseconds to seconds
         printf("Time step: %f seconds\n", time_step);
+        if(time_step > 0.1) time_step = 0.1; // Cap time step to 0.1 seconds
+        if(time_step < 0.001) time_step = 0.001; // Cap time step to 0.001 seconds  
 
         PID_timer.reset();
         PID_timer.start();
 
         // Compute yaw rate and cumulative yaw
         float yaw_rate = (c_speed / WHEELBASE) * (tan(m_desiredSteer * M_PI / 180.0f) * 180 / M_PI);
-        printf("Yaw rate: %f\n", yaw_rate);
+        // printf("Yaw rate: %f\n", yaw_rate);
         yaw_calc += yaw_rate * time_step;
 
         // Keep the yaw beteween 0 and 360
         if(yaw_calc > 360.0f) yaw_calc -= 360.0f;
         if(yaw_calc < 0.0f) yaw_calc += 360.0f;
 
-        printf("Current speed : %f\n", c_speed);
-        printf("Yaw calc: %f\n", yaw_calc);
-        printf("Yaw IMU: %f\n", imu_yaw);
+        // printf("Current speed : %f\n", c_speed);
 
-        // Compute error
+        // Error needs to be between [-180,180]
         float error = yaw_calc - imu_yaw;
         if(error > 180.0f) error -= 360.0f;
         if(error < -180.0f) error += 360.0f;
-
-        printf("Error: %f\n", error);
-        // sprintf("Error: %f\n", error);
-        // if (std::abs(error) > MAX_ERROR) {
-        //     m_serialPort.write("Steering error too high\n", 24);
-        //     return;
-        // }
+        printf("@E1:%f\n", error);
+        printf("@Y1:%f\n", yaw_calc);
+        printf("@Y2:%f\n", imu_yaw);
 
         // PID control
         integral += error * time_step;
@@ -191,16 +182,23 @@ namespace drivers{
         // Adjust steering
         newSteer =  m_desiredSteer + (m_proportional * error + m_integral * integral + m_derivative * derivative);
 
+        float integral_calc = m_integral ;
+        float derivative_calc = m_derivative ;
         m_currentSteer = newSteer;
 
-        printf("Current Steer: %f\n", newSteer);
-        printf("Desired Steer: %f\n", m_desiredSteer);
+        // printf("Current Steer: %f\n", newSteer);
+        // printf("Desired Steer: %f\n", m_desiredSteer);
 
         // Actuate steering
         newDutyCycle = CalculateAngle(newSteer);
         PWMAngle(newDutyCycle);
+        printf("@Y4:%f\n", newSteer);
 
-        printf("Sent duty cycle: %f\n", newDutyCycle);
+        printf("@E4:%f\n", m_proportional);
+        printf("@E2:%f\n", m_integral);
+        printf("@E3:%f\n", m_derivative);
+
+        // printf("Sent duty cycle: %f\n", newDutyCycle);
 
     }
 
@@ -308,6 +306,19 @@ namespace drivers{
 
     void CSteeringMotor::setYaw(){
         imu_yaw = m_imu.getYaw();
+    };
+
+    void CSteeringMotor::setPID(float f_proportional, float f_integral, float f_derivative){
+        m_proportional = f_proportional;
+        m_integral = f_integral;
+        m_derivative = f_derivative;
+        m_pidActive = true;
+        yaw_calc = 0.0f;
+        integral = 0.0f;
+        previous_error = 0.0f;
+        newSteer = 0.0f;
+        newDutyCycle = 0.0f;
+        PID_timer.reset();
     };
 
     void CSteeringMotor::_run()
