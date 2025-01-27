@@ -151,12 +151,15 @@ namespace brain{
 
     void CRobotStateMachine::serialCallbackPIDcommand(char const *a, char *b){
         float pid_active;
+        float integral;
+        float proportional;
+        float derivative;
 
         uint32_t l_res = sscanf(a, "%f:%f:%f:%f"
         , &pid_active
-        , &m_steeringControl.m_proportional
-        , &m_steeringControl.m_integral
-        , &m_steeringControl.m_derivative
+        , &proportional
+        , &integral
+        , &derivative
         );
         if (1 == l_res)
         {
@@ -166,7 +169,7 @@ namespace brain{
             }
             else if(pid_active == 1){
                 // Activate the PID
-                m_steeringControl.m_pidActive = true;
+                m_steeringControl.setPID(proportional, integral, derivative);
                 sprintf(b,"ack -- PID active");
             }
             else{
