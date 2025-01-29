@@ -921,7 +921,7 @@ class OpenCVGuiApp(QWidget):
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f}, z: {z:.2f})')
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw/np.pi*180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):

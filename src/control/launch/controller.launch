@@ -65,6 +65,8 @@
   <param name="y0" value="$(arg y0)"/>
   <param name="yaw0" value="$(arg yaw0)"/>
 
+  <arg name="test" default="0"/>
+  <param name="/test" value="$(arg test)"/>
   <arg name="real" default="false"/>
   <param name="/is_real" value="$(arg real)"/>
   <arg name="subModel" default="false"/>

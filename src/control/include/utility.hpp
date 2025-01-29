@@ -484,10 +484,17 @@ public:
         return closest_index;
     }
 
-    static double yaw_mod(double yaw, double ref=0) {
+    static double yaw_mod(double& io_yaw, double ref=0) {
+        double yaw = io_yaw;
         while (yaw - ref > M_PI) yaw -= 2 * M_PI;
         while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+        io_yaw = yaw;
         return yaw;
+    }
+    static double compare_yaw(double yaw1, double yaw2) {
+        double diff = yaw1 - yaw2;
+        diff = yaw_mod(diff);
+        return std::abs(diff);
     }
     
     static std::string getSourceDirectory() {
@@ -517,7 +524,38 @@ public:
     bool is_known_static_object(int obj) {
         return is_known_static_object(static_cast<OBJECT>(obj));
     }
+    
     const std::vector<std::vector<double>>& get_relevant_signs(int type, std::string& o_string) {
+        OBJECT obj = static_cast<OBJECT>(type);
+        if (obj == OBJECT::ROUNDABOUT) {
+            o_string = "ALL ROUNDABOUTS";
+            return ALL_ROUNDABOUTS;
+        } else if (obj == OBJECT::STOPSIGN || obj == OBJECT::PRIORITY) {
+            o_string = (obj == OBJECT::STOPSIGN) ? "STOPSIGN" :
+                        (obj == OBJECT::PRIORITY) ? "PRIORITY" :
+                        "UNKNOWN";
+            return ALL_SIGNS;
+        } else if (obj == OBJECT::CROSSWALK) {
+            o_string = "ALL CROSSWALKS";
+            return ALL_CROSSWALKS;
+        } else if (obj == OBJECT::LIGHTS) {
+            o_string = "ALL LIGHTS";
+            return ALL_LIGHTS;
+        } else if (obj == OBJECT::HIGHWAYENTRANCE) {
+            o_string = "ALL_HIGHWAYENTRANCES";
+            return ALL_HIGHWAYENTRANCES;
+        } else if (obj == OBJECT::HIGHWAYEXIT) {
+            o_string = "ALL_HIGHWAYEXITS";
+            return ALL_HIGHWAYEXITS;
+        } else if (obj == OBJECT::PARK) {
+            o_string = "PARKING SIGNS";
+            return PARKING_SIGN_POSES;
+        }
+        o_string = "UNKNOWN";
+        return EMPTY;
+    }
+
+    const std::vector<std::vector<double>>& get_relevant_signs_old(int type, std::string& o_string) {
         int nearestDirectionIndex = nearest_direction_index(this->yaw);
         OBJECT obj = static_cast<OBJECT>(type);
         if (obj == OBJECT::ROUNDABOUT) {
@@ -549,12 +587,20 @@ public:
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
                                                                     SOUTH_FACING_CROSSWALKS;
+            o_string = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
+                                        (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
+                                        (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
+                                                                    "CROSSWALK SOUTH";
             return objects;
         } else if (obj == OBJECT::LIGHTS) {
             const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_LIGHTS :
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_LIGHTS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_LIGHTS :
                                                                     SOUTH_FACING_LIGHTS;
+            o_string = (nearestDirectionIndex == 0) ? "LIGHTS EAST" :
+                                        (nearestDirectionIndex == 1) ? "LIGHTS NORTH" :
+                                        (nearestDirectionIndex == 2) ? "LIGHTS WEST" :
+                                                                    "LIGHTS SOUTH";
             return objects;
         } else if (obj == OBJECT::HIGHWAYENTRANCE) {
             const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_HIGHWAYENTRANCES :
