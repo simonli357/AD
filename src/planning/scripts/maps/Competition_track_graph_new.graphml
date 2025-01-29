@@ -238,7 +238,7 @@
     </node>
     <node id="71">
       <data key="d0">3.45</data>
-      <data key="d1">13.03</data>
+      <data key="d1">13.06</data>
     </node>
     <node id="76">
       <data key="d0">2.69</data>
@@ -754,27 +754,27 @@
     </node>
     <node id="204">
       <data key="d0">4.76</data>
-      <data key="d1">11.83</data>
+      <data key="d1">11.81</data>
     </node>
     <node id="205">
       <data key="d0">4.75</data>
-      <data key="d1">12.21</data>
+      <data key="d1">12.19</data>
     </node>
     <node id="206">
       <data key="d0">4.75</data>
-      <data key="d1">12.59</data>
+      <data key="d1">12.47</data>
     </node>
     <node id="207">
       <data key="d0">4.57</data>
       <data key="d1">12.87</data>
     </node>
     <node id="208">
-      <data key="d0">4.35</data>
-      <data key="d1">12.99</data>
+      <data key="d0">4.22</data>
+      <data key="d1">13.06</data>
     </node>
     <node id="209">
-      <data key="d0">3.97</data>
-      <data key="d1">13.01</data>
+      <data key="d0">3.83</data>
+      <data key="d1">13.06</data>
     </node>
     <node id="210">
       <data key="d0">4.8</data>
@@ -2714,16 +2714,13 @@
     <edge source="205" target="206">
       <data key="d2">False</data>
     </edge>
-    <!-- <edge source="206" target="188">
+    <!-- <edge source="206" target="207">
       <data key="d2">False</data>
     </edge> -->
-    <edge source="206" target="207">
+    <edge source="206" target="208">
       <data key="d2">False</data>
     </edge>
-    <edge source="207" target="208">
-      <data key="d2">False</data>
-    </edge>
-    <edge source="207" target="187">
+    <edge source="206" target="187">
       <data key="d2">False</data>
     </edge>
     <edge source="208" target="209">
