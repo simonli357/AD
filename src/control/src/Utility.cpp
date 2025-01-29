@@ -439,8 +439,12 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
                 if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
-                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
-                    debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                    double sign_yaw = relevant_signs[min_index][2];
+                    double yaw_error = compare_yaw(sign_yaw, yaw);
+                    if(yaw_error < 35 * M_PI / 180) {
+                        road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
+                        debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                    }
                 }
             } else {
                 road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
