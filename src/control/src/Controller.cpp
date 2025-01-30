@@ -820,16 +820,21 @@ public:
     }
 
     int lane_based_relocalization() {
+        static ros::Time lane_cooldown_timer = ros::Time::now();
+        static double cooldown = 3.0; // seconds
+        if(lane_cooldown_timer > ros::Time::now()) {
+            return 0;
+        }
         utils.update_states(x_current);
         double center = utils.center + pixel_center_offset;
-        if (center >= 240 && center <= 400) {
+        if (center >= 180 && center <= 460) {
             double yaw = utils.get_yaw();
             double nearest_direction = Utility::nearest_direction(yaw);
             double yaw_error = nearest_direction - yaw;
             if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
             else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
             if (std::abs(yaw_error) > lane_localization_orientation_threshold * M_PI / 180) {
-                // ROS_WARN("lane_based_relocalization(): yaw error too large: %.3f, lane based relocalization failed...", yaw_error);
+                // ROS_WARN("LANE_RELOC(): yaw error too large: %.3f, lane based relocalization failed...", yaw_error);
                 return 0;
             }
             double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
@@ -848,14 +853,15 @@ public:
                         min_error = error;
                         min_index = i;
                     }
-                    // std::cout << "i: " << i << ", center: " << LANE_CENTERS[i] << ", error: " << error << "min_error: " << min_error << "min_index: " << min_index << std::endl;
                 }
+                ROS_INFO("center: %.3f, offset: %.3f, closest lane center: %.3f, running_y: %.3f, estimated running_y: %.3f", center, offset, LANE_CENTERS[min_index], x_current[1], LANE_CENTERS[min_index] - offset);
                 if (std::abs(min_error) < LANE_OFFSET/2) {
                     utils.recalibrate_states(0, min_error);
-                    utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(min_error) + ", running y: " + std::to_string(x_current[1]) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
+                    utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
+                    lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
                     return 1;
                 } else {
-                    utils.debug("lane_based_relocalization(): FAILURE: error too large: " + std::to_string(min_error) + ", running y: " + std::to_string(x_current[1]) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
+                    utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
                     return 0;
                 }
             } else if (nearestDirectionIndex == 1 || nearestDirectionIndex == 3) { // North, 1 || South, 3
@@ -868,15 +874,15 @@ public:
                         min_error = error;
                         min_index = i;
                     }
-                    // std::cout << "i: " << i << ", center: " << LANE_CENTERS[i] << ", error: " << error << "min_error: " << min_error << "min_index: " << min_index << std::endl;
                 }
-                // ROS_INFO("center: %.3f, offset: %.3f, running_x: %.3f, min_error: %.3f, closest lane center: %.3f", center, offset, running_x, min_error, Y_ALIGNED_LANE_CENTERS[min_index]);
+                // ROS_INFO("center: %.3f, offset: %.3f, closest lane center: %.3f, running_x: %.3f, estimated running_x: %.3f", center, offset, LANE_CENTERS[min_index], x_current[0], LANE_CENTERS[min_index] + offset);
                 if (std::abs(min_error) < LANE_OFFSET/2) {
                     utils.recalibrate_states(min_error, 0);
-                    utils.debug("lane_based_relocalization(): SUCCESS: error: " + std::to_string(std::abs(min_error)) + ", running x: " + std::to_string(x_current[0]) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
+                    lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
+                    utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
                     return 1;
                 } else {
-                    utils.debug("lane_based_relocalization(): FAILURE: error too large: " + std::to_string(std::abs(min_error)) + ", running x: " + std::to_string(x_current[0]) + ", center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", minidx: " + std::to_string(min_index), 2);
+                    utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
                     return 0;
                 }
             }
@@ -1280,12 +1286,23 @@ void StateMachine::run() {
             }
             update_mpc_states(x_current[0], x_current[1], x_current[2]);
             int closest_idx = path_manager.find_closest_waypoint(x_current);
-            if (lane_relocalize && !path_manager.is_not_detectable(closest_idx)) {
-                static int lane_relocalization_semaphore = 0;
-                lane_relocalization_semaphore++;
-                if (lane_relocalization_semaphore >= 5) {
-                    lane_based_relocalization();
-                    lane_relocalization_semaphore = 0;
+            if (lane_relocalize) {
+                static double lookahead = 0.5;
+                static double lookbehind = 0.3;
+                int end_idx = std::min(static_cast<int>(closest_idx + lookahead * path_manager.density), static_cast<int>(path_manager.state_refs.rows() - 1));
+                int start_idx = std::max(0, closest_idx - static_cast<int>(lookbehind * path_manager.density));
+                if (path_manager.lane_detectable(closest_idx, end_idx)) {
+                    int num_waypoints = static_cast<int>((lookahead + lookbehind) * path_manager.density);
+                    double nearest_direction = Utility::nearest_direction(utils.get_yaw());
+                    if (path_manager.is_straight_line(start_idx, num_waypoints, nearest_direction, 0.1)) {
+                        lane_based_relocalization();
+                    }
+                    // static int lane_relocalization_semaphore = 0;
+                    // lane_relocalization_semaphore++;
+                    // if (lane_relocalization_semaphore >= 5) {
+                    //     lane_based_relocalization();
+                    //     lane_relocalization_semaphore = 0;
+                    // }
                 }
             }
             if (!use_lane) {
@@ -1569,51 +1586,43 @@ void StateMachine::run() {
             utils.stop_car();
             change_state(STATE::INIT);
         } else if (state == STATE::TESTING) {
-            int sign_index = utils.object_index(OBJECT::STOPSIGN);
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::REDLIGHT);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::LIGHTS);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::GREENLIGHT);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::PRIORITY);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::ROUNDABOUT);
-            }
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::CROSSWALK);
-            }
-            bool is_car = false;
-            if (sign_index < 0) {
-                sign_index = utils.object_index(OBJECT::CAR);
-                is_car = true;
-            }
-            if (sign_index < 0) {
-                continue;
-            }
-            double detected_dist1 = utils.object_distance(sign_index);
-            std::cout << "detected_dist: " << detected_dist1 << std::endl;
-            auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, is_car);
-            ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
-            ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
-            ROS_INFO("Relative pose: (%.2f, %.2f)", sign_pose1[0] - x_current[0], sign_pose1[1] - x_current[1]);
-            // estimated: (4.49, 1.30), actual: (4.51, 1.35)
-            // estimated: (4.49, 1.57), actual: (4.51, 1.62)
-            // estimated: (4.8, 1.57), actual: (4.8, 1.62)
-            // estimated: (4.96, 1.36), actual: (4.954, 1.4)
-            // estimated: (5.04, 1.98), actual: (5, 2.05)
-
-            // new
-            // estimated: (4.5, 1.39), actual: (4.52, 1.47)
-            // estimated: (4.8, 1.54), actual: (4.8, 1.62)
+            lane_based_relocalization();
+            // int sign_index = utils.object_index(OBJECT::STOPSIGN);
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::REDLIGHT);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::LIGHTS);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::GREENLIGHT);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::PRIORITY);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::ROUNDABOUT);
+            // }
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::CROSSWALK);
+            // }
+            // bool is_car = false;
+            // if (sign_index < 0) {
+            //     sign_index = utils.object_index(OBJECT::CAR);
+            //     is_car = true;
+            // }
+            // if (sign_index < 0) {
+            //     continue;
+            // }
+            // double detected_dist1 = utils.object_distance(sign_index);
+            // std::cout << "detected_dist: " << detected_dist1 << std::endl;
+            // auto sign_pose1 = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist1, is_car);
+            // ROS_INFO("current_pose: (%.2f, %.2f, %.2f)", x_current[0], x_current[1], x_current[2]);
+            // ROS_INFO("sign_pose: (%.2f, %.2f)", sign_pose1[0], sign_pose1[1]); 
+            // ROS_INFO("Relative pose: (%.2f, %.2f)", sign_pose1[0] - x_current[0], sign_pose1[1] - x_current[1]);
             rate->sleep();
             continue;
         }

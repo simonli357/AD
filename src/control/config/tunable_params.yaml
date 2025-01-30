@@ -2,12 +2,12 @@ real:
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
   parking_base_yaw_target: 0.23 # times pi
-  pixel_center_offset: -30
+  pixel_center_offset: 0
   constant_distance_to_intersection_at_detection: 0.3725
   change_lane_yaw: 0.29 # times pi
   change_lane_thresh: 0.05
   change_lane_speed: 0.2
-  lane_relocalize: false
+  lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
   use_lane: false
@@ -43,7 +43,7 @@ sim:
   intersection_localization_threshold: 1.5
   intersection_localization_orientation_threshold: 15.0 # degrees
   constant_distance_to_intersection_at_detection: 0.3725
-  pixel_center_offset: -30
+  pixel_center_offset: 0
   sigma_v: 0.075
   sigma_delta: 10 # degrees
   odom_rate: 50
@@ -55,7 +55,7 @@ sim:
   parking_base_thresh: 0.1
   NORMAL_SPEED: 0.23
   FAST_SPEED: 0.4
-  lane_relocalize: false
+  lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
   use_lane: false
