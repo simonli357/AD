@@ -820,71 +820,90 @@ public:
     }
 
     int lane_based_relocalization() {
+        static int count = 0;
+        if (count >= 100) count = 0;
+        count++;
         static ros::Time lane_cooldown_timer = ros::Time::now();
         static double cooldown = 3.0; // seconds
         if(lane_cooldown_timer > ros::Time::now()) {
+            // utils.debug("LANE_RELOC(): FAILURE: on cooldown" + std::to_string(count), 4);
+            return 0;
+        }
+        static double lookahead = 0.5;
+        static double lookbehind = 0.3;
+        
+        int closest_idx = path_manager.closest_waypoint_index;
+        int end_idx = std::min(static_cast<int>(closest_idx + lookahead * path_manager.density), static_cast<int>(path_manager.state_refs.rows() - 1));
+        int start_idx = std::max(0, closest_idx - static_cast<int>(lookbehind * path_manager.density));
+        if (!path_manager.lane_detectable(closest_idx, end_idx)) {
+            // utils.debug("LANE_RELOC(): FAILURE: lane not detectable" + std::to_string(count), 4);
+            return 0;
+        }
+        int num_waypoints = static_cast<int>((lookahead + lookbehind) * path_manager.density);
+        double nearest_direction = Utility::nearest_direction(utils.get_yaw());
+        if (!path_manager.is_straight_line(start_idx, num_waypoints, nearest_direction, 0.1)) {
+            // utils.debug("LANE_RELOC(): FAILURE: not a straight line"+ std::to_string(count), 4);
             return 0;
         }
         utils.update_states(x_current);
         double center = utils.center + pixel_center_offset;
-        if (center >= 180 && center <= 460) {
-            double yaw = utils.get_yaw();
-            double nearest_direction = Utility::nearest_direction(yaw);
-            double yaw_error = nearest_direction - yaw;
-            if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
-            else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
-            if (std::abs(yaw_error) > lane_localization_orientation_threshold * M_PI / 180) {
-                // ROS_WARN("LANE_RELOC(): yaw error too large: %.3f, lane based relocalization failed...", yaw_error);
+        if (center < 180 || center > 460) {
+            // utils.debug("LANE_RELOC(): FAILURE: center out of bounds: " + std::to_string(center), 4);
+            return 0;
+        }
+        double yaw = utils.get_yaw();
+        double yaw_error = nearest_direction - yaw;
+        if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
+        else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
+        if (std::abs(yaw_error) > lane_localization_orientation_threshold * M_PI / 180) {
+            utils.debug("LANE_RELOC(): FAILURE: yaw error too large: " + std::to_string(yaw_error) + ", threshold: " + std::to_string(lane_localization_orientation_threshold), 2);
+            return 0;
+        }
+        double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
+        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
+        const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
+                                    (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
+                                    (nearestDirectionIndex == 2) ? WEST_FACING_LANE_CENTERS :
+                                                                SOUTH_FACING_LANE_CENTERS;
+        if (nearestDirectionIndex == 0 || nearestDirectionIndex == 2) { // East, 0 || West, 2
+            if (nearestDirectionIndex == 2) offset *= -1;
+            int min_index = 0;
+            double min_error = 1000;
+            for (int i = 0; i < LANE_CENTERS.size(); i++) {
+                double error = (LANE_CENTERS[i] - offset) - x_current[1];
+                if (std::abs(error) < std::abs(min_error)) {
+                    min_error = error;
+                    min_index = i;
+                }
+            }
+            if (std::abs(min_error) < LANE_OFFSET/2) {
+                utils.recalibrate_states(0, min_error);
+                utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
+                lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
+                return 1;
+            } else {
+                utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
                 return 0;
             }
-            double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
-            int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
-            const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_LANE_CENTERS :
-                                                                    SOUTH_FACING_LANE_CENTERS;
-            if (nearestDirectionIndex == 0 || nearestDirectionIndex == 2) { // East, 0 || West, 2
-                if (nearestDirectionIndex == 2) offset *= -1;
-                int min_index = 0;
-                double min_error = 1000;
-                for (int i = 0; i < LANE_CENTERS.size(); i++) {
-                    double error = (LANE_CENTERS[i] - offset) - x_current[1];
-                    if (std::abs(error) < std::abs(min_error)) {
-                        min_error = error;
-                        min_index = i;
-                    }
+        } else if (nearestDirectionIndex == 1 || nearestDirectionIndex == 3) { // North, 1 || South, 3
+            if (nearestDirectionIndex == 3) offset *= -1;
+            int min_index = 0;
+            double min_error = 1000;
+            for (int i = 0; i < LANE_CENTERS.size(); i++) {
+                double error = (LANE_CENTERS[i] + offset) - x_current[0];
+                if (std::abs(error) < std::abs(min_error)) {
+                    min_error = error;
+                    min_index = i;
                 }
-                ROS_INFO("center: %.3f, offset: %.3f, closest lane center: %.3f, running_y: %.3f, estimated running_y: %.3f", center, offset, LANE_CENTERS[min_index], x_current[1], LANE_CENTERS[min_index] - offset);
-                if (std::abs(min_error) < LANE_OFFSET/2) {
-                    utils.recalibrate_states(0, min_error);
-                    utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
-                    lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
-                    return 1;
-                } else {
-                    utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running y: " + std::to_string(x_current[1]) + ", estimated running y: " + std::to_string(LANE_CENTERS[min_index] - offset), 2);
-                    return 0;
-                }
-            } else if (nearestDirectionIndex == 1 || nearestDirectionIndex == 3) { // North, 1 || South, 3
-                if (nearestDirectionIndex == 3) offset *= -1;
-                int min_index = 0;
-                double min_error = 1000;
-                for (int i = 0; i < LANE_CENTERS.size(); i++) {
-                    double error = (LANE_CENTERS[i] + offset) - x_current[0];
-                    if (std::abs(error) < std::abs(min_error)) {
-                        min_error = error;
-                        min_index = i;
-                    }
-                }
-                // ROS_INFO("center: %.3f, offset: %.3f, closest lane center: %.3f, running_x: %.3f, estimated running_x: %.3f", center, offset, LANE_CENTERS[min_index], x_current[0], LANE_CENTERS[min_index] + offset);
-                if (std::abs(min_error) < LANE_OFFSET/2) {
-                    utils.recalibrate_states(min_error, 0);
-                    lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
-                    utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
-                    return 1;
-                } else {
-                    utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
-                    return 0;
-                }
+            }
+            if (std::abs(min_error) < LANE_OFFSET/2) {
+                utils.recalibrate_states(min_error, 0);
+                lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
+                utils.debug("LANE_RELOC(): SUCCESS: error: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
+                return 1;
+            } else {
+                utils.debug("LANE_RELOC(): FAILURE: error too large: " + std::to_string(min_error) + ", lane center: " + std::to_string(LANE_CENTERS[min_index]) + ", offset: " + std::to_string(offset) + ", nearest direction: " + std::to_string(nearestDirectionIndex) + ", running x: " + std::to_string(x_current[0]) + ", estimated running x: " + std::to_string(LANE_CENTERS[min_index] + offset), 2);
+                return 0;
             }
         }
         return 0;
@@ -1035,7 +1054,7 @@ public:
                         on_highway = true;
                         density *= 1/1.33;
                         path_manager.overtake_end_index_scaler *= 1.5;
-                        utils.debug("CHECK_CAR(): detected car is on left side of highway, if overtake, on right", 3);
+                        // utils.debug("CHECK_CAR(): detected car is on left side of highway, if overtake, on right", 3);
                         break;
                     }
                 }
@@ -1080,8 +1099,8 @@ public:
                 } else {
                     detected_car_state = DETECTED_CAR_STATE::NOT_SURE;
                 }
-                utils.debug("CHECK_CAR(): closest waypoint to detected car: " + std::to_string(min_index) + ", at " + std::to_string(path_manager.state_refs(min_index, 0)) + ", " + std::to_string(path_manager.state_refs(min_index, 1)), 3);
-                utils.debug("CHECK_CAR(): min dist between car and closest waypoint: " + std::to_string(min_dist) + ", same lane: " + std::to_string(detected_car_state == DETECTED_CAR_STATE::SAME_LANE), 3);
+                // utils.debug("CHECK_CAR(): closest waypoint to detected car: " + std::to_string(min_index) + ", at " + std::to_string(path_manager.state_refs(min_index, 0)) + ", " + std::to_string(path_manager.state_refs(min_index, 1)), 3);
+                // utils.debug("CHECK_CAR(): min dist between car and closest waypoint: " + std::to_string(min_dist) + ", same lane: " + std::to_string(detected_car_state == DETECTED_CAR_STATE::SAME_LANE), 3);
                 if (detected_car_state == DETECTED_CAR_STATE::SAME_LANE) {
                     if (idx < path_manager.state_refs.rows() && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::DOTTED_CROSSWALK) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) && !path_manager.attribute_cmp(idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT)) {
                         if (dist < MAX_TAILING_DIST) {
@@ -1213,7 +1232,7 @@ void StateMachine::change_state(STATE new_state) {
 void StateMachine::run() {
     static ros::Time overtake_cd = ros::Time::now();
     static bool wrong_lane = false;
-    utils.debug("start running", 3);
+    // utils.debug("start running", 3);
     // double running_x, running_y, running_yaw;
     // double &running_x = x_current(0);
     // double &running_y = x_current(1);
@@ -1246,21 +1265,9 @@ void StateMachine::run() {
                 } else if(stopsign_flag == OBJECT::ROUNDABOUT) {
                     utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 2);
                     stopsign_flag = OBJECT::NONE;
-                    if (use_lane) {
-                        update_mpc_states(x_current[0], x_current[1], x_current[2]);
-                        solve();
-                        rate->sleep();
-                        continue;
-                    }
                 } else {
                     ROS_WARN("intersection reached: CASE NO SIGN, proceeding...");
                     stopsign_flag = OBJECT::NONE;
-                    if (use_lane) {
-                        update_mpc_states(x_current[0], x_current[1], x_current[2]);
-                        solve();
-                        rate->sleep();
-                        continue;
-                    }
                 }
             }
             if (sign) {
@@ -1274,7 +1281,7 @@ void StateMachine::run() {
                     double detected_dist = utils.object_distance(park_index);
                     double abs_error = std::abs(detected_dist - distance_to_parking_spot);
                     if (abs_error < 1.) {
-                        utils.debug("parking sign detected, proceeding to parking...", 3);
+                        // utils.debug("parking sign detected, proceeding to parking...", 3);
                         change_state(STATE::PARKING);
                         park_count++;
                         continue;
@@ -1287,23 +1294,9 @@ void StateMachine::run() {
             update_mpc_states(x_current[0], x_current[1], x_current[2]);
             int closest_idx = path_manager.find_closest_waypoint(x_current);
             if (lane_relocalize) {
-                static double lookahead = 0.5;
-                static double lookbehind = 0.3;
-                int end_idx = std::min(static_cast<int>(closest_idx + lookahead * path_manager.density), static_cast<int>(path_manager.state_refs.rows() - 1));
-                int start_idx = std::max(0, closest_idx - static_cast<int>(lookbehind * path_manager.density));
-                if (path_manager.lane_detectable(closest_idx, end_idx)) {
-                    int num_waypoints = static_cast<int>((lookahead + lookbehind) * path_manager.density);
-                    double nearest_direction = Utility::nearest_direction(utils.get_yaw());
-                    if (path_manager.is_straight_line(start_idx, num_waypoints, nearest_direction, 0.1)) {
-                        lane_based_relocalization();
-                    }
-                    // static int lane_relocalization_semaphore = 0;
-                    // lane_relocalization_semaphore++;
-                    // if (lane_relocalization_semaphore >= 5) {
-                    //     lane_based_relocalization();
-                    //     lane_relocalization_semaphore = 0;
-                    // }
-                }
+                lane_based_relocalization();
+            } else {
+                utils.debug("lane relocalization disabled", 1);
             }
             if (!use_lane) {
                 update_mpc_states();
