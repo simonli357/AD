@@ -89,7 +89,7 @@ public:
         return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
     }
     bool lane_detectable(int start_idx, int end_idx) {
-        const static std::vector<int> detectable_attributes = {ATTRIBUTE::NORMAL, ATTRIBUTE::ONEWAY, ATTRIBUTE::DOTTED};
+        const static std::vector<int> detectable_attributes = {ATTRIBUTE::NORMAL, ATTRIBUTE::ONEWAY, ATTRIBUTE::DOTTED, ATTRIBUTE::CROSSWALK};
         if (start_idx < 0 || start_idx >= state_attributes.size()) {
             return false;
         }
@@ -213,6 +213,7 @@ public:
                 closest = i;
             }
         }
+        closest_waypoint_index = closest;
         return closest;
     }
 
