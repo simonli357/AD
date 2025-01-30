@@ -755,7 +755,7 @@ class OpenCVGuiApp(QWidget):
 
     def message_callback(self, msg):
         self.message_history.append(msg.data)
-        if len(self.message_history) > 12:
+        if len(self.message_history) > 20:
             self.message_history.pop(0)
 
     def update_stopwatch(self):

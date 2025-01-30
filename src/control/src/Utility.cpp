@@ -537,18 +537,6 @@ void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     static double previous_center = 320;
     lock.lock();
     center = msg->center;
-    if(std::abs(center - previous_center) > 200) {
-        // ROS_INFO("center is too far from previous_center");
-        center = previous_center;
-    }
-    if (std::abs(center - 320) < 0.01) {
-        // ROS_INFO("center is 320");
-        double temp = center;
-        center = previous_center;
-        previous_center = temp;
-    } else {
-        previous_center = center;
-    }
     stopline = msg->stopline;
     lock.unlock();
 }

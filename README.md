@@ -19,6 +19,13 @@ The pipeline is structured to operate both in simulation (Gazebo) and on real ha
 
 ## Dependencies
 
+### Ubuntu 20.04
+
+- Not sure if ROS noetic works on a different version.
+
+#### Dual Boot:
+https://linuxconfig.org/how-to-install-ubuntu-alongside-windows-11-dual-boot
+
 ### ROS
 #### Installation:
 http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html
@@ -160,7 +167,7 @@ https://github.com/simonli357/Simulator
     sudo apt install nlohmann-json3-dev
     sudo apt-get install libncurses5-dev libncursesw5-dev
     ```
-    
+
 ## Build
 
 1. Build the packages using
