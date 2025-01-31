@@ -769,6 +769,21 @@ double Utility::object_distance(int index) {
     }
     return -1;
 }
+std::array<double, 3> Utility::object_world_pose(int index) {
+    double object_x, object_y, object_yaw;
+    if (num_obj == 1) {
+        object_x = detected_objects[x_rel];
+        object_y = detected_objects[y_rel];
+        object_yaw = detected_objects[yaw_rel];
+    } else if (index >= 0 && index < num_obj) {
+        object_x = detected_objects[index * NUM_VALUES_PER_OBJECT + x_rel];
+        object_y = detected_objects[index * NUM_VALUES_PER_OBJECT + y_rel];
+        object_yaw = detected_objects[index * NUM_VALUES_PER_OBJECT + yaw_rel];
+    }
+    double x, y, yaw;
+    get_states(x, y, yaw);
+    return object_to_world(object_x, object_y, object_yaw, x, y, yaw);
+}
 std::array<double, 4> Utility::object_box(int index) {
     std::array<double, 4> box;
 
