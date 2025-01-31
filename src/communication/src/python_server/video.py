@@ -26,8 +26,9 @@ class VideoConnection:
         while True:
             seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
             seg_num = seg[0]
-            bytes = b''
             bytes = seg[1:]
+            if len(bytes) == 0 or seg_num not in self.bytes_table.keys():
+                continue
             self.bytes_table[seg_num] = bytes
 
     def update(self):
@@ -48,9 +49,13 @@ class VideoConnection:
             elif len(bytes) != 0 and self.encoding == '32FC1':
                 np_array = np.frombuffer(bytes, dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                cv_image = cv_image.astype(np.float32)
+                if cv_image is None:
+                    print("Failed to decode the image. The data might be corrupted.")
+                    return None
+                # cv_image = cv_image.astype(np.float32)
+                cv_image = (cv_image).astype(np.uint16)
                 bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='32FC1')
+                return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
             return None
         except Exception as e:
             print(e)

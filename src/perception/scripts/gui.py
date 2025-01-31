@@ -738,8 +738,8 @@ class OpenCVGuiApp(QWidget):
     def depth_callback(self, msg):
         if not self.show_depth:
             return
-        # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-        depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
+        depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+        # depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
         # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
         # Apply normalization with a focus on closer objects
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
@@ -921,7 +921,7 @@ class OpenCVGuiApp(QWidget):
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f}, z: {z:.2f})')
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw/np.pi*180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):

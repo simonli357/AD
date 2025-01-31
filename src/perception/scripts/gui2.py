@@ -746,7 +746,7 @@ class OpenCVGuiApp(QWidget):
     def depth_callback(self, msg):
         if not self.show_depth:
             return
-        depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+        depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16")
         # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
         # Apply normalization with a focus on closer objects
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)

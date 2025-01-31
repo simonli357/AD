@@ -96,7 +96,6 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
-			std::cout << "creating camera thread" << std::endl;
 			cameraThreadRunning = true;
 			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
 			std::cout << "camera thread created" << std::endl;
