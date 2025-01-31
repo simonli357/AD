@@ -565,7 +565,7 @@ class OpenCVGuiApp(QWidget):
 
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
-        # rospy.wait_for_service('goto_command', timeout=5)
+        rospy.wait_for_service('goto_command', timeout=5)
         print("service found, calling service...")
         try:
             if self.server.utility_node_client.socket is None:
