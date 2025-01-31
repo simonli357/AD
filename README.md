@@ -3,17 +3,28 @@ Autonomous Driving Pipeline For Bosch Future Mobility Challenge: https://boschfu
 
 ## Description
 
-tbd
+This repository contains the Autonomous Driving (AD) pipeline developed for the Bosch Future Mobility Challenge. The project is designed for a 1-to-10 scale autonomous vehicle and includes modules for perception, localization, planning, and control. It leverages ROS (Robot Operating System) to manage communication between different components and integrates a variety of technologies, including model predictive control, extended Kalman filtering, and deep learning-based perception.
+
+The pipeline is structured to operate both in simulation (Gazebo) and on real hardware, using an STM32-based embedded platform for low-level control. This pipeline serves as a robust framework for autonomous navigation, making it suitable for both competition and research purposes.
+
 
 ## Structure
 
-- **control**: 
-- **localization**: 
-- **perception**: 
-- **planning**: 
-- **utils**: contains custom msgs and srvs used by the other packages.
+- **Embedded_Platform**: code provided by Bosch and modified by us. Contains functionalities to interface with STM32, which controls the car's motor, servo and interacts with the sensors (e.g. IMU).
+- **src/control**: Uses Model Predictive Control (MPC) for smooth path following and a state machine to handle autonomous decision-making.
+- **src/localization**: Uses the `robot_localization` package to fuse sensor data via an Extended Kalman Filter (EKF) for state estimation.
+- **src/perception**: Runs histogram based lane detection algorithm. Sign detection can use either custom trained yoloFastestV2 model deployed with NCNN (using CPU) or custom trained yoloV8 model deployed with TensorRT (using GPU). Detectable objects include traffic signs that can be encountered in the competition, traffic lights (+ color classification), vehicles, and the pedestrian doll.
+- **src/planning**: Fetches global waypoints from graphML file, optimizes path using Spline interpolation.
+- **src/utils**: Contains custom msgs and srvs used by the other packages.
 
 ## Dependencies
+
+### Ubuntu 20.04
+
+- Not sure if ROS noetic works on a different version.
+
+#### Dual Boot:
+https://linuxconfig.org/how-to-install-ubuntu-alongside-windows-11-dual-boot
 
 ### ROS
 #### Installation:

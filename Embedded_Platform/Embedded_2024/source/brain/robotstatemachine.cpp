@@ -149,34 +149,44 @@ namespace brain{
         }
     }
 
-    void CRobotStateMachine::serialCallbackPIDcommand(char const *a, char *b){
+    void CRobotStateMachine::serialCallbackPIDcommand(char const *a, char *b) {
         float pid_active;
+        float integral = 0.0f;
+        float proportional = 0.0f;
+        float derivative = 0.0f;
 
-        uint32_t l_res = sscanf(a, "%f:%f:%f:%f"
-        , &pid_active
-        , &m_steeringControl.m_proportional
-        , &m_steeringControl.m_integral
-        , &m_steeringControl.m_derivative
-        );
-        if (1 == l_res)
-        {
-            if(pid_active == 0){
+        // Attempt to parse the input string
+        uint32_t l_res = sscanf(a, "%f:%f:%f:%f",
+                                &pid_active,
+                                &proportional,
+                                &integral,
+                                &derivative);
+
+        if (l_res == 4) {
+            if (pid_active == 0) {
                 m_steeringControl.m_pidActive = false;
-                sprintf(b,"ack -- PID inactive");
+                sprintf(b, "ack -- PID inactive");
+            } else if (pid_active == 1) {
+                // Activate the PID with the given parameters
+                m_steeringControl.setPID(proportional, integral, derivative);
+                sprintf(b, "ack -- PID active");
+            } else {
+                // Invalid pid_active value
+                sprintf(b, "The PID command is not valid");
             }
-            else if(pid_active == 1){
-                // Activate the PID
-                m_steeringControl.m_pidActive = true;
-                sprintf(b,"ack -- PID active");
+        } else if (l_res == 1) {
+            if (pid_active == 0) {
+                m_steeringControl.m_pidActive = false;
+                sprintf(b, "ack -- PID inactive");
+            } else if (pid_active == 1) {
+                sprintf(b, "syntax error -- missing PID parameters");
+            } else {
+                sprintf(b, "The PID command is not valid");
             }
-            else{
-                sprintf(b,"The PID command is not valid");
-                return;
-            }
-        }
-        else
-        {
-            sprintf(b,"syntax error");
+        } else if (l_res == 0 || l_res == EOF) {
+            sprintf(b, "syntax error -- invalid input");
+        } else {
+            sprintf(b, "syntax error -- incomplete PID parameters");
         }
     }
 

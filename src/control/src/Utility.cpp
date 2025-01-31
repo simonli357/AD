@@ -439,8 +439,12 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
                 if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
-                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
-                    debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                    double sign_yaw = relevant_signs[min_index][2];
+                    double yaw_error = compare_yaw(sign_yaw, yaw);
+                    if(yaw_error < 35 * M_PI / 180) {
+                        road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
+                        debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                    }
                 }
             } else {
                 road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
@@ -533,18 +537,6 @@ void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     static double previous_center = 320;
     lock.lock();
     center = msg->center;
-    if(std::abs(center - previous_center) > 200) {
-        // ROS_INFO("center is too far from previous_center");
-        center = previous_center;
-    }
-    if (std::abs(center - 320) < 0.01) {
-        // ROS_INFO("center is 320");
-        double temp = center;
-        center = previous_center;
-        previous_center = temp;
-    } else {
-        previous_center = center;
-    }
     stopline = msg->stopline;
     lock.unlock();
 }
@@ -776,6 +768,21 @@ double Utility::object_distance(int index) {
         return detected_objects[index * NUM_VALUES_PER_OBJECT + distance];
     }
     return -1;
+}
+std::array<double, 3> Utility::object_world_pose(int index) {
+    double object_x, object_y, object_yaw;
+    if (num_obj == 1) {
+        object_x = detected_objects[x_rel];
+        object_y = detected_objects[y_rel];
+        object_yaw = detected_objects[yaw_rel];
+    } else if (index >= 0 && index < num_obj) {
+        object_x = detected_objects[index * NUM_VALUES_PER_OBJECT + x_rel];
+        object_y = detected_objects[index * NUM_VALUES_PER_OBJECT + y_rel];
+        object_yaw = detected_objects[index * NUM_VALUES_PER_OBJECT + yaw_rel];
+    }
+    double x, y, yaw;
+    get_states(x, y, yaw);
+    return object_to_world(object_x, object_y, object_yaw, x, y, yaw);
 }
 std::array<double, 4> Utility::object_box(int index) {
     std::array<double, 4> box;
