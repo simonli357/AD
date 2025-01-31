@@ -177,6 +177,7 @@ public:
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+    
     }
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
@@ -1741,7 +1742,6 @@ int main(int argc, char **argv) {
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
     bool use_tcp = false;
     nh.getParam("/use_tcp", use_tcp);
-    if (use_tcp) std::thread t1(&StateMachine::receive_services, &sm);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
@@ -1750,6 +1750,7 @@ int main(int argc, char **argv) {
     
     sm.run();
 
+    if (use_tcp) std::thread t1(&StateMachine::receive_services, &sm);
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
