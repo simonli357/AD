@@ -1,0 +1,598 @@
+slsecret@slsecret-Alienware-x15-R2:~/AD$ roslaunch control controller.launch sign:=true lane:=true v:=25
+... logging to /home/slsecret/.ros/log/1cbb3c9c-debb-11ef-baaa-9925e277a046/roslaunch-slsecret-Alienware-x15-R2-881182.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+
+started roslaunch server http://localhost:39631/
+
+SUMMARY
+========
+
+PARAMETERS
+ * /N: 40
+ * /N_park: 49
+ * /T: 0.1
+ * /T_park: 0.05
+ * /constraints/delta_max: 0.3578
+ * /constraints/delta_min: -0.3578
+ * /constraints/v_max: 0.4
+ * /constraints/v_min: -0.4
+ * /constraints/v_ref: 0.25
+ * /constraints/x_max: 22.0
+ * /constraints/x_min: -1.0
+ * /constraints/y_max: 16.0
+ * /constraints/y_min: -1.0
+ * /constraints_park/delta_max: 0.4
+ * /constraints_park/delta_min: -0.4
+ * /constraints_park/v_max: 0.5
+ * /constraints_park/v_min: -0.5
+ * /constraints_park/v_ref: -0.5
+ * /constraints_park/x_max: 4
+ * /constraints_park/x_min: -4
+ * /constraints_park/y_max: 4
+ * /constraints_park/y_min: -4
+ * /costs/delta_steer_cost: 0.5
+ * /costs/delta_v_cost: 0.25
+ * /costs/steer_cost: 0.2
+ * /costs/v_cost: 1
+ * /costs/x_cost: 2
+ * /costs/y_cost: 2
+ * /costs/yaw_cost: 0.5
+ * /costs_park/delta_steer_cost: 0.0
+ * /costs_park/delta_v_cost: 0.0
+ * /costs_park/steer_cost: 0.05
+ * /costs_park/v_cost: 0.5
+ * /costs_park/x_cost: 1
+ * /costs_park/y_cost: 7
+ * /costs_park/yaw_cost: 1
+ * /dashboard: True
+ * /debug_level: 2
+ * /emergency: False
+ * /exit_thresh: 0.1
+ * /gps: False
+ * /hw: 1.33
+ * /ip: 127.0.0.1
+ * /is_real: False
+ * /kb: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/ekf: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/lane: True
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/name: car1
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/rate: 300
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/real: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/robot_name: car1
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/sign: True
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/subModel: False
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/vref: 0.25
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/x0: 4.76
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/y0: 2.706
+ * /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382/yaw0: -1.5708
+ * /name: mobile_robot_25
+ * /parallel_park: offset_x = 0.63 o...
+ * /park_thresh: 0.1
+ * /pathName: run3easy
+ * /pub_wpts: True
+ * /real/FAST_SPEED: 0.4
+ * /real/NORMAL_SPEED: 0.175
+ * /real/change_lane_offset_scaler: 0.9
+ * /real/change_lane_speed: 0.2
+ * /real/change_lane_thresh: 0.05
+ * /real/change_lane_yaw: 0.29
+ * /real/constant_distance_to_intersection_at_detection: 0.3725
+ * /real/cw_speed_ratio: 0.85
+ * /real/has_light: False
+ * /real/hw_speed_ratio: 1.25
+ * /real/intersection_localization_orientation_threshold: 15.0
+ * /real/intersection_localization_threshold: 0.753
+ * /real/intersection_relocalize: False
+ * /real/lane_localization_orientation_threshold: 7.53
+ * /real/lane_localization_threshold: 0.9
+ * /real/lane_relocalize: False
+ * /real/odom_rate: 50
+ * /real/parking_base_speed: -0.2
+ * /real/parking_base_thresh: 0.1
+ * /real/parking_base_yaw_target: 0.23
+ * /real/pedestrian_count_thresh: 8
+ * /real/pixel_center_offset: 0
+ * /real/sigma_delta: 10
+ * /real/sigma_v: 0.075
+ * /real/sign_localization_orientation_threshold: 50.0
+ * /real/sign_localization_threshold: 0.537
+ * /real/sign_relocalize: True
+ * /real/stop_duration: 3.0
+ * /real/use_lane: False
+ * /real/use_stopline: True
+ * /realsense_imu: False
+ * /rosdistro: noetic
+ * /rosversion: 1.17.0
+ * /sim/FAST_SPEED: 0.4
+ * /sim/NORMAL_SPEED: 0.23
+ * /sim/change_lane_offset_scaler: 1.3
+ * /sim/change_lane_speed: 0.2
+ * /sim/change_lane_thresh: 0.05
+ * /sim/change_lane_yaw: 0.25
+ * /sim/constant_distance_to_intersection_at_detection: 0.3725
+ * /sim/cw_speed_ratio: 0.7143
+ * /sim/has_light: False
+ * /sim/hw_speed_ratio: 1.33
+ * /sim/intersection_localization_orientation_threshold: 15.0
+ * /sim/intersection_localization_threshold: 1.5
+ * /sim/intersection_relocalize: False
+ * /sim/lane_localization_orientation_threshold: 7.53
+ * /sim/lane_localization_threshold: 0.1
+ * /sim/lane_relocalize: True
+ * /sim/odom_rate: 50
+ * /sim/parking_base_speed: -0.2
+ * /sim/parking_base_thresh: 0.1
+ * /sim/parking_base_yaw_target: 0.29
+ * /sim/pedestrian_count_thresh: 8
+ * /sim/pixel_center_offset: 0
+ * /sim/sigma_delta: 10
+ * /sim/sigma_v: 0.075
+ * /sim/sign_localization_orientation_threshold: 50.0
+ * /sim/sign_localization_threshold: 0.537
+ * /sim/sign_relocalize: True
+ * /sim/stop_duration: 1.5
+ * /sim/use_lane: False
+ * /sim/use_stopline: True
+ * /test: 0
+ * /use_tcp: False
+ * /vrefInt: 25
+ * /x0: 4.76
+ * /y0: 2.706
+ * /yaw0: -1.5708
+
+NODES
+  /
+    mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382 (control/controller)
+
+ROS_MASTER_URI=http://localhost:11311
+
+process[mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382-1]: started with pid [881229]
+node name: /mpc_controller_slsecret_Alienware_x15_R2_881182_7224823470860597382
+Successfully loaded parameters
+ekf: 0, sign: 1, T: 0.1, N: 40, vref: 0.25, real: 0
+Utility constructor
+[ INFO] [1738208201.516767573]: Utility constructor: TCP client not created.
+[ INFO] [1738208201.517610596]: Utility constructor: ERROR: Failed to open serial port: open: No such file or directory
+[ INFO] [1738208201.518331251]: ERROR: set pose service call failed
+[ INFO] [1738208201.519564096]: imu topic: /car1/imu
+[ INFO] [1738208201.519575862]: waiting for Imu message
+received message from Imu
+waiting for sign message
+received message from sign
+Path Manager Constructor
+v ref: 0.25, int:25
+MPC Constructor
+reference speed is 25 cm/s
+[ INFO] [1738208201.958696003, 4723.686000000]: mode: sim
+rate: 10
+[ INFO] [1738208201.963505423, 4723.690000000]: start_bool server ready, mpc time step T = 0.100000
+[ INFO] [1738208201.963548693, 4723.691000000]: state machine initialized
+[ INFO] [1738208201.963794350, 4723.691000000]: Utility node spinning at a rate of 300.000000
+imu initialized, intial yaw is -90.1 degrees
+[ INFO] [1738208201.963869888, 4723.691000000]: initialized in imu callback
+[ INFO] [1738208201.963904859, 4723.691000000]: new PRIORITY (known static object) detected at (4.511800, 1.351000), road_objects size: 2
+[ INFO] [1738208231.250272848, 4752.928000000]: start(): x=4.760000, y=2.706000, yaw=-1.572657
+[ INFO] [1738208231.251226736, 4752.929000000]: waypoints service found
+[ INFO] [1738208231.477886635, 4753.156000000]: initialize(): Received waypoints of size 6860
+[ INFO] [1738208231.630042469, 4753.308000000]: Python node notified successfully.
+[ INFO] [1738208231.630100234, 4753.308000000]: initialize(): start: 4.760000, 2.706000
+[ INFO] [1738208231.630128412, 4753.308000000]: initialize(): destination: 3.850000, 3.676000
+[ INFO] [1738208231.637328427, 4753.315000000]: Changing from INIT to MOVING
+[ INFO] [1738208231.712023348, 4753.390000000]: LANE_RELOC(): SUCCESS: error: 0.003922, lane center: 4.768050, offset: -0.004128, nearest direction: 3, running x: 4.760000, estimated running x: 4.763922
+[ INFO] [1738208232.914955366, 4754.590000000]: check_stop_sign(): priority detected at a distance of: 1.181000
+[ INFO] [1738208232.915001729, 4754.590000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (4.512596, 1.360630), actual: (4.511800, 1.351000), error: (-0.000796, -0.009630), error norm: 0.009663, threshold: 0.537000
+[ INFO] [1738208236.022653184, 4757.690000000]: intersection_reached(): setting last intersection point to (4.750969, 1.621919)
+[ INFO] [1738208236.022710662, 4757.690000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1738208240.065069791, 4761.715000000]: new STOPSIGN (known static object) detected at (3.507240, 0.984030), road_objects size: 3
+[ INFO] [1738208240.140660555, 4761.790000000]: check_stop_sign(): stop sign detected at a distance of: 0.664500
+[ INFO] [1738208240.140732843, 4761.790000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (3.622979, 0.872031), actual: (3.507240, 0.984030), error: (-0.115739, 0.111999), error norm: 0.161056, threshold: 0.537000
+[ INFO] [1738208241.241944476, 4762.890000000]: intersection_reached(): setting last intersection point to (3.788099, 0.768791)
+[ INFO] [1738208241.241975946, 4762.890000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208243.191429693, 4764.835000000]: new No Entry detected at (3.058190, 1.043927), road_objects size: 4
+[ INFO] [1738208248.355123502, 4769.990000000]: center: 240.000, offset: -0.078, closest lane center: 0.729, running_y: 0.755, estimated running_y: 0.807
+[ INFO] [1738208248.355177765, 4769.991000000]: LANE_RELOC(): SUCCESS: error: 0.051967, lane center: 0.729080, offset: -0.077700, nearest direction: 2, running y: 0.754813, estimated running y: 0.806780
+[ INFO] [1738208254.390504709, 4776.015000000]: new STOPSIGN (known static object) detected at (0.982112, 3.020450), road_objects size: 5
+[ INFO] [1738208256.168717808, 4777.791000000]: LANE_RELOC(): SUCCESS: error: 0.011381, lane center: 0.727162, offset: 0.009227, nearest direction: 1, running x: 0.725008, estimated running x: 0.736389
+[ INFO] [1738208256.568801094, 4778.191000000]: check_stop_sign(): stop sign detected at a distance of: 1.191000
+[ INFO] [1738208256.568853859, 4778.191000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.870350, 2.858627), actual: (0.982112, 3.020450), error: (0.111762, 0.161823), error norm: 0.196666, threshold: 0.537000
+[ INFO] [1738208259.573119643, 4781.190000000]: intersection_reached(): setting last intersection point to (0.758326, 2.748267)
+[ INFO] [1738208259.573173945, 4781.190000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208266.985599447, 4788.590000000]: LANE_RELOC(): SUCCESS: error: 0.000717, lane center: 0.727162, offset: -0.017968, nearest direction: 1, running x: 0.708477, estimated running x: 0.709194
+[ INFO] [1738208267.110046965, 4788.715000000]: new STOPSIGN (known static object) detected at (0.982112, 5.911470), road_objects size: 6
+[ INFO] [1738208268.788976806, 4790.390000000]: check_stop_sign(): stop sign detected at a distance of: 1.194000
+[ INFO] [1738208268.789032898, 4790.390000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.977111, 5.871894), actual: (0.982112, 5.911470), error: (0.005001, 0.039576), error norm: 0.039891, threshold: 0.537000
+[ INFO] [1738208269.990401778, 4791.591000000]: LANE_RELOC(): SUCCESS: error: -0.005866, lane center: 0.727162, offset: 0.006313, nearest direction: 1, running x: 0.739341, estimated running x: 0.733475
+[ INFO] [1738208271.792961169, 4793.390000000]: intersection_reached(): setting last intersection point to (0.732052, 5.635419)
+[ INFO] [1738208271.792993738, 4793.390000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208273.295418223, 4794.890000000]: LANE_RELOC(): SUCCESS: error: -0.004890, lane center: 0.727162, offset: 0.000000, nearest direction: 1, running x: 0.732052, estimated running x: 0.727162
+[ INFO] [1738208278.769693186, 4800.355000000]: new STOPSIGN (known static object) detected at (0.982112, 9.021700), road_objects size: 7
+[ INFO] [1738208280.708229880, 4802.291000000]: LANE_RELOC(): SUCCESS: error: 0.005406, lane center: 0.727162, offset: -0.001943, nearest direction: 1, running x: 0.719814, estimated running x: 0.725220
+[ INFO] [1738208281.909564179, 4803.490000000]: check_stop_sign(): stop sign detected at a distance of: 1.168000
+[ INFO] [1738208281.909610136, 4803.490000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.984781, 8.976014), actual: (0.982112, 9.021700), error: (-0.002669, 0.045686), error norm: 0.045764, threshold: 0.537000
+[ INFO] [1738208284.818377443, 4806.390000000]: intersection_reached(): setting last intersection point to (0.726339, 8.733806)
+[ INFO] [1738208284.818420171, 4806.390000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208292.129428973, 4813.690000000]: LANE_RELOC(): SUCCESS: error: 0.017546, lane center: 0.727162, offset: 0.004128, nearest direction: 1, running x: 0.713744, estimated running x: 0.731290
+[ INFO] [1738208299.541717913, 4821.090000000]: center: 220.000, offset: 0.097, closest lane center: 11.806, running_y: 11.811, estimated running_y: 11.709
+[ INFO] [1738208299.541778217, 4821.090000000]: LANE_RELOC(): SUCCESS: error: -0.101709, lane center: 11.806350, offset: 0.097125, nearest direction: 0, running y: 11.810934, estimated running y: 11.709225
+[ INFO] [1738208302.547452639, 4824.090000000]: center: 274.250, offset: 0.044, closest lane center: 11.806, running_y: 11.787, estimated running_y: 11.762
+[ INFO] [1738208302.547509759, 4824.090000000]: LANE_RELOC(): SUCCESS: error: -0.025148, lane center: 11.806350, offset: 0.044435, nearest direction: 0, running y: 11.787064, estimated running y: 11.761915
+[ INFO] [1738208305.550846386, 4827.090000000]: center: 295.000, offset: 0.024, closest lane center: 11.806, running_y: 11.800, estimated running_y: 11.782
+[ INFO] [1738208305.550885568, 4827.090000000]: LANE_RELOC(): SUCCESS: error: -0.017549, lane center: 11.806350, offset: 0.024281, nearest direction: 0, running y: 11.799617, estimated running y: 11.782069
+[ INFO] [1738208308.556386928, 4830.090000000]: center: 311.750, offset: 0.008, closest lane center: 11.806, running_y: 11.801, estimated running_y: 11.798
+[ INFO] [1738208308.556438440, 4830.090000000]: LANE_RELOC(): SUCCESS: error: -0.003090, lane center: 11.806350, offset: 0.008013, nearest direction: 0, running y: 11.801428, estimated running y: 11.798337
+[ INFO] [1738208311.560760832, 4833.090000000]: center: 329.750, offset: -0.009, closest lane center: 11.806, running_y: 11.809, estimated running_y: 11.816
+[ INFO] [1738208311.560842718, 4833.090000000]: LANE_RELOC(): SUCCESS: error: 0.006330, lane center: 11.806350, offset: -0.009470, nearest direction: 0, running y: 11.809489, estimated running y: 11.815820
+[ INFO] [1738208311.986832461, 4833.515000000]: new ALL_HIGHWAYENTRANCES (known static object) detected at (6.347700, 11.560000), road_objects size: 8
+[ INFO] [1738208312.062659312, 4833.591000000]: SIGN_RELOC(ALL_HIGHWAYENTRANCES): SUCCESS: estimated sign pose: (6.261122, 11.556865), actual: (6.347700, 11.560000), error: (0.086578, 0.003135), error norm: 0.086635, threshold: 0.537000
+[ INFO] [1738208313.364225390, 4834.890000000]: SIGN_RELOC(ALL_HIGHWAYENTRANCES): SUCCESS: estimated sign pose: (6.388388, 11.566453), actual: (6.347700, 11.560000), error: (-0.040688, -0.006453), error norm: 0.041197, threshold: 0.537000
+[ INFO] [1738208314.566756977, 4836.091000000]: center: 324.750, offset: -0.005, closest lane center: 11.806, running_y: 11.805, estimated running_y: 11.811
+[ INFO] [1738208314.566830481, 4836.091000000]: LANE_RELOC(): SUCCESS: error: 0.006100, lane center: 11.806350, offset: -0.004613, nearest direction: 0, running y: 11.804863, estimated running y: 11.810963
+[ INFO] [1738208323.805795572, 4845.315000000]: new Car detected at (9.947729, 11.648026), road_objects size: 9
+[ INFO] [1738208326.770943132, 4848.275000000]: new Car detected at (10.866727, 10.790464), road_objects size: 10
+[ INFO] [1738208327.988284120, 4849.490000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 993, end idx: 1038, min_dist: 0.031845, min_dist_adj: 0.420558
+[ INFO] [1738208327.988331965, 4849.490000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the right in 0.465000 meters. start pose: (10.253066,10.945041), end: (11.676189, 10.459259), cur: (9.908094, 11.233311)
+[ INFO] [1738208337.248378703, 4858.735000000]: new ALL ROUNDABOUTS (known static object) detected at (14.924090, 10.155166), road_objects size: 11
+[ INFO] [1738208339.407755469, 4860.890000000]: check_stop_sign(): roundabout detected at a distance of: 1.172000
+[ INFO] [1738208339.407813784, 4860.890000000]: SIGN_RELOC(ALL ROUNDABOUTS): SUCCESS: estimated sign pose: (14.834488, 10.145807), actual: (14.924090, 10.155166), error: (0.089602, 0.009359), error norm: 0.090090, threshold: 0.537000
+[ INFO] [1738208342.413054012, 4863.890000000]: intersection_reached(): setting last intersection point to (14.646704, 10.380923)
+[ INFO] [1738208342.413084555, 4863.890000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1738208356.665542329, 4878.119000000]: new Car detected at (19.704931, 10.495150), road_objects size: 12
+[ INFO] [1738208358.439835722, 4879.891000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 1332, end idx: 1393, min_dist: 0.040972, min_dist_adj: 0.352555
+[ INFO] [1738208358.439901785, 4879.891000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the left in 0.464000 meters. start pose: (19.174281,10.516342), end: (20.313723, 11.219748), cur: (18.736966, 10.419095)
+[ INFO] [1738208387.288313896, 4908.690000000]: check_stop_sign(): roundabout detected at a distance of: 1.199500
+[ INFO] [1738208387.288373468, 4908.690000000]: SIGN_RELOC(ALL ROUNDABOUTS): SUCCESS: estimated sign pose: (15.928439, 11.889768), actual: (15.629166, 11.744351), error: (-0.299273, -0.145417), error norm: 0.332732, threshold: 0.537000
+[ INFO] [1738208387.573762757, 4908.975000000]: new ALL ROUNDABOUTS (known static object) detected at (15.629166, 11.744351), road_objects size: 13
+[ INFO] [1738208390.494335069, 4911.890000000]: intersection_reached(): setting last intersection point to (15.792382, 12.011535)
+[ INFO] [1738208390.494369813, 4911.890000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1738208407.971147528, 4929.338000000]: new Car detected at (15.526908, 6.001030), road_objects size: 14
+[ INFO] [1738208413.136615542, 4934.495000000]: new STOPSIGN (known static object) detected at (15.057500, 4.631000), road_objects size: 15
+[ INFO] [1738208415.235050430, 4936.590000000]: check_stop_sign(): stop sign detected at a distance of: 1.180000
+[ INFO] [1738208415.235103797, 4936.590000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (14.940240, 4.674476), actual: (15.057500, 4.631000), error: (0.117260, -0.043476), error norm: 0.125060, threshold: 0.537000
+[ INFO] [1738208417.524414140, 4938.875000000]: new Oneway detected at (14.829432, 4.252460), road_objects size: 16
+[ INFO] [1738208418.241326066, 4939.590000000]: intersection_reached(): setting last intersection point to (15.312276, 4.886458)
+[ INFO] [1738208418.241373902, 4939.590000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208421.511140675, 4942.855000000]: new ALL CROSSWALKS (known static object) detected at (15.086600, 3.035000), road_objects size: 17
+[ INFO] [1738208422.750261164, 4944.090000000]: check_stop_sign(): crosswalk detected at a distance of: 1.182000
+[ INFO] [1738208422.750323581, 4944.090000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (15.088245, 3.041470), actual: (15.086600, 3.035000), error: (-0.001645, -0.006470), error norm: 0.006676, threshold: 0.537000
+[ INFO] [1738208425.654831220, 4946.990000000]: intersection_reached(): setting last intersection point to (15.290398, 3.326606)
+[ INFO] [1738208425.654870138, 4946.990000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208426.462164182, 4947.795000000]: new STOPSIGN (known static object) detected at (15.057976, 1.548200), road_objects size: 18
+[ INFO] [1738208428.461069227, 4949.791000000]: check_stop_sign(): stop sign detected at a distance of: 1.190000
+[ INFO] [1738208428.461124653, 4949.791000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (15.054835, 1.584430), actual: (15.057976, 1.548200), error: (0.003141, -0.036230), error norm: 0.036366, threshold: 0.537000
+[ INFO] [1738208432.969306441, 4954.291000000]: intersection_reached(): setting last intersection point to (15.287781, 1.834992)
+[ INFO] [1738208432.969342191, 4954.291000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208442.384078971, 4963.690000000]: check_stop_sign(): crosswalk detected at a distance of: 1.170500
+[ INFO] [1738208442.384140517, 4963.691000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.092028, threshold: 50.000000
+[ INFO] [1738208442.483608050, 4963.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.065404, threshold: 50.000000
+[ INFO] [1738208442.584176960, 4963.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.038974, threshold: 50.000000
+[ INFO] [1738208442.684738125, 4963.991000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.012947, threshold: 50.000000
+[ INFO] [1738208442.783890454, 4964.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.987570, threshold: 50.000000
+[ INFO] [1738208442.884671013, 4964.191000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.962898, threshold: 50.000000
+[ INFO] [1738208442.984404653, 4964.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.938965, threshold: 50.000000
+[ INFO] [1738208443.084593198, 4964.391000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.915180, threshold: 50.000000
+[ INFO] [1738208443.183861449, 4964.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.891630, threshold: 50.000000
+[ INFO] [1738208443.284510499, 4964.590000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (17.280601, 2.114911), actual: (17.332400, 2.288000), error: (0.051799, 0.173089), error norm: 0.180673, threshold: 0.537000
+[ INFO] [1738208444.011038145, 4965.315000000]: new ALL CROSSWALKS (known static object) detected at (17.332400, 2.288000), road_objects size: 19
+[ INFO] [1738208445.488316327, 4966.790000000]: intersection_reached(): setting last intersection point to (17.120519, 1.847911)
+[ INFO] [1738208445.488353014, 4966.790000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208454.203218957, 4975.490000000]: check_stop_sign(): priority detected at a distance of: 0.852000
+[ INFO] [1738208454.203281915, 4975.490000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.198848, threshold: 50.000000
+[ INFO] [1738208454.304092272, 4975.590000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.162646, threshold: 50.000000
+[ INFO] [1738208454.405119812, 4975.690000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.126338, threshold: 50.000000
+[ INFO] [1738208454.505675678, 4975.792000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.089804, threshold: 50.000000
+[ INFO] [1738208454.605086162, 4975.890000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.053247, threshold: 50.000000
+[ INFO] [1738208454.704506684, 4975.990000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.016497, threshold: 50.000000
+[ INFO] [1738208454.805841895, 4976.091000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.979550, threshold: 50.000000
+[ INFO] [1738208454.905194882, 4976.190000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.942832, threshold: 50.000000
+[ INFO] [1738208455.005169801, 4976.290000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.905238, threshold: 50.000000
+[ INFO] [1738208455.106110514, 4976.390000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (16.374503, 4.251191), actual: (16.299500, 4.270300), error: (-0.075003, 0.019109), error norm: 0.077398, threshold: 0.537000
+[ INFO] [1738208456.007646865, 4977.290000000]: intersection_reached(): setting last intersection point to (16.622698, 3.927591)
+[ INFO] [1738208456.007685400, 4977.290000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1738208461.416069342, 4982.690000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2448, end idx: 2509, min_dist: 0.012339, min_dist_adj: 0.381796
+[ INFO] [1738208461.416147204, 4982.690000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the left in 0.489000 meters. start pose: (15.558955,5.296229), end: (15.665340, 6.829943), cur: (15.661032, 4.823989)
+[ INFO] [1738208465.222159750, 4986.490000000]: LANE_RELOC(): FAILURE: error too large: 0.417958, lane center: 15.679550, offset: -0.039093, nearest direction: 1, running x: 15.222499, estimated running x: 15.640457
+[ INFO] [1738208465.322599857, 4986.591000000]: LANE_RELOC(): FAILURE: error too large: 0.421613, lane center: 15.679550, offset: -0.039093, nearest direction: 1, running x: 15.218844, estimated running x: 15.640457
+[ INFO] [1738208465.421972635, 4986.690000000]: LANE_RELOC(): FAILURE: error too large: 0.351125, lane center: 15.679550, offset: -0.111937, nearest direction: 1, running x: 15.216489, estimated running x: 15.567613
+[ INFO] [1738208465.523458048, 4986.790000000]: LANE_RELOC(): FAILURE: error too large: 0.368513, lane center: 15.679550, offset: -0.095668, nearest direction: 1, running x: 15.215369, estimated running x: 15.583882
+[ INFO] [1738208465.624396421, 4986.890000000]: LANE_RELOC(): FAILURE: error too large: 0.367395, lane center: 15.679550, offset: -0.096882, nearest direction: 1, running x: 15.215272, estimated running x: 15.582668
+[ INFO] [1738208465.724738781, 4986.990000000]: LANE_RELOC(): FAILURE: error too large: 0.374087, lane center: 15.679550, offset: -0.089598, nearest direction: 1, running x: 15.215866, estimated running x: 15.589952
+[ INFO] [1738208465.823955548, 4987.090000000]: LANE_RELOC(): FAILURE: error too large: 0.401839, lane center: 15.679550, offset: -0.060703, nearest direction: 1, running x: 15.217008, estimated running x: 15.618847
+[ INFO] [1738208465.924025444, 4987.191000000]: LANE_RELOC(): FAILURE: error too large: 0.406925, lane center: 15.679550, offset: -0.054147, nearest direction: 1, running x: 15.218478, estimated running x: 15.625403
+[ INFO] [1738208466.024076608, 4987.290000000]: LANE_RELOC(): FAILURE: error too large: 0.409543, lane center: 15.679550, offset: -0.049777, nearest direction: 1, running x: 15.220231, estimated running x: 15.629773
+[ INFO] [1738208466.123547485, 4987.390000000]: LANE_RELOC(): FAILURE: error too large: 0.400833, lane center: 15.679550, offset: -0.056575, nearest direction: 1, running x: 15.222141, estimated running x: 15.622975
+[ INFO] [1738208466.224196865, 4987.491000000]: LANE_RELOC(): FAILURE: error too large: 0.400551, lane center: 15.679550, offset: -0.054633, nearest direction: 1, running x: 15.224366, estimated running x: 15.624917
+[ INFO] [1738208466.324984796, 4987.590000000]: LANE_RELOC(): FAILURE: error too large: 0.423984, lane center: 15.679550, offset: -0.028895, nearest direction: 1, running x: 15.226672, estimated running x: 15.650655
+[ INFO] [1738208466.424969252, 4987.691000000]: LANE_RELOC(): FAILURE: error too large: 0.421628, lane center: 15.679550, offset: -0.028895, nearest direction: 1, running x: 15.229027, estimated running x: 15.650655
+[ INFO] [1738208466.524088679, 4987.790000000]: LANE_RELOC(): FAILURE: error too large: 0.421956, lane center: 15.679550, offset: -0.025981, nearest direction: 1, running x: 15.231613, estimated running x: 15.653569
+[ INFO] [1738208474.604198765, 4995.856000000]: new ALL ROUNDABOUTS (known static object) detected at (16.507834, 9.466390), road_objects size: 20
+[ INFO] [1738208477.342591461, 4998.590000000]: check_stop_sign(): roundabout detected at a distance of: 0.511500
+[ INFO] [1738208477.342635591, 4998.590000000]: SIGN_RELOC(ALL ROUNDABOUTS): SUCCESS: estimated sign pose: (16.497084, 9.358158), actual: (16.507834, 9.466390), error: (0.010750, 0.108232), error norm: 0.108765, threshold: 0.537000
+[ INFO] [1738208477.742238682, 4998.990000000]: intersection_reached(): setting last intersection point to (16.254484, 9.169202)
+[ INFO] [1738208477.742274032, 4998.990000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1738208509.199393183, 5030.391000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2972, end idx: 3033, min_dist: 0.022456, min_dist_adj: 0.371774
+[ INFO] [1738208509.199475183, 5030.391000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the left in 0.472000 meters. start pose: (20.042862,11.302871), end: (18.685320, 10.765860), cur: (19.936639, 11.763518)
+[ INFO] [1738208511.192341840, 5032.376000000]: new Car detected at (19.383038, 9.750685), road_objects size: 21
+[ INFO] [1738208513.957230858, 5035.136000000]: new ALL ROUNDABOUTS (known static object) detected at (17.217610, 11.035834), road_objects size: 22
+[ INFO] [1738208517.318528444, 5038.490000000]: check_stop_sign(): roundabout detected at a distance of: 1.188500
+[ INFO] [1738208517.318575264, 5038.490000000]: SIGN_RELOC(ALL ROUNDABOUTS): SUCCESS: estimated sign pose: (17.363080, 11.119937), actual: (17.217610, 11.035834), error: (-0.145470, -0.084103), error norm: 0.168032, threshold: 0.537000
+[ INFO] [1738208519.923240577, 5041.090000000]: intersection_reached(): setting last intersection point to (17.472817, 10.748978)
+[ INFO] [1738208519.923299974, 5041.091000000]: intersection reached: CASE ROUNDABOUT, proceeding...
+[ INFO] [1738208526.696748092, 5047.853000000]: new ALL_HIGHWAYENTRANCES (known static object) detected at (14.350000, 11.030000), road_objects size: 23
+[ INFO] [1738208526.734302054, 5047.890000000]: SIGN_RELOC(ALL_HIGHWAYENTRANCES): SUCCESS: estimated sign pose: (14.344145, 11.106197), actual: (14.350000, 11.030000), error: (0.005855, -0.076197), error norm: 0.076422, threshold: 0.537000
+[ INFO] [1738208527.635841647, 5048.791000000]: SIGN_RELOC(ALL_HIGHWAYENTRANCES): SUCCESS: estimated sign pose: (14.323052, 11.085885), actual: (14.350000, 11.030000), error: (0.026948, -0.055885), error norm: 0.062043, threshold: 0.537000
+[ INFO] [1738208542.361333640, 5063.490000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 3338, end idx: 3383, min_dist: 0.175244, min_dist_adj: 0.568729
+[ INFO] [1738208542.361405891, 5063.490000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the right in 0.469500 meters. start pose: (10.675226,11.476620), end: (9.292567, 12.070251), cur: (11.056170, 11.179234)
+[ INFO] [1738208579.072325685, 5100.136000000]: new STOPSIGN (known static object) detected at (0.104340, 10.635000), road_objects size: 24
+[ INFO] [1738208579.327378281, 5100.390000000]: check_stop_sign(): stop sign detected at a distance of: 1.174500
+[ INFO] [1738208579.327428002, 5100.390000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.086107, 10.704951), actual: (0.104340, 10.635000), error: (0.018233, -0.069951), error norm: 0.072289, threshold: 0.537000
+[ INFO] [1738208582.032081308, 5103.090000000]: intersection_reached(): setting last intersection point to (0.352328, 10.905565)
+[ INFO] [1738208582.032149969, 5103.091000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208585.638281505, 5106.690000000]: check_stop_sign(): crosswalk detected at a distance of: 1.155000
+[ INFO] [1738208585.638336880, 5106.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.521545, threshold: 50.000000
+[ INFO] [1738208585.738966172, 5106.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.522682, threshold: 50.000000
+[ INFO] [1738208585.838609400, 5106.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.524266, threshold: 50.000000
+[ INFO] [1738208585.939099364, 5106.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.526262, threshold: 50.000000
+[ INFO] [1738208586.039559522, 5107.091000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.528634, threshold: 50.000000
+[ INFO] [1738208586.138956894, 5107.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.531400, threshold: 50.000000
+[ INFO] [1738208586.239290079, 5107.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.534412, threshold: 50.000000
+[ INFO] [1738208586.339041932, 5107.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.537737, threshold: 50.000000
+[ INFO] [1738208586.439255076, 5107.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.541287, threshold: 50.000000
+[ INFO] [1738208586.540034031, 5107.591000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.545065, threshold: 50.000000
+[ INFO] [1738208586.639468079, 5107.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.548900, threshold: 50.000000
+[ INFO] [1738208586.740052330, 5107.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.552911, threshold: 50.000000
+[ INFO] [1738208586.839607602, 5107.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.557411, threshold: 50.000000
+[ INFO] [1738208586.939342855, 5107.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.562086, threshold: 50.000000
+[ INFO] [1738208587.039741146, 5108.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.566571, threshold: 50.000000
+[ INFO] [1738208587.140340851, 5108.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.570739, threshold: 50.000000
+[ INFO] [1738208587.240613329, 5108.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.574643, threshold: 50.000000
+[ INFO] [1738208587.340830488, 5108.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.578298, threshold: 50.000000
+[ INFO] [1738208587.440407078, 5108.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.581713, threshold: 50.000000
+[ INFO] [1738208587.540938853, 5108.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 1.584868, threshold: 50.000000
+[ INFO] [1738208587.642531481, 5108.691000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.020243, 8.814949)
+[ INFO] [1738208587.742932657, 5108.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.016743, 8.783764)
+[ INFO] [1738208587.842293983, 5108.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.013232, 8.753202)
+[ INFO] [1738208587.942744871, 5108.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.010028, 8.723375)
+[ INFO] [1738208588.041887244, 5109.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.007141, 8.694215)
+[ INFO] [1738208588.143838222, 5109.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.004594, 8.665668)
+[ INFO] [1738208588.242955786, 5109.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.002320, 8.637636)
+[ INFO] [1738208588.343346340, 5109.391000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.000311, 8.610062)
+[ INFO] [1738208588.443192594, 5109.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.998560, 8.582901)
+[ INFO] [1738208588.543529222, 5109.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.997057, 8.556107)
+[ INFO] [1738208588.644833640, 5109.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.995789, 8.529641)
+[ INFO] [1738208588.743448321, 5109.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.994750, 8.503470)
+[ INFO] [1738208588.842981489, 5109.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993926, 8.477562)
+[ INFO] [1738208588.944255229, 5109.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993295, 8.451883)
+[ INFO] [1738208589.044883515, 5110.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992852, 8.426410)
+[ INFO] [1738208589.144725311, 5110.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992557, 8.401105)
+[ INFO] [1738208589.243940467, 5110.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992384, 8.375939)
+[ INFO] [1738208589.344209138, 5110.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992305, 8.350885)
+[ INFO] [1738208589.443815728, 5110.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992324, 8.325935)
+[ INFO] [1738208589.545351948, 5110.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992461, 8.297854)
+[ INFO] [1738208589.645618919, 5110.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992621, 8.270240)
+[ INFO] [1738208589.745235773, 5110.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.992853, 8.243066)
+[ INFO] [1738208589.844788633, 5110.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993081, 8.216230)
+[ INFO] [1738208589.945320640, 5110.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993359, 8.189720)
+[ INFO] [1738208590.046390601, 5111.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993659, 8.163479)
+[ INFO] [1738208590.146548432, 5111.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.993965, 8.137463)
+[ INFO] [1738208590.169315671, 5111.213000000]: new STOPSIGN (known static object) detected at (0.104340, 7.521675), road_objects size: 25
+[ INFO] [1738208590.247324972, 5111.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.119429, 8.130737)
+[ INFO] [1738208590.346833975, 5111.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.114520, 8.105337)
+[ INFO] [1738208590.447137663, 5111.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.110730, 8.079147)
+[ INFO] [1738208590.546351834, 5111.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.106852, 8.053116)
+[ INFO] [1738208590.646821553, 5111.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.102942, 8.027214)
+[ INFO] [1738208590.747525442, 5111.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.098139, 8.001399)
+[ INFO] [1738208590.847955543, 5111.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.094208, 7.975697)
+[ INFO] [1738208590.947196662, 5111.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.088178, 7.950113)
+[ INFO] [1738208591.047741512, 5112.091000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.086303, 7.924530)
+[ INFO] [1738208591.148334138, 5112.191000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.081445, 7.899023)
+[ INFO] [1738208591.247803547, 5112.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.074398, 7.873625)
+[ INFO] [1738208591.347367998, 5112.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.070570, 7.844891)
+[ INFO] [1738208591.447893428, 5112.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.997789, 7.803688)
+[ INFO] [1738208591.548170965, 5112.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.060478, 7.788910)
+[ INFO] [1738208591.648432413, 5112.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.053553, 7.761452)
+[ INFO] [1738208591.748963851, 5112.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.046628, 7.734301)
+[ INFO] [1738208591.848462021, 5112.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.040753, 7.707400)
+[ INFO] [1738208591.948998347, 5112.991000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.034848, 7.680741)
+[ INFO] [1738208592.048437721, 5113.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.027791, 7.654326)
+[ INFO] [1738208592.150034181, 5113.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.019893, 7.628032)
+[ INFO] [1738208592.250846060, 5113.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.013093, 7.598553)
+[ INFO] [1738208592.350214494, 5113.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (0.005231, 7.569654)
+[ INFO] [1738208592.449471761, 5113.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.004588, 7.541217)
+[ INFO] [1738208592.549621650, 5113.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.012250, 7.513161)
+[ INFO] [1738208592.649225001, 5113.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.023190, 7.485543)
+[ INFO] [1738208592.749726272, 5113.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.030890, 7.458182)
+[ INFO] [1738208592.850068409, 5113.891000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.039674, 7.431116)
+[ INFO] [1738208592.950352939, 5113.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.050520, 7.404287)
+[ INFO] [1738208593.050926486, 5114.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.063329, 7.377620)
+[ INFO] [1738208593.151226348, 5114.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.073040, 7.351127)
+[ INFO] [1738208593.251728536, 5114.291000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.085019, 7.324865)
+[ INFO] [1738208593.350916974, 5114.390000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.096793, 7.298648)
+[ INFO] [1738208593.450321154, 5114.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.108584, 7.272548)
+[ INFO] [1738208593.550799878, 5114.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.124554, 7.246547)
+[ INFO] [1738208593.650517600, 5114.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.139663, 7.220706)
+[ INFO] [1738208593.751054454, 5114.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.153694, 7.194920)
+[ INFO] [1738208593.850526335, 5114.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.168634, 7.169126)
+[ INFO] [1738208593.951667768, 5114.990000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.186681, 7.143363)
+[ INFO] [1738208594.051983396, 5115.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.206714, 7.114289)
+[ INFO] [1738208594.151852824, 5115.190000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.226860, 7.085737)
+[ INFO] [1738208594.252282261, 5115.290000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.252121, 7.057509)
+[ INFO] [1738208594.354168009, 5115.391000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.271165, 7.029671)
+[ INFO] [1738208594.452797075, 5115.490000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (-0.284038, 7.002216)
+[ INFO] [1738208594.552153015, 5115.590000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.015497, 6.983102)
+[ INFO] [1738208594.653552154, 5115.690000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.016024, 6.956776)
+[ INFO] [1738208594.752860091, 5115.790000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.016540, 6.930644)
+[ INFO] [1738208594.853222953, 5115.890000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.017090, 6.904707)
+[ INFO] [1738208594.953651649, 5115.991000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.017791, 6.875708)
+[ INFO] [1738208595.053952055, 5116.090000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: error too large: 31.622777, threshold: 0.537000, estimated sign pose: (1.018629, 6.847359)
+[ INFO] [1738208595.154168748, 5116.190000000]: intersection_reached(): setting last intersection point to (0.343706, 7.848595)
+[ INFO] [1738208595.154224768, 5116.190000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208600.670253586, 5121.696000000]: new STOPSIGN (known static object) detected at (0.104340, 4.635900), road_objects size: 26
+[ INFO] [1738208602.869524404, 5123.890000000]: check_stop_sign(): stop sign detected at a distance of: 1.187000
+[ INFO] [1738208602.869572143, 5123.890000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.001296, 4.720205), actual: (0.104340, 4.635900), error: (0.103044, -0.084305), error norm: 0.133137, threshold: 0.537000
+[ INFO] [1738208605.875574173, 5126.891000000]: intersection_reached(): setting last intersection point to (0.369279, 4.897510)
+[ INFO] [1738208605.875622551, 5126.891000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208624.209556840, 5145.190000000]: check_stop_sign(): stop sign detected at a distance of: 1.198000
+[ INFO] [1738208624.209637087, 5145.191000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (1.767357, 0.102690), actual: (1.899750, 0.101391), error: (0.132393, -0.001299), error norm: 0.132399, threshold: 0.537000
+[ INFO] [1738208624.414491730, 5145.396000000]: new STOPSIGN (known static object) detected at (1.899750, 0.101391), road_objects size: 27
+[ INFO] [1738208626.913523566, 5147.890000000]: intersection_reached(): setting last intersection point to (1.619789, 0.382095)
+[ INFO] [1738208626.913573370, 5147.890000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208632.508810660, 5153.476000000]: new PRIORITY (known static object) detected at (4.143644, 0.101336), road_objects size: 28
+[ INFO] [1738208633.724604314, 5154.690000000]: check_stop_sign(): priority detected at a distance of: 1.190000
+[ INFO] [1738208633.724698757, 5154.691000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (4.096501, -0.007992), actual: (4.143644, 0.101336), error: (0.047143, 0.109328), error norm: 0.119059, threshold: 0.537000
+[ INFO] [1738208636.628867082, 5157.590000000]: intersection_reached(): setting last intersection point to (3.895237, 0.403676)
+[ INFO] [1738208636.628912358, 5157.590000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1738208638.838637952, 5159.796000000]: new Oneway detected at (5.371025, 0.147855), road_objects size: 29
+[ INFO] [1738208647.573431090, 5168.516000000]: new PARKING SIGNS (known static object) detected at (8.936750, 1.161200), road_objects size: 30
+[ INFO] [1738208648.154169906, 5169.096000000]: new ALL CROSSWALKS (known static object) detected at (8.142500, 0.703300), road_objects size: 31
+[ INFO] [1738208649.050130358, 5169.990000000]: check_stop_sign(): crosswalk detected at a distance of: 1.192500
+[ INFO] [1738208649.050177963, 5169.990000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (8.122284, 0.686412), actual: (8.142500, 0.703300), error: (0.020216, 0.016888), error norm: 0.026342, threshold: 0.537000
+[ INFO] [1738208651.579463789, 5172.516000000]: new Car detected at (9.139406, 1.114713), road_objects size: 32
+[ INFO] [1738208651.955641174, 5172.890000000]: intersection_reached(): setting last intersection point to (7.849709, 0.937298)
+[ INFO] [1738208651.955670621, 5172.890000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208652.261387802, 5173.196000000]: new Car detected at (9.106514, 0.712066), road_objects size: 33
+[ INFO] [1738208652.757898110, 5173.691000000]: Changing from MOVING to PARKING
+[ INFO] [1738208653.557214450, 5174.490000000]: park sign detected at a distance of: 0.992000, parking offset is: 2.176500
+[ INFO] [1738208653.557254712, 5174.490000000]: orientation: 6.283
+[ INFO] [1738208653.557294843, 5174.490000000]: SIGN_RELOC(PARKING): SUCCESS: estimated sign pose: (8.925939, 0.703659), actual: (8.936750, 0.687367), error: (0.010811, -0.016292), error norm: 0.019553, threshold: 0.537000
+[ INFO] [1738208653.557546938, 5174.490000000]: PARKING(): target spot: 0
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.1, 0.56
+parking spot 3: 10.1, 1.3
+parking spot 4: 10.8, 0.56
+parking spot 5: 10.8, 1.3
+parking spot 6: 11.6, 0.56
+parking spot 7: 11.6, 1.3
+parking spot 8: 12.3, 0.56
+parking spot 9: 12.3, 1.3
+[ INFO] [1738208653.557603291, 5174.490000000]: PARKING(): car detected in spot: 0, error: 0.092027
+[ INFO] [1738208653.557618473, 5174.490000000]: PARKING(): car detected in spot: 1, error: 0.107883
+[ INFO] [1738208653.557635143, 5174.490000000]: car in spot, changing to target spot 2 at (10.123, 0.560), right: true
+[ INFO] [1738208656.327137123, 5177.256000000]: new Oneway detected at (9.255887, 0.607519), road_objects size: 34
+[ INFO] [1738208659.632677751, 5180.556000000]: new Car detected at (10.935081, 1.308962), road_objects size: 35
+[ INFO] [1738208666.136972347, 5187.050000000]: x offset reached: (10.96, 0.91), ready for parking maneuver...
+[ INFO] [1738208667.740410499, 5188.650000000]: parking_maneuver_hardcode(): initial y error: -0.008803, initial yaw error: 0.000088, base yaw target: 0.289277pi
+[ INFO] [1738208667.740450373, 5188.650000000]: parking_maneuver_hardcode(): park right: true, exit: 0
+targets: 0.909     0     0, steerings:  20.5 -20.5  20.5, speeds: -0.2 -0.2  0.2, thresholds:    0.1    0.1 0.0333
+[ INFO] [1738208667.740506689, 5188.650000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.908790, 0.000000
+[ INFO] [1738208667.740530646, 5188.650000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1738208673.850231488, 5194.750000000]: maneuver completed
+[ INFO] [1738208673.850274011, 5194.750000000]: Changing from PARKING to PARKED
+[ INFO] [1738208675.352990852, 5196.250000000]: Changing from PARKED to EXITING_PARKING
+[ INFO] [1738208675.353039553, 5196.250000000]: parking_maneuver_hardcode(): initial y error: 0.000000, initial yaw error: 0.000000, base yaw target: 0.290000pi
+[ INFO] [1738208675.353055397, 5196.250000000]: parking_maneuver_hardcode(): park right: true, exit: 1
+targets: 0.866 0.866     0, steerings:  20.5 -20.5  20.5, speeds: -0.2  0.2  0.2, thresholds: 0.766   0.1   0.1
+[ INFO] [1738208675.353096267, 5196.251000000]: maneuver_hardcode(): initial yaw: 0.000000, target yaws: 0.865509, 0.865509
+[ INFO] [1738208675.353107086, 5196.251000000]: maneuver_hardcode(): nearest direction: 0.000000
+[ INFO] [1738208680.813312111, 5201.701000000]: maneuver completed
+exiting_park(): target waypoint index: 4593, at (10.8, 0.946)
+exiting_park(): closest waypoint index: 4467, at (8.04, 0.929)
+exiting_park(): current state: x: 10.8, y: 0.862, yaw: 0.0897
+[ INFO] [1738208680.819813147, 5201.707000000]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1738208681.265687723, 5202.153000000]: new Car detected at (12.505878, 0.634301), road_objects size: 36
+[ INFO] [1738208687.680102635, 5208.556000000]: new STOPSIGN (known static object) detected at (14.687600, 0.668850), road_objects size: 37
+[ INFO] [1738208690.737178337, 5211.608000000]: check_stop_sign(): stop sign detected at a distance of: 1.198000
+[ INFO] [1738208690.737244517, 5211.609000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (14.588617, 0.676686), actual: (14.687600, 0.668850), error: (0.098983, -0.007836), error norm: 0.099292, threshold: 0.537000
+[ INFO] [1738208693.741799169, 5214.608000000]: intersection_reached(): setting last intersection point to (14.420417, 0.948707)
+[ INFO] [1738208693.741831520, 5214.608000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208704.459512534, 5225.308000000]: check_stop_sign(): crosswalk detected at a distance of: 1.198000
+[ INFO] [1738208704.459552671, 5225.309000000]: SIGN_RELOC(ALL CROSSWALKS): FAILURE: yaw error too large: 0.889480, threshold: 50.000000
+[ INFO] [1738208704.560003805, 5225.408000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (17.345601, 2.183745), actual: (17.332400, 2.288000), error: (-0.013201, 0.104255), error norm: 0.105087, threshold: 0.537000
+[ INFO] [1738208712.382507205, 5233.216000000]: new Car detected at (16.489425, 4.335566), road_objects size: 38
+[ INFO] [1738208717.082516145, 5237.908000000]: intersection_reached(): setting last intersection point to (16.752571, 3.870686)
+[ INFO] [1738208717.082553675, 5237.908000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208727.867883982, 5248.676000000]: new Car detected at (12.377383, 4.146884), road_objects size: 39
+[ INFO] [1738208729.503073203, 5250.308000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.977000
+[ INFO] [1738208729.604332230, 5250.409000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.951000
+[ INFO] [1738208729.703904557, 5250.508000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.935000
+[ INFO] [1738208729.804899667, 5250.609000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.896000
+[ INFO] [1738208729.904852565, 5250.708000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.876000
+[ INFO] [1738208730.004739129, 5250.808000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.847000
+[ INFO] [1738208730.104653566, 5250.908000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.816000
+[ INFO] [1738208730.205093429, 5251.009000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.801000
+[ INFO] [1738208730.304557734, 5251.108000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.772500
+[ INFO] [1738208730.405607192, 5251.209000000]: CHECK_CAR(): SAME_LANE: detetected car is in one way or non-dotted region, dist = 0.746000, stopping...
+[ INFO] [1738208732.608611945, 5253.408000000]: CHECK_CAR(): SAME_LANE: detetected car is in one way or non-dotted region, dist = 0.708000, stopping...
+[ INFO] [1738208742.926348236, 5263.708000000]: check_stop_sign(): crosswalk detected at a distance of: 1.197500
+[ INFO] [1738208742.926398477, 5263.708000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (9.894905, 4.349902), actual: (9.546000, 4.236400), error: (-0.348905, -0.113502), error norm: 0.366902, threshold: 0.537000
+[ INFO] [1738208742.933944687, 5263.716000000]: new ALL CROSSWALKS (known static object) detected at (9.546000, 4.236400), road_objects size: 40
+[ INFO] [1738208745.831288214, 5266.608000000]: intersection_reached(): setting last intersection point to (9.830308, 4.010477)
+[ INFO] [1738208745.831329879, 5266.608000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208746.239058358, 5267.016000000]: new Oneway detected at (9.099141, 4.400431), road_objects size: 41
+[ INFO] [1738208747.221036987, 5267.996000000]: new STOPSIGN (known static object) detected at (7.619552, 4.269900), road_objects size: 42
+[ INFO] [1738208751.442143194, 5272.208000000]: check_stop_sign(): stop sign detected at a distance of: 1.198000
+[ INFO] [1738208751.442209920, 5272.208000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (7.650375, 4.266992), actual: (7.619552, 4.269900), error: (-0.030823, 0.002908), error norm: 0.030960, threshold: 0.537000
+[ INFO] [1738208754.446509832, 5275.208000000]: intersection_reached(): setting last intersection point to (7.906604, 4.036962)
+[ INFO] [1738208754.446556538, 5275.208000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208756.938083485, 5277.696000000]: new STOPSIGN (known static object) detected at (5.761000, 4.268600), road_objects size: 43
+[ INFO] [1738208760.055811004, 5280.808000000]: check_stop_sign(): stop sign detected at a distance of: 1.182000
+[ INFO] [1738208760.055868149, 5280.808000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (5.772810, 4.269875), actual: (5.761000, 4.268600), error: (-0.011810, -0.001275), error norm: 0.011879, threshold: 0.537000
+[ INFO] [1738208763.062048653, 5283.809000000]: intersection_reached(): setting last intersection point to (6.029898, 4.044577)
+[ INFO] [1738208763.062089701, 5283.809000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208768.899719539, 5289.636000000]: new Green Light detected at (3.521077, 4.251405), road_objects size: 44
+[ INFO] [1738208770.174828939, 5290.908000000]: check_stop_sign(): traffic light detected at a distance of: 1.187500
+[ INFO] [1738208770.174881860, 5290.908000000]: SIGN_RELOC(ALL LIGHTS): SUCCESS: estimated sign pose: (3.483863, 4.273552), actual: (3.505300, 4.268137), error: (0.021437, -0.005415), error norm: 0.022110, threshold: 0.537000
+[ INFO] [1738208772.978830853, 5293.708000000]: intersection_reached(): setting last intersection point to (3.836715, 4.042840)
+[ INFO] [1738208772.978877199, 5293.708000000]: intersection reached: CASE TRAFFIC LIGHT, clearing stopsign flag...
+[ INFO] [1738208775.027725112, 5295.753000000]: new STOPSIGN (known static object) detected at (1.347000, 4.266250), road_objects size: 45
+[ INFO] [1738208780.640889044, 5301.356000000]: new STOPSIGN (known static object) detected at (2.264500, 1.351000), road_objects size: 46
+[ INFO] [1738208781.693629595, 5302.408000000]: check_stop_sign(): stop sign detected at a distance of: 1.175000
+[ INFO] [1738208781.693696181, 5302.408000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (2.153607, 1.508837), actual: (2.264500, 1.351000), error: (0.110893, -0.157837), error norm: 0.192898, threshold: 0.537000
+[ INFO] [1738208784.599257052, 5305.308000000]: intersection_reached(): setting last intersection point to (2.542610, 1.632820)
+[ INFO] [1738208784.599307672, 5305.308000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208791.009295593, 5311.708000000]: check_stop_sign(): priority detected at a distance of: 1.191000
+[ INFO] [1738208791.009340539, 5311.708000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (4.001584, 0.010170), actual: (4.143644, 0.101336), error: (0.142060, 0.091166), error norm: 0.168797, threshold: 0.537000
+[ INFO] [1738208793.512902387, 5314.208000000]: intersection_reached(): setting last intersection point to (3.882073, 0.415543)
+[ INFO] [1738208793.512953500, 5314.208000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1738208805.923507931, 5326.596000000]: new STOPSIGN (known static object) detected at (6.886100, 3.391610), road_objects size: 47
+[ INFO] [1738208808.739887716, 5329.408000000]: LANE_RELOC(): SUCCESS: error: 0.025525, lane center: 6.657550, offset: -0.009227, nearest direction: 1, running x: 6.622798, estimated running x: 6.648323
+[ INFO] [1738208809.040304456, 5329.708000000]: check_stop_sign(): stop sign detected at a distance of: 1.177000
+[ INFO] [1738208809.040367920, 5329.708000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (7.041848, 3.152954), actual: (6.886100, 3.391610), error: (-0.155748, 0.238656), error norm: 0.284981, threshold: 0.537000
+[ INFO] [1738208811.945720583, 5332.608000000]: intersection_reached(): setting last intersection point to (6.586952, 3.132973)
+[ INFO] [1738208811.945750411, 5332.608000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208826.670534651, 5347.308000000]: check_stop_sign(): priority detected at a distance of: 1.151000
+[ INFO] [1738208826.670577582, 5347.308000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.090696, threshold: 50.000000
+[ INFO] [1738208826.770106559, 5347.408000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.055841, threshold: 50.000000
+[ INFO] [1738208826.870879145, 5347.508000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 1.021123, threshold: 50.000000
+[ INFO] [1738208826.970759306, 5347.608000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.984222, threshold: 50.000000
+[ INFO] [1738208827.071805000, 5347.708000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.944948, threshold: 50.000000
+[ INFO] [1738208827.172365137, 5347.808000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.905217, threshold: 50.000000
+[ INFO] [1738208827.272114018, 5347.908000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (5.839094, 7.181502), actual: (5.759000, 7.155500), error: (-0.080094, -0.026002), error norm: 0.084209, threshold: 0.537000
+[ INFO] [1738208828.041646693, 5348.676000000]: new PRIORITY (known static object) detected at (5.759000, 7.155500), road_objects size: 48
+[ INFO] [1738208829.876875051, 5350.508000000]: intersection_reached(): setting last intersection point to (6.071064, 6.920156)
+[ INFO] [1738208829.876922414, 5350.508000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1738208832.067817879, 5352.696000000]: new Car detected at (3.984886, 6.689571), road_objects size: 49
+[ INFO] [1738208833.583028293, 5354.208000000]: intersection_reached(): setting last intersection point to (5.185550, 7.207886)
+[ WARN] [1738208833.583060198, 5354.208000000]: intersection reached: CASE NO SIGN, proceeding...
+[ INFO] [1738208835.173553042, 5355.796000000]: new Car detected at (4.803667, 9.146395), road_objects size: 50
+[ INFO] [1738208837.201205716, 5357.809000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 6223, end idx: 6284, min_dist: 0.079191, min_dist_adj: 0.315361
+[ INFO] [1738208837.201298268, 5357.809000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: changing lane to the left in 0.480500 meters. start pose: (4.954679,8.559445), end: (4.215937, 9.831762), cur: (5.070686, 8.108561)
+[ INFO] [1738208840.690480776, 5361.297000000]: new Car detected at (3.491613, 9.842934), road_objects size: 51
+[ INFO] [1738208847.860520968, 5368.454000000]: new ALL CROSSWALKS (known static object) detected at (1.785000, 10.239400), road_objects size: 52
+[ INFO] [1738208849.016349618, 5369.608000000]: check_stop_sign(): crosswalk detected at a distance of: 1.174000
+[ INFO] [1738208849.016399835, 5369.608000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (1.825455, 10.400684), actual: (1.785000, 10.239400), error: (-0.040455, -0.161284), error norm: 0.166281, threshold: 0.537000
+[ INFO] [1738208852.422953708, 5373.008000000]: intersection_reached(): setting last intersection point to (2.075092, 10.041266)
+[ INFO] [1738208852.422981514, 5373.008000000]: intersection reached: CASE CROSSWALK, proceeding...
+[ INFO] [1738208854.325708530, 5374.908000000]: center: 295.500, offset: -0.024, closest lane center: 10.781, running_y: 10.028, estimated running_y: 10.804
+[ INFO] [1738208854.325783745, 5374.908000000]: LANE_RELOC(): FAILURE: error too large: 0.776282, lane center: 10.780550, offset: -0.023796, nearest direction: 2, running y: 10.028064, estimated running y: 10.804346
+[ INFO] [1738208862.738870930, 5383.308000000]: LANE_RELOC(): SUCCESS: error: 0.133723, lane center: 0.359290, offset: 0.120435, nearest direction: 3, running x: 0.346002, estimated running x: 0.479725
+[ INFO] [1738208862.839054754, 5383.408000000]: check_stop_sign(): stop sign detected at a distance of: 1.183000
+[ INFO] [1738208862.839115049, 5383.408000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.077670, 7.686873), actual: (0.104340, 7.521675), error: (0.026670, -0.165198), error norm: 0.167337, threshold: 0.537000
+[ INFO] [1738208865.843673589, 5386.408000000]: intersection_reached(): setting last intersection point to (0.377115, 7.744079)
+[ INFO] [1738208865.843703333, 5386.408000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208872.754908473, 5393.308000000]: LANE_RELOC(): SUCCESS: error: -0.021442, lane center: 0.359290, offset: -0.027438, nearest direction: 3, running x: 0.353294, estimated running x: 0.331852
+[ INFO] [1738208874.859575140, 5395.408000000]: check_stop_sign(): stop sign detected at a distance of: 1.192000
+[ INFO] [1738208874.859647331, 5395.408000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (0.088505, 4.662980), actual: (0.104340, 4.635900), error: (0.015835, -0.027080), error norm: 0.031370, threshold: 0.537000
+[ INFO] [1738208875.761053126, 5396.309000000]: LANE_RELOC(): SUCCESS: error: -0.005372, lane center: 0.359290, offset: -0.011898, nearest direction: 3, running x: 0.352764, estimated running x: 0.347392
+[ INFO] [1738208877.864668902, 5398.408000000]: intersection_reached(): setting last intersection point to (0.351290, 4.927843)
+[ INFO] [1738208877.864726635, 5398.408000000]: intersection reached: CASE STOP SIGN, stopping for 1.500000 seconds...
+[ INFO] [1738208882.240433451, 5402.777000000]: new Green Light detected at (1.776191, 3.381060), road_objects size: 53
+[ INFO] [1738208884.275354293, 5404.809000000]: check_stop_sign(): traffic light detected at a distance of: 1.180000
+[ INFO] [1738208884.275413466, 5404.809000000]: SIGN_RELOC(ALL LIGHTS): SUCCESS: estimated sign pose: (1.797330, 3.339337), actual: (1.899750, 3.391500), error: (0.102420, 0.052163), error norm: 0.114938, threshold: 0.537000
+[ INFO] [1738208886.104179234, 5406.634000000]: new Yellow Light detected at (1.925126, 3.389740), road_objects size: 54
+[ INFO] [1738208890.611316438, 5411.134000000]: new PRIORITY (known static object) detected at (4.143760, 3.389660), road_objects size: 55
+[ INFO] [1738208892.489011341, 5413.008000000]: center: 452.750, offset: -0.129, closest lane center: 3.645, running_y: 3.676, estimated running_y: 3.774
+[ INFO] [1738208892.489079811, 5413.009000000]: LANE_RELOC(): SUCCESS: error: 0.097621, lane center: 3.644610, offset: -0.128933, nearest direction: 0, running y: 3.675922, estimated running y: 3.773543
+[ INFO] [1738208894.391516997, 5414.908000000]: Changing from MOVING to DONE

@@ -13,10 +13,11 @@
 #include <unistd.h>
 #include <limits.h>
 #include <cmath>
-#include "constants.h"
+#include "utils/constants.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
 #include <std_srvs/Trigger.h>
+#include "utility.hpp"
 
 class PathManager {
 public:
@@ -87,7 +88,26 @@ public:
     bool is_not_detectable(int idx) {
         return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
     }
-
+    bool lane_detectable(int start_idx, int end_idx) {
+        const static std::vector<int> detectable_attributes = {ATTRIBUTE::NORMAL, ATTRIBUTE::ONEWAY, ATTRIBUTE::DOTTED, ATTRIBUTE::CROSSWALK};
+        if (start_idx < 0 || start_idx >= state_attributes.size()) {
+            return false;
+        }
+        if (end_idx >= state_attributes.size()) {
+            return false;
+        }
+        bool start_idx_detectable = false;
+        bool end_idx_detectable = false;
+        for (int i = 0; i < detectable_attributes.size(); i++) {
+            if (attribute_cmp(start_idx_detectable, detectable_attributes[i])) {
+                start_idx_detectable = true;
+            }
+            if (attribute_cmp(end_idx, detectable_attributes[i])) {
+                end_idx_detectable = true;
+            }
+        }
+        return start_idx_detectable && end_idx_detectable;
+    }
     void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36-0.1) {
         if (shift_right) shift_distance *= -1;
         // state_refs.block(start_index, 0, end_index-start_index, 2) += normals.block(start_index, 0, end_index-start_index, 2) * shift_distance;
@@ -193,6 +213,7 @@ public:
                 closest = i;
             }
         }
+        closest_waypoint_index = closest;
         return closest;
     }
 
@@ -200,6 +221,29 @@ public:
         target_waypoint_index = find_closest_waypoint(x_current);
     }
     
+    bool is_straight_line(int start_idx, int num_waypoints, double target_angle, double threshold) {
+        int N = state_refs.rows();
+        
+        // Ensure the start index and number of waypoints are within valid bounds
+        if (start_idx < 0 || start_idx >= N || num_waypoints <= 0 || start_idx + num_waypoints > N) {
+            std::cerr << "Invalid index range." << std::endl;
+            return false;
+        }
+        
+        target_angle = Utility::yaw_mod(target_angle); // now between -pi and pi
+        for (int i = start_idx; i < start_idx + num_waypoints; ++i) {
+            double yaw = state_refs(i, 2);
+            yaw = Utility::yaw_mod(yaw); // between -pi and pi
+            double diff = Utility::compare_yaw(target_angle, yaw);
+            // Check if yaw is within the threshold of target_angle
+            if (diff > threshold) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     utils::waypoints call_waypoint_service(double x, double y, double yaw) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
