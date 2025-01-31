@@ -1746,11 +1746,14 @@ int main(int argc, char **argv) {
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
 
+    if(use_tcp) {
+        std::thread t1(&StateMachine::receive_services, &sm);
+        t1.join();
+    } 
     std::thread t2(&Utility::spin, &sm.utils);
     
     sm.run();
 
-    if (use_tcp) std::thread t1(&StateMachine::receive_services, &sm);
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
