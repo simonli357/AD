@@ -6,6 +6,7 @@
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
+#include "utils/Lane2.h"
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
@@ -40,6 +41,7 @@ class TcpClient {
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
+    void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const Image &img);
 	void send_image_depth(const Image &img);
 	void send_road_object(const Float32MultiArray &array);

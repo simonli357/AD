@@ -1,4 +1,5 @@
 #include "TcpClient.hpp"
+#include "msg/Lane2Msg.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -6,7 +7,9 @@
 #include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Header.h"
 #include "std_msgs/String.h"
+#include "utils/Lane2.h"
 #include <algorithm>
 #include <arpa/inet.h>
 #include <cstdint>
@@ -59,7 +62,7 @@ void TcpClient::create_tcp_socket() {
 
 void TcpClient::set_data_types() {
 	data_types.push_back(0x01); // std::string
-	data_types.push_back(0x02); // Image rgb
+	data_types.push_back(0x02); // Lane2
 	data_types.push_back(0x03); // Image depth
 	data_types.push_back(0x04); // Road Objects
 	data_types.push_back(0x05); // Waypoints
@@ -185,6 +188,17 @@ void TcpClient::send_string(const std::string &str) {
 		std::memcpy(full_message.data() + header_size, str.data(), length);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
+}
+
+void TcpClient::send_lane2(const utils::Lane2 &lane) {
+    if (canSend) {
+        std_msgs::Header header = lane.header;
+        float center = lane.center;
+        int32_t stopline = lane.stopline;
+        bool crosswalk = lane.crosswalk;
+		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(data_types[1]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+    }
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {

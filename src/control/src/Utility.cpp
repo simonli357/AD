@@ -509,6 +509,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     car_pose_pub.publish(car_pose_msg);
 }
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
+    tcp_client->send_lane2(*msg);
     static double previous_center = 320;
     lock.lock();
     center = msg->center;
