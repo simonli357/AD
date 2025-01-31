@@ -128,7 +128,8 @@ public:
     MPC mpc;
 
     // intersection variables
-    Eigen::Vector2d last_intersection_point = {0, 0};
+    Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
+    Eigen::Vector2d next_intersection_point = {1000.0, 1000.0};
 
     void receive_services() {
         while(true) {
@@ -211,6 +212,7 @@ public:
         if (testing) {
             change_state(STATE::TESTING);
         } else {
+            // find_next_intersection(true);
             change_state(STATE::MOVING);
         }
         return 1;
@@ -418,6 +420,48 @@ public:
             return false;
         }
     }
+    bool find_next_intersection(bool first = false) {
+        int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+        double threshold = INTERSECTION_DISTANCE_THRESHOLD;
+        if (first) {
+            threshold = 0.0;
+        }
+        int next_intersection_idx = closest_idx + static_cast<int>(threshold * path_manager.density);
+        int limit = std::max(next_intersection_idx + static_cast<int>(30.0 * path_manager.density), static_cast<int>(path_manager.state_refs.rows() - 1));
+        while(true) {
+            if (path_manager.attribute_cmp(next_intersection_idx, path_manager.ATTRIBUTE::STOPLINE)) {
+                break;
+            }
+            if (next_intersection_idx >= limit) {
+                utils.debug("find_next_intersection(): FAILURE: no waypoint of attribute stopline found", 1);
+                return false;
+            }
+            next_intersection_idx++;
+        }
+        double closest_yaw = path_manager.state_refs(next_intersection_idx, 2);
+        double nearest_direction = Utility::nearest_direction(closest_yaw);
+        auto& INTERSECTIONS = (nearest_direction == 0) ? EAST_FACING_INTERSECTIONS :
+                                (nearest_direction == 1) ? NORTH_FACING_INTERSECTIONS :
+                                (nearest_direction == 2) ? WEST_FACING_INTERSECTIONS :
+                                                            SOUTH_FACING_INTERSECTIONS;
+        bool found = false;
+        double x = path_manager.state_refs(next_intersection_idx, 0);
+        double y = path_manager.state_refs(next_intersection_idx, 1);
+        for(auto& intersection : INTERSECTIONS) {
+            double dist_sq = std::pow(intersection[0] - x, 2) + std::pow(intersection[1] - y, 2);
+            if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
+                utils.debug("find_next_intersection(): found intersection at (" + std::to_string(intersection[0]) + ", " + std::to_string(intersection[1]) + ")", 1);
+                next_intersection_point = {intersection[0], intersection[1]};
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            utils.debug("find_next_intersection(): FAILURE: no intersection near (" + std::to_string(x) + ", " + std::to_string(y) + ")", 1);
+            return false;
+        }
+        return found;
+    }
     bool intersection_reached() {
         static double lookahead_dist = 0.15;
         static int num_index = static_cast<int>(lookahead_dist * path_manager.density);
@@ -471,6 +515,7 @@ public:
                     }
                     utils.debug("intersection_reached(): setting last intersection point to (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
                     last_intersection_point = {x, y};
+                    // find_next_intersection();                    
                 } else {
                     // utils.debug("intersection_reached(): found false, ignoring...", 2);
                     return false;
@@ -508,6 +553,27 @@ public:
         }
         return false;
     }
+    bool sign_in_path(int sign_idx, double search_dist) {
+        auto estimated_sign_pose = utils.object_world_pose(sign_idx);
+        double x = estimated_sign_pose[0];
+        double y = estimated_sign_pose[1];
+        int closest_idx = path_manager.closest_waypoint_index;
+        int num_index = static_cast<int>(search_dist * path_manager.density);
+        double min_dist_sq = std::numeric_limits<double>::max();
+        double threshold = INTERSECTION_TO_SIGN * INTERSECTION_TO_SIGN * 1.5 * 1.5;
+        for (int i = closest_idx; i < closest_idx + num_index; i+=4) {
+            if (i >= path_manager.state_refs.rows()) break;
+            double dist_sq = std::pow(x - path_manager.state_refs(i, 0), 2) + std::pow(y - path_manager.state_refs(i, 1), 2);
+            if (dist_sq < min_dist_sq) {
+                min_dist_sq = dist_sq;
+            }
+            if (min_dist_sq < threshold) {
+                utils.debug("sign_in_path(): sign at (" + std::to_string(x) + ", " + std::to_string(y) + ") found in path", 1);
+                return true;
+            }
+        }
+        return false;
+    }
     void check_stop_sign() {
         static bool relocalized = false;
         if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected 
@@ -533,7 +599,9 @@ public:
                     utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
-                    stopsign_flag = OBJECT::STOPSIGN;
+                    if (sign_in_path(sign_index, dist + 0.2)) {
+                        stopsign_flag = OBJECT::STOPSIGN;
+                    }
                 }
             }
         }
@@ -555,7 +623,9 @@ public:
                     utils.debug("check_stop_sign(): traffic light detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
                     // if(lane) utils.reset_odom();
-                    stopsign_flag = OBJECT::LIGHTS;
+                    if (sign_in_path(sign_index, dist + 0.2)) {
+                        stopsign_flag = OBJECT::LIGHTS;
+                    }
                 }
             }
             if (is_red) {
@@ -572,7 +642,9 @@ public:
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): priority detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = OBJECT::PRIORITY;
+                    if (sign_in_path(sign_index, dist + 0.2)) {
+                        stopsign_flag = OBJECT::PRIORITY;
+                    }
                 }
             }
         }
@@ -585,7 +657,9 @@ public:
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): roundabout detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = OBJECT::ROUNDABOUT;
+                    if (sign_in_path(sign_index, dist + 0.2)) {
+                        stopsign_flag = OBJECT::ROUNDABOUT;
+                    }
                 }
             }
         }
@@ -598,7 +672,9 @@ public:
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + std::to_string(dist), 2);
                     detected_dist = dist;
-                    stopsign_flag = OBJECT::CROSSWALK;
+                    if (sign_in_path(sign_index, dist + 0.2)) {
+                        stopsign_flag = OBJECT::CROSSWALK;
+                    }
                 }
             }
         }
