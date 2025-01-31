@@ -1,9 +1,9 @@
-#include "msg/Lane2.hpp"
+#include "msg/Lane2Msg.hpp"
 #include "ros/serialization.h"
 #include "std_msgs/Header.h"
 #include <cstdint>
 
-Lane2::Lane2(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted)
+Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted)
 	: header(header), center(center), stopline(stopline), crosswalk(crosswalk), dotted(dotted) {
 	header_length = ros::serialization::serializationLength(header);
 	center_length = sizeof(center);
@@ -13,7 +13,7 @@ Lane2::Lane2(std_msgs::Header &header, float center, int32_t stopline, bool cros
 	data_length = header_length + center_length + stopline_length + crosswalk_length + dotted_length;
 }
 
-std::unique_ptr<Lane2> Lane2::deserialize(std::vector<uint8_t> &bytes) {
+std::unique_ptr<Lane2Msg> Lane2Msg::deserialize(std::vector<uint8_t> &bytes) {
     std::vector<std::vector<uint8_t>> datatypes = split(bytes);
     ros::serialization::IStream stream(datatypes[0].data(), datatypes[0].size());
     
@@ -25,14 +25,14 @@ std::unique_ptr<Lane2> Lane2::deserialize(std::vector<uint8_t> &bytes) {
     bool crosswalk = bool_from_bytes(datatypes[3]);
     bool dotted = bool_from_bytes(datatypes[4]);
     
-    return std::make_unique<Lane2>(header_msg, center, stopline, crosswalk, dotted);
+    return std::make_unique<Lane2Msg>(header_msg, center, stopline, crosswalk, dotted);
 }
 
-uint32_t Lane2::compute_lengths_length() { return lengths_length; }
+uint32_t Lane2Msg::compute_lengths_length() { return lengths_length; }
 
-uint32_t Lane2::compute_data_length() { return data_length; }
+uint32_t Lane2Msg::compute_data_length() { return data_length; }
 
-std::vector<uint8_t> Lane2::get_lengths() {
+std::vector<uint8_t> Lane2Msg::get_lengths() {
 	std::vector<uint8_t> lengths(lengths_length);
 	std::memcpy(lengths.data(), &lengths_length, bytes_length);
 	std::memcpy(lengths.data() + bytes_length, &header_length, bytes_length);
@@ -43,7 +43,7 @@ std::vector<uint8_t> Lane2::get_lengths() {
 	return lengths;
 }
 
-std::vector<uint8_t> Lane2::get_data() {
+std::vector<uint8_t> Lane2Msg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
 	std::vector<uint8_t> header_data = serializeROSHeader(header);

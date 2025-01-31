@@ -6,14 +6,14 @@
 #include <cstdint>
 #include <vector>
 
-class Lane2 : public Decoder<Lane2>, public Encoder {
+class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
   public:
-	Lane2(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted);
-	Lane2(Lane2 &&) = default;
-	Lane2(const Lane2 &) = default;
-	Lane2 &operator=(Lane2 &&) = delete;
-	Lane2 &operator=(const Lane2 &) = delete;
-	~Lane2() = default;
+	Lane2Msg(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted);
+	Lane2Msg(Lane2Msg &&) = default;
+	Lane2Msg(const Lane2Msg &) = default;
+	Lane2Msg &operator=(Lane2Msg &&) = delete;
+	Lane2Msg &operator=(const Lane2Msg &) = delete;
+	~Lane2Msg() = default;
 
 	std_msgs::Header &header;
 	float center;
@@ -21,7 +21,7 @@ class Lane2 : public Decoder<Lane2>, public Encoder {
 	bool crosswalk;
 	bool dotted;
 
-	std::unique_ptr<Lane2> deserialize(std::vector<uint8_t> &bytes) override;
+	std::unique_ptr<Lane2Msg> deserialize(std::vector<uint8_t> &bytes) override;
 
   private:
 	const size_t num_elements = 5;

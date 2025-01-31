@@ -8,6 +8,7 @@ from python_server.service_calls.go_to_srv import GoToSrv
 from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
 from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
+from python_server.msg.lane2_msg import Lane2Msg
 
 
 class Connection:
@@ -16,7 +17,7 @@ class Connection:
         if client_socket is not None:
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
-                b'\x02': self.parse_image_rgb,
+                b'\x02': self.parse_lane2,
                 b'\x03': self.parse_image_depth,
                 b'\x04': self.parse_road_object,
                 b'\x05': self.parse_waypoint,
@@ -30,7 +31,7 @@ class Connection:
             })
             self.types = list(self.data_actions.keys())
             self.strings = []
-            self.rgb_image = None
+            self.lane2 = Lane2Msg(b'\x02')
             self.depth_image = None
             self.road_objects = []
             self.waypoints = []
@@ -103,11 +104,9 @@ class Connection:
     def parse_string(self, bytes):
         self.strings.append(bytes.decode('utf-8'))
 
-    def parse_image_rgb(self, bytes):
+    def parse_lane2(self, bytes):
         try:
-            img_msg = Image()
-            img_msg.deserialize(bytes)
-            self.rgb_image = img_msg
+            self.lane2.decode(bytes)
         except Exception as e:
             print(e)
 

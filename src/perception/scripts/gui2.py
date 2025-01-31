@@ -465,7 +465,7 @@ class OpenCVGuiApp(QWidget):
         # self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
         # self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
         # self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
-        self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
+        # self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
         # self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
@@ -1147,6 +1147,9 @@ def callbacks(gui, server):
             if server.sign_node_client.signs:
                 gui.sign_callback(server.sign_node_client.signs.pop(0))
         if server.utility_node_client.socket is not None:
+            # Lane2
+            if server.utility_node_client.lane2.header is not None:
+                gui.lane_callback(server.utility_node_client.lane2)
             # Road object
             if server.utility_node_client.road_objects:
                 gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
