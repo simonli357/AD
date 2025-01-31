@@ -69,14 +69,36 @@ class CameraNode {
 			cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
 			pipe.start(cfg);
 
+			// Query the stream profiles
+			auto profiles = pipe.get_active_profile().get_streams();
+
+			// Iterate to find the COLOR stream profile
+			for (auto &&p : profiles)
+			{
+					if (p.stream_type() == RS2_STREAM_COLOR)
+					{
+							auto vid_profile = p.as<rs2::video_stream_profile>();
+							rs2_intrinsics intr = vid_profile.get_intrinsics();
+
+							double fx = intr.fx;
+							double fy = intr.fy;
+							double cx = intr.ppx; // principal point x
+							double cy = intr.ppy; // principal point y
+							ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
+						  break;
+					}
+			}
+
 			std::cout.precision(4);
 			imu_pub = nh.advertise<sensor_msgs::Imu>("/camera/imu", 2);
 			if (pubImage) {
 				color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
-				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_rect_raw", 1);
+				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
+			cameraThreadRunning = true;
 			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
+			std::cout << "camera thread created" << std::endl;
 		}
 
 		if (!doLane) {
@@ -153,9 +175,10 @@ class CameraNode {
 	std::mutex mutex;
 	void cameraThreadFunc() {
 			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
+			std::cout << "starting loop" << std::endl;
 			while (ros::ok() && cameraThreadRunning) {
-					get_frame();
-					cameraRate.sleep();
+				get_frame();
+				cameraRate.sleep();
 			}
 	}
 

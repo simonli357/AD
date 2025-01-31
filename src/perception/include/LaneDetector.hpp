@@ -312,23 +312,22 @@ public:
                 centers.push_back((lanes[2 * i] + lanes[2 * i + 1]) / 2.0);
             }
         }
-        // std::cout << "centers: " << std::endl;
-        // for (auto center : centers) {
-        //     std::cout << center << std::endl;
+
+        // std::cout << "centers size: " << centers.size() << std::endl;
+        double center = -1;
+        if (centers.size() == 2) center = (centers[0] + centers.back()) / 2;
+        // if (centers.empty()) {
+        //     if (robust) center = -1;
+        //     else center = w / 2.0;
+        // } else if (centers.size() == 1) {
+        //     if (robust) center = -1;
+        //     else center = (centers[0] > (w / 2.0)) ? (centers[0] - 0) / 2 : (centers[0] * 2 + w) / 2;
+        // } else if (abs(centers[0] - centers.back()) < 200) {
+        //     if (robust) center = -1;
+        //     else center = ((centers[0] + centers.back()) > w) ? ((centers[0] + centers.back()) / 2 + 0) / 2.0 : ((centers[0] + centers.back()) + w) / 2;
+        // } else {
+        //     center = (centers[0] + centers.back()) / 2;
         // }
-        double center;
-        if (centers.empty()) {
-            if (robust) center = -1;
-            else center = w / 2.0;
-        } else if (centers.size() == 1) {
-            if (robust) center = -1;
-            else center = (centers[0] > (w / 2.0)) ? (centers[0] - 0) / 2 : (centers[0] * 2 + w) / 2;
-        } else if (abs(centers[0] - centers.back()) < 200) {
-            if (robust) center = -1;
-            else center = ((centers[0] + centers.back()) > w) ? ((centers[0] + centers.back()) / 2 + 0) / 2.0 : ((centers[0] + centers.back()) + w) / 2;
-        } else {
-            center = (centers[0] + centers.back()) / 2;
-        }
 
         // if(std::abs(center - previous_center) > 250) {
         //     center = previous_center;

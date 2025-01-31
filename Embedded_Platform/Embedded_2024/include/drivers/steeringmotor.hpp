@@ -26,12 +26,13 @@ namespace drivers
             virtual bool inRange(float f_angle) = 0 ;
             virtual void PWMAngle(float f_PWM) = 0 ;
             virtual float CalculateAngle(float f_angle) = 0 ;
+            virtual void setPID(float proportional, float integral, float derivative) = 0 ; 
             // Variable to know if the PID is active
             bool m_pidActive = false;
             // PID controller values
-            float m_proportional = 0.5;
-            float m_integral = 0;
-            float m_derivative = 0;
+            float m_proportional;
+            float m_integral;
+            float m_derivative;
             // Desired steer value
             float m_desiredSteer = 0;
             /** @brief 0 default */
@@ -67,6 +68,7 @@ namespace drivers
             bool inRange(float f_angle);
             void PWMAngle( float f_PWM);
             float CalculateAngle(float f_angle);
+            void setPID(float proportional, float integral, float derivative);
             void steerPID();
             virtual void _run();
             void setDutyCycle(float f_dutyCycle);
@@ -98,6 +100,14 @@ namespace drivers
             // Current steering angles
             float m_currentSteer = 0;
             float m_currentDutyCycle;
+
+            // PID control values
+            float yaw_calc;
+            float integral;
+            float previous_error;
+            float newSteer;
+            float newDutyCycle;
+
             /* reference to Serial object */
             UnbufferedSerial&   m_serialPort;
 
