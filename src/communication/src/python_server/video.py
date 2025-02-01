@@ -3,7 +3,6 @@ import time
 import numpy as np
 import cv2
 from cv_bridge import CvBridge
-from collections import OrderedDict
 
 
 class VideoConnection:
@@ -13,29 +12,14 @@ class VideoConnection:
             self.encoding = encoding
             self.frame = None
             self.MAX_DGRAM = 65507
-            self.MAX_SIZE = 921667
-            self.REST = self.MAX_SIZE - ((self.MAX_DGRAM - 1) * 14)
-            self.bytes_table = OrderedDict({
-                2: b'',
-                1: b'',
-            })
             threading.Thread(target=self.receive, daemon=True).start()
-            threading.Thread(target=self.update, daemon=True).start()
 
     def receive(self):
         while True:
             seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-            seg_num = seg[0]
             bytes = seg[1:]
-            if len(bytes) == 0 or seg_num not in self.bytes_table.keys():
+            if len(bytes) == 0:
                 continue
-            self.bytes_table[seg_num] = bytes
-
-    def update(self):
-        while True:
-            bytes = b''
-            for key, value in self.bytes_table.items():
-                bytes += value
             self.frame = self.parse_image(bytes)
             time.sleep(0.016)
 
