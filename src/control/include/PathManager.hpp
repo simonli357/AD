@@ -61,8 +61,6 @@ public:
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
         trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
-    // TCP Client
-    std::unique_ptr<TcpClient> tcp_client;
 
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
