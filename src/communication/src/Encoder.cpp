@@ -1,6 +1,8 @@
 #include "Encoder.hpp"
 #include "ros/serialization.h"
 #include "std_msgs/Header.h"
+#include "std_srvs/TriggerRequest.h"
+#include "std_srvs/TriggerResponse.h"
 #include <cstdint>
 #include <cstring>
 #include <netinet/in.h>
@@ -19,6 +21,22 @@ std::vector<uint8_t> Encoder::serializeROSHeader(std_msgs::Header &header) {
 	std::vector<uint8_t> data(length);
 	ros::serialization::OStream stream(data.data(), length);
 	ros::serialization::serialize(stream, header);
+	return data;
+}
+
+std::vector<uint8_t> Encoder::serializeTriggerRequest(std_srvs::TriggerRequest &request) {
+	uint32_t length = ros::serialization::serializationLength(request);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, request);
+	return data;
+}
+
+std::vector<uint8_t> Encoder::serializeTriggerResponse(std_srvs::TriggerResponse &response) {
+	uint32_t length = ros::serialization::serializationLength(response);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, response);
 	return data;
 }
 

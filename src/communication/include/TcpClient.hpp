@@ -1,11 +1,13 @@
 #pragma once
 
+#include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
 #include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
+#include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
 #include <cstdint>
 #include <functional>
@@ -38,26 +40,28 @@ class TcpClient {
 	std::queue<std::unique_ptr<SetStatesSrv>> &get_set_states_srv_msgs();
 	std::queue<std::unique_ptr<WaypointsSrv>> &get_waypoints_srv_msgs();
 	std::queue<bool> &get_start_srv_msgs();
+	std::queue<std::unique_ptr<TriggerMsg>> &get_trigger_msgs();
 	// Encode
-	void send_type(const std::string &str);
-	void send_string(const std::string &str);
-    void send_lane2(const utils::Lane2 &lane);
+	void send_type(std::string &str);
+	void send_string(std::string &str);
+	void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const Image &img);
 	void send_image_depth(const Image &img);
-	void send_road_object(const Float32MultiArray &array);
-	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(const Float32MultiArray &array);
-	void send_message(const String &msg);
+	void send_road_object(Float32MultiArray &array);
+	void send_waypoint(Float32MultiArray &array);
+	void send_sign(Float32MultiArray &array);
+	void send_message(String &msg);
 	void send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
 	void send_set_states_srv(bool success);
 	void send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
+	void send_trigger(std_srvs::Trigger &trigger);
 
   private:
 	// Fields
 	std::string server_address = "127.0.0.1";
-	const std::string client_type;
+	std::string client_type;
 	const size_t buffer_size;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
@@ -82,6 +86,7 @@ class TcpClient {
 	std::queue<std::unique_ptr<SetStatesSrv>> set_states_srv_msgs;
 	std::queue<std::unique_ptr<WaypointsSrv>> waypoints_srv_msgs;
 	std::queue<bool> start_srv_msgs;
+	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
 	// Methods
 	void create_tcp_socket();
 	void set_data_types();
@@ -95,4 +100,5 @@ class TcpClient {
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);
 	void parse_waypoints_srv(std::vector<uint8_t> &bytes);
 	void parse_start_srv(std::vector<uint8_t> &bytes);
+	void parse_trigger_msg(std::vector<uint8_t> &bytes);
 };

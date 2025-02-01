@@ -172,6 +172,7 @@ public:
                 double y0 = utils.tcp_client->get_waypoints_srv_msgs().front()->y0;
                 double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front()->yaw0;
                 utils::waypoints srv = path_manager.call_waypoint_service(x0, y0, yaw0);
+                path_manager.set_params(utils.tcp_client);
                 utils.tcp_client->get_waypoints_srv_msgs().pop();
                 utils.tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
             }
@@ -1745,15 +1746,17 @@ int main(int argc, char **argv) {
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
-
+    
+    std::thread services;
     if(use_tcp) {
-        std::thread t1(&StateMachine::receive_services, &sm);
-        t1.join();
+        services = std::thread(&StateMachine::receive_services, &sm);
     } 
+
     std::thread t2(&Utility::spin, &sm.utils);
     
     sm.run();
-
+    
+    services.join();
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
