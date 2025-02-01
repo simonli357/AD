@@ -1,4 +1,5 @@
 #include "TcpClient.hpp"
+#include "msg/TriggerMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
@@ -9,6 +10,7 @@
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/Header.h"
 #include "std_msgs/String.h"
+#include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -63,7 +65,7 @@ void TcpClient::create_tcp_socket() {
 void TcpClient::set_data_types() {
 	data_types.push_back(0x01); // std::string
 	data_types.push_back(0x02); // Lane2
-	data_types.push_back(0x03); // Image depth
+	data_types.push_back(0x03); // Trigger
 	data_types.push_back(0x04); // Road Objects
 	data_types.push_back(0x05); // Waypoints
 	data_types.push_back(0x06); // Signs
@@ -77,6 +79,7 @@ void TcpClient::set_data_types() {
 
 void TcpClient::set_data_actions() {
 	data_actions[data_types[0]] = &TcpClient::parse_string;			// std::string
+	data_actions[data_types[2]] = &TcpClient::parse_trigger_msg;    // Trigger
 	data_actions[data_types[7]] = &TcpClient::parse_go_to_srv;		// GoToSrv
 	data_actions[data_types[8]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
 	data_actions[data_types[9]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
@@ -163,12 +166,13 @@ std::queue<std::unique_ptr<GoToCmdSrv>> &TcpClient::get_go_to_cmd_srv_msgs() { r
 std::queue<std::unique_ptr<SetStatesSrv>> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
 std::queue<std::unique_ptr<WaypointsSrv>> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
 std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
+std::queue<std::unique_ptr<TriggerMsg>> &TcpClient::get_trigger_msgs() { return trigger_msgs; }
 
 // ------------------- //
 // Encoding
 // ------------------- //
 
-void TcpClient::send_type(const std::string &str) {
+void TcpClient::send_type(std::string &str) {
 	uint32_t length = str.size();
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> full_message(total_size);
@@ -178,7 +182,7 @@ void TcpClient::send_type(const std::string &str) {
 	send(tcp_socket, full_message.data(), full_message.size(), 0);
 }
 
-void TcpClient::send_string(const std::string &str) {
+void TcpClient::send_string(std::string &str) {
 	if (canSend) {
 		uint32_t length = str.size();
 		size_t total_size = header_size + length;
@@ -199,6 +203,13 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(data_types[1]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
     }
+}
+
+void TcpClient::send_trigger(std_srvs::Trigger &trigger) {
+	if (canSend) {
+		std::vector<uint8_t> bytes = TriggerMsg(trigger).serialize(data_types[2]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+	}
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
@@ -241,7 +252,7 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	}
 }
 
-void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_road_object(std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -256,7 +267,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_waypoint(std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -271,7 +282,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_sign(std_msgs::Float32MultiArray &array) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -286,7 +297,7 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 	}
 }
 
-void TcpClient::send_message(const std_msgs::String &msg) {
+void TcpClient::send_message(std_msgs::String &msg) {
 	if (canSend) {
 		uint32_t length = ros::serialization::serializationLength(msg);
 		std::vector<uint8_t> message(length);
@@ -346,6 +357,7 @@ void TcpClient::send_start_srv(bool started) {
 	}
 }
 
+
 // ------------------- //
 // Decoding
 // ------------------- //
@@ -358,6 +370,10 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		return;
 	}
 	strings.push(decoded_string);
+}
+
+void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
+    trigger_msgs.push(TriggerMsg().deserialize(bytes));
 }
 
 void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) {

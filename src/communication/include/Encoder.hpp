@@ -1,6 +1,8 @@
 #pragma once
 
 #include "std_msgs/Float32MultiArray.h"
+#include "std_srvs/TriggerRequest.h"
+#include "std_srvs/TriggerResponse.h"
 #include <cstdint>
 #include <vector>
 
@@ -16,6 +18,8 @@ class Encoder {
 	std::vector<uint8_t> serialize(uint8_t data_type);
 	std::vector<uint8_t> serializeFloat32MultiArray(std_msgs::Float32MultiArray &array);
 	std::vector<uint8_t> serializeROSHeader(std_msgs::Header &header);
+    std::vector<uint8_t> serializeTriggerRequest(std_srvs::TriggerRequest &request);
+    std::vector<uint8_t> serializeTriggerResponse(std_srvs::TriggerResponse &response);
 
   private:
 	const size_t header_size = 5;
