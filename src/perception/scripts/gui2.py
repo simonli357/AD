@@ -563,8 +563,8 @@ class OpenCVGuiApp(QWidget):
 
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
-        rospy.wait_for_service('goto_command', timeout=5)
-        print("service found, calling service...")
+        # rospy.wait_for_service('goto_command', timeout=5)
+        # print("service found, calling service...")
         try:
             if self.server.utility_node_client.socket is None:
                 return
@@ -586,8 +586,8 @@ class OpenCVGuiApp(QWidget):
 
     def call_set_states_service(self, x=None, y=None):
         print("set states service called, waiting for service...")
-        rospy.wait_for_service('set_states', timeout=5)
-        print("service found, calling service...")
+        # rospy.wait_for_service('set_states', timeout=5)
+        # print("service found, calling service...")
         try:
             if self.server.utility_node_client.socket is None:
                 return
@@ -741,6 +741,7 @@ class OpenCVGuiApp(QWidget):
             rospy.logerr(f"OpenCV error: {e}")
         except Exception as e:
             rospy.logerr(f"Unexpected error in camera_callback: {e}")
+
     def depth_callback(self, msg):
         if not self.show_depth:
             return
