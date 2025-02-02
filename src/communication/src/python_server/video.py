@@ -32,10 +32,10 @@ class VideoConnection:
                 return bridge.cv2_to_imgmsg(cv_image, encoding=self.encoding)
             elif len(bytes) != 0 and self.encoding == '32FC1':
                 np_array = np.frombuffer(bytes, dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 cv_image = (cv_image).astype(np.uint16)
                 bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='16UC3')
+                return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
             return None
         except Exception as e:
             print(e)
