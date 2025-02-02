@@ -18,6 +18,6 @@ class Lane2Msg:
         splits = decoder.split(bytes)
         self.header = Header().deserialize(splits[0])
         self.center = struct.unpack('f', splits[1])[0]
-        self.stopline = struct.unpack('<I', splits[2])[0]
+        self.stopline = struct.unpack('i', splits[2])[0]
         self.crosswalk = splits[3] == b'\x01'
         self.dotted = splits[4] == b'\x01'
