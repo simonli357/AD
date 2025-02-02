@@ -198,7 +198,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
     if (canSend) {
         std_msgs::Header header = lane.header;
         float center = lane.center;
-        int32_t stopline = lane.stopline;
+        int stopline = lane.stopline;
         bool crosswalk = lane.crosswalk;
 		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(data_types[1]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);

@@ -8,7 +8,7 @@
 
 class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
   public:
-	Lane2Msg(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted);
+	Lane2Msg(std_msgs::Header &header, float center, int stopline, bool crosswalk, bool dotted);
 	Lane2Msg(Lane2Msg &&) = default;
 	Lane2Msg(const Lane2Msg &) = default;
 	Lane2Msg &operator=(Lane2Msg &&) = delete;
@@ -17,7 +17,7 @@ class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
 
 	std_msgs::Header &header;
 	float center;
-	int32_t stopline;
+	int stopline;
 	bool crosswalk;
 	bool dotted;
 
