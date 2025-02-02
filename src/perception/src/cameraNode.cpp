@@ -175,7 +175,6 @@ class CameraNode {
 	std::mutex mutex;
 	void cameraThreadFunc() {
 			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
-			std::cout << "starting loop" << std::endl;
 			while (ros::ok() && cameraThreadRunning) {
 				get_frame();
 				cameraRate.sleep();
