@@ -413,9 +413,28 @@ public:
 
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
+        static bool first = true;
+        
         if (serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
+        }
+
+        if (first) {
+            first = false;
+        
+            // Send PID command (equivalent to setPID function in Python)
+            float f_active = 1.0;
+            float f_proportional = 1.25;
+            float f_integral = 0.625;
+            float f_derivative = 0.15125;
+            
+            std::stringstream pid_str;
+            char pid_buff[100];
+            snprintf(pid_buff, sizeof(pid_buff), "%.4f:%.4f:%.4f:%.4f;;\r\n", f_active, f_proportional, f_integral, f_derivative);
+            pid_str << "#" << "12" << ":" << pid_buff;
+            
+            boost::asio::write(*serial, boost::asio::buffer(pid_str.str()));
         }
         if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
