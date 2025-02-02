@@ -138,8 +138,8 @@ public:
                 continue;
             }
             if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
-                double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_x;
-                double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front().dest_y;
+                double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_x;
+                double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_y;
                 utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
                 utils::goto_command::Request req;
                 utils::goto_command::Response res;
@@ -149,8 +149,8 @@ public:
                 utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
             }
             if(utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
-                double x = utils.tcp_client->get_set_states_srv_msgs().front().x;
-                double y = utils.tcp_client->get_set_states_srv_msgs().front().y;
+                double x = utils.tcp_client->get_set_states_srv_msgs().front()->x;
+                double y = utils.tcp_client->get_set_states_srv_msgs().front()->y;
                 utils.tcp_client->get_set_states_srv_msgs().pop();
                 utils::set_states::Request req;
                 utils::set_states::Response res;
@@ -168,10 +168,11 @@ public:
                 utils.tcp_client->send_start_srv(true);
             }
             if(utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
-                double x0 = utils.tcp_client->get_waypoints_srv_msgs().front().x0;
-                double y0 = utils.tcp_client->get_waypoints_srv_msgs().front().y0;
-                double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front().yaw0;
+                double x0 = utils.tcp_client->get_waypoints_srv_msgs().front()->x0;
+                double y0 = utils.tcp_client->get_waypoints_srv_msgs().front()->y0;
+                double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front()->yaw0;
                 utils::waypoints srv = path_manager.call_waypoint_service(x0, y0, yaw0);
+                path_manager.set_params(utils.tcp_client);
                 utils.tcp_client->get_waypoints_srv_msgs().pop();
                 utils.tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
             }
@@ -1745,16 +1746,20 @@ int main(int argc, char **argv) {
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
+    
+    std::thread services_thread;
+    if(use_tcp) {
+        services_thread = std::thread(&StateMachine::receive_services, &sm);
+    } 
 
-    std::thread t1;
-    if (use_tcp) t1 = std::thread(&StateMachine::receive_services, &sm);
     std::thread t2(&Utility::spin, &sm.utils);
     
     sm.run();
 
-    if (t1.joinable()) {
-        t1.join();
+    if (services_thread.joinable()) {
+        services_thread.join();
     }
+  
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
