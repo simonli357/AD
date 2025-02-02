@@ -42,7 +42,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             debug("Utility constructor: ERROR: Failed to get 'ip_address' parameter. TCP client not created.", 1);
             tcp_client = nullptr;
         } else {
-            tcp_client = std::make_unique<TcpClient>(1024, "utility_node_client", ip_address);
+            tcp_client = std::make_shared<TcpClient>(1024, "utility_node_client", ip_address);
             debug("Utility constructor: TCP client created successfully.", 1);
         }
     } else {
@@ -534,6 +534,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     car_pose_pub.publish(car_pose_msg);
 }
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
+    tcp_client->send_lane2(*msg);
     static double previous_center = 320;
     lock.lock();
     center = msg->center;

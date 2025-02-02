@@ -1,36 +1,39 @@
+from tqdm import tqdm
+from functools import lru_cache
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from ortools.constraint_solver import pywrapcp, routing_enums_pb2
+# from ortools.constraint_solver import pywrapcp, routing_enums_pb2
 import os
 import random
 import time
 import math
 from networkx.algorithms.matching import max_weight_matching
 
+
 def plot_path_on_map(graph, coordinates, destinations, path, map_image_path):
     # Load the map image
     img = mpimg.imread(map_image_path)
-    
+
     # Create a plot with the map as background
     fig, ax = plt.subplots()
     ax.imshow(img, extent=[0, 20.696, 0, 13.786])  # Adjust these extents according to your map image's scaling
-    
+
     # Plot the shortest path between consecutive nodes in the path
     for i in range(len(path) - 1):
         start_node = str(path[i])
         end_node = str(path[i + 1])
         sub_path = nx.shortest_path(graph, start_node, end_node, weight='length')
-        
+
         # Extract the X and Y coordinates for each node in the sub_path
         x_coords = [graph.nodes[node]['x'] for node in sub_path]
         y_coords = [graph.nodes[node]['y'] for node in sub_path]
         y_coords = [13.786 - y for y in y_coords]  # Invert Y coordinates to match map scaling
-        
+
         # Plot the edges between nodes
         ax.plot(x_coords, y_coords, 'o-', color='blue', markersize=5, label='Path' if i == 0 else "")
-    
+
     # Plot and annotate each node with its sequence in the path
     for idx, node in enumerate(path):
         x, y = graph.nodes[str(node)]['x'], 13.786 - graph.nodes[str(node)]['y']
@@ -45,13 +48,14 @@ def plot_path_on_map(graph, coordinates, destinations, path, map_image_path):
     end_coords = graph.nodes[str(path[-1])]
     end_x, end_y = end_coords['x'], 13.786 - end_coords['y']
     ax.annotate("End", (end_x, end_y), textcoords="offset points", xytext=(0, 10), ha='center', color='red')
-    
+
     # Show the plot
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Optimal Path on the Map (Following Graph Edges)')
     plt.legend()
     plt.show()
+
 
 def print_total_distance(graph, best_path):
     total_distance = 0
@@ -60,36 +64,37 @@ def print_total_distance(graph, best_path):
     for i in range(len(best_path) - 1):
         start_node = str(best_path[i])
         end_node = str(best_path[i + 1])
-        
+
         try:
             # Get the shortest path between start_node and end_node
             sub_path = nx.shortest_path(graph, source=start_node, target=end_node)
-            
+
             # Calculate the distance for the sub-path
             sub_path_distance = 0
             for j in range(len(sub_path) - 1):
                 node_a = str(sub_path[j])
                 node_b = str(sub_path[j + 1])
-                
+
                 # Extract the x, y coordinates for consecutive nodes
                 x1, y1 = graph.nodes[node_a]['x'], graph.nodes[node_a]['y']
                 x2, y2 = graph.nodes[node_b]['x'], graph.nodes[node_b]['y']
-                
+
                 # Calculate the Euclidean distance between the nodes
                 distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
                 sub_path_distance += distance
 
             total_distance += sub_path_distance
             # print(f"Distance from {start_node} to {end_node} (via path {sub_path}): {sub_path_distance:.2f} meters")
-        
+
         except nx.NetworkXNoPath:
             # Handle the case where no path exists
             print(f"No path exists from {start_node} to {end_node} due to uni-directional edges.")
         except KeyError as e:
             print(f"Missing coordinate data for nodes: {e}")
-    
+
     # Print the total distance traveled
     print(f"Total distance traveled: {total_distance:.2f} meters")
+
 
 def get_node_coordinates(graph, destinations):
     coordinates = []
@@ -101,21 +106,23 @@ def get_node_coordinates(graph, destinations):
             raise ValueError(f"Node {node} not found in graph.")
     return np.array(coordinates)
 
+
 def find_closest_node(graph, x, y):
     closest_node = None
     min_distance = float('inf')
-    
+
     # Iterate through all nodes in the graph to find the closest node
     for node, data in graph.nodes(data=True):
         node_x = data.get('x')
         node_y = data.get('y')
         distance = np.sqrt((x - node_x)**2 + (y - node_y)**2)  # Euclidean distance
-        
+
         if distance < min_distance:
             min_distance = distance
             closest_node = node
-    
+
     return closest_node
+
 
 def create_graph_hop_matrix(graph, destinations):
     num_nodes = len(destinations)
@@ -133,8 +140,9 @@ def create_graph_hop_matrix(graph, destinations):
                 except nx.NetworkXNoPath:
                     # If no path exists, it remains float('inf') in the matrix
                     pass
-    
+
     return hop_matrix
+
 
 def create_graph_distance_matrix(graph, destinations):
     num_nodes = len(destinations)
@@ -155,13 +163,14 @@ def create_graph_distance_matrix(graph, destinations):
                     pass
     return distance_matrix
 
+
 def solve_nn(distance_matrix, destinations):
     num_nodes = len(distance_matrix)
     visited = [False] * num_nodes
     path = [0]  # Start from the first node
     visited[0] = True
     total_distance = 0  # Initialize the total distance
-    
+
     for _ in range(1, num_nodes):
         last = path[-1]
         next_node = None
@@ -173,16 +182,18 @@ def solve_nn(distance_matrix, destinations):
         path.append(next_node)
         visited[next_node] = True
         total_distance += min_distance  # Add the distance to the total
-    
+
     # Return to the start to complete the tour
     # path.append(0)
     # total_distance += distance_matrix[path[-2]][path[-1]]  # Add the distance to return to start
-    
+
     # convert final path to actual node indices
     path = [destinations[i] for i in path]
     return path, total_distance
 
 # def simulated_annealing_tsp(distance_matrix, initial_temp=1000, cooling_rate=0.995, stopping_temp=1e-3, max_iter=1000):
+
+
 def simulated_annealing_tsp(distance_matrix, destinations, initial_temp=1000, cooling_rate=0.999, stopping_temp=1e-5, max_iter=5000):
     """
     Solve the TSP using Simulated Annealing.
@@ -232,13 +243,11 @@ def simulated_annealing_tsp(distance_matrix, destinations, initial_temp=1000, co
 
         # Cool down the temperature
         temperature *= cooling_rate
-    
+
     # convert final path to actual node indices
     best_path = [destinations.index(node) for node in best_path]
     return best_path, best_distance
 
-from tqdm import tqdm
-from functools import lru_cache
 
 def reduce_with_fixed_sequences(distance_matrix, destinations, fixed_sequences):
     """
@@ -317,6 +326,7 @@ def reduce_with_fixed_sequences(distance_matrix, destinations, fixed_sequences):
                 ][destination_to_index[node_j]]
 
     return reduced_distance_matrix, reduced_destinations, fixed_sequence_mapping
+
 
 def max_destinations_with_reduced_problem(
     reduced_distance_matrix, max_distance, reduced_destinations, fixed_sequence_mapping
@@ -400,6 +410,7 @@ def max_destinations_with_reduced_problem(
 
     return max_destinations, resolved_path
 
+
 def save_path_to_file(path, filename):
     """
     Save the given path to a text file.
@@ -414,6 +425,8 @@ def save_path_to_file(path, filename):
         for node in path:
             f.write(f"{node}\n")
     print(f"Path saved to {filename}")
+
+
 def load_path_from_file(filename):
     """
     Load a path from a text file, stopping at the first empty line.
@@ -435,36 +448,38 @@ def load_path_from_file(filename):
             path.append(int(stripped_line))
     print(f"Path loaded from {filename}")
     return path
+
+
 def main():
-    
-    destinations = [386, 343, 362, 368, 317, 318, 404, 399, 425, 420, 437, 82, 80, 93, 121, 116, 127, 75, 71, 
+
+    destinations = [386, 343, 362, 368, 317, 318, 404, 399, 425, 420, 437, 82, 80, 93, 121, 116, 127, 75, 71,
                     185, 27, 25, 31, 29, 301, 8, 289, 199, 42, 225, 228, 239, 261, 257, 56]
-    fixed_sequences = [[399,425,437], [318, 56], [225, 228,239,257], [116,121], [127,75], [420,404], [368,386],[343,362]]
+    fixed_sequences = [[399, 425, 437], [318, 56], [225, 228, 239, 257], [116, 121], [127, 75], [420, 404], [368, 386], [343, 362]]
     max_distance = 150
-    # destinations = [386, 362, 317, 404, 425, 82, 80, 93, 121, 75, 71, 
+    # destinations = [386, 362, 317, 404, 425, 82, 80, 93, 121, 75, 71,
     #                 185, 27, 25, 31, 29, 301, 8, 289, 199, 42, 239, 261, 257, 56]
-    
+
     graph_file = '/maps/Competition_track_graph_modified_new.graphml'
     current_dir = os.path.dirname(os.path.realpath(__file__))
     graph = nx.read_graphml(current_dir + graph_file)
-    
+
     closest_node_int = 145
     if closest_node_int not in destinations:
         destinations.insert(0, closest_node_int)
-        
+
     coordinates = get_node_coordinates(graph, destinations)
-    #invert y coordinates
-    coordinates = [(x, 13.786-y) for x, y in coordinates]
-    
-    # distance_matrix = create_graph_distance_matrix(graph, destinations)
-    # hop_matrix = create_graph_hop_matrix(graph, destinations)
-    
+    # invert y coordinates
+    coordinates = [(x, 13.786 - y) for x, y in coordinates]
+
+    distance_matrix = create_graph_distance_matrix(graph, destinations)
+    hop_matrix = create_graph_hop_matrix(graph, destinations)
+
     print("solving...")
     t1 = time.time()
     # best_path, best_distance = solve_nn(distance_matrix, destinations)
     # best_path, best_distance = solve_nn(hop_matrix, destinations)
     # best_path, best_distance = simulated_annealing_tsp(distance_matrix, destinations)
-    # reduced_distance_matrix, reduced_destinations, fixed_sequence_mapping = reduce_with_fixed_sequences(
+    # # reduced_distance_matrix, reduced_destinations, fixed_sequence_mapping = reduce_with_fixed_sequences(
     #     distance_matrix, destinations, fixed_sequences
     # )
     # max_destinations, best_path = max_destinations_with_reduced_problem(
@@ -473,11 +488,11 @@ def main():
     # print(f"Maximum number of destinations within {max_distance} distance: {max_destinations}")
     # print(f"Best path: {best_path}")
     # print("time:", time.time()-t1)
-    # print("best distance:", best_distance)
-    
+    # # print("best distance:", best_distance)
+
     # save_path_to_file(best_path, "paths/dp1.txt")
-    
-    best_path = load_path_from_file("paths/manual1.txt")
+
+    best_path = load_path_from_file("paths/manual2.txt")
     if best_path:
         print("Best Path (order of node indices):", best_path)
         # Print the distances between consecutive nodes and the total distance
