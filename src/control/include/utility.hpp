@@ -95,7 +95,7 @@ public:
     tf2_ros::Buffer tfBuffer;
 
     // Client
-    std::unique_ptr<TcpClient> tcp_client;
+    std::shared_ptr<TcpClient> tcp_client;
 
     // publishers
     ros::Publisher odom_pub;

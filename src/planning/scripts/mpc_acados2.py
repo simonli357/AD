@@ -115,9 +115,7 @@ class Optimizer(object):
             self.v_ref_int = str(int(''.join(filter(str.isdigit, config_path))))
         except:
             self.v_ref_int = ''
-        print("number: ", self.v_ref_int)
 
-        print("creating solver...")
         t1 = timeit.default_timer()
         model = AcadosModel() #  ca.types.SimpleNamespace()
         # control inputs
