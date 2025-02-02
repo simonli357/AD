@@ -386,7 +386,11 @@ class OpenCVGuiApp(QWidget):
         y_init = rospy.get_param('/y_init', default=3)
         yaw_init = rospy.get_param('/yaw_init', default=0)
         path_name = rospy.get_param('/pathName', default='run1')
-        threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
+        self.initial_waypoint_srv_call = threading.Thread(
+            target=self.call_waypoint_service,
+            args=('25', path_name, x_init, y_init, yaw_init),
+            daemon=True
+        )
 
         # Objects
         # Lane
@@ -469,6 +473,8 @@ class OpenCVGuiApp(QWidget):
         # self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
         # self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
         # self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
+        self.initial_waypoint_srv_call.start()
+        self.initial_waypoint_srv_call.join()
         return
 
     # ROS service calls
