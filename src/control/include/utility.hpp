@@ -413,17 +413,16 @@ public:
 
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
-        static bool first = true;
+        static int count = 0;
         
         if (serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
 
-        if (first) {
-            first = false;
+        if (count == 0) {
+            count = 1;
         
-            // Send PID command (equivalent to setPID function in Python)
             float f_active = 1.0;
             float f_proportional = 1.25;
             float f_integral = 0.625;
@@ -433,14 +432,24 @@ public:
             char pid_buff[100];
             snprintf(pid_buff, sizeof(pid_buff), "%.4f:%.4f:%.4f:%.4f;;\r\n", f_active, f_proportional, f_integral, f_derivative);
             pid_str << "#" << "12" << ":" << pid_buff;
+            std::cout << pid_str.str() << std::endl;
             
             boost::asio::write(*serial, boost::asio::buffer(pid_str.str()));
         }
+        if (count == 1) {
+            count++;
+            std::stringstream strs;
+            char buff[100];
+            snprintf(buff, sizeof(buff), "%.4f:%.4f;;\r\n", 0.25 * 100, -20.5);
+            strs << "#" << "13" << ":" << buff;
+            boost::asio::write(*serial, boost::asio::buffer(strs.str()));
+            return;
+        } else return;
         if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
-        strs << "#" << "11" << ":" << buff;
+        strs << "#" << "13" << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }
