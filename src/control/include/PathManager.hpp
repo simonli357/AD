@@ -2,6 +2,7 @@
 #define PathManager_HPP
 
 #include <ros/ros.h>
+#include <thread>
 #include <vector>
 #include <string>
 #include <Eigen/Dense>
@@ -13,6 +14,8 @@
 #include <unistd.h>
 #include <limits.h>
 #include <cmath>
+#include "TcpClient.hpp"
+#include "std_srvs/TriggerResponse.h"
 #include "utils/constants.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
@@ -58,6 +61,7 @@ public:
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
         trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
+
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
 
@@ -277,7 +281,7 @@ public:
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
-            set_params();
+            // set_params();
             return srv;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
@@ -348,14 +352,34 @@ public:
             }
         }
     }
-    bool set_params() {
+    bool set_params(std::shared_ptr<TcpClient> tcp_client) {
         std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
         nh.setParam("/state_refs", state_refs_v);
         std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
         nh.setParam("/state_attributes", state_attributes_v);
         std_srvs::Trigger trigger_srv;
-        if (trigger_client.call(trigger_srv)) {
-            if (trigger_srv.response.success) {
+        
+        tcp_client->send_trigger(trigger_srv);
+
+        bool success = false;
+        size_t retries = 50;
+        size_t try_count = 0;
+        std::optional<std_srvs::TriggerResponse> response;
+        
+        while (try_count < retries) {
+            if (tcp_client->get_trigger_msgs().size() > 0) {
+                response = tcp_client->get_trigger_msgs().front()->response;
+                tcp_client->get_trigger_msgs().pop();
+                success = true;
+                std::cout << "ROS node set params notification ack = success." << std::endl;
+                break;
+            }
+            try_count++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        if (success) {
+            if (response.value().success) {
                 ROS_INFO("Python node notified successfully.");
             } else {
                 ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str());
@@ -363,6 +387,16 @@ public:
         } else {
             ROS_ERROR("Failed to call the notification service.");
         }
+
+        /* if (trigger_client.call(trigger_srv)) { */
+        /*     if (trigger_srv.response.success) { */
+        /*         ROS_INFO("Python node notified successfully."); */
+        /*     } else { */
+        /*         ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str()); */
+        /*     } */
+        /* } else { */
+        /*     ROS_ERROR("Failed to call the notification service."); */
+        /* } */
         return true;
     }
     static std::string getSourceDirectory() {

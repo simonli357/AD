@@ -12,7 +12,9 @@
         "has_x0": true,
         "idxbu": [
             0,
-            1
+            1,
+            2,
+            3
         ],
         "idxbx": [
             0,
@@ -42,7 +44,9 @@
         "idxsphi_e": [],
         "lbu": [
             -0.4,
-            -0.3578
+            -0.3578,
+            -Infinity,
+            -Infinity
         ],
         "lbx": [
             -1.0,
@@ -75,7 +79,9 @@
         "lsphi_e": [],
         "ubu": [
             0.4,
-            0.3578
+            0.3578,
+            Infinity,
+            Infinity
         ],
         "ubx": [
             22.0,
@@ -111,21 +117,43 @@
         "Vu": [
             [
                 0.0,
-                0.0
-            ],
-            [
+                0.0,
                 0.0,
                 0.0
             ],
             [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
                 0.0,
                 0.0
             ],
             [
                 1.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
                 0.0,
                 1.0
             ]
@@ -133,21 +161,43 @@
         "Vu_0": [
             [
                 0.0,
-                0.0
-            ],
-            [
+                0.0,
                 0.0,
                 0.0
             ],
             [
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
                 0.0,
                 0.0
             ],
             [
                 1.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
                 0.0,
                 1.0
             ]
@@ -167,6 +217,16 @@
                 0.0,
                 0.0,
                 1.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
             ],
             [
                 0.0,
@@ -204,6 +264,16 @@
                 0.0,
                 0.0,
                 0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
             ]
         ],
         "Vx_e": [
@@ -231,11 +301,15 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
                 0.0,
                 2.0,
+                0.0,
+                0.0,
                 0.0,
                 0.0,
                 0.0
@@ -245,6 +319,8 @@
                 0.0,
                 0.5,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -252,6 +328,8 @@
                 0.0,
                 0.0,
                 1.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -259,7 +337,27 @@
                 0.0,
                 0.0,
                 0.0,
-                0.2
+                0.2,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.5
             ]
         ],
         "W_0": [
@@ -268,11 +366,15 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
                 0.0,
                 2.0,
+                0.0,
+                0.0,
                 0.0,
                 0.0,
                 0.0
@@ -282,6 +384,8 @@
                 0.0,
                 0.5,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -289,6 +393,8 @@
                 0.0,
                 0.0,
                 1.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -296,7 +402,27 @@
                 0.0,
                 0.0,
                 0.0,
-                0.2
+                0.2,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.5
             ]
         ],
         "W_e": [
@@ -333,9 +459,13 @@
             0.0,
             0.0,
             0.0,
+            0.0,
+            0.0,
             0.0
         ],
         "yref_0": [
+            0.0,
+            0.0,
             0.0,
             0.0,
             0.0,
@@ -360,7 +490,7 @@
     ],
     "dims": {
         "N": 40,
-        "nbu": 2,
+        "nbu": 4,
         "nbx": 2,
         "nbx_0": 3,
         "nbx_e": 0,
@@ -391,10 +521,10 @@
         "nsphi": 0,
         "nsphi_0": 0,
         "nsphi_e": 0,
-        "nu": 2,
+        "nu": 4,
         "nx": 3,
-        "ny": 5,
-        "ny_0": 5,
+        "ny": 7,
+        "ny_0": 7,
         "ny_e": 3,
         "nz": 0
     },
@@ -446,7 +576,7 @@
         "nu_original": null,
         "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "t": [],
-        "u": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
+        "u": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegiaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegpcaaaaaaaaaaaaaagaaaaaaaghpfahchfgghegpcaaaaaaaaaaaaaakaaaaaaaegfgmgehbgpfahchfggh",
         "x": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
         "xdot": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcd",
         "z": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

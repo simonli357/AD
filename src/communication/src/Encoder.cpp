@@ -1,11 +1,12 @@
 #include "Encoder.hpp"
 #include "ros/serialization.h"
+#include "std_msgs/Header.h"
+#include "std_srvs/TriggerRequest.h"
+#include "std_srvs/TriggerResponse.h"
 #include <cstdint>
 #include <cstring>
 #include <netinet/in.h>
 #include <vector>
-
-Encoder::Encoder(uint8_t &data_type) : data_type(data_type) {}
 
 std::vector<uint8_t> Encoder::serializeFloat32MultiArray(std_msgs::Float32MultiArray &array) {
 	uint32_t length = ros::serialization::serializationLength(array);
@@ -15,7 +16,31 @@ std::vector<uint8_t> Encoder::serializeFloat32MultiArray(std_msgs::Float32MultiA
 	return data;
 }
 
-std::vector<uint8_t> Encoder::serialize() {
+std::vector<uint8_t> Encoder::serializeROSHeader(std_msgs::Header &header) {
+	uint32_t length = ros::serialization::serializationLength(header);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, header);
+	return data;
+}
+
+std::vector<uint8_t> Encoder::serializeTriggerRequest(std_srvs::TriggerRequest &request) {
+	uint32_t length = ros::serialization::serializationLength(request);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, request);
+	return data;
+}
+
+std::vector<uint8_t> Encoder::serializeTriggerResponse(std_srvs::TriggerResponse &response) {
+	uint32_t length = ros::serialization::serializationLength(response);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, response);
+	return data;
+}
+
+std::vector<uint8_t> Encoder::serialize(uint8_t data_type) {
 	uint32_t lengths_length = compute_lengths_length();
 	uint32_t data_length = compute_data_length();
 	uint32_t size = lengths_length + data_length;
