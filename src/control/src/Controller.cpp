@@ -1747,16 +1747,19 @@ int main(int argc, char **argv) {
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
     
-    std::thread services;
+    std::thread services_thread;
     if(use_tcp) {
-        services = std::thread(&StateMachine::receive_services, &sm);
+        services_thread = std::thread(&StateMachine::receive_services, &sm);
     } 
 
     std::thread t2(&Utility::spin, &sm.utils);
     
     sm.run();
-    
-    services.join();
+
+    if (services_thread.joinable()) {
+        services_thread.join();
+    }
+  
     t2.join();
     std::cout << "threads joined" << std::endl;
     return 0;
