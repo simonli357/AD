@@ -1,13 +1,14 @@
 import threading
 import struct
 from collections import OrderedDict
-from sensor_msgs.msg import Image
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
 from python_server.service_calls.go_to_srv import GoToSrv
 from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
 from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
+from python_server.msg.lane2_msg import Lane2Msg
+from python_server.msg.trigger_msg import TriggerMsg
 
 
 class Connection:
@@ -16,8 +17,8 @@ class Connection:
         if client_socket is not None:
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
-                b'\x02': self.parse_image_rgb,
-                b'\x03': self.parse_image_depth,
+                b'\x02': self.parse_lane2,
+                b'\x03': self.parse_trigger,
                 b'\x04': self.parse_road_object,
                 b'\x05': self.parse_waypoint,
                 b'\x06': self.parse_sign,
@@ -26,12 +27,12 @@ class Connection:
                 b'\x09': self.parse_go_to_cmd_srv,
                 b'\x0a': self.parse_set_states_srv,
                 b'\x0b': self.parse_waypoints_srv,
-                b'\x0c': self.parse_start_srv
+                b'\x0c': self.parse_start_srv,
             })
             self.types = list(self.data_actions.keys())
             self.strings = []
-            self.rgb_image = None
-            self.depth_image = None
+            self.lane2 = Lane2Msg(b'\x02')
+            self.triggers = TriggerMsg(b'\x03')
             self.road_objects = []
             self.waypoints = []
             self.signs = []
@@ -77,6 +78,10 @@ class Connection:
         bytes = length + self.types[0] + data
         self.socket.sendall(bytes)
 
+    def send_trigger(self, request, response):
+        bytes = self.triggers.encode(request, response)
+        self.socket.sendall(bytes)
+
     def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
         bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
         self.socket.sendall(bytes)
@@ -103,51 +108,39 @@ class Connection:
     def parse_string(self, bytes):
         self.strings.append(bytes.decode('utf-8'))
 
-    def parse_image_rgb(self, bytes):
+    def parse_lane2(self, bytes):
         try:
-            img_msg = Image()
-            img_msg.deserialize(bytes)
-            self.rgb_image = img_msg
+            self.lane2.decode(bytes)
         except Exception as e:
             print(e)
 
-    def parse_image_depth(self, bytes):
+    def parse_trigger(self, bytes):
         try:
-            img_msg = Image()
-            img_msg.deserialize(bytes)
-            self.depth_image = img_msg
+            self.triggers.decode(bytes)
         except Exception as e:
             print(e)
 
     def parse_road_object(self, bytes):
         try:
-            float32_array = Float32MultiArray()
-            float32_array.deserialize(bytes)
-            self.road_objects.append(float32_array)
+            self.road_objects.append(Float32MultiArray().deserialize(bytes))
         except Exception as e:
             print(e)
 
     def parse_waypoint(self, bytes):
         try:
-            float32_array = Float32MultiArray()
-            float32_array.deserialize(bytes)
-            self.waypoints.append(float32_array)
+            self.waypoints.append(Float32MultiArray().deserialize(bytes))
         except Exception as e:
             print(e)
 
     def parse_sign(self, bytes):
         try:
-            float32_array = Float32MultiArray()
-            float32_array.deserialize(bytes)
-            self.signs.append(float32_array)
+            self.signs.append(Float32MultiArray().deserialize(bytes))
         except Exception as e:
             print(e)
 
     def parse_message(self, bytes):
         try:
-            msg = String()
-            msg.deserialize(bytes)
-            self.messages.append(msg)
+            self.messages.append(String().deserialize(bytes))
         except Exception as e:
             print(e)
 
