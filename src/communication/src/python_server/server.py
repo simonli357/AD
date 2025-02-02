@@ -23,7 +23,7 @@ class Server:
     def initialize(self):
         signal.signal(signal.SIGINT, self.handle_signal)
         self.tcp_socket.bind(('', self.tcp_port))
-        self.tcp_socket.listen(2)
+        self.tcp_socket.listen(3)
         self.udp_rgb_socket.bind(('', self.udp_rgb_port))
         self.udp_depth_socket.bind(('', self.udp_depth_port))
         threading.Thread(target=self.listen, daemon=True).start()
