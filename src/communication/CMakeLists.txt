@@ -43,6 +43,7 @@ catkin_package(
 include_directories(
   include
   include/service_calls
+  include/msg
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
@@ -50,7 +51,8 @@ include_directories(
 ## Declare a C++ library
 file(GLOB SOURCES src/*.cpp)
 file(GLOB SERVICES src/service_calls/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES})
+file(GLOB MSGS src/msg/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES} ${MSGS})
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/communication.cpp
 # )

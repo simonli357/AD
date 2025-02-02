@@ -9,13 +9,11 @@ import os
 import math
 import rospy
 from python_server.server import Server
-from std_srvs.srv import Trigger, TriggerResponse
+from std_srvs.srv import TriggerResponse, TriggerRequest
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
-from std_srvs.srv import SetBool, SetBoolRequest
-from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandRequest, set_states, set_statesRequest
-from utils.msg import Lane2
+from utils.srv import waypointsRequest
 from cv_bridge import CvBridge
 
 
@@ -388,7 +386,7 @@ class OpenCVGuiApp(QWidget):
         y_init = rospy.get_param('/y_init', default=3)
         yaw_init = rospy.get_param('/yaw_init', default=0)
         path_name = rospy.get_param('/pathName', default='run1')
-        self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
+        threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
 
         # Objects
         # Lane
@@ -461,7 +459,7 @@ class OpenCVGuiApp(QWidget):
         }
 
         # ROS Services
-        self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
+        # self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
 
         # ROS Subscribers
         # self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
@@ -469,7 +467,7 @@ class OpenCVGuiApp(QWidget):
         # self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
         # self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
         # self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
-        self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
+        # self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
         # self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
@@ -566,7 +564,7 @@ class OpenCVGuiApp(QWidget):
     def call_goto_service(self, x, y):
         print("goto command service called, waiting for service...")
         # rospy.wait_for_service('goto_command', timeout=5)
-        print("service found, calling service...")
+        # print("service found, calling service...")
         try:
             if self.server.utility_node_client.socket is None:
                 return
@@ -588,8 +586,8 @@ class OpenCVGuiApp(QWidget):
 
     def call_set_states_service(self, x=None, y=None):
         print("set states service called, waiting for service...")
-        rospy.wait_for_service('set_states', timeout=5)
-        print("service found, calling service...")
+        # rospy.wait_for_service('set_states', timeout=5)
+        # print("service found, calling service...")
         try:
             if self.server.utility_node_client.socket is None:
                 return
@@ -743,6 +741,7 @@ class OpenCVGuiApp(QWidget):
             rospy.logerr(f"OpenCV error: {e}")
         except Exception as e:
             rospy.logerr(f"Unexpected error in camera_callback: {e}")
+
     def depth_callback(self, msg):
         if not self.show_depth:
             return
@@ -795,8 +794,9 @@ class OpenCVGuiApp(QWidget):
 
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
         try:
-            if self.server.utility_node_client.socket is None:
-                return
+            print("Waiting for control node client to connect")
+            while self.server.utility_node_client.socket is None:
+                time.sleep(0.1)
             req = waypointsRequest()
             self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
             max_retries = 50
@@ -1178,6 +1178,9 @@ def callbacks(gui, server):
             if server.sign_node_client.signs:
                 gui.sign_callback(server.sign_node_client.signs.pop(0))
         if server.utility_node_client.socket is not None:
+            # Lane2
+            if server.utility_node_client.lane2.header is not None:
+                gui.lane_callback(server.utility_node_client.lane2)
             # Road object
             if server.utility_node_client.road_objects:
                 gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
@@ -1187,6 +1190,11 @@ def callbacks(gui, server):
             # Messages
             if server.utility_node_client.messages:
                 gui.message_callback(server.utility_node_client.messages.pop(0))
+            # Set params
+            if server.utility_node_client.triggers.msgs:
+                req, res = server.utility_node_client.triggers.msgs.pop(0)
+                response = gui.update_params(req)
+                server.utility_node_client.send_trigger(TriggerRequest(), response)
 
         time.sleep(0.016)
 
