@@ -17,17 +17,17 @@ rosrun planning path2.py
 
 - detection:
 ```bash
-roslaunch perception cameraNode.launch newlane:=false
+roslaunch perception cameraNode.launch newlane:=false use_tcp:=true
 ```
 
 - gui:
 ```bash
-rosrun perception gui.py
+rosrun gui gui2.py
 ```
 
 - control:
 ```bash
-roslaunch control controller.launch sign:=true lane:=true v:=25
+roslaunch control controller.launch sign:=true lane:=true v:=25 use_tcp:=true
 ```
 
 == real run
@@ -110,4 +110,5 @@ roi:
   height: 0
   width: 0
   do_rectify: False
+FOV (deg): (55.56294646186197, 43.14253845277586)
 ---

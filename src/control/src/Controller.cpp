@@ -1761,6 +1761,5 @@ int main(int argc, char **argv) {
     }
   
     t2.join();
-    std::cout << "threads joined" << std::endl;
     return 0;
 }
