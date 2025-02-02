@@ -3,7 +3,7 @@
 #include "std_msgs/Header.h"
 #include <cstdint>
 
-Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, int32_t stopline, bool crosswalk, bool dotted)
+Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, int stopline, bool crosswalk, bool dotted)
 	: header(header), center(center), stopline(stopline), crosswalk(crosswalk), dotted(dotted) {
 	header_length = ros::serialization::serializationLength(header);
 	center_length = sizeof(center);
