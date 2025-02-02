@@ -1,5 +1,4 @@
 import threading
-import time
 import numpy as np
 import cv2
 from cv_bridge import CvBridge
@@ -21,7 +20,6 @@ class VideoConnection:
             if len(bytes) == 0:
                 continue
             self.frame = self.parse_image(bytes)
-            time.sleep(0.016)
 
     def parse_image(self, bytes):
         try:
