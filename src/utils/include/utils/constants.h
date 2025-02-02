@@ -392,7 +392,7 @@ namespace VehicleConstants {
         244.39398   // cy
     };
     static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0};
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.12, 0.032, 0.25, 0, 0.2617, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.113, 0.0, 0.26, 0, 0.2617, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
