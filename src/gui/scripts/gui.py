@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import threading
+import time
 import sys
 import cv2
 import pandas as pd
@@ -6,21 +8,23 @@ import numpy as np
 import os
 import math
 import rospy
-from std_srvs.srv import Trigger, TriggerResponse
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSpacerItem, QSizePolicy, QTextEdit
-from PyQt5.QtCore import Qt, QTimer, QPointF
-from PyQt5.QtGui import QImage, QPixmap, QPen, QColor, QCursor
+from python_server.server import Server
+from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
 from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandRequest, set_states, set_statesRequest
 from utils.msg import Lane2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-
+import argparse
 
 class OpenCVGuiApp(QWidget):
-    def __init__(self):
+    def __init__(self, server = None):
         super().__init__()
+        self.server = server
         self.current_zoom = 1.0
         self.min_zoom = 1.0
 
@@ -386,7 +390,11 @@ class OpenCVGuiApp(QWidget):
         y_init = rospy.get_param('/y_init', default=3)
         yaw_init = rospy.get_param('/yaw_init', default=0)
         path_name = rospy.get_param('/pathName', default='run1')
-        self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
+        if self.server is None:
+            self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
+        else:
+            threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
+            
 
         # Objects
         # Lane
@@ -458,17 +466,17 @@ class OpenCVGuiApp(QWidget):
             'z': 6
         }
 
-        # ROS Services
-        self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
-
-        # ROS Subscribers
-        self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
-        self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
-        self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
-        self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
-        self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
-        self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
-        self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
+        if self.server is None:
+            # ROS Services
+            self.trigger_service = rospy.Service('/notify_params_updated', Trigger, self.update_params)
+            # ROS Subscribers
+            self.road_object_sub = rospy.Subscriber('/road_objects', Float32MultiArray, self.road_objects_callback)
+            self.camera_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.camera_callback)
+            self.depth_sub = rospy.Subscriber('/camera/depth/image_raw', Image, self.depth_callback)
+            self.waypoint_sub = rospy.Subscriber("/waypoints", Float32MultiArray, self.waypoint_callback, queue_size=3)
+            self.sign_sub = rospy.Subscriber('/sign', Float32MultiArray, self.sign_callback)
+            self.sign_sub = rospy.Subscriber('/lane', Lane2, self.lane_callback)
+            self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
     # ROS service calls
@@ -562,60 +570,118 @@ class OpenCVGuiApp(QWidget):
         print("saved state refs")
 
     def call_goto_service(self, x, y):
-        print("goto command service called, waiting for service...")
-        rospy.wait_for_service('goto_command', timeout=5)
-        print("service found, calling service...")
-        try:
-            goto_service = rospy.ServiceProxy('goto_command', goto_command)
-            req = goto_commandRequest()
-            req.dest_x = x
-            req.dest_y = y
+        if self.server is None:
+            try:
+                print("goto command service called, waiting for service...")
+                rospy.wait_for_service('goto_command', timeout=5)
+                print("service found, calling service...")
+                goto_service = rospy.ServiceProxy('goto_command', goto_command)
+                req = goto_commandRequest()
+                req.dest_x = x
+                req.dest_y = y
 
-            res = goto_service(req)
-            if not res.success:
-                print("Failed to send goto command")
-            self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
-            self.attributes_np = np.array(res.wp_attributes.data)
-            print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+                res = goto_service(req)
+                if not res.success:
+                    print("Failed to send goto command")
+                self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+                self.attributes_np = np.array(res.wp_attributes.data)
+                print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
+        else:
+            try:
+                if self.server.utility_node_client.socket is None:
+                    return
+                self.server.utility_node_client.send_go_to_cmd_srv(x, y)
+                max_retries = 50
+                retries = 0
+                res = self.server.utility_node_client.go_to_cmd_srv_msg
+                while (retries < max_retries):
+                    if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
+                        self.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+                        self.attributes_np = np.array(res.wp_attributes.data)
+                        print("Goto_command service call successful. shape: ", self.state_refs_np.shape)
+                        return
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to send go to cmd")
+            except Exception as e:
+                raise e
 
     def call_set_states_service(self, x=None, y=None):
-        print("set states service called, waiting for service...")
-        rospy.wait_for_service('set_states', timeout=5)
-        print("service found, calling service...")
-        try:
-            set_states_service = rospy.ServiceProxy('set_states', set_states)
-            req = set_statesRequest()
-            if x is not None and y is not None:
-                req.x = x
-                req.y = y
-            else:
-                req.x = -200
-                req.y = -200
-            res = set_states_service(req)
-            if not res.success:
-                print("Failed to send set states command")
-            print("Set_states service call successful. shape: ", self.state_refs_np.shape)
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+        if self.server is None:
+            print("set states service called, waiting for service...")
+            rospy.wait_for_service('set_states', timeout=5)
+            print("service found, calling service...")
+            try:
+                set_states_service = rospy.ServiceProxy('set_states', set_states)
+                req = set_statesRequest()
+                if x is not None and y is not None:
+                    req.x = x
+                    req.y = y
+                else:
+                    req.x = -200
+                    req.y = -200
+                res = set_states_service(req)
+                if not res.success:
+                    print("Failed to send set states command")
+                print("Set_states service call successful. shape: ", self.state_refs_np.shape)
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
+        else:
+            print("set states service called")
+            try:
+                if self.server.utility_node_client.socket is None:
+                    return
+                if x is not None and y is not None:
+                    self.server.utility_node_client.send_set_states_srv(x, y)
+                else:
+                    self.server.utility_node_client.send_set_states_srv(-200.0, -200.0)
+                max_retries = 50
+                retries = 0
+                while (retries < max_retries):
+                    if self.server.utility_node_client.set_states_srv_msg.success:
+                        print("Successful set_states service call")
+                        return
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to set states")
+            except Exception as e:
+                raise e
 
     def call_start_service(self, start):
         print("service call")
-        rospy.wait_for_service("/start_bool", timeout=5)
-        try:
-            # Create a service proxy
-            service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
-            request = SetBoolRequest()
-            request.data = start
-            # Call the service
-            response = service_proxy(request)
-            if response.success:
-                rospy.loginfo("Service call succeeded!")
-            else:
-                rospy.logerr("Service call failed!")
-        except rospy.ServiceException as e:
-            print("Service call failed:", e)
+        if self.server is None:
+            rospy.wait_for_service("/start_bool", timeout=5)
+            try:
+                # Create a service proxy
+                service_proxy = rospy.ServiceProxy("/start_bool", SetBool)
+                request = SetBoolRequest()
+                request.data = start
+                # Call the service
+                response = service_proxy(request)
+                if response.success:
+                    rospy.loginfo("Service call succeeded!")
+                else:
+                    rospy.logerr("Service call failed!")
+            except rospy.ServiceException as e:
+                print("Service call failed:", e)
+        else:
+            try:
+                if self.server.utility_node_client.socket is None:
+                    return
+                self.server.utility_node_client.send_start_srv(not self.started)
+                max_retries = 50
+                retries = 0
+                while (retries < max_retries):
+                    if self.server.utility_node_client.start_srv_msg:
+                        print("Successful start/stop service call")
+                        return
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to start/stop")
+            except Exception as e:
+                raise e
 
     # ROS callback functions
     def lane_callback(self, msg):
@@ -738,8 +804,8 @@ class OpenCVGuiApp(QWidget):
     def depth_callback(self, msg):
         if not self.show_depth:
             return
-        depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-        # depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
+        # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+        depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
         # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
         # Apply normalization with a focus on closer objects
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
@@ -787,23 +853,45 @@ class OpenCVGuiApp(QWidget):
         self.show_depth = not self.show_depth
 
     def call_waypoint_service(self, vref_name, path_name, x0, y0, yaw0):
-        rospy.wait_for_service('waypoint_path', timeout=5)
-        try:
-            waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
-            req = waypointsRequest()
-            req.vrefName = vref_name
-            req.pathName = path_name
-            req.x0 = x0
-            req.y0 = y0
-            req.yaw0 = yaw0
+        if self.server is None:
+            rospy.wait_for_service('waypoint_path', timeout=5)
+            try:
+                waypoint_path_service = rospy.ServiceProxy('waypoint_path', waypoints)
+                req = waypointsRequest()
+                req.vrefName = vref_name
+                req.pathName = path_name
+                req.x0 = x0
+                req.y0 = y0
+                req.yaw0 = yaw0
 
-            res = waypoint_path_service(req)
+                res = waypoint_path_service(req)
 
-            self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-            self.attributes_np = np.array(res.wp_attributes.data)
-            print("Service call successful.")
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call failed: {e}")
+                self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                self.attributes_np = np.array(res.wp_attributes.data)
+                print("Service call successful.")
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call failed: {e}")
+        else:
+            try:
+                print("Waiting for control node client to connect")
+                while self.server.utility_node_client.socket is None:
+                    time.sleep(0.1)
+                req = waypointsRequest()
+                self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
+                max_retries = 50
+                retries = 0
+                res = self.server.utility_node_client.waypoints_srv_msg
+                while (retries < max_retries):
+                    if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
+                        self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                        self.attributes_np = np.array(res.wp_attributes.data)
+                        print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                        return
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to send waypoints service call")
+            except Exception as e:
+                raise e
 
     def illustrate_path(self, image):
         if self.state_refs_np is None or self.attributes_np is None:
@@ -1155,9 +1243,52 @@ class OpenCVGuiApp(QWidget):
                 pen
             )
 
+def callbacks(gui, server):
+    while True:
+        # Image rgb
+        if server.rgb_stream.frame is not None:
+            gui.camera_callback(server.rgb_stream.frame)
+        # Image depth
+        if server.depth_stream.frame is not None:
+            gui.depth_callback(server.depth_stream.frame)
+        if server.sign_node_client.socket is not None:
+            # Signs
+            if server.sign_node_client.signs:
+                gui.sign_callback(server.sign_node_client.signs.pop(0))
+        if server.utility_node_client.socket is not None:
+            # Lane2
+            if server.utility_node_client.lane2.header is not None:
+                gui.lane_callback(server.utility_node_client.lane2)
+            # Road object
+            if server.utility_node_client.road_objects:
+                gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
+            # Waypoints
+            if server.utility_node_client.waypoints:
+                gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
+            # Messages
+            if server.utility_node_client.messages:
+                gui.message_callback(server.utility_node_client.messages.pop(0))
+            # Set params
+            if server.utility_node_client.triggers.msgs:
+                req, res = server.utility_node_client.triggers.msgs.pop(0)
+                response = gui.update_params(req)
+                server.utility_node_client.send_trigger(TriggerRequest(), response)
+
+        time.sleep(0.016)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='OpenCV GUI')
+    parser.add_argument('--use_tcp', action='store_true', help='Use TCP for communication instead of ROS')
+    args = parser.parse_args()
+    use_tcp = args.use_tcp
+    if use_tcp:
+        server = Server()
+        server.initialize()
+    else: 
+        server = None
     app = QApplication(sys.argv)
-    window = OpenCVGuiApp()
+    window = OpenCVGuiApp(server=server)
+    if use_tcp:
+        threading.Thread(target=callbacks, args=(window, server,), daemon=True).start()
     window.show()
     sys.exit(app.exec_())
