@@ -386,6 +386,8 @@ class OpenCVGuiApp(QWidget):
         y_init = rospy.get_param('/y_init', default=3)
         yaw_init = rospy.get_param('/yaw_init', default=0)
         path_name = rospy.get_param('/pathName', default='run1')
+
+        # Service calls
         self.initial_waypoint_srv_call = threading.Thread(
             target=self.call_waypoint_service,
             args=('25', path_name, x_init, y_init, yaw_init),
@@ -561,7 +563,7 @@ class OpenCVGuiApp(QWidget):
 
     def reset_yaw(self):
         self.call_set_states_service()
-    
+
     def save_path(self):
         path = os.path.dirname(os.path.abspath(__file__))
         np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
@@ -676,8 +678,8 @@ class OpenCVGuiApp(QWidget):
         for i in range(self.numObj):
             try:
                 id = int(self.detected_objects[10 * i + 6])
-            except:
-                print("Error in sign detection")
+            except Exception as e:
+                print(e)
                 return
             if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
                 continue
@@ -731,7 +733,7 @@ class OpenCVGuiApp(QWidget):
             # Continue with processing
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
-            
+
             # Convert BGR to RGB
             rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
             rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))

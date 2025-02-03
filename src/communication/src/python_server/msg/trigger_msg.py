@@ -24,17 +24,20 @@ class TriggerMsg:
         self.msgs.append((request, response))
 
     def encode(self, request, response):
+        self.num_elements = 0
         data_bytes = []
         request_buff = io.BytesIO()
         response_buff = io.BytesIO()
         request.serialize(request_buff)
-        response.serialize(request_buff)
+        response.serialize(response_buff)
         if len(request_buff.getvalue()) > 0:
             data_bytes.append(request_buff.getvalue())
             self.num_elements += 1
         if len(response_buff.getvalue()) > 0:
             data_bytes.append(response_buff.getvalue())
             self.num_elements += 1
+        request_buff.seek(0)
+        response_buff.seek(0)
         data_lengths = [len(element) for element in data_bytes]
         data_length = sum(data_lengths)
         lengths_length = (self.num_elements + 1) * self.bytes_length

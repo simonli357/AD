@@ -171,10 +171,8 @@ public:
                 double x0 = utils.tcp_client->get_waypoints_srv_msgs().front()->x0;
                 double y0 = utils.tcp_client->get_waypoints_srv_msgs().front()->y0;
                 double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front()->yaw0;
-                utils::waypoints srv = path_manager.call_waypoint_service(x0, y0, yaw0);
-                path_manager.set_params(utils.tcp_client);
+                path_manager.call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
                 utils.tcp_client->get_waypoints_srv_msgs().pop();
-                utils.tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
@@ -196,7 +194,7 @@ public:
         utils.get_states(x, y, yaw);
         utils.update_states(x_current);
         utils.debug("start(): x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", yaw=" + std::to_string(yaw), 2);
-        path_manager.call_waypoint_service(x, y, yaw);
+        path_manager.call_waypoint_service(x, y, yaw, utils.tcp_client);
         destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
         utils.debug("initialize(): start: " + std::to_string(x) + ", " + std::to_string(y), 2);
         utils.debug("initialize(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
