@@ -67,16 +67,16 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	const uint32_t MAX_DGRAM = 65507;
-    const std::chrono::milliseconds udp_throttle = std::chrono::milliseconds(16);
+	const std::chrono::milliseconds UDP_THROTTLE{16};
 	bool alive = true;
 	bool connected = false;
 	bool tcp_can_send = false;
 	sockaddr_in tcp_address;
-    sockaddr_in udp_address;
+	sockaddr_in udp_address;
 	sockaddr_in udp_rgb_address;
 	sockaddr_in udp_depth_address;
 	int tcp_socket;
-    int udp_socket;
+	int udp_socket;
 	int udp_rgb_socket;
 	int udp_depth_socket;
 	std::thread receive;
@@ -84,7 +84,7 @@ class TcpClient {
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
-    std::map<uint8_t, std::chrono::steady_clock::time_point> udp_cooldowns;
+	std::map<uint8_t, std::chrono::steady_clock::time_point> udp_cooldowns;
 	// Storage
 	std::queue<std::string> strings;
 	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
@@ -101,7 +101,7 @@ class TcpClient {
 	void set_udp_data_types();
 	void poll_connection();
 	void listen();
-    bool udp_can_send(uint8_t datatype);
+	bool udp_can_send(uint8_t datatype);
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_go_to_srv(std::vector<uint8_t> &bytes);
