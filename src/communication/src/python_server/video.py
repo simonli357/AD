@@ -16,10 +16,9 @@ class VideoConnection:
     def receive(self):
         while True:
             seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-            bytes = seg[1:]
-            if len(bytes) == 0:
+            if len(seg) == 0:
                 continue
-            self.frame = self.parse_image(bytes)
+            self.frame = self.parse_image(seg)
 
     def parse_image(self, bytes):
         try:
