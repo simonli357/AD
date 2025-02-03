@@ -1179,20 +1179,20 @@ def callbacks(gui, server):
         # Image depth
         if server.depth_stream.frame is not None:
             gui.depth_callback(server.depth_stream.frame)
-        if server.sign_node_client.socket is not None:
-            # Signs
-            if server.sign_node_client.signs:
-                gui.sign_callback(server.sign_node_client.signs.pop(0))
+        # Lane2
+        if server.udp_connection.lane2.header is not None:
+            gui.lane_callback(server.udp_connection.lane2)
+        # Road object
+        if server.udp_connection.road_object is not None:
+            gui.road_objects_callback(server.udp_connection.road_object)
+        # Waypoints
+        if server.udp_connection.waypoint is not None:
+            gui.waypoint_callback(server.udp_connection.waypoint)
+        # Signs
+        if server.udp_connection.sign is not None:
+            gui.sign_callback(server.udp_connection.sign)
+
         if server.utility_node_client.socket is not None:
-            # Lane2
-            if server.utility_node_client.lane2.header is not None:
-                gui.lane_callback(server.utility_node_client.lane2)
-            # Road object
-            if server.utility_node_client.road_objects:
-                gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
-            # Waypoints
-            if server.utility_node_client.waypoints:
-                gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
             # Messages
             if server.utility_node_client.messages:
                 gui.message_callback(server.utility_node_client.messages.pop(0))

@@ -1,46 +1,36 @@
 import threading
 import struct
 from collections import OrderedDict
-from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import String
 from python_server.service_calls.go_to_srv import GoToSrv
 from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
 from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
-from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.trigger_msg import TriggerMsg
 
 
-class Connection:
+class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
         if client_socket is not None:
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
-                b'\x02': self.parse_lane2,
-                b'\x03': self.parse_trigger,
-                b'\x04': self.parse_road_object,
-                b'\x05': self.parse_waypoint,
-                b'\x06': self.parse_sign,
-                b'\x07': self.parse_message,
-                b'\x08': self.parse_go_to_srv,
-                b'\x09': self.parse_go_to_cmd_srv,
-                b'\x0a': self.parse_set_states_srv,
-                b'\x0b': self.parse_waypoints_srv,
-                b'\x0c': self.parse_start_srv,
+                b'\x02': self.parse_trigger,
+                b'\x03': self.parse_message,
+                b'\x04': self.parse_go_to_srv,
+                b'\x05': self.parse_go_to_cmd_srv,
+                b'\x06': self.parse_set_states_srv,
+                b'\x07': self.parse_waypoints_srv,
+                b'\x08': self.parse_start_srv,
             })
             self.types = list(self.data_actions.keys())
             self.strings = []
-            self.lane2 = Lane2Msg(b'\x02')
-            self.triggers = TriggerMsg(b'\x03')
-            self.road_objects = []
-            self.waypoints = []
-            self.signs = []
+            self.triggers = TriggerMsg(b'\x02')
             self.messages = []
-            self.go_to_srv_msg = GoToSrv(b'\x08')
-            self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x09')
-            self.set_states_srv_msg = SetStatesSrv(b'\x0a')
-            self.waypoints_srv_msg = WaypointsSrv(b'\x0b')
+            self.go_to_srv_msg = GoToSrv(b'\x04')
+            self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
+            self.set_states_srv_msg = SetStatesSrv(b'\x06')
+            self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
             threading.Thread(target=self.receive, daemon=True).start()
             self.send_string("ack")
@@ -102,39 +92,15 @@ class Connection:
         str = "start" if start else "stop"
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
-        bytes = length + self.types[11] + data
+        bytes = length + self.types[7] + data
         self.socket.sendall(bytes)
 
     def parse_string(self, bytes):
         self.strings.append(bytes.decode('utf-8'))
 
-    def parse_lane2(self, bytes):
-        try:
-            self.lane2.decode(bytes)
-        except Exception as e:
-            print(e)
-
     def parse_trigger(self, bytes):
         try:
             self.triggers.decode(bytes)
-        except Exception as e:
-            print(e)
-
-    def parse_road_object(self, bytes):
-        try:
-            self.road_objects.append(Float32MultiArray().deserialize(bytes))
-        except Exception as e:
-            print(e)
-
-    def parse_waypoint(self, bytes):
-        try:
-            self.waypoints.append(Float32MultiArray().deserialize(bytes))
-        except Exception as e:
-            print(e)
-
-    def parse_sign(self, bytes):
-        try:
-            self.signs.append(Float32MultiArray().deserialize(bytes))
         except Exception as e:
             print(e)
 
