@@ -10,7 +10,6 @@ real:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
-  use_lane: false
   has_light: false
   change_lane_offset_scaler: 0.9
   sigma_delta: 10 # degrees
@@ -55,9 +54,8 @@ sim:
   parking_base_thresh: 0.1
   NORMAL_SPEED: 0.23
   FAST_SPEED: 0.4
-  lane_relocalize: true
-  sign_relocalize: true
+  lane_relocalize: false
+  sign_relocalize: false
   intersection_relocalize: false
-  use_lane: false
   has_light: false
   change_lane_offset_scaler: 1.3
