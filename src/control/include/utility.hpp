@@ -413,15 +413,15 @@ public:
 
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
-        static int count = 0;
-        
+        static bool first = true;
+        static bool use_pid = false;
         if (serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
 
-        if (count == 0) {
-            count = 1;
+        if (first && use_pid) {
+            first = false;
         
             float f_active = 1.0;
             float f_proportional = 1.25;
@@ -436,19 +436,12 @@ public:
             
             boost::asio::write(*serial, boost::asio::buffer(pid_str.str()));
         }
-        if (count == 1) {
-            count++;
-            std::stringstream strs;
-            char buff[100];
-            snprintf(buff, sizeof(buff), "%.4f:%.4f;;\r\n", 0.25 * 100, -20.5);
-            strs << "#" << "13" << ":" << buff;
-            boost::asio::write(*serial, boost::asio::buffer(strs.str()));
-            return;
-        } else return;
+
         if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
+        std::string number = use_pid ? "13" : "11";
         strs << "#" << "13" << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
