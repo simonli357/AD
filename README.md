@@ -146,7 +146,7 @@ This package contains firmware modified from Bosch’s provided code to interfac
 - cd to where the simulator workspace is located.
 ```bash
 source devel/setup.bash
-roslaunch sim_pkgs run3.launch
+roslaunch sim_pkg run3.launch
 ```
 
 #### Run Path Planner Server
@@ -166,7 +166,7 @@ roslaunch control controller.launch sign:=true v:=25 use_tcp:=true ip:=127.0.0.1
 
 #### Start GUI
 ```bash
-rosrun perception gui2.py
+rosrun gui gui2.py
 ```
 Press **start** to follow the planned path. To change the path, **double-click on a destination** and press **goto**. 
 
@@ -191,7 +191,7 @@ roslaunch control controller.launch sign:=true lane:=true v:=25 real:=true use_t
 
 #### Start GUI
 ```bash
-rosrun perception gui2.py
+rosrun gui gui2.py
 ```
 - run this on another computer to see what the car is doing.
 
