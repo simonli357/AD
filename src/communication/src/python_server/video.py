@@ -5,9 +5,9 @@ from cv_bridge import CvBridge
 
 
 class VideoConnection:
-    def __init__(self, client_socket=None, encoding=None):
-        if client_socket is not None:
-            self.socket = client_socket
+    def __init__(self, udp_socket=None, encoding=None):
+        if udp_socket is not None:
+            self.socket = udp_socket
             self.encoding = encoding
             self.frame = None
             self.MAX_DGRAM = 65507
