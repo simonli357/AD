@@ -120,6 +120,10 @@ public:
         x_state[2] = 0.0;
         x_state[3] = 0.0;
         x_state[4] = 0.0;
+        x_state[5] = 0.0;
+        x_state[6] = 0.0;
+        u_current[0] = 0.0;
+        u_current[1] = 0.0;
     }
     MPC(): MPC(0.125, 40, 0.25) {}
     ~MPC() {
@@ -136,7 +140,7 @@ public:
     }
 
     int status; // acados operation state
-    double x_state[5];
+    double x_state[7];
     double u_current[2];
     int N, nx, nu, iter = 0;
     int v_ref_int;
@@ -209,15 +213,16 @@ public:
         */
         
         int idx = 0;
+        // --- Set terminal cost (stage N) ---
+        static double x_ref_terminal[3] = {0.0};
         for(int i=0; i<3; i++) {
-            // x_state[i] = (*state_refs_ptr)(target_waypoint_index, i);
-            x_state[i] = state_refs(0, i);
+            x_ref_terminal[i] = state_refs(0, i);
         }
-        x_state[3] = 0.0; // v ref is 0
-        x_state[4] = 0.0; // steer is 0
+        x_ref_terminal[3] = 0.0; // v ref is 0
+        x_ref_terminal[4] = 0.0; // steer is 0
 
         // Set the reference trajectory for the optimization problem
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", x_state);
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", x_ref_terminal);
 
         // Set the reference trajectory for next N steps
         for (int j = 0; j < N; ++j) {
@@ -236,8 +241,12 @@ public:
                     x_state[i + 3] = input_refs(idx + j, i);
                 }
             }
-            x_state[4] = 0.0; // set steer rate to 0
+            x_state[4] = 0.0; // set steer reference to 0
+            // Delta_u terms (penalize change from previous control)
+            x_state[5] = 0.0; // delta_v_ref (always 0)
+            x_state[6] = 0.0; // delta_steer_ref (always 0)
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, j, "yref", x_state);
+            mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2);
         }
 
         // Set the constraints for the current state
@@ -257,7 +266,7 @@ public:
             return 1; 
         }
 
-        // Get the optimal control for the next step
+        // get the optimal control for the next step
         ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, 0, "u", &u_current);
 
         return 0;

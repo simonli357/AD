@@ -1,7 +1,7 @@
 {
     "acados_include_path": "/home/slsecret/acados/include",
     "acados_lib_path": "/home/slsecret/acados/lib",
-    "code_export_directory": "/home/slsecret/AD/src/planning/scripts/c_generated_code",
+    "code_export_directory": "/home/slsecret/AD/c_generated_code",
     "constraints": {
         "C": [],
         "C_e": [],
@@ -108,11 +108,157 @@
         "usphi_e": []
     },
     "cost": {
-        "Vu": [],
-        "Vu_0": [],
-        "Vx": [],
-        "Vx_0": [],
-        "Vx_e": [],
+        "Vu": [
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ]
+        ],
+        "Vu_0": [
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0
+            ]
+        ],
+        "Vx": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ]
+        ],
+        "Vx_0": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0
+            ]
+        ],
+        "Vx_e": [
+            [
+                1.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                1.0
+            ]
+        ],
         "Vz": [],
         "Vz_0": [],
         "W": [
@@ -157,7 +303,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.0,
+                0.2,
                 0.0,
                 0.0
             ],
@@ -222,7 +368,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.0,
+                0.2,
                 0.0,
                 0.0
             ],
@@ -271,9 +417,9 @@
         "cost_ext_fun_type": "casadi",
         "cost_ext_fun_type_0": "casadi",
         "cost_ext_fun_type_e": "casadi",
-        "cost_type": "NONLINEAR_LS",
-        "cost_type_0": "NONLINEAR_LS",
-        "cost_type_e": "NONLINEAR_LS",
+        "cost_type": "LINEAR_LS",
+        "cost_type_0": "LINEAR_LS",
+        "cost_type_e": "LINEAR_LS",
         "yref": [
             0.0,
             0.0,
@@ -320,7 +466,7 @@
         "nh": 0,
         "nh_0": 0,
         "nh_e": 0,
-        "np": 2,
+        "np": 0,
         "nphi": 0,
         "nphi_0": 0,
         "nphi_e": 0,
@@ -377,9 +523,9 @@
         "cost_r_in_psi_expr": null,
         "cost_r_in_psi_expr_0": null,
         "cost_r_in_psi_expr_e": null,
-        "cost_y_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
-        "cost_y_expr_0": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
-        "cost_y_expr_e": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
+        "cost_y_expr": null,
+        "cost_y_expr_0": null,
+        "cost_y_expr_e": null,
         "disc_dyn_expr": null,
         "dyn_disc_fun": null,
         "dyn_disc_fun_jac": null,
@@ -394,7 +540,7 @@
         },
         "name": "mobile_robot_25",
         "nu_original": null,
-        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
+        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "t": [],
         "u": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
         "x": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
@@ -402,10 +548,7 @@
         "z": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     "name": "mobile_robot_25",
-    "parameter_values": [
-        0.0,
-        0.0
-    ],
+    "parameter_values": [],
     "problem_class": "OCP",
     "shared_lib_ext": ".so",
     "solver_options": {
