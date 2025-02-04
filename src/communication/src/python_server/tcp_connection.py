@@ -13,7 +13,7 @@ class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
         if client_socket is not None:
-            self.socket.settimeout(None)
+            self.socket.setblocking(False)
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
                 b'\x02': self.parse_trigger,
@@ -46,7 +46,7 @@ class TcpConnection:
                 data += chunk
             return data
         except Exception as e:
-            print(e)
+            # print(e)
             return data
 
     def receive(self):
@@ -62,7 +62,7 @@ class TcpConnection:
                             continue
                         break
                     except Exception as e:
-                        print(e)
+                        # print(e)
                         continue
                 length = struct.unpack('<I', header[:message_size])[0]
                 message_type = header[message_size:header_size]
@@ -72,7 +72,7 @@ class TcpConnection:
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
             except Exception as e:
-                print(e)
+                # print(e)
                 continue
 
     ###################
