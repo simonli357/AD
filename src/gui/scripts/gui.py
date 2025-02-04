@@ -1269,10 +1269,10 @@ def callbacks(gui, server):
         if server.utility_node_client.socket is not None:
             # Messages
             if server.utility_node_client.messages:
-                gui.message_callback(server.utility_node_client.messages.pop(0))
+                gui.message_callback(server.utility_node_client.messages.popleft())
             # Set params
             if server.utility_node_client.triggers.msgs:
-                req, res = server.utility_node_client.triggers.msgs.pop(0)
+                req, res = server.utility_node_client.triggers.msgs.popleft()
                 response = gui.update_params(req)
                 server.utility_node_client.send_trigger(TriggerRequest(), response)
 
