@@ -75,6 +75,10 @@ class TcpConnection:
                 print(e)
                 continue
 
+    ###################
+    # Encode
+    ###################
+
     def send_string(self, str):
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
@@ -100,6 +104,10 @@ class TcpConnection:
     def send_waypoints_srv(self, pathName, vrefName, x0, y0, yaw0):
         bytes = self.waypoints_srv_msg.encode(pathName, vrefName, x0, y0, yaw0)
         self.socket.sendall(bytes)
+
+    ###################
+    # Decode
+    ###################
 
     def send_start_srv(self, start):
         str = "start" if start else "stop"

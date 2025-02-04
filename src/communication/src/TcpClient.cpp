@@ -335,7 +335,7 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 	std::vector<uchar> image;
 	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 70});
 	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_DGRAM);
+	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM);
         std::memcpy(segment.data(), &length, message_size);
@@ -350,7 +350,7 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	std::vector<uchar> image;
 	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 1000});
 	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_DGRAM);
+	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM);
         std::memcpy(segment.data(), &length, message_size);
