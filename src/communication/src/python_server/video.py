@@ -15,10 +15,13 @@ class VideoConnection:
 
     def receive(self):
         while True:
-            seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-            if len(seg) == 0:
-                continue
-            self.frame = self.parse_image(seg)
+            try:
+                seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
+                if len(seg) == 0:
+                    continue
+                self.frame = self.parse_image(seg)
+            except Exception as e:
+                print(e)
 
     def parse_image(self, bytes):
         try:

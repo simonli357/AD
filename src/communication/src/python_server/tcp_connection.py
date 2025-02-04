@@ -13,6 +13,7 @@ class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
         if client_socket is not None:
+            self.socket.settimeout(None)
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
                 b'\x02': self.parse_trigger,
@@ -37,30 +38,42 @@ class TcpConnection:
 
     def recvall(self, length):
         data = b""
-        while len(data) < length:
-            chunk = self.socket.recv(min(4096, length - len(data)))
-            if not chunk:
-                raise ConnectionError("Connection lost")
-            data += chunk
-        return data
+        try:
+            while len(data) < length:
+                chunk = self.socket.recv(min(4096, length - len(data)))
+                if not chunk:
+                    raise ConnectionError("Connection lost")
+                data += chunk
+            return data
+        except Exception as e:
+            print(e)
+            return data
 
     def receive(self):
         header_size = 5
         message_size = 4
         while True:
-            # Receive the header (5 bytes)
-            while True:
-                header = self.socket.recv(header_size)
-                if len(header) < header_size:
-                    continue
-                break
-            length = struct.unpack('<I', header[:message_size])[0]
-            message_type = header[message_size:header_size]
-            # Receive the data based on the length from the header
-            data = self.recvall(length)
-            # Process the data
-            if message_type in self.data_actions:
-                self.data_actions[message_type](data)
+            try:
+                # Receive the header (5 bytes)
+                while True:
+                    try:
+                        header = self.socket.recv(header_size)
+                        if len(header) < header_size:
+                            continue
+                        break
+                    except Exception as e:
+                        print(e)
+                        continue
+                length = struct.unpack('<I', header[:message_size])[0]
+                message_type = header[message_size:header_size]
+                # Receive the data based on the length from the header
+                data = self.recvall(length)
+                # Process the data
+                if message_type in self.data_actions:
+                    self.data_actions[message_type](data)
+            except Exception as e:
+                print(e)
+                continue
 
     def send_string(self, str):
         data = str.encode('utf-8')
