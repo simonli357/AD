@@ -13,6 +13,7 @@ class UdpConnection:
         self.socket = udp_socket
         self.MAX_DGRAM = 65507
         if udp_socket is not None:
+            self.socket.setblocking(False)
             self.data_actions = OrderedDict({
                 1: self.store_lane2,
                 2: self.store_road_object,
@@ -50,7 +51,7 @@ class UdpConnection:
                 if message_type in self.data_actions:
                     self.data_actions[message_type](bytes)
             except Exception as e:
-                print(e)
+                # print(e)
                 continue
 
     def process(self):
