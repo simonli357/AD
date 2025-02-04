@@ -84,7 +84,6 @@ class TcpClient {
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
-	std::map<uint8_t, std::chrono::steady_clock::time_point> udp_cooldowns;
 	// Storage
 	std::queue<std::string> strings;
 	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
@@ -101,7 +100,6 @@ class TcpClient {
 	void set_udp_data_types();
 	void poll_connection();
 	void listen();
-	bool udp_can_send(uint8_t datatype);
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_go_to_srv(std::vector<uint8_t> &bytes);

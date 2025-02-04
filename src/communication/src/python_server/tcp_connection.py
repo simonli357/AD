@@ -1,6 +1,6 @@
 import threading
 import struct
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from std_msgs.msg import String
 from python_server.service_calls.go_to_srv import GoToSrv
 from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
@@ -25,9 +25,9 @@ class TcpConnection:
                 b'\x08': self.parse_start_srv,
             })
             self.types = list(self.data_actions.keys())
-            self.strings = []
+            self.strings = deque()
             self.triggers = TriggerMsg(b'\x02')
-            self.messages = []
+            self.messages = deque()
             self.go_to_srv_msg = GoToSrv(b'\x04')
             self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
