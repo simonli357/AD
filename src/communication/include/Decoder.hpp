@@ -55,30 +55,29 @@ std::vector<std::vector<uint8_t>> Decoder<T>::split(std::vector<uint8_t> &bytes)
 template <typename T>
 int32_t Decoder<T>::int32_t_from_bytes(std::vector<uint8_t> &bytes) {
     uint32_t i;
-    std::memcpy(&i, bytes.data(), bytes.size());
+    std::memcpy(&i, bytes.data(), sizeof(i));
     return i;
 }
 
 template <typename T>
 double Decoder<T>::double_from_bytes(std::vector<uint8_t> &bytes) {
-	std::string double_str(bytes.begin(), bytes.end());
     double d;
-    std::istringstream(double_str) >> d;
+    std::memcpy(&d, bytes.data(), sizeof(d));
     return d;
 }
 
 template <typename T>
 float Decoder<T>::float_from_bytes(std::vector<uint8_t> &bytes) {
-	std::string float_str(bytes.begin(), bytes.end());
-    float d;
-    std::istringstream(float_str) >> d;
-    return d;
+    float f;
+    std::memcpy(&f, bytes.data(), sizeof(f));
+    return f;
 }
 
 template <typename T>
 bool Decoder<T>::bool_from_bytes(std::vector<uint8_t> &bytes) {
-	std::string bool_str(bytes.begin(), bytes.end());
-    return bool_str == "true";
+    bool b;
+    std::memcpy(&b, bytes.data(), sizeof(b));
+    return b;
 }
 
 template <typename T>

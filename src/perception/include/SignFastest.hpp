@@ -60,7 +60,7 @@ class SignFastest {
                     ROS_ERROR("Failed to get 'ip_address' parameter. TCP client not created.");
                     tcp_client = nullptr;
                 } else {
-                    tcp_client = std::make_unique<TcpClient>(1024, "sign_node_client", ip_address);
+                    tcp_client = std::make_unique<TcpClient>(4096, "sign_node_client", ip_address);
                     ROS_INFO("TCP client created successfully.");
                 }
             } else {
