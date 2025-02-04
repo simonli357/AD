@@ -16,12 +16,15 @@ class GoToCmdSrv:
         self.success = False
 
     def decode(self, bytes):
-        splits = decoder.split(bytes)
-        self.state_refs.deserialize(splits[0])
-        self.input_refs.deserialize(splits[1])
-        self.wp_attributes.deserialize(splits[2])
-        self.wp_normals.deserialize(splits[3])
-        self.success = splits[4] == b'\x01'
+        try:
+            splits = decoder.split(bytes)
+            self.state_refs.deserialize(splits[0])
+            self.input_refs.deserialize(splits[1])
+            self.wp_attributes.deserialize(splits[2])
+            self.wp_normals.deserialize(splits[3])
+            self.success = splits[4] == b'\x01'
+        except Exception as e:
+            print(e)
 
     def encode(self, dest_x, dest_y):
         data_bytes = []

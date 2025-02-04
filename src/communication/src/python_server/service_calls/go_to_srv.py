@@ -15,11 +15,14 @@ class GoToSrv:
         self.wp_normals = Float32MultiArray()
 
     def decode(self, bytes):
-        splits = decoder.split(bytes)
-        self.state_refs.deserialize(splits[0])
-        self.input_refs.deserialize(splits[1])
-        self.wp_attributes.deserialize(splits[2])
-        self.wp_normals.deserialize(splits[3])
+        try:
+            splits = decoder.split(bytes)
+            self.state_refs.deserialize(splits[0])
+            self.input_refs.deserialize(splits[1])
+            self.wp_attributes.deserialize(splits[2])
+            self.wp_normals.deserialize(splits[3])
+        except Exception as e:
+            print(e)
 
     def encode(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
         data_bytes = []
