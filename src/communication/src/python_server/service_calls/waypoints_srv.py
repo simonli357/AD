@@ -25,9 +25,9 @@ class WaypointsSrv:
         data_bytes = []
         data_bytes.append(pathName.encode('utf-8'))
         data_bytes.append(vrefName.encode('utf-8'))
-        data_bytes.append(str(x0).encode('utf-8'))
-        data_bytes.append(str(y0).encode('utf-8'))
-        data_bytes.append(str(yaw0).encode('utf-8'))
+        data_bytes.append(struct.pack('<f', x0))
+        data_bytes.append(struct.pack('<f', y0))
+        data_bytes.append(struct.pack('<f', yaw0))
         data_lengths = [len(element) for element in data_bytes]
         data_length = sum(data_lengths)
         lengths_length = (self.num_elements + 1) * self.bytes_length
