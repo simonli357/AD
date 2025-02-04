@@ -1248,11 +1248,11 @@ class OpenCVGuiApp(QWidget):
 def callbacks(gui, server):
     while True:
         # Image rgb
-        if server.rgb_stream.frame is not None:
-            gui.camera_callback(server.rgb_stream.frame)
+        if server.udp_connection.rgb_frame is not None:
+            gui.camera_callback(server.udp_connection.rgb_frame)
         # Image depth
-        if server.depth_stream.frame is not None:
-            gui.depth_callback(server.depth_stream.frame)
+        if server.udp_connection.depth_frame is not None:
+            gui.depth_callback(server.udp_connection.depth_frame)
         # Lane2
         if server.udp_connection.lane2.header is not None:
             gui.lane_callback(server.udp_connection.lane2)

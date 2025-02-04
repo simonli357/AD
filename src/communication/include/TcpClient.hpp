@@ -73,12 +73,8 @@ class TcpClient {
 	bool tcp_can_send = false;
 	sockaddr_in tcp_address;
 	sockaddr_in udp_address;
-	sockaddr_in udp_rgb_address;
-	sockaddr_in udp_depth_address;
 	int tcp_socket;
 	int udp_socket;
-	int udp_rgb_socket;
-	int udp_depth_socket;
 	std::thread receive;
 	std::thread poll;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
@@ -94,7 +90,7 @@ class TcpClient {
 	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
 	// Utility Methods
 	void create_tcp_socket();
-	void create_udp_sockets();
+	void create_udp_socket();
 	void set_tcp_data_types();
 	void set_tcp_data_actions();
 	void set_udp_data_types();
