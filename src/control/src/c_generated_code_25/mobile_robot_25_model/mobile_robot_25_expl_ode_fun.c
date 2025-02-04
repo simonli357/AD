@@ -32,7 +32,6 @@ extern "C" {
 #define casadi_f0 CASADI_PREFIX(f0)
 #define casadi_s0 CASADI_PREFIX(s0)
 #define casadi_s1 CASADI_PREFIX(s1)
-#define casadi_s2 CASADI_PREFIX(s2)
 
 /* Symbol visibility in DLLs */
 #ifndef CASADI_SYMBOL_EXPORT
@@ -51,9 +50,8 @@ extern "C" {
 
 static const casadi_int casadi_s0[7] = {3, 1, 0, 3, 0, 1, 2};
 static const casadi_int casadi_s1[6] = {2, 1, 0, 2, 0, 1};
-static const casadi_int casadi_s2[3] = {0, 0, 0};
 
-/* mobile_robot_25_expl_ode_fun:(i0[3],i1[2],i2[])->(o0[3]) */
+/* mobile_robot_25_expl_ode_fun:(i0[3],i1[2],i2[2])->(o0[3]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a2;
   a0=arg[1]? arg[1][0] : 0;
@@ -131,7 +129,7 @@ CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_25_expl_ode_fun_sparsity_in(
   switch (i) {
     case 0: return casadi_s0;
     case 1: return casadi_s1;
-    case 2: return casadi_s2;
+    case 2: return casadi_s1;
     default: return 0;
   }
 }
