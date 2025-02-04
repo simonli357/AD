@@ -12,7 +12,6 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <algorithm>
 #include <arpa/inet.h>
 #include <cstdint>
 #include <cstring>
@@ -27,12 +26,10 @@
 
 TcpClient::TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address)
 	: buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
-	create_udp_sockets();
+	create_udp_socket();
 	set_tcp_data_types();
 	set_udp_data_types();
 	set_tcp_data_actions();
-	inet_pton(AF_INET, server_address.c_str(), &udp_rgb_address.sin_addr);	 // Default server address
-	inet_pton(AF_INET, server_address.c_str(), &udp_depth_address.sin_addr); // Default server address
 	receive = std::thread(&TcpClient::initialize, this);
 	poll = std::thread(&TcpClient::poll_connection, this);
 }
@@ -62,16 +59,11 @@ void TcpClient::create_tcp_socket() {
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
 }
 
-void TcpClient::create_udp_sockets() {
+void TcpClient::create_udp_socket() {
 	udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	udp_address.sin_family = AF_INET;
 	udp_address.sin_port = htons(49154);
-	udp_rgb_socket = socket(AF_INET, SOCK_DGRAM, 0);
-	udp_rgb_address.sin_family = AF_INET;
-	udp_rgb_address.sin_port = htons(49155);
-	udp_depth_socket = socket(AF_INET, SOCK_DGRAM, 0);
-	udp_depth_address.sin_family = AF_INET;
-	udp_depth_address.sin_port = htons(49156);
+	inet_pton(AF_INET, server_address.c_str(), &udp_address.sin_addr);
 }
 
 void TcpClient::set_tcp_data_types() {
@@ -346,8 +338,10 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM);
-		std::memcpy(segment.data(), &image[0], image.size());
-		sendto(udp_rgb_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_rgb_address, sizeof(udp_rgb_address));
+        std::memcpy(segment.data(), &length, message_size);
+        segment[4] = udp_data_types[4];
+		std::memcpy(segment.data() + header_size, &image[0], image.size());
+		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
@@ -359,8 +353,10 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM);
-		std::memcpy(segment.data(), &image[0], image.size());
-		sendto(udp_depth_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_depth_address, sizeof(udp_depth_address));
+        std::memcpy(segment.data(), &length, message_size);
+        segment[4] = udp_data_types[5];
+		std::memcpy(segment.data() + header_size, &image[0], image.size());
+		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
