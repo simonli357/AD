@@ -9,6 +9,7 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
@@ -65,20 +66,20 @@ class TcpClient {
 	const size_t buffer_size;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	const uint32_t MAX_IMAGE_DGRAM = 65507;
+	const uint32_t MAX_DGRAM = 65507;
+	const std::chrono::milliseconds UDP_THROTTLE{16};
 	bool alive = true;
 	bool connected = false;
-	bool canSend = false;
+	bool tcp_can_send = false;
 	sockaddr_in tcp_address;
-	sockaddr_in udp_rgb_address;
-	sockaddr_in udp_depth_address;
+	sockaddr_in udp_address;
 	int tcp_socket;
-	int udp_rgb_socket;
-	int udp_depth_socket;
+	int udp_socket;
 	std::thread receive;
 	std::thread poll;
-	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> data_actions;
-	std::vector<uint8_t> data_types;
+	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
+	std::vector<uint8_t> tcp_data_types;
+	std::vector<uint8_t> udp_data_types;
 	// Storage
 	std::queue<std::string> strings;
 	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
@@ -87,10 +88,12 @@ class TcpClient {
 	std::queue<std::unique_ptr<WaypointsSrv>> waypoints_srv_msgs;
 	std::queue<bool> start_srv_msgs;
 	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
-	// Methods
+	// Utility Methods
 	void create_tcp_socket();
-	void set_data_types();
-	void set_data_actions();
+	void create_udp_socket();
+	void set_tcp_data_types();
+	void set_tcp_data_actions();
+	void set_udp_data_types();
 	void poll_connection();
 	void listen();
 	// Decode

@@ -21,8 +21,9 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 import argparse
 
+
 class OpenCVGuiApp(QWidget):
-    def __init__(self, server = None):
+    def __init__(self, server=None):
         super().__init__()
         self.server = server
         self.current_zoom = 1.0
@@ -394,7 +395,6 @@ class OpenCVGuiApp(QWidget):
             self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
         else:
             threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
-            
 
         # Objects
         # Lane
@@ -563,7 +563,7 @@ class OpenCVGuiApp(QWidget):
 
     def reset_yaw(self):
         self.call_set_states_service()
-    
+
     def save_path(self):
         path = os.path.dirname(os.path.abspath(__file__))
         np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
@@ -729,8 +729,9 @@ class OpenCVGuiApp(QWidget):
         for i in range(self.numObj):
             try:
                 id = int(self.detected_objects[10 * i + 6])
-            except:
+            except Exception as e:
                 print("Error in sign detection")
+                print(e)
                 return
             if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
                 continue
@@ -784,7 +785,7 @@ class OpenCVGuiApp(QWidget):
             # Continue with processing
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
-            
+
             # Convert BGR to RGB
             rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
             rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
@@ -805,7 +806,7 @@ class OpenCVGuiApp(QWidget):
         if not self.show_depth:
             return
         # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-        depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16") # real
+        depth_image = self.bridge.imgmsg_to_cv2(msg, "mono16")  # real
         # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
         # Apply normalization with a focus on closer objects
         depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
@@ -1003,13 +1004,13 @@ class OpenCVGuiApp(QWidget):
                 for i in range(0, len(self.waypoints) - 1, 8):
                     center = (int(self.waypoints[i] / 20.696 * image.shape[1]), int((13.786 - self.waypoints[i + 1]) / 13.786 * image.shape[0]))
                     cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
-            if self.detected_data is None:
+            if self.detected_data is None or len(self.detected_data) == 0:
                 return
             x = self.detected_data[0, self.road_msg_dict['x']]
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw/np.pi*180):.2f}, z: {z:.2f})')
+            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             for i in range(len(self.detected_data)):
@@ -1243,38 +1244,40 @@ class OpenCVGuiApp(QWidget):
                 pen
             )
 
+
 def callbacks(gui, server):
     while True:
         # Image rgb
-        if server.rgb_stream.frame is not None:
-            gui.camera_callback(server.rgb_stream.frame)
+        if server.udp_connection.rgb_frame is not None:
+            gui.camera_callback(server.udp_connection.rgb_frame)
         # Image depth
-        if server.depth_stream.frame is not None:
-            gui.depth_callback(server.depth_stream.frame)
-        if server.sign_node_client.socket is not None:
-            # Signs
-            if server.sign_node_client.signs:
-                gui.sign_callback(server.sign_node_client.signs.pop(0))
+        if server.udp_connection.depth_frame is not None:
+            gui.depth_callback(server.udp_connection.depth_frame)
+        # Lane2
+        if server.udp_connection.lane2.header is not None:
+            gui.lane_callback(server.udp_connection.lane2)
+        # Road object
+        if server.udp_connection.road_object is not None:
+            gui.road_objects_callback(server.udp_connection.road_object)
+        # Waypoints
+        if server.udp_connection.waypoint is not None:
+            gui.waypoint_callback(server.udp_connection.waypoint)
+        # Signs
+        if server.udp_connection.sign is not None:
+            gui.sign_callback(server.udp_connection.sign)
+
         if server.utility_node_client.socket is not None:
-            # Lane2
-            if server.utility_node_client.lane2.header is not None:
-                gui.lane_callback(server.utility_node_client.lane2)
-            # Road object
-            if server.utility_node_client.road_objects:
-                gui.road_objects_callback(server.utility_node_client.road_objects.pop(0))
-            # Waypoints
-            if server.utility_node_client.waypoints:
-                gui.waypoint_callback(server.utility_node_client.waypoints.pop(0))
             # Messages
             if server.utility_node_client.messages:
-                gui.message_callback(server.utility_node_client.messages.pop(0))
+                gui.message_callback(server.utility_node_client.messages.popleft())
             # Set params
             if server.utility_node_client.triggers.msgs:
-                req, res = server.utility_node_client.triggers.msgs.pop(0)
+                req, res = server.utility_node_client.triggers.msgs.popleft()
                 response = gui.update_params(req)
                 server.utility_node_client.send_trigger(TriggerRequest(), response)
 
         time.sleep(0.016)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='OpenCV GUI')
@@ -1284,7 +1287,7 @@ if __name__ == '__main__':
     if use_tcp:
         server = Server()
         server.initialize()
-    else: 
+    else:
         server = None
     app = QApplication(sys.argv)
     window = OpenCVGuiApp(server=server)
