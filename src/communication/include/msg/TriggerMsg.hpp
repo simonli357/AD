@@ -29,7 +29,7 @@ class TriggerMsg : public Decoder<TriggerMsg>, public Encoder {
 
   private:
 	const size_t num_elements = 2;
-	uint32_t lengths_length = num_elements * (bytes_length + 1);
+	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;
 	uint32_t request_length;
 	uint32_t response_length;

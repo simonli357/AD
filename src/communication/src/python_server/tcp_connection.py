@@ -7,6 +7,7 @@ from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
 from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
 from python_server.msg.trigger_msg import TriggerMsg
+from python_server.msg.params_msg import ParamsMsg
 
 
 class TcpConnection:
@@ -23,6 +24,7 @@ class TcpConnection:
                 b'\x06': self.parse_set_states_srv,
                 b'\x07': self.parse_waypoints_srv,
                 b'\x08': self.parse_start_srv,
+                b'\x09': self.parse_params,
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -33,6 +35,7 @@ class TcpConnection:
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
+            self.params = ParamsMsg(b'\x09')
             threading.Thread(target=self.receive, daemon=True).start()
             self.send_string("ack")
 
@@ -124,6 +127,12 @@ class TcpConnection:
             self.triggers.decode(bytes)
         except Exception as e:
             print(e)
+
+    def parse_params(self, bytes):
+        try:
+            self.params.decode(bytes)
+        except Exception as e:
+            raise e
 
     def parse_message(self, bytes):
         try:

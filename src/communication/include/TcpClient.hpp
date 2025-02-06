@@ -1,5 +1,6 @@
 #pragma once
 
+#include "msg/ParamsMsg.hpp"
 #include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
@@ -9,7 +10,6 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
@@ -36,12 +36,13 @@ class TcpClient {
 	void initialize();
 	// Storage
 	std::queue<std::string> &get_strings();
+	std::queue<std::unique_ptr<TriggerMsg>> &get_trigger_msgs();
+	std::queue<std::unique_ptr<ParamsMsg>> &get_params_msgs();
 	std::queue<std::unique_ptr<GoToSrv>> &get_go_to_srv_msgs();
 	std::queue<std::unique_ptr<GoToCmdSrv>> &get_go_to_cmd_srv_msgs();
 	std::queue<std::unique_ptr<SetStatesSrv>> &get_set_states_srv_msgs();
 	std::queue<std::unique_ptr<WaypointsSrv>> &get_waypoints_srv_msgs();
 	std::queue<bool> &get_start_srv_msgs();
-	std::queue<std::unique_ptr<TriggerMsg>> &get_trigger_msgs();
 	// Encode
 	void send_type(std::string &str);
 	void send_string(std::string &str);
@@ -52,12 +53,13 @@ class TcpClient {
 	void send_waypoint(Float32MultiArray &array);
 	void send_sign(Float32MultiArray &array);
 	void send_message(String &msg);
+	void send_trigger(std_srvs::Trigger &trigger);
+    void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);
 	void send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
 	void send_set_states_srv(bool success);
 	void send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
-	void send_trigger(std_srvs::Trigger &trigger);
 
   private:
 	// Fields
@@ -67,7 +69,6 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	const uint32_t MAX_DGRAM = 65507;
-	const std::chrono::milliseconds UDP_THROTTLE{16};
 	bool alive = true;
 	bool connected = false;
 	bool tcp_can_send = false;
@@ -82,12 +83,13 @@ class TcpClient {
 	std::vector<uint8_t> udp_data_types;
 	// Storage
 	std::queue<std::string> strings;
+	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
+	std::queue<std::unique_ptr<ParamsMsg>> params_msgs;
 	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
 	std::queue<std::unique_ptr<GoToCmdSrv>> go_to_cmd_srv_msgs;
 	std::queue<std::unique_ptr<SetStatesSrv>> set_states_srv_msgs;
 	std::queue<std::unique_ptr<WaypointsSrv>> waypoints_srv_msgs;
 	std::queue<bool> start_srv_msgs;
-	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -98,10 +100,11 @@ class TcpClient {
 	void listen();
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
+	void parse_trigger_msg(std::vector<uint8_t> &bytes);
+    void parse_params_msg(std::vector<uint8_t> &bytes);
 	void parse_go_to_srv(std::vector<uint8_t> &bytes);
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);
 	void parse_waypoints_srv(std::vector<uint8_t> &bytes);
 	void parse_start_srv(std::vector<uint8_t> &bytes);
-	void parse_trigger_msg(std::vector<uint8_t> &bytes);
 };
