@@ -553,32 +553,62 @@ def initiate_shutdown():
     rospy.signal_shutdown("Service request processed. Shutting down.")
 def visualize_waypoints2(waypoints):
     import matplotlib.pyplot as plt
-    # Extract x, y, and yaw from waypoints
+    import numpy as np
+    
+    # Extract coordinates and orientations
     x = waypoints[:, 0]
     y = waypoints[:, 1]
     yaw = waypoints[:, 2]
-    # skip every other point for better visualization
-    x = x[::32]
-    y = y[::32]
-    yaw = yaw[::32]
     
-    # Create a plot
-    plt.figure(figsize=(8, 8))
-    plt.plot(x, y, 'o', label="Waypoints Path", markersize=1, color='blue')
+    # Create figure with larger size
+    plt.figure(figsize=(12, 12))
     
-    # Add arrows for yaw
-    for i in range(len(x)):
-        dx = np.cos(yaw[i]) * 0.2  # Scale for better visualization
-        dy = np.sin(yaw[i]) * 0.2
-        plt.arrow(x[i], y[i], dx, dy, head_width=0.1, head_length=0.1, fc='red', ec='red')
+    # Plot complete path with semi-transparent line
+    plt.plot(x, y, color='royalblue', alpha=0.4, linewidth=2, label='Path')
     
-    # Label the axes
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Waypoint Visualization')
-    plt.legend()
+    # Highlight every 8th waypoint with markers and arrows
+    step = 8
+    highlight_x = x[::step]
+    highlight_y = y[::step]
+    highlight_yaw = yaw[::step]
+    
+    # Draw main waypoint markers
+    plt.scatter(highlight_x, highlight_y, s=80, c='deepskyblue', 
+                edgecolors='navy', linewidths=0.5, marker='o', 
+                label='Key Waypoints', zorder=3)
+    
+    # Add orientation arrows
+    for xi, yi, yiaw in zip(highlight_x, highlight_y, highlight_yaw):
+        dx = np.cos(yiaw) * 0.6  # Increased arrow length
+        dy = np.sin(yiaw) * 0.6
+        plt.arrow(xi, yi, dx, dy, head_width=0.4, head_length=0.4, 
+                  fc='crimson', ec='darkred', width=0.05, zorder=4)
+    
+    # Emphasize start and end points
+    start_marker = dict(color='limegreen', marker='s', s=250, 
+                        edgecolor='darkgreen', linewidth=2, zorder=5)
+    end_marker = dict(color='orangered', marker='X', s=250, 
+                      edgecolor='darkred', linewidth=2, zorder=5)
+    
+    plt.scatter(x[0], y[0], **start_marker, label='Start')
+    plt.scatter(x[-1], y[-1], **end_marker, label='End')
+    
+    # Add text annotations for start/end
+    plt.annotate('START', (x[0], y[0]), 
+                 textcoords="offset points", xytext=(10,-5),
+                 ha='left', color='darkgreen', fontweight='bold')
+    plt.annotate('END', (x[-1], y[-1]), 
+                 textcoords="offset points", xytext=(10,-5),
+                 ha='left', color='darkred', fontweight='bold')
+    
+    # Configure plot aesthetics
+    plt.title('Enhanced Waypoint Visualization', fontsize=14, pad=20)
+    plt.xlabel('X Coordinate', fontweight='bold')
+    plt.ylabel('Y Coordinate', fontweight='bold')
+    plt.legend(loc='upper right', framealpha=0.9)
+    plt.grid(True, color='gainsboro', linestyle='--')
     plt.axis('equal')
-    plt.grid()
+    plt.tight_layout()
     plt.show()
 if __name__ == "__main__":
     rospy.init_node('waypointPathServer')
@@ -593,24 +623,24 @@ if __name__ == "__main__":
         # rospy.spin()
         rate.sleep()
         
-    # current_dir = os.path.dirname(os.path.abspath(__file__))
-    # print("current_dir: ", current_dir)
-    # config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
-    # print("config_path: ", config_path)
-    # path = config_path
-    # with open(path, 'r') as f:
-    #     config = yaml.safe_load(f)
-    # T = config['T']
-    # N = config['N']
-    # constraint_name = 'constraints'
-    # cost_name = 'costs'
-    # t_horizon = T * N
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    print("current_dir: ", current_dir)
+    config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
+    print("config_path: ", config_path)
+    path = config_path
+    with open(path, 'r') as f:
+        config = yaml.safe_load(f)
+    T = config['T']
+    N = config['N']
+    constraint_name = 'constraints'
+    cost_name = 'costs'
+    t_horizon = T * N
 
-    # v_ref = config[constraint_name]['v_ref']
-    # print("v_ref: ", v_ref)
-    # x0 = np.array([0.35,2.726,-1.5708])
-    # name = "run1"
-    # path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
-    # np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
-    # visualize_waypoints2(path.state_refs)
+    v_ref = config[constraint_name]['v_ref']
+    print("v_ref: ", v_ref)
+    x0 = np.array([0.35,2.726,-1.5708])
+    name = "run221"
+    path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
+    np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
+    visualize_waypoints2(path.state_refs)
     
