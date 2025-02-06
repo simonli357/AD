@@ -94,6 +94,12 @@ class GlobalPlanner:
         else:
             raise ValueError(f"Invalid destination identifier: {identifier}")
 
+    def get_node_coordinates(self, node):
+        return np.array(self.pos[node])
+    
+    def get_distance(self, start, end):
+        return nx.dijkstra_path_length(self.G, source=start, target=end, weight='weight')
+    
     def plan_path(self, start, end):
         if not isinstance(start, str):
             start = str(start)
