@@ -390,7 +390,7 @@ class OpenCVGuiApp(QWidget):
         x_init = rospy.get_param('/x_init', default=3)
         y_init = rospy.get_param('/y_init', default=3)
         yaw_init = rospy.get_param('/yaw_init', default=0)
-        path_name = rospy.get_param('/pathName', default='run1')
+        path_name = rospy.get_param('/pathName', default='run3easy')
         if self.server is None:
             self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
         else:

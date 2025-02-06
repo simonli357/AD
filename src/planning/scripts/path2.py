@@ -532,6 +532,7 @@ def handle_array_service(req):
     v_ref = config[constraint_name]['v_ref']
     # print("v_reeeeeeeeeeeeeeefffffffffff: ", v_ref)
 
+    print("request received: ", req.pathName, ", x0: ", initial_state)
     path = Path(v_ref = v_ref, N = N, T = T, x0= initial_state, name = req.pathName)
 
     # path.illustrate_path(path.state_refs.T)
