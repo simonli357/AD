@@ -42,7 +42,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             debug("Utility constructor: ERROR: Failed to get 'ip_address' parameter. TCP client not created.", 1);
             tcp_client = nullptr;
         } else {
-            tcp_client = std::make_shared<TcpClient>(4096, "utility_node_client", ip_address);
+            tcp_client = std::make_shared<TcpClient>(262144, "utility_node_client", ip_address);
             debug("Utility constructor: TCP client created successfully.", 1);
         }
     } else {

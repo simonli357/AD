@@ -481,25 +481,51 @@ class OpenCVGuiApp(QWidget):
 
     # ROS service calls
     def update_params(self, req):
-        try:
-            # Retrieve updated parameters
-            state_refs = rospy.get_param('/state_refs')
-            self.state_refs_np = np.array(state_refs).reshape(3, -1)
+        if self.server is None:
+            try:
+                # Retrieve updated parameters
+                state_refs = rospy.get_param('/state_refs')
+                self.state_refs_np = np.array(state_refs).reshape(3, -1)
 
-            state_attributes = rospy.get_param('/state_attributes')
-            self.attributes_np = np.array(state_attributes)
+                state_attributes = rospy.get_param('/state_attributes')
+                self.attributes_np = np.array(state_attributes)
 
-            print("state ref shape: ", self.state_refs_np.shape)
-            # print first 3 rows
-            print("state ref: ", self.state_refs_np.T[:, :3])
-            path = os.path.dirname(os.path.abspath(__file__))
-            np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
-            print("saved state refs")
-            rospy.loginfo("Parameters updated successfully.")
-            return TriggerResponse(success=True, message="Parameters updated")
-        except Exception as e:
-            rospy.logerr(f"Failed to update parameters: {e}")
-            return TriggerResponse(success=False, message=f"Failed to update: {e}")
+                print("state ref shape: ", self.state_refs_np.shape)
+                # print first 3 rows
+                print("state ref: ", self.state_refs_np.T[:, :3])
+                path = os.path.dirname(os.path.abspath(__file__))
+                np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+                print("saved state refs")
+                rospy.loginfo("Parameters updated successfully.")
+                return TriggerResponse(success=True, message="Parameters updated")
+            except Exception as e:
+                rospy.logerr(f"Failed to update parameters: {e}")
+                return TriggerResponse(success=False, message=f"Failed to update: {e}")
+        else:
+            try:
+                # Retrieve updated params
+                max_retries = 50
+                retries = 0
+                params = self.server.utility_node_client.params
+                while (retries < max_retries):
+                    if (len(params.state_refs) > 0 and len(params.attributes) > 0):
+                        self.state_refs_np = params.state_refs.popleft()
+                        self.attributes_np = params.attributes.popleft()
+                        print("state ref shape: ", self.state_refs_np.shape)
+                        # print first 3 rows
+                        print("state ref: ", self.state_refs_np.T[:, :3])
+                        path = os.path.dirname(os.path.abspath(__file__))
+                        np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+                        print("saved state refs")
+                        rospy.loginfo("Parameters updated successfully.")
+                        return TriggerResponse(success=True, message="Parameters updated")
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to update params: timeout")
+                return TriggerResponse(success=False, message="Failed to update: timeout")
+            except Exception as e:
+                print(f"Failed to update parameters: {e}")
+                return TriggerResponse(success=False, message=f"Failed to update: {e}")
 
     def start(self):
         self.call_start_service(not self.started)
@@ -509,7 +535,7 @@ class OpenCVGuiApp(QWidget):
                 QPushButton {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #DC3545, stop:1 #00FF00);
-                    border: 2px solid #DC3545;  
+                    border: 2px solid #DC3545;
                     border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
