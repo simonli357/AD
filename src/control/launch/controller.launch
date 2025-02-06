@@ -56,10 +56,10 @@
   <arg name = "path" default="run1"/> -->
 
   <!-- run3 -->
-  <!-- <arg name="x0" default="4.76"/>
+  <arg name="x0" default="4.76"/>
   <arg name="y0" default="2.706"/>
   <arg name="yaw0" default="-1.5708"/>
-  <arg name = "path" default="run3easy"/> -->
+  <arg name = "path" default="run3easy"/>
 
   <!-- run107 -->
   <!-- <arg name="x0" default="2.88"/>
@@ -176,10 +176,10 @@
   <arg name = "path" default="run214"/> -->
 
   <!-- run221 -->
-  <arg name="x0" default="4.75"/>
+  <!-- <arg name="x0" default="4.75"/>
   <arg name="y0" default="5.206"/>
   <arg name="yaw0" default="-1.5708"/>
-  <arg name = "path" default="run221"/>
+  <arg name = "path" default="run221"/> -->
 
   <param name="x0" value="$(arg x0)"/>
   <param name="y0" value="$(arg y0)"/>
