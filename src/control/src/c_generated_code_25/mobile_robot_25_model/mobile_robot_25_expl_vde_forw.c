@@ -34,7 +34,6 @@ extern "C" {
 #define casadi_s1 CASADI_PREFIX(s1)
 #define casadi_s2 CASADI_PREFIX(s2)
 #define casadi_s3 CASADI_PREFIX(s3)
-#define casadi_s4 CASADI_PREFIX(s4)
 #define casadi_sq CASADI_PREFIX(sq)
 
 /* Symbol visibility in DLLs */
@@ -58,9 +57,8 @@ static const casadi_int casadi_s0[7] = {3, 1, 0, 3, 0, 1, 2};
 static const casadi_int casadi_s1[15] = {3, 3, 0, 3, 6, 9, 0, 1, 2, 0, 1, 2, 0, 1, 2};
 static const casadi_int casadi_s2[11] = {3, 2, 0, 3, 6, 0, 1, 2, 0, 1, 2};
 static const casadi_int casadi_s3[6] = {2, 1, 0, 2, 0, 1};
-static const casadi_int casadi_s4[3] = {0, 0, 0};
 
-/* mobile_robot_25_expl_vde_forw:(i0[3],i1[3x3],i2[3x2],i3[2],i4[])->(o0[3],o1[3x3],o2[3x2]) */
+/* mobile_robot_25_expl_vde_forw:(i0[3],i1[3x3],i2[3x2],i3[2],i4[2])->(o0[3],o1[3x3],o2[3x2]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
   casadi_real a0, a1, a10, a11, a2, a3, a4, a5, a6, a7, a8, a9;
   a0=arg[3]? arg[3][0] : 0;
@@ -200,7 +198,7 @@ CASADI_SYMBOL_EXPORT const casadi_int* mobile_robot_25_expl_vde_forw_sparsity_in
     case 1: return casadi_s1;
     case 2: return casadi_s2;
     case 3: return casadi_s3;
-    case 4: return casadi_s4;
+    case 4: return casadi_s3;
     default: return 0;
   }
 }

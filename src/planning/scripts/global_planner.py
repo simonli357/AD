@@ -94,6 +94,20 @@ class GlobalPlanner:
         else:
             raise ValueError(f"Invalid destination identifier: {identifier}")
 
+    def get_node_coordinates(self, node):
+        return np.array(self.pos[node])
+    
+    def get_distance(self, start, end):
+        return nx.dijkstra_path_length(self.G, source=start, target=end, weight='weight')
+    
+    def get_total_distance(self, sequence):
+        total_distance = 0.0
+        for i in range(len(sequence) - 1):
+            start = sequence[i]
+            end = sequence[i + 1]
+            total_distance += self.get_distance(start, end)
+        return total_distance
+    
     def plan_path(self, start, end):
         if not isinstance(start, str):
             start = str(start)
@@ -145,19 +159,19 @@ class GlobalPlanner:
                 if normalized_cross > 0.75: #left
                     # print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     x, y = self.pos[node]
-                    x += vec1[0] / mag1 * 0.005 #15
-                    y += vec1[1] / mag1 * 0.005 #15
+                    x += vec1[0] / mag1 * 0.2 #15
+                    y += vec1[1] / mag1 * 0.2 #15
                     # adjust with vec2
-                    x += vec2[0] / mag2 * 0.23 #15
-                    y += vec2[1] / mag2 * 0.23 #15
+                    x += vec2[0] / mag2 * 0.43 #15
+                    y += vec2[1] / mag2 * 0.43 #15
                     wp_x.append(x)
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     # x = prev_x + vec1[0] / mag1 * 0.0015#0.001
                     # y = prev_y + vec1[1] / mag1 * 0.0015#0.001
-                    x = prev_x + vec1[0] / mag1 * 0.3#0.001
-                    y = prev_y + vec1[1] / mag1 * 0.3#0.001
+                    x = prev_x + vec1[0] / mag1 * 0.4#0.001
+                    y = prev_y + vec1[1] / mag1 * 0.4#0.001
                     # adjust with vec2
                     # x += vec2[0] / mag2 * 0.0005 #15
                     # y += vec2[1] / mag2 * 0.0005 #15
