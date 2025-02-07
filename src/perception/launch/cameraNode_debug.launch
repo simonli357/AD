@@ -1,0 +1,48 @@
+<launch>
+
+<rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+<arg name="show" default="false"/>
+<arg name="print" default="false"/>
+<arg name="print_duration" default="false"/>
+<arg name="depth" default="true"/>
+<arg name="real" default="false"/>
+<param name="/is_real" value="$(arg real)"/>
+<arg name="pub" default="true"/>
+<arg name="lane" default="true"/>
+<arg name="sign" default="true"/>
+<arg name="ncnn" default="false"/>
+<arg name="newlane" default="true"/>
+<arg name="realsense" default="false"/>
+<arg name="rate" default="50"/>
+<arg name="lane_rate" default="100"/>
+<arg name="sign_rate" default="30"/>
+<arg name="pubImage" default="true"/>
+<arg name="thread" default="true"/>
+<arg name="use_tcp" default="false"/>
+<param name="use_tcp" value="$(arg use_tcp)"/>
+<arg name="ip" default="127.0.0.1"/>
+<param name="ip" value="$(arg ip)"/>
+<arg name="use_emergency" default="false"/>
+
+<node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true" launch-prefix="gdb --args">
+    <param name="/use_emergency" value="$(arg use_emergency)"/>
+    <param name="/showFlag" value="$(arg show)"/>
+    <param name="/printFlag" value="$(arg print)"/>
+    <param name="/printDuration" value="$(arg print_duration)"/>
+    <param name="/hasDepthImage" value="$(arg depth)"/>
+    <param name="/real" value="$(arg real)"/>
+    <param name="/pub" value="$(arg pub)"/>
+    <param name="/lane" value="$(arg lane)"/>
+    <param name="/sign" value="$(arg sign)"/>
+    <param name="/ncnn" value="$(arg ncnn)"/>
+    <param name="/newlane" value="$(arg newlane)"/>
+    <param name="/realsense" value="$(arg realsense)"/>
+    <param name="/rate" value="$(arg rate)"/>
+    <!-- publish camera image if realsense enabled -->
+    <param name="/pubImage" value="$(arg pubImage)"/>
+    <param name="/thread" value="$(arg thread)"/>
+    <param name="/lane_rate" value="$(arg lane_rate)"/>
+    <param name="/sign_rate" value="$(arg sign_rate)"/>
+</node>
+
+</launch>

@@ -248,7 +248,7 @@ public:
         return true;
     }
 
-    utils::waypoints call_waypoint_service(double x, double y, double yaw) {
+    bool call_waypoint_service(double x, double y, double yaw, std::shared_ptr<TcpClient> tcp_client) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -266,7 +266,7 @@ public:
             ROS_INFO("waypoints service found");
         } else {
             ROS_INFO("waypoints service not found after 5 seconds");
-            return srv;
+            return false;
         }
         if(waypoints_client.call(srv)) {
             std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
@@ -281,11 +281,12 @@ public:
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
-            // set_params();
-            return srv;
+            tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
+            set_params(tcp_client);
+            return true;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-            return srv;
+            return false;
         }
     }
     

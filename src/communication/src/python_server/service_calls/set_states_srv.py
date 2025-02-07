@@ -15,8 +15,8 @@ class SetStatesSrv:
 
     def encode(self, x, y):
         data_bytes = []
-        data_bytes.append(str(x).encode('utf-8'))
-        data_bytes.append(str(y).encode('utf-8'))
+        data_bytes.append(struct.pack('<f', x))
+        data_bytes.append(struct.pack('<f', y))
         data_lengths = [len(element) for element in data_bytes]
         data_length = sum(data_lengths)
         lengths_length = (self.num_elements + 1) * self.bytes_length

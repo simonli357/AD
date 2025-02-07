@@ -39,7 +39,7 @@
 #define MOBILE_ROBOT_25_NX     3
 #define MOBILE_ROBOT_25_NZ     0
 #define MOBILE_ROBOT_25_NU     2
-#define MOBILE_ROBOT_25_NP     0
+#define MOBILE_ROBOT_25_NP     2
 #define MOBILE_ROBOT_25_NBX    2
 #define MOBILE_ROBOT_25_NBX0   3
 #define MOBILE_ROBOT_25_NBU    2
@@ -60,8 +60,8 @@
 #define MOBILE_ROBOT_25_NG     0
 #define MOBILE_ROBOT_25_NBXN   0
 #define MOBILE_ROBOT_25_NGN    0
-#define MOBILE_ROBOT_25_NY0    5
-#define MOBILE_ROBOT_25_NY     5
+#define MOBILE_ROBOT_25_NY0    7
+#define MOBILE_ROBOT_25_NY     7
 #define MOBILE_ROBOT_25_NYN    3
 #define MOBILE_ROBOT_25_N      40
 #define MOBILE_ROBOT_25_NH     0
@@ -104,9 +104,21 @@ typedef struct mobile_robot_25_solver_capsule
 
     // cost
 
+    external_function_param_casadi *cost_y_fun;
+    external_function_param_casadi *cost_y_fun_jac_ut_xt;
+    external_function_param_casadi *cost_y_hess;
 
 
 
+    external_function_param_casadi cost_y_0_fun;
+    external_function_param_casadi cost_y_0_fun_jac_ut_xt;
+    external_function_param_casadi cost_y_0_hess;
+
+
+
+    external_function_param_casadi cost_y_e_fun;
+    external_function_param_casadi cost_y_e_fun_jac_ut_xt;
+    external_function_param_casadi cost_y_e_hess;
 
 
     // constraints

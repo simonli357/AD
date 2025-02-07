@@ -10,7 +10,6 @@ real:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
-  use_lane: false
   has_light: false
   change_lane_offset_scaler: 0.9
   sigma_delta: 10 # degrees
@@ -58,6 +57,5 @@ sim:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
-  use_lane: false
   has_light: false
   change_lane_offset_scaler: 1.3

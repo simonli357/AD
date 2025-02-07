@@ -1,6 +1,6 @@
 #include "TcpClient.hpp"
-#include "msg/TriggerMsg.hpp"
 #include "msg/Lane2Msg.hpp"
+#include "msg/TriggerMsg.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -12,7 +12,6 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <algorithm>
 #include <arpa/inet.h>
 #include <cstdint>
 #include <cstring>
@@ -27,16 +26,10 @@
 
 TcpClient::TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address)
 	: buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
-	udp_rgb_socket = socket(AF_INET, SOCK_DGRAM, 0);
-	udp_rgb_address.sin_family = AF_INET;
-	udp_rgb_address.sin_port = htons(49154);
-	udp_depth_socket = socket(AF_INET, SOCK_DGRAM, 0);
-	udp_depth_address.sin_family = AF_INET;
-	udp_depth_address.sin_port = htons(49155);
-	set_data_types();
-	set_data_actions();
-	inet_pton(AF_INET, server_address.c_str(), &udp_rgb_address.sin_addr);	 // Default server address
-	inet_pton(AF_INET, server_address.c_str(), &udp_depth_address.sin_addr); // Default server address
+	create_udp_socket();
+	set_tcp_data_types();
+	set_udp_data_types();
+	set_tcp_data_actions();
 	receive = std::thread(&TcpClient::initialize, this);
 	poll = std::thread(&TcpClient::poll_connection, this);
 }
@@ -55,6 +48,10 @@ TcpClient::~TcpClient() {
 	}
 }
 
+// ------------------- //
+// Utility Methods
+// ------------------- //
+
 void TcpClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
 	tcp_address.sin_family = AF_INET;
@@ -62,29 +59,41 @@ void TcpClient::create_tcp_socket() {
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
 }
 
-void TcpClient::set_data_types() {
-	data_types.push_back(0x01); // std::string
-	data_types.push_back(0x02); // Lane2
-	data_types.push_back(0x03); // Trigger
-	data_types.push_back(0x04); // Road Objects
-	data_types.push_back(0x05); // Waypoints
-	data_types.push_back(0x06); // Signs
-	data_types.push_back(0x07); // Messages
-	data_types.push_back(0x08); // GoToSrv
-	data_types.push_back(0x09); // GoToCmdSrv
-	data_types.push_back(0x0a); // SetStatesSrv
-	data_types.push_back(0x0b); // WaypointsSrv
-	data_types.push_back(0x0c); // StartSrv
+void TcpClient::create_udp_socket() {
+	udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	udp_address.sin_family = AF_INET;
+	udp_address.sin_port = htons(49154);
+	inet_pton(AF_INET, server_address.c_str(), &udp_address.sin_addr);
 }
 
-void TcpClient::set_data_actions() {
-	data_actions[data_types[0]] = &TcpClient::parse_string;			// std::string
-	data_actions[data_types[2]] = &TcpClient::parse_trigger_msg;    // Trigger
-	data_actions[data_types[7]] = &TcpClient::parse_go_to_srv;		// GoToSrv
-	data_actions[data_types[8]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
-	data_actions[data_types[9]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
-	data_actions[data_types[10]] = &TcpClient::parse_waypoints_srv; // SetStatesSrv
-	data_actions[data_types[11]] = &TcpClient::parse_start_srv;		// StartSrv
+void TcpClient::set_tcp_data_types() {
+	tcp_data_types.push_back(0x01); // std::string
+	tcp_data_types.push_back(0x02); // Trigger
+	tcp_data_types.push_back(0x03); // Messages
+	tcp_data_types.push_back(0x04); // GoToSrv
+	tcp_data_types.push_back(0x05); // GoToCmdSrv
+	tcp_data_types.push_back(0x06); // SetStatesSrv
+	tcp_data_types.push_back(0x07); // WaypointsSrv
+	tcp_data_types.push_back(0x08); // StartSrv
+}
+
+void TcpClient::set_udp_data_types() {
+	udp_data_types.push_back(0x01); // Lane2
+	udp_data_types.push_back(0x02); // Road Objects
+	udp_data_types.push_back(0x03); // Waypoints
+	udp_data_types.push_back(0x04); // Signs
+	udp_data_types.push_back(0x05); // RGB Images
+	udp_data_types.push_back(0x06); // Depth Images
+}
+
+void TcpClient::set_tcp_data_actions() {
+	tcp_data_actions[tcp_data_types[0]] = &TcpClient::parse_string;			// std::string
+	tcp_data_actions[tcp_data_types[1]] = &TcpClient::parse_trigger_msg;	// Trigger
+	tcp_data_actions[tcp_data_types[3]] = &TcpClient::parse_go_to_srv;		// GoToSrv
+	tcp_data_actions[tcp_data_types[4]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
+	tcp_data_actions[tcp_data_types[5]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
+	tcp_data_actions[tcp_data_types[6]] = &TcpClient::parse_waypoints_srv;	// SetStatesSrv
+	tcp_data_actions[tcp_data_types[7]] = &TcpClient::parse_start_srv;		// StartSrv
 }
 
 void TcpClient::initialize() {
@@ -148,8 +157,8 @@ void TcpClient::listen() {
 		}
 		// Process data if full message is received
 		if (total_bytes_received == length) {
-			auto it = data_actions.find(type);
-			if (it != data_actions.end()) {
+			auto it = tcp_data_actions.find(type);
+			if (it != tcp_data_actions.end()) {
 				it->second(this, data);
 			}
 		}
@@ -169,7 +178,7 @@ std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
 std::queue<std::unique_ptr<TriggerMsg>> &TcpClient::get_trigger_msgs() { return trigger_msgs; }
 
 // ------------------- //
-// Encoding
+// TCP Encoding
 // ------------------- //
 
 void TcpClient::send_type(std::string &str) {
@@ -177,128 +186,32 @@ void TcpClient::send_type(std::string &str) {
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> full_message(total_size);
 	std::memcpy(full_message.data(), &length, message_size);
-	full_message[4] = data_types[0];
+	full_message[4] = tcp_data_types[0];
 	std::memcpy(full_message.data() + header_size, str.data(), length);
 	send(tcp_socket, full_message.data(), full_message.size(), 0);
 }
 
 void TcpClient::send_string(std::string &str) {
-	if (canSend) {
+	if (tcp_can_send) {
 		uint32_t length = str.size();
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
 		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[0];
+		full_message[4] = tcp_data_types[0];
 		std::memcpy(full_message.data() + header_size, str.data(), length);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
 }
 
-void TcpClient::send_lane2(const utils::Lane2 &lane) {
-    if (canSend) {
-        std_msgs::Header header = lane.header;
-        float center = lane.center;
-        int stopline = lane.stopline;
-        bool crosswalk = lane.crosswalk;
-		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(data_types[1]);
-		send(tcp_socket, bytes.data(), bytes.size(), 0);
-    }
-}
-
 void TcpClient::send_trigger(std_srvs::Trigger &trigger) {
-	if (canSend) {
-		std::vector<uint8_t> bytes = TriggerMsg(trigger).serialize(data_types[2]);
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = TriggerMsg(trigger).serialize(tcp_data_types[1]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
-	}
-}
-
-void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
-	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
-	std::vector<uchar> image;
-	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 70});
-	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_IMAGE_DGRAM);
-	uint8_t current_segment = total_segments;
-	uint32_t array_pos_start = 0;
-	uint32_t offset = 0;
-	while (current_segment > 0) {
-		uint32_t size = std::min(length - offset, MAX_IMAGE_DGRAM - 1);
-		std::vector<uint8_t> segment(size + 1);
-		segment[0] = current_segment;
-		std::memcpy(segment.data() + 1, &image[offset], size);
-		sendto(udp_rgb_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_rgb_address, sizeof(udp_rgb_address));
-		offset += size;
-		current_segment--;
-	}
-}
-
-void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
-    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
-    std::vector<uchar> image;
-    cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_PNG_COMPRESSION, 4});
-	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length) / MAX_IMAGE_DGRAM);
-	uint8_t current_segment = total_segments;
-	uint32_t array_pos_start = 0;
-	uint32_t offset = 0;
-	while (current_segment > 0) {
-		uint32_t size = std::min(length - offset, MAX_IMAGE_DGRAM - 1);
-		std::vector<uint8_t> segment(size + 1);
-		segment[0] = current_segment;
-		std::memcpy(segment.data() + 1, &image[offset], size);
-		sendto(udp_depth_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_depth_address, sizeof(udp_depth_address));
-		offset += size;
-		current_segment--;
-	}
-}
-
-void TcpClient::send_road_object(std_msgs::Float32MultiArray &array) {
-	if (canSend) {
-		uint32_t length = ros::serialization::serializationLength(array);
-		std::vector<uint8_t> arr(length);
-		ros::serialization::OStream stream(arr.data(), length);
-		ros::serialization::serialize(stream, array);
-		size_t total_size = header_size + length;
-		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[3];
-		std::memcpy(full_message.data() + header_size, arr.data(), length);
-		send(tcp_socket, full_message.data(), full_message.size(), 0);
-	}
-}
-
-void TcpClient::send_waypoint(std_msgs::Float32MultiArray &array) {
-	if (canSend) {
-		uint32_t length = ros::serialization::serializationLength(array);
-		std::vector<uint8_t> arr(length);
-		ros::serialization::OStream stream(arr.data(), length);
-		ros::serialization::serialize(stream, array);
-		size_t total_size = header_size + length;
-		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[4];
-		std::memcpy(full_message.data() + header_size, arr.data(), length);
-		send(tcp_socket, full_message.data(), full_message.size(), 0);
-	}
-}
-
-void TcpClient::send_sign(std_msgs::Float32MultiArray &array) {
-	if (canSend) {
-		uint32_t length = ros::serialization::serializationLength(array);
-		std::vector<uint8_t> arr(length);
-		ros::serialization::OStream stream(arr.data(), length);
-		ros::serialization::serialize(stream, array);
-		size_t total_size = header_size + length;
-		std::vector<uint8_t> full_message(total_size);
-		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[5];
-		std::memcpy(full_message.data() + header_size, arr.data(), length);
-		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
 }
 
 void TcpClient::send_message(std_msgs::String &msg) {
-	if (canSend) {
+	if (tcp_can_send) {
 		uint32_t length = ros::serialization::serializationLength(msg);
 		std::vector<uint8_t> message(length);
 		ros::serialization::OStream stream(message.data(), length);
@@ -306,91 +219,170 @@ void TcpClient::send_message(std_msgs::String &msg) {
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
 		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[6];
+		full_message[4] = tcp_data_types[2];
 		std::memcpy(full_message.data() + header_size, message.data(), length);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
 }
 
 void TcpClient::send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {
-	if (canSend) {
-		std::vector<uint8_t> bytes = GoToSrv(state_refs, input_refs, wp_attributes, wp_normals).serialize(data_types[7]);
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = GoToSrv(state_refs, input_refs, wp_attributes, wp_normals).serialize(tcp_data_types[3]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
 	}
 }
 
 void TcpClient::send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success) {
-	if (canSend) {
-		std::vector<uint8_t> bytes = GoToCmdSrv(state_refs, input_refs, wp_attributes, wp_normals, success).serialize(data_types[8]);
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = GoToCmdSrv(state_refs, input_refs, wp_attributes, wp_normals, success).serialize(tcp_data_types[4]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
 	}
 }
 
 void TcpClient::send_set_states_srv(bool success) {
-	if (canSend) {
+	if (tcp_can_send) {
 		uint32_t length = 1;
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
 		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[9];
+		full_message[4] = tcp_data_types[5];
 		full_message[5] = static_cast<uint8_t>(success);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
 }
 
 void TcpClient::send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals) {
-	if (canSend) {
-		std::vector<uint8_t> bytes = WaypointsSrv(state_refs, input_refs, wp_attributes, wp_normals).serialize(data_types[10]);
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = WaypointsSrv(state_refs, input_refs, wp_attributes, wp_normals).serialize(tcp_data_types[6]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
 	}
 }
 
 void TcpClient::send_start_srv(bool started) {
-	if (canSend) {
+	if (tcp_can_send) {
 		uint32_t length = 1;
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
 		std::memcpy(full_message.data(), &length, message_size);
-		full_message[4] = data_types[11];
+		full_message[4] = tcp_data_types[7];
 		full_message[5] = static_cast<uint8_t>(started);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
 }
 
+// ------------------- //
+// UDP Encoding
+// ------------------- //
+
+void TcpClient::send_lane2(const utils::Lane2 &lane) {
+	std_msgs::Header header = lane.header;
+	float center = lane.center;
+	int stopline = lane.stopline;
+	bool crosswalk = lane.crosswalk;
+	std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(udp_data_types[0]);
+	std::vector<uint8_t> segment(MAX_DGRAM);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_road_object(std_msgs::Float32MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> arr(length);
+	ros::serialization::OStream stream(arr.data(), length);
+	ros::serialization::serialize(stream, array);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> bytes(total_size);
+	std::memcpy(bytes.data(), &length, message_size);
+	bytes[4] = udp_data_types[1];
+	std::memcpy(bytes.data() + header_size, arr.data(), length);
+	std::vector<uint8_t> segment(MAX_DGRAM);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_waypoint(std_msgs::Float32MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> arr(length);
+	ros::serialization::OStream stream(arr.data(), length);
+	ros::serialization::serialize(stream, array);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> bytes(total_size);
+	std::memcpy(bytes.data(), &length, message_size);
+	bytes[4] = udp_data_types[2];
+	std::memcpy(bytes.data() + header_size, arr.data(), length);
+	std::vector<uint8_t> segment(MAX_DGRAM);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_sign(std_msgs::Float32MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> arr(length);
+	ros::serialization::OStream stream(arr.data(), length);
+	ros::serialization::serialize(stream, array);
+	size_t total_size = header_size + length;
+	std::vector<uint8_t> bytes(total_size);
+	std::memcpy(bytes.data(), &length, message_size);
+	bytes[4] = tcp_data_types[3];
+	std::memcpy(bytes.data() + header_size, arr.data(), length);
+	std::vector<uint8_t> segment(MAX_DGRAM);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
+	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+	std::vector<uchar> image;
+	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 70});
+	uint32_t length = image.size();
+	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
+	if (total_segments == 1) {
+		std::vector<uint8_t> segment(MAX_DGRAM);
+        std::memcpy(segment.data(), &length, message_size);
+        segment[4] = udp_data_types[4];
+		std::memcpy(segment.data() + header_size, &image[0], image.size());
+		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	}
+}
+
+void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
+	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
+	std::vector<uchar> image;
+	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 1000});
+	uint32_t length = image.size();
+	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
+	if (total_segments == 1) {
+		std::vector<uint8_t> segment(MAX_DGRAM);
+        std::memcpy(segment.data(), &length, message_size);
+        segment[4] = udp_data_types[5];
+		std::memcpy(segment.data() + header_size, &image[0], image.size());
+		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	}
+}
 
 // ------------------- //
-// Decoding
+// TCP Decoding
 // ------------------- //
 
 void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "ack") {
-		canSend = true;
+		tcp_can_send = true;
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}
 	strings.push(decoded_string);
 }
 
-void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
-    trigger_msgs.push(TriggerMsg().deserialize(bytes));
-}
+void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) { trigger_msgs.push(TriggerMsg().deserialize(bytes)); }
 
-void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) {
-    go_to_srv_msgs.push(GoToSrv().deserialize(bytes));
-}
+void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) { go_to_srv_msgs.push(GoToSrv().deserialize(bytes)); }
 
-void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
-    go_to_cmd_srv_msgs.push(GoToCmdSrv().deserialize(bytes));
-}
+void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) { go_to_cmd_srv_msgs.push(GoToCmdSrv().deserialize(bytes)); }
 
-void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
-    set_states_srv_msgs.push(SetStatesSrv().deserialize(bytes));
-}
+void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) { set_states_srv_msgs.push(SetStatesSrv().deserialize(bytes)); }
 
-void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
-    waypoints_srv_msgs.push(WaypointsSrv().deserialize(bytes));
-}
+void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) { waypoints_srv_msgs.push(WaypointsSrv().deserialize(bytes)); }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 	std::string decoded_string(bytes.begin(), bytes.end());
