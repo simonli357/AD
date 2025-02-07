@@ -100,6 +100,14 @@ class GlobalPlanner:
     def get_distance(self, start, end):
         return nx.dijkstra_path_length(self.G, source=start, target=end, weight='weight')
     
+    def get_total_distance(self, sequence):
+        total_distance = 0.0
+        for i in range(len(sequence) - 1):
+            start = sequence[i]
+            end = sequence[i + 1]
+            total_distance += self.get_distance(start, end)
+        return total_distance
+    
     def plan_path(self, start, end):
         if not isinstance(start, str):
             start = str(start)
