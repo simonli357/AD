@@ -74,24 +74,12 @@ class GlobalPlanner:
                 self.G[u][v]['weight'] = float('inf')
         
         # Define destinations from the problem statement, converting to strings
-        self.destinations = ['112', '386', '343', '362', '368', '317', '318', '404', '399', 
+        self.base_destinations = ['386', '343', '362', '368', '317', '318', '404', '399', 
                              '425', '420', '437', '82', '80', '93', '121', '116', '127', '75', 
                              '71', '185', '27', '25', '31', '29', '301', '8', '289', '199', 
                              '42', '225', '228', '239', '261', '257', '56']
         
-        # Precompute distance matrix between all pairs of destinations
-        self.distance_matrix = {}
-        for start in self.destinations:
-            self.distance_matrix[start] = {}
-            for end in self.destinations:
-                if start == end:
-                    self.distance_matrix[start][end] = 0.0
-                else:
-                    try:
-                        length = nx.dijkstra_path_length(self.G, start, end, weight='weight')
-                        self.distance_matrix[start][end] = length
-                    except nx.NetworkXNoPath:
-                        self.distance_matrix[start][end] = float('inf')
+        self.destinations = self.base_destinations.copy()
     
     def plan_path(self, start, end):
         if not isinstance(start, str):
@@ -112,12 +100,24 @@ class GlobalPlanner:
                 wp_y.append(y)
         return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
-    def find_optimal_sequence(self):
-        start_node = '112'
-        if start_node not in self.destinations:
-            return [], 0.0
-        
-        remaining_budget = 150.0
+    def find_optimal_sequence(self, start_node, max_distance=150.0):
+        # append start node at the beginning of the destinations list
+        self.destinations = self.base_destinations.copy()
+        self.destinations.insert(0, start_node)
+        self.distance_matrix = {}
+        for start in self.destinations:
+            self.distance_matrix[start] = {}
+            for end in self.destinations:
+                if start == end:
+                    self.distance_matrix[start][end] = 0.0
+                else:
+                    try:
+                        length = nx.dijkstra_path_length(self.G, start, end, weight='weight')
+                        self.distance_matrix[start][end] = length
+                    except nx.NetworkXNoPath:
+                        self.distance_matrix[start][end] = float('inf')
+                        
+        remaining_budget = max_distance
         current_node = start_node
         visited = set([current_node])
         path = [current_node]
@@ -176,10 +176,31 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    optimal_path, total_dist = planner.find_optimal_sequence()
-    print(f"Optimal sequence of destinations: {optimal_path}")
-    print(f"Total distance traveled: {total_dist} meters")
-    print(f"Number of destinations visited: {len(optimal_path)}")
+    
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    starting_points_path = os.path.join(current_dir, 'config/starting_points.yaml')
+    with open(starting_points_path, 'r') as f:
+        starting_points = yaml.safe_load(f)
+    
+    runs = {}
+    
+    for start in starting_points:
+        start_str = str(start)
+        optimal_path, total_dist = planner.find_optimal_sequence(start_str, 157.0)
+        optimal_path_ints = [int(node) for node in optimal_path]
+        #remove first node from path
+        optimal_path_ints.pop(0)
+        runs[f'run{start}'] = optimal_path_ints
+        print(f"run{start}: distance={total_dist:.2f}m, num_destinations={len(optimal_path)-1}")
+    
+    runs_path = os.path.join(current_dir, 'config/runs.yaml')
+    with open(runs_path, 'w') as f:
+        yaml.dump(runs, f, default_flow_style=False)
+        
+    # optimal_path, total_dist = planner.find_optimal_sequence('112')
+    # print(f"Optimal sequence of destinations: {optimal_path}")
+    # print(f"Total distance traveled: {total_dist} meters")
+    # print(f"Number of destinations visited: {len(optimal_path)}")
     
     # Plot the optimal path on the map
-    plot_path_on_map(planner.G, optimal_path, planner.current_dir + '/maps/Competition_track_graph_new.png')
+    # plot_path_on_map(planner.G, optimal_path, planner.current_dir + '/maps/Competition_track_graph_new.png')
