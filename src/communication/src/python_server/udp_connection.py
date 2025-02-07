@@ -75,7 +75,7 @@ class UdpConnection:
     def parse_lane2(self):
         try:
             if len(self.lane2_buf) > 0:
-                return Lane2Msg(b'\x02').decode(self.lane2_buf.popleft())
+                return Lane2Msg(b'\x02').decode(self.lane2_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -84,7 +84,7 @@ class UdpConnection:
     def parse_road_object(self):
         try:
             if len(self.road_object_buf) > 0:
-                return Float32MultiArray().deserialize(self.road_object_buf.popleft())
+                return Float32MultiArray().deserialize(self.road_object_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -93,7 +93,7 @@ class UdpConnection:
     def parse_waypoint(self):
         try:
             if len(self.waypoint_buf) > 0:
-                return Float32MultiArray().deserialize(self.waypoint_buf.popleft())
+                return Float32MultiArray().deserialize(self.waypoint_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -102,7 +102,7 @@ class UdpConnection:
     def parse_sign(self):
         try:
             if len(self.sign_buf) > 0:
-                return Float32MultiArray().deserialize(self.sign_buf.popleft())
+                return Float32MultiArray().deserialize(self.sign_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -111,7 +111,7 @@ class UdpConnection:
     def parse_rgb_image(self):
         try:
             if len(self.rgb_buf) > 0:
-                np_array = np.frombuffer(self.rgb_buf.popleft(), dtype=np.uint8)
+                np_array = np.frombuffer(self.rgb_buf[0], dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
                 bridge = CvBridge()
                 return bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
@@ -123,7 +123,7 @@ class UdpConnection:
     def parse_depth_image(self):
         try:
             if len(self.depth_buf) > 0:
-                np_array = np.frombuffer(self.depth_buf.popleft(), dtype=np.uint8)
+                np_array = np.frombuffer(self.depth_buf[0], dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 cv_image = (cv_image).astype(np.uint16)
                 bridge = CvBridge()

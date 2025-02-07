@@ -1304,7 +1304,7 @@ def udp_callbacks(gui, server):
         if sign is not None:
             gui.sign_callback(sign)
 
-        time.sleep(0.0016)
+        time.sleep(0.016)
 
 
 def tcp_callbacks(gui, server):
@@ -1319,7 +1319,7 @@ def tcp_callbacks(gui, server):
                 response = gui.update_params(req)
                 server.utility_node_client.send_trigger(TriggerRequest(), response)
 
-        time.sleep(0.0016)
+        time.sleep(0.016)
 
 
 if __name__ == '__main__':
