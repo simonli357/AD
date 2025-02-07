@@ -49,7 +49,7 @@ class TcpConnection:
                 data += chunk
             return data
         except Exception as e:
-            # print(e)
+            print(e)
             return data
 
     def receive(self):
@@ -65,7 +65,7 @@ class TcpConnection:
                             continue
                         break
                     except Exception as e:
-                        # print(e)
+                        print(e)
                         continue
                 length = struct.unpack('<I', header[:message_size])[0]
                 message_type = header[message_size:header_size]
@@ -75,7 +75,7 @@ class TcpConnection:
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
             except Exception as e:
-                # print(e)
+                print(e)
                 continue
 
     ###################
