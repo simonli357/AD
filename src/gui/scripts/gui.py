@@ -1271,27 +1271,44 @@ class OpenCVGuiApp(QWidget):
             )
 
 
-def callbacks(gui, server):
+def udp_callbacks(gui, server):
     while True:
-        # Image rgb
-        if server.udp_connection.rgb_frame is not None:
-            gui.camera_callback(server.udp_connection.rgb_frame)
-        # Image depth
-        if server.udp_connection.depth_frame is not None:
-            gui.depth_callback(server.udp_connection.depth_frame)
-        # Lane2
-        if server.udp_connection.lane2.header is not None:
-            gui.lane_callback(server.udp_connection.lane2)
-        # Road object
-        if server.udp_connection.road_object is not None:
-            gui.road_objects_callback(server.udp_connection.road_object)
-        # Waypoints
-        if server.udp_connection.waypoint is not None:
-            gui.waypoint_callback(server.udp_connection.waypoint)
-        # Signs
-        if server.udp_connection.sign is not None:
-            gui.sign_callback(server.udp_connection.sign)
+        rgb_image = None
+        depth_image = None
+        if gui.show_depth:
+            depth_image = server.udp_connection.parse_depth_image()
+        else:
+            rgb_image = server.udp_connection.parse_rgb_image()
 
+        sign = server.udp_connection.parse_sign()
+        waypoint = server.udp_connection.parse_waypoint()
+        road_obj = server.udp_connection.parse_road_object()
+        lane2 = server.udp_connection.parse_lane2()
+
+        # Image rgb
+        if rgb_image is not None:
+            gui.camera_callback(rgb_image)
+        # Image depth
+        if depth_image is not None:
+            gui.depth_callback(depth_image)
+        # Lane2
+        if lane2 is not None:
+            gui.lane_callback(lane2)
+        # Road object
+        if road_obj is not None:
+            gui.road_objects_callback(road_obj)
+        # Waypoints
+        if waypoint is not None:
+            gui.waypoint_callback(waypoint)
+        # Signs
+        if sign is not None:
+            gui.sign_callback(sign)
+
+        time.sleep(0.0016)
+
+
+def tcp_callbacks(gui, server):
+    while True:
         if server.utility_node_client.socket is not None:
             # Messages
             if server.utility_node_client.messages:
@@ -1302,7 +1319,7 @@ def callbacks(gui, server):
                 response = gui.update_params(req)
                 server.utility_node_client.send_trigger(TriggerRequest(), response)
 
-        time.sleep(0.016)
+        time.sleep(0.0016)
 
 
 if __name__ == '__main__':
@@ -1318,6 +1335,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = OpenCVGuiApp(server=server)
     if use_tcp:
-        threading.Thread(target=callbacks, args=(window, server,), daemon=True).start()
+        threading.Thread(target=udp_callbacks, args=(window, server,), daemon=True).start()
+        threading.Thread(target=tcp_callbacks, args=(window, server,), daemon=True).start()
     window.show()
     sys.exit(app.exec_())

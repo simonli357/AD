@@ -14,7 +14,7 @@ class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
         if client_socket is not None:
-            self.socket.setblocking(False)
+            self.socket.settimeout(None)
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
                 b'\x02': self.parse_trigger,
