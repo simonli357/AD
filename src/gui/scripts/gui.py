@@ -152,7 +152,9 @@ class OpenCVGuiApp(QWidget):
             padding: 5px;
             """
         )
-        self.centiseconds = 0
+        # self.centiseconds = 0
+        self.start_time = None
+        self.accumulated_centiseconds = 0
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
         # self.time_timer.start(10)  # Update every 10 ms
@@ -504,7 +506,11 @@ class OpenCVGuiApp(QWidget):
     def start(self):
         self.call_start_service(not self.started)
         if not self.started:
-            self.time_timer.start(10)
+            if self.start_time is None:
+                self.start_time = time.time()
+            else:
+                self.start_time = time.time() - (self.accumulated_centiseconds / 100)
+            self.time_timer.start(25)
             self.start_button.setStyleSheet("""
                 QPushButton {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -529,6 +535,10 @@ class OpenCVGuiApp(QWidget):
             """)
             self.start_button.setText("Stop")
         else:
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                self.accumulated_centiseconds += int(elapsed * 100)
+                self.start_time = None
             self.time_timer.stop()
             self.start_button.setStyleSheet("""
                 QPushButton {
@@ -826,10 +836,18 @@ class OpenCVGuiApp(QWidget):
             self.message_history.pop(0)
 
     def update_stopwatch(self):
-        self.centiseconds += 1
-        minutes = (self.centiseconds // 6000) % 60
-        seconds = (self.centiseconds // 100) % 60
-        centiseconds = self.centiseconds % 100
+        if self.start_time is None:
+            return
+        current_time = time.time()
+        elapsed_seconds = current_time - self.start_time
+        total_centiseconds = int(elapsed_seconds * 100) + self.accumulated_centiseconds
+        minutes = (total_centiseconds // 6000) % 60
+        seconds = (total_centiseconds // 100) % 60
+        centiseconds = total_centiseconds % 100
+        # self.centiseconds += 1
+        # minutes = (self.centiseconds // 6000) % 60
+        # seconds = (self.centiseconds // 100) % 60
+        # centiseconds = self.centiseconds % 100
         self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
 
     def toggle_visibility(self):

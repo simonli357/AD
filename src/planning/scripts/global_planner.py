@@ -25,11 +25,15 @@ class GlobalPlanner:
             self.pos[node] = (x, 13.786 - y)
             self.attribute[node] = data.get('new_attribute', 0)
         
+        for u, v, data in self.G.edges(data=True):
+            pos_u = np.array(self.pos[u])
+            pos_v = np.array(self.pos[v])
+            data['weight'] = np.linalg.norm(pos_u - pos_v)
+            
         self.wp_x = []
         self.wp_y = []
         self.place_names = {}
         self.undetectable_areas = [398, 399, 403, 404, 405, 400, 366, 367, 368, 369, 342, 343, 396, 397, 318, 317, 316]
-        
         for i in range(263, 271):
             self.undetectable_areas.append(i)
         for i in range(292, 296):
@@ -113,10 +117,10 @@ class GlobalPlanner:
             start = str(start)
         if not isinstance(end, str):
             end = str(end)
-        print("start: ", start, "end: ", end)
+        # print("start: ", start, "end: ", end)
         path = nx.dijkstra_path(self.G, source=start, target=end)
         path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-        print("path: ", path)
+        # print("path: ", path)
         wp_x = []
         wp_y = []
         wp_attributes = []
@@ -140,21 +144,25 @@ class GlobalPlanner:
                 next_node = path[path.index(node)+1]
                 try:
                     next_node2 = path[path.index(node)+2]
+                    next_node3 = path[path.index(node)+3]
                 except:
-                    print("end of path at node: ", node)
+                    # print("end of path at node: ", node)
                     continue
+                # print(f"prev2: {prev_node2}, prev: {prev_node}, node: {node}, next: {next_node}, next2: {next_node2}, next3: {next_node3}")
                 #calculate the vector from prev to current
                 prev_x2, prev_y2 = self.pos[prev_node2]
                 prev_x, prev_y = self.pos[prev_node]
                 next_x, next_y = self.pos[next_node]
                 next_x2, next_y2 = self.pos[next_node2]
+                next_x3, next_y3 = self.pos[next_node3]
                 vec1 = np.array([prev_x-prev_x2, prev_y-prev_y2])
                 vec2 = np.array([next_x2-next_x, next_y2-next_y])
+                vec3 = np.array([next_x3-next_x2, next_y3-next_y2])
                 #calculate the angle between the two vectors
                 mag1 = np.linalg.norm(vec1)
                 # print("mag1: ", mag1)
-                mag2 = np.linalg.norm(vec2)
-                cross_product = np.cross(vec1, vec2)
+                mag2 = np.linalg.norm(vec3)
+                cross_product = np.cross(vec1, vec3)
                 normalized_cross = cross_product / (mag1 * mag2)
                 if normalized_cross > 0.75: #left
                     # print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
@@ -180,10 +188,10 @@ class GlobalPlanner:
                     wp_x.append(x)
                     wp_y.append(y)
                 else:
-                    if int(node) == 80:
-                        print("node 80 straight")
-                        exit()
-                    pass
+                    # if int(node) == 80:
+                    #     print("node 80 straight")
+                    #     exit()
+                    continue
         return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
     def find_closest_node(self, x, y):
@@ -221,5 +229,5 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    # planner.plan_path(18, 15)
-    planner.illustrate_path(399, 427)
+    planner.plan_path(180, 167)
+    # planner.illustrate_path(399, 427)
