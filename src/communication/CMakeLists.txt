@@ -49,9 +49,9 @@ include_directories(
 )
 
 ## Declare a C++ library
-file(GLOB SOURCES src/*.cpp)
-file(GLOB SERVICES src/service_calls/*.cpp)
-file(GLOB MSGS src/msg/*.cpp)
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB SERVICES ${CMAKE_CURRENT_SOURCE_DIR}/src/service_calls/*.cpp)
+file(GLOB MSGS ${CMAKE_CURRENT_SOURCE_DIR}/src/msg/*.cpp)
 add_library(${PROJECT_NAME} ${SOURCES} ${SERVICES} ${MSGS})
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/communication.cpp
