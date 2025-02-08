@@ -10,16 +10,12 @@ class PathVisualizer:
         self.planner = GlobalPlanner()
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
         
-        # Load track image with exact dimensions
         self.track_img = mpimg.imread(os.path.join(self.current_dir, 'maps/Track.png'))
-        # flip image vertically to match coordinate system
         self.track_img = np.flipud(self.track_img)
         
-        # Set known track dimensions (in meters)
         self.track_width = 20.696
         self.track_height = 13.656
         
-        # Set coordinate system bounds
         self.min_x = 0.0
         self.max_x = self.track_width
         self.min_y = 0.0
@@ -32,32 +28,25 @@ class PathVisualizer:
     def plot_run(self, run_name, sequence):
         plt.figure(figsize=(12, 8))
         
-        # Plot track background with proper scaling
         plt.imshow(self.track_img, 
                   extent=[self.min_x, self.max_x, self.max_y, self.min_y],  # Flip Y-axis
                   aspect='equal', 
                   alpha=0.7)
         
-        # Set axis limits to match track dimensions
         plt.xlim(self.min_x, self.max_x)
         plt.ylim(self.min_y, self.max_y)
         
-        # Collect all path points
         full_path_x = []
         full_path_y = []
         
-        # Convert all nodes to strings
         sequence = [str(node) for node in sequence]
         
-        # Plot path segments between consecutive nodes
         for i in range(len(sequence)-1):
             start_node = sequence[i]
             end_node = sequence[i+1]
             
-            # Get path between nodes
             path_points, _, _ = self.planner.plan_path(start_node, end_node)
             
-            # Add to full path (avoid duplicates)
             if full_path_x:
                 full_path_x.extend(path_points[0][1:])
                 full_path_y.extend(path_points[1][1:])
@@ -65,10 +54,8 @@ class PathVisualizer:
                 full_path_x.extend(path_points[0])
                 full_path_y.extend(path_points[1])
         
-        # Plot complete path
         plt.plot(full_path_x, full_path_y, 'b-', linewidth=1.5, alpha=0.8, label='Path')
         
-        # Annotate destinations with order numbers
         for order, node in enumerate(sequence, 1):
             if node in self.planner.pos:
                 x, y = self.planner.pos[node]
@@ -82,7 +69,7 @@ class PathVisualizer:
         total_distance = self.planner.get_total_distance(sequence)
         plt.xlabel('X Position (meters)')
         plt.ylabel('Y Position (meters)')
-        plt.title(f'Path Visualization: {run_name}\nTotal Destinations: {len(sequence)} | Total Distance: {total_distance:.2f} meters')
+        plt.title(f'Path Visualization: {run_name}\nTotal Destinations: {len(sequence)-1} | Total Distance: {total_distance:.2f} meters')
         plt.grid(True, alpha=0.3)
         plt.legend(loc='upper right')
         plt.tight_layout()
@@ -91,16 +78,13 @@ class PathVisualizer:
 def main():
     visualizer = PathVisualizer()
     
-    # Load run configurations
     yaml_path = os.path.join(visualizer.current_dir, 'config/runs.yaml')
     runs = visualizer.load_runs(yaml_path)
     
-    # Select a run to visualize
-    selected_run = 'run112'
+    selected_run = 'run131'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")
-        # append the 218 at start of the sequence
         start = selected_run[3:]
         start = int(start)
         runs[selected_run].insert(0, start)
