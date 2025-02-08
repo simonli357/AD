@@ -1,4 +1,5 @@
 #include "TcpClient.hpp"
+#include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "msg/TriggerMsg.hpp"
 #include "ros/serialization.h"
@@ -70,11 +71,12 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x01); // std::string
 	tcp_data_types.push_back(0x02); // Trigger
 	tcp_data_types.push_back(0x03); // Messages
-	tcp_data_types.push_back(0x04); // GoToSrv
-	tcp_data_types.push_back(0x05); // GoToCmdSrv
-	tcp_data_types.push_back(0x06); // SetStatesSrv
-	tcp_data_types.push_back(0x07); // WaypointsSrv
-	tcp_data_types.push_back(0x08); // StartSrv
+	tcp_data_types.push_back(0x04); // GoTo Srv
+	tcp_data_types.push_back(0x05); // GoToCmd Srv
+	tcp_data_types.push_back(0x06); // SetStates Srv
+	tcp_data_types.push_back(0x07); // Waypoints Srv
+	tcp_data_types.push_back(0x08); // Start Srv
+    tcp_data_types.push_back(0x09); // Params
 }
 
 void TcpClient::set_udp_data_types() {
@@ -170,12 +172,13 @@ void TcpClient::listen() {
 // ------------------- //
 
 std::queue<std::string> &TcpClient::get_strings() { return strings; }
+std::queue<std::unique_ptr<TriggerMsg>> &TcpClient::get_trigger_msgs() { return trigger_msgs; }
+std::queue<std::unique_ptr<ParamsMsg>> &TcpClient::get_params_msgs() { return params_msgs; }
 std::queue<std::unique_ptr<GoToSrv>> &TcpClient::get_go_to_srv_msgs() { return go_to_srv_msgs; }
 std::queue<std::unique_ptr<GoToCmdSrv>> &TcpClient::get_go_to_cmd_srv_msgs() { return go_to_cmd_srv_msgs; }
 std::queue<std::unique_ptr<SetStatesSrv>> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
 std::queue<std::unique_ptr<WaypointsSrv>> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
 std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
-std::queue<std::unique_ptr<TriggerMsg>> &TcpClient::get_trigger_msgs() { return trigger_msgs; }
 
 // ------------------- //
 // TCP Encoding
@@ -268,6 +271,13 @@ void TcpClient::send_start_srv(bool started) {
 		full_message[5] = static_cast<uint8_t>(started);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	}
+}
+
+void TcpClient::send_params(std::vector<double> &state_refs, std::vector<double> &attributes) {
+    if (tcp_can_send) {
+        std::vector<uint8_t> bytes = ParamsMsg(state_refs, attributes).serialize(tcp_data_types[8]);
+        send(tcp_socket, bytes.data(), bytes.size(), 0);
+    }
 }
 
 // ------------------- //
@@ -375,6 +385,8 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) { trigger_msgs.push(TriggerMsg().deserialize(bytes)); }
+
+void TcpClient::parse_params_msg(std::vector<uint8_t> &bytes) { params_msgs.push(ParamsMsg().deserialize(bytes)); }
 
 void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) { go_to_srv_msgs.push(GoToSrv().deserialize(bytes)); }
 
