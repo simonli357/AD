@@ -82,7 +82,13 @@ def interpolate_waypoints(waypoints, num_points):
     normalized_length = cumulative_length / cumulative_length[-1]
 
     # Fit the spline using the normalized arc-length as parameter
-    tck, u = splprep([x, y], u=normalized_length, s=0)
+    try:
+        tck, u = splprep([x, y], u=normalized_length, s=0)
+    except Exception as e:
+        points = np.vstack((x, y)).T
+        print("error at: ", points)
+        print("Error in splprep: ", e)
+        return waypoints
 
     # Generate equally spaced parameter values in normalized arc-length
     u_new = np.linspace(0, 1, num_points)
@@ -183,7 +189,7 @@ class Path:
         if name is not None:
             self.name = name
             current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
+            with open(os.path.join(current_path, 'config/runs_mod.yaml'), 'r') as stream:
                 data = yaml.safe_load(stream)
                 destinations = data[name]
         else:
@@ -219,41 +225,6 @@ class Path:
 
         runs1 = np.hstack(runs)
         
-        # for undetected in self.undetectable_areas:
-        #     print("undetected: ", len(undetected))
-        # print("runs1: ", runs1.shape, "x0: ", x0)
-        # runs1:  (2, 168) x0:  [3 2 0]
-        
-        #find closest index to x0
-        # if x0 is not None:
-        #     def calculate_distances(run, x0):
-        #         return np.sqrt(np.sum((run[:2, :] - x0[:2, None])**2, axis=0))
-        #     # Find the closest point across all runs
-        #     min_distance = np.inf
-        #     min_distance_run_index = -1
-        #     min_distance_point_index = -1
-
-        #     for i, run in enumerate(runs):
-        #         distances = calculate_distances(run, x0)
-        #         min_index = np.argmin(distances)
-        #         min_dist = distances[min_index]
-                
-        #         if min_dist < min_distance:
-        #             min_distance = min_dist
-        #             min_distance_run_index = i
-        #             min_distance_point_index = min_index
-
-        #     # Now modify the list of runs as per the instructions
-        #     if min_distance_run_index != -1:
-        #         closest_run = runs[min_distance_run_index]
-        #         # Append x0 to the closest run before the closest waypoint
-        #         modified_run = np.hstack((closest_run[:, :min_distance_point_index], x0[:2, None], closest_run[:, min_distance_point_index:]))
-        #         # Eliminate the waypoints before x0
-        #         modified_run = modified_run[:, min_distance_point_index:]
-        #         # Update the list of runs
-        #         runs = [modified_run] + runs[min_distance_run_index+1:]
-                
-        # print("runs: ", len(runs))
         # Compute path lengths 
         path_lengths = [np.sum(np.linalg.norm(run[:, 1:] - run[:, :-1], axis=0)) for run in runs]
         self.density = 1/abs(self.v_ref)/T # wp/m
@@ -264,6 +235,36 @@ class Path:
         runs_cw = []
         attributes_hw = []
         attributes_cw = []
+        n = len(runs)
+        for i in range(n):
+            if i >= n:
+                break
+            run = runs[i]
+            if run.shape[1] < 4:
+                if i == len(runs) - 1:
+                    # if last, append to the previous run
+                    # remove the first element of run
+                    run = run[:, 1:]
+                    runs[i-1] = np.hstack((runs[i-1], run))
+                    attributes[i-1] = attributes[i-1] + attributes[i]
+                    path_lengths[i-1] += path_lengths[i]
+                    runs.pop(i)
+                    attributes.pop(i)
+                    path_lengths.pop(i)
+                    break
+                else:
+                    # if has less than 4 waypoints, append to the next run
+                    # remove the last element of run
+                    run = run[:, :-1]
+                    runs[i+1] = np.hstack((run, runs[i+1]))
+                    attributes[i+1] = attributes[i] + attributes[i+1]
+                    path_lengths[i+1] += path_lengths[i]
+                    runs.pop(i)
+                    attributes.pop(i)
+                    path_lengths.pop(i)
+                    i -= 1
+                    n -= 1
+                i += 1
         for i, length in enumerate(path_lengths):
             # print(i, ") path length: ", length)
             runs_hw.append(interpolate_waypoints(runs[i].T, int(np.ceil(length*self.density/self.hw_density_factor))))
