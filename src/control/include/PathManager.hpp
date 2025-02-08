@@ -361,6 +361,7 @@ public:
         std_srvs::Trigger trigger_srv;
         
         tcp_client->send_trigger(trigger_srv);
+        tcp_client->send_params(state_refs_v, state_attributes_v);
 
         bool success = false;
         size_t retries = 50;

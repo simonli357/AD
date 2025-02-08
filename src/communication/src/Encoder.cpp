@@ -1,12 +1,21 @@
 #include "Encoder.hpp"
 #include "ros/serialization.h"
 #include "std_msgs/Header.h"
+#include "std_msgs/Float64MultiArray.h"
 #include "std_srvs/TriggerRequest.h"
 #include "std_srvs/TriggerResponse.h"
 #include <cstdint>
 #include <cstring>
 #include <netinet/in.h>
 #include <vector>
+
+std::vector<uint8_t> Encoder::serializeFloat64MultiArray(std_msgs::Float64MultiArray &array) {
+	uint32_t length = ros::serialization::serializationLength(array);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, array);
+	return data;
+}
 
 std::vector<uint8_t> Encoder::serializeFloat32MultiArray(std_msgs::Float32MultiArray &array) {
 	uint32_t length = ros::serialization::serializationLength(array);
