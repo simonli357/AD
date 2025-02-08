@@ -1,5 +1,4 @@
 import threading
-import time
 import numpy as np
 from cv_bridge import CvBridge
 import cv2
@@ -13,7 +12,7 @@ class UdpConnection:
         self.socket = udp_socket
         self.MAX_DGRAM = 65507
         if udp_socket is not None:
-            self.socket.setblocking(False)
+            self.socket.settimeout(None)
             self.data_actions = OrderedDict({
                 1: self.store_lane2,
                 2: self.store_road_object,
@@ -23,20 +22,13 @@ class UdpConnection:
                 6: self.store_depth_image,
             })
             self.types = list(self.data_actions.keys())
-            self.lane2_buf = deque([], 100)
-            self.road_object_buf = deque([], 100)
-            self.waypoint_buf = deque([], 100)
-            self.sign_buf = deque([], 100)
-            self.rgb_buf = deque([], 100)
-            self.depth_buf = deque([], 100)
-            self.lane2 = Lane2Msg(b'\x02')
-            self.road_object = Float32MultiArray()
-            self.waypoint = Float32MultiArray()
-            self.sign = Float32MultiArray()
-            self.rgb_frame = None
-            self.depth_frame = None
+            self.lane2_buf = deque([], 1)
+            self.road_object_buf = deque([], 1)
+            self.waypoint_buf = deque([], 1)
+            self.sign_buf = deque([], 1)
+            self.rgb_buf = deque([], 1)
+            self.depth_buf = deque([], 1)
             threading.Thread(target=self.receive, daemon=True).start()
-            threading.Thread(target=self.process, daemon=True).start()
 
     def receive(self):
         while True:
@@ -51,24 +43,8 @@ class UdpConnection:
                 if message_type in self.data_actions:
                     self.data_actions[message_type](bytes)
             except Exception as e:
-                # print(e)
+                print(e)
                 continue
-
-    def process(self):
-        while True:
-            if len(self.lane2_buf) > 0:
-                self.parse_lane2(self.lane2_buf.popleft())
-            if len(self.road_object_buf) > 0:
-                self.parse_road_object(self.road_object_buf.popleft())
-            if len(self.waypoint_buf) > 0:
-                self.parse_waypoint(self.waypoint_buf.popleft())
-            if len(self.sign_buf) > 0:
-                self.parse_sign(self.sign_buf.popleft())
-            if len(self.rgb_buf) > 0:
-                self.parse_rgb_image(self.rgb_buf.popleft())
-            if len(self.depth_buf) > 0:
-                self.parse_depth_image(self.depth_buf.popleft())
-            time.sleep(0.008)
 
     ###################
     # Data actions
@@ -96,45 +72,63 @@ class UdpConnection:
     # Utility methods
     ####################
 
-    def parse_lane2(self, bytes):
+    def parse_lane2(self):
         try:
-            self.lane2.decode(bytes)
+            if len(self.lane2_buf) > 0:
+                return Lane2Msg(b'\x02').decode(self.lane2_buf[0])
+            return None
         except Exception as e:
             print(e)
+            return None
 
-    def parse_road_object(self, bytes):
+    def parse_road_object(self):
         try:
-            self.road_object.deserialize(bytes)
+            if len(self.road_object_buf) > 0:
+                return Float32MultiArray().deserialize(self.road_object_buf[0])
+            return None
         except Exception as e:
             print(e)
+            return None
 
-    def parse_waypoint(self, bytes):
+    def parse_waypoint(self):
         try:
-            self.waypoint.deserialize(bytes)
+            if len(self.waypoint_buf) > 0:
+                return Float32MultiArray().deserialize(self.waypoint_buf[0])
+            return None
         except Exception as e:
             print(e)
+            return None
 
-    def parse_sign(self, bytes):
+    def parse_sign(self):
         try:
-            self.sign.deserialize(bytes)
+            if len(self.sign_buf) > 0:
+                return Float32MultiArray().deserialize(self.sign_buf[0])
+            return None
         except Exception as e:
             print(e)
+            return None
 
-    def parse_rgb_image(self, bytes):
+    def parse_rgb_image(self):
         try:
-            np_array = np.frombuffer(bytes, dtype=np.uint8)
-            cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-            bridge = CvBridge()
-            self.rgb_frame = bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+            if len(self.rgb_buf) > 0:
+                np_array = np.frombuffer(self.rgb_buf[0], dtype=np.uint8)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+                bridge = CvBridge()
+                return bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+            return None
         except Exception as e:
             print(e)
+            return None
 
-    def parse_depth_image(self, bytes):
+    def parse_depth_image(self):
         try:
-            np_array = np.frombuffer(bytes, dtype=np.uint8)
-            cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-            cv_image = (cv_image).astype(np.uint16)
-            bridge = CvBridge()
-            self.depth_frame = bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
+            if len(self.depth_buf) > 0:
+                np_array = np.frombuffer(self.depth_buf[0], dtype=np.uint8)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
+                cv_image = (cv_image).astype(np.uint16)
+                bridge = CvBridge()
+                return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
+            return None
         except Exception as e:
             print(e)
+            return None
