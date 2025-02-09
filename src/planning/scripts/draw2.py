@@ -56,20 +56,32 @@ class Draw_MPC_tracking(object):
         plt.show()
 
     def draw_static_objects(self):
+        # Draw obstacles as circles with radius
         for obj in self.objects:
-            obj_pose = obj['pose']
-            obj_type = obj['type']
-            # Label text for each object
-            self.ax.text(obj_pose[0] + 0.1, obj_pose[1] + 0.1, '{} ({:.2f}, {:.2f})'.format(obj_type, *obj_pose), 
-                        color='blue', fontsize=12, bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
-            # Object position marker
-            self.ax.scatter(obj_pose[0], obj_pose[1], c='blue', s=100)  
+            x = obj['x']
+            y = obj['y']
+            radius = obj['radius']
             
-        for car in self.car_states:
-            self.ax.scatter(car[0], car[1], c='red', s=100, marker='s')  # Square for car
-            self.ax.text(car[0] + 0.1, car[1] + 0.1, '{} ({:.2f}, {:.2f}, {:.2f})'.format("car", *car), 
-                        color='red', fontsize=12, bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
+            # Draw circular obstacle
+            circle = plt.Circle((x, y), radius, color='blue', alpha=0.3, zorder=3)
+            self.ax.add_patch(circle)
+            
+            # Obstacle label text
+            self.ax.text(x + 0.1, y + 0.1, 
+                        f"Obstacle ({x:.2f}, {y:.2f})\nR: {radius:.2f}", 
+                        color='blue', fontsize=12, 
+                        bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
 
+        # Draw cars if available
+        if hasattr(self, 'car_states') and self.car_states is not None:
+            for car in self.car_states:
+                # Draw car position
+                self.ax.scatter(car[0], car[1], c='red', s=100, marker='s', zorder=4)
+                # Car label text
+                self.ax.text(car[0] + 0.1, car[1] + 0.1, 
+                            'Car ({:.2f}, {:.2f})'.format(car[0], car[1]), 
+                            color='red', fontsize=12,
+                            bbox=dict(facecolor='white', alpha=0.5, edgecolor='none'))
     def animation_init(self, ):
         self.recent_positions = []
         self.max_recent_positions = 5

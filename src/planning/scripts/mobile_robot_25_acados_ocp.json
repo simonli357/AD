@@ -56,7 +56,9 @@
         "lbx_e": [],
         "lg": [],
         "lg_e": [],
-        "lh": [],
+        "lh": [
+            0.0
+        ],
         "lh_0": [],
         "lh_e": [],
         "lphi": [],
@@ -89,7 +91,9 @@
         "ubx_e": [],
         "ug": [],
         "ug_e": [],
-        "uh": [],
+        "uh": [
+            1e+20
+        ],
         "uh_0": [],
         "uh_e": [],
         "uphi": [],
@@ -317,7 +321,7 @@
         "nbxe_0": 3,
         "ng": 0,
         "ng_e": 0,
-        "nh": 0,
+        "nh": 1,
         "nh_0": 0,
         "nh_e": 0,
         "np": 2,
@@ -350,7 +354,7 @@
     },
     "json_file": "./mobile_robot_25_acados_ocp.json",
     "model": {
-        "con_h_expr": null,
+        "con_h_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegmcaaaaaaaaaaaaaachekahndkahndkiopdeglaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaajhegmcaaaaaaaaaaaaaajghaaaaaaaegmcaaaaaaaaaaaaaachaaaaaaaaaaaaanpd",
         "con_h_expr_0": null,
         "con_h_expr_e": null,
         "con_phi_expr": null,

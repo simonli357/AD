@@ -7,13 +7,14 @@ from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
 from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
 from python_server.msg.trigger_msg import TriggerMsg
+from python_server.msg.params_msg import ParamsMsg
 
 
 class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
         if client_socket is not None:
-            self.socket.setblocking(False)
+            self.socket.settimeout(None)
             self.data_actions = OrderedDict({
                 b'\x01': self.parse_string,
                 b'\x02': self.parse_trigger,
@@ -23,6 +24,7 @@ class TcpConnection:
                 b'\x06': self.parse_set_states_srv,
                 b'\x07': self.parse_waypoints_srv,
                 b'\x08': self.parse_start_srv,
+                b'\x09': self.parse_params,
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -33,6 +35,7 @@ class TcpConnection:
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
+            self.params = ParamsMsg(b'\x09')
             threading.Thread(target=self.receive, daemon=True).start()
             self.send_string("ack")
 
@@ -46,7 +49,7 @@ class TcpConnection:
                 data += chunk
             return data
         except Exception as e:
-            # print(e)
+            print(e)
             return data
 
     def receive(self):
@@ -62,7 +65,7 @@ class TcpConnection:
                             continue
                         break
                     except Exception as e:
-                        # print(e)
+                        print(e)
                         continue
                 length = struct.unpack('<I', header[:message_size])[0]
                 message_type = header[message_size:header_size]
@@ -72,7 +75,7 @@ class TcpConnection:
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
             except Exception as e:
-                # print(e)
+                print(e)
                 continue
 
     ###################
@@ -124,6 +127,12 @@ class TcpConnection:
             self.triggers.decode(bytes)
         except Exception as e:
             print(e)
+
+    def parse_params(self, bytes):
+        try:
+            self.params.decode(bytes)
+        except Exception as e:
+            raise e
 
     def parse_message(self, bytes):
         try:

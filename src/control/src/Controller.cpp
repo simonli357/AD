@@ -139,32 +139,32 @@ public:
             if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_x;
                 double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_y;
-                utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
                 utils::goto_command::Request req;
                 utils::goto_command::Response res;
                 req.dest_x = x;
                 req.dest_y = y;
                 goto_command_callback(req, res);
                 utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+                utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
             }
             if(utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
                 double x = utils.tcp_client->get_set_states_srv_msgs().front()->x;
                 double y = utils.tcp_client->get_set_states_srv_msgs().front()->y;
-                utils.tcp_client->get_set_states_srv_msgs().pop();
                 utils::set_states::Request req;
                 utils::set_states::Response res;
                 req.x = x;
                 req.y = y;
                 set_states_callback(req, res);
                 utils.tcp_client->send_set_states_srv(true);
+                utils.tcp_client->get_set_states_srv_msgs().pop();
             }
             if(utils.tcp_client->get_start_srv_msgs().size() > 0) {
                 std_srvs::SetBool::Request req;
                 std_srvs::SetBool::Response res;
                 req.data = utils.tcp_client->get_start_srv_msgs().front();
-                utils.tcp_client->get_start_srv_msgs().pop();
                 start_bool_callback(req, res);
                 utils.tcp_client->send_start_srv(true);
+                utils.tcp_client->get_start_srv_msgs().pop();
             }
             if(utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
                 double x0 = utils.tcp_client->get_waypoints_srv_msgs().front()->x0;

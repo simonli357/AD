@@ -69,11 +69,13 @@ class GlobalPlanner:
                 x1, y1 = self.pos[u]
                 x2, y2 = self.pos[v]
                 distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                if self.attribute[u] == 4 or self.attribute[v] == 4 or self.attribute[u] == 5 or self.attribute[v] == 5:
+                    # in highway, distance is 0.5
+                    distance *= 0.5
                 self.G[u][v]['weight'] = distance
             else:
                 self.G[u][v]['weight'] = float('inf')
         
-        # Define destinations from the problem statement, converting to strings
         self.base_destinations = ['386', '343', '362', '368', '317', '318', '404', '399', 
                              '425', '420', '437', '82', '80', '93', '121', '116', '127', '75', 
                              '71', '185', '27', '25', '31', '29', '301', '8', '289', '199', 
@@ -186,7 +188,11 @@ if __name__ == "__main__":
     
     for start in starting_points:
         start_str = str(start)
-        optimal_path, total_dist = planner.find_optimal_sequence(start_str, 157.0)
+        total_dist = 0.0
+        max_dist = 157.0
+        while total_dist < 149.0:
+            optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
+            max_dist += 2.0
         optimal_path_ints = [int(node) for node in optimal_path]
         #remove first node from path
         optimal_path_ints.pop(0)
