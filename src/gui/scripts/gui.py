@@ -921,8 +921,7 @@ class OpenCVGuiApp(QWidget):
                 print("Waiting for control node client to connect")
                 while self.server.utility_node_client.socket is None:
                     time.sleep(0.1)
-                req = waypointsRequest()
-                self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
+                self.server.utility_node_client.send_waypoints_srv(vref_name, path_name, x0, y0, yaw0)
                 max_retries = 50
                 retries = 0
                 res = self.server.utility_node_client.waypoints_srv_msg
