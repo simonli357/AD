@@ -152,7 +152,9 @@ class OpenCVGuiApp(QWidget):
             padding: 5px;
             """
         )
-        self.centiseconds = 0
+        # self.centiseconds = 0
+        self.start_time = None
+        self.accumulated_centiseconds = 0
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
         # self.time_timer.start(10)  # Update every 10 ms
@@ -481,35 +483,65 @@ class OpenCVGuiApp(QWidget):
 
     # ROS service calls
     def update_params(self, req):
-        try:
-            # Retrieve updated parameters
-            state_refs = rospy.get_param('/state_refs')
-            self.state_refs_np = np.array(state_refs).reshape(3, -1)
+        if self.server is None:
+            try:
+                # Retrieve updated parameters
+                state_refs = rospy.get_param('/state_refs')
+                self.state_refs_np = np.array(state_refs).reshape(3, -1)
 
-            state_attributes = rospy.get_param('/state_attributes')
-            self.attributes_np = np.array(state_attributes)
+                state_attributes = rospy.get_param('/state_attributes')
+                self.attributes_np = np.array(state_attributes)
 
-            print("state ref shape: ", self.state_refs_np.shape)
-            # print first 3 rows
-            print("state ref: ", self.state_refs_np.T[:, :3])
-            path = os.path.dirname(os.path.abspath(__file__))
-            np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
-            print("saved state refs")
-            rospy.loginfo("Parameters updated successfully.")
-            return TriggerResponse(success=True, message="Parameters updated")
-        except Exception as e:
-            rospy.logerr(f"Failed to update parameters: {e}")
-            return TriggerResponse(success=False, message=f"Failed to update: {e}")
+                print("state ref shape: ", self.state_refs_np.shape)
+                # print first 3 rows
+                print("state ref: ", self.state_refs_np.T[:, :3])
+                path = os.path.dirname(os.path.abspath(__file__))
+                np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+                print("saved state refs")
+                rospy.loginfo("Parameters updated successfully.")
+                return TriggerResponse(success=True, message="Parameters updated")
+            except Exception as e:
+                rospy.logerr(f"Failed to update parameters: {e}")
+                return TriggerResponse(success=False, message=f"Failed to update: {e}")
+        else:
+            try:
+                # Retrieve updated params
+                max_retries = 50
+                retries = 0
+                params = self.server.utility_node_client.params
+                while (retries < max_retries):
+                    if (len(params.state_refs) > 0 and len(params.attributes) > 0):
+                        self.state_refs_np = params.state_refs.popleft()
+                        self.attributes_np = params.attributes.popleft()
+                        print("state ref shape: ", self.state_refs_np.shape)
+                        # print first 3 rows
+                        print("state ref: ", self.state_refs_np.T[:, :3])
+                        path = os.path.dirname(os.path.abspath(__file__))
+                        np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+                        print("saved state refs")
+                        rospy.loginfo("Parameters updated successfully.")
+                        return TriggerResponse(success=True, message="Parameters updated")
+                    retries += 1
+                    time.sleep(0.1)
+                print("Failed to update params: timeout")
+                return TriggerResponse(success=False, message="Failed to update: timeout")
+            except Exception as e:
+                print(f"Failed to update parameters: {e}")
+                return TriggerResponse(success=False, message=f"Failed to update: {e}")
 
     def start(self):
         self.call_start_service(not self.started)
         if not self.started:
-            self.time_timer.start(10)
+            if self.start_time is None:
+                self.start_time = time.time()
+            else:
+                self.start_time = time.time() - (self.accumulated_centiseconds / 100)
+            self.time_timer.start(25)
             self.start_button.setStyleSheet("""
                 QPushButton {
                     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
                         stop:0 #DC3545, stop:1 #00FF00);
-                    border: 2px solid #DC3545;  
+                    border: 2px solid #DC3545;
                     border-radius: 30px;  /* Circular shape (80px diameter) */
                     color: white;
                     font-size: 14px;
@@ -529,6 +561,10 @@ class OpenCVGuiApp(QWidget):
             """)
             self.start_button.setText("Stop")
         else:
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                self.accumulated_centiseconds += int(elapsed * 100)
+                self.start_time = None
             self.time_timer.stop()
             self.start_button.setStyleSheet("""
                 QPushButton {
@@ -826,10 +862,18 @@ class OpenCVGuiApp(QWidget):
             self.message_history.pop(0)
 
     def update_stopwatch(self):
-        self.centiseconds += 1
-        minutes = (self.centiseconds // 6000) % 60
-        seconds = (self.centiseconds // 100) % 60
-        centiseconds = self.centiseconds % 100
+        if self.start_time is None:
+            return
+        current_time = time.time()
+        elapsed_seconds = current_time - self.start_time
+        total_centiseconds = int(elapsed_seconds * 100) + self.accumulated_centiseconds
+        minutes = (total_centiseconds // 6000) % 60
+        seconds = (total_centiseconds // 100) % 60
+        centiseconds = total_centiseconds % 100
+        # self.centiseconds += 1
+        # minutes = (self.centiseconds // 6000) % 60
+        # seconds = (self.centiseconds // 100) % 60
+        # centiseconds = self.centiseconds % 100
         self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
 
     def toggle_visibility(self):
@@ -1245,27 +1289,44 @@ class OpenCVGuiApp(QWidget):
             )
 
 
-def callbacks(gui, server):
+def udp_callbacks(gui, server):
     while True:
-        # Image rgb
-        if server.udp_connection.rgb_frame is not None:
-            gui.camera_callback(server.udp_connection.rgb_frame)
-        # Image depth
-        if server.udp_connection.depth_frame is not None:
-            gui.depth_callback(server.udp_connection.depth_frame)
-        # Lane2
-        if server.udp_connection.lane2.header is not None:
-            gui.lane_callback(server.udp_connection.lane2)
-        # Road object
-        if server.udp_connection.road_object is not None:
-            gui.road_objects_callback(server.udp_connection.road_object)
-        # Waypoints
-        if server.udp_connection.waypoint is not None:
-            gui.waypoint_callback(server.udp_connection.waypoint)
-        # Signs
-        if server.udp_connection.sign is not None:
-            gui.sign_callback(server.udp_connection.sign)
+        rgb_image = None
+        depth_image = None
+        if gui.show_depth:
+            depth_image = server.udp_connection.parse_depth_image()
+        else:
+            rgb_image = server.udp_connection.parse_rgb_image()
 
+        sign = server.udp_connection.parse_sign()
+        waypoint = server.udp_connection.parse_waypoint()
+        road_obj = server.udp_connection.parse_road_object()
+        lane2 = server.udp_connection.parse_lane2()
+
+        # Image rgb
+        if rgb_image is not None:
+            gui.camera_callback(rgb_image)
+        # Image depth
+        if depth_image is not None:
+            gui.depth_callback(depth_image)
+        # Lane2
+        if lane2 is not None:
+            gui.lane_callback(lane2)
+        # Road object
+        if road_obj is not None:
+            gui.road_objects_callback(road_obj)
+        # Waypoints
+        if waypoint is not None:
+            gui.waypoint_callback(waypoint)
+        # Signs
+        if sign is not None:
+            gui.sign_callback(sign)
+
+        time.sleep(0.016)
+
+
+def tcp_callbacks(gui, server):
+    while True:
         if server.utility_node_client.socket is not None:
             # Messages
             if server.utility_node_client.messages:
@@ -1292,6 +1353,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = OpenCVGuiApp(server=server)
     if use_tcp:
-        threading.Thread(target=callbacks, args=(window, server,), daemon=True).start()
+        threading.Thread(target=udp_callbacks, args=(window, server,), daemon=True).start()
+        threading.Thread(target=tcp_callbacks, args=(window, server,), daemon=True).start()
     window.show()
     sys.exit(app.exec_())
