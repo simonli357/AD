@@ -1,14 +1,15 @@
-#include "htn/actions/Move.hpp"
+#include "htn/actions/MoveForward.hpp"
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-Move::Move(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+    cost = 1; // Moving forward is the best move as it moves us closer to the goal.
 	pre_conditions = {
 		{PARKING_SIGN_DETECTED, '_'}, {PARKING_COUNT, '_'}, {TRAFFIC_LIGHT_DETECTED, false}, {STOP_SIGN_DETECTED, false}, {OBSTACLE_DETECTED, false}, {DESTINATION_REACHED, false},
 	};
 }
 
-void Move::execute() {
+void MoveForward::execute() {
 	if (!can_execute()) {
 		std::cout << "Illegal action, pre conditions not satisfied" << std::endl;
 		return;
@@ -20,7 +21,7 @@ void Move::execute() {
 	update_post_conditions();
 }
 
-bool Move::detect_stop_sign() {
+bool MoveForward::detect_stop_sign() {
 	int sign_index = utils.object_index(OBJECT::STOPSIGN);
 	if (sign_index >= 0) {
 		double dist = utils.object_distance(sign_index);
@@ -36,7 +37,7 @@ bool Move::detect_stop_sign() {
 	return false;
 }
 
-bool Move::detect_traffic_light() {
+bool MoveForward::detect_traffic_light() {
 	bool is_red = false;
 	int sign_index = utils.object_index(OBJECT::REDLIGHT);
 	if (sign_index >= 0) {
@@ -64,7 +65,7 @@ bool Move::detect_traffic_light() {
 	return false;
 }
 
-bool Move::detect_parking_sign() {
+bool MoveForward::detect_parking_sign() {
 	int park_index = utils.object_index(OBJECT::PARK);
 	if (park_index >= 0) {
 		double dist = utils.object_distance(park_index);
@@ -88,7 +89,7 @@ bool Move::detect_parking_sign() {
 	return false;
 }
 
-bool Move::detect_obstacles() {
+bool MoveForward::detect_obstacles() {
 	double dist;
 	std::list<int> cars = utils.recent_car_indices;
 	// std::cout << "number of cars detected: " << cars.size() << std::endl;
@@ -100,7 +101,7 @@ bool Move::detect_obstacles() {
 	return false;
 }
 
-bool Move::destination_reached() {
+bool MoveForward::destination_reached() {
 	double error_sq = (x_current.head(2) - world.destination).squaredNorm();
 	if (error_sq < TOLERANCE_SQUARED && path_manager.target_waypoint_index >= path_manager.state_refs.rows() * 0.9) {
 		return true;
@@ -108,12 +109,11 @@ bool Move::destination_reached() {
 	return false;
 }
 
-void Move::update_post_conditions() {
+void MoveForward::update_post_conditions() {
 	post_conditions[STOP_SIGN_DETECTED] = detect_stop_sign();
 	post_conditions[TRAFFIC_LIGHT_DETECTED] = detect_traffic_light();
     if (detect_parking_sign()) {
         post_conditions[PARKING_SIGN_DETECTED] = true;
-        post_conditions[PARKING_COUNT] = 1;
     }
 	post_conditions[OBSTACLE_DETECTED] = detect_obstacles();
 	post_conditions[DESTINATION_REACHED] = destination_reached();
