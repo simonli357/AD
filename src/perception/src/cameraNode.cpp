@@ -69,10 +69,8 @@ class CameraNode {
 			cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
 			pipe.start(cfg);
 
-			// Query the stream profiles
 			auto profiles = pipe.get_active_profile().get_streams();
 
-			// Iterate to find the COLOR stream profile
 			for (auto &&p : profiles)
 			{
 					if (p.stream_type() == RS2_STREAM_COLOR)
@@ -174,7 +172,7 @@ class CameraNode {
 	bool cameraThreadRunning;
 	std::mutex mutex;
 	void cameraThreadFunc() {
-			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
+			ros::Rate cameraRate(30);
 			while (ros::ok() && cameraThreadRunning) {
 				get_frame();
 				cameraRate.sleep();

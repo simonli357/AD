@@ -23,16 +23,21 @@ class Optimizer(object):
 
         name = 'run3'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
-        self.waypoints_x = self.path.waypoints_x
-        self.waypoints_y = self.path.waypoints_y
+        self.waypoints_x_global = self.path.waypoints_x
+        self.waypoints_y_global = self.path.waypoints_y
+        self.global_waypoints = np.column_stack((self.path.waypoints_x, self.path.waypoints_y))
+        
         self.num_waypoints = self.path.num_waypoints
         self.wp_normals = self.path.wp_normals
         self.kappa = self.path.kappa
         self.density = self.path.density
-        self.state_refs = self.path.state_refs
+        self.state_refs_global = self.path.state_refs  
         self.input_refs = self.path.input_refs
-        self.waypoints_x = self.state_refs[:,0]
-        self.waypoints_y = self.state_refs[:,1]
+        
+        self.state_refs = self.convert_state_refs_to_frenet(self.state_refs_global)
+        self.waypoints_x = self.state_refs[:, 0]
+        self.waypoints_y = self.state_refs[:, 1]
+
 
         self.counter = 0
         self.target_waypoint_index = 0
@@ -41,8 +46,10 @@ class Optimizer(object):
         self.region_of_acceptance = 0.05/10*density * 2*1.5
         self.last_u = None
         self.t0 = 0
+        
         self.init_state = x0 if x0 is not None else self.state_refs[0]
-        self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
+        self.update_current_state(*self.init_state)  # assume update_current_state(s, d, epsi) sets self.current_state
+        
         self.init_state = self.current_state.copy()
         self.u0 = np.zeros((self.N, 2))
         self.next_trajectories = np.tile(self.init_state, self.N+1).reshape(self.N+1, -1) # set the initial state as the first trajectories for the robot
@@ -65,6 +72,114 @@ class Optimizer(object):
         self.export_fig = os.path.join(filepath+'/gifs_acados',name + '_N'+str(self.N) + '_vref'+str(self.v_ref) 
                                        + '_T'+str(self.T))
         
+    def global_to_frenet(self, x, y, yaw, path_points, s_cum):
+        """
+        Converts a single state in global coordinates (x, y, yaw) to Frenet coordinates (s, d, epsi)
+        given the reference path (path_points) and its cumulative arc-length (s_cum).
+        """
+        # Compute distances from the point to each waypoint.
+        distances = np.linalg.norm(path_points - np.array([x, y]), axis=1)
+        idx = np.argmin(distances)
+
+        # Determine the segment for projection:
+        if idx >= len(path_points) - 1:
+            idx = len(path_points) - 2
+        p1 = path_points[idx]
+        p2 = path_points[idx + 1]
+
+        # Compute the unit vector along the segment.
+        seg = p2 - p1
+        seg_length = np.linalg.norm(seg)
+        if seg_length < 1e-6:
+            seg_unit = np.array([1.0, 0.0])
+        else:
+            seg_unit = seg / seg_length
+
+        # Project the point onto the segment.
+        vec = np.array([x, y]) - p1
+        proj_len = np.dot(vec, seg_unit)
+        proj_point = p1 + proj_len * seg_unit
+
+        # The along-track coordinate s is the cumulative distance to the projection.
+        s_val = s_cum[idx] + proj_len
+
+        # Compute the lateral deviation d.
+        # First, compute a normal vector (rotate seg_unit by 90 degrees).
+        normal = np.array([-seg_unit[1], seg_unit[0]])
+        d_val = np.dot(vec, normal)
+
+        # Compute the reference heading (the tangent of the segment).
+        theta_path = np.arctan2(seg_unit[1], seg_unit[0])
+        # Heading error (epsi): difference between the vehicle yaw and the path tangent.
+        epsi = yaw - theta_path
+        # Normalize epsi to be between -pi and pi.
+        epsi = np.arctan2(np.sin(epsi), np.cos(epsi))
+        return s_val, d_val, epsi
+
+    def convert_state_refs_to_frenet(self, state_refs_global):
+        """
+        Converts an array of global state references (each [x, y, yaw])
+        into Frenet coordinates [s, d, epsi] using the reference path.
+        """
+        # Build a (N x 2) array for the reference path from the waypoints.
+        # Here we assume the waypoints are given in order.
+        path_points = np.column_stack((self.waypoints_x_global, self.waypoints_y_global))
+        # Compute cumulative arc-length along the path.
+        diffs = np.diff(path_points, axis=0)
+        ds = np.linalg.norm(diffs, axis=1)
+        s_cum = np.concatenate(([0], np.cumsum(ds)))
+
+        # Convert each global reference state.
+        state_refs_frenet = []
+        for ref in state_refs_global:
+            x, y, yaw = ref
+            s_val, d_val, epsi = self.global_to_frenet(x, y, yaw, path_points, s_cum)
+            state_refs_frenet.append([s_val, d_val, epsi])
+        return np.array(state_refs_frenet)  
+    
+    def frenet_to_global(self, frenet_state):
+        """
+        Convert a single Frenet state [s, d, epsi] back to global [x, y, yaw].
+        This function uses the original (global) reference path stored in self.global_waypoints.
+        """
+        s, d, epsi = frenet_state
+        global_points = self.global_waypoints  # Nx2 array of global [x,y]
+        # Compute cumulative arc-length along the global reference path.
+        diffs = np.diff(global_points, axis=0)
+        ds = np.linalg.norm(diffs, axis=1)
+        s_cum = np.concatenate(([0], np.cumsum(ds)))
+        # Find the segment in which s lies.
+        if s >= s_cum[-1]:
+            i = len(s_cum) - 2
+            s_local = s - s_cum[i]
+        else:
+            i = np.searchsorted(s_cum, s) - 1
+            if i < 0:
+                i = 0
+            s_local = s - s_cum[i]
+        p1 = global_points[i]
+        p2 = global_points[i + 1]
+        seg = p2 - p1
+        seg_length = np.linalg.norm(seg)
+        seg_unit = seg / seg_length if seg_length >= 1e-6 else np.array([1.0, 0.0])
+        pos_ref = p1 + s_local * seg_unit
+        # Compute the normal vector to the segment.
+        normal = np.array([-seg_unit[1], seg_unit[0]])
+        # Global position is the reference plus lateral offset.
+        x_global = pos_ref[0] + d * normal[0]
+        y_global = pos_ref[1] + d * normal[1]
+        # The global yaw is the reference segment heading plus the heading error.
+        theta_ref = np.arctan2(seg_unit[1], seg_unit[0])
+        yaw_global = theta_ref + epsi
+        yaw_global = np.arctan2(np.sin(yaw_global), np.cos(yaw_global))
+        return np.array([x_global, y_global, yaw_global])
+
+    def convert_traj_frenet_to_global(self, traj_frenet):
+        """
+        Convert an array (trajectory) of Frenet states (each [s,d,epsi]) to global states.
+        """
+        return np.array([self.frenet_to_global(state) for state in traj_frenet])
+    
     def create_solver(self, config_path='config/mpc_config25.yaml'):
         model = AcadosModel() #  ca.types.SimpleNamespace()
         # control inputs
@@ -72,24 +187,36 @@ class Optimizer(object):
         delta = ca.SX.sym('delta')
         controls = ca.vertcat(v, delta)
         # model states
-        x = ca.SX.sym('x')
-        y = ca.SX.sym('y')
-        psi = ca.SX.sym('psi')
-        states = ca.vertcat(x, y, psi)
+        s_f = ca.SX.sym('s')
+        d_f = ca.SX.sym('d')
+        epsi = ca.SX.sym('epsi')
+        states = ca.vertcat(s_f, d_f, epsi)
+        
         self.L = 0.258
-        rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta)]
+        # --- Define curvature as an extra parameter ---
+        kappa = ca.SX.sym('kappa')
+        
+        # --- Define Frenet dynamics ---
+        # ds/dt = v * cos(epsi) / (1 - kappa*d)
+        ds = v * ca.cos(epsi) / (1 - kappa * d_f)
+        # dd/dt = v * sin(epsi)
+        dd = v * ca.sin(epsi)
+        # depsi/dt = (v / L)*tan(delta) - kappa * ds/dt
+        depsi = v / self.L * ca.tan(delta) - kappa * ds
 
-        f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
-        # acados model
-        x_dot = ca.SX.sym('x_dot', len(rhs))
-        f_impl = x_dot - f(states, controls)
+        rhs = ca.vertcat(ds, dd, depsi)
 
-        model.f_expl_expr = f(states, controls)
+        f = ca.Function('f', [states, controls, kappa], [rhs],
+                        ['state', 'control_input', 'curvature'], ['rhs'])
+        x_dot = ca.SX.sym('x_dot', rhs.size1())
+        f_impl = x_dot - f(states, controls, kappa)
+
+        model.f_expl_expr = f(states, controls, kappa)
         model.f_impl_expr = f_impl
         model.x = states
         model.xdot = x_dot
         model.u = controls
-        model.p = []
+        model.p = ca.vertcat(kappa)
 
         current_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(current_path, config_path)
@@ -107,26 +234,38 @@ class Optimizer(object):
         self.v_min = config[constraint_name]['v_min']
         self.delta_max = config[constraint_name]['delta_max']
         self.delta_min = config[constraint_name]['delta_min']
+        
         self.x_min = config[constraint_name]['x_min']
         self.x_max = config[constraint_name]['x_max']
         self.y_min = config[constraint_name]['y_min']
         self.y_max = config[constraint_name]['y_max']
+        self.s_min = -10.0
+        self.s_max = 10.0
+        self.d_min = -10.0
+        self.d_max = 10.0
+        
         self.v_ref = config[constraint_name]['v_ref']
-        self.x_cost = config[cost_name]['x_cost']
-        self.y_cost = config[cost_name]['y_cost']
-        self.yaw_cost = config[cost_name]['yaw_cost']
+        # self.x_cost = config[cost_name]['x_cost']
+        # self.y_cost = config[cost_name]['y_cost']
+        # self.yaw_cost = config[cost_name]['yaw_cost']
+        self.s_cost = 2.0
+        self.d_cost = 2.0
+        self.epsi_cost = 1.0
         self.v_cost = config[cost_name]['v_cost']
         self.steer_cost = config[cost_name]['steer_cost']
         self.delta_v_cost = config[cost_name]['delta_v_cost']
         self.delta_steer_cost = config[cost_name]['delta_steer_cost']
-        self.costs = np.array([self.x_cost, self.yaw_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
-        Q = np.array([[self.x_cost, 0.0, 0.0],[0.0, self.y_cost, 0.0],[0.0, 0.0, self.yaw_cost]])*1
-        R = np.array([[self.v_cost, 0.0], [0.0, self.steer_cost]])*1
+        self.costs = np.array([self.s_cost, self.d_cost, self.epsi_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
+        Q = np.array([[self.s_cost,    0.0,          0.0],
+                      [0.0,         self.d_cost,    0.0],
+                      [0.0,          0.0,       self.epsi_cost]])
+        R = np.array([[self.v_cost, 0.0],
+                      [0.0,        self.steer_cost]])
 
         nx = model.x.size()[0]
         nu = model.u.size()[0]
         ny = nx + nu
-        n_params = len(model.p)
+        n_params = model.p.size()[0]
 
         os.chdir(os.path.dirname(os.path.realpath(__file__)))
         acados_source_path = os.environ['ACADOS_SOURCE_DIR']
@@ -153,8 +292,10 @@ class Optimizer(object):
         ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
         ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
         ocp.constraints.idxbu = np.array([0, 1])
-        ocp.constraints.lbx = np.array([self.x_min, self.y_min])
-        ocp.constraints.ubx = np.array([self.x_max, self.y_max])
+        # ocp.constraints.lbx = np.array([self.x_min, self.y_min])
+        # ocp.constraints.ubx = np.array([self.x_max, self.y_max])
+        ocp.constraints.lbx = np.array([self.s_min, self.d_min])
+        ocp.constraints.ubx = np.array([self.s_max, self.d_max])
         ocp.constraints.idxbx = np.array([0, 1])
 
         x_ref = np.zeros(nx)
@@ -211,43 +352,91 @@ class Optimizer(object):
         self.current_state = self.integrator.get('x')
         self.t0 += self.T
     
-    def update_current_state(self, x, y, yaw):
-        if self.target_waypoint_index < len(self.state_refs):
-            ref_yaw = self.state_refs[self.target_waypoint_index, 2]
-            while yaw - ref_yaw > np.pi:
-                yaw -= 2 * np.pi
-            while yaw - ref_yaw < -np.pi:
-                yaw += 2 * np.pi
-        self.current_state = np.array([x, y, yaw])
+    # def update_current_state(self, x, y, yaw):
+    #     if self.target_waypoint_index < len(self.state_refs):
+    #         ref_yaw = self.state_refs[self.target_waypoint_index, 2]
+    #         while yaw - ref_yaw > np.pi:
+    #             yaw -= 2 * np.pi
+    #         while yaw - ref_yaw < -np.pi:
+    #             yaw += 2 * np.pi
+    #     self.current_state = np.array([x, y, yaw])
+    
+    def update_current_state(self, s, d, epsi):
+        """
+        Example method to update the current state.
+        In your implementation, ensure that self.current_state is in [s, d, epsi].
+        """
+        self.current_state = np.array([s, d, epsi])
         
     def find_closest_waypoint(self):
-        distances = np.linalg.norm(np.vstack((self.waypoints_x, self.waypoints_y)).T - self.current_state[:2], axis=1)
+        """
+        In Frenet coordinates, self.current_state = [s, d, epsi].
+        self.waypoints_x and self.waypoints_y are the s and d coordinates of the reference path.
+        We compute the Euclidean distance between [s, d] of the current state and each waypoint.
+        """
+        # Build an array of reference points in the Frenet plane.
+        ref_points = np.column_stack((self.waypoints_x, self.waypoints_y))
+        # Extract the [s, d] from the current state.
+        current_sd = self.current_state[:2]
+        # Compute distances in the (s,d) plane.
+        distances = np.linalg.norm(ref_points - current_sd, axis=1)
         index = np.argmin(distances)
         return index, distances[index]
     def find_next_waypoint(self):
+        """
+        Determines the next waypoint index using the Frenet coordinates.
+        This version uses the distance (in the (s,d) plane) computed from find_closest_waypoint.
+        It then uses index differences to decide whether to step ahead.
+        """
         closest_idx, dist_to_waypoint = self.find_closest_waypoint()
+        
         if dist_to_waypoint < self.region_of_acceptance:
+            # If we are close enough to the current waypoint, try to move ahead.
             if closest_idx - self.last_waypoint_index < 15:
-                self.last_waypoint_index = max(self.last_waypoint_index, closest_idx+1)
+                self.last_waypoint_index = max(self.last_waypoint_index, closest_idx + 1)
             else:
                 closest_idx = self.last_waypoint_index
         else:
+            # If we are not close enough, limit the jump in indices.
             if closest_idx - self.last_waypoint_index > 15:
                 closest_idx = self.last_waypoint_index + 1
-            # If not within the region of acceptance, take smaller steps forward in the waypoint list
+            # Take a small step forward.
             self.last_waypoint_index += 1
+        
         target_idx = max(self.last_waypoint_index, closest_idx)
+        # Ensure we do not exceed the number of available waypoints.
         return min(target_idx, len(self.waypoints_x) - 1)
+    
     def draw_result(self, stats, xmin=None, xmax=None, ymin=None, ymax=None, objects=None, car_states=None):
+        """
+        Before calling the drawing function, convert the stored Frenet trajectories back to global coordinates.
+        """
+        # Convert initial state, simulation states, and reference states back to global.
+        global_init_state = self.frenet_to_global(self.init_state)
+        global_robot_states = self.convert_traj_frenet_to_global(self.xx)
+        global_ref_states = self.convert_traj_frenet_to_global(self.x_refs)
+        # Use the original global waypoints.
+        global_waypoints = self.global_waypoints
+
+        # Optionally, set drawing limits using global coordinates.
         if xmin is None:
-            xmin = self.x_min
-            xmax = self.x_max
-            ymin = self.y_min
-            ymax = self.y_max
-        Draw_MPC_tracking(self.u_c, init_state=self.init_state, 
-                        robot_states=self.xx, ref_states = self.x_refs, export_fig=self.export_fig, waypoints_x=self.waypoints_x, 
-                        waypoints_y=self.waypoints_y, stats = stats, costs = self.costs, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                        times = self.t_c, objects=objects, car_states=car_states)
+            # For example, you might compute these from the waypoints:
+            xmin = global_waypoints[:, 0].min() - 1
+            xmax = global_waypoints[:, 0].max() + 1
+            ymin = global_waypoints[:, 1].min() - 1
+            ymax = global_waypoints[:, 1].max() + 1
+
+        Draw_MPC_tracking(self.u_c,
+                          init_state=global_init_state,
+                          robot_states=global_robot_states,
+                          ref_states=global_ref_states,
+                          export_fig=self.export_fig,
+                          waypoints_x=global_waypoints[:, 0],
+                          waypoints_y=global_waypoints[:, 1],
+                          stats=stats,
+                          costs=self.costs,
+                          xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                          times=self.t_c, objects=objects, car_states=car_states)
     def compute_stats(self):
         ## after loop
         print("iter: ", self.mpciter)
