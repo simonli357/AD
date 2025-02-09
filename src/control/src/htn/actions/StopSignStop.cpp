@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 StopSignStop::StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+    cost = 2;
 	pre_conditions = {
 		{PARKING_SIGN_DETECTED, '_'}, {PARKING_COUNT, '_'}, {TRAFFIC_LIGHT_DETECTED, '_'}, {STOP_SIGN_DETECTED, true}, {OBSTACLE_DETECTED, '_'}, {DESTINATION_REACHED, '_'},
 	};

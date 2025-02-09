@@ -24,6 +24,7 @@ class Action {
 	PathManager &path_manager = world.path_manager;
 	Eigen::Vector3d &x_current = world.x_current;
 
+	int32_t cost;
 	std::unordered_map<PRIMITIVES, ValueType> pre_conditions;
 	std::unordered_map<PRIMITIVES, ValueType> post_conditions;
 

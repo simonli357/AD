@@ -2,8 +2,6 @@
 
 #include "Action.hpp"
 #include <cstdint>
-#include <memory>
-#include <queue>
 #include <unordered_map>
 #include <variant>
 
@@ -21,7 +19,7 @@ class HTN {
 	std::unordered_map<PRIMITIVES, ValueType> initial_state;
 	std::unordered_map<PRIMITIVES, ValueType> goal_state;
 
-	std::queue<std::unique_ptr<Action>> plan;
+	void start();
 
   private:
 };
