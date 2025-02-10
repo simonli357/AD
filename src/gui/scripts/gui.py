@@ -11,7 +11,7 @@ import rospy
 from python_server.server import Server
 from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
@@ -23,8 +23,16 @@ import argparse
 
 
 class OpenCVGuiApp(QWidget):
+    update_camera_signal = pyqtSignal(QPixmap)
+    update_map_signal = pyqtSignal()
+
     def __init__(self, server=None):
         super().__init__()
+        self.update_camera_signal.connect(self.update_camera_display)
+        self.update_map_signal.connect(self.update_map_display)
+        self.current_camera_pixmap = None
+        self.current_map_pixmap = None
+
         self.server = server
         self.current_zoom = 1.0
         self.min_zoom = 1.0
@@ -481,6 +489,13 @@ class OpenCVGuiApp(QWidget):
             self.message_sub = rospy.Subscriber('/message', String, self.message_callback)
         return
 
+    def update_camera_display(self, pixmap):
+        self.current_camera_pixmap = pixmap
+        self.camera_label.setPixmap(self.current_camera_pixmap)
+
+    def update_map_display(self):
+        self.update_map()
+
     # ROS service calls
     def update_params(self, req):
         if self.server is None:
@@ -831,7 +846,7 @@ class OpenCVGuiApp(QWidget):
             bytes_per_line = ch * w
             qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
             pixmap = QPixmap.fromImage(qt_image)
-            self.camera_label.setPixmap(pixmap)
+            self.update_camera_signal.emit(pixmap)
 
         except cv2.error as e:
             rospy.logerr(f"OpenCV error: {e}")
@@ -854,7 +869,7 @@ class OpenCVGuiApp(QWidget):
         bytes_per_line = ch * w
         qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qt_image)
-        self.camera_label.setPixmap(pixmap)
+        self.update_camera_signal.emit(pixmap)
 
     def message_callback(self, msg):
         self.message_history.append(msg.data)
@@ -921,8 +936,7 @@ class OpenCVGuiApp(QWidget):
                 print("Waiting for control node client to connect")
                 while self.server.utility_node_client.socket is None:
                     time.sleep(0.1)
-                req = waypointsRequest()
-                self.server.utility_node_client.send_waypoints_srv(req.vrefName, req.pathName, req.x0, req.y0, req.yaw0)
+                self.server.utility_node_client.send_waypoints_srv(vref_name, path_name, x0, y0, yaw0)
                 max_retries = 50
                 retries = 0
                 res = self.server.utility_node_client.waypoints_srv_msg
@@ -1216,7 +1230,8 @@ class OpenCVGuiApp(QWidget):
         step = channel * width
         q_img = QImage(display_image.data, width, height, step, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_img)
-        self.map_item.setPixmap(pixmap)
+        self.current_map_pixmap = pixmap
+        self.map_item.setPixmap(self.current_map_pixmap)
 
     def eventFilter(self, source, event):
         if event.type() == event.Wheel:  # Zoom with mouse wheel

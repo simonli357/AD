@@ -4,7 +4,6 @@
 from path2 import Path
 import os
 import sys
-import timeit
 
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
