@@ -1,26 +1,39 @@
+#pragma once
+
 #include "MPC.hpp"
 #include "PathManager.hpp"
+#include "htn/Primitives.hpp"
 #include "utility.hpp"
 #include "utils/constants.h"
+#include "utils/goto_command.h"
+#include "utils/set_states.h"
+#include <std_srvs/SetBool.h>
+#include <unordered_map>
+#include <variant>
 
+using ValueType = std::variant<bool, double, int32_t, char>;
 using namespace VehicleConstants;
 
 class World {
   public:
-	World(ros::NodeHandle &nh, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init,
-		  bool real);
+	World(ros::NodeHandle &nh, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real);
 	World(World &&) = delete;
 	World(const World &) = delete;
 	World &operator=(World &&) = delete;
 	World &operator=(const World &) = delete;
 	~World();
 
+	std::unordered_map<PRIMITIVES, ValueType> initial_state;
+	std::unordered_map<PRIMITIVES, ValueType> goal_state;
+	std::unordered_map<PRIMITIVES, ValueType> current_state;
+
 	ros::NodeHandle &nh;
+	ros::ServiceServer start_trigger;
 
 	double change_lane_yaw = 0.15, cw_speed_ratio, hw_speed_ratio, sign_localization_threshold = 0.5, lane_localization_orientation_threshold = 10, pixel_center_offset = -30.0,
-		   constant_distance_to_intersection_at_detection = 0.371, intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166,
-		   parking_base_speed = -0.2, parking_base_thresh = 0.1, change_lane_speed = 0.2, change_lane_thresh = 0.05, sign_localization_orientation_threshold = 15,
-		   intersection_localization_orientation_threshold = 15, NORMAL_SPEED = 0.175, FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
+		   constant_distance_to_intersection_at_detection = 0.371, intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166, parking_base_speed = -0.2,
+		   parking_base_thresh = 0.1, change_lane_speed = 0.2, change_lane_thresh = 0.05, sign_localization_orientation_threshold = 15, intersection_localization_orientation_threshold = 15,
+		   NORMAL_SPEED = 0.175, FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
 	bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, has_light = false, emergency = false;
 	bool initialized = false;
 	int pedestrian_count_thresh = 8;
@@ -52,13 +65,20 @@ class World {
 
 	void update_mpc_states(double x, double y, double yaw);
 	void update_mpc_states();
-	void solve();
 	void publish_waypoints();
 	void publish_commands();
 	bool intersection_reached();
 	int intersection_based_relocalization();
 	bool near_intersection();
-    bool sign_in_path(int sign_idx, double search_dist);
+	bool sign_in_path(int sign_idx, double search_dist);
+	void call_trigger_service();
 
   private:
+	std::thread services_thread;
+	int initialize();
+	void receive_services();
+	void htn_algorithm();
+	bool goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res);
+	bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res);
+	bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
 };

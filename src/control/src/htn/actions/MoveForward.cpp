@@ -5,7 +5,13 @@
 MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
     cost = 1; // Moving forward is the best move as it moves us closer to the goal.
 	pre_conditions = {
-		{PARKING_SIGN_DETECTED, '_'}, {PARKING_COUNT, '_'}, {TRAFFIC_LIGHT_DETECTED, false}, {STOP_SIGN_DETECTED, false}, {OBSTACLE_DETECTED, false}, {DESTINATION_REACHED, false},
+        {FORCE_STOP, false},
+		{PARKING_SIGN_DETECTED, '_'},
+        {PARKING_COUNT, '_'},
+        {TRAFFIC_LIGHT_DETECTED, false},
+        {STOP_SIGN_DETECTED, false},
+        {OBSTACLE_DETECTED, false},
+        {DESTINATION_REACHED, false},
 	};
 }
 
@@ -15,10 +21,41 @@ void MoveForward::execute() {
 		return;
 	}
 	world.update_mpc_states();
-	world.solve();
+	solve();
+	update_post_conditions();
 	// TODO : Lane based relocalization
 	// TODO : Sign based relocalization
-	update_post_conditions();
+}
+
+void MoveForward::solve() {
+	int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
+	// std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+	// std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " <<
+	// path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl; std::cout <<
+	// "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " <<
+	// path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl; for (int i =
+	// path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 6, static_cast<int>(path_manager.state_refs.rows())); i++) {
+	//     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) <<
+	//     std::endl;
+	// }
+	int idx = path_manager.target_waypoint_index;
+	if (idx > path_manager.state_refs.rows() - 2) {
+		idx = path_manager.state_refs.rows() - 2;
+		utils.debug("WARNING: solve(): target waypoint index exceeds state_refs size, using last waypoint...", 3);
+	}
+	int N = std::min(Eigen::Index(path_manager.N), path_manager.state_refs.rows() - idx);
+	if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
+
+		Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
+		Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
+		int status = world.mpc.solve(state_refs_block, input_refs_block, x_current);
+	} else {
+		ROS_WARN("Block indices are out of bounds, skipping solve.");
+		ROS_INFO("state_refs rows: %ld, cols: %ld", path_manager.state_refs.rows(), path_manager.state_refs.cols());
+		ROS_INFO("input_refs rows: %ld, cols: %ld", path_manager.input_refs.rows(), path_manager.input_refs.cols());
+		ROS_INFO("idx: %d, N: %d", idx, N);
+	}
+	world.publish_commands();
 }
 
 bool MoveForward::detect_stop_sign() {
@@ -73,7 +110,7 @@ bool MoveForward::detect_parking_sign() {
 			utils.debug("Parking sign detected at a distance of: " + std::to_string(dist), 2);
 			auto x1 = PARKING_SIGN_POSES[0][0];
 			auto y1 = PARKING_SIGN_POSES[0][1];
-			double distance_to_parking_spot = std::sqrt(std::pow((world.x_current[0] - x1), 2) + std::pow((world.x_current[1] - y1), 2));
+			double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
 			double detected_dist = utils.object_distance(park_index);
 			double abs_error = std::abs(detected_dist - distance_to_parking_spot);
 			if (abs_error < 1.) {
@@ -110,11 +147,11 @@ bool MoveForward::destination_reached() {
 }
 
 void MoveForward::update_post_conditions() {
-	post_conditions[STOP_SIGN_DETECTED] = detect_stop_sign();
-	post_conditions[TRAFFIC_LIGHT_DETECTED] = detect_traffic_light();
+	current_state[STOP_SIGN_DETECTED] = detect_stop_sign();
+	current_state[TRAFFIC_LIGHT_DETECTED] = detect_traffic_light();
     if (detect_parking_sign()) {
-        post_conditions[PARKING_SIGN_DETECTED] = true;
+        current_state[PARKING_SIGN_DETECTED] = true;
     }
-	post_conditions[OBSTACLE_DETECTED] = detect_obstacles();
-	post_conditions[DESTINATION_REACHED] = destination_reached();
+	current_state[OBSTACLE_DETECTED] = detect_obstacles();
+	current_state[DESTINATION_REACHED] = destination_reached();
 }

@@ -5,7 +5,13 @@
 ObstacleStop::ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
     cost = 3; // Navigating around could save some time, stop if we must absolutely stop.
 	pre_conditions = {
-		{PARKING_SIGN_DETECTED, '_'}, {PARKING_COUNT, '_'}, {TRAFFIC_LIGHT_DETECTED, '_'}, {STOP_SIGN_DETECTED, '_'}, {OBSTACLE_DETECTED, true}, {DESTINATION_REACHED, '_'},
+        {FORCE_STOP, false},
+		{PARKING_SIGN_DETECTED, '_'},
+        {PARKING_COUNT, '_'},
+        {TRAFFIC_LIGHT_DETECTED, '_'},
+        {STOP_SIGN_DETECTED, '_'},
+        {OBSTACLE_DETECTED, true},
+        {DESTINATION_REACHED, '_'},
 	};
 }
 
@@ -19,5 +25,5 @@ void ObstacleStop::execute() {
 }
 
 void ObstacleStop::update_post_conditions() {
-    post_conditions[OBSTACLE_DETECTED] = false;
+    current_state[OBSTACLE_DETECTED] = false;
 }

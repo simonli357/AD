@@ -115,6 +115,8 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS} 
   include 
+  include/htn
+  include/htn/actions
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
@@ -127,6 +129,12 @@ target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
 
 add_library(sim_shared_lib SHARED ${sim_solver} ${casadi_fun} ${sim_solver50} ${casadi_fun50} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
 target_link_libraries(sim_shared_lib acados hpipm blasfeo)
+
+# HTN Lib
+file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
+file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
+add_library(htn ${HTN} ${ACTIONS})
+target_link_libraries(htn ocp_shared_lib sim_shared_lib)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -159,5 +167,6 @@ ocp_shared_lib
 sim_shared_lib
 ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
+htn
 communication
 )

@@ -1,9 +1,96 @@
 #include "htn/World.hpp"
+#include "htn/Action.hpp"
+#include "htn/HTN.hpp"
 
-World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init,
-			 double yaw_init, bool real)
-	: nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T, N, v_ref), path_manager(nh, T, N, v_ref), sign(sign), ekf(ekf), lane(lane),
-	  T_park(T_park), T(T), real(real) {}
+World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real)
+	: nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T, N, v_ref), path_manager(nh, T, N, v_ref), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real) {
+
+	services_thread = std::thread(&World::receive_services, this);
+
+    current_state = {
+        {FORCE_STOP, true},
+        {PARKING_SIGN_DETECTED, '_'},
+        {PARKING_COUNT, 0},
+        {TRAFFIC_LIGHT_DETECTED, '_'},
+        {STOP_SIGN_DETECTED, '_'},
+        {OBSTACLE_DETECTED, '_'},
+        {DESTINATION_REACHED, false},
+    };
+
+    goal_state = {
+        {FORCE_STOP, '_'},
+        {PARKING_SIGN_DETECTED, '_'},
+        {PARKING_COUNT, '_'},
+        {TRAFFIC_LIGHT_DETECTED, '_'},
+        {STOP_SIGN_DETECTED, '_'},
+        {OBSTACLE_DETECTED, '_'},
+        {DESTINATION_REACHED, true},
+    };
+
+	std::string mode = real ? "real" : "sim";
+	utils.debug("mode: " + mode, 2);
+	bool success = true;
+	success = success && nh.getParam("/" + mode + "/change_lane_yaw", change_lane_yaw);
+	success = success && nh.getParam("/" + mode + "/cw_speed_ratio", cw_speed_ratio);
+	success = success && nh.getParam("/" + mode + "/hw_speed_ratio", hw_speed_ratio);
+	success = success && nh.getParam("/" + mode + "/sign_localization_threshold", sign_localization_threshold);
+	success = success && nh.getParam("/" + mode + "/lane_localization_orientation_threshold", lane_localization_orientation_threshold);
+	success = success && nh.getParam("/" + mode + "/pixel_center_offset", pixel_center_offset);
+	success = success && nh.getParam("/" + mode + "/constant_distance_to_intersection_at_detection", constant_distance_to_intersection_at_detection);
+	success = success && nh.getParam("/" + mode + "/intersection_localization_threshold", intersection_localization_threshold);
+	success = success && nh.getParam("/" + mode + "/stop_duration", stop_duration);
+	success = success && nh.getParam("/" + mode + "/use_stopline", use_stopline);
+	success = success && nh.getParam("/" + mode + "/pedestrian_count_thresh", pedestrian_count_thresh);
+	success = success && nh.getParam("/" + mode + "/parking_base_yaw_target", parking_base_yaw_target);
+	success = success && nh.getParam("/" + mode + "/parking_base_speed", parking_base_speed);
+	success = success && nh.getParam("/" + mode + "/parking_base_thresh", parking_base_thresh);
+	success = success && nh.getParam("/" + mode + "/change_lane_speed", change_lane_speed);
+	success = success && nh.getParam("/" + mode + "/change_lane_thresh", change_lane_thresh);
+	success = success && nh.getParam("/" + mode + "/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold);
+	success = success && nh.getParam("/" + mode + "/sign_localization_orientation_threshold", sign_localization_orientation_threshold);
+	success = success && nh.getParam("/" + mode + "/NORMAL_SPEED", NORMAL_SPEED);
+	success = success && nh.getParam("/" + mode + "/FAST_SPEED", FAST_SPEED);
+	success = success && nh.getParam("/" + mode + "/lane_relocalize", lane_relocalize);
+	success = success && nh.getParam("/" + mode + "/sign_relocalize", sign_relocalize);
+	success = success && nh.getParam("/" + mode + "/intersection_relocalize", intersection_relocalize);
+	success = success && nh.getParam("/" + mode + "/has_light", has_light);
+	success = success && nh.getParam("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
+	success = success && nh.getParam("/emergency", emergency);
+	success = success && nh.getParam("/pub_wpts", pubWaypoints);
+	success = success && nh.getParam("/kb", keyboardControl);
+	success = success && nh.getParam("/dashboard", dashboard);
+	success = success && nh.getParam("/gps", hasGps);
+
+	if (!success) {
+		ROS_ERROR("Failed to get parameters");
+		ros::shutdown();
+	}
+
+	// initialize parking spots
+	for (int i = 0; i < 5; i++) {
+		Eigen::Vector2d spot_right = {PARKING_SPOT_RIGHT[0] + i * PARKING_SPOT_LENGTH, PARKING_SPOT_RIGHT[1]};
+		Eigen::Vector2d spot_left = {PARKING_SPOT_LEFT[0] + i * PARKING_SPOT_LENGTH, PARKING_SPOT_LEFT[1]};
+		PARKING_SPOTS.push_back(spot_right);
+		PARKING_SPOTS.push_back(spot_left);
+	}
+
+	double rateVal = 1 / mpc.T;
+	rate = new ros::Rate(rateVal);
+	std::cout << "rate: " << rateVal << std::endl;
+	goto_command_server = nh.advertiseService("/goto_command", &World::goto_command_callback, this);
+	set_states_server = nh.advertiseService("/set_states", &World::set_states_callback, this);
+	start_trigger = nh.advertiseService("/start_bool", &World::start_bool_callback, this);
+	utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
+	utils.debug("world initialized", 2);
+    initialize();
+    htn_algorithm();
+}
+
+World::~World() {
+	if (services_thread.joinable()) {
+		services_thread.join();
+	}
+}
 
 void World::update_mpc_states() {
 	utils.update_states(x_current);
@@ -21,37 +108,6 @@ void World::update_mpc_states(double x, double y, double yaw) {
 		yaw = Utility::yaw_mod(yaw, ref_yaw);
 	}
 	x_current << x, y, yaw;
-}
-
-void World::solve() {
-	int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
-	// std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-	// std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " <<
-	// path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl; std::cout <<
-	// "target waypoint index: " << path_manager.target_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", y: " <<
-	// path_manager.state_refs(path_manager.target_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.target_waypoint_index, 2) << std::endl; for (int i =
-	// path_manager.target_waypoint_index; i < std::min(path_manager.target_waypoint_index + 6, static_cast<int>(path_manager.state_refs.rows())); i++) {
-	//     std::cout << "i: " << i << ", x: " << path_manager.state_refs(i, 0) << ", y: " << path_manager.state_refs(i, 1) << ", yaw: " << path_manager.state_refs(i, 2) <<
-	//     std::endl;
-	// }
-	int idx = path_manager.target_waypoint_index;
-	if (idx > path_manager.state_refs.rows() - 2) {
-		idx = path_manager.state_refs.rows() - 2;
-		utils.debug("WARNING: solve(): target waypoint index exceeds state_refs size, using last waypoint...", 3);
-	}
-	int N = std::min(Eigen::Index(path_manager.N), path_manager.state_refs.rows() - idx);
-	if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
-
-		Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
-		Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
-		int status = mpc.solve(state_refs_block, input_refs_block, x_current);
-	} else {
-		ROS_WARN("Block indices are out of bounds, skipping solve.");
-		ROS_INFO("state_refs rows: %ld, cols: %ld", path_manager.state_refs.rows(), path_manager.state_refs.cols());
-		ROS_INFO("input_refs rows: %ld, cols: %ld", path_manager.input_refs.rows(), path_manager.input_refs.cols());
-		ROS_INFO("idx: %d, N: %d", idx, N);
-	}
-	publish_commands();
 }
 
 void World::publish_waypoints() {
@@ -115,17 +171,15 @@ bool World::near_intersection() {
 	}
 	// exit(0);
 	if (min_error_sq < 0.3 * 0.3) {
-		utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
-						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
-						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " +
-						std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+		utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" +
+						std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
 					4);
 		return true;
 	} else {
-		utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
-						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
-						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " +
-						std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+		utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) + "), actual: (" +
+						std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
 					4);
 		return false;
 	}
@@ -169,18 +223,16 @@ int World::intersection_based_relocalization() {
 
 	// exit(0);
 	if (min_error_sq < intersection_localization_threshold * intersection_localization_threshold) {
-		utils.debug("intersection based relocalization(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " +
-						std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " +
-						std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) +
-						", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+		utils.debug("intersection based relocalization(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
+						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
 					2);
 		utils.recalibrate_states(direction_intersections[min_index][0] - estimated_position[0], direction_intersections[min_index][1] - estimated_position[1]);
 		return 1; // Successful relocalization
 	} else {
-		utils.debug("intersection based relocalization(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " +
-						std::to_string(estimated_position[1]) + "), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " +
-						std::to_string(direction_intersections[min_index][1]) + "), error: (" + std::to_string(direction_intersections[min_index][0] - estimated_position[0]) +
-						", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+		utils.debug("intersection based relocalization(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
+						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
 					2);
 		return 0; // Failed to relocalize
 	}
@@ -233,9 +285,7 @@ bool World::intersection_reached() {
 				double &y = x_current[1];
 				double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
 				if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
-					utils.debug("intersection_reached(): intersection detected, but distance (" + std::to_string(std::sqrt(dist_sq)) +
-									") too close to previous intersection, ignoring...",
-								4);
+					utils.debug("intersection_reached(): intersection detected, but distance (" + std::to_string(std::sqrt(dist_sq)) + ") too close to previous intersection, ignoring...", 4);
 					return false;
 				}
 				utils.debug("intersection_reached(): setting last intersection point to (" + std::to_string(x) + ", " + std::to_string(y) + ")", 2);
@@ -302,4 +352,159 @@ bool World::sign_in_path(int sign_idx, double search_dist) {
 		}
 	}
 	return false;
+}
+
+void World::call_trigger_service() {
+	ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
+	std_srvs::Trigger srv;
+	client.call(srv);
+}
+
+// ------------------//
+// Private functions //
+// ------------------//
+
+int World::initialize() {
+    if (initialized) return 1;
+    // sleep 2 seconds to allow for initialization
+    ros::Duration(2).sleep();
+    if(hasGps) {
+        if(!utils.reinitialize_states()) ROS_WARN("Failed to reinitialize");
+    }
+    double x, y, yaw;
+    utils.get_states(x, y, yaw);
+    utils.update_states(x_current);
+    utils.debug("start(): x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", yaw=" + std::to_string(yaw), 2);
+    path_manager.call_waypoint_service(x, y, yaw, utils.tcp_client);
+    destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
+    utils.debug("initialize(): start: " + std::to_string(x) + ", " + std::to_string(y), 2);
+    utils.debug("initialize(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
+
+    path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
+    mpc.reset_solver();
+    initialized = true;
+    return 1;
+}
+
+void World::receive_services() {
+	while (true) {
+		if (utils.tcp_client == nullptr) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+			continue;
+		}
+		if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
+			double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_x;
+			double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_y;
+			utils::goto_command::Request req;
+			utils::goto_command::Response res;
+			req.dest_x = x;
+			req.dest_y = y;
+			goto_command_callback(req, res);
+			utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+			utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
+		}
+		if (utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
+			double x = utils.tcp_client->get_set_states_srv_msgs().front()->x;
+			double y = utils.tcp_client->get_set_states_srv_msgs().front()->y;
+			utils::set_states::Request req;
+			utils::set_states::Response res;
+			req.x = x;
+			req.y = y;
+			set_states_callback(req, res);
+			utils.tcp_client->send_set_states_srv(true);
+			utils.tcp_client->get_set_states_srv_msgs().pop();
+		}
+		if (utils.tcp_client->get_start_srv_msgs().size() > 0) {
+			std_srvs::SetBool::Request req;
+			std_srvs::SetBool::Response res;
+			req.data = utils.tcp_client->get_start_srv_msgs().front();
+			start_bool_callback(req, res);
+			utils.tcp_client->send_start_srv(true);
+			utils.tcp_client->get_start_srv_msgs().pop();
+		}
+		if (utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
+			double x0 = utils.tcp_client->get_waypoints_srv_msgs().front()->x0;
+			double y0 = utils.tcp_client->get_waypoints_srv_msgs().front()->y0;
+			double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front()->yaw0;
+			path_manager.call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+			utils.tcp_client->get_waypoints_srv_msgs().pop();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+}
+
+void World::htn_algorithm() {
+	while (true) {
+		current_state = initial_state;
+		std::unique_ptr<Action> force_stop = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> move_forward = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> obstacle_stop = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> park = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> stop_sign_stop = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> traffic_light_stop = std::make_unique<Action>(*this, current_state);
+
+		std::vector<std::unique_ptr<Action>> actions;
+		actions.push_back(std::move(force_stop));
+		actions.push_back(std::move(move_forward));
+		actions.push_back(std::move(obstacle_stop));
+		actions.push_back(std::move(park));
+		actions.push_back(std::move(stop_sign_stop));
+		actions.push_back(std::move(traffic_light_stop));
+
+        utils.debug("Starting htn algorithm", 2);
+		HTN(current_state, goal_state, actions).start();
+	}
+}
+
+bool World::goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res) {
+	utils.update_states(x_current);
+	if (!path_manager.call_go_to_service(x_current[0], x_current[1], x_current[2], req.dest_x, req.dest_y)) {
+		res.success = false;
+		return false;
+	}
+	auto state_refs = path_manager.state_refs.transpose();
+	auto input_refs = path_manager.input_refs.transpose();
+	auto &state_attributes = path_manager.state_attributes;
+	auto normals = path_manager.normals.transpose();
+	res.state_refs.data = std::vector<float>(state_refs.data(), state_refs.data() + state_refs.size());
+	res.input_refs.data = std::vector<float>(input_refs.data(), input_refs.data() + input_refs.size());
+	res.wp_attributes.data = std::vector<float>(state_attributes.data(), state_attributes.data() + state_attributes.size());
+	res.wp_normals.data = std::vector<float>(normals.data(), normals.data() + normals.size());
+	res.success = true;
+	destination = path_manager.state_refs.row(path_manager.state_refs.rows() - 1).head(2);
+	// for (int i = 0; i<path_manager.state_refs.rows(); i++) {
+	//     std::cout << i << ") " << path_manager.state_refs(i, 0) << ", " << path_manager.state_refs(i, 1) << ", " << path_manager.state_refs(i, 2) << std::endl;
+	// }
+	utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
+	utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
+
+	path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1); // search from the beginning to the end
+	path_manager.overtake_end_index = 0;
+	mpc.reset_solver();
+	initialized = true;
+	return true;
+}
+
+bool World::set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res) {
+	if (req.x >= 0 && req.y >= 0) {
+		utils.set_states(req.x, req.y);
+	} else {
+		utils.reset_yaw();
+	}
+	res.success = true;
+	return true;
+}
+
+bool World::start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
+	static int history = -1;
+	if (req.data) {
+		current_state[FORCE_STOP] = false;
+		res.success = true;
+		res.message = "Started";
+	} else {
+		current_state[FORCE_STOP] = true;
+		res.success = true;
+		res.message = "Stopped";
+	}
+	return true;
 }
