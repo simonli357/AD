@@ -15,11 +15,15 @@ TrafficLightStop::TrafficLightStop(World &world, std::unordered_map<PRIMITIVES, 
 	};
 }
 
+TrafficLightStop::~TrafficLightStop() {}
+
 void TrafficLightStop::execute() {
 	if (!can_execute()) {
-		std::cout << "Illegal action, pre conditions not satisfied" << std::endl;
+        utils.debug("Illegal action, pre conditions not satisfied", 2);
 		return;
 	}
+    // Stop car
+    utils.debug("Performing Action: Traffic Light Stop.", 2);
     // TODO: Stop the car
 	update_post_conditions();
 }

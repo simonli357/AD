@@ -15,6 +15,9 @@ bool Action::can_execute() {
 		if (std::holds_alternative<char>(pre_conditions[key]) && std::get<char>(pre_conditions[key]) == '_') {
 			continue;
 		}
+		if (std::holds_alternative<char>(current_state[key]) && std::get<char>(current_state[key]) == '_') {
+			continue;
+		}
 		if (pre_conditions[key] != current_state[key]) {
 			return false;
 		}

@@ -15,11 +15,15 @@ MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType>
 	};
 }
 
+MoveForward::~MoveForward() {}
+
 void MoveForward::execute() {
 	if (!can_execute()) {
-		std::cout << "Illegal action, pre conditions not satisfied" << std::endl;
+        utils.debug("Illegal action, pre conditions not satisfied", 2);
 		return;
 	}
+    // Move the car forward
+    utils.debug("Performing Action: Move Forward.", 2);
 	world.update_mpc_states();
 	solve();
 	update_post_conditions();

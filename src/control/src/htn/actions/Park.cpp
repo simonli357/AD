@@ -15,11 +15,15 @@ Park::Park(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) 
 	};
 }
 
+Park::~Park() {}
+
 void Park::execute() {
 	if (!can_execute()) {
-		std::cout << "Illegal action, pre conditions not satisfied" << std::endl;
+        utils.debug("Illegal action, pre conditions not satisfied", 2);
 		return;
 	}
+    // Park the car
+    utils.debug("Performing Action: Park.", 2);
     // TODO: Park the car
 	update_post_conditions();
 }

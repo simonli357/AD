@@ -19,6 +19,9 @@ bool HTN::goal_reached() {
 		if (std::holds_alternative<char>(goal_state[key]) && std::get<char>(goal_state[key]) == '_') {
 			continue;
 		}
+		if (std::holds_alternative<char>(current_state[key]) && std::get<char>(current_state[key]) == '_') {
+			continue;
+		}
 		if (goal_state[key] != current_state[key]) {
 			return false;
 		}

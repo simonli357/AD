@@ -1,4 +1,10 @@
 #include "htn/World.hpp"
+#include "ForceStop.hpp"
+#include "MoveForward.hpp"
+#include "ObstacleStop.hpp"
+#include "Park.hpp"
+#include "StopSignStop.hpp"
+#include "TrafficLightStop.hpp"
 #include "htn/Action.hpp"
 #include "htn/HTN.hpp"
 
@@ -7,7 +13,7 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
 
 	services_thread = std::thread(&World::receive_services, this);
 
-    current_state = {
+    initial_state = {
         {FORCE_STOP, true},
         {PARKING_SIGN_DETECTED, '_'},
         {PARKING_COUNT, 0},
@@ -436,12 +442,12 @@ void World::receive_services() {
 void World::htn_algorithm() {
 	while (true) {
 		current_state = initial_state;
-		std::unique_ptr<Action> force_stop = std::make_unique<Action>(*this, current_state);
-		std::unique_ptr<Action> move_forward = std::make_unique<Action>(*this, current_state);
-		std::unique_ptr<Action> obstacle_stop = std::make_unique<Action>(*this, current_state);
-		std::unique_ptr<Action> park = std::make_unique<Action>(*this, current_state);
-		std::unique_ptr<Action> stop_sign_stop = std::make_unique<Action>(*this, current_state);
-		std::unique_ptr<Action> traffic_light_stop = std::make_unique<Action>(*this, current_state);
+		std::unique_ptr<Action> force_stop = std::make_unique<ForceStop>(*this, current_state);
+		std::unique_ptr<Action> move_forward = std::make_unique<MoveForward>(*this, current_state);
+		std::unique_ptr<Action> obstacle_stop = std::make_unique<ObstacleStop>(*this, current_state);
+		std::unique_ptr<Action> park = std::make_unique<Park>(*this, current_state);
+		std::unique_ptr<Action> stop_sign_stop = std::make_unique<StopSignStop>(*this, current_state);
+		std::unique_ptr<Action> traffic_light_stop = std::make_unique<TrafficLightStop>(*this, current_state);
 
 		std::vector<std::unique_ptr<Action>> actions;
 		actions.push_back(std::move(force_stop));
