@@ -15,11 +15,15 @@ ObstacleStop::ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueTyp
 	};
 }
 
+ObstacleStop::~ObstacleStop() {}
+
 void ObstacleStop::execute() {
 	if (!can_execute()) {
-		std::cout << "Illegal action, pre conditions not satisfied" << std::endl;
+        utils.debug("Illegal action, pre conditions not satisfied", 2);
 		return;
 	}
+    // Stop car
+    utils.debug("Performing Action: Obstacle Stop.", 2);
     // TODO: Stop the car, go backwards ...
 	update_post_conditions();
 }

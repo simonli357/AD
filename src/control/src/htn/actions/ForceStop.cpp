@@ -15,6 +15,8 @@ ForceStop::ForceStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &co
 	};
 }
 
+ForceStop::~ForceStop() {}
+
 void ForceStop::execute() {
 	if (!can_execute()) {
         utils.debug("Illegal action, pre conditions not satisfied", 2);
