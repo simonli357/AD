@@ -5,7 +5,13 @@
 StopSignStop::StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
     cost = 2;
 	pre_conditions = {
-		{PARKING_SIGN_DETECTED, '_'}, {PARKING_COUNT, '_'}, {TRAFFIC_LIGHT_DETECTED, '_'}, {STOP_SIGN_DETECTED, true}, {OBSTACLE_DETECTED, '_'}, {DESTINATION_REACHED, '_'},
+        {FORCE_STOP, false},
+		{PARKING_SIGN_DETECTED, '_'},
+        {PARKING_COUNT, '_'},
+        {TRAFFIC_LIGHT_DETECTED, '_'},
+        {STOP_SIGN_DETECTED, true},
+        {OBSTACLE_DETECTED, '_'},
+        {DESTINATION_REACHED, '_'},
 	};
 }
 
@@ -19,5 +25,5 @@ void StopSignStop::execute() {
 }
 
 void StopSignStop::update_post_conditions() {
-    post_conditions[STOP_SIGN_DETECTED] = false;
+    current_state[STOP_SIGN_DETECTED] = false;
 }

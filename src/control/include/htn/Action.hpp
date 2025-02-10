@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PathManager.hpp"
-#include "Primitives.hpp"
 #include "World.hpp"
 #include "utility.hpp"
 #include <cstdint>
@@ -12,24 +11,28 @@ using ValueType = std::variant<bool, double, int32_t, char>;
 
 class Action {
   public:
-	Action(World &world, std::unordered_map<PRIMITIVES, ValueType> &contidions);
-	Action(Action &&) = default;
-	Action(const Action &) = default;
+	Action(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
+	Action(Action &&) = delete;
+	Action(const Action &) = delete;
 	Action &operator=(Action &&) = delete;
 	Action &operator=(const Action &) = delete;
 	~Action();
 
-	World &world;
-	Utility &utils = world.utils;
-	PathManager &path_manager = world.path_manager;
-	Eigen::Vector3d &x_current = world.x_current;
+    World &world;
+	Utility &utils;
+	PathManager &path_manager;
+	Eigen::Vector3d &x_current;
 
 	int32_t cost;
 	std::unordered_map<PRIMITIVES, ValueType> pre_conditions;
-	std::unordered_map<PRIMITIVES, ValueType> post_conditions;
+	std::unordered_map<PRIMITIVES, ValueType> &current_state;
 
+    void set_conditions(std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	bool can_execute();
+
 	virtual void execute();
+
+    void stop_car_for(double duration);
 
   private:
 	virtual void update_post_conditions();
