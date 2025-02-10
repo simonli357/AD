@@ -39,8 +39,6 @@
 
 // example specific
 #include "mobile_robot_25_model/mobile_robot_25_model.h"
-#include "mobile_robot_25_constraints/mobile_robot_25_constraints.h"
-#include "mobile_robot_25_cost/mobile_robot_25_cost.h"
 
 
 
@@ -151,11 +149,11 @@ void mobile_robot_25_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_plan, c
 
     nlp_solver_plan->ocp_qp_solver_plan.qp_solver = PARTIAL_CONDENSING_HPIPM;
 
-    nlp_solver_plan->nlp_cost[0] = NONLINEAR_LS;
+    nlp_solver_plan->nlp_cost[0] = LINEAR_LS;
     for (int i = 1; i < N; i++)
-        nlp_solver_plan->nlp_cost[i] = NONLINEAR_LS;
+        nlp_solver_plan->nlp_cost[i] = LINEAR_LS;
 
-    nlp_solver_plan->nlp_cost[N] = NONLINEAR_LS;
+    nlp_solver_plan->nlp_cost[N] = LINEAR_LS;
 
     for (int i = 0; i < N; i++)
     {
@@ -322,19 +320,8 @@ void mobile_robot_25_acados_create_3_create_and_set_functions(mobile_robot_25_so
         capsule->__CAPSULE_FNC__.casadi_sparsity_in = & __MODEL_BASE_FNC__ ## _sparsity_in; \
         capsule->__CAPSULE_FNC__.casadi_sparsity_out = & __MODEL_BASE_FNC__ ## _sparsity_out; \
         capsule->__CAPSULE_FNC__.casadi_work = & __MODEL_BASE_FNC__ ## _work; \
-        external_function_param_casadi_create(&capsule->__CAPSULE_FNC__ , 2); \
+        external_function_param_casadi_create(&capsule->__CAPSULE_FNC__ , 1); \
     } while(false)
-    // constraints.constr_type == "BGH" and dims.nh > 0
-    capsule->nl_constr_h_fun_jac = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++) {
-        MAP_CASADI_FNC(nl_constr_h_fun_jac[i], mobile_robot_25_constr_h_fun_jac_uxt_zt);
-    }
-    capsule->nl_constr_h_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++) {
-        MAP_CASADI_FNC(nl_constr_h_fun[i], mobile_robot_25_constr_h_fun);
-    }
-    
-
 
 
     // explicit ode
@@ -349,32 +336,6 @@ void mobile_robot_25_acados_create_3_create_and_set_functions(mobile_robot_25_so
     }
 
 
-    // nonlinear least squares function
-    MAP_CASADI_FNC(cost_y_0_fun, mobile_robot_25_cost_y_0_fun);
-    MAP_CASADI_FNC(cost_y_0_fun_jac_ut_xt, mobile_robot_25_cost_y_0_fun_jac_ut_xt);
-    MAP_CASADI_FNC(cost_y_0_hess, mobile_robot_25_cost_y_0_hess);
-    // nonlinear least squares cost
-    capsule->cost_y_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_fun[i], mobile_robot_25_cost_y_fun);
-    }
-
-    capsule->cost_y_fun_jac_ut_xt = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_fun_jac_ut_xt[i], mobile_robot_25_cost_y_fun_jac_ut_xt);
-    }
-
-    capsule->cost_y_hess = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_hess[i], mobile_robot_25_cost_y_hess);
-    }
-    // nonlinear least square function
-    MAP_CASADI_FNC(cost_y_e_fun, mobile_robot_25_cost_y_e_fun);
-    MAP_CASADI_FNC(cost_y_e_fun_jac_ut_xt, mobile_robot_25_cost_y_e_fun_jac_ut_xt);
-    MAP_CASADI_FNC(cost_y_e_hess, mobile_robot_25_cost_y_e_hess);
 
 #undef MAP_CASADI_FNC
 }
@@ -443,12 +404,23 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
     // change only the non-zero elements:
     W_0[0+(NY0) * 0] = 2;
     W_0[1+(NY0) * 1] = 2;
-    W_0[2+(NY0) * 2] = 0.5;
+    W_0[2+(NY0) * 2] = 1;
     W_0[3+(NY0) * 3] = 1;
-    W_0[5+(NY0) * 5] = 0.25;
-    W_0[6+(NY0) * 6] = 0.5;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", W_0);
     free(W_0);
+    double* Vx_0 = calloc(NY0*NX, sizeof(double));
+    // change only the non-zero elements:
+    Vx_0[0+(NY0) * 0] = 1;
+    Vx_0[1+(NY0) * 1] = 1;
+    Vx_0[2+(NY0) * 2] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "Vx", Vx_0);
+    free(Vx_0);
+    double* Vu_0 = calloc(NY0*NU, sizeof(double));
+    // change only the non-zero elements:
+    Vu_0[3+(NY0) * 0] = 1;
+    Vu_0[4+(NY0) * 1] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "Vu", Vu_0);
+    free(Vu_0);
     double* yref = calloc(NY, sizeof(double));
     // change only the non-zero elements:
 
@@ -461,16 +433,37 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
     // change only the non-zero elements:
     W[0+(NY) * 0] = 2;
     W[1+(NY) * 1] = 2;
-    W[2+(NY) * 2] = 0.5;
+    W[2+(NY) * 2] = 1;
     W[3+(NY) * 3] = 1;
-    W[5+(NY) * 5] = 0.25;
-    W[6+(NY) * 6] = 0.5;
 
     for (int i = 1; i < N; i++)
     {
         ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "W", W);
     }
     free(W);
+    double* Vx = calloc(NY*NX, sizeof(double));
+    // change only the non-zero elements:
+    Vx[0+(NY) * 0] = 1;
+    Vx[1+(NY) * 1] = 1;
+    Vx[2+(NY) * 2] = 1;
+    for (int i = 1; i < N; i++)
+    {
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "Vx", Vx);
+    }
+    free(Vx);
+
+    
+    double* Vu = calloc(NY*NU, sizeof(double));
+    // change only the non-zero elements:
+    
+    Vu[3+(NY) * 0] = 1;
+    Vu[4+(NY) * 1] = 1;
+
+    for (int i = 1; i < N; i++)
+    {
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "Vu", Vu);
+    }
+    free(Vu);
     double* yref_e = calloc(NYN, sizeof(double));
     // change only the non-zero elements:
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", yref_e);
@@ -480,21 +473,17 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
     // change only the non-zero elements:
     W_e[0+(NYN) * 0] = 2;
     W_e[1+(NYN) * 1] = 2;
-    W_e[2+(NYN) * 2] = 0.5;
+    W_e[2+(NYN) * 2] = 1;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "W", W_e);
     free(W_e);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_fun", &capsule->cost_y_0_fun);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_fun_jac", &capsule->cost_y_0_fun_jac_ut_xt);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_hess", &capsule->cost_y_0_hess);
-    for (int i = 1; i < N; i++)
-    {
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_fun", &capsule->cost_y_fun[i-1]);
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_fun_jac", &capsule->cost_y_fun_jac_ut_xt[i-1]);
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_hess", &capsule->cost_y_hess[i-1]);
-    }
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_fun", &capsule->cost_y_e_fun);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_fun_jac", &capsule->cost_y_e_fun_jac_ut_xt);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_hess", &capsule->cost_y_e_hess);
+    double* Vx_e = calloc(NYN*NX, sizeof(double));
+    // change only the non-zero elements:
+    
+    Vx_e[0+(NYN) * 0] = 1;
+    Vx_e[1+(NYN) * 1] = 1;
+    Vx_e[2+(NYN) * 2] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "Vx", Vx_e);
+    free(Vx_e);
 
 
 
@@ -576,10 +565,10 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
     double* lbx = lubx;
     double* ubx = lubx + NBX;
     
-    lbx[0] = -1;
-    ubx[0] = 22;
-    lbx[1] = -1;
-    ubx[1] = 16;
+    lbx[0] = -10;
+    ubx[0] = 10;
+    lbx[1] = -10;
+    ubx[1] = 10;
 
     for (int i = 1; i < N; i++)
     {
@@ -593,27 +582,6 @@ void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* 
 
 
 
-    // set up nonlinear constraints for stage 1 to N-1
-    double* luh = calloc(2*NH, sizeof(double));
-    double* lh = luh;
-    double* uh = luh + NH;
-
-    
-
-    
-    uh[0] = 100000000000000000000;
-
-    for (int i = 1; i < N; i++)
-    {
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "nl_constr_h_fun_jac",
-                                      &capsule->nl_constr_h_fun_jac[i-1]);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "nl_constr_h_fun",
-                                      &capsule->nl_constr_h_fun[i-1]);
-        
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "lh", lh);
-        ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, i, "uh", uh);
-    }
-    free(luh);
 
 
 
@@ -893,7 +861,7 @@ int mobile_robot_25_acados_update_params(mobile_robot_25_solver_capsule* capsule
 {
     int solver_status = 0;
 
-    int casadi_np = 2;
+    int casadi_np = 1;
     if (casadi_np != np) {
         printf("acados_update_params: trying to set %i parameters for external functions."
             " External function has %i parameters. Exiting.\n", np, casadi_np);
@@ -912,22 +880,14 @@ int mobile_robot_25_acados_update_params(mobile_robot_25_solver_capsule* capsule
         }
         else
         {
-            capsule->nl_constr_h_fun_jac[stage-1].set_param(capsule->nl_constr_h_fun_jac+stage-1, p);
-            capsule->nl_constr_h_fun[stage-1].set_param(capsule->nl_constr_h_fun+stage-1, p);
         }
 
         // cost
         if (stage == 0)
         {
-            capsule->cost_y_0_fun.set_param(&capsule->cost_y_0_fun, p);
-            capsule->cost_y_0_fun_jac_ut_xt.set_param(&capsule->cost_y_0_fun_jac_ut_xt, p);
-            capsule->cost_y_0_hess.set_param(&capsule->cost_y_0_hess, p);
         }
         else // 0 < stage < N
         {
-            capsule->cost_y_fun[stage-1].set_param(capsule->cost_y_fun+stage-1, p);
-            capsule->cost_y_fun_jac_ut_xt[stage-1].set_param(capsule->cost_y_fun_jac_ut_xt+stage-1, p);
-            capsule->cost_y_hess[stage-1].set_param(capsule->cost_y_hess+stage-1, p);
         }
     }
 
@@ -935,9 +895,6 @@ int mobile_robot_25_acados_update_params(mobile_robot_25_solver_capsule* capsule
     {
         // terminal shooting node has no dynamics
         // cost
-        capsule->cost_y_e_fun.set_param(&capsule->cost_y_e_fun, p);
-        capsule->cost_y_e_fun_jac_ut_xt.set_param(&capsule->cost_y_e_fun_jac_ut_xt, p);
-        capsule->cost_y_e_hess.set_param(&capsule->cost_y_e_hess, p);
         // constraints
     }
 
@@ -949,7 +906,7 @@ int mobile_robot_25_acados_update_params_sparse(mobile_robot_25_solver_capsule *
 {
     int solver_status = 0;
 
-    int casadi_np = 2;
+    int casadi_np = 1;
     if (casadi_np < n_update) {
         printf("mobile_robot_25_acados_update_params_sparse: trying to set %d parameters for external functions."
             " External function has %d parameters. Exiting.\n", n_update, casadi_np);
@@ -975,21 +932,13 @@ int mobile_robot_25_acados_update_params_sparse(mobile_robot_25_solver_capsule *
         if (stage == 0)
         {
             // cost
-            capsule->cost_y_0_fun.set_param_sparse(&capsule->cost_y_0_fun, n_update, idx, p);
-            capsule->cost_y_0_fun_jac_ut_xt.set_param_sparse(&capsule->cost_y_0_fun_jac_ut_xt, n_update, idx, p);
-            capsule->cost_y_0_hess.set_param_sparse(&capsule->cost_y_0_hess, n_update, idx, p);
             // constraints
         
         }
         else // 0 < stage < N
         {
-            capsule->cost_y_fun[stage-1].set_param_sparse(capsule->cost_y_fun+stage-1, n_update, idx, p);
-            capsule->cost_y_fun_jac_ut_xt[stage-1].set_param_sparse(capsule->cost_y_fun_jac_ut_xt+stage-1, n_update, idx, p);
-            capsule->cost_y_hess[stage-1].set_param_sparse(capsule->cost_y_hess+stage-1, n_update, idx, p);
 
         
-            capsule->nl_constr_h_fun_jac[stage-1].set_param_sparse(capsule->nl_constr_h_fun_jac+stage-1, n_update, idx, p);
-            capsule->nl_constr_h_fun[stage-1].set_param_sparse(capsule->nl_constr_h_fun+stage-1, n_update, idx, p);
         }
     }
 
@@ -997,9 +946,6 @@ int mobile_robot_25_acados_update_params_sparse(mobile_robot_25_solver_capsule *
     {
         // terminal shooting node has no dynamics
         // cost
-        capsule->cost_y_e_fun.set_param_sparse(&capsule->cost_y_e_fun, n_update, idx, p);
-        capsule->cost_y_e_fun_jac_ut_xt.set_param_sparse(&capsule->cost_y_e_fun_jac_ut_xt, n_update, idx, p);
-        capsule->cost_y_e_hess.set_param_sparse(&capsule->cost_y_e_hess, n_update, idx, p);
         // constraints
     
     }
@@ -1042,30 +988,8 @@ int mobile_robot_25_acados_free(mobile_robot_25_solver_capsule* capsule)
     free(capsule->expl_ode_fun);
 
     // cost
-    external_function_param_casadi_free(&capsule->cost_y_0_fun);
-    external_function_param_casadi_free(&capsule->cost_y_0_fun_jac_ut_xt);
-    external_function_param_casadi_free(&capsule->cost_y_0_hess);
-    for (int i = 0; i < N - 1; i++)
-    {
-        external_function_param_casadi_free(&capsule->cost_y_fun[i]);
-        external_function_param_casadi_free(&capsule->cost_y_fun_jac_ut_xt[i]);
-        external_function_param_casadi_free(&capsule->cost_y_hess[i]);
-    }
-    free(capsule->cost_y_fun);
-    free(capsule->cost_y_fun_jac_ut_xt);
-    free(capsule->cost_y_hess);
-    external_function_param_casadi_free(&capsule->cost_y_e_fun);
-    external_function_param_casadi_free(&capsule->cost_y_e_fun_jac_ut_xt);
-    external_function_param_casadi_free(&capsule->cost_y_e_hess);
 
     // constraints
-    for (int i = 0; i < N-1; i++)
-    {
-        external_function_param_casadi_free(&capsule->nl_constr_h_fun_jac[i]);
-        external_function_param_casadi_free(&capsule->nl_constr_h_fun[i]);
-    }
-    free(capsule->nl_constr_h_fun_jac);
-    free(capsule->nl_constr_h_fun);
 
     return 0;
 }
