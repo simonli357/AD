@@ -57,11 +57,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double odom_publish_frequency = 50; 
     std::string mode = real ? "/real" : "/sim";
     bool success = true;
-    success = success && nh.getParam(mode + "/sigma_v", sigma_v);
-    success = success && nh.getParam(mode + "/sigma_delta", sigma_delta);
     success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
     success = success && nh.getParam("/debug_level", debugLevel);
     success = success && nh.getParam("/gps", hasGps);
+    success = success && nh.getParam(mode + "/use_beta_model", use_beta_model);
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
         exit(1);
@@ -95,7 +94,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::string nodeName = ros::this_node::getName();
     nh.param<double>(nodeName + "/rate", rateVal, 500);
     rate = new ros::Rate(rateVal);
-    wheelbase = 0.258;
+    wheelbase = WHEELBASE;
+    if (real) {
+        l_r = L_R_REAL;
+        l_f = L_F_REAL;
+    } else {
+        l_r = L_R_SIM;
+        l_f = L_F_SIM;
+    }
     odomRatio = 1.0;
     maxspeed = 1.5;
     center = -1;
@@ -143,7 +149,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double dt = 1.0 / odom_publish_frequency;
     double variance_v = sigma_v * sigma_v;
     double sigma_delta_rad = sigma_delta * M_PI / 180;
-    double variance_delta = sigma_delta_rad * sigma_delta_rad;
     double variance_yaw_rate = std::pow((sigma_v / 0.27 * std::tan(sigma_delta_rad)), 2);
     double variance_x = variance_v * dt * dt;
     double variance_y = variance_v * dt * dt;
@@ -833,37 +838,34 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
         dt = (ros::Time::now() - timerodom).toSec();
         timerodom = ros::Time::now();
     }
-    // if (dt > (0.1)) {
-    //     ROS_WARN("update_states_rk4(): dt is too large: %.3f", dt);
-    //     return 0;
-    // }
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
     }
     dheight = speed * dt * odomRatio * sin(pitch);
-    speed *= cos(pitch);
-    double magnitude = speed * dt * odomRatio;
-    double yaw_rate = magnitude * tan(-steering_angle * M_PI / 180) / wheelbase;
+    double v_eff = speed * cos(pitch);
 
-    double k1_x = magnitude * cos(yaw);
-    double k1_y = magnitude * sin(yaw);
-    double k1_yaw = yaw_rate;
+    double delta_rad = -steering_angle * M_PI / 180.0;
+    double beta = 0;
+    if (use_beta_model) beta = atan((l_r / wheelbase) * tan(delta_rad));
 
-    double k2_x = magnitude * cos(yaw + dt / 2 * k1_yaw);
-    double k2_y = magnitude * sin(yaw + dt / 2 * k1_yaw);
-    double k2_yaw = yaw_rate;
+    double magnitude = v_eff * dt * odomRatio;
+    double yaw_rate = dt * magnitude * tan(delta_rad) / wheelbase * cos(beta);
 
-    double k3_x = magnitude * cos(yaw + dt / 2 * k2_yaw);
-    double k3_y = magnitude * sin(yaw + dt / 2 * k2_yaw);
-    double k3_yaw = yaw_rate;
+    double k1_x = magnitude * cos(yaw + beta);
+    double k1_y = magnitude * sin(yaw + beta);
 
-    double k4_x = magnitude * cos(yaw + dt * k3_yaw);
-    double k4_y = magnitude * sin(yaw + dt * k3_yaw);
-    double k4_yaw = yaw_rate;
+    double k2_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k2_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k3_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k3_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k4_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k4_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
-    dyaw = 1 / 6.0 * (k1_yaw + 2 * k2_yaw + 2 * k3_yaw + k4_yaw);
+    dyaw = yaw_rate;
     // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }

@@ -59,6 +59,7 @@ def imu_callback(msg):
     roll_data.append(roll)
     pitch_data.append(pitch)
     yaw_data.append(yaw)
+    print("yaw (deg): ", yaw*180/3.14159)
 
 def animate(frame, axs):
     """
@@ -99,7 +100,10 @@ def main():
     rospy.init_node('imu_visualizer', anonymous=True)
     
     # Subscribe to the IMU data topic (change topic if necessary)
-    imu_topic = '/camera/imu'
+    # imu_topic = '/camera/imu'
+    # imu_topic = '/realsense_ros_node/imu/data'
+    imu_topic = '/imu/data'
+    # imu_topic = '/fcu/imu'
     # imu_topic = '/carla/ego_vehicle/imu'
     rospy.Subscriber(imu_topic, Imu, imu_callback)
     

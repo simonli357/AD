@@ -18,9 +18,7 @@ import yaml
 import argparse
 
 class Optimizer(object):
-    def __init__(self, x0 = None, obstacles=None, safety_margin=0.2):
-        self.obstacles = obstacles if obstacles is not None else []
-        self.safety_margin = safety_margin
+    def __init__(self, x0 = None):
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
         name = 'run107'
@@ -70,7 +68,12 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         
     def create_solver(self, config_path='config/mpc_config25.yaml'):
-        model = AcadosModel() #  ca.types.SimpleNamespace()
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(current_path, config_path)
+        with open(path, 'r') as f:
+            config = yaml.safe_load(f)
+            
+        model = AcadosModel()
         # control inputs
         v = ca.SX.sym('v')
         delta = ca.SX.sym('delta')
@@ -80,8 +83,17 @@ class Optimizer(object):
         y = ca.SX.sym('y')
         psi = ca.SX.sym('psi')
         states = ca.vertcat(x, y, psi)
-        self.L = 0.258
-        rhs = [v*ca.cos(psi), v*ca.sin(psi), v/self.L*ca.tan(delta)]
+        # Vehicle geometry parameters
+        L_f = config['l_f']
+        L_r = config['l_r']
+        self.L = config['wheelbase']
+        # Compute slip angle beta
+        beta = ca.atan((L_r/self.L) * ca.tan(delta))
+        # Improved kinematic equations
+        x_dot   = v * ca.cos(psi + beta)
+        y_dot   = v * ca.sin(psi + beta)
+        psi_dot = (v * ca.cos(beta) / self.L) * ca.tan(delta)
+        rhs = [x_dot, y_dot, psi_dot]
 
         f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
         # acados model
@@ -96,10 +108,6 @@ class Optimizer(object):
         model.p = ca.SX.sym('p', 2)  # [v_prev, delta_prev]
         delta_u = controls - model.p
 
-        current_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(current_path, config_path)
-        with open(path, 'r') as f:
-            config = yaml.safe_load(f)
         model.name = config['name']
         T = config['T']
         N = config['N']
@@ -160,28 +168,6 @@ class Optimizer(object):
         ocp.constraints.lbx = np.array([self.x_min, self.y_min])
         ocp.constraints.ubx = np.array([self.x_max, self.y_max])
         ocp.constraints.idxbx = np.array([0, 1])
-        
-        # Add obstacle constraints
-        h_obs = []
-        for obs in self.obstacles:
-            ox = obs['x']
-            oy = obs['y']
-            r = obs['radius']
-            dx = model.x[0] - ox
-            dy = model.x[1] - oy
-            min_dist_sq = (r + self.safety_margin) ** 2
-            h_obs_i = dx ** 2 + dy ** 2 - min_dist_sq
-            h_obs.append(h_obs_i)
-
-        if h_obs:
-            print("obstacle exist")
-            model.con_h_expr = ca.vertcat(*h_obs)
-            ocp.constraints.lh = np.zeros(len(h_obs))
-            ocp.constraints.uh = np.full(len(h_obs), 1e20)
-        else:
-            model.con_h_expr = ca.SX.sym('h', 0)
-            ocp.constraints.lh = np.array([])
-            ocp.constraints.uh = np.array([])
 
         x_ref = np.zeros(nx)
         u_ref = np.zeros(nu)
@@ -205,7 +191,6 @@ class Optimizer(object):
     def update_and_solve(self):
         self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
-        print("target_waypoint_index: ", idx)
         self.next_trajectories = self.state_refs[idx:idx + self.N + 1]
         self.next_controls = self.input_refs[idx:idx + self.N]
         xs = self.state_refs[idx]
@@ -325,7 +310,7 @@ class Optimizer(object):
         self.last_waypoint_index = output_target
         self.target_waypoint_index = output_target  # update the target waypoint index
         return output_target
-    
+
     def draw_result(self, stats, xmin=None, xmax=None, ymin=None, ymax=None, objects=None, car_states=None):
         if xmin is None:
             xmin = self.x_min
@@ -378,16 +363,14 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    obstacles = [
-        {'x': 0.77, 'y': 7, 'radius': 0.3},
-    ]
-    
-    x0 = None
-    mpc = Optimizer(x0=x0, obstacles=obstacles, safety_margin=0.2)
+    mpc = Optimizer()
     
     mpc.target_waypoint_index = 0
+    maxiter = 3000
+    print("current state: ", mpc.current_state)
+    u_real = np.zeros((maxiter+1, 2))
     while True:
-        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > 1000:
+        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > maxiter:
             break
         t = time.time()
         mpc.x_errors.append(mpc.current_state[0] - mpc.next_trajectories[0, 0])
@@ -396,6 +379,7 @@ if __name__ == '__main__':
         mpc.yaw_errors.append(mpc.current_state[2] - mpc.next_trajectories[0, 2])
         t_ = time.time()
         u_res = mpc.update_and_solve()
+        u_real[mpc.mpciter] = u_res
         t2 = time.time()- t_
         if u_res is None:
             break
@@ -405,9 +389,12 @@ if __name__ == '__main__':
         mpc.integrate_next_states(u_res)
         mpc.xx.append(mpc.current_state)
         mpc.mpciter = mpc.mpciter + 1
+    # np.savetxt('/home/slsecret/AD/src/planning/scripts/u_c.txt', mpc.u_c, fmt='%.6f')
+    np.save('/home/slsecret/AD/src/planning/scripts/u_c.npy', u_real)
+    # np.save('/home/slsecret/AD/src/planning/scripts/x_refs.npy', mpc.x_refs)
+    # np.save('/home/slsecret/AD/src/planning/scripts/xx.npy', mpc.xx)
     stats = mpc.compute_stats()
-    objects = [{'x': obs['x'], 'y': obs['y'], 'radius': obs['radius']} for obs in obstacles]
-    mpc.draw_result(stats, -2, 22, -2, 16, objects=objects)
+    mpc.draw_result(stats, -2, 22, -2, 16)
 
 # WITH CONTROL CHANGE PENALTY
 # mean solve time:  0.0007192402571945877 max:  0.011326789855957031 min:  0.0006029605865478516 std:  0.0003375104801741561 median:  0.000701904296875

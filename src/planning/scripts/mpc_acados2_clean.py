@@ -66,7 +66,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         
     def create_solver(self, config_path='config/mpc_config25.yaml'):
-        model = AcadosModel() #  ca.types.SimpleNamespace()
+        model = AcadosModel()
         # control inputs
         v = ca.SX.sym('v')
         delta = ca.SX.sym('delta')
