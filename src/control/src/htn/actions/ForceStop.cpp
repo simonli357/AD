@@ -28,9 +28,4 @@ void ForceStop::execute() {
         utils.publish_cmd_vel(0.0, 0.0);
         world.rate->sleep();
     }
-	update_post_conditions();
-}
-
-void ForceStop::update_post_conditions() {
-    current_state[FORCE_STOP] = false;
 }

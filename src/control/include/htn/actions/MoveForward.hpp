@@ -15,11 +15,6 @@ class MoveForward : public Action {
 	void execute() override;
 
   private:
-	void update_post_conditions() override;
 	void solve();
-	bool detect_stop_sign();
-	bool detect_traffic_light();
-	bool detect_parking_sign();
-	bool detect_obstacles();
 	bool destination_reached();
 };

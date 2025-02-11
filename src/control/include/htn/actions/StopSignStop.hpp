@@ -13,7 +13,4 @@ class StopSignStop : public Action {
 	~StopSignStop();
 
 	void execute() override;
-
-  private:
-	void update_post_conditions() override;
 };

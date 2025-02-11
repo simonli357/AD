@@ -13,7 +13,4 @@ class TrafficLightStop : public Action {
 	~TrafficLightStop();
 
 	void execute() override;
-
-  private:
-	void update_post_conditions() override;
 };

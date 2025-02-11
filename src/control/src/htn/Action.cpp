@@ -32,4 +32,3 @@ void Action::stop_car_for(double duration) {
 // ----------------//
 
 void Action::execute() { return; }
-void Action::update_post_conditions() { return; }

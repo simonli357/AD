@@ -13,7 +13,4 @@ class ForceStop : public Action {
 	~ForceStop();
 
 	void execute() override;
-
-  private:
-	void update_post_conditions() override;
 };

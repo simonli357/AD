@@ -20,12 +20,5 @@ void Park::execute() {
 	}
     // Park the car
     utils.debug("Performing Action: Park.", 2);
-    // TODO: Park the car
-	update_post_conditions();
-}
-
-void Park::update_post_conditions() {
-    current_state[PARKING_SIGN_DETECTED] = false;
-    // Set to 0 if cannot park (occupied slot ...).
-    current_state[PARKING_COUNT] = 1;
+    // TODO: Implement
 }
