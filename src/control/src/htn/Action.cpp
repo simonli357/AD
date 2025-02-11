@@ -29,6 +29,15 @@ void Action::stop_car_for(double duration) {
     // TODO: reset path manager idx
 }
 
+
+// Interrupts current action by stopping the car until it can be continued.
+void Action::emergency_stop() {
+    while(!can_execute()) {
+        utils.publish_cmd_vel(0.0, 0.0);
+        world.rate->sleep();
+    }
+}
+
 //-----------------//
 // Virtual methods //
 // ----------------//

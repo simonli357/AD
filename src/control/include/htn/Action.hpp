@@ -27,6 +27,7 @@ class Action {
 
 	bool can_execute();
 	void stop_car_for(double duration);
+    void emergency_stop();
 
 	virtual void execute();
 };

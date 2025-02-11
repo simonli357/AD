@@ -3,7 +3,7 @@
 #include "HTN.hpp"
 #include "MoveForward.hpp"
 #include "PedestrianStop.hpp"
-#include "htn/actions/park/Park.hpp"
+#include "Parking.hpp"
 #include "StopSignStop.hpp"
 #include "TrafficLightStop.hpp"
 #include "TrafficStop.hpp"
@@ -350,7 +350,7 @@ void World::htn_algorithm() {
         actions.push_back(std::make_unique<ForceStop>(*this, current_state));
         actions.push_back(std::make_unique<MoveForward>(*this, current_state));
         actions.push_back(std::make_unique<PedestrianStop>(*this, current_state));
-        actions.push_back(std::make_unique<Park>(*this, current_state));
+        actions.push_back(std::make_unique<Parking>(*this, current_state));
         actions.push_back(std::make_unique<StopSignStop>(*this, current_state));
         actions.push_back(std::make_unique<TrafficLightStop>(*this, current_state));
         actions.push_back(std::make_unique<TrafficStop>(*this, current_state));
