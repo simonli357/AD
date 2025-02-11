@@ -5,7 +5,7 @@
 
 class MoveForward : public Action {
   public:
-	MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	MoveForward(MoveForward &&) = delete;
 	MoveForward(const MoveForward &) = delete;
 	MoveForward &operator=(MoveForward &&) = delete;

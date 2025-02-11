@@ -2,12 +2,10 @@
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
     cost = 1; // Moving forward is the best move as it moves us closer to the goal.
 	pre_conditions = {
         {FORCE_STOP, false},
-		{PARKING_SIGN_DETECTED, '_'},
-        {PARKING_COUNT, '_'},
         {TRAFFIC_LIGHT_DETECTED, false},
         {STOP_SIGN_DETECTED, false},
         {OBSTACLE_DETECTED, false},
@@ -26,9 +24,10 @@ void MoveForward::execute() {
     utils.debug("Performing Action: Move Forward.", 2);
 	world.update_mpc_states();
 	solve();
-	update_post_conditions();
 	// TODO : Lane based relocalization
 	// TODO : Sign based relocalization
+	update_post_conditions();
+    world.rate->sleep();
 }
 
 void MoveForward::solve() {

@@ -5,7 +5,7 @@
 
 class TrafficLightStop : public Action {
   public:
-	TrafficLightStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	TrafficLightStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	TrafficLightStop(TrafficLightStop &&) = delete;
 	TrafficLightStop(const TrafficLightStop &) = delete;
 	TrafficLightStop &operator=(TrafficLightStop &&) = delete;

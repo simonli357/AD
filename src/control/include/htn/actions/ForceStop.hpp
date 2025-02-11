@@ -5,7 +5,7 @@
 
 class ForceStop : public Action {
   public:
-	ForceStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	ForceStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	ForceStop(ForceStop &&) = delete;
 	ForceStop(const ForceStop &) = delete;
 	ForceStop &operator=(ForceStop &&) = delete;

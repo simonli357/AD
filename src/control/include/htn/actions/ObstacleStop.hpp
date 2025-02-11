@@ -5,7 +5,7 @@
 
 class ObstacleStop : public Action {
   public:
-	ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	ObstacleStop(ObstacleStop &&) = delete;
 	ObstacleStop(const ObstacleStop &) = delete;
 	ObstacleStop &operator=(ObstacleStop &&) = delete;

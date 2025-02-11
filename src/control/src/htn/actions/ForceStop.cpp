@@ -2,16 +2,10 @@
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-ForceStop::ForceStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+ForceStop::ForceStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
     cost = 0;
 	pre_conditions = {
         {FORCE_STOP, true},
-		{PARKING_SIGN_DETECTED, '_'},
-        {PARKING_COUNT, '_'},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
-        {STOP_SIGN_DETECTED, true},
-        {OBSTACLE_DETECTED, '_'},
-        {DESTINATION_REACHED, '_'},
 	};
 }
 
@@ -25,7 +19,7 @@ void ForceStop::execute() {
     // Stop the car until we can restart it
     utils.debug("Performing Action: Force Stop.", 2);
     while (true) {
-        auto& condition = world.current_state[FORCE_STOP];
+        auto& condition = current_state[FORCE_STOP];
         if (auto* value = std::get_if<bool>(&condition)) {
             if (!(*value)) {
                 break;

@@ -2,16 +2,11 @@
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-StopSignStop::StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+StopSignStop::StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
     cost = 2;
 	pre_conditions = {
         {FORCE_STOP, false},
-		{PARKING_SIGN_DETECTED, '_'},
-        {PARKING_COUNT, '_'},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
         {STOP_SIGN_DETECTED, true},
-        {OBSTACLE_DETECTED, '_'},
-        {DESTINATION_REACHED, '_'},
 	};
 }
 

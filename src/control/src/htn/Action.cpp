@@ -5,19 +5,8 @@ Action::Action(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_
 
 Action::~Action() {}
 
-void Action::set_conditions(std::unordered_map<PRIMITIVES, ValueType> &conditions) {
-    current_state = conditions;
-}
-
 bool Action::can_execute() {
 	for (const auto &[key, value] : pre_conditions) {
-		// wildcard
-		if (std::holds_alternative<char>(pre_conditions[key]) && std::get<char>(pre_conditions[key]) == '_') {
-			continue;
-		}
-		if (std::holds_alternative<char>(current_state[key]) && std::get<char>(current_state[key]) == '_') {
-			continue;
-		}
 		if (pre_conditions[key] != current_state[key]) {
 			return false;
 		}

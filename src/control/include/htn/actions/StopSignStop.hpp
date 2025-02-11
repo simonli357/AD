@@ -5,7 +5,7 @@
 
 class StopSignStop : public Action {
   public:
-	StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	StopSignStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	StopSignStop(StopSignStop &&) = delete;
 	StopSignStop(const StopSignStop &) = delete;
 	StopSignStop &operator=(StopSignStop &&) = delete;

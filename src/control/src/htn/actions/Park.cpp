@@ -2,16 +2,12 @@
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-Park::Park(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+Park::Park(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
     cost = 0; // Parking is mandatory
 	pre_conditions = {
         {FORCE_STOP, false},
 		{PARKING_SIGN_DETECTED, true},
         {PARKING_COUNT, 0},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
-        {STOP_SIGN_DETECTED, '_'},
-        {OBSTACLE_DETECTED, '_'},
-        {DESTINATION_REACHED, '_'},
 	};
 }
 

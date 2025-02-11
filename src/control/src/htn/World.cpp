@@ -15,21 +15,15 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
 
     initial_state = {
         {FORCE_STOP, true},
-        {PARKING_SIGN_DETECTED, '_'},
+        {PARKING_SIGN_DETECTED, false},
         {PARKING_COUNT, 0},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
-        {STOP_SIGN_DETECTED, '_'},
-        {OBSTACLE_DETECTED, '_'},
+        {TRAFFIC_LIGHT_DETECTED, false},
+        {STOP_SIGN_DETECTED, false},
+        {OBSTACLE_DETECTED, false},
         {DESTINATION_REACHED, false},
     };
 
     goal_state = {
-        {FORCE_STOP, '_'},
-        {PARKING_SIGN_DETECTED, '_'},
-        {PARKING_COUNT, '_'},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
-        {STOP_SIGN_DETECTED, '_'},
-        {OBSTACLE_DETECTED, '_'},
         {DESTINATION_REACHED, true},
     };
 
@@ -440,26 +434,18 @@ void World::receive_services() {
 }
 
 void World::htn_algorithm() {
-	while (true) {
-		current_state = initial_state;
-		std::unique_ptr<Action> force_stop = std::make_unique<ForceStop>(*this, current_state);
-		std::unique_ptr<Action> move_forward = std::make_unique<MoveForward>(*this, current_state);
-		std::unique_ptr<Action> obstacle_stop = std::make_unique<ObstacleStop>(*this, current_state);
-		std::unique_ptr<Action> park = std::make_unique<Park>(*this, current_state);
-		std::unique_ptr<Action> stop_sign_stop = std::make_unique<StopSignStop>(*this, current_state);
-		std::unique_ptr<Action> traffic_light_stop = std::make_unique<TrafficLightStop>(*this, current_state);
-
-		std::vector<std::unique_ptr<Action>> actions;
-		actions.push_back(std::move(force_stop));
-		actions.push_back(std::move(move_forward));
-		actions.push_back(std::move(obstacle_stop));
-		actions.push_back(std::move(park));
-		actions.push_back(std::move(stop_sign_stop));
-		actions.push_back(std::move(traffic_light_stop));
-
+    while (true) {
+        current_state = initial_state;
+        std::vector<std::unique_ptr<Action>> actions;
+        actions.push_back(std::make_unique<ForceStop>(*this, current_state));
+        actions.push_back(std::make_unique<MoveForward>(*this, current_state));
+        actions.push_back(std::make_unique<ObstacleStop>(*this, current_state));
+        actions.push_back(std::make_unique<Park>(*this, current_state));
+        actions.push_back(std::make_unique<StopSignStop>(*this, current_state));
+        actions.push_back(std::make_unique<TrafficLightStop>(*this, current_state));
         utils.debug("Starting htn algorithm", 2);
-		HTN(current_state, goal_state, actions).start();
-	}
+        HTN(*this, current_state, goal_state, actions).start();
+    }
 }
 
 bool World::goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res) {
@@ -502,15 +488,17 @@ bool World::set_states_callback(utils::set_states::Request &req, utils::set_stat
 }
 
 bool World::start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
-	static int history = -1;
-	if (req.data) {
-		current_state[FORCE_STOP] = false;
-		res.success = true;
-		res.message = "Started";
-	} else {
-		current_state[FORCE_STOP] = true;
-		res.success = true;
-		res.message = "Stopped";
-	}
+    auto& condition = current_state[FORCE_STOP];
+    if (auto* value = std::get_if<bool>(&condition)) {
+        if (*value) {
+            current_state[FORCE_STOP] = false;
+            res.success = true;
+            res.message = "Started";
+        } else {
+            current_state[FORCE_STOP] = true;
+            res.success = true;
+            res.message = "Stopped";
+        }
+    }
 	return true;
 }
