@@ -43,7 +43,8 @@ south_facing_lane_centers = [
     [2.667 - ofs6, 0, "Lane"],
     [4.9156 - ofs6, 0, "Lane"],
     [15.165279 + ofs6, 0, "Lane"],
-    [15.1632 + ofs6, 0, "Lane"]
+    [15.1632 + ofs6, 0, "Lane"],
+    [15.7356 + ofs6, 0, "Lane"]
 ]
 
 east_facing_lane_centers = [
