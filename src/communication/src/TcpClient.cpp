@@ -358,7 +358,7 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
 	std::vector<uchar> image;
-	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 1000});
+	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_PNG_COMPRESSION, 4});
 	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {

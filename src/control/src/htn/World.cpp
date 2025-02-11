@@ -1,12 +1,12 @@
 #include "htn/World.hpp"
 #include "ForceStop.hpp"
+#include "HTN.hpp"
 #include "MoveForward.hpp"
-#include "HandleObstacle.hpp"
-#include "Park.hpp"
+#include "PedestrianStop.hpp"
+#include "htn/actions/park/Park.hpp"
 #include "StopSignStop.hpp"
 #include "TrafficLightStop.hpp"
 #include "htn/Action.hpp"
-#include "htn/HTN.hpp"
 
 World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real)
 	: nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T, N, v_ref), path_manager(nh, T, N, v_ref), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real) {
@@ -20,7 +20,7 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
         {PARKING_COUNT, 0},
         {TRAFFIC_LIGHT_DETECTED, false},
         {STOP_SIGN_DETECTED, false},
-        {OBSTACLE_DETECTED, false},
+        {PEDESTRIAN_DETECTED, false},
         {DESTINATION_REACHED, false},
     };
 
@@ -146,6 +146,127 @@ void World::call_trigger_service() {
 	client.call(srv);
 }
 
+double World::check_crosswalk() {
+    static ros::Time crosswalk_cooldown_timer = ros::Time::now();
+    static double detected_dist = -1;
+    if(crosswalk_cooldown_timer > ros::Time::now()) {
+        // std::cout << "crosswalk detected previously, cd expire in " << (crosswalk_cooldown_timer - ros::Time::now()).toSec() << "s" << std::endl;
+        return 100;
+    }
+    int crosswalk_index = utils.object_index(OBJECT::CROSSWALK);
+    if(crosswalk_index >= 0) {
+        detected_dist = utils.object_distance(crosswalk_index);
+        if (detected_dist < MAX_CROSSWALK_DIST && detected_dist > 0) {
+            double cd = (detected_dist + CROSSWALK_LENGTH) / NORMAL_SPEED * cw_speed_ratio;
+            crosswalk_cooldown_timer = ros::Time::now() + ros::Duration(cd);
+            utils.debug("crosswalk detected at a distance of: " + std::to_string(detected_dist), 2);
+            if (sign_relocalize) {
+            // if (1) {
+                utils.update_states(x_current);
+                auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist);
+                std::string sign_type;
+                const auto& direction_crosswalks = utils.get_relevant_signs(OBJECT::CROSSWALK, sign_type);
+                int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
+                sign_based_relocalization(crosswalk_pose, direction_crosswalks, sign_type);
+            }
+            return detected_dist;
+        }
+    }
+    return -1;
+}
+
+double World::check_highway() {
+    utils.update_states(x_current);
+    update_mpc_states(x_current[0], x_current[1], x_current[2]);
+    int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+    return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
+}
+
+int World::intersection_based_relocalization() {
+	// stop_for(0.5);
+	// check orientation
+	double yaw = utils.get_yaw();
+	double nearest_direction = Utility::nearest_direction(yaw);
+	double yaw_error = nearest_direction - yaw;
+	if (yaw_error > M_PI * 1.5)
+		yaw_error -= 2 * M_PI;
+	else if (yaw_error < -M_PI * 1.5)
+		yaw_error += 2 * M_PI;
+	if (std::abs(yaw_error) > intersection_localization_orientation_threshold * M_PI / 180) {
+		utils.debug("intersection_based_relocalization(): FAILURE: yaw error too large: " + std::to_string(yaw_error), 2);
+		return 0;
+	}
+
+	int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
+	const auto &direction_intersections = (nearestDirectionIndex == 0)	 ? EAST_FACING_INTERSECTIONS
+										  : (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS
+										  : (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS
+																		 : SOUTH_FACING_INTERSECTIONS;
+
+	static Eigen::Vector2d estimated_position(0, 0);
+	utils.get_states(estimated_position(0), estimated_position(1), yaw);
+	estimated_position[0] += constant_distance_to_intersection_at_detection * cos(yaw);
+	estimated_position[1] += constant_distance_to_intersection_at_detection * sin(yaw);
+
+	double min_error_sq = std::numeric_limits<double>::max();
+	int min_index = 0;
+	for (size_t i = 0; i < direction_intersections.size(); ++i) {
+		double error_sq = std::pow(estimated_position[0] - direction_intersections[i][0], 2) + std::pow(estimated_position[1] - direction_intersections[i][1], 2);
+		if (error_sq < min_error_sq) {
+			min_error_sq = error_sq;
+			min_index = static_cast<int>(i);
+		}
+	}
+
+	// exit(0);
+	if (min_error_sq < intersection_localization_threshold * intersection_localization_threshold) {
+		utils.debug("intersection based relocalization(): SUCCESS: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
+						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+					2);
+		utils.recalibrate_states(direction_intersections[min_index][0] - estimated_position[0], direction_intersections[min_index][1] - estimated_position[1]);
+		return 1; // Successful relocalization
+	} else {
+		utils.debug("intersection based relocalization(): FAILURE: estimated intersection position: (" + std::to_string(estimated_position[0]) + ", " + std::to_string(estimated_position[1]) +
+						"), actual: (" + std::to_string(direction_intersections[min_index][0]) + ", " + std::to_string(direction_intersections[min_index][1]) + "), error: (" +
+						std::to_string(direction_intersections[min_index][0] - estimated_position[0]) + ", " + std::to_string(direction_intersections[min_index][1] - estimated_position[1]) + ")",
+					2);
+		return 0; // Failed to relocalize
+	}
+}
+
+int World::sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string &sign_type) {
+	int min_index = 0;
+	double min_error_sq = 1000.0;
+	if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, sign_localization_threshold)) {
+		double yaw = utils.get_yaw();
+		double sign_direction = EMPIRICAL_POSES[min_index][2];
+		double yaw_error = Utility::compare_yaw(sign_direction, yaw);
+		if (yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
+			utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + std::to_string(yaw_error) + ", threshold: " + std::to_string(sign_localization_orientation_threshold), 2);
+			return 0;
+		}
+		utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + "), actual: (" +
+						std::to_string(EMPIRICAL_POSES[min_index][0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1]) + "), error: (" +
+						std::to_string(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + std::to_string(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) +
+						"), error norm: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold),
+					2);
+		double x, y;
+		utils.get_states(x, y, yaw);
+		utils.debug("SIGN_RELOC(" + sign_type + "): relative estimated pose to car: (" + std::to_string(estimated_sign_pose[0] - x) + ", " + std::to_string(estimated_sign_pose[1] - y) + ")", 3);
+		utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
+	} else {
+		utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: error too large: " + std::to_string(std::sqrt(min_error_sq)) + ", threshold: " + std::to_string(sign_localization_threshold) +
+						", estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + ")",
+					2);
+		return 0;
+	}
+	utils.update_states(x_current);
+	path_manager.reset_target_waypoint_index(x_current);
+	mpc.reset_solver();
+	return 1;
+}
+
 // ------------------//
 // Private functions //
 // ------------------//
@@ -225,7 +346,7 @@ void World::htn_algorithm() {
         std::vector<std::unique_ptr<Action>> actions;
         actions.push_back(std::make_unique<ForceStop>(*this, current_state));
         actions.push_back(std::make_unique<MoveForward>(*this, current_state));
-        actions.push_back(std::make_unique<HandleObstacle>(*this, current_state));
+        actions.push_back(std::make_unique<PedestrianStop>(*this, current_state));
         actions.push_back(std::make_unique<Park>(*this, current_state));
         actions.push_back(std::make_unique<StopSignStop>(*this, current_state));
         actions.push_back(std::make_unique<TrafficLightStop>(*this, current_state));

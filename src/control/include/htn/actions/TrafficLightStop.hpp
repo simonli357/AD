@@ -13,4 +13,7 @@ class TrafficLightStop : public Action {
 	~TrafficLightStop();
 
 	void execute() override;
+
+  private:
+	void wait_for_green();
 };
