@@ -62,6 +62,7 @@ class World {
 	Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
 	Eigen::Vector2d next_intersection_point = {1000.0, 1000.0};
 
+	void htn_algorithm();
 	void update_mpc_states(double x, double y, double yaw);
 	void update_mpc_states();
 	void publish_waypoints();
@@ -77,7 +78,6 @@ class World {
 	std::thread utils_thread;
 	int initialize();
 	void receive_services();
-	void htn_algorithm();
 	bool goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res);
 	bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res);
 	bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);

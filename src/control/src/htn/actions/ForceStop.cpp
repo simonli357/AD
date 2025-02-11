@@ -26,6 +26,5 @@ void ForceStop::execute() {
             }
         }
         utils.publish_cmd_vel(0.0, 0.0);
-        world.rate->sleep();
     }
 }

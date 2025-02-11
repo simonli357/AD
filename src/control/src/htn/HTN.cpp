@@ -34,6 +34,7 @@ void HTN::start() {
 			if (action) {
                 if (action->can_execute()) {
                     action->execute();
+                    world.rate->sleep();
                     break;
                 }
 			}

@@ -26,7 +26,6 @@ void MoveForward::execute() {
 	world.update_mpc_states();
 	solve();
     current_state[DESTINATION_REACHED] = destination_reached();
-    world.rate->sleep();
 }
 
 void MoveForward::solve() {

@@ -9,8 +9,7 @@
 #include <std_srvs/Trigger.h>
 #include <string>
 
-std::unique_ptr<World> world;
-
+World *world = nullptr;
 void signalHandler(int signum) {
 	if (world) {
 		world->utils.stop_car();
@@ -53,9 +52,10 @@ int main(int argc, char **argv) {
 		vref = 35.;
 	std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
 
+	World w(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
+    world = &w;
 	signal(SIGINT, signalHandler);
-
-	world = std::make_unique<World>(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
+    w.htn_algorithm();
 
 	return 0;
 }
