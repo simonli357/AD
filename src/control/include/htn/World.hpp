@@ -67,6 +67,10 @@ class World {
 	void publish_waypoints();
 	void publish_commands();
 	void call_trigger_service();
+    double check_crosswalk();
+    double check_highway();
+    int intersection_based_relocalization();
+    int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string &sign_type = "");
 
   private:
 	std::thread services_thread;

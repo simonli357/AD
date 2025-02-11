@@ -13,4 +13,7 @@ class Park : public Action {
 	~Park();
 
 	void execute() override;
+
+  private:
+	void htn();
 };
