@@ -8,13 +8,13 @@
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
 #include <string>
-#include <thread>
 
 std::unique_ptr<World> world;
 
 void signalHandler(int signum) {
 	if (world) {
 		world->utils.stop_car();
+        world->current_state[FORCE_STOP] = true;
 		world->call_trigger_service();
 	}
 	if (world && world->utils.serial && world->utils.serial->is_open()) {

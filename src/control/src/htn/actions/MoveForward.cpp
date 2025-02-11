@@ -22,7 +22,7 @@ void MoveForward::execute() {
 		return;
 	}
     // Move the car forward
-    utils.debug("Performing Action: Move Forward.", 2);
+    // utils.debug("Performing Action: Move Forward.", 2);
 	world.update_mpc_states();
 	solve();
     current_state[DESTINATION_REACHED] = destination_reached();
