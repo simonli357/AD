@@ -75,6 +75,7 @@ class World {
 
   private:
 	std::thread services_thread;
+	std::thread utils_thread;
 	int initialize();
 	void receive_services();
 	void htn_algorithm();

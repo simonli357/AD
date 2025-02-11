@@ -12,6 +12,7 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
 	: nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T, N, v_ref), path_manager(nh, T, N, v_ref), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real) {
 
 	services_thread = std::thread(&World::receive_services, this);
+    utils_thread = std::thread(&Utility::spin, &utils);
 
     initial_state = {
         {FORCE_STOP, true},
