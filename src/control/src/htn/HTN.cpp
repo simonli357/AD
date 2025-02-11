@@ -29,7 +29,6 @@ void HTN::start() {
 		if (goal_reached()) {
 			break;
 		}
-        ObjectDetection(world, current_state).detect_objects();
 		for (auto &action : actions) {
 			if (action) {
                 if (action->can_execute()) {
