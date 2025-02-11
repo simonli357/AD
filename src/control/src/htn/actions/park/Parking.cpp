@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 Parking::Parking(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
-	cost = 0; // Parkinging is mandatory
+	cost = 1; // Parkinging is mandatory
 	pre_conditions = {
 		{FORCE_STOP, false},
 		{PEDESTRIAN_DETECTED, false},
