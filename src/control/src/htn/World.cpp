@@ -6,6 +6,8 @@
 #include "htn/actions/park/Park.hpp"
 #include "StopSignStop.hpp"
 #include "TrafficLightStop.hpp"
+#include "TrafficStop.hpp"
+#include "TrafficOvertake.hpp"
 #include "htn/Action.hpp"
 
 World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real)
@@ -22,6 +24,8 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
         {STOP_SIGN_DETECTED, false},
         {PEDESTRIAN_DETECTED, false},
         {DESTINATION_REACHED, false},
+		{CAR_DETECTED_ON_SAME_LANE, false},
+        {LANE_IS_DOTTED, false}
     };
 
     goal_state = {
@@ -350,6 +354,8 @@ void World::htn_algorithm() {
         actions.push_back(std::make_unique<Park>(*this, current_state));
         actions.push_back(std::make_unique<StopSignStop>(*this, current_state));
         actions.push_back(std::make_unique<TrafficLightStop>(*this, current_state));
+        actions.push_back(std::make_unique<TrafficStop>(*this, current_state));
+        actions.push_back(std::make_unique<TrafficOvertake>(*this, current_state));
         utils.debug("Starting htn algorithm", 2);
         HTN(*this, current_state, goal_state, actions).start();
     }

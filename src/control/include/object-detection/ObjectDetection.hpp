@@ -26,6 +26,7 @@ public:
 private:
     void detect_signs();
     void detect_pedestrians();
+    void detect_cars();
     void check_road_signs();
     bool check_highway_signs();
     void check_parking_signs();
