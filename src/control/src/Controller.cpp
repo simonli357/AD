@@ -53,9 +53,9 @@ int main(int argc, char **argv) {
 		vref = 35.;
 	std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
 
-	world = std::make_unique<World>(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
-
 	signal(SIGINT, signalHandler);
+
+	world = std::make_unique<World>(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
 
 	return 0;
 }
