@@ -2,8 +2,8 @@
 #include "htn/Action.hpp"
 #include <memory>
 
-HTN::HTN(std::unordered_map<PRIMITIVES, ValueType> &current_state, std::unordered_map<PRIMITIVES, ValueType> &goal_state, std::vector<std::unique_ptr<Action>> &actions)
-	: current_state(current_state), goal_state(goal_state), actions(actions) {
+HTN::HTN(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state, std::unordered_map<PRIMITIVES, ValueType> &goal_state, std::vector<std::unique_ptr<Action>> &actions)
+	: world(world), current_state(current_state), goal_state(goal_state), actions(actions) {
 	sort_actions();
 }
 
@@ -15,13 +15,6 @@ void HTN::sort_actions() {
 
 bool HTN::goal_reached() {
 	for (const auto &[key, value] : goal_state) {
-		// wildcard
-		if (std::holds_alternative<char>(goal_state[key]) && std::get<char>(goal_state[key]) == '_') {
-			continue;
-		}
-		if (std::holds_alternative<char>(current_state[key]) && std::get<char>(current_state[key]) == '_') {
-			continue;
-		}
 		if (goal_state[key] != current_state[key]) {
 			return false;
 		}
@@ -31,12 +24,12 @@ bool HTN::goal_reached() {
 
 void HTN::start() {
 	while (true) {
+        world.utils.update_states(world.x_current);
 		if (goal_reached()) {
 			break;
 		}
 		for (auto &action : actions) {
 			if (action) {
-                action->set_conditions(current_state);
                 if (action->can_execute()) {
                     action->execute();
                     break;

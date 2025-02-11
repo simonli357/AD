@@ -27,7 +27,6 @@ class Action {
 	std::unordered_map<PRIMITIVES, ValueType> pre_conditions;
 	std::unordered_map<PRIMITIVES, ValueType> &current_state;
 
-    void set_conditions(std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	bool can_execute();
 
 	virtual void execute();

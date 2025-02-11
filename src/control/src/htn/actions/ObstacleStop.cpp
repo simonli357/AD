@@ -2,16 +2,11 @@
 #include "htn/Action.hpp"
 #include <unordered_map>
 
-ObstacleStop::ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions) : Action(world, conditions) {
+ObstacleStop::ObstacleStop(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state) : Action(world, current_state) {
     cost = 3; // Navigating around could save some time, stop if we must absolutely stop.
 	pre_conditions = {
         {FORCE_STOP, false},
-		{PARKING_SIGN_DETECTED, '_'},
-        {PARKING_COUNT, '_'},
-        {TRAFFIC_LIGHT_DETECTED, '_'},
-        {STOP_SIGN_DETECTED, '_'},
         {OBSTACLE_DETECTED, true},
-        {DESTINATION_REACHED, '_'},
 	};
 }
 

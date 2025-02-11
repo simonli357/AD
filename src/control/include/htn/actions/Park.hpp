@@ -5,7 +5,7 @@
 
 class Park : public Action {
   public:
-	Park(World &world, std::unordered_map<PRIMITIVES, ValueType> &conditions);
+	Park(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state);
 	Park(Park &&) = delete;
 	Park(const Park &) = delete;
 	Park &operator=(Park &&) = delete;
