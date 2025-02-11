@@ -1,5 +1,4 @@
 #include "htn/actions/park/Parking.hpp"
-#include "ObjectDetection.hpp"
 #include "World.hpp"
 #include "htn/Action.hpp"
 #include <unordered_map>
@@ -54,7 +53,6 @@ void Parking::execute() {
 			std::cout << "parking spot " << i << ": " << world.PARKING_SPOTS[i][0] << ", " << world.PARKING_SPOTS[i][1] << std::endl;
 		}
 		while (1) {
-            ObjectDetection(world, current_state).detect_objects();
             if (!can_execute()) {
                 return;
             }
@@ -123,7 +121,11 @@ void Parking::execute() {
 		// ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
 		utils.debug("orientation: " + std::to_string(orientation) + ", yaw: " + std::to_string(yaw), 4);
 		// exit(0);
-		parking_maneuver_hardcode(world.right_park, false, 1 / world.T_park, initial_y_error, initial_yaw_error);
+		int res = parking_maneuver_hardcode(world.right_park, false, 1 / world.T_park, initial_y_error, initial_yaw_error);
+        if (res == 1) {
+            // cannot complete maneuver
+            return;
+        }
 	}
 	double x, y, yaw;
 	utils.get_states(x, y, yaw);
@@ -238,6 +240,9 @@ int Parking::maneuver_hardcode(const Eigen::VectorXd &targets, const Eigen::Vect
 	double yaw_error = yaw - target_yaws(stage - 1);
 	double yaw_error_sign = yaw_error > 0 ? 1 : -1;
 	while (1) {
+        if (!can_execute()) {
+            return 1;
+        }
 		yaw = utils.get_yaw();
 		yaw = Utility::yaw_mod(yaw);
 		yaw_error = yaw - target_yaws(stage - 1);
