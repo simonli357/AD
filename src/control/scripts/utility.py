@@ -278,13 +278,6 @@ class Utility:
             self.ekf_x = ekf.pose.pose.position.x
             self.ekf_y = ekf.pose.pose.position.y
     def model_callback(self, model):
-        # if self.timerpid is None:
-        #     self.timerpid = rospy.Time.now()
-        # now = rospy.Time.now()
-        # dt = (now-self.timerpid).to_sec()
-        # rate = 1/dt if dt != 0 else "inf"
-        # print("model: ",dt, ", rate: ", rate)
-        # self.timerpid = now
         with self.lock:
             if self.i is None:
                 try:

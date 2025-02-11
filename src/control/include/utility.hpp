@@ -65,11 +65,11 @@ public:
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
     int debugLevel = 5;
     std_msgs::String debug_msg;
-    bool real;
+    bool real, use_beta_model = false;
     double rateVal;
     ros::Rate* rate;
 
-    double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
+    double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     // bool stopline = false;
     int stopline = -1;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
