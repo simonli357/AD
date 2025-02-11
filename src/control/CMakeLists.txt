@@ -136,8 +136,7 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
 file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
 file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
-file(GLOB PARKING ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/park/*.cpp)
-add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS} ${PARKING})
+add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
 target_link_libraries(htn ocp_shared_lib sim_shared_lib)
 
 # add_executable(opt

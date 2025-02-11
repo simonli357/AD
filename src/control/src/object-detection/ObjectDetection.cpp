@@ -10,8 +10,6 @@ ObjectDetection::ObjectDetection(World &world, std::unordered_map<PRIMITIVES, Va
 ObjectDetection::~ObjectDetection() {}
 
 void ObjectDetection::detect_objects() {
-    // synchronize manual stop state into sub-states -> car can be stopped when complex actions are performed.
-    current_state[FORCE_STOP] = world.current_state[FORCE_STOP];
     // detect objects and update the current state
     detect_signs();
     detect_pedestrians();

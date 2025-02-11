@@ -1,4 +1,4 @@
-#include "htn/actions/park/Parking.hpp"
+#include "htn/actions/Parking.hpp"
 #include "World.hpp"
 #include "htn/Action.hpp"
 #include <unordered_map>
@@ -7,6 +7,8 @@ Parking::Parking(World &world, std::unordered_map<PRIMITIVES, ValueType> &curren
 	cost = 1; // Parkinging is mandatory
 	pre_conditions = {
 		{FORCE_STOP, false},
+        {PARKING_SIGN_DETECTED, true},
+        {PARKING_COUNT, 0},
 		{PEDESTRIAN_DETECTED, false},
 	};
 }
@@ -40,7 +42,7 @@ void Parking::execute() {
 			double dist = utils.object_distance(park_index);
 		} else {
 			ROS_WARN("parking sign invalid... returning to STATE::MOVING");
-			current_state[PARKING_COMPLETE] = true;
+			current_state[PARKING_SIGN_DETECTED] = false;
 			return;
 		}
 		// if (1) {
@@ -53,9 +55,7 @@ void Parking::execute() {
 			std::cout << "parking spot " << i << ": " << world.PARKING_SPOTS[i][0] << ", " << world.PARKING_SPOTS[i][1] << std::endl;
 		}
 		while (1) {
-            if (!can_execute()) {
-                return;
-            }
+            emergency_stop();
 			// check utils.recent_car_indices
 			// std::cout << "recent car indices size: " << utils.recent_car_indices.size() << std::endl;
 			std::list<int> cars = utils.recent_car_indices;
@@ -121,11 +121,7 @@ void Parking::execute() {
 		// ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
 		utils.debug("orientation: " + std::to_string(orientation) + ", yaw: " + std::to_string(yaw), 4);
 		// exit(0);
-		int res = parking_maneuver_hardcode(world.right_park, false, 1 / world.T_park, initial_y_error, initial_yaw_error);
-        if (res == 1) {
-            // cannot complete maneuver
-            return;
-        }
+		parking_maneuver_hardcode(world.right_park, false, 1 / world.T_park, initial_y_error, initial_yaw_error);
 	}
 	double x, y, yaw;
 	utils.get_states(x, y, yaw);
@@ -152,8 +148,8 @@ void Parking::execute() {
 			temp_rate.sleep();
 		}
 	}
-    current_state[PARKING_SUCCESS] = true;
-    current_state[PARKING_COMPLETE] = true;
+    current_state[PARKING_COUNT] = 1;
+    current_state[PARKING_SIGN_DETECTED] = false;
 }
 
 void Parking::orientation_follow(double orientation, double speed) {
@@ -240,9 +236,7 @@ int Parking::maneuver_hardcode(const Eigen::VectorXd &targets, const Eigen::Vect
 	double yaw_error = yaw - target_yaws(stage - 1);
 	double yaw_error_sign = yaw_error > 0 ? 1 : -1;
 	while (1) {
-        if (!can_execute()) {
-            return 1;
-        }
+        emergency_stop();
 		yaw = utils.get_yaw();
 		yaw = Utility::yaw_mod(yaw);
 		yaw_error = yaw - target_yaws(stage - 1);
