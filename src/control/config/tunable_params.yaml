@@ -10,13 +10,12 @@ real:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
+  use_beta_model: true
   has_light: false
   change_lane_offset_scaler: 0.9
-  sigma_delta: 10 # degrees
-  sigma_v: 0.075
   cw_speed_ratio: 0.85
   hw_speed_ratio: 1.25
-  sign_localization_threshold: 0.537
+  sign_localization_threshold: 0.357
   sign_localization_orientation_threshold: 50.0 # degrees
   lane_localization_threshold: 0.9
   lane_localization_orientation_threshold: 7.53 # degrees
@@ -35,7 +34,7 @@ sim:
   change_lane_thresh: 0.05
   cw_speed_ratio: 0.7143
   hw_speed_ratio: 1.33
-  sign_localization_threshold: 0.537
+  sign_localization_threshold: 0.357
   sign_localization_orientation_threshold: 50.0 # degrees
   lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
@@ -43,8 +42,6 @@ sim:
   intersection_localization_orientation_threshold: 15.0 # degrees
   constant_distance_to_intersection_at_detection: 0.3725
   pixel_center_offset: 0
-  sigma_v: 0.075
-  sigma_delta: 10 # degrees
   odom_rate: 50
   stop_duration: 1.5
   use_stopline: true
@@ -57,5 +54,6 @@ sim:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
+  use_beta_model: true
   has_light: false
   change_lane_offset_scaler: 1.3
