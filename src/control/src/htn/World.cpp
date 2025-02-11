@@ -88,7 +88,6 @@ World::World(ros::NodeHandle &nh_, double T, int N, double v_ref, bool sign, boo
 	utils.debug("start_bool server ready, mpc time step T = " + std::to_string(T), 2);
 	utils.debug("world initialized", 2);
     initialize();
-    htn_algorithm();
 }
 
 World::~World() {
