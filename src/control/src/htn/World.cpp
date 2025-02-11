@@ -91,6 +91,9 @@ World::~World() {
 	if (services_thread.joinable()) {
 		services_thread.join();
 	}
+    if (utils_thread.joinable()) {
+        utils_thread.join();
+    }
 }
 
 void World::update_mpc_states() {
