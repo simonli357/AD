@@ -1,5 +1,6 @@
 #include "htn/HTN.hpp"
 #include "htn/Action.hpp"
+#include "object-detection/ObjectDetection.hpp"
 #include <memory>
 
 HTN::HTN(World &world, std::unordered_map<PRIMITIVES, ValueType> &current_state, std::unordered_map<PRIMITIVES, ValueType> &goal_state, std::vector<std::unique_ptr<Action>> &actions)
@@ -28,6 +29,7 @@ void HTN::start() {
 		if (goal_reached()) {
 			break;
 		}
+        ObjectDetection(world, current_state).detect_objects();
 		for (auto &action : actions) {
 			if (action) {
                 if (action->can_execute()) {

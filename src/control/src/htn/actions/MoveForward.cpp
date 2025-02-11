@@ -1,5 +1,4 @@
 #include "htn/actions/MoveForward.hpp"
-#include "ObjectDetection.hpp"
 #include "htn/Action.hpp"
 #include <unordered_map>
 
@@ -11,6 +10,7 @@ MoveForward::MoveForward(World &world, std::unordered_map<PRIMITIVES, ValueType>
         {STOP_SIGN_DETECTED, false},
         {PEDESTRIAN_DETECTED, false},
         {DESTINATION_REACHED, false},
+        {CAR_DETECTED_ON_SAME_LANE, false},
 	};
 }
 
@@ -25,7 +25,6 @@ void MoveForward::execute() {
     utils.debug("Performing Action: Move Forward.", 2);
 	world.update_mpc_states();
 	solve();
-    ObjectDetection(world, current_state).detect_objects();
     current_state[DESTINATION_REACHED] = destination_reached();
     world.rate->sleep();
 }

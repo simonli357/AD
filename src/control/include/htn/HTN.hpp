@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Action.hpp"
-#include "object-detection/ObjectDetection.hpp"
 #include <memory>
 #include <unordered_map>
 
