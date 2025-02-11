@@ -13,7 +13,4 @@ class Park : public Action {
 	~Park();
 
 	void execute() override;
-
-  private:
-	void update_post_conditions() override;
 };

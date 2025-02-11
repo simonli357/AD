@@ -3,15 +3,14 @@
 #include "MPC.hpp"
 #include "PathManager.hpp"
 #include "htn/Primitives.hpp"
+#include "htn/ValueTypes.hpp"
 #include "utility.hpp"
 #include "utils/constants.h"
 #include "utils/goto_command.h"
 #include "utils/set_states.h"
 #include <std_srvs/SetBool.h>
 #include <unordered_map>
-#include <variant>
 
-using ValueType = std::variant<bool, double, int32_t, char>;
 using namespace VehicleConstants;
 
 class World {
@@ -67,10 +66,6 @@ class World {
 	void update_mpc_states();
 	void publish_waypoints();
 	void publish_commands();
-	bool intersection_reached();
-	int intersection_based_relocalization();
-	bool near_intersection();
-	bool sign_in_path(int sign_idx, double search_dist);
 	void call_trigger_service();
 
   private:

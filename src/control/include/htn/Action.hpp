@@ -2,12 +2,10 @@
 
 #include "PathManager.hpp"
 #include "World.hpp"
+#include "htn/ValueTypes.hpp"
 #include "utility.hpp"
 #include <cstdint>
 #include <unordered_map>
-#include <variant>
-
-using ValueType = std::variant<bool, double, int32_t, char>;
 
 class Action {
   public:
@@ -18,7 +16,7 @@ class Action {
 	Action &operator=(const Action &) = delete;
 	~Action();
 
-    World &world;
+	World &world;
 	Utility &utils;
 	PathManager &path_manager;
 	Eigen::Vector3d &x_current;
@@ -28,11 +26,7 @@ class Action {
 	std::unordered_map<PRIMITIVES, ValueType> &current_state;
 
 	bool can_execute();
+	void stop_car_for(double duration);
 
 	virtual void execute();
-
-    void stop_car_for(double duration);
-
-  private:
-	virtual void update_post_conditions();
 };

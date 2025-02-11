@@ -1,12 +1,8 @@
 #pragma once
 
 #include "Action.hpp"
-#include <cstdint>
 #include <memory>
 #include <unordered_map>
-#include <variant>
-
-using ValueType = std::variant<bool, double, int32_t, char>;
 
 class HTN {
   public:

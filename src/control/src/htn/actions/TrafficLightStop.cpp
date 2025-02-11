@@ -19,10 +19,5 @@ void TrafficLightStop::execute() {
 	}
     // Stop car
     utils.debug("Performing Action: Traffic Light Stop.", 2);
-    // TODO: Stop the car
-	update_post_conditions();
-}
-
-void TrafficLightStop::update_post_conditions() {
-    current_state[TRAFFIC_LIGHT_DETECTED] = false;
+    // TODO: Implement
 }
