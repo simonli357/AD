@@ -32,26 +32,21 @@ public:
         std::cout << "Path Manager Constructor" << std::endl;
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         
-        // get relative path
-        std::string dir = helper::getSourceDirectory();
-        // dir.replace(dir.rfind("src"), 3, "scripts");
-        std::string v_ref_int_str = std::to_string(v_ref_int);
-        std::string path_name = "_speedrun";
-        // path_name = "";
-        path_name = "_path1";
-        state_refs = loadTxt(dir + "/../../../control/scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
-        remove_large_yaw_jump();
-        input_refs = loadTxt(dir + "/../../../control/scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
-        state_attributes = loadTxt(dir + "/../../../control/scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
-        
-        state_refs_ptr = &state_refs;
-        normals = loadTxt(dir + "/../../../control/scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
+        // std::string dir = helper::getSourceDirectory();
+        // std::string v_ref_int_str = std::to_string(v_ref_int);
+        // std::string path_name = "_speedrun";
+        // path_name = "_path1";
+        // state_refs = loadTxt(dir + "/../../../control/scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
+        // remove_large_yaw_jump();
+        // input_refs = loadTxt(dir + "/../../../control/scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
+        // state_attributes = loadTxt(dir + "/../../../control/scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
+        // normals = loadTxt(dir + "/../../../control/scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
 
+        state_refs_ptr = &state_refs;
         target_waypoint_index = 0;
         last_waypoint_index = target_waypoint_index;
 
         std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
-        if(v_ref > 0.3) v_ref = 0.35;
 
         waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
         if(!nh.getParam("/pathName", pathName)) {
@@ -261,7 +256,6 @@ public:
             ROS_ERROR("Failed to get param 'vrefInt'");
             vrefInt = 25;
         }
-        if (vrefInt > 30) vrefInt = 35;
         srv.request.vrefName = std::to_string(vrefInt);
         if(waypoints_client.waitForExistence(ros::Duration(5))) {
             ROS_INFO("waypoints service found");
@@ -304,7 +298,6 @@ public:
             ROS_ERROR("Failed to get param 'vrefInt'");
             vrefInt = 25;
         }
-        if (vrefInt > 30) vrefInt = 35;
         srv.request.vrefName = std::to_string(vrefInt);
         if(go_to_client.waitForExistence(ros::Duration(5))) {
             ROS_INFO("go_to service found");
