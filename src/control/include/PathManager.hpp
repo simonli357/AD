@@ -15,8 +15,10 @@
 #include <limits.h>
 #include <cmath>
 #include "TcpClient.hpp"
+#include "std_msgs/Float32MultiArray.h"
 #include "std_srvs/TriggerResponse.h"
 #include "utils/constants.h"
+#include "utils/goto_command.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
 #include <std_srvs/Trigger.h>
@@ -333,6 +335,17 @@ public:
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
             return false;
         }
+    }
+
+    bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>> &destinations) {
+        // TODO: Similar to call_go_to_service but plan the path for multiple destinations.
+        ROS_INFO("Planning multi destination path");
+        for (const auto& dest : destinations) {
+            const float target_x = std::get<0>(dest);
+            const float target_y = std::get<1>(dest);
+            ROS_INFO("dest_x: %f, dest_y: %f", target_x, target_y);
+        }
+        return false;
     }
     
     void remove_large_yaw_jump() {

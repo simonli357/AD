@@ -305,7 +305,7 @@ void World::receive_services() {
 		if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
             std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
 			utils::goto_command::Response res;
-			goto_command_callback_tcp(coords, res);
+			goto_multiple_command_callback(coords, res);
 			utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
 			utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
 		}
@@ -385,9 +385,9 @@ bool World::goto_command_callback(utils::goto_command::Request &req, utils::goto
 	return true;
 }
 
-bool World::goto_command_callback_tcp(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
+bool World::goto_multiple_command_callback(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
 	utils.update_states(x_current);
-	if (!path_manager.call_go_to_service(x_current[0], x_current[1], x_current[2], std::get<0>(coords[0]), std::get<1>(coords[0]))) {
+	if (!path_manager.call_go_to_multiple_service(x_current[0], x_current[1], x_current[2], coords)) {
 		res.success = false;
 		return false;
 	}
