@@ -57,23 +57,29 @@ void TrafficLightStop::wait_for_green() {
 			utils.y0 = total_y / n - utils.odomY;
 		}
 		return;
-	} else if (world.real) {
+	} else if (true) {
 		utils.debug("wait_for_green(): red light detected, waiting for " + std::to_string(world.stop_duration * 2) + "s or until light turns green", 2);
-		auto expiring_time = ros::Time::now() + ros::Duration(world.stop_duration * 2);
-		while (true) {
-			if (ros::Time::now() > expiring_time) {
-				utils.debug("wait_for_green(): timer expired, proceeding...", 2);
-				return;
-			}
-			int sign_index = utils.object_index(OBJECT::GREENLIGHT);
-			if (sign_index < 0)
-				sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
-			if (sign_index >= 0) {
-				utils.debug("wait_for_green(): green light detected, proceeding...", 2);
-				return;
-			}
-			stop_car_for(world.T);
-		}
+		auto expiring_time = ros::Time::now() + ros::Duration(5.0);
+        int green_count = 0;
+        while (true) {
+            if (ros::Time::now() > expiring_time) {
+                utils.debug("wait_for_green(): timer expired, proceeding...", 2);
+                return;
+            }
+            int sign_index = utils.object_index(OBJECT::GREENLIGHT);
+            if (sign_index >= 0) {
+                utils.debug("wait_for_green(): green light detected, proceeding...", 2);
+                green_count++;
+                if (green_count > 5) return;
+            }
+            if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+            if (sign_index >= 0) {
+                utils.debug("wait_for_green(): yellow light detected, proceeding...", 2);
+                green_count++;
+                if (green_count > 5) return;
+            }
+            stop_car_for(world.T);
+        }
 		return;
 	} else {
 		utils.debug("wait_for_green(): light detected, but in simulation, proceeding ", 2);
