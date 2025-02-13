@@ -11,7 +11,7 @@ import rospy
 from python_server.server import Server
 from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
 from std_msgs.msg import Float32MultiArray, String
 from std_srvs.srv import SetBool, SetBoolRequest
@@ -140,8 +140,10 @@ class OpenCVGuiApp(QWidget):
         # Vehicle information labels
         self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
         self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
-        self.cursor_x = [3.86]
-        self.cursor_y = [3.62]
+        self.markers = []
+        self.cursor_coords = []
+        self.cursor_x = 3.86
+        self.cursor_y = 3.62
         self.speed_label = QLabel('Speed: 0.0 m/s')
         self.text_layout.addWidget(self.position_label)
         self.text_layout.addWidget(self.cursor_label)
@@ -607,7 +609,7 @@ class OpenCVGuiApp(QWidget):
         self.started = not self.started
 
     def goto(self):
-        self.call_goto_service(self.cursor_x, self.cursor_y)
+        self.call_goto_service(self.cursor_coords)
 
     def set_states(self):
         self.call_set_states_service(self.cursor_x, self.cursor_y)
@@ -620,7 +622,7 @@ class OpenCVGuiApp(QWidget):
         np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
         print("saved state refs")
 
-    def call_goto_service(self, x, y):
+    def call_goto_service(self, cursor_coords):
         if self.server is None:
             try:
                 print("goto command service called, waiting for service...")
@@ -628,8 +630,8 @@ class OpenCVGuiApp(QWidget):
                 print("service found, calling service...")
                 goto_service = rospy.ServiceProxy('goto_command', goto_command)
                 req = goto_commandRequest()
-                req.dest_x = x
-                req.dest_y = y
+                req.dest_x = self.cursor_x
+                req.dest_y = self.cursor_y
 
                 res = goto_service(req)
                 if not res.success:
@@ -643,7 +645,10 @@ class OpenCVGuiApp(QWidget):
             try:
                 if self.server.utility_node_client.socket is None:
                     return
-                self.server.utility_node_client.send_go_to_cmd_srv(x, y)
+                if len(cursor_coords) == 0:
+                    self.server.utility_node_client.send_go_to_cmd_srv([(self.cursor_x, self.cursor_y)])
+                else:
+                    self.server.utility_node_client.send_go_to_cmd_srv(cursor_coords)
                 max_retries = 50
                 retries = 0
                 res = self.server.utility_node_client.go_to_cmd_srv_msg
@@ -1260,43 +1265,63 @@ class OpenCVGuiApp(QWidget):
         event.accept()
 
     def mousePressEvent(self, event):
-        # Get the position of the mouse click in the scene coordinates
-        scene_position = self.graphics_view.mapToScene(event.pos())
+        if event.button() == Qt.RightButton:
+            # Remove all existing markers
+            for marker in self.markers:  # Iterate through all markers
+                if marker.scene() == self.scene:  # Check if still in scene
+                    self.scene.removeItem(marker)
+            self.markers.clear()  # Clear the list
+            return
 
-        # Get the pixel coordinates relative to the image
-        image_x = scene_position.x() - 25
-        image_y = scene_position.y() - 23
+        elif event.button() == Qt.LeftButton:
+            # Get mouse position and convert to scene coordinates
+            scene_position = self.graphics_view.mapToScene(event.pos())
+            image_x = scene_position.x() - 25
+            image_y = scene_position.y() - 23
 
-        # Check if the click is within the bounds of the image
-        if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
-            # Convert the pixel coordinates to real-world coordinates
-            click_x = image_x * (self.image_width_real / self.image_width)
-            click_y = 13.786 - image_y * (self.image_height_real / self.image_height)
+            if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
+                # Convert to real-world coordinates (your existing code)
+                click_x = image_x * (self.image_width_real / self.image_width)
+                click_y = 13.786 - image_y * (self.image_height_real / self.image_height)
 
-            self.cursor_x.append(click_x)
-            self.cursor_y.append(click_y)
+                # Store coordinates
+                self.cursor_coords.append((click_x, click_y))
 
-            # Display the real-world coordinates in the bottom left corner (or anywhere else)
-            self.cursor_label.setText(f'Cursor: (x: {click_x:.2f} m, y: {click_y:.2f} m)')
-            cursor_radius = 10  # Adjust the size of the cursor
-            pen = QPen(QColor(0, 150, 255), 2)
-            # Create a circle to represent the cursor marker
-            self.cursor_marker = self.scene.addEllipse(
-                image_x - cursor_radius, image_y - cursor_radius,
-                cursor_radius * 2, cursor_radius * 2, pen
-            )
-            marker_size = 20  # Adjust the size of the "X"
-            pen = QPen(QColor(255, 0, 0), 3)
-            self.cursor_marker_x1 = self.scene.addLine(
-                image_x - marker_size / 2, image_y - marker_size / 2,
-                image_x + marker_size / 2, image_y + marker_size / 2,
-                pen
-            )
-            self.cursor_marker_x2 = self.scene.addLine(
-                image_x - marker_size / 2, image_y + marker_size / 2,
-                image_x + marker_size / 2, image_y - marker_size / 2,
-                pen
-            )
+                # Create new markers
+                cursor_radius = 10
+                pen = QPen(QColor(0, 150, 255), 2)
+
+                # 1. Create circle marker
+                circle = self.scene.addEllipse(
+                    image_x - cursor_radius,
+                    image_y - cursor_radius,
+                    cursor_radius * 2,
+                    cursor_radius * 2,
+                    pen
+                )
+                self.markers.append(circle)  # Add to tracking list
+
+                # 2. Create X markers
+                marker_size = 20
+                red_pen = QPen(QColor(255, 0, 0), 3)
+
+                x_line1 = self.scene.addLine(
+                    image_x - marker_size / 2,
+                    image_y - marker_size / 2,
+                    image_x + marker_size / 2,
+                    image_y + marker_size / 2,
+                    red_pen
+                )
+                self.markers.append(x_line1)
+
+                x_line2 = self.scene.addLine(
+                    image_x - marker_size / 2,
+                    image_y + marker_size / 2,
+                    image_x + marker_size / 2,
+                    image_y - marker_size / 2,
+                    red_pen
+                )
+                self.markers.append(x_line2)
 
 
 def udp_callbacks(gui, server):

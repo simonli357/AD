@@ -303,13 +303,9 @@ void World::receive_services() {
 			continue;
 		}
 		if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
-			double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_x;
-			double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_y;
-			utils::goto_command::Request req;
+            std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
 			utils::goto_command::Response res;
-			req.dest_x = x;
-			req.dest_y = y;
-			goto_command_callback(req, res);
+			goto_command_callback_tcp(coords, res);
 			utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
 			utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
 		}
@@ -363,6 +359,35 @@ void World::htn_algorithm() {
 bool World::goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res) {
 	utils.update_states(x_current);
 	if (!path_manager.call_go_to_service(x_current[0], x_current[1], x_current[2], req.dest_x, req.dest_y)) {
+		res.success = false;
+		return false;
+	}
+	auto state_refs = path_manager.state_refs.transpose();
+	auto input_refs = path_manager.input_refs.transpose();
+	auto &state_attributes = path_manager.state_attributes;
+	auto normals = path_manager.normals.transpose();
+	res.state_refs.data = std::vector<float>(state_refs.data(), state_refs.data() + state_refs.size());
+	res.input_refs.data = std::vector<float>(input_refs.data(), input_refs.data() + input_refs.size());
+	res.wp_attributes.data = std::vector<float>(state_attributes.data(), state_attributes.data() + state_attributes.size());
+	res.wp_normals.data = std::vector<float>(normals.data(), normals.data() + normals.size());
+	res.success = true;
+	destination = path_manager.state_refs.row(path_manager.state_refs.rows() - 1).head(2);
+	// for (int i = 0; i<path_manager.state_refs.rows(); i++) {
+	//     std::cout << i << ") " << path_manager.state_refs(i, 0) << ", " << path_manager.state_refs(i, 1) << ", " << path_manager.state_refs(i, 2) << std::endl;
+	// }
+	utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
+	utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
+
+	path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1); // search from the beginning to the end
+	path_manager.overtake_end_index = 0;
+	mpc.reset_solver();
+	initialized = true;
+	return true;
+}
+
+bool World::goto_command_callback_tcp(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
+	utils.update_states(x_current);
+	if (!path_manager.call_go_to_service(x_current[0], x_current[1], x_current[2], std::get<0>(coords[0]), std::get<1>(coords[0]))) {
 		res.success = false;
 		return false;
 	}
