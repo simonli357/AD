@@ -576,6 +576,14 @@ public:
         return false;
     }
     void check_light() {
+        utils.update_states(x_current);
+        double &x = x_current[0];
+        double &y = x_current[1];
+        double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
+        if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
+            // distance to last intersection too close
+            return;
+        }
         // check for traffic light
         static bool relocalized = false;
         // if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected
@@ -602,11 +610,11 @@ public:
             if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                 detected_dist = dist;
                 light_pose = utils.object_world_pose(sign_index);
-                double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
-                if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                    utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);
-                    return;
-                }
+                // double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
+                // if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
+                //     utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);
+                //     return;
+                // }
                 if (sign_in_path(sign_index, dist + 0.2)) {
                     utils.debug("check_light(): traffic light detected at a distance of: " + std::to_string(dist), 2);
                     stopsign_flag = OBJECT::LIGHTS;
@@ -617,7 +625,7 @@ public:
                     }
                 }
             }
-        }
+        }   
         if (is_red && dist < MAX_LIGHT_DIST) {
             mpc.reset_solver();
             wait_for_green();
@@ -627,14 +635,14 @@ public:
         static bool relocalized = false;
         if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected 
         if (stopsign_flag == OBJECT::NONE) relocalized = false;
-        // utils.update_states(x_current);
-        // double &x = x_current[0];
-        // double &y = x_current[1];
-        // double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
-        // if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
-        //     // distance to last intersection too close
-        //     return;
-        // }
+        utils.update_states(x_current);
+        double &x = x_current[0];
+        double &y = x_current[1];
+        double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
+        if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
+            // distance to last intersection too close
+            return;
+        }
         
         int sign_index;
         double dist = -10.0;
@@ -649,12 +657,6 @@ public:
                 
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     detected_dist = dist;
-                    sign_pose = utils.object_world_pose(sign_index);
-                    double dist_to_last_intersection_sq = std::pow(sign_pose[0] - last_intersection_point[0], 2) + std::pow(sign_pose[1] - last_intersection_point[1], 2);
-                    if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                        utils.debug("check_stop_sign(): stop sign detected too close to last intersection, ignoring...", 2);
-                        return;
-                    }
                     if (sign_in_path(sign_index, dist + 0.2)) {
                         utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                         stopsign_flag = OBJECT::STOPSIGN;
@@ -670,12 +672,6 @@ public:
                 dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     detected_dist = dist;
-                    sign_pose = utils.object_world_pose(sign_index);
-                    double dist_to_last_intersection_sq = std::pow(sign_pose[0] - last_intersection_point[0], 2) + std::pow(sign_pose[1] - last_intersection_point[1], 2);
-                    if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                        utils.debug("check_stop_sign(): stop sign detected too close to last intersection, ignoring...", 2);
-                        return;
-                    }
                     if (sign_in_path(sign_index, dist + 0.2)) {
                         utils.debug("check_stop_sign(): priority detected at a distance of: " + std::to_string(dist), 2);
                         stopsign_flag = OBJECT::PRIORITY;
@@ -691,12 +687,6 @@ public:
                 dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     detected_dist = dist;
-                    sign_pose = utils.object_world_pose(sign_index);
-                    double dist_to_last_intersection_sq = std::pow(sign_pose[0] - last_intersection_point[0], 2) + std::pow(sign_pose[1] - last_intersection_point[1], 2);
-                    if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                        utils.debug("check_stop_sign(): stop sign detected too close to last intersection, ignoring...", 2);
-                        return;
-                    }
                     if (sign_in_path(sign_index, dist + 0.2)) {
                         utils.debug("check_stop_sign(): roundabout detected at a distance of: " + std::to_string(dist), 2);
                         stopsign_flag = OBJECT::ROUNDABOUT;
@@ -712,12 +702,6 @@ public:
                 dist = utils.object_distance(sign_index);
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     detected_dist = dist;
-                    sign_pose = utils.object_world_pose(sign_index);
-                    double dist_to_last_intersection_sq = std::pow(sign_pose[0] - last_intersection_point[0], 2) + std::pow(sign_pose[1] - last_intersection_point[1], 2);
-                    if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                        utils.debug("check_stop_sign(): stop sign detected too close to last intersection, ignoring...", 2);
-                        return;
-                    }
                     if (sign_in_path(sign_index, dist + 0.2)) {
                         utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + std::to_string(dist), 2);
                         stopsign_flag = OBJECT::CROSSWALK;
@@ -725,9 +709,10 @@ public:
                 }
             }
         }
-
+        
         // relocalize based on sign
         if (sign_relocalize && stopsign_flag != OBJECT::NONE) {
+            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
             std::string sign_type;
             const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
             relocalized = sign_based_relocalization(sign_pose, intersection_signs, sign_type);
