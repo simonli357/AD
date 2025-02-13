@@ -12,12 +12,12 @@
 #include <cmath>
 #include "acados/utils/math.h"
 #include "acados_c/ocp_nlp_interface.h"
-#include "acados_sim_solver_mobile_robot.h"
-#include "acados_solver_mobile_robot.h"
 #include "acados_sim_solver_mobile_robot_25.h"
 #include "acados_solver_mobile_robot_25.h"
 #include "acados_sim_solver_mobile_robot_18.h"
 #include "acados_solver_mobile_robot_18.h"
+#include "acados_sim_solver_mobile_robot_32.h"
+#include "acados_solver_mobile_robot_32.h"
 #include "utils/constants.h"
 
 class MPC {
@@ -29,36 +29,7 @@ public:
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         status = 0; // Assuming 0 is a default 'no error' state
 
-        if (v_ref_int >= 30) {
-            std::cout << "reference speed is 35. cm/s" << std::endl;
-            // Create a capsule according to the pre-defined model
-            acados_ocp_capsule = mobile_robot_acados_create_capsule();
-            // Initialize the optimizer
-            status = mobile_robot_acados_create(acados_ocp_capsule);
-            if (status) {
-                printf("mobile_robot_acados_create() returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-            // Create and initialize simulator capsule
-            sim_capsule = mobile_robot_acados_sim_solver_create_capsule();
-            status = mobile_robot_acados_sim_create(sim_capsule);
-
-            mobile_robot_sim_config = mobile_robot_acados_get_sim_config(sim_capsule);
-            mobile_robot_sim_dims = mobile_robot_acados_get_sim_dims(sim_capsule);
-            mobile_robot_sim_in = mobile_robot_acados_get_sim_in(sim_capsule);
-            mobile_robot_sim_out = mobile_robot_acados_get_sim_out(sim_capsule);
-
-            if (status) {
-                printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-
-            // Initialize some important structure of ocp
-            nlp_config = mobile_robot_acados_get_nlp_config(acados_ocp_capsule);
-            nlp_dims = mobile_robot_acados_get_nlp_dims(acados_ocp_capsule);
-            nlp_in = mobile_robot_acados_get_nlp_in(acados_ocp_capsule);
-            nlp_out = mobile_robot_acados_get_nlp_out(acados_ocp_capsule);
-        } else if(v_ref_int == 25) {
+        if(v_ref_int == 25) {
             std::cout << "reference speed is 25 cm/s" << std::endl;
             use25 = true;
             acados_ocp_capsule_25 = mobile_robot_25_acados_create_capsule();
@@ -105,8 +76,33 @@ public:
             nlp_dims = mobile_robot_18_acados_get_nlp_dims(acados_ocp_capsule_18);
             nlp_in = mobile_robot_18_acados_get_nlp_in(acados_ocp_capsule_18);
             nlp_out = mobile_robot_18_acados_get_nlp_out(acados_ocp_capsule_18);
+        } else if(v_ref_int == 32) {
+            std::cout << "reference speed is 32 cm/s" << std::endl;
+            use32 = true;
+            use25 = false;
+            use18 = false;
+            acados_ocp_capsule_32 = mobile_robot_32_acados_create_capsule();
+            status = mobile_robot_32_acados_create(acados_ocp_capsule_32);
+            if (status) {
+                printf("mobile_robot_32_acados_create() returned status %d. Exiting.\n", status);
+                exit(1);
+            }
+            sim_capsule_32 = mobile_robot_32_acados_sim_solver_create_capsule();
+            status = mobile_robot_32_acados_sim_create(sim_capsule_32);
+            mobile_robot_sim_config = mobile_robot_32_acados_get_sim_config(sim_capsule_32);
+            mobile_robot_sim_dims = mobile_robot_32_acados_get_sim_dims(sim_capsule_32);
+            mobile_robot_sim_in = mobile_robot_32_acados_get_sim_in(sim_capsule_32);
+            mobile_robot_sim_out = mobile_robot_32_acados_get_sim_out(sim_capsule_32);
+            if (status) {
+                printf("acados_create() simulator returned status %d. Exiting.\n", status);
+                exit(1);
+            }
+            nlp_config = mobile_robot_32_acados_get_nlp_config(acados_ocp_capsule_32);
+            nlp_dims = mobile_robot_32_acados_get_nlp_dims(acados_ocp_capsule_32);
+            nlp_in = mobile_robot_32_acados_get_nlp_in(acados_ocp_capsule_32);
+            nlp_out = mobile_robot_32_acados_get_nlp_out(acados_ocp_capsule_32);
         } else {
-            std::cerr << "Invalid reference speed, please use 18, 25 or 50" << std::endl;
+            std::cerr << "Invalid reference speed, please use 18, 25 or 32" << std::endl;
             exit(1);
         }
 
@@ -125,10 +121,14 @@ public:
         u_current[0] = 0.0;
         u_current[1] = 0.0;
     }
-    MPC(): MPC(0.125, 40, 0.25) {}
+    MPC(): MPC(0.1, 40, 0.3) {}
     ~MPC() {
-        free(acados_ocp_capsule);
-        free(sim_capsule);
+        free(acados_ocp_capsule_18);
+        free(sim_capsule_18);
+        free(acados_ocp_capsule_25);
+        free(sim_capsule_25);
+        free(acados_ocp_capsule_32);
+        free(sim_capsule_32);
         free(mobile_robot_sim_config);
         free(mobile_robot_sim_dims);
         free(mobile_robot_sim_in);
@@ -146,14 +146,15 @@ public:
     int v_ref_int;
     bool use25 = false;
     bool use18 = false;
+    bool use32 = false;
     double v_ref, t0, T;
    
-    mobile_robot_solver_capsule *acados_ocp_capsule;
-    mobile_robot_sim_solver_capsule *sim_capsule;
     mobile_robot_25_solver_capsule *acados_ocp_capsule_25;
     mobile_robot_25_sim_solver_capsule *sim_capsule_25;
     mobile_robot_18_solver_capsule *acados_ocp_capsule_18;
     mobile_robot_18_sim_solver_capsule *sim_capsule_18;
+    mobile_robot_32_solver_capsule *acados_ocp_capsule_32;
+    mobile_robot_32_sim_solver_capsule *sim_capsule_32;
     sim_config *mobile_robot_sim_config;
     void *mobile_robot_sim_dims;
     sim_in *mobile_robot_sim_in;
@@ -199,8 +200,8 @@ public:
             reset_status = mobile_robot_25_acados_reset(acados_ocp_capsule_25, 1);
         } else if(use18) {
             reset_status = mobile_robot_18_acados_reset(acados_ocp_capsule_18, 1);
-        } else {
-            reset_status = mobile_robot_acados_reset(acados_ocp_capsule, 1);
+        } else if(use32) {
+            reset_status = mobile_robot_32_acados_reset(acados_ocp_capsule_32, 1);
         }
         return reset_status;
     }
@@ -246,7 +247,13 @@ public:
             x_state[5] = 0.0; // delta_v_ref (always 0)
             x_state[6] = 0.0; // delta_steer_ref (always 0)
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, j, "yref", x_state);
-            mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2);
+            if (use25) {
+                mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2);
+            } else if (use18) {
+                mobile_robot_18_acados_update_params(acados_ocp_capsule_18, j, u_current, 2);
+            } else if (use32) {
+                mobile_robot_32_acados_update_params(acados_ocp_capsule_32, j, u_current, 2);
+            }
         }
 
         // Set the constraints for the current state
@@ -258,8 +265,8 @@ public:
             status = mobile_robot_25_acados_solve(acados_ocp_capsule_25);
         } else if(use18) {
             status = mobile_robot_18_acados_solve(acados_ocp_capsule_18);
-        } else {
-            status = mobile_robot_acados_solve(acados_ocp_capsule);
+        } else if(use32) {
+            status = mobile_robot_32_acados_solve(acados_ocp_capsule_32);
         }
         if (status != 0) {
             std::cout << "ERROR!!! acados acados_ocp_solver returned status " << status << ". Exiting." << std::endl;
@@ -280,8 +287,10 @@ public:
         int status_s;
         if(use25) {
             status_s  = mobile_robot_25_acados_sim_solve(sim_capsule_25);
-        } else {
-            status_s  = mobile_robot_acados_sim_solve(sim_capsule);
+        } else if(use18) {
+            status_s  = mobile_robot_18_acados_sim_solve(sim_capsule_18);
+        } else if(use32) {
+            status_s  = mobile_robot_32_acados_sim_solve(sim_capsule_32);
         }
         if (status_s != ACADOS_SUCCESS) {
             throw std::runtime_error("acados integrator returned status " + std::to_string(status_s) + ". Exiting.");

@@ -480,8 +480,8 @@ class Path:
 def handle_goto_service(req):
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
+    # if int(vrefName) >30:
+    #     vrefName = "50"
     config_path='config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -513,8 +513,8 @@ def handle_array_service(req):
     """
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
+    # if int(vrefName) >30:
+    #     vrefName = "50"
     config_path='config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)
@@ -625,24 +625,24 @@ if __name__ == "__main__":
         # rospy.spin()
         rate.sleep()
         
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    print("current_dir: ", current_dir)
-    config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
-    print("config_path: ", config_path)
-    path = config_path
-    with open(path, 'r') as f:
-        config = yaml.safe_load(f)
-    T = config['T']
-    N = config['N']
-    constraint_name = 'constraints'
-    cost_name = 'costs'
-    t_horizon = T * N
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+    # print("current_dir: ", current_dir)
+    # config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
+    # print("config_path: ", config_path)
+    # path = config_path
+    # with open(path, 'r') as f:
+    #     config = yaml.safe_load(f)
+    # T = config['T']
+    # N = config['N']
+    # constraint_name = 'constraints'
+    # cost_name = 'costs'
+    # t_horizon = T * N
 
-    v_ref = config[constraint_name]['v_ref']
-    print("v_ref: ", v_ref)
-    x0 = np.array([0.35,2.726,-1.5708])
-    name = "run221"
-    path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
-    np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
-    visualize_waypoints2(path.state_refs)
+    # v_ref = config[constraint_name]['v_ref']
+    # print("v_ref: ", v_ref)
+    # x0 = np.array([0.35,2.726,-1.5708])
+    # name = "run221"
+    # path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
+    # np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
+    # visualize_waypoints2(path.state_refs)
     
