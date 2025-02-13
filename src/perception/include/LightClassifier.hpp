@@ -64,7 +64,7 @@ class LightClassifier {
             cv::GaussianBlur(hsv, hsv, cv::Size(5,5), 0);
         
             // adaptive Brightness Detection
-            cv::extractChannel(hsv, value_channel, 2); // Extract V channel
+            cv::extractChannel(hsv, value_channel, 2);
             float baseline_brightness = cv::mean(value_channel)[0] / 255.0f;
             updateThresholds(baseline_brightness);
             cv::threshold(value_channel, bright_mask, 0, 255, 
@@ -91,6 +91,7 @@ class LightClassifier {
                 // draw the contours on the image and then show
                 detected_with_contours = detected_light.clone();
                 cv::drawContours(detected_with_contours, contours, -1, cv::Scalar(255, 0, 0), 2);
+                cv::imshow("Contours", detected_with_contours);
                 std::cout << "num contours: " << contours.size() << std::endl;
                 //draw 3 circles of diameter circle_diameter, starting from top of bbox
                 cv::circle(detected_with_contours, cv::Point(img_width/2,  empirical_y_center_red), circle_diameter/2, cv::Scalar(0, 0, 255), 2);
@@ -120,7 +121,7 @@ class LightClassifier {
                     continue;
                 }
                 
-                // Size filter (8-40% of bounding box height)
+                // size filter (8-40% of bounding box height)
                 double height_norm = std::sqrt(area) / detected_light.rows;
                 if (height_norm < 0.08 || height_norm > 0.4) {
                     // std::cout << "too small or too big: " << height_norm << std::endl;

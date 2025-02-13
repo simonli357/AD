@@ -1754,7 +1754,6 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "Successfully loaded parameters" << std::endl;
     }
-    if(vref>30) vref = 35.;
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
     bool use_tcp = false;

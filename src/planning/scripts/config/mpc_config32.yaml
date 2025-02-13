@@ -1,4 +1,4 @@
-name: mobile_robot_25
+name: mobile_robot_32
 T: 0.1
 N: 40
 l_r: 0.115
@@ -6,16 +6,16 @@ l_f: 0.143
 wheelbase: 0.258
 
 constraints:
-  v_max: 0.45
-  v_min: -0.45
-  v_ref: 0.25
+  v_max: 0.5
+  v_min: -0.5
+  v_ref: 0.32
 
   delta_max: 0.3578
   delta_min: -0.3578
-  x_min: -1.0
-  x_max: 22.0
-  y_min: -1.0
-  y_max: 16.0
+  x_min: -3.0
+  x_max: 25.0
+  y_min: -3.0
+  y_max: 19.0
 
 costs:
   y_cost: 2
