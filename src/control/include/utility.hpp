@@ -162,7 +162,8 @@ public:
     int object_index(int obj_id);
     std::vector<int> object_indices(int obj_id);
     double object_distance(int index);
-    std::array<double, 3> object_world_pose(int index);
+    // std::array<double, 3> object_world_pose(int index);
+    Eigen::Vector2d object_world_pose(int index);
     std::array<double, 4> object_box(int index);
     void object_box(int index, std::array<double, 4>& oBox);
     void set_initial_pose(double x, double y, double yaw);
@@ -518,7 +519,6 @@ public:
         diff = yaw_mod(diff);
         return std::abs(diff);
     }
-    
 
     void debug(const std::string& message, int level) {
         if (debugLevel >= level) {

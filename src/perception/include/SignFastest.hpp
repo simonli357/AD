@@ -430,7 +430,7 @@ class SignFastest {
                     if (class_id == OBJECT::LIGHTS) {
                         cv::Mat detected_light = image(cv::Rect(x1, y1, x2 - x1, y2 - y1));
                         // auto start = high_resolution_clock::now();
-                        auto light_color = light_classifier.classifyTrafficLight(detected_light);
+                        auto light_color = light_classifier.classify(detected_light);
                         // auto stop1 = high_resolution_clock::now();
                         // std::cout << "duration: " << duration_cast<microseconds>(stop1 - start).count() << std::endl;
                         if (light_color != LightColor::UNDETERMINED) {
