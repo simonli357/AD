@@ -18,6 +18,7 @@
 #include <std_srvs/SetBool.h>
 #include <ncurses.h>
 #include <std_msgs/Byte.h>
+#include "utils/helper.h"
 
 using namespace VehicleConstants;
 
