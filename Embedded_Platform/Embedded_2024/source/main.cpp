@@ -23,7 +23,7 @@ periodics::CImu g_imu(0.1 / g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
 drivers::CSpeedingMotor g_speedingDriver(D3, -50.0, 50.0); //speed in cm/s
 
 //PIN for angle in servo degrees, inferior and superior limit
-drivers::CSteeringMotor g_steeringDriver(0.1 / g_baseTick, g_rpi, D4, -25.0, 25.0, g_imu, g_speedingDriver);
+drivers::CSteeringMotor g_steeringDriver(0.05 / g_baseTick, g_rpi, D4, -100.0, 100.0, g_imu, g_speedingDriver);
 
 // Task responsible for configuring the vehicle's speed and steering over a specified duration.
 drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
@@ -46,7 +46,8 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     // Callback for the PWM input command
     {"10",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPWMcommand)},
     {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
-    {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)}
+    {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
+    {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)}
 };
 
 // Create the serial monitor object, which decodes, redirects the messages and transmits the responses.
