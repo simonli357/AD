@@ -146,7 +146,7 @@ This package contains firmware modified from Bosch’s provided code to interfac
 - cd to where the simulator workspace is located.
 ```bash
 source devel/setup.bash
-roslaunch sim_pkg run3.launch
+roslaunch sim_pkg run107.launch
 ```
 
 #### Run Path Planner Server
