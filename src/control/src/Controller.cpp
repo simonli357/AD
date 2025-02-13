@@ -647,8 +647,6 @@ public:
         int sign_index;
         double dist = -10.0;
 
-        static Eigen::Vector2d sign_pose(1000.0, 1000.0);
-
         // check for stop sign
         sign_index = utils.object_index(OBJECT::STOPSIGN);
         if (stopsign_flag == OBJECT::NONE) { // if no sign detected
