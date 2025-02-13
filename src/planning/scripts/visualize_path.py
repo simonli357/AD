@@ -78,10 +78,10 @@ class PathVisualizer:
 def main():
     visualizer = PathVisualizer()
     
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2.yaml')
     runs = visualizer.load_runs(yaml_path)
     
-    selected_run = 'run131'
+    selected_run = 'run107'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")

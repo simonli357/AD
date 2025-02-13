@@ -76,10 +76,12 @@ class GlobalPlanner:
             else:
                 self.G[u][v]['weight'] = float('inf')
         
-        self.base_destinations = ['386', '343', '362', '368', '317', '318', '404', '399', 
-                             '425', '420', '437', '82', '80', '93', '121', '116', '127', '75', 
-                             '71', '185', '27', '25', '31', '29', '301', '8', '289', '199', 
-                             '42', '225', '228', '239', '261', '257', '56']
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        destination_path = os.path.join(current_dir, 'config/destinations_mod_condensed.yaml')
+        with open(destination_path, 'r') as f:
+            self.base_destinations = yaml.safe_load(f)
+        self.base_destinations = [str(d) for d in self.base_destinations]
+        print(f"Base destinations: {self.base_destinations}")
         
         self.destinations = self.base_destinations.copy()
     
@@ -190,7 +192,7 @@ if __name__ == "__main__":
         start_str = str(start)
         total_dist = 0.0
         max_dist = 157.0
-        while total_dist < 149.0:
+        while total_dist < 140.0:
             optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
             max_dist += 2.0
         optimal_path_ints = [int(node) for node in optimal_path]
