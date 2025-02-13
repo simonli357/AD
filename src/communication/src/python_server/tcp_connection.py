@@ -96,8 +96,8 @@ class TcpConnection:
         bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
         self.socket.sendall(bytes)
 
-    def send_go_to_cmd_srv(self, dest_x, dest_y):
-        bytes = self.go_to_cmd_srv_msg.encode(dest_x, dest_y)
+    def send_go_to_cmd_srv(self, cursor_coords):
+        bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
         self.socket.sendall(bytes)
 
     def send_set_states_srv(self, x, y):
