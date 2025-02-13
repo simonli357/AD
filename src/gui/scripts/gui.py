@@ -140,8 +140,8 @@ class OpenCVGuiApp(QWidget):
         # Vehicle information labels
         self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
         self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
-        self.cursor_x = 3.86
-        self.cursor_y = 3.62
+        self.cursor_x = [3.86]
+        self.cursor_y = [3.62]
         self.speed_label = QLabel('Speed: 0.0 m/s')
         self.text_layout.addWidget(self.position_label)
         self.text_layout.addWidget(self.cursor_label)
@@ -1267,22 +1267,17 @@ class OpenCVGuiApp(QWidget):
         image_x = scene_position.x() - 25
         image_y = scene_position.y() - 23
 
-        # Remove any previous marker
-        if hasattr(self, 'cursor_marker') and self.cursor_marker:
-            self.scene.removeItem(self.cursor_marker)
-        if hasattr(self, 'cursor_marker_x1') and self.cursor_marker_x1:
-            self.scene.removeItem(self.cursor_marker_x1)
-        if hasattr(self, 'cursor_marker_x2') and self.cursor_marker_x2:
-            self.scene.removeItem(self.cursor_marker_x2)
-
         # Check if the click is within the bounds of the image
         if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
             # Convert the pixel coordinates to real-world coordinates
-            self.cursor_x = image_x * (self.image_width_real / self.image_width)
-            self.cursor_y = 13.786 - image_y * (self.image_height_real / self.image_height)
+            click_x = image_x * (self.image_width_real / self.image_width)
+            click_y = 13.786 - image_y * (self.image_height_real / self.image_height)
+
+            self.cursor_x.append(click_x)
+            self.cursor_y.append(click_y)
 
             # Display the real-world coordinates in the bottom left corner (or anywhere else)
-            self.cursor_label.setText(f'Cursor: (x: {self.cursor_x:.2f} m, y: {self.cursor_y:.2f} m)')
+            self.cursor_label.setText(f'Cursor: (x: {click_x:.2f} m, y: {click_y:.2f} m)')
             cursor_radius = 10  # Adjust the size of the cursor
             pen = QPen(QColor(0, 150, 255), 2)
             # Create a circle to represent the cursor marker
