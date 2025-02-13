@@ -79,7 +79,7 @@ class World {
 	int initialize();
 	void receive_services();
 	bool goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res);
-	bool goto_command_callback_tcp(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res);
+	bool goto_multiple_command_callback(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res);
 	bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res);
 	bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
 };
