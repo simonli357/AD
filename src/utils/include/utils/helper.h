@@ -1,7 +1,7 @@
 #pragma once
 
 namespace helper {
-    std::string getSourceDirectory() {
+    inline std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
         size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path
         if (last_dir_sep == std::string::npos) {
