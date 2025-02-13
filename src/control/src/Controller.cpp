@@ -18,6 +18,7 @@
 #include <std_srvs/SetBool.h>
 #include <ncurses.h>
 #include <std_msgs/Byte.h>
+#include "utils/helper.h"
 
 using namespace VehicleConstants;
 
@@ -574,6 +575,62 @@ public:
         }
         return false;
     }
+    void check_light() {
+        utils.update_states(x_current);
+        double &x = x_current[0];
+        double &y = x_current[1];
+        double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
+        if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
+            // distance to last intersection too close
+            return;
+        }
+        // check for traffic light
+        static bool relocalized = false;
+        // if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected
+        if (stopsign_flag == OBJECT::NONE) relocalized = false;
+        static Eigen::Vector2d light_pose(1000.0, 1000.0);
+        if (stopsign_flag != OBJECT::NONE && stopsign_flag != OBJECT::LIGHTS && stopsign_flag != OBJECT::REDLIGHT 
+            && stopsign_flag != OBJECT::GREENLIGHT && stopsign_flag != OBJECT::YELLOWLIGHT)
+        { 
+            return; // sign already detected 
+        }
+        double dist = -10.0;
+        bool is_red = false;
+        int sign_index = utils.object_index(OBJECT::REDLIGHT);
+        if(sign_index >= 0) {
+            is_red = true;
+        } else {
+            sign_index = utils.object_index(OBJECT::LIGHTS);
+        }
+        if(sign_index >= 0) is_red = true; // consider LIGHTS as red light
+        if (sign_index < 0) sign_index = utils.object_index(OBJECT::GREENLIGHT);
+        if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+        if(sign_index >= 0 && !relocalized && stopsign_flag == OBJECT::NONE) {
+            dist = utils.object_distance(sign_index);
+            if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
+                detected_dist = dist;
+                light_pose = utils.object_world_pose(sign_index);
+                // double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
+                // if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
+                //     utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);
+                //     return;
+                // }
+                if (sign_in_path(sign_index, dist + 0.2)) {
+                    utils.debug("check_light(): traffic light detected at a distance of: " + std::to_string(dist), 2);
+                    stopsign_flag = OBJECT::LIGHTS;
+                    if (sign_relocalize) {
+                        std::string sign_type;
+                        const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
+                        relocalized = sign_based_relocalization(light_pose, intersection_signs, sign_type);
+                    }
+                }
+            }
+        }   
+        if (is_red && dist < MAX_LIGHT_DIST) {
+            mpc.reset_solver();
+            wait_for_green();
+        }
+    }
     void check_stop_sign() {
         static bool relocalized = false;
         if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected 
@@ -595,42 +652,14 @@ public:
         if (stopsign_flag == OBJECT::NONE) { // if no sign detected
             if(sign_index >= 0) {
                 dist = utils.object_distance(sign_index);
+                
                 if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                     detected_dist = dist;
-                    // if(lane) utils.reset_odom();
                     if (sign_in_path(sign_index, dist + 0.2)) {
                         utils.debug("check_stop_sign(): stop sign detected at a distance of: " + std::to_string(dist), 2);
                         stopsign_flag = OBJECT::STOPSIGN;
                     }
                 }
-            }
-        }
-
-        // check for traffic light
-        if (stopsign_flag == OBJECT::NONE) {
-            bool is_red = false;
-            sign_index = utils.object_index(OBJECT::REDLIGHT);
-            if(sign_index >= 0) {
-                is_red = true;
-            } else {
-                sign_index = utils.object_index(OBJECT::LIGHTS);
-            }
-            if (sign_index < 0) sign_index = utils.object_index(OBJECT::GREENLIGHT);
-            if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
-            if(sign_index >= 0) {
-                dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                    detected_dist = dist;
-                    // if(lane) utils.reset_odom();
-                    if (sign_in_path(sign_index, dist + 0.2)) {
-                        utils.debug("check_stop_sign(): traffic light detected at a distance of: " + std::to_string(dist), 2);
-                        stopsign_flag = OBJECT::LIGHTS;
-                    }
-                }
-            }
-            if (is_red) {
-                mpc.reset_solver();
-                wait_for_green();
             }
         }
         
@@ -678,7 +707,7 @@ public:
                 }
             }
         }
-
+        
         // relocalize based on sign
         if (sign_relocalize && stopsign_flag != OBJECT::NONE) {
             auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
@@ -1012,19 +1041,26 @@ public:
                 utils.y0 = total_y / n - utils.odomY;
             }
             return;
-        } else if (real) {
+        } else if (true) {
             utils.debug("wait_for_green(): red light detected, waiting for " + std::to_string(stop_duration * 2) + "s or until light turns green", 2);
-            auto expiring_time = ros::Time::now() + ros::Duration(stop_duration * 2);
+            auto expiring_time = ros::Time::now() + ros::Duration(5.0);
+            int green_count = 0;
             while (true) {
                 if (ros::Time::now() > expiring_time) {
                     utils.debug("wait_for_green(): timer expired, proceeding...", 2);
                     return;
                 }
                 int sign_index = utils.object_index(OBJECT::GREENLIGHT);
-                if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
                 if (sign_index >= 0) {
                     utils.debug("wait_for_green(): green light detected, proceeding...", 2);
-                    return;
+                    green_count++;
+                    if (green_count > 5) return;
+                }
+                if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
+                if (sign_index >= 0) {
+                    utils.debug("wait_for_green(): yellow light detected, proceeding...", 2);
+                    green_count++;
+                    if (green_count > 5) return;
                 }
                 stop_for(T);
             }
@@ -1350,6 +1386,7 @@ void StateMachine::run() {
             }
             if (sign) {
                 check_stop_sign();
+                check_light();
                 check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {

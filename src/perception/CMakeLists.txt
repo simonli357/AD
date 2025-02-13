@@ -162,6 +162,14 @@ target_link_libraries(cameraNode
   ${Python3_LIBRARIES}
   communication
 )
+add_executable(rs
+  src/rs.cpp
+)
+target_link_libraries(rs
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  realsense2::realsense2
+)
 add_executable(testNode
   src/testNode.cpp
   src/yolo-fastestv2.cpp

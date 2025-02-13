@@ -21,21 +21,11 @@
 #include <memory>
 #include <eigen3/Eigen/Dense>
 #include "utils/constants.h"
+#include "utils/helper.h"
+#include "LightClassifier.hpp"
 
 using namespace std::chrono;
 using namespace VehicleConstants;
-
-std::string getSourceDirectory() {
-    std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
-    size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path
-    if (last_dir_sep == std::string::npos) {
-        last_dir_sep = file_path.rfind('\\');  // For Windows path
-    }
-    if (last_dir_sep != std::string::npos) {
-        return file_path.substr(0, last_dir_sep);  // Extract directory path
-    }
-    return "";  // Return empty string if path not found
-}
 
 class SignFastest {
     public:
@@ -111,8 +101,8 @@ class SignFastest {
             sign_counter.resize(OBJECT_COUNT, 0);
 
             if (ncnn) {
-                std::string filePathBin = getSourceDirectory() + "/../models/ncnn/" + model + ".bin";
-                std::string filePathParam = getSourceDirectory() + "/../models/ncnn/" + model + ".param";
+                std::string filePathBin = helper::getSourceDirectory() + "/../models/ncnn/" + model + ".bin";
+                std::string filePathParam = helper::getSourceDirectory() + "/../models/ncnn/" + model + ".param";
                 const char* bin = filePathBin.c_str();
                 const char* param = filePathParam.c_str();
 
@@ -121,7 +111,7 @@ class SignFastest {
                 std::string model_name;
                 nh.param("model_name", model_name, std::string("citycocov2lgtclab_20")); 
                 // model_name = "v2originalTRT"; 
-                std::string current_path = getSourceDirectory();
+                std::string current_path = helper::getSourceDirectory();
                 std::string modelPath = current_path + "/../models/trt/" + model_name + ".onnx";
                 yolov8 = std::make_unique<YoloV8>(modelPath, config);
             }
@@ -132,12 +122,6 @@ class SignFastest {
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
         
-        enum LightColor {
-            RED,
-            GREEN,
-            YELLOW,
-            UNDETERMINED
-        };
         // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
         static constexpr double parallel_w2h_ratio = 1.30;
         static constexpr double perpendicular_w2h_ratio = 2.88;
@@ -228,6 +212,7 @@ class SignFastest {
         static constexpr int OBJECT_COUNT = 13;
         // private:
         yoloFastestv2 api;
+        LightClassifier light_classifier;
     
         std::unique_ptr<TcpClient> tcp_client;
 
@@ -344,106 +329,7 @@ class SignFastest {
 
             return false;
         }
-        bool isCircular(const std::vector<cv::Point>& contour) {
-            double area = cv::contourArea(contour);
-            cv::Rect bounding_rect = cv::boundingRect(contour);
-            double radius = bounding_rect.width / 2.0;
-            double circle_area = CV_PI * radius * radius;
-            return (area / circle_area) > 0.6; // Adjust threshold for circularity
-        }
-        LightColor classifyTrafficLight(cv::Mat detected_light) {
-            // Convert to grayscale and HSV
-            cv::Mat gray_image, hsv_image, bright_mask;
-            cv::cvtColor(detected_light, gray_image, cv::COLOR_BGR2GRAY);
-            cv::cvtColor(detected_light, hsv_image, cv::COLOR_BGR2HSV);
-
-            // Threshold for brightness
-            cv::threshold(gray_image, bright_mask, 200, 255, cv::THRESH_BINARY);
-
-            // Find contours in the bright mask
-            std::vector<std::vector<cv::Point>> contours;
-            cv::findContours(bright_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-            // Iterate through contours to find circular regions
-            for (const auto& contour : contours) {
-                // if (isCircular(contour)) {
-                if (true) {
-                    // Get bounding box of the circular region
-                    cv::Rect circle_rect = cv::boundingRect(contour);
-                    cv::Mat circle_region = hsv_image(circle_rect);
-
-                    cv::Mat detected_with_circle = detected_light.clone();
-                    cv::rectangle(detected_with_circle, circle_rect, cv::Scalar(0, 255, 0), 2);
-
-                    // Define HSV ranges for red, green, yellow
-                    cv::Scalar lower_red1(0, 50, 50), upper_red1(10, 255, 255);
-                    cv::Scalar lower_red2(170, 50, 50), upper_red2(180, 255, 255);
-                    cv::Scalar lower_green(40, 50, 50), upper_green(90, 255, 255);
-                    cv::Scalar lower_yellow(15, 50, 50), upper_yellow(35, 255, 255);
-
-                    // Create masks for each color
-                    cv::Mat mask_red1, mask_red2, red_mask, green_mask, yellow_mask;
-                    cv::inRange(circle_region, lower_red1, upper_red1, mask_red1);
-                    cv::inRange(circle_region, lower_red2, upper_red2, mask_red2);
-                    cv::bitwise_or(mask_red1, mask_red2, red_mask);
-
-                    cv::inRange(circle_region, lower_green, upper_green, green_mask);
-                    cv::inRange(circle_region, lower_yellow, upper_yellow, yellow_mask);
-
-                    // Calculate the intensity of each color
-                    double red_area = cv::countNonZero(red_mask);
-                    double green_area = cv::countNonZero(green_mask);
-                    double yellow_area = cv::countNonZero(yellow_mask);
-                    double total_area = circle_region.rows * circle_region.cols;
-
-                    double red_ratio = red_area / total_area;
-                    double green_ratio = green_area / total_area;
-                    double yellow_ratio = yellow_area / total_area;
-
-                    // std::cout << "Red Ratio: " << red_ratio << ", Green Ratio: " << green_ratio
-                    //   << ", Yellow Ratio: " << yellow_ratio << std::endl;
-                    if (red_ratio > green_ratio && red_ratio > yellow_ratio && red_ratio > 0.2) {
-                        return LightColor::RED;
-                    } else if (green_ratio > red_ratio && green_ratio > yellow_ratio && green_ratio > 0.2) {
-                        return LightColor::GREEN;
-                    } else if (yellow_ratio > red_ratio && yellow_ratio > green_ratio && yellow_ratio > 0.2) {
-                        return LightColor::YELLOW;
-                    }
-                }
-            }
-            return LightColor::UNDETERMINED;
-        }
-        bool is_red_light(const cv::Mat &detected_light) {
-            // Convert to HSV color space
-            cv::Mat hsv_image;
-            cv::cvtColor(detected_light, hsv_image, cv::COLOR_BGR2HSV);
-            
-            // Define HSV ranges for red color
-            cv::Scalar lower_red1(0, 50, 50);  // First red range
-            cv::Scalar upper_red1(10, 255, 255);
-            cv::Scalar lower_red2(170, 50, 50); // Second red range
-            cv::Scalar upper_red2(180, 255, 255);
-            
-            // Create masks for red
-            cv::Mat mask1, mask2, red_mask;
-            cv::inRange(hsv_image, lower_red1, upper_red1, mask1);
-            cv::inRange(hsv_image, lower_red2, upper_red2, mask2);
-
-            // Combine the masks
-            cv::bitwise_or(mask1, mask2, red_mask);
-
-            // Optional: Morphological operations to reduce noise
-            cv::erode(red_mask, red_mask, cv::Mat(), cv::Point(-1, -1), 2);
-            cv::dilate(red_mask, red_mask, cv::Mat(), cv::Point(-1, -1), 2);
-
-            // Analyze the red_mask
-            double red_area = cv::countNonZero(red_mask);
-            double total_area = detected_light.rows * detected_light.cols;
-
-            // Threshold for classification
-            double red_ratio = red_area / total_area;
-            return red_ratio > 0.2; // Return true if red occupies more than 20% of the area
-        }
+        
         int populate_sign_msg(std_msgs::Float32MultiArray& sign_msg, const cv::Mat& image, const cv::Mat& depthImage, int class_id, float confidence, int x1, int y1, int x2, int y2) {
             if (confidence >= confidence_thresholds[class_id]) {
                 double distance;
@@ -528,7 +414,7 @@ class SignFastest {
                 }
             } else {
                 detected_objects = yolov8->detectObjects(image);
-                for (const struct Object& box : detected_objects) {
+                for (struct Object& box : detected_objects) {
                     int class_id = box.label;
                     detected_indices[class_id] = 1;
                     sign_counter[class_id]++;
@@ -543,12 +429,13 @@ class SignFastest {
                     int y2 = box.rect.y + box.rect.height;
                     if (class_id == OBJECT::LIGHTS) {
                         cv::Mat detected_light = image(cv::Rect(x1, y1, x2 - x1, y2 - y1));
-                        // if (is_red_light(detected_light)) {
-                        //     ROS_INFO("Red light detected");
-                        // }
-                        auto light_color = classifyTrafficLight(detected_light);
+                        // auto start = high_resolution_clock::now();
+                        auto light_color = light_classifier.classify(detected_light);
+                        // auto stop1 = high_resolution_clock::now();
+                        // std::cout << "duration: " << duration_cast<microseconds>(stop1 - start).count() << std::endl;
                         if (light_color != LightColor::UNDETERMINED) {
                             class_id = light_color == LightColor::RED ? OBJECT::REDLIGHT : light_color == LightColor::GREEN ? OBJECT::GREENLIGHT : OBJECT::YELLOWLIGHT;
+                            box.label = static_cast<int>(class_id);
                         }
                     }
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;

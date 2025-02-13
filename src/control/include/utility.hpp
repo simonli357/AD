@@ -65,11 +65,11 @@ public:
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
     int debugLevel = 5;
     std_msgs::String debug_msg;
-    bool real;
+    bool real, use_beta_model = false;
     double rateVal;
     ros::Rate* rate;
 
-    double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
+    double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     // bool stopline = false;
     int stopline = -1;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
@@ -162,7 +162,8 @@ public:
     int object_index(int obj_id);
     std::vector<int> object_indices(int obj_id);
     double object_distance(int index);
-    std::array<double, 3> object_world_pose(int index);
+    // std::array<double, 3> object_world_pose(int index);
+    Eigen::Vector2d object_world_pose(int index);
     std::array<double, 4> object_box(int index);
     void object_box(int index, std::array<double, 4>& oBox);
     void set_initial_pose(double x, double y, double yaw);
@@ -517,18 +518,6 @@ public:
         double diff = yaw1 - yaw2;
         diff = yaw_mod(diff);
         return std::abs(diff);
-    }
-    
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__); 
-        size_t last_dir_sep = file_path.rfind('/');
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\'); 
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
     }
 
     void debug(const std::string& message, int level) {
