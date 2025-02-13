@@ -21,6 +21,7 @@
 #include "utils/go_to.h"
 #include <std_srvs/Trigger.h>
 #include "utility.hpp"
+#include "utils/helper.h"
 
 class PathManager {
 public:
@@ -32,19 +33,19 @@ public:
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         
         // get relative path
-        std::string dir = getSourceDirectory();
+        std::string dir = helper::getSourceDirectory();
         // dir.replace(dir.rfind("src"), 3, "scripts");
         std::string v_ref_int_str = std::to_string(v_ref_int);
         std::string path_name = "_speedrun";
         // path_name = "";
         path_name = "_path1";
-        state_refs = loadTxt(dir + "/../scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
+        state_refs = loadTxt(dir + "/../../../control/scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
         remove_large_yaw_jump();
-        input_refs = loadTxt(dir + "/../scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
-        state_attributes = loadTxt(dir + "/../scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
+        input_refs = loadTxt(dir + "/../../../control/scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
+        state_attributes = loadTxt(dir + "/../../../control/scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
         
         state_refs_ptr = &state_refs;
-        normals = loadTxt(dir + "/../scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
+        normals = loadTxt(dir + "/../../../control/scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
 
         target_waypoint_index = 0;
         last_waypoint_index = target_waypoint_index;
@@ -401,20 +402,9 @@ public:
         /* } */
         return true;
     }
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
-        size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\');  // For Windows path
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
-    }
     template <typename EigenType>
     static void saveToFile(const EigenType &data, const std::string &filename) {
-        std::string dir = getSourceDirectory();
+        std::string dir = helper::getSourceDirectory();
         std::string file_path = dir + "/" + filename;
         std::ofstream file(file_path);
         if (file.is_open()) {
