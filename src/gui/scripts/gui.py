@@ -1286,6 +1286,8 @@ class OpenCVGuiApp(QWidget):
 
                 # Store coordinates
                 self.cursor_coords.append((click_x, click_y))
+                self.cursor_x = click_x
+                self.cursor_y = click_y
 
                 # Create new markers
                 cursor_radius = 10
