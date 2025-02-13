@@ -31,14 +31,12 @@ namespace VehicleConstants {
         KEYBOARD_CONTROL,
         TESTING
     };
-    // enum STOPSIGN_FLAGS {
-    //     NONE,
-    //     STOP,
-    //     LIGHT,
-    //     PRIO,
-    //     RDB,
-    //     CW
-    // };
+    enum LightColor {
+        RED,
+        GREEN,
+        YELLOW,
+        UNDETERMINED
+    };
     enum OBJECT {
         ONEWAY,
         HIGHWAYENTRANCE,
@@ -87,6 +85,7 @@ namespace VehicleConstants {
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
     static constexpr double MAX_SIGN_DIST = 1.2;
+    static constexpr double MAX_LIGHT_DIST = 1.2;
     static constexpr double MAX_SIGN_DIST2 = 1.5;
     // static constexpr double MAX_SIGN_DIST = 0.753;
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21

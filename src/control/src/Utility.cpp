@@ -775,7 +775,8 @@ double Utility::object_distance(int index) {
     }
     return -1;
 }
-std::array<double, 3> Utility::object_world_pose(int index) {
+// std::array<double, 3> Utility::object_world_pose(int index) {
+Eigen::Vector2d Utility::object_world_pose(int index) {
     double object_x, object_y, object_yaw;
     if (num_obj == 1) {
         object_x = detected_objects[x_rel];
@@ -788,7 +789,8 @@ std::array<double, 3> Utility::object_world_pose(int index) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    return object_to_world(object_x, object_y, object_yaw, x, y, yaw);
+    auto world_pose_array = object_to_world(object_x, object_y, object_yaw, x, y, yaw);
+    return Eigen::Vector2d(world_pose_array[0], world_pose_array[1]);
 }
 std::array<double, 4> Utility::object_box(int index) {
     std::array<double, 4> box;
