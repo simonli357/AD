@@ -161,7 +161,7 @@ communication
 )
 
 add_executable(controller 
-src/Controller.cpp
+src/Controller2.cpp
 src/Utility.cpp
 src/RoadObject.cpp
 )
