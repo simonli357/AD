@@ -31,14 +31,12 @@ namespace VehicleConstants {
         KEYBOARD_CONTROL,
         TESTING
     };
-    // enum STOPSIGN_FLAGS {
-    //     NONE,
-    //     STOP,
-    //     LIGHT,
-    //     PRIO,
-    //     RDB,
-    //     CW
-    // };
+    enum LightColor {
+        RED,
+        GREEN,
+        YELLOW,
+        UNDETERMINED
+    };
     enum OBJECT {
         ONEWAY,
         HIGHWAYENTRANCE,

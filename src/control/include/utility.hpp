@@ -519,17 +519,6 @@ public:
         return std::abs(diff);
     }
     
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__); 
-        size_t last_dir_sep = file_path.rfind('/');
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\'); 
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
-    }
 
     void debug(const std::string& message, int level) {
         if (debugLevel >= level) {

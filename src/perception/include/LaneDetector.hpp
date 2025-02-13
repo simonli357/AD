@@ -462,7 +462,7 @@ public:
 
         // Define an adaptive threshold based on the mean and standard deviation
         int adaptive_threshold = static_cast<int>(mean + 0.5 * stddev);
-        std::cout << "adaptive_threshold: " << adaptive_threshold << ", threshold: " << threshold << ", mean: " << mean << ", stddev: " << stddev << std::endl;
+        // std::cout << "adaptive_threshold: " << adaptive_threshold << ", threshold: " << threshold << ", mean: " << mean << ", stddev: " << stddev << std::endl;
         // Find indices above the adaptive threshold
         std::vector<int> above_threshold;
         for (int i = 0; i < hist.size(); ++i) {
