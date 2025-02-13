@@ -58,7 +58,7 @@ class LightClassifier {
             green_high = cv::Scalar(85, 255, 255);
         }
 
-        LightColor classifyTrafficLight(cv::Mat detected_light) {
+        LightColor classify(cv::Mat detected_light) {
             // preprocessing
             cv::cvtColor(detected_light, hsv, cv::COLOR_BGR2HSV);
             cv::GaussianBlur(hsv, hsv, cv::Size(5,5), 0);
@@ -191,10 +191,10 @@ class LightClassifier {
                 return LightColor::GREEN;
             }
             // std::cout << "brightness red: " << brightness_score_red << ", yellow: " << brightness_score_yellow << ", green: " << brightness_score_green << ", threshold: " << adaptive_threshold << std::endl;
-            return classifyTrafficLight_backup(detected_light);
+            return classify_backup(detected_light);
         }
 
-        LightColor classifyTrafficLight_backup(cv::Mat detected_light) {
+        LightColor classify_backup(cv::Mat detected_light) {
             // Convert to grayscale and HSV
             cv::Mat gray_image, hsv_image, bright_mask;
             cv::cvtColor(detected_light, gray_image, cv::COLOR_BGR2GRAY);
