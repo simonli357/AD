@@ -24,6 +24,7 @@ public:
     void detect_objects();
 
 private:
+    void detect_traffic_lights();
     void detect_signs();
     void detect_pedestrians();
     void detect_cars();
