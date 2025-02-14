@@ -1,5 +1,7 @@
 #include "service_calls/GoToCmdSrv.hpp"
+#include "ros/serialization.h"
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float64MultiArray.h"
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -21,13 +23,21 @@ GoToCmdSrv::GoToCmdSrv(Float32MultiArray &state_refs, Float32MultiArray &input_r
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length + success_length;
 }
 
-GoToCmdSrv::GoToCmdSrv(float dest_x, float dest_y) : dest_x(dest_x), dest_y(dest_y) {}
+GoToCmdSrv::GoToCmdSrv(std::vector<std::tuple<float, float>> coords) : coords(coords) {}
 
 std::unique_ptr<GoToCmdSrv> GoToCmdSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);
-	float dest_x = float_from_bytes(datatypes[0]);
-	float dest_y = float_from_bytes(datatypes[1]);
-	return std::make_unique<GoToCmdSrv>(dest_x, dest_y);
+	std_msgs::Float64MultiArray x_coords;
+	std_msgs::Float64MultiArray y_coords;
+	ros::serialization::IStream x_stream(datatypes[0].data(), datatypes[0].size());
+	ros::serialization::IStream y_stream(datatypes[1].data(), datatypes[1].size());
+	ros::serialization::deserialize(x_stream, x_coords);
+	ros::serialization::deserialize(y_stream, y_coords);
+	std::vector<std::tuple<float, float>> coords;
+	for (size_t i = 0; i < x_coords.data.size(); ++i) {
+		coords.emplace_back(static_cast<float>(x_coords.data[i]), static_cast<float>(y_coords.data[i]));
+	}
+	return std::make_unique<GoToCmdSrv>(coords);
 }
 
 uint32_t GoToCmdSrv::compute_lengths_length() { return lengths_length; }

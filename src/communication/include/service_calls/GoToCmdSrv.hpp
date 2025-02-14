@@ -5,6 +5,7 @@
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
 #include <optional>
+#include <tuple>
 
 using std_msgs::Float32MultiArray;
 
@@ -12,7 +13,7 @@ class GoToCmdSrv : public Decoder<GoToCmdSrv>, public Encoder {
   public:
     GoToCmdSrv();
 	GoToCmdSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
-	GoToCmdSrv(float dest_x, float dest_y);
+	GoToCmdSrv(std::vector<std::tuple<float, float>> coords);
 	GoToCmdSrv(GoToCmdSrv &&) = default;
 	GoToCmdSrv(const GoToCmdSrv &) = default;
 	GoToCmdSrv &operator=(GoToCmdSrv &&) = delete;
@@ -20,8 +21,7 @@ class GoToCmdSrv : public Decoder<GoToCmdSrv>, public Encoder {
 	~GoToCmdSrv() = default;
 
 	// Request
-	float dest_x;
-	float dest_y;
+    std::vector<std::tuple<float, float>> coords;
 
 	// Response
 	std::optional<Float32MultiArray> state_refs;
