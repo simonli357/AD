@@ -161,7 +161,7 @@ roslaunch perception cameraNode.launch newlane:=false use_tcp:=true ip:=127.0.0.
 
 #### Run Control Node
 ```bash
-roslaunch control controller.launch sign:=true v:=25 use_tcp:=true ip:=127.0.0.1
+roslaunch control controller.launch sign:=true v:=32 use_tcp:=true ip:=127.0.0.1
 ```
 
 #### Start GUI
@@ -185,7 +185,7 @@ roslaunch perception cameraNode.launch newlane:=false real:=true realsense:=true
 
 #### Run Control Node
 ```bash
-roslaunch control controller.launch sign:=true lane:=true v:=25 real:=true use_tcp:=true ip:={ip_address}
+roslaunch control controller.launch sign:=true lane:=true v:=32 real:=true use_tcp:=true ip:={ip_address}
 ```
 - replace {ip_address} by ip address of computer on which the gui is run
 

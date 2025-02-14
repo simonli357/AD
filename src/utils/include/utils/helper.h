@@ -1,5 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 namespace helper {
     inline std::string getSourceDirectory() {
         std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
@@ -12,4 +16,11 @@ namespace helper {
         }
         return "";  // Return empty string if path not found
     }
+
+    std::string d2str(double value, int precision = 3) {
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(precision) << value;
+        return out.str();
+    }
 }
+

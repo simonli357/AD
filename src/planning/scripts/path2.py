@@ -200,7 +200,7 @@ class Path:
         if name is not None:
             self.name = name
             current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/runs_mod.yaml'), 'r') as stream:
+            with open(os.path.join(current_path, 'config/runs_mod2_custom.yaml'), 'r') as stream:
                 data = yaml.safe_load(stream)
                 destinations = data[name]
         else:
