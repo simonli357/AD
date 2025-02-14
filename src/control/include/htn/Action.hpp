@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ObjectDetection.hpp"
 #include "PathManager.hpp"
 #include "World.hpp"
 #include "htn/ValueTypes.hpp"
@@ -17,6 +18,7 @@ class Action {
 	~Action();
 
 	World &world;
+	ObjectDetection object_detection;
 	Utility &utils;
 	PathManager &path_manager;
 	Eigen::Vector3d &x_current;
@@ -27,7 +29,7 @@ class Action {
 
 	bool can_execute();
 	void stop_car_for(double duration);
-    void emergency_stop();
+	void emergency_stop();
 
 	virtual void execute();
 };
