@@ -1,5 +1,4 @@
 #include "htn/actions/PedestrianStop.hpp"
-#include "ObjectDetection.hpp"
 #include "htn/Action.hpp"
 #include <unordered_map>
 
@@ -20,7 +19,7 @@ void PedestrianStop::execute() {
 	}
     utils.debug("Performing Action: Pedestrian Stop.", 2);
     while (true) {
-        ObjectDetection(world, current_state).detect_objects();
+        object_detection.detect_objects();
         auto& condition = current_state[PEDESTRIAN_DETECTED];
         if (auto* value = std::get_if<bool>(&condition)) {
             if (!(*value)) {
