@@ -193,11 +193,20 @@ class Path:
                 data = yaml.safe_load(stream)
                 destinations = data[name]
         else:
-            dest_x = dest[0]
-            dest_y = dest[1]
-            destination = self.global_planner.find_closest_node(dest_x, dest_y)
-            print("destination: ", destination, type(destination))
-            destinations = [destination]
+            destinations = []
+            #check if dest is a list with x and y coordinates or a list containing a list with x and y coordinates
+            if dest is not None and isinstance(dest[0], list):
+                for d in dest:
+                    dest_x = d[0]
+                    dest_y = d[1]
+                    destination = self.global_planner.find_closest_node(dest_x, dest_y)
+                    destinations.append(destination)
+            else:
+                dest_x = dest[0]
+                dest_y = dest[1]
+                destination = self.global_planner.find_closest_node(dest_x, dest_y)
+                print("destination: ", destination, type(destination))
+                destinations = [destination]
 
         # Plan runs between sequential destinations
         runs = []
