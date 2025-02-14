@@ -21,7 +21,7 @@ class Optimizer(object):
     def __init__(self, x0 = None):
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
-        name = 'run3'
+        name = 'run107'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
         self.waypoints_x_global = self.path.waypoints_x
         self.waypoints_y_global = self.path.waypoints_y
@@ -31,6 +31,7 @@ class Optimizer(object):
         self.wp_normals = self.path.wp_normals
         self.kappa = self.path.kappa
         self.density = self.path.density
+        self.rdb_circumference = 3.95
         self.state_refs_global = self.path.state_refs  
         self.input_refs = self.path.input_refs
         
@@ -42,6 +43,7 @@ class Optimizer(object):
         self.counter = 0
         self.target_waypoint_index = 0
         self.last_waypoint_index = 0
+        self.count = 0
         density = 1/abs(self.v_ref)/self.T
         self.region_of_acceptance = 0.05/10*density * 2*1.5
         self.last_u = None
@@ -384,28 +386,42 @@ class Optimizer(object):
         return index, distances[index]
     def find_next_waypoint(self):
         """
-        Determines the next waypoint index using the Frenet coordinates.
-        This version uses the distance (in the (s,d) plane) computed from find_closest_waypoint.
-        It then uses index differences to decide whether to step ahead.
+        Find the next waypoint index based on the current state.
+        This function mimics the provided C++ version:
+        - It first finds the closest waypoint (using find_closest_waypoint).
+        - If the distance to the closest waypoint is greater than 1.2 m,
+            it prints a warning and re-searches using an updated minimum index.
+        - It then uses a counter (reset every 8 calls) to either set the target
+            to closest + lookahead or simply increments the target waypoint index.
+        
+        Returns:
+        The next waypoint index (an integer, bounded by the number of waypoints).
         """
-        closest_idx, dist_to_waypoint = self.find_closest_waypoint()
-        
-        if dist_to_waypoint < self.region_of_acceptance:
-            # If we are close enough to the current waypoint, try to move ahead.
-            if closest_idx - self.last_waypoint_index < 15:
-                self.last_waypoint_index = max(self.last_waypoint_index, closest_idx + 1)
-            else:
-                closest_idx = self.last_waypoint_index
+        # Make sure self.count is initialized (e.g., in __init__: self.count = 0)
+        closest_idx, distance_to_current = self.find_closest_waypoint()
+
+        if distance_to_current > 1.2:
+            print("WARNING: find_next_waypoint(): distance to closest waypoint is too large:", distance_to_current)
+            # Update min_index as in C++: max(closest_idx - distance_to_current * density * 1.2, 0)
+            min_index = int(max(closest_idx - distance_to_current * self.density * 1.2, 0))
+            closest_idx, distance_to_current = self.find_closest_waypoint(self.current_state, min_index, -1)
+
+        # In C++ a static counter is used: if count >= 8, then target = closest_idx + lookahead,
+        # else target = target_waypoint_index + 1, and then count is incremented.
+        if self.count >= 8:
+            # In C++ the lookahead is set to 1 if v_ref > 0.375, else default lookahead is 1.
+            lookahead = 1 if self.v_ref > 0.375 else 1  # you can adjust this if needed
+            target = closest_idx + lookahead
+            self.count = 0
         else:
-            # If we are not close enough, limit the jump in indices.
-            if closest_idx - self.last_waypoint_index > 15:
-                closest_idx = self.last_waypoint_index + 1
-            # Take a small step forward.
-            self.last_waypoint_index += 1
-        
-        target_idx = max(self.last_waypoint_index, closest_idx)
-        # Ensure we do not exceed the number of available waypoints.
-        return min(target_idx, len(self.waypoints_x) - 1)
+            target = self.target_waypoint_index + 1
+            self.count += 1
+
+        # Ensure we do not exceed the last waypoint index.
+        output_target = min(target, len(self.state_refs) - 1)
+        self.last_waypoint_index = output_target
+        self.target_waypoint_index = output_target  # update the target waypoint index
+        return output_target
     
     def draw_result(self, stats, xmin=None, xmax=None, ymin=None, ymax=None, objects=None, car_states=None):
         """
