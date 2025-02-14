@@ -264,9 +264,9 @@
   <data key="d2">2</data>
 </node>
 <node id="60">
-  <data key="d0">15.48</data>
-  <data key="d1">9.75</data>
-  <data key="d2">2</data>
+  <data key="d0">15.268</data>
+  <data key="d1">9.61</data>
+  <data key="d2">0</data>
 </node>
 <node id="75">
   <data key="d0">1.94</data>
@@ -2763,7 +2763,7 @@
 <edge source="60" target="49">
   <data key="d3">False</data>
 </edge>
-<edge source="60" target="51">
+<edge source="56" target="51">
   <data key="d3">False</data>
 </edge>
 <edge source="75" target="78">
