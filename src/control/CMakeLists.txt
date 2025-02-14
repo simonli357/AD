@@ -24,42 +24,24 @@ include_directories($ENV{ACADOS_SOURCE_DIR}/include/hpipm/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/acados)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_18)
 link_directories($ENV{ACADOS_SOURCE_DIR}/lib)
 
-file(GLOB ocp_solver
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/acados_solver_mobile_robot.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/acados_solver_park.c
+file(GLOB ocp_solver32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_solver_mobile_robot_32.c
         )
 
-file(GLOB casadi_fun
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_vde_adj.c)
-
-file(GLOB sim_solver
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/acados_sim_solver_mobile_robot.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/acados_sim_solver_park.c
+file(GLOB casadi_fun32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_ode_fun.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_forw.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_adj.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_cost/*.c
         )
 
-
-file(GLOB ocp_solver50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/acados_solver_mobile_robot_50.c
-        )
-
-file(GLOB casadi_fun50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_vde_adj.c
-        )
-
-file(GLOB sim_solver50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/acados_sim_solver_mobile_robot_50.c
+file(GLOB sim_solver32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_sim_solver_mobile_robot_32.c
         )
 
 file(GLOB ocp_solver25
@@ -126,10 +108,10 @@ include_directories(
 # file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 # add_library(alglib SHARED ${ALGLIB_SOURCES})
 
-add_library(ocp_shared_lib SHARED ${ocp_solver} ${casadi_fun} ${ocp_solver50} ${casadi_fun50} ${ocp_solver25} ${casadi_fun25} ${ocp_solver18} ${casadi_fun18})
+add_library(ocp_shared_lib SHARED ${ocp_solver32} ${casadi_fun32} ${ocp_solver25} ${casadi_fun25} ${ocp_solver18} ${casadi_fun18})
 target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
 
-add_library(sim_shared_lib SHARED ${sim_solver} ${casadi_fun} ${sim_solver50} ${casadi_fun50} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
+add_library(sim_shared_lib SHARED ${sim_solver32} ${casadi_fun32} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
 target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 
 # HTN Lib
