@@ -97,6 +97,10 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS} 
   include 
+  include/object-detection
+  include/htn
+  include/htn/actions
+  include/htn/actions/park
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
@@ -109,6 +113,13 @@ target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
 
 add_library(sim_shared_lib SHARED ${sim_solver32} ${casadi_fun32} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
 target_link_libraries(sim_shared_lib acados hpipm blasfeo)
+
+# HTN Lib
+file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
+file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
+file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
+add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
+target_link_libraries(htn ocp_shared_lib sim_shared_lib)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -132,7 +143,7 @@ communication
 )
 
 add_executable(controller 
-src/Controller.cpp
+src/Controller2.cpp
 src/Utility.cpp
 src/RoadObject.cpp
 )
@@ -141,5 +152,6 @@ ocp_shared_lib
 sim_shared_lib
 ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
+htn
 communication
 )
