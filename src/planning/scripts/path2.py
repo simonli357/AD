@@ -489,8 +489,6 @@ class Path:
 def handle_goto_service(req):
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    # if int(vrefName) >30:
-    #     vrefName = "50"
     config_path='config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -522,8 +520,6 @@ def handle_array_service(req):
     """
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    # if int(vrefName) >30:
-    #     vrefName = "50"
     config_path='config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)
