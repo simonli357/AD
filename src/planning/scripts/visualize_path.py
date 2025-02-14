@@ -78,10 +78,14 @@ class PathVisualizer:
 def main():
     visualizer = PathVisualizer()
     
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2_custom.yaml')
     runs = visualizer.load_runs(yaml_path)
     
-    selected_run = 'run107'
+    # custom_run = [56, 54] # Avram 10m
+    # custom_run = [368, 341] # Laneless outer 14m
+    # custom_run = [342, 335] # Laneless inner 11m
+    # visualizer.plot_run('custom_run', custom_run)
+    selected_run = 'run221'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")

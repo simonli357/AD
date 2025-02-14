@@ -229,5 +229,5 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    planner.plan_path(180, 167)
-    # planner.illustrate_path(399, 427)
+    # planner.plan_path(56, 54)
+    planner.illustrate_path(56, 54)
