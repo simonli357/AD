@@ -1271,6 +1271,7 @@ class OpenCVGuiApp(QWidget):
                 if marker.scene() == self.scene:  # Check if still in scene
                     self.scene.removeItem(marker)
             self.markers.clear()  # Clear the list
+            self.cursor_coords.clear()  # Clear previous coords
             return
 
         elif event.button() == Qt.LeftButton:
