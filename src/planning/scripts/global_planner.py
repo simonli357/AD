@@ -146,9 +146,9 @@ class GlobalPlanner:
                     next_node2 = path[path.index(node)+2]
                     next_node3 = path[path.index(node)+3]
                 except:
-                    # print("end of path at node: ", node)
+                    print("end of path at node: ", node)
                     continue
-                # print(f"prev2: {prev_node2}, prev: {prev_node}, node: {node}, next: {next_node}, next2: {next_node2}, next3: {next_node3}")
+                print(f"prev2: {prev_node2}, prev: {prev_node}, node: {node}, next: {next_node}, next2: {next_node2}, next3: {next_node3}")
                 #calculate the vector from prev to current
                 prev_x2, prev_y2 = self.pos[prev_node2]
                 prev_x, prev_y = self.pos[prev_node]
@@ -165,7 +165,7 @@ class GlobalPlanner:
                 cross_product = np.cross(vec1, vec3)
                 normalized_cross = cross_product / (mag1 * mag2)
                 if normalized_cross > 0.75: #left
-                    # print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
+                    print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     x, y = self.pos[node]
                     x += vec1[0] / mag1 * 0.2 #15
                     y += vec1[1] / mag1 * 0.2 #15
@@ -175,7 +175,7 @@ class GlobalPlanner:
                     wp_x.append(x)
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
-                    # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
+                    print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     # x = prev_x + vec1[0] / mag1 * 0.0015#0.001
                     # y = prev_y + vec1[1] / mag1 * 0.0015#0.001
                     x = prev_x + vec1[0] / mag1 * 0.4#0.001
