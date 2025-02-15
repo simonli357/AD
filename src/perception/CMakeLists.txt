@@ -52,12 +52,14 @@ else()
 endif()
 include_directories(${CUDA_INCLUDE_DIRS})
 link_directories(${CUDA_LIBRARY_DIRS})
+
 find_package(realsense2 CONFIG REQUIRED)
 if (realsense2_FOUND)
   message("-- RealSense found")
 else()
   message("-- RealSense not found")
 endif()
+
 find_package (Eigen3 REQUIRED )
 
 # For finding FindTensorRT.cmake
@@ -83,8 +85,55 @@ else()
     message("OpenCV not found")
 endif()
 
+set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")  # Use ENV variable or absolute path
+set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
+set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+
+include_directories(
+  include
+  include/ncnn/include
+  include/sort
+  ${TENSORRT_INCLUDE_DIR}
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
+)
+include_directories(${Eigen3_INCLUDE_DIRS})
+
+include_directories(${HOME}/TensorRT-8.6.1.6/include)
+link_directories(${HOME}/TensorRT-8.6.1.6/lib)
+link_directories(${TENSORRT_LIB_DIR})
+
+include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
+link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
+
+add_library(object_detection_lib
+  src/yolo-fastestv2.cpp
+  src/engine.cpp
+  src/yolov8.cpp
+)
+target_link_libraries(object_detection_lib PUBLIC
+  ncnn
+  ${CUDA_LIBRARIES}    
+  nvinfer              
+  nvparsers
+  nvonnxparser
+  realsense2::realsense2
+  alglib
+  ${TENSORRT_LIB_DIR}
+)
+target_include_directories(object_detection_lib PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/include              
+  ${TENSORRT_INCLUDE_DIR}                      
+  ${ncnn_INCLUDE_DIR}                          
+  ${CUDA_INCLUDE_DIRS} 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src                        
+)
+
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include include/ncnn/include ${TENSORRT_INCLUDE_DIR}
   CATKIN_DEPENDS
   geometry_msgs
   roscpp
@@ -96,23 +145,26 @@ catkin_package(
   cv_bridge
   sensor_msgs
   communication
+  LIBRARIES object_detection_lib
+  # CFG_EXTRAS perception-extras.cmake
 )
+# install(DIRECTORY include/
+#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#   FILES_MATCHING
+#   PATTERN "*.h"
+#   PATTERN "*.hpp"
+# )
+# install(DIRECTORY include/ncnn/lib/
+#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   PATTERN "*.so"
+#   PATTERN "*.a"
+# )
 
-include_directories(
-  include
-  include/ncnn/include
-  include/sort
-  ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
-)
-include_directories(${Eigen3_INCLUDE_DIRS})
-
-include_directories(~/TensorRT-8.6.1.6/include)
-link_directories(~/TensorRT-8.6.1.6/lib)
-
-include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
-link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
+# configure_file(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/perception-extras.cmake
+#   @ONLY
+# )
 
 file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 add_library(alglib SHARED ${ALGLIB_SOURCES})
@@ -190,9 +242,9 @@ target_link_libraries(testNode
   communication
 )
 
-install(DIRECTORY include/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.hpp"
-)
-
+# configure_file(
+#   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/perception-extras.cmake
+#   @ONLY
+# )
 

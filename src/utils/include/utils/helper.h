@@ -17,7 +17,7 @@ namespace helper {
         return "";  // Return empty string if path not found
     }
 
-    std::string d2str(double value, int precision = 3) {
+    inline std::string d2str(double value, int precision = 3) {
         std::ostringstream out;
         out << std::fixed << std::setprecision(precision) << value;
         return out.str();
