@@ -175,7 +175,7 @@ rosrun planning path2.py
 
 #### Run Control Node + CameraNode
 ```bash
-roslaunch control controller.launch sign:=true lane:=true v:=32 real:=true use_tcp:=true ip:={ip_address} newlane:=false realsense:=true
+roslaunch control controller.launch real:=true use_tcp:=true newlane:=false realsense:=true ip:={ip_address}
 ```
 - replace {ip_address} by ip address of computer on which the gui is run
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.

@@ -68,7 +68,7 @@ class Optimizer(object):
                                        + '_T'+str(self.T))
         
     # def create_solver(self, config_path='config/mpc_config25.yaml'):
-    def create_solver(self, config_path='config/mpc_config32.yaml'):
+    def create_solver(self, config_path='config/mpc_config25.yaml'):
         current_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(current_path, config_path)
         with open(path, 'r') as f:
