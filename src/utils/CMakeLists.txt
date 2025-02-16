@@ -17,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
    ImgInfo.msg
    Sensors.msg
    odometry.msg
-
+   Point2D.msg
  )
  
 ## Generate services in the 'srv' folder
@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   FILES
   waypoints.srv
   go_to.srv
+  go_to_multiple.srv
   goto_command.srv
   set_states.srv
 )

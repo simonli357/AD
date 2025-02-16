@@ -5,6 +5,12 @@
 #include <array>
 
 namespace VehicleConstants {
+    // vehicle constants
+    static constexpr double WHEELBASE = 0.258;
+    static constexpr double L_R_SIM = 0.129;
+    static constexpr double L_F_SIM = 0.129;
+    static constexpr double L_R_REAL = 0.115;
+    static constexpr double L_F_REAL = 0.143;
     const std::array<std::string, 13> state_names = {
         "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
         "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", 
@@ -25,14 +31,12 @@ namespace VehicleConstants {
         KEYBOARD_CONTROL,
         TESTING
     };
-    // enum STOPSIGN_FLAGS {
-    //     NONE,
-    //     STOP,
-    //     LIGHT,
-    //     PRIO,
-    //     RDB,
-    //     CW
-    // };
+    enum LightColor {
+        RED,
+        GREEN,
+        YELLOW,
+        UNDETERMINED
+    };
     enum OBJECT {
         ONEWAY,
         HIGHWAYENTRANCE,
@@ -81,6 +85,7 @@ namespace VehicleConstants {
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
     static constexpr double MAX_SIGN_DIST = 1.2;
+    static constexpr double MAX_LIGHT_DIST = 1.2;
     static constexpr double MAX_SIGN_DIST2 = 1.5;
     // static constexpr double MAX_SIGN_DIST = 0.753;
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
@@ -120,7 +125,7 @@ namespace VehicleConstants {
     // add half of inner lane width to the x values
     // static constexpr std::array<double, 13> Y_ALIGNED_LANE_CENTERS = {0.22237, 0.591617, 2.383851, 2.754291, 4.63, 4.9981, 6.49, 6.864, 15.17, 16.963, 15.54, 15.7404, 16.112};
     static const std::vector<double> NORTH_FACING_LANE_CENTERS = {0.579612+ofs6, 2.744851+ofs6, 4.9887+ofs6, 6.51+ofs6, 6.8507+ofs6, 16.954+ofs6, 15.532+ofs6, 16.1035+ofs6};
-    static const std::vector<double> SOUTH_FACING_LANE_CENTERS = {0.50684-ofs6, 2.667-ofs6, 4.9156-ofs6, 15.165279+ofs6, 15.1632+ofs6};
+    static const std::vector<double> SOUTH_FACING_LANE_CENTERS = {0.50684-ofs6, 2.667-ofs6, 4.9156-ofs6, 15.165279+ofs6, 15.1632+ofs6, 15.7356+ofs6};
     // add half of inner lane width to the y values
     // static constexpr std::array<double, 13> X_ALIGNED_LANE_CENTERS = {13.314624, 12.94356, 10.669, 10.2963, 3.89, 0.598716, 0.9698, 3.516515, 3.88667, 6.4122, 6.78514, 11.6955, 12.0661};
     static const std::vector<double> EAST_FACING_LANE_CENTERS = {12.904+ofs6, 10.5538-ofs6, 0.503891-ofs6, 1.072 - ofs6, 3.79216-ofs6, 6.6816-ofs6, 10.5538-ofs6, 11.6588+ofs6};
@@ -262,13 +267,13 @@ namespace VehicleConstants {
 
         // WEST_FACING_SIGNS
         {{1.296+sign_ofs2, 3.86375+ofs6*2+pole_size+sign_ofs1, M_PI}},
-        {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1, M_PI}},
+        // {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1, M_PI}}, // remove temporarily
         {{5.708+sign_ofs2, 6.753+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{3.4547+sign_ofs2, 6.7545+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{1.296+sign_ofs2, 6.754754+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{7.568552+sign_ofs2, 3.8674+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{3.45624+sign_ofs2, 0.58153+ofs6*2+pole_size+sign_ofs1, M_PI}},
-        {{16.2485+sign_ofs2, 3.8678+ofs6*2+pole_size+sign_ofs1, M_PI}},
+        // {{16.2485+sign_ofs2, 3.8678+ofs6*2+pole_size+sign_ofs1, M_PI}}, // remove temporarily
 
         // EAST_FACING_SIGNS
         {{1.95075-sign_ofs2, 0.503891-ofs6*2-pole_size-sign_ofs1, 0}},

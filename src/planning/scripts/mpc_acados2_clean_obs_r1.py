@@ -4,7 +4,6 @@
 from path2 import Path
 import os
 import sys
-import timeit
 
 from acados_template import AcadosOcp, AcadosOcpSolver, AcadosSimSolver
 
@@ -24,7 +23,7 @@ class Optimizer(object):
         self.safety_margin = safety_margin
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
-        name = 'run3'
+        name = 'run107'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
         self.waypoints_x = self.path.waypoints_x
         self.waypoints_y = self.path.waypoints_y
@@ -32,6 +31,7 @@ class Optimizer(object):
         self.wp_normals = self.path.wp_normals
         self.kappa = self.path.kappa
         self.density = self.path.density
+        self.rdb_circumference = 3.95
         self.state_refs = self.path.state_refs
         self.input_refs = self.path.input_refs
         self.waypoints_x = self.state_refs[:,0]
@@ -40,6 +40,7 @@ class Optimizer(object):
         self.counter = 0
         self.target_waypoint_index = 0
         self.last_waypoint_index = 0
+        self.count = 0
         density = 1/abs(self.v_ref)/self.T
         self.region_of_acceptance = 0.05/10*density * 2*1.5
         self.last_u = None
@@ -248,26 +249,83 @@ class Optimizer(object):
                 yaw += 2 * np.pi
         self.current_state = np.array([x, y, yaw])
         
-    def find_closest_waypoint(self):
-        distances = np.linalg.norm(np.vstack((self.waypoints_x, self.waypoints_y)).T - self.current_state[:2], axis=1)
-        index = np.argmin(distances)
-        return index, distances[index]
+    def find_closest_waypoint(self, current_state, min_index=-1, max_index=-1):
+        """
+        Find the index of the closest waypoint to the current state,
+        searching between indices min_index and max_index.
+        This version mimics the C++ method by iterating in reverse order.
+        
+        Parameters:
+        current_state: array-like, [x, y, psi]
+        min_index: if < 0, set to min(self.last_waypoint_index, len(self.state_refs)-1)
+        max_index: if < 0, set to min(self.target_waypoint_index + limit, len(self.state_refs)-1)
+                    where limit = floor(rdb_circumference/(v_ref*T))
+        
+        Returns:
+        (closest_index, distance) where distance is the Euclidean distance.
+        """
+        current_norm = np.dot(current_state[:2], current_state[:2])
+        min_distance_sq = np.inf
+        closest = -1
+
+        if min_index < 0:
+            min_index = min(self.last_waypoint_index, len(self.state_refs) - 1)
+        if max_index < 0:
+            limit = int(np.floor(self.rdb_circumference / (self.v_ref * self.T)))
+            max_index = min(self.target_waypoint_index + limit, len(self.state_refs) - 1)
+
+        # Iterate from max_index down to min_index (inclusive)
+        for i in range(max_index, min_index - 1, -1):
+            # Compute squared distance between waypoint i and current_state (using only x and y)
+            diff = self.state_refs[i][:2] - current_state[:2]
+            distance_sq = np.dot(diff, diff)
+            if distance_sq < min_distance_sq:
+                min_distance_sq = distance_sq
+                closest = i
+
+        self.closest_waypoint_index = closest  # store for later use if needed
+        return closest, np.sqrt(min_distance_sq)
+
+
     def find_next_waypoint(self):
-        self.target_waypoint_index += 1
-        return min(self.target_waypoint_index, len(self.waypoints_x) - 1)
-        # closest_idx, dist_to_waypoint = self.find_closest_waypoint()
-        # if dist_to_waypoint < self.region_of_acceptance:
-        #     if closest_idx - self.last_waypoint_index < 15:
-        #         self.last_waypoint_index = max(self.last_waypoint_index, closest_idx+1)
-        #     else:
-        #         closest_idx = self.last_waypoint_index
-        # else:
-        #     if closest_idx - self.last_waypoint_index > 15:
-        #         closest_idx = self.last_waypoint_index + 1
-        #     # If not within the region of acceptance, take smaller steps forward in the waypoint list
-        #     self.last_waypoint_index += 1
-        # target_idx = max(self.last_waypoint_index, closest_idx)
-        # return min(target_idx, len(self.waypoints_x) - 1)
+        """
+        Find the next waypoint index based on the current state.
+        This function mimics the provided C++ version:
+        - It first finds the closest waypoint (using find_closest_waypoint).
+        - If the distance to the closest waypoint is greater than 1.2 m,
+            it prints a warning and re-searches using an updated minimum index.
+        - It then uses a counter (reset every 8 calls) to either set the target
+            to closest + lookahead or simply increments the target waypoint index.
+        
+        Returns:
+        The next waypoint index (an integer, bounded by the number of waypoints).
+        """
+        # Make sure self.count is initialized (e.g., in __init__: self.count = 0)
+        closest_idx, distance_to_current = self.find_closest_waypoint(self.current_state)
+
+        if distance_to_current > 1.2:
+            print("WARNING: find_next_waypoint(): distance to closest waypoint is too large:", distance_to_current)
+            # Update min_index as in C++: max(closest_idx - distance_to_current * density * 1.2, 0)
+            min_index = int(max(closest_idx - distance_to_current * self.density * 1.2, 0))
+            closest_idx, distance_to_current = self.find_closest_waypoint(self.current_state, min_index, -1)
+
+        # In C++ a static counter is used: if count >= 8, then target = closest_idx + lookahead,
+        # else target = target_waypoint_index + 1, and then count is incremented.
+        if self.count >= 8:
+            # In C++ the lookahead is set to 1 if v_ref > 0.375, else default lookahead is 1.
+            lookahead = 1 if self.v_ref > 0.375 else 1  # you can adjust this if needed
+            target = closest_idx + lookahead
+            self.count = 0
+        else:
+            target = self.target_waypoint_index + 1
+            self.count += 1
+
+        # Ensure we do not exceed the last waypoint index.
+        output_target = min(target, len(self.state_refs) - 1)
+        self.last_waypoint_index = output_target
+        self.target_waypoint_index = output_target  # update the target waypoint index
+        return output_target
+    
     def draw_result(self, stats, xmin=None, xmax=None, ymin=None, ymax=None, objects=None, car_states=None):
         if xmin is None:
             xmin = self.x_min

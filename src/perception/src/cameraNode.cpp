@@ -11,7 +11,6 @@
 #include <librealsense2/rs.hpp>
 #include <mutex>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/Imu.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <thread>
@@ -51,7 +50,7 @@ class CameraNode {
 				ros::topic::waitForMessage<sensor_msgs::Image>(topic, nh);
 				std::cout << "got it" << std::endl;
 			}
-			sub = it.subscribe("/camera/color/image_raw", 3, &CameraNode::imageCallback, this);
+			rgb_sub = it.subscribe("/camera/color/image_raw", 3, &CameraNode::imageCallback, this);
 			std::cout << "waiting for rgb image" << std::endl;
 			ros::topic::waitForMessage<sensor_msgs::Image>("/camera/color/image_raw", nh);
 			std::cout << "got color image" << std::endl;
@@ -59,8 +58,6 @@ class CameraNode {
 			align_to_color = std::make_unique<rs2::align>(RS2_STREAM_COLOR);
 			depth_frame = rs2::frame();
 			color_frame = rs2::frame();
-			imu_msg = sensor_msgs::Imu();
-			imu_msg.header.frame_id = "imu_link";
 			data = rs2::frameset();
 
 			cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
@@ -69,10 +66,8 @@ class CameraNode {
 			cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
 			pipe.start(cfg);
 
-			// Query the stream profiles
 			auto profiles = pipe.get_active_profile().get_streams();
 
-			// Iterate to find the COLOR stream profile
 			for (auto &&p : profiles)
 			{
 					if (p.stream_type() == RS2_STREAM_COLOR)
@@ -90,7 +85,6 @@ class CameraNode {
 			}
 
 			std::cout.precision(4);
-			imu_pub = nh.advertise<sensor_msgs::Imu>("/camera/imu", 2);
 			if (pubImage) {
 				color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
@@ -141,7 +135,7 @@ class CameraNode {
 			}
 	}
 
-	void spin() {
+	void cameraNodeSpin() {
 			ros::Rate loopRate(mainLoopRate);
 			while (ros::ok()) {
 					ros::spinOnce();
@@ -158,7 +152,7 @@ class CameraNode {
     
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
-	image_transport::Subscriber sub;
+	image_transport::Subscriber rgb_sub;
 	image_transport::Subscriber depth_sub;
 	image_transport::ImageTransport it;
 	cv::Mat depthImage, colorImage;
@@ -174,7 +168,7 @@ class CameraNode {
 	bool cameraThreadRunning;
 	std::mutex mutex;
 	void cameraThreadFunc() {
-			ros::Rate cameraRate(30); // RealSense is configured for 30 FPS
+			ros::Rate cameraRate(30);
 			while (ros::ok() && cameraThreadRunning) {
 				get_frame();
 				cameraRate.sleep();
@@ -182,14 +176,12 @@ class CameraNode {
 	}
 
 	// rs
-	ros::Publisher imu_pub;
 	ros::Publisher color_pub, depth_pub;
 
 	rs2::pipeline pipe;
 	rs2::config cfg;
 	rs2::frame color_frame;
 	rs2::frame depth_frame;
-	sensor_msgs::Imu imu_msg;
 	rs2::frameset data;
 	rs2::frame gyro_frame;
 	rs2::frame accel_frame;
@@ -291,23 +283,6 @@ class CameraNode {
 		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
 		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
 
-		// Convert gyro and accel frames to ROS Imu message
-		imu_msg.header.stamp = ros::Time::now();
-		float *gyro_data = (float *)gyro_frame.get_data();
-		imu_msg.angular_velocity.x = gyro_data[0];
-		imu_msg.angular_velocity.y = gyro_data[1];
-		imu_msg.angular_velocity.z = gyro_data[2];
-
-		float *accel_data = (float *)accel_frame.get_data();
-		imu_msg.linear_acceleration.x = accel_data[0];
-		imu_msg.linear_acceleration.y = accel_data[1];
-		imu_msg.linear_acceleration.z = accel_data[2];
-
-		// float[] accel_angle = {0, 0, 0};
-		// accel_angle[2] = atan2(accel_data[1], accel_data[2]);
-		// accel_angle[0] = atan2(accel_data[0], sqrt(accel_data[1] * accel_data[1] + accel_data[2] * accel_data[2]));
-		imu_pub.publish(imu_msg);
-
 		if (!useRosTimer) {
 			if (doLane) {
 				run_lane_once();
@@ -336,7 +311,7 @@ int main(int argc, char **argv) {
 	ros::NodeHandle nh;
 
 	CameraNode cameraNode(nh);
-	cameraNode.spin();
+	cameraNode.cameraNodeSpin();
 
 	return 0;
 }

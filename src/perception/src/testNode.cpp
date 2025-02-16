@@ -19,11 +19,12 @@ public:
         nh.param(nodeName + "/input_type", inputType, std::string("image")); // "image" or "video"
         nh.param(nodeName + "/input_path", inputPath, std::string("./rf2/381.jpg"));
 
-        std::string path = getSourceDirectory();
+        std::string path = helper::getSourceDirectory();
         //check if input path starts with /
         if (inputPath[0] != '/') {
             path += "/";
         }
+        path += "../../../../";
         path += inputPath;
         if (inputType == "video") {
             videoCapture.open(path);
@@ -83,17 +84,6 @@ private:
         runDetection();
     }
 
-    std::string getSourceDirectory() {
-        std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
-        size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\');  // For Windows path
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
-    }
     void processImageFrame() {
         if (colorImage.empty()) {
             ROS_WARN("Loaded empty image.");
@@ -101,7 +91,7 @@ private:
         }
         runDetection();
     }
-
+    
     void runDetection() {
         if (doLane) {
             Lane.publish_lane(colorImage);
