@@ -53,20 +53,28 @@ static const casadi_int casadi_s1[6] = {2, 1, 0, 2, 0, 1};
 
 /* mobile_robot_25_expl_ode_fun:(i0[3],i1[2],i2[2])->(o0[3]) */
 static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem) {
-  casadi_real a0, a1, a2;
+  casadi_real a0, a1, a2, a3, a4;
   a0=arg[1]? arg[1][0] : 0;
   a1=arg[0]? arg[0][2] : 0;
-  a2=cos(a1);
-  a2=(a0*a2);
-  if (res[0]!=0) res[0][0]=a2;
+  a2=3.9922480620155038e-01;
+  a3=arg[1]? arg[1][1] : 0;
+  a4=tan(a3);
+  a2=(a2*a4);
+  a2=atan(a2);
+  a4=(a1+a2);
+  a4=cos(a4);
+  a4=(a0*a4);
+  if (res[0]!=0) res[0][0]=a4;
+  a1=(a1+a2);
   a1=sin(a1);
   a1=(a0*a1);
   if (res[0]!=0) res[0][1]=a1;
-  a1=2.5800000000000001e-01;
-  a0=(a0/a1);
-  a1=arg[1]? arg[1][1] : 0;
-  a1=tan(a1);
-  a0=(a0*a1);
+  a2=cos(a2);
+  a0=(a0*a2);
+  a2=2.5800000000000001e-01;
+  a0=(a0/a2);
+  a3=tan(a3);
+  a0=(a0*a3);
   if (res[0]!=0) res[0][2]=a0;
   return 0;
 }
