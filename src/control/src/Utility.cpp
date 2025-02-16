@@ -25,9 +25,10 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
-    trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real)
+    trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real),
+    it(nh), Sign(nh), Lane(nh)
 {
-    // debug("Utility constructor", 1);  
+    cameraNodeConstructor(nh);
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
     bool use_tcp = false;
@@ -57,11 +58,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double odom_publish_frequency = 50; 
     std::string mode = real ? "/real" : "/sim";
     bool success = true;
-    success = success && nh.getParam(mode + "/sigma_v", sigma_v);
-    success = success && nh.getParam(mode + "/sigma_delta", sigma_delta);
     success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
     success = success && nh.getParam("/debug_level", debugLevel);
     success = success && nh.getParam("/gps", hasGps);
+    success = success && nh.getParam(mode + "/use_beta_model", use_beta_model);
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
         exit(1);
@@ -95,7 +95,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::string nodeName = ros::this_node::getName();
     nh.param<double>(nodeName + "/rate", rateVal, 500);
     rate = new ros::Rate(rateVal);
-    wheelbase = 0.258;
+    wheelbase = WHEELBASE;
+    if (real) {
+        l_r = L_R_REAL;
+        l_f = L_F_REAL;
+    } else {
+        l_r = L_R_SIM;
+        l_f = L_F_SIM;
+    }
     odomRatio = 1.0;
     maxspeed = 1.5;
     center = -1;
@@ -143,7 +150,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     double dt = 1.0 / odom_publish_frequency;
     double variance_v = sigma_v * sigma_v;
     double sigma_delta_rad = sigma_delta * M_PI / 180;
-    double variance_delta = sigma_delta_rad * sigma_delta_rad;
     double variance_yaw_rate = std::pow((sigma_v / 0.27 * std::tan(sigma_delta_rad)), 2);
     double variance_x = variance_v * dt * dt;
     double variance_y = variance_v * dt * dt;
@@ -214,7 +220,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         }
     }
     if (true) {
-        lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+        // lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         // std::cout << "waiting for lane message" << std::endl;
         // ros::topic::waitForMessage<utils::Lane2>("/lane");
         // std::cout << "received message from lane" << std::endl;
@@ -222,10 +228,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     if (subSign) {
-        sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-        std::cout << "waiting for sign message" << std::endl;
-        ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
-        std::cout << "received message from sign" << std::endl;
+        // sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+        // std::cout << "waiting for sign message" << std::endl;
+        // ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
+        // std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
@@ -238,6 +244,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 
 Utility::~Utility() {
     stop_car(); 
+    cameraThreadRunning = false;
+    if (cameraThread.joinable()) {
+            cameraThread.join();
+    }
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
@@ -347,10 +357,11 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
             static double accel_mag;
 
 
-            lock.lock();
-            this->yaw = -yaw_deg * M_PI/180;
-            this->yaw = yaw_mod(this->yaw);
-            lock.unlock();
+            {
+                // std::lock_guard<std::mutex> lock(general_mutex);
+                this->yaw = -yaw_deg * M_PI/180;
+                this->yaw = yaw_mod(this->yaw);
+            }
 
             static bool debug_imu = false;
             if (debug_imu) {
@@ -388,14 +399,18 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     // }
 }
 void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
-    lock.lock();
-    if (msg->data.size()) {
-        num_obj = msg->data.size() / NUM_VALUES_PER_OBJECT;
-        detected_objects.assign(msg->data.begin(), msg->data.end());
+    process_sign_data(*msg);   
+}
+void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
+    if (msg.data.size()) {
+        num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
+        {
+            std::lock_guard<std::mutex> lock(general_mutex);
+            detected_objects.assign(msg.data.begin(), msg.data.end());
+        }
     } else {
         num_obj = 0;
     }
-    lock.unlock();
     if (num_obj == 1 && detected_objects[0] == -1.0) {
         emergency = true;
     } else {
@@ -407,12 +422,12 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
-        auto type = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
-        double confidence = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
+        auto type = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
+        double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
-        double x_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x_rel];
-        double y_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
-        double yaw_rel = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
+        double x_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x_rel];
+        double y_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
+        double yaw_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
         auto world_states = object_to_world(x_rel, y_rel, yaw_rel, x, y, yaw);
         bool is_known_static = is_known_static_object(type);
         
@@ -468,13 +483,13 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     int car_id = 12;
     double threshold = 0.5;
     for(int i = 0; i < num_obj; i++) {
-        if(msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id] == car_id) {
+        if(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id] == car_id) {
             double dist = object_distance(i);
             if(dist > 3.0 || dist < 0.6) continue;
-            double xmin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
-            double ymin = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
-            double xmax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
-            double ymax = msg->data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
+            double xmin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
+            double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
+            double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
+            double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
             double x, y, yaw;
             get_states(x, y, yaw);
             Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
@@ -492,7 +507,7 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
             }
             for(int j = 0; j < detected_cars.size(); j++) {
                 double error_norm_sq = (detected_cars[j] - world_pose).squaredNorm();
-                double score = msg->data[i * NUM_VALUES_PER_OBJECT + confidence];
+                double score = msg.data[i * NUM_VALUES_PER_OBJECT + confidence];
                 if(error_norm_sq < threshold * threshold) {
                     // if (detected_cars_counter[j] < 15) {
                     if (true) {
@@ -533,16 +548,20 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     // }
     car_pose_pub.publish(car_pose_msg);
 }
+
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
-    tcp_client->send_lane2(*msg);
-    static double previous_center = 320;
-    lock.lock();
-    center = msg->center;
-    stopline = msg->stopline;
-    lock.unlock();
+    process_lane_data(*msg);
+}
+void Utility::process_lane_data(const utils::Lane2& msg) {
+    tcp_client->send_lane2(msg);
+    {
+        std::lock_guard<std::mutex> lock(general_mutex);
+        center = msg.center;
+        stopline = msg.stopline;
+    }
 }
 void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
-    lock.lock();
+    // std::lock_guard<std::mutex> lock(general_mutex);
     // this->imu_msg = *msg;
     q_imu = tf2::Quaternion(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
     // q_chassis = q_transform * q_imu;
@@ -569,13 +588,12 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     if (real) yaw = yaw - initial_yaw;
     // yaw = yaw - initial_yaw + yaw0;
     yaw = yaw_mod(yaw);
-    lock.unlock();
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
+    // std::lock_guard<std::mutex> lock(general_mutex);
     // ros::Time now = ros::Time::now();
     double offset_x = gps_offset_x * std::cos(yaw) - gps_offset_y * std::sin(yaw);
     double offset_y = gps_offset_x * std::sin(yaw) + gps_offset_y * std::cos(yaw);
-    lock.lock();
     ekf_x = msg->pose.pose.position.x + offset_x;
     ekf_y = msg->pose.pose.position.y + offset_y;
     // x0 = ekf_x - odomX;
@@ -598,7 +616,6 @@ void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     //         if (imuInitialized) initializationFlag = true;
     //     }
     // }
-    lock.unlock();
     // ROS_INFO("ekf callback rate: %f", 1 / (now - general_timer).toSec());
     // general_timer = now;
 }
@@ -609,7 +626,7 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
     // last_time = now;
     // ROS_INFO("model callback rate: %.3f", 1 / dt);
 
-    lock.lock();
+    // std::lock_guard<std::mutex> lock(general_mutex);
     // auto start = std::chrono::high_resolution_clock::now();
     if (!car_idx.has_value()) {
         auto it = std::find(msg->name.begin(), msg->name.end(), robot_name);
@@ -618,7 +635,6 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
             std::cout << "automobile found: " << *car_idx << std::endl;
         } else {
             printf("automobile not found\n");
-            lock.unlock();
             return; 
         }
     }
@@ -632,7 +648,6 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
         car_pose_msg.data[0] = gps_x;
         car_pose_msg.data[1] = gps_y;
     }
-    lock.unlock();
 }
 
 void Utility::stop_car() {
@@ -677,15 +692,19 @@ void Utility::set_pose_using_service(double x, double y, double yaw) {
 }
 
 void Utility::publish_odom() {
-    yaw = fmod(yaw, 2 * M_PI);
+    {
+        yaw = fmod(yaw, 2 * M_PI);
 
-    // update_states_rk4(velocity, steer_command);
-    update_states_rk4(velocity_command, steer_command);
-
-    odomX += dx;
-    odomY += dy;
-    height -= dheight;
-    // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
+        // update_states_rk4(velocity, steer_command);
+        update_states_rk4(velocity_command, steer_command);
+        {
+            // std::lock_guard<std::mutex> lock(general_mutex);
+            odomX += dx;
+            odomY += dy;
+        }
+        height -= dheight;
+        // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
+    }
     
     auto current_time = ros::Time::now();
     odom_msg.header.stamp = current_time;
@@ -726,6 +745,7 @@ void Utility::publish_odom() {
 }
 
 int Utility::object_index(int obj_id) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     if (num_obj < 1) {
         return -1;
     }
@@ -744,6 +764,7 @@ int Utility::object_index(int obj_id) {
 }
 
 std::vector<int> Utility::object_indices(int obj_id) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     std::vector<int> indices;
     if (num_obj < 1) {
         return indices;
@@ -763,6 +784,7 @@ std::vector<int> Utility::object_indices(int obj_id) {
 }
 
 double Utility::object_distance(int index) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     if (num_obj == 1) {
         return detected_objects[distance];
     } else if (index >= 0 && index < num_obj) {
@@ -770,7 +792,9 @@ double Utility::object_distance(int index) {
     }
     return -1;
 }
-std::array<double, 3> Utility::object_world_pose(int index) {
+// std::array<double, 3> Utility::object_world_pose(int index) {
+Eigen::Vector2d Utility::object_world_pose(int index) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     double object_x, object_y, object_yaw;
     if (num_obj == 1) {
         object_x = detected_objects[x_rel];
@@ -783,9 +807,11 @@ std::array<double, 3> Utility::object_world_pose(int index) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    return object_to_world(object_x, object_y, object_yaw, x, y, yaw);
+    auto world_pose_array = object_to_world(object_x, object_y, object_yaw, x, y, yaw);
+    return Eigen::Vector2d(world_pose_array[0], world_pose_array[1]);
 }
 std::array<double, 4> Utility::object_box(int index) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     std::array<double, 4> box;
 
     if (num_obj == 1) {
@@ -804,6 +830,7 @@ std::array<double, 4> Utility::object_box(int index) {
     return box;
 }
 void Utility::object_box(int index, std::array<double, 4>& oBox) {
+    std::lock_guard<std::mutex> lock(general_mutex);
     if (num_obj == 1) {
         oBox[0] = detected_objects[VehicleConstants::x1];
         oBox[1] = detected_objects[VehicleConstants::y1];
@@ -818,6 +845,7 @@ void Utility::object_box(int index, std::array<double, 4>& oBox) {
     }
 }
 void Utility::set_initial_pose(double x, double y, double yaw) {
+    // std::lock_guard<std::mutex> lock(general_mutex);
     // initializationTimer = ros::Time::now();
     debug("Setting initial pose: x: " + std::to_string(x) + ", y: " + std::to_string(y) + ", yaw: " + std::to_string(yaw), 1);
     odomX = x;
@@ -833,37 +861,34 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
         dt = (ros::Time::now() - timerodom).toSec();
         timerodom = ros::Time::now();
     }
-    // if (dt > (0.1)) {
-    //     ROS_WARN("update_states_rk4(): dt is too large: %.3f", dt);
-    //     return 0;
-    // }
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
     }
     dheight = speed * dt * odomRatio * sin(pitch);
-    speed *= cos(pitch);
-    double magnitude = speed * dt * odomRatio;
-    double yaw_rate = magnitude * tan(-steering_angle * M_PI / 180) / wheelbase;
+    double v_eff = speed * cos(pitch);
 
-    double k1_x = magnitude * cos(yaw);
-    double k1_y = magnitude * sin(yaw);
-    double k1_yaw = yaw_rate;
+    double delta_rad = -steering_angle * M_PI / 180.0;
+    double beta = 0;
+    if (use_beta_model) beta = atan((l_r / wheelbase) * tan(delta_rad));
 
-    double k2_x = magnitude * cos(yaw + dt / 2 * k1_yaw);
-    double k2_y = magnitude * sin(yaw + dt / 2 * k1_yaw);
-    double k2_yaw = yaw_rate;
+    double magnitude = v_eff * dt * odomRatio;
+    double yaw_rate = dt * magnitude * tan(delta_rad) / wheelbase * cos(beta);
 
-    double k3_x = magnitude * cos(yaw + dt / 2 * k2_yaw);
-    double k3_y = magnitude * sin(yaw + dt / 2 * k2_yaw);
-    double k3_yaw = yaw_rate;
+    double k1_x = magnitude * cos(yaw + beta);
+    double k1_y = magnitude * sin(yaw + beta);
 
-    double k4_x = magnitude * cos(yaw + dt * k3_yaw);
-    double k4_y = magnitude * sin(yaw + dt * k3_yaw);
-    double k4_yaw = yaw_rate;
+    double k2_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k2_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k3_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k3_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k4_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k4_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
-    dyaw = 1 / 6.0 * (k1_yaw + 2 * k2_yaw + 2 * k3_yaw + k4_yaw);
+    dyaw = yaw_rate;
     // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }
@@ -884,11 +909,11 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
         velocity = 0.0;
     }
     float vel = velocity;
-    lock.lock();
-    steer_command = steering_angle;
-    velocity_command = velocity;
+    {
+        steer_command = steering_angle;
+        velocity_command = velocity;
+    }
 
-    lock.unlock();
     float steer = steering_angle;
     if(true) {
         send_speed_and_steer(vel, steer);
@@ -915,7 +940,11 @@ double Utility::get_steering_angle(double offset) {
         dt = (now - timerpid.value()).toSec(); 
         timerpid = now;
     } 
-    double error = center - image_center + offset;
+    double error;
+    {
+        // std::lock_guard<std::mutex> lock(general_mutex); // lock because using center
+        error = center - image_center + offset;
+    }
     double d_error = (error - last) / dt;
     last = error;
     double steering_angle = (p * error + d * d_error) * 180 / M_PI;
@@ -975,14 +1004,13 @@ std::array<double, 3> Utility::get_real_states() const {
     return {gps_x, gps_y, yaw};
 }
 void Utility::spin() {
-    // auto start = std::chrono::high_resolution_clock::now();
-    debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
-    while (ros::ok()) {
-        // auto end = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double> elapsed = end - start;
-        // start = end;
-        // ROS_INFO("utility_node loop time elapsed: %fs, rate: %f", elapsed.count(), 1 / elapsed.count());
-        ros::spinOnce();
-        rate->sleep();
-    }
+    int num_threads = 4;
+    ros::AsyncSpinner spinner(num_threads);
+    spinner.start();
+    ros::waitForShutdown();
+    // debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
+    // while (ros::ok()) {
+    //     ros::spinOnce();
+    //     rate->sleep();
+    // }
 }

@@ -18,48 +18,63 @@ else()
 endif()
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
+
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
+find_package(CUDA REQUIRED)
+if(CUDA_FOUND)
+  message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}")
+else()
+  message("-- CUDA not found")
+endif()
+include_directories(${CUDA_INCLUDE_DIRS})
+link_directories(${CUDA_LIBRARY_DIRS})
+include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
+link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+    set(VCPKG_TARGET_TRIPLET "x64-linux")
+    message("system processor is x86_64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(VCPKG_TARGET_TRIPLET "arm64-linux")
+    message("system processor is aarch64")
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/scripts/buildsystems/vcpkg.cmake)
+set(realsense2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/share/realsense2)
+find_package(realsense2 CONFIG REQUIRED)
+if (realsense2_FOUND)
+  message("-- RealSense found")
+else()
+  message("-- RealSense not found")
+endif()
+include_directories(${realsense2_INCLUDE_DIRS})
+
 include_directories($ENV{ACADOS_SOURCE_DIR}/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/blasfeo/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/hpipm/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/acados)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_18)
 link_directories($ENV{ACADOS_SOURCE_DIR}/lib)
 
-file(GLOB ocp_solver
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/acados_solver_mobile_robot.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/acados_solver_park.c
+file(GLOB ocp_solver32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_solver_mobile_robot_32.c
         )
 
-file(GLOB casadi_fun
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/mobile_robot_model/mobile_robot_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/park_model/park_expl_vde_adj.c)
-
-file(GLOB sim_solver
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code/acados_sim_solver_mobile_robot.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_park/acados_sim_solver_park.c
+file(GLOB casadi_fun32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_ode_fun.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_forw.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_adj.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_cost/*.c
         )
 
-
-file(GLOB ocp_solver50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/acados_solver_mobile_robot_50.c
-        )
-
-file(GLOB casadi_fun50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/mobile_robot_50_model/mobile_robot_50_expl_vde_adj.c
-        )
-
-file(GLOB sim_solver50
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_50/acados_sim_solver_mobile_robot_50.c
+file(GLOB sim_solver32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_sim_solver_mobile_robot_32.c
         )
 
 file(GLOB ocp_solver25
@@ -115,18 +130,29 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS} 
   include 
+  include/object-detection
+  include/htn
+  include/htn/actions
+  include/htn/actions/park
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
 
-# file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-# add_library(alglib SHARED ${ALGLIB_SOURCES})
+file(GLOB_RECURSE ALGLIB_SOURCES_CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
+add_library(alglib_control SHARED ${ALGLIB_SOURCES_CONTROL})
 
-add_library(ocp_shared_lib SHARED ${ocp_solver} ${casadi_fun} ${ocp_solver50} ${casadi_fun50} ${ocp_solver25} ${casadi_fun25} ${ocp_solver18} ${casadi_fun18})
+add_library(ocp_shared_lib SHARED ${ocp_solver32} ${casadi_fun32} ${ocp_solver25} ${casadi_fun25} ${ocp_solver18} ${casadi_fun18})
 target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
 
-add_library(sim_shared_lib SHARED ${sim_solver} ${casadi_fun} ${sim_solver50} ${casadi_fun50} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
+add_library(sim_shared_lib SHARED ${sim_solver32} ${casadi_fun32} ${sim_solver25} ${casadi_fun25} ${sim_solver18} ${casadi_fun18})
 target_link_libraries(sim_shared_lib acados hpipm blasfeo)
+
+# HTN Lib
+file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
+file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
+file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
+add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
+target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -139,15 +165,15 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 # ${catkin_LIBRARIES}
 # )
 
-add_executable(utility 
-src/utility_main.cpp
-src/Utility.cpp
-src/RoadObject.cpp
-)
-target_link_libraries(utility
-${catkin_LIBRARIES}
-communication
-)
+# add_executable(utility 
+# src/utility_main.cpp
+# src/Utility.cpp
+# src/RoadObject.cpp
+# )
+# target_link_libraries(utility
+# ${catkin_LIBRARIES}
+# communication
+# )
 
 add_executable(controller 
 src/Controller.cpp
@@ -159,5 +185,22 @@ ocp_shared_lib
 sim_shared_lib
 ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
+htn
 communication
+object_detection_lib
+)
+
+add_executable(controller2
+src/Controller2.cpp
+src/Utility.cpp
+src/RoadObject.cpp
+)
+target_link_libraries(controller2
+ocp_shared_lib 
+sim_shared_lib
+${catkin_LIBRARIES}
+${CURSES_LIBRARIES}
+htn
+communication
+object_detection_lib
 )

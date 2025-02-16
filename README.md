@@ -146,7 +146,7 @@ This package contains firmware modified from Bosch’s provided code to interfac
 - cd to where the simulator workspace is located.
 ```bash
 source devel/setup.bash
-roslaunch sim_pkg run3.launch
+roslaunch sim_pkg run131.launch
 ```
 
 #### Run Path Planner Server
@@ -154,15 +154,11 @@ roslaunch sim_pkg run3.launch
 rosrun planning path2.py
 ```
 
-#### Launch Camera Node
+#### Run Control Node + CameraNode
 ```bash
-roslaunch perception cameraNode.launch newlane:=false use_tcp:=true ip:=127.0.0.1
+roslaunch control controller.launch sign:=true v:=32 use_tcp:=true ip:=127.0.0.1 newlane:=false
 ```
-
-#### Run Control Node
-```bash
-roslaunch control controller.launch sign:=true v:=25 use_tcp:=true ip:=127.0.0.1
-```
+- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
 
 #### Start GUI
 ```bash
@@ -177,18 +173,13 @@ Press **start** to follow the planned path. To change the path, **double-click o
 rosrun planning path2.py
 ```
 
-#### Launch Camera Node
+#### Run Control Node + CameraNode
 ```bash
-roslaunch perception cameraNode.launch newlane:=false real:=true realsense:=true use_tcp:=true ip:={ip_address}
+roslaunch control controller.launch sign:=true lane:=true v:=32 real:=true use_tcp:=true ip:={ip_address} newlane:=false realsense:=true
 ```
 - replace {ip_address} by ip address of computer on which the gui is run
-
-#### Run Control Node
-```bash
-roslaunch control controller.launch sign:=true lane:=true v:=25 real:=true use_tcp:=true ip:={ip_address}
-```
-- replace {ip_address} by ip address of computer on which the gui is run
-
+- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
+ 
 #### Start GUI
 ```bash
 rosrun gui gui.py --use_tcp

@@ -1,0 +1,11 @@
+# Propagate TensorRT paths to dependent packages
+set(TENSORRT_INCLUDE_DIR "@TENSORRT_INCLUDE_DIR@")
+set(TENSORRT_LIB_DIR "@TENSORRT_LIB_DIR@")
+
+# Add include/link directories for dependents
+include_directories(${TENSORRT_INCLUDE_DIR})
+link_directories(${TENSORRT_LIB_DIR})
+
+# Ensure ncnn is found
+set(ncnn_DIR "@ncnn_DIR@")
+find_package(ncnn REQUIRED)

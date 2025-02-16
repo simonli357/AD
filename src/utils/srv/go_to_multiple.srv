@@ -1,0 +1,12 @@
+# Request
+string vrefName
+float64 x0
+float64 y0
+float64 yaw0
+Point2D[] destinations
+---
+# Response
+std_msgs/Float32MultiArray state_refs
+std_msgs/Float32MultiArray input_refs
+std_msgs/Float32MultiArray wp_attributes
+std_msgs/Float32MultiArray wp_normals

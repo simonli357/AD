@@ -330,14 +330,17 @@ void TcpClient::send_sign(std_msgs::Float32MultiArray &array) {
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
 	ros::serialization::serialize(stream, array);
+	
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> bytes(total_size);
 	std::memcpy(bytes.data(), &length, message_size);
 	bytes[4] = tcp_data_types[3];
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
-	std::vector<uint8_t> segment(MAX_DGRAM);
-	std::memcpy(segment.data(), bytes.data(), bytes.size());
-	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	
+	// Allocate a segment buffer (if necessary)
+	std::vector<uint8_t> segment = bytes; // Copy only the valid message
+	sendto(udp_socket, segment.data(), segment.size(), 0,
+				 (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
@@ -358,7 +361,7 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
 	std::vector<uchar> image;
-	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_JPEG2000_COMPRESSION_X1000, 1000});
+	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_PNG_COMPRESSION, 4});
 	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {

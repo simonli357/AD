@@ -360,7 +360,7 @@ std::vector<Object> YoloV8::postprocessDetect(std::vector<float> &featureVector)
     auto numChannels = outputDims[0].d[1];
     auto numAnchors = outputDims[0].d[2];
 
-    auto numClasses = CLASS_NAMES.size();
+    auto numClasses = CLASS_NAMES.size() - 4;
 
     std::vector<cv::Rect> bboxes;
     std::vector<float> scores;
