@@ -380,6 +380,7 @@ class SignFastest {
             if(printDuration) start = high_resolution_clock::now();
             // std_msgs::Float32MultiArray sign_msg;
             sign_msg.data.clear();
+            sign_msg.layout.dim.clear();
             sign_msg.layout.data_offset = 0;
 
             // bool emergency = detect_emergency_obstacle(depthImage);
