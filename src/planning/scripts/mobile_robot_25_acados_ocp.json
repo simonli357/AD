@@ -45,8 +45,8 @@
             -0.3578
         ],
         "lbx": [
-            -10.0,
-            -10.0
+            -1.0,
+            -1.0
         ],
         "lbx_0": [
             0.0,
@@ -78,8 +78,8 @@
             0.3578
         ],
         "ubx": [
-            10.0,
-            10.0
+            22.0,
+            16.0
         ],
         "ubx_0": [
             0.0,
@@ -108,121 +108,11 @@
         "usphi_e": []
     },
     "cost": {
-        "Vu": [
-            [
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0
-            ],
-            [
-                1.0,
-                0.0
-            ],
-            [
-                0.0,
-                1.0
-            ]
-        ],
-        "Vu_0": [
-            [
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0
-            ],
-            [
-                1.0,
-                0.0
-            ],
-            [
-                0.0,
-                1.0
-            ]
-        ],
-        "Vx": [
-            [
-                1.0,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                1.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                1.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0
-            ]
-        ],
-        "Vx_0": [
-            [
-                1.0,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                1.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                1.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                0.0
-            ]
-        ],
-        "Vx_e": [
-            [
-                1.0,
-                0.0,
-                0.0
-            ],
-            [
-                0.0,
-                1.0,
-                0.0
-            ],
-            [
-                0.0,
-                0.0,
-                1.0
-            ]
-        ],
+        "Vu": [],
+        "Vu_0": [],
+        "Vx": [],
+        "Vx_0": [],
+        "Vx_e": [],
         "Vz": [],
         "Vz_0": [],
         "W": [
@@ -231,6 +121,8 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -238,20 +130,26 @@
                 2.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
                 0.0,
                 0.0,
                 1.0,
                 0.0,
-                0.0
-            ],
-            [
                 0.0,
-                0.0,
-                0.0,
-                1.0,
                 0.0
             ],
             [
@@ -259,7 +157,27 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.5
             ]
         ],
         "W_0": [
@@ -268,6 +186,8 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
@@ -275,20 +195,26 @@
                 2.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
             ],
             [
+                0.0,
+                0.0,
+                0.5,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
                 0.0,
                 0.0,
                 1.0,
                 0.0,
-                0.0
-            ],
-            [
                 0.0,
-                0.0,
-                0.0,
-                1.0,
                 0.0
             ],
             [
@@ -296,7 +222,27 @@
                 0.0,
                 0.0,
                 0.0,
+                0.0,
+                0.0,
                 0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.25,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.5
             ]
         ],
         "W_e": [
@@ -313,7 +259,7 @@
             [
                 0.0,
                 0.0,
-                1.0
+                0.5
             ]
         ],
         "Zl": [],
@@ -325,10 +271,12 @@
         "cost_ext_fun_type": "casadi",
         "cost_ext_fun_type_0": "casadi",
         "cost_ext_fun_type_e": "casadi",
-        "cost_type": "LINEAR_LS",
-        "cost_type_0": "LINEAR_LS",
-        "cost_type_e": "LINEAR_LS",
+        "cost_type": "NONLINEAR_LS",
+        "cost_type_0": "NONLINEAR_LS",
+        "cost_type_e": "NONLINEAR_LS",
         "yref": [
+            0.0,
+            0.0,
             0.0,
             0.0,
             0.0,
@@ -336,6 +284,8 @@
             0.0
         ],
         "yref_0": [
+            0.0,
+            0.0,
             0.0,
             0.0,
             0.0,
@@ -370,7 +320,7 @@
         "nh": 0,
         "nh_0": 0,
         "nh_e": 0,
-        "np": 1,
+        "np": 2,
         "nphi": 0,
         "nphi_0": 0,
         "nphi_e": 0,
@@ -393,8 +343,8 @@
         "nsphi_e": 0,
         "nu": 2,
         "nx": 3,
-        "ny": 5,
-        "ny_0": 5,
+        "ny": 7,
+        "ny_0": 7,
         "ny_e": 3,
         "nz": 0
     },
@@ -427,32 +377,33 @@
         "cost_r_in_psi_expr": null,
         "cost_r_in_psi_expr_0": null,
         "cost_r_in_psi_expr_e": null,
-        "cost_y_expr": null,
-        "cost_y_expr_0": null,
-        "cost_y_expr_e": null,
+        "cost_y_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
+        "cost_y_expr_0": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeglaaaaaaaaaaaaaaahaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaeaaaaaaaaaaaaaaafaaaaaaaaaaaaaaagaaaaaaaaaaaaaaahaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegcaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
+        "cost_y_expr_e": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
         "disc_dyn_expr": null,
         "dyn_disc_fun": null,
         "dyn_disc_fun_jac": null,
         "dyn_disc_fun_jac_hess": null,
         "dyn_ext_fun_type": "casadi",
         "dyn_generic_source": null,
-        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaaeaaaaaaafgahdhjgegcaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaabdegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaalgbgahahbgegpcaaaaaaaaaaaaaabaaaaaaaegegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegdaaaaaaaaaaaaaaachgaaaaaaaaaaaaaaachkaaaaaaaaaaaaaaa",
-        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaaeaaaaaaafgahdhjgegcaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaabdegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaalgbgahahbgegpcaaaaaaaaaaaaaabaaaaaaaegegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegcaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegdaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaachlaaaaaaaaaaaaaaa",
+        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachdgomijddgomijnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaa",
+        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachdgomijddgomijnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaa",
         "gnsf": {
             "nontrivial_f_LO": 1,
             "purely_linear": 0
         },
         "name": "mobile_robot_25",
         "nu_original": null,
-        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegfaaaaaaaaaaaaaaabaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaalgbgahahbg",
+        "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
         "t": [],
         "u": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbg",
-        "x": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaadhegpcaaaaaaaaaaaaaabaaaaaaaegegpcaaaaaaaaaaaaaaeaaaaaaafgahdhjg",
+        "x": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaihegpcaaaaaaaaaaaaaabaaaaaaajhegpcaaaaaaaaaaaaaadaaaaaaaahdhjg",
         "xdot": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcd",
         "z": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
     "name": "mobile_robot_25",
     "parameter_values": [
+        0.0,
         0.0
     ],
     "problem_class": "OCP",
