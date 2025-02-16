@@ -122,6 +122,8 @@ class SignFastest {
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
         
+        std_msgs::Float32MultiArray sign_msg;
+        
         // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
         static constexpr double parallel_w2h_ratio = 1.30;
         static constexpr double perpendicular_w2h_ratio = 2.88;
@@ -376,7 +378,8 @@ class SignFastest {
                 return;
             }
             if(printDuration) start = high_resolution_clock::now();
-            std_msgs::Float32MultiArray sign_msg;
+            // std_msgs::Float32MultiArray sign_msg;
+            sign_msg.data.clear();
             sign_msg.layout.data_offset = 0;
 
             // bool emergency = detect_emergency_obstacle(depthImage);
@@ -457,7 +460,7 @@ class SignFastest {
             }
             // Publish Sign message
             if (publish) {
-                pub.publish(sign_msg);
+                // pub.publish(sign_msg);
                 if (tcp_client != nullptr) tcp_client->send_sign(sign_msg);
             }
             if(printDuration) {
@@ -606,5 +609,4 @@ class SignFastest {
             }
             return 0.5 * (depths[(index - 1) / 2] + depths[index / 2]);
         }
-
 };

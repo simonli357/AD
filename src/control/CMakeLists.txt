@@ -18,6 +18,39 @@ else()
 endif()
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
+
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
+find_package(CUDA REQUIRED)
+if(CUDA_FOUND)
+  message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}")
+else()
+  message("-- CUDA not found")
+endif()
+include_directories(${CUDA_INCLUDE_DIRS})
+link_directories(${CUDA_LIBRARY_DIRS})
+include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
+link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+    set(VCPKG_TARGET_TRIPLET "x64-linux")
+    message("system processor is x86_64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(VCPKG_TARGET_TRIPLET "arm64-linux")
+    message("system processor is aarch64")
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/scripts/buildsystems/vcpkg.cmake)
+set(realsense2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/share/realsense2)
+find_package(realsense2 CONFIG REQUIRED)
+if (realsense2_FOUND)
+  message("-- RealSense found")
+else()
+  message("-- RealSense not found")
+endif()
+include_directories(${realsense2_INCLUDE_DIRS})
+
 include_directories($ENV{ACADOS_SOURCE_DIR}/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/blasfeo/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/hpipm/include)
@@ -105,8 +138,8 @@ include_directories(
   ${CURSES_INCLUDE_DIR}
 )
 
-# file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-# add_library(alglib SHARED ${ALGLIB_SOURCES})
+file(GLOB_RECURSE ALGLIB_SOURCES_CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
+add_library(alglib_control SHARED ${ALGLIB_SOURCES_CONTROL})
 
 add_library(ocp_shared_lib SHARED ${ocp_solver32} ${casadi_fun32} ${ocp_solver25} ${casadi_fun25} ${ocp_solver18} ${casadi_fun18})
 target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
@@ -119,7 +152,7 @@ file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
 file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
 file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
 add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
-target_link_libraries(htn ocp_shared_lib sim_shared_lib)
+target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -132,18 +165,18 @@ target_link_libraries(htn ocp_shared_lib sim_shared_lib)
 # ${catkin_LIBRARIES}
 # )
 
-add_executable(utility 
-src/utility_main.cpp
-src/Utility.cpp
-src/RoadObject.cpp
-)
-target_link_libraries(utility
-${catkin_LIBRARIES}
-communication
-)
+# add_executable(utility 
+# src/utility_main.cpp
+# src/Utility.cpp
+# src/RoadObject.cpp
+# )
+# target_link_libraries(utility
+# ${catkin_LIBRARIES}
+# communication
+# )
 
 add_executable(controller 
-src/Controller2.cpp
+src/Controller.cpp
 src/Utility.cpp
 src/RoadObject.cpp
 )
@@ -154,4 +187,20 @@ ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
 htn
 communication
+object_detection_lib
+)
+
+add_executable(controller2
+src/Controller2.cpp
+src/Utility.cpp
+src/RoadObject.cpp
+)
+target_link_libraries(controller2
+ocp_shared_lib 
+sim_shared_lib
+${catkin_LIBRARIES}
+${CURSES_LIBRARIES}
+htn
+communication
+object_detection_lib
 )

@@ -267,7 +267,7 @@ namespace VehicleConstants {
 
         // WEST_FACING_SIGNS
         {{1.296+sign_ofs2, 3.86375+ofs6*2+pole_size+sign_ofs1, M_PI}},
-        {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1, M_PI}},
+        // {{5.71+sign_ofs2, 3.8661+ofs6*2+pole_size+sign_ofs1, M_PI}}, // remove temporarily
         {{5.708+sign_ofs2, 6.753+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{3.4547+sign_ofs2, 6.7545+ofs6*2+pole_size+sign_ofs1, M_PI}},
         {{1.296+sign_ofs2, 6.754754+ofs6*2+pole_size+sign_ofs1, M_PI}},

@@ -138,18 +138,14 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(10000));
                 continue;
             }
-            if(utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
-                double x = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_x;
-                double y = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->dest_y;
-                utils::goto_command::Request req;
+            if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
+                std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
                 utils::goto_command::Response res;
-                req.dest_x = x;
-                req.dest_y = y;
-                goto_command_callback(req, res);
+                goto_multiple_command_callback(coords, res);
                 utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
                 utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
             }
-            if(utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
+            if (utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
                 double x = utils.tcp_client->get_set_states_srv_msgs().front()->x;
                 double y = utils.tcp_client->get_set_states_srv_msgs().front()->y;
                 utils::set_states::Request req;
@@ -1280,6 +1276,35 @@ public:
         initialized = true;
         return true;
     }
+
+    bool goto_multiple_command_callback(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
+        utils.update_states(x_current);
+        if (!path_manager.call_go_to_multiple_service(x_current[0], x_current[1], x_current[2], coords)) {
+            res.success = false;
+            return false;
+        }
+        auto state_refs = path_manager.state_refs.transpose();
+        auto input_refs = path_manager.input_refs.transpose();
+        auto &state_attributes = path_manager.state_attributes;
+        auto normals = path_manager.normals.transpose();
+        res.state_refs.data = std::vector<float>(state_refs.data(), state_refs.data() + state_refs.size());
+        res.input_refs.data = std::vector<float>(input_refs.data(), input_refs.data() + input_refs.size());
+        res.wp_attributes.data = std::vector<float>(state_attributes.data(), state_attributes.data() + state_attributes.size());
+        res.wp_normals.data = std::vector<float>(normals.data(), normals.data() + normals.size());
+        res.success = true;
+        destination = path_manager.state_refs.row(path_manager.state_refs.rows() - 1).head(2);
+        // for (int i = 0; i<path_manager.state_refs.rows(); i++) {
+        //     std::cout << i << ") " << path_manager.state_refs(i, 0) << ", " << path_manager.state_refs(i, 1) << ", " << path_manager.state_refs(i, 2) << std::endl;
+        // }
+        utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
+        utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
+    
+        path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1); // search from the beginning to the end
+        path_manager.overtake_end_index = 0;
+        mpc.reset_solver();
+        initialized = true;
+        return true;
+    }
     
     bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res) {
         if (req.x >= 0 && req.y >= 0) {
@@ -1348,11 +1373,7 @@ void StateMachine::change_state(STATE new_state) {
 void StateMachine::run() {
     static ros::Time overtake_cd = ros::Time::now();
     static bool wrong_lane = false;
-    // utils.debug("start running", 3);
-    // double running_x, running_y, running_yaw;
-    // double &running_x = x_current(0);
-    // double &running_y = x_current(1);
-    // double &running_yaw = x_current(2);
+    std::cout << "State Machine running..." << std::endl;
     while (ros::ok()) {
         utils.update_states(x_current);
         if (sign) {
@@ -1778,14 +1799,17 @@ int main(int argc, char **argv) {
         services_thread = std::thread(&StateMachine::receive_services, &sm);
     } 
 
-    std::thread t2(&Utility::spin, &sm.utils);
+    // std::thread callback_thread(&Utility::spin, &sm.utils);
+    int num_threads = 4;
+    ros::AsyncSpinner spinner(num_threads);
+    spinner.start();
     
     sm.run();
 
     if (services_thread.joinable()) {
         services_thread.join();
     }
-  
-    t2.join();
+    ros::waitForShutdown();
+    // callback_thread.join();
     return 0;
 }

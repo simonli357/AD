@@ -330,14 +330,17 @@ void TcpClient::send_sign(std_msgs::Float32MultiArray &array) {
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
 	ros::serialization::serialize(stream, array);
+	
 	size_t total_size = header_size + length;
 	std::vector<uint8_t> bytes(total_size);
 	std::memcpy(bytes.data(), &length, message_size);
 	bytes[4] = tcp_data_types[3];
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
-	std::vector<uint8_t> segment(MAX_DGRAM);
-	std::memcpy(segment.data(), bytes.data(), bytes.size());
-	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	
+	// Allocate a segment buffer (if necessary)
+	std::vector<uint8_t> segment = bytes; // Copy only the valid message
+	sendto(udp_socket, segment.data(), segment.size(), 0,
+				 (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
