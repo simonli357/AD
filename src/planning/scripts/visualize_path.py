@@ -10,7 +10,7 @@ class PathVisualizer:
         self.planner = GlobalPlanner()
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
         
-        self.track_img = mpimg.imread(os.path.join(self.current_dir, 'maps/Track.png'))
+        self.track_img = mpimg.imread(os.path.join(self.current_dir, 'maps/map_with_destinations.png'))
         self.track_img = np.flipud(self.track_img)
         
         self.track_width = 20.696
@@ -78,14 +78,22 @@ class PathVisualizer:
 def main():
     visualizer = PathVisualizer()
     
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2_custom.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2_custom.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0215_modified.yaml')
     runs = visualizer.load_runs(yaml_path)
     
     # custom_run = [56, 54] # Avram 10m
     # custom_run = [368, 341] # Laneless outer 14m
     # custom_run = [342, 335] # Laneless inner 11m
+    # custom_run = [80, 405] # Highway east 17m
+    # custom_run = [398, 79] # Highway west 17m
+    # custom_run = [340, 56] # Highway south 6m
+    # custom_run = [55, 332] # Highway north 6m
+    # custom_run = [223, 290] # Parking + bus lane 23m
+    # custom_run = [192, 200] # Unirii oneway 3m
     # visualizer.plot_run('custom_run', custom_run)
-    selected_run = 'run221'
+    # exit()
+    selected_run = 'run131'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")
