@@ -25,8 +25,6 @@ class Optimizer(object):
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
         self.waypoints_x_global = self.path.waypoints_x
         self.waypoints_y_global = self.path.waypoints_y
-        self.global_waypoints = np.column_stack((self.path.waypoints_x, self.path.waypoints_y))
-        
         self.num_waypoints = self.path.num_waypoints
         self.wp_normals = self.path.wp_normals
         self.kappa = self.path.kappa
@@ -34,14 +32,9 @@ class Optimizer(object):
         self.rdb_circumference = 3.95
         self.state_refs_global = self.path.state_refs  
         self.input_refs = self.path.input_refs
-        np.savetxt('state_refs_global.txt', self.state_refs_global, fmt='%.3f')
         self.state_refs = self.convert_state_refs_to_frenet(self.state_refs_global)
-        # save as txt with 3 decimals
-        np.savetxt('state_refs_frenet.txt', self.state_refs, fmt='%.3f')
-        # exit()
-        self.waypoints_x = self.state_refs[:, 0]
-        self.waypoints_y = self.state_refs[:, 1]
-
+        self.waypoints_s = self.state_refs[:, 0]
+        self.waypoints_d = self.state_refs[:, 1]
 
         self.counter = 0
         self.target_waypoint_index = 0
@@ -51,10 +44,8 @@ class Optimizer(object):
         self.region_of_acceptance = 0.05/10*density * 2*1.5
         self.last_u = None
         self.t0 = 0
-        
         self.init_state = x0 if x0 is not None else self.state_refs[0]
-        self.update_current_state(*self.init_state)  # assume update_current_state(s, d, epsi) sets self.current_state
-        
+        self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
         self.init_state = self.current_state.copy()
         self.u0 = np.zeros((self.N, 2))
         self.next_trajectories = np.tile(self.init_state, self.N+1).reshape(self.N+1, -1) # set the initial state as the first trajectories for the robot
@@ -77,6 +68,140 @@ class Optimizer(object):
         self.export_fig = os.path.join(filepath+'/gifs_acados',name + '_N'+str(self.N) + '_vref'+str(self.v_ref) 
                                        + '_T'+str(self.T))
         
+    # def create_solver(self, config_path='config/mpc_config25.yaml'):
+    def create_solver(self, config_path='config/mpc_config32.yaml'):
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(current_path, config_path)
+        with open(path, 'r') as f:
+            config = yaml.safe_load(f)
+            
+        model = AcadosModel()
+        # control inputs
+        v = ca.SX.sym('v')
+        delta = ca.SX.sym('delta')
+        controls = ca.vertcat(v, delta)
+        # model states (Frenet frame)
+        s = ca.SX.sym('s')
+        d = ca.SX.sym('d')
+        e_psi = ca.SX.sym('e_psi')
+        states = ca.vertcat(s, d, e_psi)
+
+        # Vehicle parameters
+        L = config['wheelbase']
+        L_r = config['l_r']
+
+        # Controls
+        v = ca.SX.sym('v')
+        delta = ca.SX.sym('delta')
+        controls = ca.vertcat(v, delta)
+
+        # Model parameters now include curvature kappa
+        model.p = ca.SX.sym('p', 3)  # [v_prev, delta_prev, kappa]
+
+        beta = ca.atan((L_r / L) * ca.tan(delta))
+        kappa = model.p[2]  # Curvature from parameters
+
+        # Frenet dynamics
+        denominator = 1 - kappa * d
+        s_dot = (v * ca.cos(e_psi + beta)) / denominator
+        d_dot = v * ca.sin(e_psi + beta)
+        e_psi_dot = (v * ca.cos(beta) / L) * ca.tan(delta) - kappa * s_dot
+
+        rhs = [s_dot, d_dot, e_psi_dot]
+
+        f = ca.Function('f', [states, controls], [ca.vcat(rhs)], ['state', 'control_input'], ['rhs'])
+        # acados model
+        x_dot = ca.SX.sym('x_dot', len(rhs))
+        f_impl = x_dot - f(states, controls)
+
+        model.f_expl_expr = f(states, controls)
+        model.f_impl_expr = f_impl
+        model.x = states
+        model.xdot = x_dot
+        model.u = controls
+        model.p = ca.SX.sym('p', 2)  # [v_prev, delta_prev]
+        delta_u = controls - model.p
+
+        model.name = config['name']
+        T = config['T']
+        N = config['N']
+        constraint_name = 'constraints'
+        cost_name = 'costs'
+        t_horizon = T * N
+
+        # constraints
+        self.v_max = config[constraint_name]['v_max']
+        self.v_min = config[constraint_name]['v_min']
+        self.delta_max = config[constraint_name]['delta_max']
+        self.delta_min = config[constraint_name]['delta_min']
+        self.x_min = config[constraint_name]['x_min']
+        self.x_max = config[constraint_name]['x_max']
+        self.y_min = config[constraint_name]['y_min']
+        self.y_max = config[constraint_name]['y_max']
+        self.v_ref = config[constraint_name]['v_ref']
+        self.x_cost = config[cost_name]['x_cost']
+        self.y_cost = config[cost_name]['y_cost']
+        self.yaw_cost = config[cost_name]['yaw_cost']
+        self.v_cost = config[cost_name]['v_cost']
+        self.steer_cost = config[cost_name]['steer_cost']
+        self.delta_v_cost = config[cost_name]['delta_v_cost']
+        self.delta_steer_cost = config[cost_name]['delta_steer_cost']
+        self.costs = np.array([self.x_cost, self.yaw_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
+        Q = np.array([[self.x_cost, 0.0, 0.0],[0.0, self.y_cost, 0.0],[0.0, 0.0, self.yaw_cost]])*1
+        R = np.array([[self.v_cost, 0.0], [0.0, self.steer_cost]])*1
+
+        nx = model.x.size()[0]
+        nu = model.u.size()[0]
+        ny = nx + nu
+        n_params = model.p.shape[0]
+
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        acados_source_path = os.environ['ACADOS_SOURCE_DIR']
+        sys.path.insert(0, acados_source_path)
+        ocp = AcadosOcp()
+        ocp.acados_include_path = acados_source_path + '/include'
+        ocp.acados_lib_path = acados_source_path + '/lib'
+        ocp.model = model
+        ocp.dims.N = N
+        ocp.solver_options.tf = t_horizon
+        ocp.dims.np = n_params
+        ocp.parameter_values = np.zeros(n_params)
+
+        ocp.model.cost_y_expr = ca.vertcat(states, controls, delta_u)
+        ocp.model.cost_y_expr_e = states
+        
+        ocp.cost.cost_type = 'NONLINEAR_LS'
+        ocp.cost.cost_type_e = 'NONLINEAR_LS'
+        S = np.diag([self.delta_v_cost, self.delta_steer_cost])
+        ocp.cost.W = scipy.linalg.block_diag(Q, R, S)
+        ocp.cost.W_e = Q
+
+        ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
+        ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
+        ocp.constraints.idxbu = np.array([0, 1])
+        ocp.constraints.lbx = np.array([self.x_min, self.y_min])
+        ocp.constraints.ubx = np.array([self.x_max, self.y_max])
+        ocp.constraints.idxbx = np.array([0, 1])
+
+        x_ref = np.zeros(nx)
+        u_ref = np.zeros(nu)
+        ocp.constraints.x0 = x_ref
+        ### 0--N-1
+        ocp.cost.yref = np.concatenate((x_ref, u_ref, np.zeros(2))) 
+        ### N
+        ocp.cost.yref_e = x_ref # yref_e means the reference for the last stage
+
+        ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
+        ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
+        ocp.solver_options.integrator_type = 'ERK'
+        ocp.solver_options.print_level = 0
+        ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+
+        json_file = os.path.join('./'+model.name+'_acados_ocp.json')
+        solver = AcadosOcpSolver(ocp, json_file=json_file)
+        integrator = AcadosSimSolver(ocp, json_file=json_file)
+        return solver, integrator, T, N, t_horizon
+    
     def global_to_frenet(self, x, y, yaw, path_points, s_cum):
         """
         Converts a single state in global coordinates (x, y, yaw) to Frenet coordinates (s, d, epsi)
@@ -185,165 +310,26 @@ class Optimizer(object):
         """
         return np.array([self.frenet_to_global(state) for state in traj_frenet])
     
-    def create_solver(self, config_path='config/mpc_config25.yaml'):
-        model = AcadosModel() #  ca.types.SimpleNamespace()
-        # control inputs
-        v = ca.SX.sym('v')
-        delta = ca.SX.sym('delta')
-        controls = ca.vertcat(v, delta)
-        # model states
-        s_f = ca.SX.sym('s') # distance along the path
-        d_f = ca.SX.sym('d') # lateral deviation from the path
-        epsi = ca.SX.sym('epsi') # heading error    
-        states = ca.vertcat(s_f, d_f, epsi)
-        
-        self.L = 0.258
-        # --- Define curvature as an extra parameter ---
-        kappa = ca.SX.sym('kappa')
-        
-        # --- Define Frenet dynamics ---
-        # ds/dt = v * cos(epsi) / (1 - kappa*d)
-        ds = v * ca.cos(epsi) / (1 - kappa * d_f)
-        # dd/dt = v * sin(epsi)
-        dd = v * ca.sin(epsi)
-        # depsi/dt = (v / L)*tan(delta) - kappa * ds/dt
-        depsi = v / self.L * ca.tan(delta) - kappa * ds
-
-        rhs = ca.vertcat(ds, dd, depsi)
-
-        f = ca.Function('f', [states, controls, kappa], [rhs],
-                        ['state', 'control_input', 'curvature'], ['rhs'])
-        x_dot = ca.SX.sym('x_dot', rhs.size1())
-        f_impl = x_dot - f(states, controls, kappa)
-
-        model.f_expl_expr = f(states, controls, kappa)
-        model.f_impl_expr = f_impl
-        model.x = states
-        model.xdot = x_dot
-        model.u = controls
-        model.p = ca.vertcat(kappa)
-
-        current_path = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(current_path, config_path)
-        with open(path, 'r') as f:
-            config = yaml.safe_load(f)
-        model.name = config['name']
-        T = config['T']
-        N = config['N']
-        constraint_name = 'constraints'
-        cost_name = 'costs'
-        t_horizon = T * N
-
-        # constraints
-        self.v_max = config[constraint_name]['v_max']
-        self.v_min = config[constraint_name]['v_min']
-        self.delta_max = config[constraint_name]['delta_max']
-        self.delta_min = config[constraint_name]['delta_min']
-        
-        self.x_min = config[constraint_name]['x_min']
-        self.x_max = config[constraint_name]['x_max']
-        self.y_min = config[constraint_name]['y_min']
-        self.y_max = config[constraint_name]['y_max']
-        self.s_min = -10.0
-        self.s_max = 10.0
-        self.d_min = -10.0
-        self.d_max = 10.0
-        
-        self.v_ref = config[constraint_name]['v_ref']
-        # self.x_cost = config[cost_name]['x_cost']
-        # self.y_cost = config[cost_name]['y_cost']
-        # self.yaw_cost = config[cost_name]['yaw_cost']
-        self.s_cost = 2.0
-        self.d_cost = 2.0
-        self.epsi_cost = 1.0
-        self.v_cost = config[cost_name]['v_cost']
-        self.steer_cost = config[cost_name]['steer_cost']
-        self.delta_v_cost = config[cost_name]['delta_v_cost']
-        self.delta_steer_cost = config[cost_name]['delta_steer_cost']
-        self.costs = np.array([self.s_cost, self.d_cost, self.epsi_cost, self.v_cost, self.steer_cost, self.delta_v_cost, self.delta_steer_cost])
-        Q = np.array([[self.s_cost,    0.0,          0.0],
-                      [0.0,         self.d_cost,    0.0],
-                      [0.0,          0.0,       self.epsi_cost]])
-        R = np.array([[self.v_cost, 0.0],
-                      [0.0,        self.steer_cost]])
-
-        nx = model.x.size()[0]
-        nu = model.u.size()[0]
-        ny = nx + nu
-        n_params = model.p.size()[0]
-
-        os.chdir(os.path.dirname(os.path.realpath(__file__)))
-        acados_source_path = os.environ['ACADOS_SOURCE_DIR']
-        sys.path.insert(0, acados_source_path)
-        ocp = AcadosOcp()
-        ocp.acados_include_path = acados_source_path + '/include'
-        ocp.acados_lib_path = acados_source_path + '/lib'
-        ocp.model = model
-        ocp.dims.N = N
-        ocp.solver_options.tf = t_horizon
-        ocp.dims.np = n_params
-        ocp.parameter_values = np.zeros(n_params)
-
-        ocp.cost.cost_type = 'LINEAR_LS'
-        ocp.cost.cost_type_e = 'LINEAR_LS'
-        ocp.cost.W = scipy.linalg.block_diag(Q, R)
-        ocp.cost.W_e = Q
-        ocp.cost.Vx = np.zeros((ny, nx))
-        ocp.cost.Vx[:nx, :nx] = np.eye(nx)
-        ocp.cost.Vu = np.zeros((ny, nu))
-        ocp.cost.Vu[-nu:, -nu:] = np.eye(nu)
-        ocp.cost.Vx_e = np.eye(nx)
-
-        ocp.constraints.lbu = np.array([self.v_min, self.delta_min])
-        ocp.constraints.ubu = np.array([self.v_max, self.delta_max])
-        ocp.constraints.idxbu = np.array([0, 1])
-        # ocp.constraints.lbx = np.array([self.x_min, self.y_min])
-        # ocp.constraints.ubx = np.array([self.x_max, self.y_max])
-        ocp.constraints.lbx = np.array([self.s_min, self.d_min])
-        ocp.constraints.ubx = np.array([self.s_max, self.d_max])
-        ocp.constraints.idxbx = np.array([0, 1])
-
-        x_ref = np.zeros(nx)
-        u_ref = np.zeros(nu)
-        ocp.constraints.x0 = x_ref
-        ### 0--N-1
-        ocp.cost.yref = np.concatenate((x_ref, u_ref))
-        ### N
-        ocp.cost.yref_e = x_ref # yref_e means the reference for the last stage
-
-        ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
-        ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
-        ocp.solver_options.integrator_type = 'ERK'
-        ocp.solver_options.print_level = 0
-        ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-
-        json_file = os.path.join('./'+model.name+'_acados_ocp.json')
-        solver = AcadosOcpSolver(ocp, json_file=json_file)
-        integrator = AcadosSimSolver(ocp, json_file=json_file)
-        return solver, integrator, T, N, t_horizon
-    
     def update_and_solve(self):
-        # self.target_waypoint_index = self.find_next_waypoint()
-        self.target_waypoint_index +=1
-        print("idx: {}, ref: {}, current: {}".format(
-            self.target_waypoint_index,
-            np.array2string(self.state_refs[self.target_waypoint_index], precision=3, separator=', ', suppress_small=True),
-            np.array2string(self.current_state, precision=3, separator=', ', suppress_small=True)
-        ))
+        self.target_waypoint_index = self.find_next_waypoint()
         idx = self.target_waypoint_index
         self.next_trajectories = self.state_refs[idx:idx + self.N + 1]
         self.next_controls = self.input_refs[idx:idx + self.N]
         xs = self.state_refs[idx]
         self.solver.set(self.N, 'yref', xs)
-        for j in range(self.N):
-            if self.target_waypoint_index+j >= self.state_refs.shape[0]:
-                self.solver.set(j, 'yref', np.concatenate((self.state_refs[-1], np.zeros(2))))
-            else:
-                self.solver.set(j, 'yref', np.concatenate((self.next_trajectories[j], self.next_controls[j])))# 设置当前循环x0 (stage 0)
         if self.last_u is None:
             self.last_u = np.zeros(2)
+        for j in range(self.N):
+            kappa_j = self.kappas[idx]
+            p_j = np.array([self.last_u[0], self.last_u[1], kappa_j])
+            if self.target_waypoint_index+j >= self.state_refs.shape[0]:
+                yref = np.concatenate((self.state_refs[-1], np.zeros(2), np.zeros(2)))
+            else:
+                yref = np.concatenate((self.next_trajectories[j], self.next_controls[j], np.zeros(2)))
+            self.solver.set(j, 'yref', yref)
+            self.solver.set(j, 'p', p_j)
         self.last_u[0] = self.next_controls[0, 0]
-        self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u)))
+        self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u, np.zeros(2))))
         self.solver.set(0, 'lbx', self.current_state)
         self.solver.set(0, 'ubx', self.current_state)
         status = self.solver.solve()
@@ -363,36 +349,22 @@ class Optimizer(object):
         self.current_state = self.integrator.get('x')
         self.t0 += self.T
     
-    # def update_current_state(self, x, y, yaw):
-    #     if self.target_waypoint_index < len(self.state_refs):
-    #         ref_yaw = self.state_refs[self.target_waypoint_index, 2]
-    #         while yaw - ref_yaw > np.pi:
-    #             yaw -= 2 * np.pi
-    #         while yaw - ref_yaw < -np.pi:
-    #             yaw += 2 * np.pi
-    #     self.current_state = np.array([x, y, yaw])
-    
-    def update_current_state(self, s, d, epsi):
-        """
-        Example method to update the current state.
-        In your implementation, ensure that self.current_state is in [s, d, epsi].
-        """
-        self.current_state = np.array([s, d, epsi])
+    def update_current_state(self, x, y, yaw):
+        if self.target_waypoint_index < len(self.state_refs):
+            ref_yaw = self.state_refs[self.target_waypoint_index, 2]
+            while yaw - ref_yaw > np.pi:
+                yaw -= 2 * np.pi
+            while yaw - ref_yaw < -np.pi:
+                yaw += 2 * np.pi
+        self.current_state = np.array([x, y, yaw])
         
-    def find_closest_waypoint(self):
-        """
-        In Frenet coordinates, self.current_state = [s, d, epsi].
-        self.waypoints_x and self.waypoints_y are the s and d coordinates of the reference path.
-        We compute the Euclidean distance between [s, d] of the current state and each waypoint.
-        """
-        # Build an array of reference points in the Frenet plane.
-        ref_points = np.column_stack((self.waypoints_x, self.waypoints_y))
-        # Extract the [s, d] from the current state.
-        current_sd = self.current_state[:2]
-        # Compute distances in the (s,d) plane.
-        distances = np.linalg.norm(ref_points - current_sd, axis=1)
-        index = np.argmin(distances)
-        return index, distances[index]
+    def find_closest_waypoint(self, current_s):
+        s_refs = self.state_refs[:, 0]
+        distances = np.abs(s_refs - current_s)
+        closest_index = np.argmin(distances)
+        return closest_index, distances[closest_index]
+
+
     def find_next_waypoint(self):
         """
         Find the next waypoint index based on the current state.
@@ -407,7 +379,7 @@ class Optimizer(object):
         The next waypoint index (an integer, bounded by the number of waypoints).
         """
         # Make sure self.count is initialized (e.g., in __init__: self.count = 0)
-        closest_idx, distance_to_current = self.find_closest_waypoint()
+        closest_idx, distance_to_current = self.find_closest_waypoint(self.current_state)
 
         if distance_to_current > 1.2:
             print("WARNING: find_next_waypoint(): distance to closest waypoint is too large:", distance_to_current)
@@ -431,37 +403,17 @@ class Optimizer(object):
         self.last_waypoint_index = output_target
         self.target_waypoint_index = output_target  # update the target waypoint index
         return output_target
-    
+
     def draw_result(self, stats, xmin=None, xmax=None, ymin=None, ymax=None, objects=None, car_states=None):
-        """
-        Before calling the drawing function, convert the stored Frenet trajectories back to global coordinates.
-        """
-        # Convert initial state, simulation states, and reference states back to global.
-        global_init_state = self.frenet_to_global(self.init_state)
-        global_robot_states = self.convert_traj_frenet_to_global(self.xx)
-        global_ref_states = self.convert_traj_frenet_to_global(self.x_refs)
-        # Use the original global waypoints.
-        global_waypoints = self.global_waypoints
-
-        # Optionally, set drawing limits using global coordinates.
         if xmin is None:
-            # For example, you might compute these from the waypoints:
-            xmin = global_waypoints[:, 0].min() - 1
-            xmax = global_waypoints[:, 0].max() + 1
-            ymin = global_waypoints[:, 1].min() - 1
-            ymax = global_waypoints[:, 1].max() + 1
-
-        Draw_MPC_tracking(self.u_c,
-                          init_state=global_init_state,
-                          robot_states=global_robot_states,
-                          ref_states=global_ref_states,
-                          export_fig=self.export_fig,
-                          waypoints_x=global_waypoints[:, 0],
-                          waypoints_y=global_waypoints[:, 1],
-                          stats=stats,
-                          costs=self.costs,
-                          xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                          times=self.t_c, objects=objects, car_states=car_states)
+            xmin = self.x_min
+            xmax = self.x_max
+            ymin = self.y_min
+            ymax = self.y_max
+        Draw_MPC_tracking(self.u_c, init_state=self.init_state, 
+                        robot_states=self.xx, ref_states = self.x_refs, export_fig=self.export_fig, waypoints_x=self.waypoints_x, 
+                        waypoints_y=self.waypoints_y, stats = stats, costs = self.costs, xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                        times = self.t_c, objects=objects, car_states=car_states)
     def compute_stats(self):
         ## after loop
         print("iter: ", self.mpciter)
@@ -504,12 +456,14 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    x0 = np.array([10, 13.29, np.pi])
     mpc = Optimizer()
     
     mpc.target_waypoint_index = 0
+    maxiter = 3000
+    print("current state: ", mpc.current_state)
+    u_real = np.zeros((maxiter+1, 2))
     while True:
-        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > 1000:
+        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > maxiter:
             break
         t = time.time()
         mpc.x_errors.append(mpc.current_state[0] - mpc.next_trajectories[0, 0])
@@ -518,6 +472,7 @@ if __name__ == '__main__':
         mpc.yaw_errors.append(mpc.current_state[2] - mpc.next_trajectories[0, 2])
         t_ = time.time()
         u_res = mpc.update_and_solve()
+        u_real[mpc.mpciter] = u_res
         t2 = time.time()- t_
         if u_res is None:
             break
@@ -527,5 +482,39 @@ if __name__ == '__main__':
         mpc.integrate_next_states(u_res)
         mpc.xx.append(mpc.current_state)
         mpc.mpciter = mpc.mpciter + 1
+    # np.savetxt('/home/slsecret/AD/src/planning/scripts/u_c.txt', mpc.u_c, fmt='%.6f')
+    np.save('/home/slsecret/AD/src/planning/scripts/u_c.npy', u_real)
+    # np.save('/home/slsecret/AD/src/planning/scripts/x_refs.npy', mpc.x_refs)
+    # np.save('/home/slsecret/AD/src/planning/scripts/xx.npy', mpc.xx)
     stats = mpc.compute_stats()
     mpc.draw_result(stats, -2, 22, -2, 16)
+
+# WITH CONTROL CHANGE PENALTY
+# mean solve time:  0.0007192402571945877 max:  0.011326789855957031 min:  0.0006029605865478516 std:  0.0003375104801741561 median:  0.000701904296875
+# 0.0007689716099025486
+# average kappa:  0.4752313764649897
+# Average speed: 0.2618 m/s
+# Average steer angle: -0.0344 rad
+# Average change in speed: 0.0004 m/s²
+# Average change in steer angle: 0.0025 rad/s
+# Average x error: 0.0112 m
+# Average y error: 0.0126 m
+# Average yaw error: 0.0273 rad
+# ref state shape1:  (1001, 3)
+# robot state shape:  (1001, 3)
+
+# OLD
+# mean solve time:  0.0005556500994123065 max:  0.0009281635284423828 min:  0.0004868507385253906 std:  4.6240667460288534e-05 median:  0.0005471706390380859
+# 0.0005939266422054508
+# average kappa:  0.4752313764649897
+# Average speed: 0.2613 m/s
+# Average steer angle: -0.0325 rad
+# Average change in speed: 0.0004 m/s²
+# Average change in steer angle: 0.0050 rad/s
+# Average x error: 0.0123 m
+# Average y error: 0.0143 m
+# Average yaw error: 0.0313 rad
+# ref state shape1:  (1001, 3)
+# robot state shape:  (1001, 3)
+# Reference states are longer than robot states. Using robot states as reference.
+# ref state shape2:  (1001, 3)
