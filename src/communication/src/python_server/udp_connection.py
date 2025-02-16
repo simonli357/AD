@@ -34,12 +34,10 @@ class UdpConnection:
         while True:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-                if len(seg) < 5:
+                if len(seg) < 6:
                     continue
                 message_type = seg[4]
                 bytes = seg[5:]
-                if len(bytes) == 0:
-                    continue
                 if message_type in self.data_actions:
                     self.data_actions[message_type](bytes)
             except Exception as e:

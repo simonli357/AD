@@ -1271,7 +1271,7 @@ class OpenCVGuiApp(QWidget):
                 if marker.scene() == self.scene:  # Check if still in scene
                     self.scene.removeItem(marker)
             self.markers.clear()  # Clear the list
-            self.cursor_coords.clear()  # Clear the coordinates
+            self.cursor_coords.clear()  # Clear previous coords
             return
 
         elif event.button() == Qt.LeftButton:
@@ -1329,38 +1329,41 @@ class OpenCVGuiApp(QWidget):
 
 def udp_callbacks(gui, server):
     while True:
-        rgb_image = None
-        depth_image = None
-        if gui.show_depth:
-            depth_image = server.udp_connection.parse_depth_image()
-        else:
-            rgb_image = server.udp_connection.parse_rgb_image()
+        try:
+            rgb_image = None
+            depth_image = None
+            if gui.show_depth:
+                depth_image = server.udp_connection.parse_depth_image()
+            else:
+                rgb_image = server.udp_connection.parse_rgb_image()
 
-        sign = server.udp_connection.parse_sign()
-        waypoint = server.udp_connection.parse_waypoint()
-        road_obj = server.udp_connection.parse_road_object()
-        lane2 = server.udp_connection.parse_lane2()
+            sign = server.udp_connection.parse_sign()
+            waypoint = server.udp_connection.parse_waypoint()
+            road_obj = server.udp_connection.parse_road_object()
+            lane2 = server.udp_connection.parse_lane2()
 
-        # Image rgb
-        if rgb_image is not None:
-            gui.camera_callback(rgb_image)
-        # Image depth
-        if depth_image is not None:
-            gui.depth_callback(depth_image)
-        # Lane2
-        if lane2 is not None:
-            gui.lane_callback(lane2)
-        # Road object
-        if road_obj is not None:
-            gui.road_objects_callback(road_obj)
-        # Waypoints
-        if waypoint is not None:
-            gui.waypoint_callback(waypoint)
-        # Signs
-        if sign is not None:
-            gui.sign_callback(sign)
+            # Image rgb
+            if rgb_image is not None:
+                gui.camera_callback(rgb_image)
+            # Image depth
+            if depth_image is not None:
+                gui.depth_callback(depth_image)
+            # Lane2
+            if lane2 is not None:
+                gui.lane_callback(lane2)
+            # Road object
+            if road_obj is not None:
+                gui.road_objects_callback(road_obj)
+            # Waypoints
+            if waypoint is not None:
+                gui.waypoint_callback(waypoint)
+            # Signs
+            if sign is not None:
+                gui.sign_callback(sign)
 
-        time.sleep(0.016)
+            time.sleep(0.016)
+        except Exception as e:
+            print(e)
 
 
 def tcp_callbacks(gui, server):
