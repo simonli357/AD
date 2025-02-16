@@ -89,7 +89,7 @@ class Optimizer(object):
         L_r = config['l_r']
         self.L = config['wheelbase']
         # Compute slip angle beta
-        beta = ca.atan((L_r/self.L) * ca.tan(delta))
+        beta = 0#ca.atan((L_r/self.L) * ca.tan(delta))
         # Improved kinematic equations
         x_dot   = v * ca.cos(psi + beta)
         y_dot   = v * ca.sin(psi + beta)
