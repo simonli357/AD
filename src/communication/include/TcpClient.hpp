@@ -49,10 +49,10 @@ class TcpClient {
 	void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const Image &img);
 	void send_image_depth(const Image &img);
-	void send_road_object(Float32MultiArray &array);
-	void send_waypoint(Float32MultiArray &array);
-	void send_sign(Float32MultiArray &array);
-	void send_message(String &msg);
+	void send_road_object(const Float32MultiArray &array);
+	void send_waypoint(const Float32MultiArray &array);
+	void send_sign(const Float32MultiArray &array);
+	void send_message(const String &msg);
 	void send_trigger(std_srvs::Trigger &trigger);
     void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);
 	void send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
