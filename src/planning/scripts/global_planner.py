@@ -141,8 +141,8 @@ class GlobalPlanner:
                 prev_node2 = path[path.index(node)-2]
                 prev_node = path[path.index(node)-1]
                 #get next node
-                next_node = path[path.index(node)+1]
                 try:
+                    next_node = path[path.index(node)+1]
                     next_node2 = path[path.index(node)+2]
                 except:
                     print("ERROR: end of path at node: ", node)

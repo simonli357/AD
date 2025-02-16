@@ -85,7 +85,7 @@ else()
     message("OpenCV not found")
 endif()
 
-set(TENSORRT_ROOT "~/TensorRT-8.6.1.6")
+set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
 set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
 set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 
