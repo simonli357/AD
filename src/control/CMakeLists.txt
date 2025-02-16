@@ -19,8 +19,8 @@ endif()
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 
-include_directories(~/TensorRT-8.6.1.6/include)
-link_directories(~/TensorRT-8.6.1.6/lib)
+# include_directories(~/TensorRT-8.6.1.6/include)
+# link_directories(~/TensorRT-8.6.1.6/lib)
 find_package(CUDA REQUIRED)
 if(CUDA_FOUND)
   message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}")
@@ -134,6 +134,7 @@ include_directories(
   include/htn
   include/htn/actions
   include/htn/actions/park
+  ${realsense2_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
