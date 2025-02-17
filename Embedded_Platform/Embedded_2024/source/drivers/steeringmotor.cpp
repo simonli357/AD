@@ -5,6 +5,7 @@
 #include <speedingmotor.hpp>
 #include <utils/task.hpp>
 #include <chrono>
+#include <ctime>
 
 namespace drivers{
     /**
@@ -119,15 +120,7 @@ namespace drivers{
 
     void CSteeringMotor::setAngle(float f_angle)
     {
-        std::pair<float, float> interpolationResult;
 
-        interpolationResult = interpolate(f_angle, steeringValueP, steeringValueN, stepValues, zeroDefaultValues, 2);
-        step_value = interpolationResult.first;
-        zero_default = interpolationResult.second;
-
-        m_pwm_pin.write(conversion(f_angle));
-        m_desiredSteer = f_angle;
-        m_currentDutyCycle = conversion(f_angle);
     };
 
     /**
@@ -137,7 +130,7 @@ namespace drivers{
     void CSteeringMotor::steerPID() {
 
         const float WHEELBASE = 0.260f; // meters
-        const float MAX_ERROR = 50.0f;  // degrees
+        const float MAX_ERROR = 100.0f;  // degrees
 
         // Retrieve current speed in m/s
         float c_speed = 0.01 * m_speedingControl.getSpeed();
@@ -151,6 +144,9 @@ namespace drivers{
         printf("Time step: %f seconds\n", time_step);
         if(time_step > 0.1) time_step = 0.1; // Cap time step to 0.1 seconds
         if(time_step < 0.001) time_step = 0.001; // Cap time step to 0.001 seconds  
+
+        // Update time elapsed
+        time_elapsed += time_step;
 
         PID_timer.reset();
         PID_timer.start();
@@ -170,21 +166,31 @@ namespace drivers{
         float error = yaw_calc - imu_yaw;
         if(error > 180.0f) error -= 360.0f;
         if(error < -180.0f) error += 360.0f;
+
+        // Print debug information
         printf("@E1:%f\n", error);
+
+        // Convert to float (Unix timestamp + milliseconds fraction)
+        printf("@T1:%f\n", time_elapsed);
         printf("@Y1:%f\n", yaw_calc);
         printf("@Y2:%f\n", imu_yaw);
 
         // PID control
         integral += error * time_step;
+        // Integral windup
+        if(integral > MAX_ERROR) integral = MAX_ERROR;
         float derivative = (error - previous_error) / time_step;
         previous_error = error;
 
         // Adjust steering
         newSteer =  m_desiredSteer + (m_proportional * error + m_integral * integral + m_derivative * derivative);
 
-        float integral_calc = m_integral ;
-        float derivative_calc = m_derivative ;
+        float integral_calc = m_integral * integral ;
+        float derivative_calc = m_derivative * derivative;
         m_currentSteer = newSteer;
+        float clipSteer = newSteer;
+        if(newSteer > 20.8) clipSteer= 20.8;
+        if(newSteer < -21.8) clipSteer = -21.8;
 
         // printf("Current Steer: %f\n", newSteer);
         // printf("Desired Steer: %f\n", m_desiredSteer);
@@ -193,12 +199,13 @@ namespace drivers{
         newDutyCycle = CalculateAngle(newSteer);
         PWMAngle(newDutyCycle);
         printf("@Y4:%f\n", newSteer);
+        printf("@Y5:%f\n", clipSteer);
 
         printf("@E4:%f\n", m_proportional);
-        printf("@E2:%f\n", m_integral);
-        printf("@E3:%f\n", m_derivative);
+        printf("@E2:%f\n", integral_calc);
+        printf("@E3:%f\n", derivative_calc);
 
-        // printf("Sent duty cycle: %f\n", newDutyCycle);
+        printf("Sent duty cycle: %f\n", newDutyCycle);
 
     }
 
@@ -217,7 +224,7 @@ namespace drivers{
     /**
      * MODIFIED FUNCTION BY MALO
      * @brief Takes as input an angle and returns the PWM value to set servo to that position
-     * @param f_angle angle to be givenc
+     * @param f_angle angle to be given
      * Computes the angle based on quadratic function, experimentally defined
      *  */    
         float CSteeringMotor::CalculateAngle(float f_angle)
@@ -234,7 +241,11 @@ namespace drivers{
         ZD_left = 0.0779;
         // Zero default when returning from a right turn
         ZD_right = 0.0763;
-        // Function to calculate the positive angle (LEFT TURN)
+        // Clip the steering angle for safety
+        if(f_angle > 20.8) f_angle = 20.8; 
+        if(f_angle < -21.8) f_angle = -21.8;
+        // Function to calculate the positive angle (RIGHT TURN)
+
         if(f_angle < 0)
         {
             // Update quadratic function parameters
@@ -244,7 +255,7 @@ namespace drivers{
             // Compute the dutyCycle 
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
-        // Function to calculate the negative angles (RIGHT TURN)
+        // Function to calculate the negative angles (LEFT TURN)
         if(f_angle > 0)
         {
             // Update quadratic function parameters
@@ -267,6 +278,7 @@ namespace drivers{
                 dutyCycle = ZD_right;
             }
         }
+        // printf("Current Duty Cycle:%f\n", dutyCycle);
         //Update the angle to remember
         prev_angle = f_angle;
         // Return the computed dutyCycle
