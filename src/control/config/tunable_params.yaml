@@ -10,7 +10,7 @@ real:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
-  use_beta_model: true
+  use_beta_model: false
   has_light: false
   change_lane_offset_scaler: 0.9
   cw_speed_ratio: 0.85

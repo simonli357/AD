@@ -461,7 +461,7 @@ class SignFastest {
             }
             // Publish Sign message
             if (publish) {
-                // pub.publish(sign_msg);
+                pub.publish(sign_msg);
                 if (tcp_client != nullptr) tcp_client->send_sign(sign_msg);
             }
             if(printDuration) {
