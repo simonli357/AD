@@ -125,20 +125,10 @@ namespace brain{
         uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
         if (2 == l_res)
         {
-            if( !m_speedingControl.inRange(l_speed)){ // Check the received reference speed is within range
-                sprintf(b,"The reference speed command is too high");
-                return;
-            }
-
-            if( !m_steeringControl.inRange(l_angle)){ // Check the received steering angle
-                sprintf(b,"The steering angle command is too high");
-                return;
-            }
 
             m_state = 1;
 
-            m_speedingControl.setSpeed(-l_speed); // Set the reference speed
-            // m_steeringControl.setAngle(l_angle); // control the steering angle
+            m_speedingControl.PWMSpeed(l_speed); // Set the reference speed
             m_steeringControl.PWMAngle(l_angle); 
 
             sprintf(b,a);
@@ -169,6 +159,7 @@ namespace brain{
             } else if (pid_active == 1) {
                 // Activate the PID with the given parameters
                 m_steeringControl.setPID(proportional, integral, derivative);
+                m_steeringControl.time_elapsed = 0.0f;
                 sprintf(b, "ack -- PID active");
             } else {
                 // Invalid pid_active value
@@ -203,20 +194,9 @@ namespace brain{
         uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
         if (2 == l_res)
         {
-            if( !m_speedingControl.inRange(l_speed)){ // Check the received reference speed is within range
-                sprintf(b,"The reference speed command is too high");
-                return;
-            }
-
-            if( !m_steeringControl.inRange(l_angle)){ // Check the received steering angle
-                sprintf(b,"The steering angle command is too high");
-                return;
-            }
-
             m_state = 1;
 
             m_speedingControl.CalculateSpeed(l_speed); // Set the reference speed
-            // m_steeringControl.setAngle(l_angle); // control the steering angle
             pwmValue = m_steeringControl.CalculateAngle(l_angle);
             m_steeringControl.PWMAngle(pwmValue);
             m_steeringControl.m_desiredSteer = l_angle;
@@ -228,8 +208,34 @@ namespace brain{
             sprintf(b,"syntax error");
         }
     }
+    /**
+     * 
+     * Modified function by Malo
+     * @brief function to compute the steering angle and speed based on experimentally defined parameteres
+     */
 
+    void CRobotStateMachine::serialCallbackSetcommand(char const * a, char * b)
+    {
+        float l_speed;
+        float l_angle;
+        float pwmValue = m_steeringControl.zero_default;
 
+        uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
+        if (2 == l_res)
+        {
+            m_state = 1;
+
+            m_speedingControl.CalculateSpeed(l_speed); // Set the reference speed
+            m_steeringControl.m_desiredSteer = l_angle; // Set the desired steering angle
+
+            sprintf(b,a);
+        }
+        else
+        {
+            sprintf(b,"syntax error");
+        }
+    }
+    
     /** \brief  Serial callback method for speed command
      *
      * Serial callback method setting controller to value received for dc motor control values. 

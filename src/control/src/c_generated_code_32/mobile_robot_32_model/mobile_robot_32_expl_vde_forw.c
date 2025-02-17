@@ -63,7 +63,7 @@ static int casadi_f0(const casadi_real** arg, casadi_real** res, casadi_int* iw,
   casadi_real a0, a1, a10, a11, a12, a13, a14, a15, a16, a2, a3, a4, a5, a6, a7, a8, a9;
   a0=arg[3]? arg[3][0] : 0;
   a1=arg[0]? arg[0][2] : 0;
-  a2=4.4573643410852715e-01;
+  a2=3.9922480620155038e-01;
   a3=arg[3]? arg[3][1] : 0;
   a4=tan(a3);
   a4=(a2*a4);

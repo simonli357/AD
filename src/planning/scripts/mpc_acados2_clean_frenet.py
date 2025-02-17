@@ -34,8 +34,11 @@ class Optimizer(object):
         self.rdb_circumference = 3.95
         self.state_refs_global = self.path.state_refs  
         self.input_refs = self.path.input_refs
-        
+        np.savetxt('state_refs_global.txt', self.state_refs_global, fmt='%.3f')
         self.state_refs = self.convert_state_refs_to_frenet(self.state_refs_global)
+        # save as txt with 3 decimals
+        np.savetxt('state_refs_frenet.txt', self.state_refs, fmt='%.3f')
+        # exit()
         self.waypoints_x = self.state_refs[:, 0]
         self.waypoints_y = self.state_refs[:, 1]
 
@@ -189,9 +192,9 @@ class Optimizer(object):
         delta = ca.SX.sym('delta')
         controls = ca.vertcat(v, delta)
         # model states
-        s_f = ca.SX.sym('s')
-        d_f = ca.SX.sym('d')
-        epsi = ca.SX.sym('epsi')
+        s_f = ca.SX.sym('s') # distance along the path
+        d_f = ca.SX.sym('d') # lateral deviation from the path
+        epsi = ca.SX.sym('epsi') # heading error    
         states = ca.vertcat(s_f, d_f, epsi)
         
         self.L = 0.258
@@ -320,7 +323,13 @@ class Optimizer(object):
         return solver, integrator, T, N, t_horizon
     
     def update_and_solve(self):
-        self.target_waypoint_index = self.find_next_waypoint()
+        # self.target_waypoint_index = self.find_next_waypoint()
+        self.target_waypoint_index +=1
+        print("idx: {}, ref: {}, current: {}".format(
+            self.target_waypoint_index,
+            np.array2string(self.state_refs[self.target_waypoint_index], precision=3, separator=', ', suppress_small=True),
+            np.array2string(self.current_state, precision=3, separator=', ', suppress_small=True)
+        ))
         idx = self.target_waypoint_index
         self.next_trajectories = self.state_refs[idx:idx + self.N + 1]
         self.next_controls = self.input_refs[idx:idx + self.N]

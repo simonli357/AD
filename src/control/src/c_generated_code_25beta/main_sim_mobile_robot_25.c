@@ -82,6 +82,7 @@ int main()
     // set parameters
     double p[NP];
     p[0] = 0;
+    p[1] = 0;
 
     mobile_robot_25_acados_sim_update_params(capsule, p, NP);
   

@@ -114,7 +114,7 @@ namespace drivers{
             beta = -258826.54;
             gamma = 9311.76;
             // Compute the dutyCycle 
-            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
+            dutyCycle = 0.0055 + (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_speed)))/(2*alpha);
         }
         if(f_speed == 0)
         {
@@ -124,7 +124,8 @@ namespace drivers{
         m_pwm_pin.write(dutyCycle);
         m_currentDutyCycle = dutyCycle;
         m_currentSpeed = f_speed;
-        printf("Speed has been set: %f\n", m_currentSpeed);
+        // printf("Speed has been set: %f\n", m_currentSpeed);
+        // printf("Duty Cycle has been set: %f\n", m_currentDutyCycle);
     }
 
     /** @brief  It modifies the speed reference of the brushless motor, which controls the speed of the wheels. 

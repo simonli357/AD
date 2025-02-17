@@ -28,7 +28,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real),
     it(nh), Sign(nh), Lane(nh)
 {
-    cameraNodeConstructor(nh);
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
     bool use_tcp = false;
@@ -228,6 +227,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     if (subSign) {
+        cameraNodeConstructor(nh);
         // sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
         // std::cout << "waiting for sign message" << std::endl;
         // ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
@@ -363,7 +363,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                 this->yaw = yaw_mod(this->yaw);
             }
 
-            static bool debug_imu = false;
+            static bool debug_imu = true;
             if (debug_imu) {
                 printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
             }
