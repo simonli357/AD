@@ -442,7 +442,7 @@ public:
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
         std::string number = use_pid ? "13" : "11";
-        strs << "#" << "13" << ":" << buff;
+        strs << "#" << number << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }
