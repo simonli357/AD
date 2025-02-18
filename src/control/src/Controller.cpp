@@ -709,7 +709,7 @@ public:
         }
         
         // relocalize based on sign
-        if (sign_relocalize && stopsign_flag != OBJECT::NONE) {
+        if (sign_relocalize && stopsign_flag != OBJECT::NONE && stopsign_flag != OBJECT::LIGHTS && stopsign_flag != OBJECT::REDLIGHT && stopsign_flag != OBJECT::GREENLIGHT && stopsign_flag != OBJECT::YELLOWLIGHT) {
             auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
             std::string sign_type;
             const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
@@ -1361,7 +1361,7 @@ void StateMachine::publish_commands() {
     double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
     // std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
-    std::cout << speed*100 << ", " << steer << std::endl;
+    // std::cout << speed*100 << ", " << steer << std::endl;
     utils.publish_cmd_vel(steer, speed);
 }
 void StateMachine::change_state(STATE new_state) {
