@@ -219,14 +219,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             imu_pub_timer = nh.createTimer(ros::Duration(1.0 / rateVal), &Utility::imu_pub_timer_callback, this);
         }
     }
-    if (true) {
-        // lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+    if (!camera) {
+        lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         // std::cout << "waiting for lane message" << std::endl;
         // ros::topic::waitForMessage<utils::Lane2>("/lane");
         // std::cout << "received message from lane" << std::endl;
-        timerpid = ros::Time::now();
     }
 
+    timerpid = ros::Time::now();
     if (subSign) {
         if (camera) {
             cameraNodeConstructor(nh);
@@ -867,7 +867,8 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
         timerodom = ros::Time::now();
         double dt2 = (std::chrono::steady_clock::now() - timer2).count() / 1e9;
         timer2 = std::chrono::steady_clock::now();
-        std::cout << "ros time: " << dt << ", steady time: " << dt2 << std::endl;
+        // std::cout << "ros time: " << dt << ", steady time: " << dt2 << std::endl;
+        dt = dt2;
     }
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
