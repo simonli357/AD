@@ -68,10 +68,10 @@
   <arg name = "path" default="run107"/>   -->
 
   <!-- run112 -->
-  <arg name="x0" default="2.52"/>
+  <!-- <arg name="x0" default="2.52"/>
   <arg name="y0" default="1.956"/>
   <arg name="yaw0" default="-1.5708"/>
-  <arg name = "path" default="run112"/>
+  <arg name = "path" default="run112"/> -->
 
   <!-- run117 -->
   <!-- <arg name="x0" default="0.73"/>
@@ -93,10 +93,10 @@
 
 
   <!-- run132 -->
-  <!-- <arg name="x0" default="3.85"/>
+  <arg name="x0" default="3.85"/>
   <arg name="y0" default="3.676"/>
   <arg name="yaw0" default="0"/>
-  <arg name = "path" default="run132"/>  -->
+  <arg name = "path" default="run132"/> 
 
   <!-- run133 -->
   <!-- <arg name="x0" default="1.55"/>
@@ -226,6 +226,12 @@
   <param name="use_tcp" value="$(arg use_tcp)"/>
   <arg name="ip" default="127.0.0.1"/>
   <param name="ip" value="$(arg ip)"/>
+  <arg name="use_beta" default="true"/>
+  <param name="use_beta" value="$(arg use_beta)"/>
+  <arg name="camera" default="true"/>
+  <param name="camera" value="$(arg camera)"/>
+  <arg name="async" default="true"/>
+  <param name="async" value="$(arg async)"/>
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config$(arg v).yaml" />
   <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
   <rosparam command="load" file="$(find planning)/scripts/config/mpc_config_park.yaml" />

@@ -51,8 +51,8 @@ class Draw_MPC_tracking(object):
             self.plot_and_save(output_path=export_fig.replace('gifs', 'plots')+ '.png')
         # self.ax.legend(loc='center', frameon=True, bbox_to_anchor=(0.8, 0.1))
         plt.grid('--')
-        if export_fig is not None:
-            self.ani.save(export_fig+'.gif', writer='pillow', fps=50)
+        # if export_fig is not None:
+        #     self.ani.save(export_fig+'.gif', writer='pillow', fps=30)
         plt.show()
 
     def draw_static_objects(self):
