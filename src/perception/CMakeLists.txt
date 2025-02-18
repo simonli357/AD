@@ -85,9 +85,9 @@ else()
     message("OpenCV not found")
 endif()
 
-# set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
-# set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
-# set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
+set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
+set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 
 include_directories(
   include
@@ -100,9 +100,9 @@ include_directories(
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
-# include_directories(~/TensorRT-8.6.1.6/include)
-# link_directories(~/TensorRT-8.6.1.6/lib)
-# link_directories(${TENSORRT_LIB_DIR})
+include_directories(~/TensorRT-8.6.1.6/include)
+link_directories(~/TensorRT-8.6.1.6/lib)
+link_directories(${TENSORRT_LIB_DIR})
 
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
 link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)

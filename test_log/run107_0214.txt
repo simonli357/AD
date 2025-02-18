@@ -89,7 +89,7 @@ PARAMETERS
  * /real/sign_localization_threshold: 0.357
  * /real/sign_relocalize: True
  * /real/stop_duration: 3.0
- * /real/use_beta_model: True
+ * /real/use_beta: True
  * /real/use_stopline: True
  * /realsense_imu: False
  * /rosdistro: noetic
@@ -120,7 +120,7 @@ PARAMETERS
  * /sim/sign_localization_threshold: 0.357
  * /sim/sign_relocalize: True
  * /sim/stop_duration: 1.5
- * /sim/use_beta_model: True
+ * /sim/use_beta: True
  * /sim/use_stopline: True
  * /test: 0
  * /use_tcp: True

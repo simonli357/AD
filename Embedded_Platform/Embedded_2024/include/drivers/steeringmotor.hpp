@@ -33,6 +33,8 @@ namespace drivers
             float m_proportional;
             float m_integral;
             float m_derivative;
+            // Keep track of time
+            float time_elapsed = 0.0f;
             // Desired steer value
             float m_desiredSteer = 0;
             /** @brief 0 default */
@@ -100,7 +102,6 @@ namespace drivers
             // Current steering angles
             float m_currentSteer = 0;
             float m_currentDutyCycle;
-
             // PID control values
             float yaw_calc;
             float integral;
