@@ -19,6 +19,7 @@ import argparse
 
 class Optimizer(object):
     def __init__(self, x0 = None):
+        self.configuration = '25beta'
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
         name = 'run107'
@@ -31,6 +32,7 @@ class Optimizer(object):
         self.density = self.path.density
         self.rdb_circumference = 3.95
         self.state_refs = self.path.state_refs
+        np.savetxt('/home/slsecret/AD/src/planning/scripts/state_refs.txt', self.state_refs, fmt='%.3f')
         self.input_refs = self.path.input_refs
         self.waypoints_x = self.state_refs[:,0]
         self.waypoints_y = self.state_refs[:,1]
@@ -64,11 +66,11 @@ class Optimizer(object):
         self.start_time = time.time()
         self.index_t = []
         filepath = os.path.dirname(os.path.abspath(__file__))
-        self.export_fig = os.path.join(filepath+'/gifs_acados',name + '_N'+str(self.N) + '_vref'+str(self.v_ref) 
-                                       + '_T'+str(self.T))
+        self.export_fig = os.path.join(filepath+'/gifs_acados',name + '_N'+str(self.N) 
+                                       + '_T'+str(self.T) + '_'+self.configuration)
         
-    # def create_solver(self, config_path='config/mpc_config25.yaml'):
-    def create_solver(self, config_path='config/mpc_config25.yaml'):
+    def create_solver(self):
+        config_path = 'config/mpc_config' + self.configuration + '.yaml'
         current_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(current_path, config_path)
         with open(path, 'r') as f:
@@ -89,7 +91,12 @@ class Optimizer(object):
         L_r = config['l_r']
         self.L = config['wheelbase']
         # Compute slip angle beta
-        beta = 0#ca.atan((L_r/self.L) * ca.tan(delta))
+        # check if config_path contains "beta"
+        if 'beta' in config_path:
+            beta = ca.atan((L_r/self.L) * ca.tan(delta))
+            print("using beta")
+        else:
+            beta = 0
         # Improved kinematic equations
         x_dot   = v * ca.cos(psi + beta)
         y_dot   = v * ca.sin(psi + beta)
@@ -206,7 +213,7 @@ class Optimizer(object):
             self.solver.set(j, 'yref', yref)
             self.solver.set(j, 'p', self.last_u)
         self.last_u[0] = self.next_controls[0, 0]
-        self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u, np.zeros(2))))
+        # self.solver.set(0, 'yref', np.concatenate((self.next_trajectories[j], self.last_u, np.zeros(2))))
         self.solver.set(0, 'lbx', self.current_state)
         self.solver.set(0, 'ubx', self.current_state)
         status = self.solver.solve()
@@ -369,9 +376,8 @@ if __name__ == '__main__':
     mpc.target_waypoint_index = 0
     maxiter = 3000
     print("current state: ", mpc.current_state)
-    u_real = np.zeros((maxiter+1, 2))
     while True:
-        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > maxiter:
+        if mpc.target_waypoint_index >= mpc.num_waypoints-1 :#or mpc.mpciter > maxiter:
             break
         t = time.time()
         mpc.x_errors.append(mpc.current_state[0] - mpc.next_trajectories[0, 0])
@@ -380,7 +386,6 @@ if __name__ == '__main__':
         mpc.yaw_errors.append(mpc.current_state[2] - mpc.next_trajectories[0, 2])
         t_ = time.time()
         u_res = mpc.update_and_solve()
-        u_real[mpc.mpciter] = u_res
         t2 = time.time()- t_
         if u_res is None:
             break
@@ -390,39 +395,37 @@ if __name__ == '__main__':
         mpc.integrate_next_states(u_res)
         mpc.xx.append(mpc.current_state)
         mpc.mpciter = mpc.mpciter + 1
-    # np.savetxt('/home/slsecret/AD/src/planning/scripts/u_c.txt', mpc.u_c, fmt='%.6f')
-    np.save('/home/slsecret/AD/src/planning/scripts/u_c.npy', u_real)
-    # np.save('/home/slsecret/AD/src/planning/scripts/x_refs.npy', mpc.x_refs)
-    # np.save('/home/slsecret/AD/src/planning/scripts/xx.npy', mpc.xx)
     stats = mpc.compute_stats()
     mpc.draw_result(stats, -2, 22, -2, 16)
 
-# WITH CONTROL CHANGE PENALTY
-# mean solve time:  0.0007192402571945877 max:  0.011326789855957031 min:  0.0006029605865478516 std:  0.0003375104801741561 median:  0.000701904296875
-# 0.0007689716099025486
-# average kappa:  0.4752313764649897
-# Average speed: 0.2618 m/s
-# Average steer angle: -0.0344 rad
+# BETA
+# mean solve time:  0.0007971468217232648 max:  0.018250703811645508 min:  0.0006532669067382812 std:  0.00025494149760249286 median:  0.0007872581481933594
+# 0.0008333412552970687
+# average kappa:  0.7485781927312134
+# Average speed: 0.3218 m/s
+# Average steer angle: -0.0012 rad
 # Average change in speed: 0.0004 m/s²
-# Average change in steer angle: 0.0025 rad/s
-# Average x error: 0.0112 m
-# Average y error: 0.0126 m
-# Average yaw error: 0.0273 rad
-# ref state shape1:  (1001, 3)
-# robot state shape:  (1001, 3)
-
-# OLD
-# mean solve time:  0.0005556500994123065 max:  0.0009281635284423828 min:  0.0004868507385253906 std:  4.6240667460288534e-05 median:  0.0005471706390380859
-# 0.0005939266422054508
-# average kappa:  0.4752313764649897
-# Average speed: 0.2613 m/s
-# Average steer angle: -0.0325 rad
-# Average change in speed: 0.0004 m/s²
-# Average change in steer angle: 0.0050 rad/s
-# Average x error: 0.0123 m
-# Average y error: 0.0143 m
-# Average yaw error: 0.0313 rad
-# ref state shape1:  (1001, 3)
-# robot state shape:  (1001, 3)
+# Average change in steer angle: 0.0074 rad/s
+# Average x error: 0.0243 m
+# Average y error: 0.0232 m
+# Average yaw error: 0.0782 rad
+# ref state shape1:  (4896, 3)
+# robot state shape:  (4896, 3)
 # Reference states are longer than robot states. Using robot states as reference.
-# ref state shape2:  (1001, 3)
+# ref state shape2:  (4896, 3)
+
+# no beta
+# mean solve time:  0.0007934053979738794 max:  0.020100831985473633 min:  0.0005965232849121094 std:  0.0002789554841912957 median:  0.0007834434509277344
+# 0.000829632691662721
+# average kappa:  0.7485781927312134
+# Average speed: 0.3220 m/s
+# Average steer angle: -0.0007 rad
+# Average change in speed: 0.0004 m/s²
+# Average change in steer angle: 0.0072 rad/s
+# Average x error: 0.0237 m
+# Average y error: 0.0229 m
+# Average yaw error: 0.0683 rad
+# ref state shape1:  (4950, 3)
+# robot state shape:  (4950, 3)
+# Reference states are longer than robot states. Using robot states as reference.
+# ref state shape2:  (4950, 3)

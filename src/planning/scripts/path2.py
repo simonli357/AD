@@ -10,6 +10,7 @@ import rospy
 from std_msgs.msg import Float32MultiArray
 from utils.srv import waypoints, waypointsResponse, go_to, go_to_multiple, go_toResponse, go_to_multipleResponse
 
+import numpy as np
 
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
@@ -62,6 +63,11 @@ def filter_waypoints_and_attributes(waypoints, attributes, threshold):
     filtered_attributes = [attributes[0]]
 
     for i in range(1, len(waypoints)):
+        thresh = threshold
+        if attributes[i] == 1:
+            thresh /= 1.5
+        if attributes[i] == 4 or attributes[i] == 5:
+            thresh *= 1.33
         if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) >= threshold:
             filtered_waypoints.append(waypoints[i])
             filtered_attributes.append(attributes[i])
@@ -402,7 +408,8 @@ class Path:
             self.attributes = np.array(new_attributes)
 
         # self.waypoints = filter_waypoints(self.waypoints, 0.01).T
-        self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, 0.01)
+        thresh = v_ref * T / 1.5
+        self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, thresh)
         self.waypoints = self.waypoints.T
 
         # Calculate the total path length of the waypoints
@@ -454,12 +461,83 @@ class Path:
 
         self.attributes = np.pad(self.attributes, (0, self.N + 5), 'edge')
 
-        # print(self.attributes.shape, self.attributes)
+        bad_idx = self.remove_bad_waypoints()
+        self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
+        self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
+        self.kappa      = np.delete(self.kappa, bad_idx)
+        self.wp_theta   = np.delete(self.wp_theta, bad_idx)
+        self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
+        self.v_refs     = np.delete(self.v_refs, bad_idx)
+        self.steer_ref  = np.delete(self.steer_ref, bad_idx)
+        self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
+        self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
+        self.attributes = np.delete(self.attributes, bad_idx)
+        self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
+        self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
+    
+    def remove_bad_waypoints(self):
+        max_yaw_change = np.pi * 0.35
+        max_yaw_change2 = np.pi * 0.57
 
-        # for i in range(len(self.state_refs)):
-        #     print(i, self.state_refs[i])
-        # exit()
-        # print("state_refs: ", self.state_refs.shape, ", input_refs: ", self.input_refs.shape)
+        # Convert inputs to numpy arrays (if they aren't already)
+        state_refs = np.array(self.state_refs)  # shape: (n, 3)
+        n = state_refs.shape[0]
+
+        # We always keep the first waypoint.
+        valid_indices = [0]
+        indices_to_fix = []
+
+        # Iterate through intermediate waypoints
+        count = 0
+        for i in range(1, n - 1):
+            current = state_refs[i]
+            previous = state_refs[valid_indices[-1]]  # use the last valid waypoint
+            next_wp = state_refs[i + 1]
+
+            # Compute yaw difference from the last valid waypoint
+            yaw_change = np.abs(current[2] - previous[2])
+            if yaw_change > max_yaw_change and yaw_change < 2 * np.pi - max_yaw_change * 2:
+                count += 1
+                # if count >= 30:
+                #     exit()
+                d1 = np.linalg.norm(next_wp[:2] - previous[:2])
+                d2 = np.linalg.norm(next_wp[:2] - current[:2])
+                if (yaw_change < max_yaw_change2 and d1 > d2 and d1 > self.v_refs[i] * 0.1 * 1.42 and (d1-d2) > self.v_refs[i] * 0.1 /3):
+                    indices_to_fix.append(i)
+                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to fix")
+                    continue
+                else:
+                    # Skip adding this waypoint (i.e. mark for removal)
+                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to remove")
+                    continue
+            # Otherwise, the waypoint is valid.
+            valid_indices.append(i)
+
+        # Always keep the final waypoint.
+        if (n - 1) not in valid_indices:
+            valid_indices.append(n - 1)
+
+        # Compute the indices of the waypoints that were not kept.
+        # add indices to fix from valid indices
+        valid_indices += indices_to_fix
+        all_indices = set(range(n))
+        valid_set = set(valid_indices)
+        removed_indices = sorted(list(all_indices - valid_set))
+        # print(f"indices to fix: {indices_to_fix}")
+        # print(f"removed indices: {removed_indices}")
+        # cur_dir = os.path.dirname(os.path.abspath(__file__))      
+        # np.savetxt(cur_dir + "/state_refs2.txt", self.state_refs, fmt="%.3f")
+        # exit()  
+        for idx in indices_to_fix:
+            diff = state_refs[idx + 1, 2] - state_refs[idx - 1, 2]
+            while diff > np.pi:
+                diff -= 2 * np.pi
+            while diff < -np.pi:
+                diff += 2 * np.pi
+            self.state_refs[idx, 2] = self.state_refs[idx - 1, 2] + diff/2
+            self.state_refs[idx, 1] = self.state_refs[idx - 1, 1] + (self.state_refs[idx + 1, 1] - self.state_refs[idx - 1, 1]) / 2
+            self.state_refs[idx, 0] = self.state_refs[idx - 1, 0] + (self.state_refs[idx + 1, 0] - self.state_refs[idx - 1, 0]) / 2
+        return removed_indices
 
     def change_lane(self, start_index, end_index, normals, shift_distance=0.36 - 0.1):
         self.state_refs[start_index:end_index, 0] += normals[start_index:end_index, 0] * shift_distance

@@ -26,7 +26,7 @@
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real),
-    it(nh), Sign(nh), Lane(nh)
+    it(nh)
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -60,7 +60,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
     success = success && nh.getParam("/debug_level", debugLevel);
     success = success && nh.getParam("/gps", hasGps);
-    success = success && nh.getParam(mode + "/use_beta_model", use_beta_model);
+    success = success && nh.getParam("/use_beta", use_beta);
+    success = success && nh.getParam("/camera", camera);
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
         exit(1);
@@ -227,11 +228,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     if (subSign) {
-        cameraNodeConstructor(nh);
-        // sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-        // std::cout << "waiting for sign message" << std::endl;
-        // ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
-        // std::cout << "received message from sign" << std::endl;
+        if (camera) {
+            cameraNodeConstructor(nh);
+        } else {
+            sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+            std::cout << "waiting for sign message" << std::endl;
+            ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
+            std::cout << "received message from sign" << std::endl;
+        }
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
@@ -363,7 +367,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                 this->yaw = yaw_mod(this->yaw);
             }
 
-            static bool debug_imu = true;
+            static bool debug_imu = false;
             if (debug_imu) {
                 printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
             }
@@ -857,9 +861,13 @@ void Utility::reset_odom() {
     set_initial_pose(0, 0, 0);
 }
 int Utility::update_states_rk4 (double speed, double steering_angle, double dt) {
+    static auto timer2 = std::chrono::steady_clock::now();
     if (dt < 0) {
         dt = (ros::Time::now() - timerodom).toSec();
         timerodom = ros::Time::now();
+        double dt2 = (std::chrono::steady_clock::now() - timer2).count() / 1e9;
+        timer2 = std::chrono::steady_clock::now();
+        std::cout << "ros time: " << dt << ", steady time: " << dt2 << std::endl;
     }
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
@@ -869,7 +877,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
 
     double delta_rad = -steering_angle * M_PI / 180.0;
     double beta = 0;
-    if (use_beta_model) beta = atan((l_r / wheelbase) * tan(delta_rad));
+    if (use_beta) beta = atan((l_r / wheelbase) * tan(delta_rad));
 
     double magnitude = v_eff * dt * odomRatio;
     double yaw_rate = dt * magnitude * tan(delta_rad) / wheelbase * cos(beta);
@@ -1004,13 +1012,9 @@ std::array<double, 3> Utility::get_real_states() const {
     return {gps_x, gps_y, yaw};
 }
 void Utility::spin() {
-    int num_threads = 4;
-    ros::AsyncSpinner spinner(num_threads);
-    spinner.start();
-    ros::waitForShutdown();
-    // debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
-    // while (ros::ok()) {
-    //     ros::spinOnce();
-    //     rate->sleep();
-    // }
+    debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
+    while (ros::ok()) {
+        ros::spinOnce();
+        rate->sleep();
+    }
 }

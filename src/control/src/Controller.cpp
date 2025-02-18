@@ -25,8 +25,8 @@ using namespace VehicleConstants;
 
 class StateMachine {
 public:
-    StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real): 
-    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref), path_manager(nh,T,N,v_ref),
+    StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real, bool use_beta): 
+    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref,use_beta), path_manager(nh,T,N,v_ref),
     state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real)
     {
         // tunables
@@ -1771,7 +1771,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     double T, v_ref, T_park;
     int N;
-    bool sign, ekf, lane, real;
+    bool sign, ekf, lane, real, use_beta, async;
     std::string name;
     std::string nodeName = ros::this_node::getName();
     std::cout << "node name: " << nodeName << std::endl;
@@ -1780,6 +1780,7 @@ int main(int argc, char **argv) {
     success = success && nh.getParam(nodeName+"/name", name) && nh.getParam(nodeName+"/vref", vref) && nh.getParam(nodeName+"/x0", x0) && nh.getParam(nodeName+"/y0", y0) && nh.getParam(nodeName+"/yaw0", yaw0);
     success = success && nh.getParam("/T_park", T_park);
     success = success && nh.getParam(nodeName+"/real", real);
+    success = success && nh.getParam("/use_beta", use_beta) && nh.getParam("/async", async);
     if (!success) {
         std::cout << "Failed to get parameters" << std::endl;
         exit(1);
@@ -1787,7 +1788,7 @@ int main(int argc, char **argv) {
         std::cout << "Successfully loaded parameters" << std::endl;
     }
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
-    StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real);
+    StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
     bool use_tcp = false;
     nh.getParam("/use_tcp", use_tcp);
 
@@ -1799,10 +1800,16 @@ int main(int argc, char **argv) {
         services_thread = std::thread(&StateMachine::receive_services, &sm);
     } 
 
-    // std::thread callback_thread(&Utility::spin, &sm.utils);
-    int num_threads = 4;
-    ros::AsyncSpinner spinner(num_threads);
-    spinner.start();
+    std::thread callback_thread;
+    std::unique_ptr<ros::AsyncSpinner> spinner;
+    if (async) {
+        int num_threads = 4;
+        spinner = std::make_unique<ros::AsyncSpinner>(num_threads);
+        spinner->start();
+        std::cout << "Async spinner started with " << num_threads << " threads" << std::endl;
+    } else {
+        callback_thread = std::thread(&Utility::spin, &sm.utils);
+    }
     
     sm.run();
 
@@ -1810,6 +1817,8 @@ int main(int argc, char **argv) {
         services_thread.join();
     }
     ros::waitForShutdown();
-    // callback_thread.join();
+    if (callback_thread.joinable()) {
+        callback_thread.join();
+    }
     return 0;
 }
