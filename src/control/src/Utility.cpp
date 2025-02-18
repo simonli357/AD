@@ -898,7 +898,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
     dyaw = yaw_rate;
-    // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
+    printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }
 void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip) {

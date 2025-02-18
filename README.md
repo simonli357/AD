@@ -154,9 +154,14 @@ roslaunch sim_pkg run132.launch
 rosrun planning path2.py
 ```
 
-#### Run Control Node + CameraNode
+#### Run Camera Node
 ```bash
-roslaunch control controller.launch sign:=true v:=32 use_tcp:=true ip:=127.0.0.1 newlane:=false
+roslaunch control perception cameraNode.launch
+```
+
+#### Run Control Node
+```bash
+roslaunch control controller.launch v:=32 camera:=false
 ```
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
 
@@ -173,9 +178,14 @@ Press **start** to follow the planned path. To change the path, **double-click o
 rosrun planning path2.py
 ```
 
+#### Run Camera Node
+```bash
+roslaunch control perception cameraNode.launch real:=true realsense:=true
+```
+
 #### Run Control Node + CameraNode
 ```bash
-roslaunch control controller.launch real:=true use_tcp:=true newlane:=false realsense:=true ip:={ip_address}
+roslaunch control controller.launch real:=true v:=32 camera:=false
 ```
 - replace {ip_address} by ip address of computer on which the gui is run
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
