@@ -1360,6 +1360,9 @@ void StateMachine::publish_commands() {
     }
     double steer = -mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
+    // steer = 0;
+    // speed = 0.32;
+    
     // std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
     // std::cout << speed*100 << ", " << steer << std::endl;
     utils.publish_cmd_vel(steer, speed);
