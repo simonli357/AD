@@ -59,6 +59,10 @@ class LightClassifier {
         }
 
         LightColor classify(cv::Mat detected_light) {
+            if (detected_light.empty()) {
+                ROS_WARN("LightColorClassify(): Empty image passed to classify, returning UNDETERMINED");
+                return LightColor::UNDETERMINED;
+            }
             // preprocessing
             cv::cvtColor(detected_light, hsv, cv::COLOR_BGR2HSV);
             cv::GaussianBlur(hsv, hsv, cv::Size(5,5), 0);

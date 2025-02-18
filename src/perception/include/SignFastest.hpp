@@ -432,14 +432,27 @@ class SignFastest {
                     int x2 = box.rect.x + box.rect.width;
                     int y2 = box.rect.y + box.rect.height;
                     if (class_id == OBJECT::LIGHTS) {
-                        cv::Mat detected_light = image(cv::Rect(x1, y1, x2 - x1, y2 - y1));
-                        // auto start = high_resolution_clock::now();
-                        auto light_color = light_classifier.classify(detected_light);
-                        // auto stop1 = high_resolution_clock::now();
-                        // std::cout << "duration: " << duration_cast<microseconds>(stop1 - start).count() << std::endl;
-                        if (light_color != LightColor::UNDETERMINED) {
-                            class_id = light_color == LightColor::RED ? OBJECT::REDLIGHT : light_color == LightColor::GREEN ? OBJECT::GREENLIGHT : OBJECT::YELLOWLIGHT;
-                            box.label = static_cast<int>(class_id);
+                        // Clamp the ROI coordinates to ensure they are within image bounds
+                        int x1_valid = std::max(x1, 0);
+                        int y1_valid = std::max(y1, 0);
+                        int x2_valid = std::min(x2, image.cols);
+                        int y2_valid = std::min(y2, image.rows);
+
+                        int width = x2_valid - x1_valid;
+                        int height = y2_valid - y1_valid;
+
+                        // Check if the ROI is valid
+                        if (width <= 0 || height <= 0) {
+                            ROS_WARN("Invalid ROI for light detection, skipping classification");
+                        } else {
+                            cv::Rect valid_roi(x1_valid, y1_valid, width, height);
+                            cv::Mat detected_light = image(valid_roi);
+                            auto light_color = light_classifier.classify(detected_light);
+                            if (light_color != LightColor::UNDETERMINED) {
+                                class_id = (light_color == LightColor::RED) ? OBJECT::REDLIGHT :
+                                        (light_color == LightColor::GREEN) ? OBJECT::GREENLIGHT : OBJECT::YELLOWLIGHT;
+                                box.label = static_cast<int>(class_id);
+                            }
                         }
                     }
                     if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
