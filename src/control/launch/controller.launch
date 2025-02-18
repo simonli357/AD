@@ -222,7 +222,7 @@
   <param name="debug_level" value="$(arg debug_level)"/>
   <arg name = "emergency" default="false"/>
   <param name="emergency" value="$(arg emergency)"/>
-  <arg name="use_tcp" default="false"/>
+  <arg name="use_tcp" default="true"/>
   <param name="use_tcp" value="$(arg use_tcp)"/>
   <arg name="ip" default="127.0.0.1"/>
   <param name="ip" value="$(arg ip)"/>
