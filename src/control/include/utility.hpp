@@ -79,7 +79,7 @@ public:
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
     int debugLevel = 5;
     std_msgs::String debug_msg;
-    bool real, use_beta_model = false;
+    bool real, use_beta, camera = false;
     double rateVal;
     ros::Rate* rate;
 
@@ -661,7 +661,10 @@ public:
     }
 
     //----------- Camera Node ------------
-    void cameraNodeConstructor(ros::NodeHandle& nh) {
+    void cameraNodeConstructor(ros::NodeHandle& nh)
+    {
+        sign_ptr = std::make_unique<SignFastest>(nh);
+        lane_ptr = std::make_unique<LaneDetector>(nh);
 		depthImage = cv::Mat::zeros(480, 640, CV_16UC1);
 		colorImage = cv::Mat::zeros(480, 640, CV_8UC3);
 		std::string nodeName = ros::this_node::getName();
@@ -675,7 +678,7 @@ public:
 		nh.param(nodeName + "/thread", useRosTimer, false);
 
 		if (!realsense) {
-			if (Sign.hasDepthImage) {
+			if (sign_ptr->hasDepthImage) {
 				std::string topic;
 				bool is_real;
 				if (!nh.getParam(nodeName + "/real", is_real)) {
@@ -766,8 +769,10 @@ public:
 		}
 	}
 
-	SignFastest Sign;
-	LaneDetector Lane;
+	// SignFastest Sign;
+	// LaneDetector Lane;
+    std::unique_ptr<SignFastest> sign_ptr;
+    std::unique_ptr<LaneDetector> lane_ptr;
     
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
@@ -816,8 +821,8 @@ public:
 			std::lock_guard<std::mutex> lock(image_mutex);
 			depthImage = cv_ptr_depth->image.clone();
 		}
-		if (Sign.tcp_client != nullptr) {
-        	Sign.tcp_client->send_image_depth(*msg);
+		if (sign_ptr->tcp_client != nullptr) {
+        	sign_ptr->tcp_client->send_image_depth(*msg);
 		}
 	}
 	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
@@ -830,8 +835,8 @@ public:
 			std::lock_guard<std::mutex> lock(image_mutex);
             colorImage = cv_ptr->image.clone();
 		}
-		if (Sign.tcp_client != nullptr) {
-        	Sign.tcp_client->send_image_rgb(*msg);
+		if (sign_ptr->tcp_client != nullptr) {
+        	sign_ptr->tcp_client->send_image_rgb(*msg);
 		}
 	}
 
@@ -845,9 +850,9 @@ public:
 		}
         {
             std::lock_guard<std::mutex> lock(image_mutex);
-		    Lane.publish_lane(colorImage);
+		    lane_ptr->publish_lane(colorImage);
         }
-        process_lane_data(Lane.lane_msg);
+        process_lane_data(lane_ptr->lane_msg);
 	}
 	void run_sign_once() {
 		if (colorImage.empty()) {
@@ -860,9 +865,9 @@ public:
 		}
         {
             std::lock_guard<std::mutex> lock(image_mutex);
-		    Sign.publish_sign(colorImage, depthImage);
+		    sign_ptr->publish_sign(colorImage, depthImage);
         }
-        process_sign_data(Sign.sign_msg);
+        process_sign_data(sign_ptr->sign_msg);
 	}
 
     void get_frame() {
@@ -893,9 +898,9 @@ public:
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-			if (Sign.tcp_client != nullptr) {
-				Sign.tcp_client->send_image_rgb(*color_msg);
-				Sign.tcp_client->send_image_depth(*depth_msg);
+			if (sign_ptr->tcp_client != nullptr) {
+				sign_ptr->tcp_client->send_image_rgb(*color_msg);
+				sign_ptr->tcp_client->send_image_depth(*depth_msg);
 			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);
