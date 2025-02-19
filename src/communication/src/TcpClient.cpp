@@ -1,4 +1,5 @@
 #include "TcpClient.hpp"
+#include <ros/ros.h>
 #include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "msg/TriggerMsg.hpp"
@@ -340,9 +341,15 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
-	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+	cv_bridge::CvImagePtr cv_ptr;
+	try {
+		cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGR8);
+	} catch (cv_bridge::Exception &e) {
+		ROS_ERROR("send_image_rgb(): cv_bridge exception: %s", e.what());
+		return;
+	}
 	std::vector<uchar> image;
-	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 50});
+	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 30});
 	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
@@ -355,7 +362,13 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 }
 
 void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
-	cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
+	cv_bridge::CvImagePtr cv_ptr;
+	try {
+		cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_16UC1);
+	} catch (cv_bridge::Exception &e) {
+		ROS_ERROR("send_image_depth(): cv_bridge exception: %s", e.what());
+		return;
+	}
 	std::vector<uchar> image;
 	cv::imencode(".png", cv_ptr->image, image, {cv::IMWRITE_PNG_COMPRESSION, 4});
 	uint32_t length = image.size();

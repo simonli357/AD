@@ -18,7 +18,7 @@
 <arg name="sign_rate" default="30"/>
 <arg name="pubImage" default="true"/>
 <arg name="thread" default="true"/>
-<arg name="use_tcp" default="false"/>
+<arg name="use_tcp" default="true"/>
 <param name="use_tcp" value="$(arg use_tcp)"/>
 <arg name="ip" default="127.0.0.1"/>
 <param name="ip" value="$(arg ip)"/>
