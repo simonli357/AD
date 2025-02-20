@@ -238,9 +238,9 @@ namespace drivers{
         float beta = 0;
         float gamma = 0;
         // Zero default when returning from a left turn
-        ZD_left = 0.0779;
+        ZD_left = 0.0772;
         // Zero default when returning from a right turn
-        ZD_right = 0.0763;
+        ZD_right = 0.0755;
         // Clip the steering angle for safety
         if(f_angle > 20.8) f_angle = 20.8; 
         if(f_angle < -21.8) f_angle = -21.8;
