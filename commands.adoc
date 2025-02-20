@@ -111,3 +111,8 @@ roi:
   width: 0
   do_rectify: False
 ---
+
+- mbed
+mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM
+st-flash erase
+
