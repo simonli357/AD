@@ -75,7 +75,7 @@ LaneNet::LaneNet(const beec::config_parse_utils::ConfigParser &config) {
 	}
 
 	MNN::ScheduleConfig mnn_config;
-	mnn_config.type = MNN_FORWARD_AUTO;
+	mnn_config.type = MNN_FORWARD_CUDA;
 	mnn_config.numThread = 4;
 
 	MNN::BackendConfig backend_config;
