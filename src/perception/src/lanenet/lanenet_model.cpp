@@ -151,34 +151,34 @@ void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv:
 	binary_output_mat *= 255;
 	binary_output_mat.convertTo(binary_seg_result, CV_8UC1);
 
-	auto pix_embedding_output_data = pix_embedding_output_tensor_user.host<float>();
-	cv::Mat pix_embedding_output_mat(_m_input_node_size_host, CV_32FC4, pix_embedding_output_data);
+	/* auto pix_embedding_output_data = pix_embedding_output_tensor_user.host<float>(); */
+	/* cv::Mat pix_embedding_output_mat(_m_input_node_size_host, CV_32FC4, pix_embedding_output_data); */
 
-	// gather pixel embedding features
-	std::vector<cv::Point> coords;
-	std::vector<DBSCAMSample> pixel_embedding_samples;
-	gather_pixel_embedding_features(binary_seg_result, pix_embedding_output_mat, coords, pixel_embedding_samples);
+	/* // gather pixel embedding features */
+	/* std::vector<cv::Point> coords; */
+	/* std::vector<DBSCAMSample> pixel_embedding_samples; */
+	/* gather_pixel_embedding_features(binary_seg_result, pix_embedding_output_mat, coords, pixel_embedding_samples); */
 
-	// simultaneously random shuffle embedding vector and coord vector inplace
-	simultaneously_random_shuffle<cv::Point, DBSCAMSample>(coords, pixel_embedding_samples);
+	/* // simultaneously random shuffle embedding vector and coord vector inplace */
+	/* simultaneously_random_shuffle<cv::Point, DBSCAMSample>(coords, pixel_embedding_samples); */
 
-	// normalize pixel embedding features
-	normalize_sample_features(pixel_embedding_samples, pixel_embedding_samples);
+	/* // normalize pixel embedding features */
+	/* normalize_sample_features(pixel_embedding_samples, pixel_embedding_samples); */
 
-	// cluster samples
-	std::vector<std::vector<uint>> cluster_ret;
-	std::vector<uint> noise;
-	{
-		AUTOTIME
-		cluster_pixem_embedding_features(pixel_embedding_samples, cluster_ret, noise);
-	}
+	/* // cluster samples */
+	/* std::vector<std::vector<uint>> cluster_ret; */
+	/* std::vector<uint> noise; */
+	/* { */
+	/* 	AUTOTIME */
+	/* 	cluster_pixem_embedding_features(pixel_embedding_samples, cluster_ret, noise); */
+	/* } */
 
-	// visualize instance segmentation
-	instance_seg_result = cv::Mat(_m_input_node_size_host, CV_8UC3, cv::Scalar(0, 0, 0));
-	{
-		AUTOTIME
-		visualize_instance_segmentation_result(cluster_ret, coords, instance_seg_result);
-	}
+	/* // visualize instance segmentation */
+	/* instance_seg_result = cv::Mat(_m_input_node_size_host, CV_8UC3, cv::Scalar(0, 0, 0)); */
+	/* { */
+	/* 	AUTOTIME */
+	/* 	visualize_instance_segmentation_result(cluster_ret, coords, instance_seg_result); */
+	/* } */
 }
 
 cv::Mat LaneNet::mask(const cv::Mat &input_image) {
