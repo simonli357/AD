@@ -67,6 +67,12 @@ public:
      * @param instance_seg_result : instance segmentation result
      */
     void detect(const cv::Mat& input_image, cv::Mat& binary_seg_result, cv::Mat& instance_seg_result);
+    
+    /***
+     * Creates trapezoidal mask
+     */
+    cv::Mat mask(const cv::Mat& input_image);
+    cv::Mat mask_grayscale(const cv::Mat& input_image);
 
     /***
      * Return if model is successfully initialized

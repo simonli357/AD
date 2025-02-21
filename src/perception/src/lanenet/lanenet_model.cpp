@@ -13,6 +13,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include <MNN/AutoTime.hpp>
+#include "MNN/MNNForwardType.h"
 #include "dbscan.hpp"
 
 namespace beec_task {
@@ -74,7 +75,7 @@ LaneNet::LaneNet(const beec::config_parse_utils::ConfigParser &config) {
 	}
 
 	MNN::ScheduleConfig mnn_config;
-	mnn_config.type = MNN_FORWARD_CPU;
+	mnn_config.type = MNN_FORWARD_AUTO;
 	mnn_config.numThread = 4;
 
 	MNN::BackendConfig backend_config;
@@ -116,13 +117,15 @@ LaneNet::~LaneNet() {
  * @param pix_embedding_result
  */
 void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv::Mat &instance_seg_result) {
+    
+    cv::Mat masked_image = mask(input_image);
 
-	// preprocess
+    // preprocess
 	cv::Mat input_image_copy;
-	input_image.copyTo(input_image_copy);
+	masked_image.copyTo(input_image_copy);
 	{
 		AUTOTIME
-		preprocess(input_image, input_image_copy);
+		preprocess(masked_image, input_image_copy);
 	}
 
 	// run session
@@ -176,6 +179,57 @@ void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv:
 		AUTOTIME
 		visualize_instance_segmentation_result(cluster_ret, coords, instance_seg_result);
 	}
+}
+
+cv::Mat LaneNet::mask(const cv::Mat &input_image) {
+    cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
+    const int height = input_image.rows;
+    const int width = input_image.cols;
+
+    std::vector<cv::Point> vertices = {
+        cv::Point(0, height),
+        cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
+        cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)),
+        cv::Point(width, height)
+    };
+
+    cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
+
+    cv::Mat input_float;
+    if (input_image.channels() == 1) {
+        cv::cvtColor(input_image, input_float, cv::COLOR_GRAY2BGR);
+    } else {
+        input_image.convertTo(input_float, CV_32FC3);
+    }
+
+    cv::Mat mask_3ch;
+    cv::merge(std::vector<cv::Mat>{mask, mask, mask}, mask_3ch);
+    mask_3ch.convertTo(mask_3ch, CV_32FC3, 1.0/255.0);
+
+    cv::Mat masked_image;
+    cv::multiply(input_float, mask_3ch, masked_image);
+    
+    return masked_image;
+}
+
+cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
+    cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
+    const int height = input_image.rows;
+    const int width = input_image.cols;
+
+    std::vector<cv::Point> vertices = {
+        cv::Point(0, height),
+        cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
+        cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)),
+        cv::Point(width, height)
+    };
+
+    cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
+
+    cv::Mat masked_image;
+    cv::multiply(input_image, mask, masked_image);
+    
+    return masked_image;
 }
 
 /***************Private Function Sets*******************/
