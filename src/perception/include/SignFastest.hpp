@@ -1,6 +1,8 @@
 #pragma once
 
 #include "TcpClient.hpp"
+#include "lanenet/config_parser.h"
+#include "lanenet/lanenet_model.h"
 #include "ros/ros.h"
 #include "yolo-fastestv2.h"
 #include <opencv2/opencv.hpp>
@@ -114,6 +116,7 @@ class SignFastest {
                 std::string current_path = helper::getSourceDirectory();
                 std::string modelPath = current_path + "/../models/trt/" + model_name + ".onnx";
                 yolov8 = std::make_unique<YoloV8>(modelPath, config);
+                lanenet = std::make_unique<beec_task::lane_detection::LaneNet>(beec::config_parse_utils::ConfigParser("config.ini"));
             }
 
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);
@@ -258,6 +261,9 @@ class SignFastest {
         // YoloV8Config config;
         YoloV8Config config;
         std::unique_ptr<YoloV8> yolov8;
+        
+        //lanenet engine
+        std::unique_ptr<beec_task::lane_detection::LaneNet> lanenet;
 
         static constexpr double SIGN_H2D_RATIO = 31.57;
         static constexpr double LIGHT_W2D_RATIO = 41.87;
@@ -418,6 +424,11 @@ class SignFastest {
                 }
             } else {
                 detected_objects = yolov8->detectObjects(image);
+                cv::Mat binary_image;
+                cv::Mat instance_image;
+                lanenet->detect(image, binary_image, instance_image);
+                const cv::Mat binary_clone = binary_image.clone();
+                tcp_client->send_binary_lanes(binary_clone);
                 for (struct Object& box : detected_objects) {
                     int class_id = box.label;
                     detected_indices[class_id] = 1;

@@ -20,6 +20,7 @@ class UdpConnection:
                 4: self.store_sign,
                 5: self.store_rgb_image,
                 6: self.store_depth_image,
+                7: self.store_binary_lanes,
             })
             self.types = list(self.data_actions.keys())
             self.lane2_buf = deque([], 1)
@@ -28,6 +29,7 @@ class UdpConnection:
             self.sign_buf = deque([], 1)
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
+            self.lanes_buf = deque([], 1)
             threading.Thread(target=self.receive, daemon=True).start()
 
     def receive(self):
@@ -65,6 +67,9 @@ class UdpConnection:
 
     def store_depth_image(self, bytes):
         self.depth_buf.append(bytes)
+
+    def store_binary_lanes(self, bytes):
+        self.lanes_buf.append(bytes)
 
     ####################
     # Utility methods
@@ -126,6 +131,18 @@ class UdpConnection:
                 cv_image = (cv_image).astype(np.uint16)
                 bridge = CvBridge()
                 return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
+            return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def parse_binary_lanes(self):
+        try:
+            if len(self.lanes_buf) > 0:
+                np_array = np.frombuffer(self.lanes_buf[0], dtype=np.uint8)
+                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
+                bridge = CvBridge()
+                return bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
             return None
         except Exception as e:
             print(e)

@@ -15,6 +15,9 @@ set(CMAKE_BUILD_TYPE Release)
 # # Enable CUDA optimizations
 # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
 
+set(MNN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/MNN)
+add_subdirectory(${MNN_DIR})
+
 find_package(PkgConfig)
 pkg_search_module(Eigen3 REQUIRED eigen3)
 
@@ -90,9 +93,11 @@ endif()
 # set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 
 include_directories(
+  ${MNN_DIR}/include
   include
   include/ncnn/include
   include/sort
+  include/lanenet
   ${TENSORRT_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
@@ -169,6 +174,10 @@ catkin_package(
 file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 add_library(alglib SHARED ${ALGLIB_SOURCES})
 
+file(GLOB LANENET ${CMAKE_CURRENT_SOURCE_DIR}/src/lanenet/*.cpp)
+add_library(lanenet ${LANENET})
+target_link_libraries(lanenet MNN)
+
 add_executable(lane
   src/lane.cpp
 )
@@ -184,6 +193,7 @@ target_link_libraries(signFastest
   ${catkin_LIBRARIES}
   ncnn ${OpenCV_LIBS}
   communication
+  lanenet
 )
 
 add_executable(videoDetector
@@ -213,6 +223,7 @@ target_link_libraries(cameraNode
   alglib
   ${Python3_LIBRARIES}
   communication
+  lanenet
 )
 add_executable(rs
   src/rs.cpp
@@ -240,6 +251,7 @@ target_link_libraries(testNode
   alglib
   ${Python3_LIBRARIES}
   communication
+  lanenet
 )
 
 # configure_file(

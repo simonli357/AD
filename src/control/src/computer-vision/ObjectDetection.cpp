@@ -1,4 +1,4 @@
-#include "object-detection/ObjectDetection.hpp"
+#include "computer-vision/ObjectDetection.hpp"
 #include "ValueTypes.hpp"
 #include "World.hpp"
 #include <unordered_map>

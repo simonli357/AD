@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
+#include <opencv2/core/mat.hpp>
 #include <queue>
 #include <sensor_msgs/Image.h>
 #include <sys/types.h>
@@ -49,6 +50,7 @@ class TcpClient {
 	void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const Image &img);
 	void send_image_depth(const Image &img);
+	void send_binary_lanes(const cv::Mat &img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);

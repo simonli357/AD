@@ -149,7 +149,7 @@ catkin_package(
 include_directories(
   ${catkin_INCLUDE_DIRS} 
   include 
-  include/object-detection
+  include/computer-vision/
   include/htn
   include/htn/actions
   include/htn/actions/park
@@ -171,7 +171,7 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
 file(GLOB COMPUTER_VISION ${CMAKE_CURRENT_SOURCE_DIR}/src/computer-vision/*.cpp)
 file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
-add_library(htn ${HTN} ${COMPUTER_VISION} ${ACTIONS})
+add_library(htn ${HTN} ${COMPUTER_VISION} ${ACTIONS} ${LANENET})
 target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
 
 # add_executable(opt

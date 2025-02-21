@@ -1330,12 +1330,14 @@ class OpenCVGuiApp(QWidget):
 def udp_callbacks(gui, server):
     while True:
         try:
-            rgb_image = None
+            # rgb_image = None
             depth_image = None
+            lanes_image = None
             if gui.show_depth:
                 depth_image = server.udp_connection.parse_depth_image()
             else:
-                rgb_image = server.udp_connection.parse_rgb_image()
+                # rgb_image = server.udp_connection.parse_rgb_image()
+                lanes_image = server.udp_connection.parse_binary_lanes()
 
             sign = server.udp_connection.parse_sign()
             waypoint = server.udp_connection.parse_waypoint()
@@ -1343,11 +1345,14 @@ def udp_callbacks(gui, server):
             lane2 = server.udp_connection.parse_lane2()
 
             # Image rgb
-            if rgb_image is not None:
-                gui.camera_callback(rgb_image)
+            # if rgb_image is not None:
+            #    gui.camera_callback(rgb_image)
             # Image depth
             if depth_image is not None:
                 gui.depth_callback(depth_image)
+            # Lanes image
+            if lanes_image is not None:
+                gui.camera_callback(lanes_image)
             # Lane2
             if lane2 is not None:
                 gui.lane_callback(lane2)
