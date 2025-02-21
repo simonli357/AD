@@ -137,6 +137,15 @@ target_include_directories(object_detection_lib PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src                        
 )
 
+file(GLOB LANENET ${CMAKE_CURRENT_SOURCE_DIR}/src/lanenet/*.cpp)
+add_library(lanenet ${LANENET})
+target_include_directories(lanenet PUBLIC 
+  ${MNN_DIR}/include
+)
+target_link_libraries(lanenet PUBLIC
+  MNN
+)
+
 catkin_package(
   INCLUDE_DIRS include include/ncnn/include ${TENSORRT_INCLUDE_DIR}
   CATKIN_DEPENDS
@@ -150,7 +159,7 @@ catkin_package(
   cv_bridge
   sensor_msgs
   communication
-  LIBRARIES object_detection_lib
+  LIBRARIES object_detection_lib lanenet
   # CFG_EXTRAS perception-extras.cmake
 )
 # install(DIRECTORY include/
@@ -173,10 +182,6 @@ catkin_package(
 
 file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 add_library(alglib SHARED ${ALGLIB_SOURCES})
-
-file(GLOB LANENET ${CMAKE_CURRENT_SOURCE_DIR}/src/lanenet/*.cpp)
-add_library(lanenet ${LANENET})
-target_link_libraries(lanenet MNN)
 
 add_executable(lane
   src/lane.cpp

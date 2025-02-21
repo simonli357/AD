@@ -116,7 +116,7 @@ class SignFastest {
                 std::string current_path = helper::getSourceDirectory();
                 std::string modelPath = current_path + "/../models/trt/" + model_name + ".onnx";
                 yolov8 = std::make_unique<YoloV8>(modelPath, config);
-                lanenet = std::make_unique<beec_task::lane_detection::LaneNet>(beec::config_parse_utils::ConfigParser("config.ini"));
+                lanenet = std::make_unique<beec_task::lane_detection::LaneNet>(beec::config_parse_utils::ConfigParser("/home/trtuser/Repositories/ROS/AD/src/perception/src/lanenet/config.ini"));
             }
 
             pub = nh.advertise<std_msgs::Float32MultiArray>("sign", 10);

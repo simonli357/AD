@@ -142,7 +142,7 @@ class UdpConnection:
                 np_array = np.frombuffer(self.lanes_buf[0], dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+                return bridge.cv2_to_imgmsg(cv_image, encoding='8UC1')
             return None
         except Exception as e:
             print(e)
