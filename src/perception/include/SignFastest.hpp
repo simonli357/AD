@@ -428,7 +428,8 @@ class SignFastest {
                 cv::Mat instance_image;
                 lanenet->detect(image, binary_image, instance_image);
                 const cv::Mat binary_clone = binary_image.clone();
-                tcp_client->send_binary_lanes(lanenet->mask_grayscale(binary_clone));
+                beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(lanenet->mask_grayscale(binary_clone));
+                tcp_client->send_lanes(lanes.l1, lanes.l2);
                 for (struct Object& box : detected_objects) {
                     int class_id = box.label;
                     detected_indices[class_id] = 1;

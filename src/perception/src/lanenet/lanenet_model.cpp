@@ -12,9 +12,9 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <MNN/AutoTime.hpp>
 #include "MNN/MNNForwardType.h"
 #include "dbscan.hpp"
+#include <MNN/AutoTime.hpp>
 
 namespace beec_task {
 namespace lane_detection {
@@ -75,7 +75,7 @@ LaneNet::LaneNet(const beec::config_parse_utils::ConfigParser &config) {
 	}
 
 	MNN::ScheduleConfig mnn_config;
-	mnn_config.type = MNN_FORWARD_CUDA;
+	mnn_config.type = MNN_FORWARD_VULKAN;
 	mnn_config.numThread = 4;
 
 	MNN::BackendConfig backend_config;
@@ -117,10 +117,10 @@ LaneNet::~LaneNet() {
  * @param pix_embedding_result
  */
 void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv::Mat &instance_seg_result) {
-    
-    cv::Mat masked_image = mask(input_image);
 
-    // preprocess
+	cv::Mat masked_image = mask(input_image);
+
+	// preprocess
 	cv::Mat input_image_copy;
 	masked_image.copyTo(input_image_copy);
 	{
@@ -182,54 +182,141 @@ void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv:
 }
 
 cv::Mat LaneNet::mask(const cv::Mat &input_image) {
-    cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
-    const int height = input_image.rows;
-    const int width = input_image.cols;
+	cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
+	const int height = input_image.rows;
+	const int width = input_image.cols;
 
-    std::vector<cv::Point> vertices = {
-        cv::Point(0, height),
-        cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
-        cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)),
-        cv::Point(width, height)
-    };
+	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)), cv::Point(width, height)};
 
-    cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
+	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
 
-    cv::Mat input_float;
-    if (input_image.channels() == 1) {
-        cv::cvtColor(input_image, input_float, cv::COLOR_GRAY2BGR);
-    } else {
-        input_image.convertTo(input_float, CV_32FC3);
-    }
+	cv::Mat input_float;
+	if (input_image.channels() == 1) {
+		cv::cvtColor(input_image, input_float, cv::COLOR_GRAY2BGR);
+	} else {
+		input_image.convertTo(input_float, CV_32FC3);
+	}
 
-    cv::Mat mask_3ch;
-    cv::merge(std::vector<cv::Mat>{mask, mask, mask}, mask_3ch);
-    mask_3ch.convertTo(mask_3ch, CV_32FC3, 1.0/255.0);
+	cv::Mat mask_3ch;
+	cv::merge(std::vector<cv::Mat>{mask, mask, mask}, mask_3ch);
+	mask_3ch.convertTo(mask_3ch, CV_32FC3, 1.0 / 255.0);
 
-    cv::Mat masked_image;
-    cv::multiply(input_float, mask_3ch, masked_image);
-    
-    return masked_image;
+	cv::Mat masked_image;
+	cv::multiply(input_float, mask_3ch, masked_image);
+
+	return masked_image;
 }
 
 cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
-    cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
-    const int height = input_image.rows;
-    const int width = input_image.cols;
 
-    std::vector<cv::Point> vertices = {
-        cv::Point(0, height),
-        cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
-        cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)),
-        cv::Point(width, height)
-    };
+	cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
+	const int height = input_image.rows;
+	const int width = input_image.cols;
 
-    cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
+	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)), cv::Point(width, height)};
 
-    cv::Mat masked_image;
-    cv::multiply(input_image, mask, masked_image);
-    
-    return masked_image;
+	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
+
+	cv::Mat masked_image;
+	cv::multiply(input_image, mask, masked_image);
+
+    cv::Mat resized_image;
+    cv::resize(masked_image, resized_image, cv::Size(640, 480));
+
+	return resized_image;
+}
+
+LaneNet::Lanes LaneNet::get_lanes(const cv::Mat &binary_image) {
+	LanePolygons polygons = get_lane_polygons(binary_image);
+	Lane lane1 = get_lane_from_polygon(polygons.l1);
+	Lane lane2 = get_lane_from_polygon(polygons.l2);
+	// print_lane(lane1);
+	// print_lane(lane2);
+	return LaneNet::Lanes{lane1, lane2};
+}
+
+void LaneNet::print_lane(Lane &lane) {
+	std::cout << "Path: ";
+	for (const auto &point : lane) {
+		float x = std::get<0>(point);
+		float y = std::get<1>(point);
+		// Format to 2 decimal places for readability
+		std::cout << "(" << std::fixed << std::setprecision(2) << x << ", " << y << "), ";
+	}
+	std::cout << "\n\n";
+}
+
+LaneNet::LanePolygons LaneNet::get_lane_polygons(const cv::Mat &binary_image) {
+	std::vector<std::vector<cv::Point>> contours;
+	// Find all external contours in the binary image
+	cv::findContours(binary_image.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+	if (contours.empty()) {
+		return LaneNet::LanePolygons{std::vector<cv::Point>{}, std::vector<cv::Point>{}};
+	}
+
+	// Sort contours by descending area
+	std::vector<size_t> indices(contours.size());
+	std::iota(indices.begin(), indices.end(), 0);
+	std::sort(indices.begin(), indices.end(), [&contours](size_t a, size_t b) { return cv::contourArea(contours[a]) > cv::contourArea(contours[b]); });
+
+	// Compute convex hulls for the two largest contours
+	std::vector<std::vector<cv::Point>> convexPolygons;
+	for (int i = 0; i < std::min(2, (int)indices.size()); ++i) {
+		std::vector<cv::Point> hull;
+		cv::convexHull(contours[indices[i]], hull);
+		convexPolygons.push_back(hull);
+	}
+
+	if (convexPolygons.size() == 1) {
+		return LaneNet::LanePolygons{convexPolygons[0], std::vector<cv::Point>{}};
+	}
+
+	if (convexPolygons.size() == 2) {
+		return LaneNet::LanePolygons{convexPolygons[0], convexPolygons[1]};
+	}
+
+	return LaneNet::LanePolygons{std::vector<cv::Point>{}, std::vector<cv::Point>{}};
+}
+
+cv::Point2f LaneNet::compute_triangle_centroids(const cv::Point2f &a, const cv::Point2f &b, const cv::Point2f &c) { return cv::Point2f((a.x + b.x + c.x) / 3.0f, (a.y + b.y + c.y) / 3.0f); }
+
+Lane LaneNet::get_lane_from_polygon(const std::vector<cv::Point> &polygon) {
+	Lane lane;
+	if (polygon.size() < 3) {
+		for (const auto &pt : polygon) {
+			lane.emplace_back(pt.x, pt.y);
+		}
+		return lane;
+	}
+
+	// 1. Create Delaunay triangulation
+	cv::Rect bounds = cv::boundingRect(polygon);
+	cv::Subdiv2D subdiv(bounds);
+	for (const auto &pt : polygon) {
+		subdiv.insert(cv::Point2f(pt));
+	}
+
+	// 2. Extract triangles and compute centroids
+	std::vector<cv::Vec6f> triangles;
+	subdiv.getTriangleList(triangles);
+	std::vector<cv::Point2f> centroids;
+	for (const auto &t : triangles) {
+		centroids.push_back(compute_triangle_centroids(cv::Point2f(t[0], t[1]), cv::Point2f(t[2], t[3]), cv::Point2f(t[4], t[5])));
+	}
+
+	std::sort(centroids.begin(), centroids.end(), [](const cv::Point2f &a, const cv::Point2f &b) {
+		return a.y > b.y; // Higher y (lower in the image) first
+	});
+
+	// 4. Convert to tuples
+	for (const auto &pt : centroids) {
+		lane.emplace_back(pt.x, pt.y);
+	}
+
+	return lane;
 }
 
 /***************Private Function Sets*******************/

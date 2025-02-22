@@ -5,6 +5,7 @@ import cv2
 from collections import OrderedDict, deque
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
+from python_server.msg.lanes_msg import LanesMsg
 
 
 class UdpConnection:
@@ -20,7 +21,7 @@ class UdpConnection:
                 4: self.store_sign,
                 5: self.store_rgb_image,
                 6: self.store_depth_image,
-                7: self.store_binary_lanes,
+                7: self.store_lanes,
             })
             self.types = list(self.data_actions.keys())
             self.lane2_buf = deque([], 1)
@@ -68,7 +69,7 @@ class UdpConnection:
     def store_depth_image(self, bytes):
         self.depth_buf.append(bytes)
 
-    def store_binary_lanes(self, bytes):
+    def store_lanes(self, bytes):
         self.lanes_buf.append(bytes)
 
     ####################
@@ -78,7 +79,7 @@ class UdpConnection:
     def parse_lane2(self):
         try:
             if len(self.lane2_buf) > 0:
-                return Lane2Msg(b'\x02').decode(self.lane2_buf[0])
+                return Lane2Msg().decode(self.lane2_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -136,13 +137,10 @@ class UdpConnection:
             print(e)
             return None
 
-    def parse_binary_lanes(self):
+    def parse_lanes(self):
         try:
             if len(self.lanes_buf) > 0:
-                np_array = np.frombuffer(self.lanes_buf[0], dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='8UC1')
+                return LanesMsg().decode(self.lanes_buf[0])
             return None
         except Exception as e:
             print(e)

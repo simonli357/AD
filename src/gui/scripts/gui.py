@@ -781,6 +781,22 @@ class OpenCVGuiApp(QWidget):
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         return image
 
+    def add_lanes_to_image(self, image, lanes):
+        if image is None:
+            return image
+
+        # Draw both lanes in blue
+        if lanes.lane1 and len(lanes.lane1) >= 2:
+            # Convert to numpy array and reshape for OpenCV
+            pts = np.array(lanes.lane1, dtype=np.int32).reshape((-1, 1, 2))
+            cv2.polylines(image, [pts], isClosed=False, color=(255, 0, 0), thickness=5)
+
+        if lanes.lane2 and len(lanes.lane2) >= 2:
+            pts = np.array(lanes.lane2, dtype=np.int32).reshape((-1, 1, 2))
+            cv2.polylines(image, [pts], isClosed=False, color=(255, 0, 0), thickness=5)
+
+        return image
+
     def add_sign_detection_to_image(self, image):
         for i in range(self.numObj):
             try:
@@ -825,7 +841,7 @@ class OpenCVGuiApp(QWidget):
 
         return image
 
-    def camera_callback(self, msg):
+    def camera_callback(self, msg, lanes):
         if self.show_depth:
             return
 
@@ -841,39 +857,8 @@ class OpenCVGuiApp(QWidget):
             # Continue with processing
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
-
-            # Convert BGR to RGB
-            rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-            rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
-
-            # Convert to QImage for GUI display
-            h, w, ch = rgb_image.shape
-            bytes_per_line = ch * w
-            qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(qt_image)
-            self.update_camera_signal.emit(pixmap)
-
-        except cv2.error as e:
-            rospy.logerr(f"OpenCV error: {e}")
-        except Exception as e:
-            rospy.logerr(f"Unexpected error in camera_callback: {e}")
-
-    def lanes_callback(self, msg):
-        if self.show_depth:
-            return
-
-        try:
-            # Convert ROS image message to OpenCV image
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "8UC1")
-
-            # Check if the image is empty
-            if cv_image is None or cv_image.size == 0:
-                rospy.logerr("Received an empty image from the camera!")
-                return
-
-            # Continue with processing
-            cv_image = self.add_sign_detection_to_image(cv_image)
-            cv_image = self.add_lane_detection_to_image(cv_image)
+            if lanes is not None:
+                cv_image = self.add_lanes_to_image(cv_image, lanes)
 
             # Convert BGR to RGB
             rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
@@ -1363,29 +1348,25 @@ class OpenCVGuiApp(QWidget):
 def udp_callbacks(gui, server):
     while True:
         try:
-            # rgb_image = None
+            rgb_image = None
             depth_image = None
-            lanes_image = None
             if gui.show_depth:
                 depth_image = server.udp_connection.parse_depth_image()
             else:
-                # rgb_image = server.udp_connection.parse_rgb_image()
-                lanes_image = server.udp_connection.parse_binary_lanes()
+                rgb_image = server.udp_connection.parse_rgb_image()
 
+            lanes = server.udp_connection.parse_lanes()
             sign = server.udp_connection.parse_sign()
             waypoint = server.udp_connection.parse_waypoint()
             road_obj = server.udp_connection.parse_road_object()
             lane2 = server.udp_connection.parse_lane2()
 
             # Image rgb
-            # if rgb_image is not None:
-            #    gui.camera_callback(rgb_image)
+            if rgb_image is not None:
+                gui.camera_callback(rgb_image, lanes)
             # Image depth
             if depth_image is not None:
                 gui.depth_callback(depth_image)
-            # Lanes image
-            if lanes_image is not None:
-                gui.lanes_callback(lanes_image)
             # Lane2
             if lane2 is not None:
                 gui.lane_callback(lane2)

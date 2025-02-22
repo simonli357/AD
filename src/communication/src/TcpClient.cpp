@@ -1,5 +1,6 @@
 #include "TcpClient.hpp"
 #include <ros/ros.h>
+#include "LanesMsg.hpp"
 #include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "msg/TriggerMsg.hpp"
@@ -383,18 +384,13 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	}
 }
 
-void TcpClient::send_binary_lanes(const cv::Mat &img) {
-	std::vector<uchar> image;
-	cv::imencode(".png", img, image, {cv::IMWRITE_PNG_COMPRESSION, 1});
-	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	if (total_segments == 1) {
-		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-        std::memcpy(segment.data(), &length, message_size);
-        segment[4] = udp_data_types[6];
-		std::memcpy(segment.data() + header_size, &image[0], image.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-	}
+void TcpClient::send_lanes(std::vector<std::tuple<float, float>> &lane1, std::vector<std::tuple<float, float>> &lane2) {
+	std::vector<uint8_t> bytes = LanesMsg(lane1, lane2).serialize(udp_data_types[6]);
+
+	std::vector<uint8_t> segment(MAX_DGRAM, 0);
+    std::memcpy(segment.data(), bytes.data(), bytes.size());
+
+    sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
