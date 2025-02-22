@@ -184,13 +184,14 @@ public:
         maps_initialized = true;
     }
 
-    void dl_detect_lanes(const cv::Mat& image) {
+    cv::Mat dl_detect_lanes(const cv::Mat& image) {
         cv::Mat binary_image;
         cv::Mat instance_image;
         lanenet->detect(image, binary_image, instance_image);
         const cv::Mat binary_clone = binary_image.clone();
         beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(lanenet->mask_grayscale(binary_clone));
         tcp_client->send_lanes(lanes.l1, lanes.l2);
+        return binary_clone;
     }
 
     void publish_lane(const cv::Mat& image) {
@@ -199,25 +200,25 @@ public:
             return;
         }
         
-        dl_detect_lanes(image);
+        cv::Mat binary_image = dl_detect_lanes(image);
 
         auto start = high_resolution_clock::now();
         if (newlane) {
             if (!maps_initialized) {
                 initializeMaps(cameraMatrix, distCoeff, transMatrix, image.size());
             }
-            static cv::Mat grayscale_image = cv::Mat::zeros(480, 640, CV_8UC1);
-            static cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
-            static cv::Mat ipm_image = cv::Mat::zeros(480, 640, CV_8UC1);
-            static cv::Mat binary_image = cv::Mat::zeros(480, 640, CV_8UC1);
+            // static cv::Mat grayscale_image = cv::Mat::zeros(480, 640, CV_8UC1);
+            // static cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
+            // static cv::Mat ipm_image = cv::Mat::zeros(480, 640, CV_8UC1);
+            // static cv::Mat binary_image = cv::Mat::zeros(480, 640, CV_8UC1);
             cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
             // ROS_INFO("Image converted to cv::Mat");
             auto start = high_resolution_clock::now();
-            if(!getIPM(image, ipm_color)) return;
+            // if(!getIPM(image, ipm_color)) return;
             auto start1 = high_resolution_clock::now();
-            if(!getIPM(grayscale_image, ipm_image)) return;
+            // if(!getIPM(grayscale_image, ipm_image)) return;
             auto start2 = high_resolution_clock::now();
-            getLanes(ipm_image, binary_image);
+            // getLanes(ipm_image, binary_image);
             auto start3 = high_resolution_clock::now();
             ret = line_fit_2(binary_image);
             auto start4 = high_resolution_clock::now();
@@ -275,8 +276,8 @@ public:
             lane_pub.publish(lane_msg);
 
             if(showflag) {
-                cv::Mat gyu_img = viz3(ipm_color,image, ret, waypoints,y_Values, true);
-                cv::imshow("Binary Image", gyu_img);
+                // cv::Mat gyu_img = viz3(ipm_color,image, ret, waypoints,y_Values, true);
+                // cv::imshow("Binary Image", gyu_img);
                 cv::waitKey(1);
             }
         } else {
