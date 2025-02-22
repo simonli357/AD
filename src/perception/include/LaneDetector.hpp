@@ -188,8 +188,8 @@ public:
         cv::Mat binary_image;
         cv::Mat instance_image;
         lanenet->detect(image, binary_image, instance_image);
-        const cv::Mat binary_clone = binary_image.clone();
-        beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(lanenet->mask_grayscale(binary_clone));
+        const cv::Mat binary_clone = lanenet->mask_grayscale(binary_image);
+        beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(binary_clone);
         tcp_client->send_lanes(lanes.l1, lanes.l2);
         return binary_clone;
     }
@@ -200,8 +200,6 @@ public:
             return;
         }
         
-        cv::Mat binary_image = dl_detect_lanes(image);
-
         auto start = high_resolution_clock::now();
         if (newlane) {
             if (!maps_initialized) {
@@ -211,7 +209,7 @@ public:
             // static cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
             // static cv::Mat ipm_image = cv::Mat::zeros(480, 640, CV_8UC1);
             // static cv::Mat binary_image = cv::Mat::zeros(480, 640, CV_8UC1);
-            cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
+            // cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
             // ROS_INFO("Image converted to cv::Mat");
             auto start = high_resolution_clock::now();
             // if(!getIPM(image, ipm_color)) return;
@@ -220,7 +218,7 @@ public:
             auto start2 = high_resolution_clock::now();
             // getLanes(ipm_image, binary_image);
             auto start3 = high_resolution_clock::now();
-            ret = line_fit_2(binary_image);
+            ret = line_fit_2(dl_detect_lanes(image));
             auto start4 = high_resolution_clock::now();
             // printTuple(ret);
             static std::vector<double> waypoints;

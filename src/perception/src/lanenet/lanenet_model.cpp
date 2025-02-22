@@ -188,8 +188,8 @@ cv::Mat LaneNet::mask(const cv::Mat &input_image) {
 	const int height = input_image.rows;
 	const int width = input_image.cols;
 
-	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
-									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height)};
+	std::vector<cv::Point> vertices = {cv::Point(0, height * 0.9), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height * 0.9)};
 
 	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
 
@@ -216,8 +216,8 @@ cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
 	const int height = input_image.rows;
 	const int width = input_image.cols;
 
-	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
-									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height)};
+	std::vector<cv::Point> vertices = {cv::Point(0, height * 0.9), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height * 0.9)};
 
 	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
 
