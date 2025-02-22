@@ -78,8 +78,9 @@ public:
 		Lane l1;
 		Lane l2;
 	};
-    cv::Mat mask(const cv::Mat& input_image);
-    cv::Mat mask_grayscale(const cv::Mat& input_image);
+    cv::Mat mask_input(const cv::Mat& input_image);
+    cv::Mat mask_binary_output(const cv::Mat& input_image);
+    cv::Mat resize_binary_output(const cv::Mat& input_image);
 	Lanes get_lanes(const cv::Mat &binary_image);
 
     /***

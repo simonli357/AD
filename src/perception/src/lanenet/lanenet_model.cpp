@@ -119,15 +119,12 @@ LaneNet::~LaneNet() {
  * @param pix_embedding_result
  */
 void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv::Mat &instance_seg_result) {
-
-	cv::Mat masked_image = mask(input_image);
-
 	// preprocess
 	cv::Mat input_image_copy;
-	masked_image.copyTo(input_image_copy);
+	input_image.copyTo(input_image_copy);
 	{
 		AUTOTIME
-		preprocess(masked_image, input_image_copy);
+		preprocess(input_image, input_image_copy);
 	}
 
 	// run session
@@ -144,9 +141,9 @@ void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv:
 
 	// output graph node
 	MNN::Tensor binary_output_tensor_user(_m_binary_output_tensor_host, MNN::Tensor::DimensionType::TENSORFLOW);
-	MNN::Tensor pix_embedding_output_tensor_user(_m_pix_embedding_output_tensor_host, MNN::Tensor::DimensionType::TENSORFLOW);
+	// MNN::Tensor pix_embedding_output_tensor_user(_m_pix_embedding_output_tensor_host, MNN::Tensor::DimensionType::TENSORFLOW);
 	_m_binary_output_tensor_host->copyToHostTensor(&binary_output_tensor_user);
-	_m_pix_embedding_output_tensor_host->copyToHostTensor(&pix_embedding_output_tensor_user);
+	// _m_pix_embedding_output_tensor_host->copyToHostTensor(&pix_embedding_output_tensor_user);
 
 	auto binary_output_data = binary_output_tensor_user.host<float>();
 	cv::Mat binary_output_mat(_m_input_node_size_host, CV_32FC1, binary_output_data);
@@ -183,7 +180,7 @@ void LaneNet::detect(const cv::Mat &input_image, cv::Mat &binary_seg_result, cv:
 	/* } */
 }
 
-cv::Mat LaneNet::mask(const cv::Mat &input_image) {
+cv::Mat LaneNet::mask_input(const cv::Mat &input_image) {
 	cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
 	const int height = input_image.rows;
 	const int width = input_image.cols;
@@ -210,7 +207,7 @@ cv::Mat LaneNet::mask(const cv::Mat &input_image) {
 	return masked_image;
 }
 
-cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
+cv::Mat LaneNet::mask_binary_output(const cv::Mat &input_image) {
 
 	cv::Mat mask = cv::Mat::zeros(input_image.size(), CV_8UC1);
 	const int height = input_image.rows;
@@ -226,6 +223,13 @@ cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
 
 	cv::Mat resized_image;
 	cv::resize(masked_image, resized_image, cv::Size(640, 480));
+
+	return resized_image;
+}
+
+cv::Mat LaneNet::resize_binary_output(const cv::Mat &input_image) {
+	cv::Mat resized_image;
+	cv::resize(input_image, resized_image, cv::Size(640, 480));
 
 	return resized_image;
 }

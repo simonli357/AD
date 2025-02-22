@@ -187,8 +187,8 @@ public:
     cv::Mat dl_detect_lanes(const cv::Mat& image) {
         cv::Mat binary_image;
         cv::Mat instance_image;
-        lanenet->detect(image, binary_image, instance_image);
-        const cv::Mat binary_clone = lanenet->mask_grayscale(binary_image);
+        lanenet->detect(lanenet->mask_input(image), binary_image, instance_image);
+        const cv::Mat binary_clone = lanenet->mask_binary_output(binary_image);
         beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(binary_clone);
         tcp_client->send_lanes(lanes.l1, lanes.l2);
         return binary_clone;
