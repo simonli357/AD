@@ -81,7 +81,7 @@ LaneNet::LaneNet(const beec::config_parse_utils::ConfigParser &config) {
 	mnn_config.numThread = 4;
 
 	MNN::BackendConfig backend_config;
-	backend_config.precision = MNN::BackendConfig::Precision_High;
+	backend_config.precision = MNN::BackendConfig::Precision_Low_BF16;
 	backend_config.power = MNN::BackendConfig::Power_High;
 	mnn_config.backendConfig = &backend_config;
 
