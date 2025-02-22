@@ -205,20 +205,21 @@ public:
             if (!maps_initialized) {
                 initializeMaps(cameraMatrix, distCoeff, transMatrix, image.size());
             }
-            // static cv::Mat grayscale_image = cv::Mat::zeros(480, 640, CV_8UC1);
-            // static cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
-            // static cv::Mat ipm_image = cv::Mat::zeros(480, 640, CV_8UC1);
+            static cv::Mat grayscale_image = cv::Mat::zeros(480, 640, CV_8UC1);
+            static cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
+            static cv::Mat ipm_image = cv::Mat::zeros(480, 640, CV_8UC1);
             // static cv::Mat binary_image = cv::Mat::zeros(480, 640, CV_8UC1);
-            // cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
-            // ROS_INFO("Image converted to cv::Mat");
+            cv::Mat binary_image = dl_detect_lanes(image);
+            cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
+            ROS_INFO("Image converted to cv::Mat");
             auto start = high_resolution_clock::now();
-            // if(!getIPM(image, ipm_color)) return;
+            if(!getIPM(image, ipm_color)) return;
             auto start1 = high_resolution_clock::now();
-            // if(!getIPM(grayscale_image, ipm_image)) return;
+            if(!getIPM(grayscale_image, ipm_image)) return;
             auto start2 = high_resolution_clock::now();
-            // getLanes(ipm_image, binary_image);
+            getLanes(ipm_image, binary_image);
             auto start3 = high_resolution_clock::now();
-            ret = line_fit_2(dl_detect_lanes(image));
+            ret = line_fit_2(binary_image);
             auto start4 = high_resolution_clock::now();
             // printTuple(ret);
             static std::vector<double> waypoints;
