@@ -18,6 +18,9 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <numeric>
+#include "TcpClient.hpp"
+#include "lanenet/config_parser.h"
+#include "lanenet/lanenet_model.h"
 
 using namespace std::chrono;
 
@@ -43,10 +46,34 @@ public:
         //     ros::spinOnce();
         //     rate.sleep();
         // }
+        
+        lanenet = std::make_unique<beec_task::lane_detection::LaneNet>(beec::config_parse_utils::ConfigParser("/home/trtuser/Repositories/ROS/AD/src/perception/src/lanenet/config.ini"));
+
+        bool use_tcp = false;
+        if (!nh.getParam("/use_tcp", use_tcp)) {
+            ROS_WARN("Failed to get 'use_tcp' parameter. Defaulting to false.");
+            use_tcp = false;
+        }
+        if(use_tcp) {
+            ROS_INFO("Attempting to create TCP client...");
+            std::string ip_address;
+            if (!nh.getParam("/ip", ip_address)) {
+                ROS_ERROR("Failed to get 'ip_address' parameter. TCP client not created.");
+                tcp_client = nullptr;
+            } else {
+                tcp_client = std::make_unique<TcpClient>(1024, "lane_node_client", ip_address);
+                ROS_INFO("TCP client created successfully.");
+            }
+        } else {
+            tcp_client = nullptr;
+            ROS_INFO("TCP client not created.");
+        }
     }
 
     // private:
     ros::NodeHandle nh;
+    std::unique_ptr<beec_task::lane_detection::LaneNet> lanenet;
+    std::unique_ptr<TcpClient> tcp_client;
     // image_transport::ImageTransport it;
     // image_transport::Subscriber image_sub;
     // image_transport::Publisher image_pub;
@@ -157,11 +184,23 @@ public:
         maps_initialized = true;
     }
 
+    void dl_detect_lanes(const cv::Mat& image) {
+        cv::Mat binary_image;
+        cv::Mat instance_image;
+        lanenet->detect(image, binary_image, instance_image);
+        const cv::Mat binary_clone = binary_image.clone();
+        beec_task::lane_detection::LaneNet::Lanes lanes = lanenet->get_lanes(lanenet->mask_grayscale(binary_clone));
+        tcp_client->send_lanes(lanes.l1, lanes.l2);
+    }
+
     void publish_lane(const cv::Mat& image) {
         if(image.empty()) {
             ROS_WARN("empty image received in lane detector");
             return;
         }
+        
+        dl_detect_lanes(image);
+
         auto start = high_resolution_clock::now();
         if (newlane) {
             if (!maps_initialized) {

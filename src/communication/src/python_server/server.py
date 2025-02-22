@@ -15,6 +15,7 @@ class Server:
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.utility_node_client = TcpConnection()
         self.sign_node_client = TcpConnection()
+        self.lane_node_client = TcpConnection()
         self.udp_connection = UdpConnection(self.udp_socket)
 
     def initialize(self):
@@ -59,3 +60,6 @@ class Server:
         if client_type == "sign_node_client":
             print("Sign Client connected")
             self.sign_node_client = TcpConnection(client_socket)
+        if client_type == "lane_node_client":
+            print("Lane Client connnected")
+            self.lane_node_client = TcpConnection(client_socket)

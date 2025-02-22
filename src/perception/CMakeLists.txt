@@ -198,7 +198,6 @@ target_link_libraries(signFastest
   ${catkin_LIBRARIES}
   ncnn ${OpenCV_LIBS}
   communication
-  lanenet
 )
 
 add_executable(videoDetector
