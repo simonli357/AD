@@ -849,8 +849,8 @@ public:
 			return;
 		}
         {
-            std::lock_guard<std::mutex> lock(image_mutex);
-		    lane_ptr->publish_lane(colorImage);
+            // std::lock_guard<std::mutex> lock(image_mutex);
+		    lane_ptr->publish_lane(colorImage.clone());
         }
         process_lane_data(lane_ptr->lane_msg);
 	}
@@ -864,8 +864,8 @@ public:
 			return;
 		}
         {
-            std::lock_guard<std::mutex> lock(image_mutex);
-		    sign_ptr->publish_sign(colorImage, depthImage);
+            // std::lock_guard<std::mutex> lock(image_mutex);
+		    sign_ptr->publish_sign(colorImage.clone(), depthImage.clone());
         }
         process_sign_data(sign_ptr->sign_msg);
 	}
@@ -889,10 +889,12 @@ public:
 
 		if (!useRosTimer) {
 			if (doLane) {
-				run_lane_once();
+				// run_lane_once();
+                std::thread([this] { run_lane_once(); }).detach();
 			}
 			if (doSign) {
-				run_sign_once();
+				// run_sign_once();
+                std::thread([this] {run_sign_once(); }).detach();
 			}
 		}
 		if (pubImage) {
