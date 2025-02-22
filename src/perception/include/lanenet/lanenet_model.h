@@ -24,6 +24,8 @@ using beec::config_parse_utils::ConfigParser;
 using DBSCAMSample = DBSCAMSample<float>;
 using Feature = Feature<float>;
 using Lane = std::vector<std::tuple<float, float>>;
+using LanePolygons = std::vector<std::vector<cv::Point>>;
+using Polygon = std::vector<cv::Point>;
 
 class LaneNet {
 
@@ -72,10 +74,6 @@ public:
     /***
      * Helpers
      */
-	struct LanePolygons {
-		std::vector<cv::Point> l1;
-		std::vector<cv::Point> l2;
-	};
 	struct Lanes {
 		Lane l1;
 		Lane l2;
@@ -83,10 +81,6 @@ public:
     cv::Mat mask(const cv::Mat& input_image);
     cv::Mat mask_grayscale(const cv::Mat& input_image);
 	Lanes get_lanes(const cv::Mat &binary_image);
-	void print_lane(Lane &lane);
-	LanePolygons get_lane_polygons(const cv::Mat &binary_image);
-	cv::Point2f compute_triangle_centroids(const cv::Point2f &a, const cv::Point2f &b, const cv::Point2f &c);
-	Lane get_lane_from_polygon(const std::vector<cv::Point> &polygon);
 
     /***
      * Return if model is successfully initialized
@@ -120,6 +114,18 @@ private:
     uint _m_dbscan_min_pts = 0;
     // successfully init model flag
     bool _m_successfully_initialized = false;
+
+    const double max_height = 0.6;
+	const double min_lane_length = 100.0;
+
+
+    /***
+     * Helpers
+     */
+	void print_lane(Lane &lane);
+	LanePolygons get_lane_polygons(const cv::Mat &binary_image);
+	cv::Point2f compute_triangle_centroids(const cv::Point2f &a, const cv::Point2f &b, const cv::Point2f &c);
+	Lane get_lane_from_polygon(const std::vector<cv::Point> &polygon);
 
     /***
      * Preprocess image, resize image and scale image into [-1.0, 1.0]

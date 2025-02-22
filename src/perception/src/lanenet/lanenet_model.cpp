@@ -16,6 +16,8 @@
 #include "dbscan.hpp"
 #include <MNN/AutoTime.hpp>
 
+#include <Eigen/Dense>
+
 namespace beec_task {
 namespace lane_detection {
 
@@ -186,8 +188,8 @@ cv::Mat LaneNet::mask(const cv::Mat &input_image) {
 	const int height = input_image.rows;
 	const int width = input_image.cols;
 
-	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
-									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)), cv::Point(width, height)};
+	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height)};
 
 	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
 
@@ -214,27 +216,44 @@ cv::Mat LaneNet::mask_grayscale(const cv::Mat &input_image) {
 	const int height = input_image.rows;
 	const int width = input_image.cols;
 
-	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * 0.7)),
-									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * 0.7)), cv::Point(width, height)};
+	std::vector<cv::Point> vertices = {cv::Point(0, height), cv::Point(static_cast<int>(width * 0.10), static_cast<int>(height * max_height)),
+									   cv::Point(static_cast<int>(width * 0.90), static_cast<int>(height * max_height)), cv::Point(width, height)};
 
 	cv::fillConvexPoly(mask, vertices, cv::Scalar(255));
 
 	cv::Mat masked_image;
 	cv::multiply(input_image, mask, masked_image);
 
-    cv::Mat resized_image;
-    cv::resize(masked_image, resized_image, cv::Size(640, 480));
+	cv::Mat resized_image;
+	cv::resize(masked_image, resized_image, cv::Size(640, 480));
 
 	return resized_image;
 }
 
 LaneNet::Lanes LaneNet::get_lanes(const cv::Mat &binary_image) {
 	LanePolygons polygons = get_lane_polygons(binary_image);
-	Lane lane1 = get_lane_from_polygon(polygons.l1);
-	Lane lane2 = get_lane_from_polygon(polygons.l2);
-	// print_lane(lane1);
-	// print_lane(lane2);
-	return LaneNet::Lanes{lane1, lane2};
+	std::vector<Lane> lanes;
+    size_t lane_count = 0;
+	for (const auto &polygon : polygons) {
+        if (lane_count >= 2) {
+            break;
+        }
+		Lane l = get_lane_from_polygon(polygon);
+		if (l.size() > 0) {
+			lanes.push_back(l);
+            lane_count++;
+		}
+	}
+
+	if (lanes.size() == 0) {
+		return LaneNet::Lanes{{}, {}};
+	}
+
+	if (lanes.size() == 1) {
+		return LaneNet::Lanes{lanes[0], {}};
+	}
+
+	return LaneNet::Lanes{lanes[0], lanes[1]};
 }
 
 void LaneNet::print_lane(Lane &lane) {
@@ -248,13 +267,13 @@ void LaneNet::print_lane(Lane &lane) {
 	std::cout << "\n\n";
 }
 
-LaneNet::LanePolygons LaneNet::get_lane_polygons(const cv::Mat &binary_image) {
+LanePolygons LaneNet::get_lane_polygons(const cv::Mat &binary_image) {
 	std::vector<std::vector<cv::Point>> contours;
 	// Find all external contours in the binary image
 	cv::findContours(binary_image.clone(), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 	if (contours.empty()) {
-		return LaneNet::LanePolygons{std::vector<cv::Point>{}, std::vector<cv::Point>{}};
+		return {{}};
 	}
 
 	// Sort contours by descending area
@@ -263,27 +282,18 @@ LaneNet::LanePolygons LaneNet::get_lane_polygons(const cv::Mat &binary_image) {
 	std::sort(indices.begin(), indices.end(), [&contours](size_t a, size_t b) { return cv::contourArea(contours[a]) > cv::contourArea(contours[b]); });
 
 	// Compute convex hulls for the two largest contours
-	std::vector<std::vector<cv::Point>> convexPolygons;
+	std::vector<std::vector<cv::Point>> lane_polygons;
 	for (int i = 0; i < std::min(2, (int)indices.size()); ++i) {
-		std::vector<cv::Point> hull;
-		cv::convexHull(contours[indices[i]], hull);
-		convexPolygons.push_back(hull);
+		lane_polygons.push_back(contours[indices[i]]);
 	}
 
-	if (convexPolygons.size() == 1) {
-		return LaneNet::LanePolygons{convexPolygons[0], std::vector<cv::Point>{}};
-	}
-
-	if (convexPolygons.size() == 2) {
-		return LaneNet::LanePolygons{convexPolygons[0], convexPolygons[1]};
-	}
-
-	return LaneNet::LanePolygons{std::vector<cv::Point>{}, std::vector<cv::Point>{}};
+	return lane_polygons;
 }
 
 cv::Point2f LaneNet::compute_triangle_centroids(const cv::Point2f &a, const cv::Point2f &b, const cv::Point2f &c) { return cv::Point2f((a.x + b.x + c.x) / 3.0f, (a.y + b.y + c.y) / 3.0f); }
 
 Lane LaneNet::get_lane_from_polygon(const std::vector<cv::Point> &polygon) {
+	using namespace Eigen;
 	Lane lane;
 	if (polygon.size() < 3) {
 		for (const auto &pt : polygon) {
@@ -307,14 +317,89 @@ Lane LaneNet::get_lane_from_polygon(const std::vector<cv::Point> &polygon) {
 		centroids.push_back(compute_triangle_centroids(cv::Point2f(t[0], t[1]), cv::Point2f(t[2], t[3]), cv::Point2f(t[4], t[5])));
 	}
 
-	std::sort(centroids.begin(), centroids.end(), [](const cv::Point2f &a, const cv::Point2f &b) {
-		return a.y > b.y; // Higher y (lower in the image) first
-	});
-
-	// 4. Convert to tuples
-	for (const auto &pt : centroids) {
-		lane.emplace_back(pt.x, pt.y);
+	if (centroids.size() < 3) {
+		for (const auto &pt : centroids)
+			lane.emplace_back(pt.x, pt.y);
+		return lane;
 	}
+
+	// Prepare data for polynomial fitting
+	VectorXd x = VectorXd::Zero(centroids.size());
+	VectorXd y = VectorXd::Zero(centroids.size());
+	for (size_t i = 0; i < centroids.size(); ++i) {
+		x(i) = centroids[i].x;
+		y(i) = centroids[i].y;
+	}
+
+	// Normalize data
+	const double x_mean = x.mean();
+	const double y_mean = y.mean();
+	x.array() -= x_mean;
+	y.array() -= y_mean;
+
+	// Find best polynomial degree
+	int best_degree = 1;
+	double best_error = std::numeric_limits<double>::max();
+	const int max_degree = std::min(4, static_cast<int>(centroids.size()) - 1);
+
+	for (int degree = 1; degree <= max_degree; ++degree) {
+		MatrixXd X(x.size(), degree + 1);
+		for (int i = 0; i < x.size(); ++i) {
+			for (int j = 0; j <= degree; ++j) {
+				X(i, j) = std::pow(y(i), j); // Note: y is the independent variable
+			}
+		}
+
+		JacobiSVD<MatrixXd> svd(X, ComputeThinU | ComputeThinV);
+		VectorXd coeffs = svd.solve(x); // Solve for x = f(y)
+
+		VectorXd residuals = x - X * coeffs;
+		double error = residuals.squaredNorm();
+
+		if (error < best_error) {
+			best_error = error;
+			best_degree = degree;
+		}
+	}
+
+	// Refit with best degree
+	MatrixXd X(x.size(), best_degree + 1);
+	for (int i = 0; i < x.size(); ++i) {
+		for (int j = 0; j <= best_degree; ++j) {
+			X(i, j) = std::pow(y(i), j);
+		}
+	}
+
+	VectorXd coeffs = X.jacobiSvd(ComputeThinU | ComputeThinV).solve(x);
+
+	// Generate smooth points
+	const double y_min = y.minCoeff() + y_mean;
+	const double y_max = y.maxCoeff() + y_mean;
+	const int num_points = 25;
+
+	VectorXd y_vals = VectorXd::LinSpaced(num_points, y_min, y_max);
+	VectorXd y_normalized = y_vals.array() - y_mean;
+
+	for (int i = 0; i < num_points; ++i) {
+		double xn = 0;
+		for (int j = 0; j <= best_degree; ++j) {
+			xn += coeffs[j] * std::pow(y_normalized(i), j);
+		}
+		xn += x_mean;
+		lane.emplace_back(xn, y_vals(i));
+	}
+
+    // Validate curve length
+    double curve_length = 0.0;
+    for (size_t i = 1; i < lane.size(); ++i) {
+        double dx = std::get<0>(lane[i]) - std::get<0>(lane[i-1]);
+        double dy = std::get<1>(lane[i]) - std::get<1>(lane[i-1]);
+        curve_length += std::sqrt(dx*dx + dy*dy);
+    }
+
+    if (curve_length < min_lane_length) {
+        return {};
+    }
 
 	return lane;
 }
