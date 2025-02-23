@@ -890,11 +890,11 @@ public:
 		if (!useRosTimer) {
 			if (doLane) {
 				// run_lane_once();
-                std::thread([this] { run_lane_once(); }).detach();
+                // std::thread([this] { run_lane_once(); }).detach();
 			}
 			if (doSign) {
 				// run_sign_once();
-                std::thread([this] {run_sign_once(); }).detach();
+                // std::thread([this] {run_sign_once(); }).detach();
 			}
 		}
 		if (pubImage) {
