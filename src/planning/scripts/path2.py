@@ -68,7 +68,7 @@ def filter_waypoints_and_attributes(waypoints, attributes, threshold):
             thresh /= 1.5
         if attributes[i] == 4 or attributes[i] == 5:
             thresh *= 1.33
-        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) >= threshold:
+        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) <= thresh:
             filtered_waypoints.append(waypoints[i])
             filtered_attributes.append(attributes[i])
         else:
@@ -408,7 +408,7 @@ class Path:
             self.attributes = np.array(new_attributes)
 
         # self.waypoints = filter_waypoints(self.waypoints, 0.01).T
-        thresh = v_ref * T / 1.5
+        thresh = v_ref * T * 1.5
         self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, thresh)
         self.waypoints = self.waypoints.T
 
@@ -474,6 +474,7 @@ class Path:
         self.attributes = np.delete(self.attributes, bad_idx)
         self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
         self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
+        # visualize_waypoints2(self.state_refs)
     
     def remove_bad_waypoints(self):
         max_yaw_change = np.pi * 0.35
@@ -773,8 +774,9 @@ if __name__ == "__main__":
 
     # v_ref = config[constraint_name]['v_ref']
     # print("v_ref: ", v_ref)
-    # x0 = np.array([0.35,2.726,-1.5708])
-    # name = "run221"
+    # # x0 = np.array([0.35,2.726,-1.5708])
+    # x0 = None
+    # name = "run136"
     # path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
     # np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
     # visualize_waypoints2(path.state_refs)

@@ -18,11 +18,12 @@ import yaml
 import argparse
 
 class Optimizer(object):
-    def __init__(self, x0 = None):
+    def __init__(self, name = None, x0 = None):
         self.configuration = '25beta'
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
-        name = 'run107'
+        if name is None:
+            name = 'run107'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
         self.waypoints_x = self.path.waypoints_x
         self.waypoints_y = self.path.waypoints_y
@@ -46,6 +47,8 @@ class Optimizer(object):
         self.last_u = None
         self.t0 = 0
         self.init_state = x0 if x0 is not None else self.state_refs[0]
+        if len(self.init_state) == 2:
+            self.init_state = np.array([self.init_state[0], self.init_state[1], self.state_refs[0, 2]])
         self.update_current_state(self.init_state[0], self.init_state[1], self.init_state[2])
         self.init_state = self.current_state.copy()
         self.u0 = np.zeros((self.N, 2))
@@ -371,13 +374,13 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    mpc = Optimizer()
+    mpc = Optimizer('run136')
     
     mpc.target_waypoint_index = 0
-    maxiter = 3000
+    maxiter = 4000
     print("current state: ", mpc.current_state)
     while True:
-        if mpc.target_waypoint_index >= mpc.num_waypoints-1 :#or mpc.mpciter > maxiter:
+        if mpc.target_waypoint_index >= mpc.num_waypoints-1 or mpc.mpciter > maxiter:
             break
         t = time.time()
         mpc.x_errors.append(mpc.current_state[0] - mpc.next_trajectories[0, 0])

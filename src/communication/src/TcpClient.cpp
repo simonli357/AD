@@ -349,7 +349,7 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 		return;
 	}
 	std::vector<uchar> image;
-	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 70});
+	cv::imencode(".jpg", cv_ptr->image, image, {cv::IMWRITE_JPEG_QUALITY, 30});
 	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
