@@ -887,6 +887,7 @@ public:
             depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
         }
 
+<<<<<<< HEAD
 		// if (!useRosTimer) {
 		// 	if (doLane) {
 		// 		run_lane_once();
@@ -895,6 +896,16 @@ public:
 		// 		run_sign_once();
 		// 	}
 		// }
+=======
+		if (!useRosTimer) {
+			if (doLane) {
+				run_lane_once();
+			}
+			if (doSign) {
+				run_sign_once();
+			}
+		}
+>>>>>>> origin/main
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
