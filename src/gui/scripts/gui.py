@@ -398,15 +398,15 @@ class OpenCVGuiApp(QWidget):
 
         self.data = pd.read_csv(os.path.join(assets_dir, 'coordinates_with_context.csv'))
 
-        rospy.init_node('visualizer', anonymous=True)
-        x_init = rospy.get_param('/x_init', default=3)
-        y_init = rospy.get_param('/y_init', default=3)
-        yaw_init = rospy.get_param('/yaw_init', default=0)
-        path_name = rospy.get_param('/pathName', default='run3easy')
-        if self.server is None:
-            self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
-        else:
-            threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
+        # rospy.init_node('visualizer', anonymous=True)
+        # x_init = rospy.get_param('/x_init', default=3)
+        # y_init = rospy.get_param('/y_init', default=3)
+        # yaw_init = rospy.get_param('/yaw_init', default=0)
+        # path_name = rospy.get_param('/pathName', default='run3easy')
+        # if self.server is None:
+        #     self.call_waypoint_service('25', path_name, x_init, y_init, yaw_init)
+        # else:
+        #     threading.Thread(target=self.call_waypoint_service, args=('25', path_name, x_init, y_init, yaw_init,), daemon=True).start()
 
         # Objects
         # Lane

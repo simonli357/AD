@@ -887,14 +887,14 @@ public:
             depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
         }
 
-		if (!useRosTimer) {
-			if (doLane) {
-				run_lane_once();
-			}
-			if (doSign) {
-				run_sign_once();
-			}
-		}
+		// if (!useRosTimer) {
+		// 	if (doLane) {
+		// 		run_lane_once();
+		// 	}
+		// 	if (doSign) {
+		// 		run_sign_once();
+		// 	}
+		// }
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();

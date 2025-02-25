@@ -78,7 +78,7 @@ class PathVisualizer:
 def main():
     visualizer = PathVisualizer()
     
-    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs_mod2_custom.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0225_modified.yaml')
     yaml_path = os.path.join(visualizer.current_dir, 'config/runs0215_modified.yaml')
     runs = visualizer.load_runs(yaml_path)
     
@@ -93,7 +93,7 @@ def main():
     # custom_run = [192, 200] # Unirii oneway 3m
     # visualizer.plot_run('custom_run', custom_run)
     # exit()
-    selected_run = 'run131'
+    selected_run = 'run209'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")

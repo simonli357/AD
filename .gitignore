@@ -9,6 +9,7 @@ src/planning/scripts/__pycache__
 src/perception/scripts/__pycache__
 rf2/
 rf3/
+rf4/
 testParkCar/
 train640/
 datasets_bb/

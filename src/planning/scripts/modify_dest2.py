@@ -1,3 +1,4 @@
+# deprecated
 # add laneless nodes
 import yaml
 from collections import OrderedDict
@@ -53,7 +54,7 @@ for run_name in data:
 with open(os.path.join(current_dir, 'config/runs_mod2.yaml'), 'w') as f:
     ordered_dump(data, f, default_flow_style=False)
 
-print("Modified YAML saved to config/runs_mod.yaml")
+print("Modified YAML saved to config/runs_mod2.yaml")
 
 # replace
 # 399 -> 484
