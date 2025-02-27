@@ -10,6 +10,7 @@ import math
 import rospy
 from python_server.server import Server
 from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QSlider, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QTextEdit
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QPen, QColor
@@ -19,6 +20,7 @@ from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandReq
 from utils.msg import Lane2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
+from controller.meters import MeterWidget
 import argparse
 
 
@@ -172,6 +174,12 @@ class OpenCVGuiApp(QWidget):
 
         self.right_panel_layout.addLayout(self.text_time_layout)
         self.right_panel_layout.addLayout(self.control_button_layout)
+
+        # Add stat meter
+        self.meter = MeterWidget()
+        self.meter_layout = QtWidgets.QVBoxLayout()
+        self.meter_layout.addWidget(self.meter)
+        self.right_panel_layout.addLayout(self.meter_layout)
 
         # Add a text area for status messages
         self.message_display = QTextEdit()
@@ -1076,6 +1084,8 @@ class OpenCVGuiApp(QWidget):
             self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
+            self.meter.set_speed(speed * 100)
+            self.meter.set_yaw(yaw / np.pi * 180)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x = self.detected_data[i, self.road_msg_dict['x']]
