@@ -7,6 +7,7 @@ import threading
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
+from PyQt5.QtCore import pyqtSignal, QObject
 from python_server.server import Server
 
 from widgets.options import OptionsWidget
@@ -19,10 +20,22 @@ from widgets.message import MessageWidget
 from std_srvs.srv import TriggerRequest
 
 
+class CommunicationHandler(QObject):
+    message_signal = pyqtSignal(str)
+    params_signal = pyqtSignal(object, object)
+    camera_frame_signal = pyqtSignal(object)
+    depth_frame_signal = pyqtSignal(object)
+    lane_signal = pyqtSignal(object)
+    road_obj_signal = pyqtSignal(object)
+    waypoint_signal = pyqtSignal(object)
+    sign_signal = pyqtSignal(object)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, server):
         super().__init__()
         self.server = server
+        self.comm = CommunicationHandler()
 
         self.setWindowTitle("BFMC DASHBOARD")
         self.setStyleSheet("background-color: black;")
@@ -34,6 +47,15 @@ class MainWindow(QMainWindow):
         self.buttons_widget = ButtonsWidget()
         self.meter_widget = MeterWidget()
         self.msg_widget = MessageWidget()
+
+        self.comm.message_signal.connect(self.msg_widget.add_message)
+        self.comm.params_signal.connect(self.handle_params_update)
+        self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
+        self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
+        self.comm.lane_signal.connect(self.cam_widget.lane_callback)
+        self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
+        self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
+        self.comm.sign_signal.connect(self.handle_sign_update)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -75,17 +97,23 @@ class MainWindow(QMainWindow):
         QApplication.setFont(nerd_font)
         print(f"Successfully loaded font: {font_family}")
 
+    def handle_params_update(self, req, res):
+        response = self.map_widget.update_params(req)
+        self.server.utility_node_client.send_trigger(TriggerRequest(), response)
+
+    def handle_sign_update(self, sign):
+        self.map_widget.sign_callback(sign)
+        self.cam_widget.sign_callback(sign)
+
     def tcp_callbacks(self) -> None:
         while True:
             if self.server.utility_node_client.socket is not None:
-                # Messages
                 if self.server.utility_node_client.messages:
-                    self.msg_widget.add_message(self.server.utility_node_client.messages.popleft())
-                # Set params
+                    msg = self.server.utility_node_client.messages.popleft()
+                    self.comm.message_signal.emit(msg.data)
                 if self.server.utility_node_client.triggers.msgs:
                     req, res = self.server.utility_node_client.triggers.msgs.popleft()
-                    response = self.map_widget.update_params(req)
-                    self.server.utility_node_client.send_trigger(TriggerRequest(), response)
+                    self.comm.params_signal.emit(req, res)
             time.sleep(0.016)
 
     def udp_callbacks(self) -> None:
@@ -96,28 +124,25 @@ class MainWindow(QMainWindow):
                 depth_image = self.server.udp_connection.parse_depth_image()
             else:
                 rgb_image = self.server.udp_connection.parse_rgb_image()
+
             sign = self.server.udp_connection.parse_sign()
             waypoint = self.server.udp_connection.parse_waypoint()
             road_obj = self.server.udp_connection.parse_road_object()
             lane2 = self.server.udp_connection.parse_lane2()
-            # Image rgb
+
             if rgb_image is not None:
-                self.cam_widget.process_camera_frame(rgb_image)
-            # Image depth
+                self.comm.camera_frame_signal.emit(rgb_image)
             if depth_image is not None:
-                self.cam_widget.process_depth_frame(depth_image)
-            # Lane2
+                self.comm.depth_frame_signal.emit(depth_image)
             if lane2 is not None:
-                self.map_widget.lane_callback(lane2)
-            # Road object
+                self.comm.lane_signal.emit(lane2)
             if road_obj is not None:
-                self.map_widget.road_objects_callback(road_obj)
-            # Waypoints
+                self.comm.road_obj_signal.emit(road_obj)
             if waypoint is not None:
-                self.map_widget.waypoint_callback(waypoint)
-            # Signs
+                self.comm.waypoint_signal.emit(waypoint)
             if sign is not None:
-                self.map_widget.sign_callback(sign)
+                self.comm.sign_signal.emit(sign)
+
             time.sleep(0.016)
 
 

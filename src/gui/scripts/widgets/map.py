@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QGraphicsView, QSizePolicy
+from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel
 from std_srvs.srv import TriggerResponse
 import pandas as pd
 
@@ -20,6 +20,10 @@ class MapWidget(QtWidgets.QWidget):
         self.markers = []
         self.cursor_coords = []
 
+        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
+        self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
+        self.speed_label = QLabel('Speed: 0.0 m/s')
+
         self.show_signs = False
         self.show_lanes = False
         self.show_cars = False
@@ -30,6 +34,17 @@ class MapWidget(QtWidgets.QWidget):
         self.attributes_np = None
         self.sign_size = 20
 
+        self.road_msg_length = 7
+        self.road_msg_dict = {
+            'type': 0,
+            'x': 1,
+            'y': 2,
+            'orientation': 3,
+            'speed': 4,
+            'confidence': 5,
+            'z': 6
+        }
+
         self.detected_data = None
         self.waypoints = None
         self.numObj = 0
@@ -38,6 +53,46 @@ class MapWidget(QtWidgets.QWidget):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.assets_dir = os.path.join(current_dir, 'assets')
         self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
+
+        self.sign_images = []
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'oneway.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'highway_entrance.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'roundabout.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'parking.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'crosswalk.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'noentry.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'highway_exit.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'priority.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'roadblock.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'pedestrian.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'car.jpg')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_green.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_yellow.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_red.png')))
+        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
+
+        self.object_dict = {
+            0: "Oneway",
+            1: "Highway Entrance",
+            2: "Stopsign",
+            3: "Roundabout",
+            4: "Parking",
+            5: "Crosswalk",
+            6: "No Entry",
+            7: "Highway Exit",
+            8: "Priority",
+            9: "Light",
+            10: "Block",
+            11: "Pedestrian",
+            12: "Car",
+            13: "Green Light",
+            14: "Yellow Light",
+            15: "Red Light",
+            16: "Sign"
+        }
+        self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
 
         self.setup_ui()
 
@@ -207,8 +262,6 @@ class MapWidget(QtWidgets.QWidget):
             self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
-            self.meter.set_speed(speed * 100)
-            self.meter.set_yaw(yaw / np.pi * 180)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x = self.detected_data[i, self.road_msg_dict['x']]
@@ -454,11 +507,6 @@ class MapWidget(QtWidgets.QWidget):
         except Exception as e:
             print(f"Failed to update parameters: {e}")
             return TriggerResponse(success=False, message=f"Failed to update: {e}")
-
-    def lane_callback(self, lane) -> None:
-        self.center = lane.center
-        self.crosswalk = lane.crosswalk
-        self.stopline = lane.stopline
 
     def road_objects_callback(self, road_object) -> None:
         self.detected_data = np.array(road_object.data).reshape(-1, self.road_msg_length)
