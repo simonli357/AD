@@ -20,7 +20,7 @@ from utils.srv import waypoints, waypointsRequest, goto_command, goto_commandReq
 from utils.msg import Lane2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from controller.meters import MeterWidget
+from widgets.meters import MeterWidget
 import argparse
 
 
