@@ -218,6 +218,9 @@ class MapWidget(QtWidgets.QWidget):
 
         return image_copy
 
+    def get_key_from_value(self, value):
+        return self.reverse_object_dict.get(value, None)
+
     def draw_objects(self, image):
         if self.show_gt:
             for index, row in self.data.iterrows():

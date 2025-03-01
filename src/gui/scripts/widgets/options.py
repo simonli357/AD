@@ -1,11 +1,18 @@
 from PyQt5 import QtWidgets, QtCore
 from collections import deque
 
+import time
+
 
 class OptionsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.main_window = self.parent()
+        self.server = self.main_window.server
+        self.map_widget = self.main_window.map_widget
+        self.cam_widget = self.main_window.cam_widget
         self.setup_ui()
+        self.connect_signals()
 
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -56,3 +63,68 @@ class OptionsWidget(QtWidgets.QWidget):
                 background-color: #1c6da8;
             }
         """)
+
+    def call_set_states_service(self, x=None, y=None):
+        print("set states service called")
+        try:
+            if self.server.utility_node_client.socket is None:
+                return
+            if x is not None and y is not None:
+                self.server.utility_node_client.send_set_states_srv(x, y)
+            else:
+                self.server.utility_node_client.send_set_states_srv(-200.0, -200.0)
+            max_retries = 50
+            retries = 0
+            while (retries < max_retries):
+                if self.server.utility_node_client.set_states_srv_msg.success:
+                    print("Successful set_states service call")
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to set states")
+        except Exception as e:
+            print(e)
+
+    def connect_signals(self) -> None:
+        self.toggle_sign_btn.clicked.connect(self.handle_sign_btn_click)
+        self.toggle_lanes_btn.clicked.connect(self.handle_lanes_btn_click)
+        self.toggle_cars_btn.clicked.connect(self.handle_cars_btn_click)
+        self.toggle_destinations_btn.clicked.connect(self.handle_destinations_btn_click)
+        self.toggle_path_btn.clicked.connect(self.handle_path_btn_click)
+        self.toggle_gt_btn.clicked.connect(self.handle_gt_btn_click)
+        self.toggle_depth_btn.clicked.connect(self.handle_depth_btn_click)
+        self.set_states_btn.clicked.connect(self.handle_states_btn_click)
+        self.set_yaw_btn.clicked.connect(self.handle_yaw_btn_click)
+        self.save_path_btn.clicked.connect(self.handle_save_path_btn_click)
+
+    def handle_sign_btn_click(self) -> None:
+        self.map_widget.show_signs = not self.map_widget.show_signs
+
+    def handle_lanes_btn_click(self) -> None:
+        self.map_widget.show_lanes = not self.map_widget.show_lanes
+
+    def handle_cars_btn_click(self) -> None:
+        self.map_widget.show_cars = not self.map_widget.show_cars
+
+    def handle_destinations_btn_click(self) -> None:
+        self.map_widget.show_destinations = not self.map_widget.show_destinations
+
+    def handle_path_btn_click(self) -> None:
+        self.map_widget.show_path = not self.map_widget.show_path
+
+    def handle_gt_btn_click(self) -> None:
+        self.map_widget.show_gt = not self.map_widget.show_gt
+
+    def handle_depth_btn_click(self) -> None:
+        self.cam_widget.show_depth = not self.cam_widget.show_depth
+
+    def handle_states_btn_click(self) -> None:
+        self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)
+
+    def handle_yaw_btn_click(self) -> None:
+        self.call_set_states_service()
+
+    def handle_save_path_btn_click(self) -> None:
+        path = os.path.dirname(os.path.abspath(__file__))
+        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
+        print("saved state refs")

@@ -51,7 +51,6 @@ class ButtonsWidget(QtWidgets.QWidget):
         for btn in self.buttons:
             self.layout.addWidget(btn)
 
-        self.layout.addStretch()
         self.layout.addWidget(self.timer_label)
 
         self.setStyleSheet("""
