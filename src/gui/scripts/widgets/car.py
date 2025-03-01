@@ -53,7 +53,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         glu.gluLookAt(8, 8, 8, 0, 0, 0, 0, 1, 0)  # Camera position
         if self.model:
             gl.glPushMatrix()
-            gl.glRotatef(self.yaw, 0, 1, 0)  # Yaw rotation
+            gl.glScalef(1, 1, -1)
+            gl.glRotatef(-self.yaw, 0, 1, 0)  # Yaw rotation
             self.draw_model()
             gl.glPopMatrix()
         self.draw_axes()

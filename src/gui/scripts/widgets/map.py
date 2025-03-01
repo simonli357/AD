@@ -262,6 +262,9 @@ class MapWidget(QtWidgets.QWidget):
             self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
+            self.window().car_widget.set_yaw(yaw / np.pi * 180)
+            self.window().meter_widget.set_yaw(yaw / np.pi * 180)
+            self.window().meter_widget.set_speed(speed)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x = self.detected_data[i, self.road_msg_dict['x']]
