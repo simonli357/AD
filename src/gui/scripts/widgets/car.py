@@ -1,10 +1,12 @@
 from PyQt5 import QtWidgets
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
+from OpenGL.arrays import vbo
+import numpy as np
 from collections import namedtuple
-
 import os
-Model = namedtuple('Model', ['vertices', 'faces'])
+
+Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
 
 class CarWidget(QtWidgets.QOpenGLWidget):
@@ -12,10 +14,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.yaw = 0
+        self.grid_vbo = None
+        self.model = None
+
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        assets_dir = os.path.join(current_dir, 'assets')
-        model_path = os.path.join(assets_dir, 'car.obj')
-        self.model = self.load_obj(model_path)
+        model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        if os.path.exists(model_path):
+            self.model = self.load_obj(model_path)
 
     def load_obj(self, model_path) -> Model:
         vertices = []
@@ -23,59 +28,95 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         with open(model_path, 'r') as f:
             for line in f:
                 if line.startswith('v '):
-                    vertex = list(map(float, line.strip().split()[1:4]))
-                    vertices.append(vertex)
+                    vertices.append(list(map(float, line.strip().split()[1:4])))
                 elif line.startswith('f '):
-                    face = [int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]]
-                    faces.append(face)
-        return Model(vertices=vertices, faces=faces)
+                    faces.append([int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]])
 
-    def set_yaw(self, yaw: float) -> None:
-        self.yaw = yaw
-        self.update()
+        # Convert to flat array of vertices
+        vertex_data = []
+        for face in faces:
+            for v_idx in face:
+                vertex_data.extend(vertices[v_idx])
+
+        vertex_array = np.array(vertex_data, dtype=np.float32)
+        model_vbo = vbo.VBO(vertex_array)
+        return Model(vertices=vertices, faces=faces, vbo=model_vbo,
+                     vertex_count=len(vertex_data) // 3)
 
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
-    def resizeGL(self, w, h):
-        gl.glViewport(0, 0, w, h)
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
-        aspect = w / h if h != 0 else 1.0
-        glu.gluPerspective(45, aspect, 0.1, 100.0)
-        gl.glMatrixMode(gl.GL_MODELVIEW)
+        # Initialize grid VBO
+        grid_size = 8
+        step = 2
+        grid_vertices = []
+        for z in range(-grid_size, grid_size + 1, step):
+            grid_vertices.extend([-grid_size, 0, z, grid_size, 0, z])
+        for x in range(-grid_size, grid_size + 1, step):
+            grid_vertices.extend([x, 0, -grid_size, x, 0, grid_size])
+
+        self.grid_vbo = vbo.VBO(np.array(grid_vertices, dtype=np.float32))
+        self.grid_vertex_count = len(grid_vertices) // 3
 
     def paintGL(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        # Set up projection matrix
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        glu.gluPerspective(45, aspect, 0.1, 100.0)
+
+        # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(10, 8, 10, 0, 0, 0, 0, 1, 0)  # Camera position
+        glu.gluLookAt(10, 8, 10, 0, 0, 0, 0, 1, 0)
+
+        # Draw grid
+        self.draw_grid()
+
+        # Draw car model
         if self.model:
             gl.glPushMatrix()
             gl.glScalef(0.8, 0.8, -0.8)
-            gl.glRotatef(-self.yaw, 0, 1, 0)  # Yaw rotation
+            gl.glRotatef(-self.yaw, 0, 1, 0)
             gl.glTranslatef(-1, -2, -1)
             self.draw_model()
             gl.glPopMatrix()
+
+        # Draw axes overlay
         self.draw_axes()
-        self.draw_grid()
 
     def draw_grid(self):
         gl.glPushMatrix()
-        gl.glColor3f(0.3, 0.3, 0.3)  # Grid color (dark gray)
-        grid_size = 8  # Total size of grid (half in each direction)
-        step = 2       # Distance between lines
-        gl.glTranslatef(0, -0.8 - 2, 0)  # Adjust Y position based on car's scaling
-        gl.glBegin(gl.GL_LINES)
-        for z in range(-grid_size, grid_size + 1, step):
-            gl.glVertex3f(-grid_size, 0, z)
-            gl.glVertex3f(grid_size, 0, z)
-        for x in range(-grid_size, grid_size + 1, step):
-            gl.glVertex3f(x, 0, -grid_size)
-            gl.glVertex3f(x, 0, grid_size)
-        gl.glEnd()
+        gl.glTranslatef(0, -2.8, 0)  # Adjusted Y position
+        gl.glColor3f(0.3, 0.3, 0.3)
+
+        self.grid_vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
+        gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.grid_vbo.unbind()
+
         gl.glPopMatrix()
+
+    def draw_model(self):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(0, 1, 0, 0.3)
+        gl.glLineWidth(1.5)
+
+        self.model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
 
     def draw_axes(self):
         gl.glPushAttrib(gl.GL_ENABLE_BIT)
@@ -117,15 +158,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPopAttrib()
         gl.glEnable(gl.GL_DEPTH_TEST)
 
-    def draw_model(self):
-        # gl.glColor3f(1, 0, 0)  # Default color
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(0, 1, 0, 0.3)
-        gl.glLineWidth(1.5)
-        gl.glBegin(gl.GL_TRIANGLES)
-        for face in self.model.faces:
-            for vertex_idx in face:
-                gl.glVertex3fv(self.model.vertices[vertex_idx])
-        gl.glEnd()
+    def set_yaw(self, yaw: float) -> None:
+        if self.yaw != yaw:
+            self.yaw = yaw
+            self.update()
+
+    def resizeGL(self, w, h):
+        gl.glViewport(0, 0, w, h)

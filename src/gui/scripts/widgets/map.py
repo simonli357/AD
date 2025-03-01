@@ -15,10 +15,13 @@ class MapWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.main_window = self.parent()
         self.current_zoom = 1.0
         self.min_zoom = 1.0
         self.markers = []
         self.cursor_coords = []
+        self.cursor_x = 3.86
+        self.cursor_y = 3.62
 
         self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
         self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
@@ -262,9 +265,9 @@ class MapWidget(QtWidgets.QWidget):
             self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             self.speed_label.setText(f'Speed: {speed:.2f} m/s')
-            self.window().car_widget.set_yaw(yaw / np.pi * 180)
-            self.window().meter_widget.set_yaw(yaw / np.pi * 180)
-            self.window().meter_widget.set_speed(speed)
+            self.main_window.car_widget.set_yaw(yaw / np.pi * 180)
+            self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
+            self.main_window.meter_widget.set_speed(speed)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x = self.detected_data[i, self.road_msg_dict['x']]
@@ -452,6 +455,8 @@ class MapWidget(QtWidgets.QWidget):
             click_y = 13.786 - image_y * (self.image_height_real / self.image_height)
 
             self.cursor_coords.append((click_x, click_y))
+            self.cursor_x = click_x
+            self.cursor_y = click_y
             self.add_marker(image_x, image_y)
 
     def add_marker(self, x, y) -> None:
