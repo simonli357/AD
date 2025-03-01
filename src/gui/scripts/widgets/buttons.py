@@ -15,7 +15,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.started = False
         self.start_time = None
         self.accumulated_centiseconds = 0
-        self.timer_label = QLabel('00:00:00')
+        self.timer_label = QLabel(f' 00:00:<font size="1">00</font>')
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
@@ -35,7 +35,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         # minutes = (self.centiseconds // 6000) % 60
         # seconds = (self.centiseconds // 100) % 60
         # centiseconds = self.centiseconds % 100
-        self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
+        self.timer_label.setText(f' {minutes:02d}:{seconds:02d}:<font size="1">{centiseconds:02d}</font>')
 
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
@@ -44,18 +44,21 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.buttons = deque()
 
         self.start_btn = QtWidgets.QPushButton("")
+        self.stop_btn = QtWidgets.QPushButton("")
         self.goto_btn = QtWidgets.QPushButton("󰓾")
 
         self.buttons.append(self.start_btn)
+        self.buttons.append(self.stop_btn)
         self.buttons.append(self.goto_btn)
 
-        self.start_btn.setToolTip("Start/Stop")
+        self.start_btn.setToolTip("Start/Pause/Resume")
+        self.stop_btn.setToolTip("Stop")
         self.goto_btn.setToolTip("Go To")
 
         for btn in self.buttons:
-            self.layout.addWidget(btn)
+            self.layout.addWidget(btn, 1)
 
-        self.layout.addWidget(self.timer_label)
+        self.layout.addWidget(self.timer_label, 2)
 
         self.setStyleSheet("""
             QPushButton {
@@ -64,14 +67,14 @@ class ButtonsWidget(QtWidgets.QWidget):
                 margin-right: 12px;
                 color: white;
                 border: none;
-                border-radius: 5px;
+                border-radius: 8px;
                 font-size: 32px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background-color: #9933ff;
             }
             QPushButton:pressed {
-                background-color: #1c6da8;
+                background-color: #cc99ff;
             }
             QToolTip {
                 background-color: black;
@@ -80,14 +83,21 @@ class ButtonsWidget(QtWidgets.QWidget):
                 font-size: 14px;
                 padding: 5px;
             }
+            QLabel {
+                background-color: rgba(255, 255, 255, 0.15);
+                border-radius: 8px;
+                color: #00FF00;  /* Neon green text */
+                font-size: 28px;
+            }
         """)
 
     def connect_signals(self) -> None:
+        self.stop_btn.clicked.connect(self.handle_stop_click)
         self.start_btn.clicked.connect(self.handle_start_click)
         self.goto_btn.clicked.connect(self.handle_goto_click)
 
     def toggle_start_icon(self) -> None:
-        if self.start_btn.text() == "":
+        if self.started:
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
@@ -135,6 +145,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.call_start_service(not self.started)
         if not self.started:
             print("Starting")
+            self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
             else:
@@ -142,6 +153,20 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.time_timer.start(25)
         else:
             print("Stopping")
+            self.started = False
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                self.accumulated_centiseconds += int(elapsed * 100)
+                self.start_time = None
+            self.time_timer.stop()
+        self.toggle_start_icon()
+
+    def handle_stop_click(self) -> None:
+        self.call_start_service(False)
+        self.started = False
+        self.time_timer.stop()
+        self.start_time = None
+        self.timer_label.setText(f' 00:00:<font size="1">00</font>')
         self.toggle_start_icon()
 
     def handle_goto_click(self) -> None:

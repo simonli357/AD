@@ -50,7 +50,8 @@ class CameraWidget(QtWidgets.QWidget):
 
         # Styling
         self.setStyleSheet("""
-            background-color: black;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
         """)
 
     def update_camera_display(self, pixmap):

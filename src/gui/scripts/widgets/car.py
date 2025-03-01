@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from PyQt5.Qt import QPainter, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
@@ -13,6 +14,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMaximumHeight(185)
         self.yaw = 0
         self.grid_vbo = None
         self.model = None
@@ -131,7 +133,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 120, 40, 0)
+        gl.glTranslatef(viewport[2] - 50, 20, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)

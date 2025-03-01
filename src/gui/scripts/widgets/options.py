@@ -65,14 +65,14 @@ class OptionsWidget(QtWidgets.QWidget):
                 padding: 12px 18px 12px 12px;
                 color: white;
                 border: none;
-                border-radius: 5px;
+                border-radius: 8px;
                 font-size: 32px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background-color: #9933ff;
             }
             QPushButton:pressed {
-                background-color: #1c6da8;
+                background-color: #cc99ff;
             }
             QToolTip {
                 background-color: black;

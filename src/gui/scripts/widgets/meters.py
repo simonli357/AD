@@ -7,6 +7,7 @@ class MeterWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMaximumHeight(185)
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0
@@ -39,11 +40,11 @@ class MeterWidget(QtWidgets.QWidget):
         widget_width = self.width()
         widget_height = self.height()
         min_length = min(widget_width, widget_height)
-        main_radius = min_length - 25
+        main_radius = min_length
         secondary_radius = main_radius / 1.35
         center1_y = min_length / 1.6
         center2_y = center1_y + ((main_radius - secondary_radius)) / 4
-        center1_x = widget_width / 2 - main_radius / 2 + secondary_radius / 3.5
+        center1_x = widget_width / 2 - main_radius / 2 + secondary_radius / 3.7
         center2_x = center1_x + secondary_radius
 
         self.center1 = QtCore.QPointF(center1_x, center1_y)
