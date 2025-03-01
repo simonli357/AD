@@ -124,6 +124,8 @@ void TcpClient::poll_connection() {
 		if (connected && recv(tcp_socket, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) == 0) {
 			std::cout << "GUI disconnected\n" << std::endl;
 			connected = false;
+            tcp_can_send = false;
+            run_sent = false;
 			pthread_cancel(receive.native_handle());
 			if (receive.joinable()) {
 				receive.join();
@@ -287,6 +289,7 @@ void TcpClient::send_run(float v_ref, std::string &path_name, float x_init, floa
     if (tcp_can_send) {
         std::vector<uint8_t> bytes = RunMsg(v_ref, path_name, x_init, y_init, yaw_init).serialize(tcp_data_types[9]);
         send(tcp_socket, bytes.data(), bytes.size(), 0);
+        run_sent = true;
     }
 }
 
