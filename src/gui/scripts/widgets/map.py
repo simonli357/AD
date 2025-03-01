@@ -16,6 +16,7 @@ class MapWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()
+        self.server = self.main_window.server
         self.current_zoom = 1.0
         self.min_zoom = 1.0
         self.markers = []
@@ -532,6 +533,24 @@ class MapWidget(QtWidgets.QWidget):
                 self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
         else:
             self.numObj = 0
+
+    def call_waypoint_service(self, run):
+        try:
+            self.server.utility_node_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
+            max_retries = 50
+            retries = 0
+            res = self.server.utility_node_client.waypoints_srv_msg
+            while (retries < max_retries):
+                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
+                    self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                    self.attributes_np = np.array(res.wp_attributes.data)
+                    print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to send waypoints service call")
+        except Exception as e:
+            raise e
 
 
 class CustomGraphicsView(QGraphicsView):

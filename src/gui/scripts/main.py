@@ -31,6 +31,7 @@ class CommunicationHandler(QObject):
     road_obj_signal = pyqtSignal(object)
     waypoint_signal = pyqtSignal(object)
     sign_signal = pyqtSignal(object)
+    run_signal = pyqtSignal(object)
 
 
 class MainWindow(QMainWindow):
@@ -63,6 +64,7 @@ class MainWindow(QMainWindow):
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
+        self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -129,6 +131,9 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.triggers.msgs:
                     req, res = self.server.utility_node_client.triggers.msgs.popleft()
                     self.comm.params_signal.emit(req, res)
+                if self.server.utility_node_client.run_msg:
+                    run = self.server.utility_node_client.run_msg.popleft()
+                    self.comm.run_signal.emit(run)
             time.sleep(0.016)
 
     def udp_callbacks(self) -> None:

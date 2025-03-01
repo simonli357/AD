@@ -32,6 +32,8 @@ class TcpClient {
 	TcpClient &operator=(TcpClient &&) = delete;
 	TcpClient &operator=(const TcpClient &) = delete;
 	~TcpClient();
+    // Fields
+	bool tcp_can_send = false;
 	// Methods
 	void initialize();
 	// Storage
@@ -54,12 +56,13 @@ class TcpClient {
 	void send_sign(const Float32MultiArray &array);
 	void send_message(const String &msg);
 	void send_trigger(std_srvs::Trigger &trigger);
-    void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);
+	void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);
 	void send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
 	void send_set_states_srv(bool success);
 	void send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
+	void send_run(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init);
 
   private:
 	// Fields
@@ -71,7 +74,6 @@ class TcpClient {
 	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
-	bool tcp_can_send = false;
 	sockaddr_in tcp_address;
 	sockaddr_in udp_address;
 	int tcp_socket;
@@ -101,7 +103,7 @@ class TcpClient {
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
-    void parse_params_msg(std::vector<uint8_t> &bytes);
+	void parse_params_msg(std::vector<uint8_t> &bytes);
 	void parse_go_to_srv(std::vector<uint8_t> &bytes);
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);

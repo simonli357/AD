@@ -3,6 +3,7 @@
 #include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "msg/TriggerMsg.hpp"
+#include "msg/RunMsg.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -78,6 +79,7 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x07); // Waypoints Srv
 	tcp_data_types.push_back(0x08); // Start Srv
     tcp_data_types.push_back(0x09); // Params
+    tcp_data_types.push_back(0x0a); // Run params
 }
 
 void TcpClient::set_udp_data_types() {
@@ -277,6 +279,13 @@ void TcpClient::send_start_srv(bool started) {
 void TcpClient::send_params(std::vector<double> &state_refs, std::vector<double> &attributes) {
     if (tcp_can_send) {
         std::vector<uint8_t> bytes = ParamsMsg(state_refs, attributes).serialize(tcp_data_types[8]);
+        send(tcp_socket, bytes.data(), bytes.size(), 0);
+    }
+}
+
+void TcpClient::send_run(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init) {
+    if (tcp_can_send) {
+        std::vector<uint8_t> bytes = RunMsg(v_ref, path_name, x_init, y_init, yaw_init).serialize(tcp_data_types[9]);
         send(tcp_socket, bytes.data(), bytes.size(), 0);
     }
 }

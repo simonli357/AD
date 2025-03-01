@@ -24,10 +24,10 @@ class WaypointsSrv:
         except Exception as e:
             print(e)
 
-    def encode(self, pathName, vrefName, x0, y0, yaw0):
+    def encode(self, vrefName, pathName, x0, y0, yaw0):
         data_bytes = []
+        data_bytes.append(struct.pack('<f', vrefName))
         data_bytes.append(pathName.encode('utf-8'))
-        data_bytes.append(vrefName.encode('utf-8'))
         data_bytes.append(struct.pack('<f', x0))
         data_bytes.append(struct.pack('<f', y0))
         data_bytes.append(struct.pack('<f', yaw0))

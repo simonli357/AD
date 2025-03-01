@@ -106,7 +106,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(0, 1, 0, 0.3)
+        gl.glColor4f(0, 1, 1, 0.3)
         gl.glLineWidth(1.5)
 
         self.model.vbo.bind()

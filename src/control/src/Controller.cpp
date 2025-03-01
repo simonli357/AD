@@ -133,10 +133,15 @@ public:
     Eigen::Vector2d next_intersection_point = {1000.0, 1000.0};
 
     void receive_services() {
+        bool run_params_sent = false;
         while(true) {
             if (utils.tcp_client == nullptr) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10000));
                 continue;
+            }
+            if (utils.tcp_client->tcp_can_send && !run_params_sent) {
+                utils.tcp_client->send_run(path_manager.v_ref, path_manager.pathName, utils.x0, utils.y0, utils.yaw0);
+                run_params_sent = true;
             }
             if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
