@@ -9,9 +9,11 @@ class MessageWidget(QtWidgets.QWidget):
         self.setup_ui()
 
     def setup_ui(self) -> None:
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setAlignment(QtCore.Qt.AlignJustify)
         self.message_display = QtWidgets.QTextEdit()
         self.message_display.setReadOnly(True)
+
         self.message_display.setStyleSheet("""
             QTextEdit {
                 background-color: rgba(255, 255, 255, 0.05);

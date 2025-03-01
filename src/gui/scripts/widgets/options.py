@@ -39,9 +39,6 @@ class OptionsWidget(QtWidgets.QWidget):
         for btn in self.buttons:
             self.layout.addWidget(btn)
 
-        # Add bottom stretch to keep buttons at top
-        self.layout.addStretch()
-
         # Styling
         self.setStyleSheet("""
             QPushButton {

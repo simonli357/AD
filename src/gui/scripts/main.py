@@ -7,6 +7,7 @@ import threading
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
+from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QObject
 from python_server.server import Server
 
@@ -63,17 +64,20 @@ class MainWindow(QMainWindow):
 
         left_widgets = QWidget()
         self.left_layout = QHBoxLayout(left_widgets)
+        self.left_layout.setAlignment(QtCore.Qt.AlignJustify)
         self.left_layout.addWidget(self.opt_widget)
         self.left_layout.addWidget(self.map_widget)
 
         right_widgets = QWidget()
         self.right_layout = QVBoxLayout(right_widgets)
+        self.right_layout.setAlignment(QtCore.Qt.AlignJustify)
         self.right_layout.addWidget(self.cam_widget)
         self.right_layout.addWidget(self.buttons_widget)
         self.right_layout.addWidget(self.meter_widget)
 
         top_widgets = QWidget()
         self.top_layout = QHBoxLayout(top_widgets)
+        self.top_layout.setAlignment(QtCore.Qt.AlignJustify)
         self.top_layout.addWidget(left_widgets)
         self.top_layout.addWidget(right_widgets)
 

@@ -6,6 +6,7 @@ import math
 class MeterWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0
@@ -18,7 +19,6 @@ class MeterWidget(QtWidgets.QWidget):
         self.size2 = None
         self.angles1 = None
         self.angles2 = None
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
     def set_speed(self, speed: float) -> None:
         self.speed = max(self.min_speed, min(speed, self.max_speed))
@@ -34,15 +34,25 @@ class MeterWidget(QtWidgets.QWidget):
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
             self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.yaw, self.min_yaw, self.max_yaw)
+            self.draw_border(painter)
+
+    def draw_border(self, painter: QPainter) -> None:
+        border_color = QColor(0, 255, 255)  # Cyan
+        border_width = 4
+        border_radius = 10
+        painter.setPen(QPen(border_color, border_width))
+        painter.setBrush(QtCore.Qt.NoBrush)
+        painter.drawRoundedRect(self.rect(), border_radius, border_radius)
 
     def draw_meters(self, painter: QPainter) -> None:
         widget_width = self.width()
         widget_height = self.height()
-        main_radius = widget_width / 2.5
+        min_length = min(widget_width, widget_height)
+        main_radius = min_length - 25
         secondary_radius = main_radius / 1.35
-        center1_y = widget_height / 1.5
+        center1_y = min_length / 1.6
         center2_y = center1_y + ((main_radius - secondary_radius)) / 4
-        center1_x = main_radius
+        center1_x = widget_width / 2 - main_radius / 2 + secondary_radius / 3.5
         center2_x = center1_x + secondary_radius
 
         self.center1 = QtCore.QPointF(center1_x, center1_y)

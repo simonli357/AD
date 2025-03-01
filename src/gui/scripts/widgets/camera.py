@@ -22,8 +22,8 @@ class CameraWidget(QtWidgets.QWidget):
         self.stopline = False
 
         # Camera
-        self.camera_w = int(640 / 640 * 500)
-        self.camera_h = int(480 / 640 * 500)
+        self.camera_w = 640
+        self.camera_h = 480
 
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
@@ -50,7 +50,10 @@ class CameraWidget(QtWidgets.QWidget):
 
         # Styling
         self.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid #00FFFF;
+            border-radius: 10px;
+            padding: 2px;
+            background-color: black;
         """)
 
     def update_camera_display(self, pixmap):
