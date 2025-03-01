@@ -81,7 +81,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             gl.glPushMatrix()
             gl.glScalef(0.8, 0.8, -0.8)
             gl.glRotatef(-self.yaw, 0, 1, 0)
-            gl.glTranslatef(-1, -2, -1)
+            gl.glTranslatef(1, -2, -1)
             self.draw_model()
             gl.glPopMatrix()
 
@@ -137,18 +137,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glDisable(gl.GL_DEPTH_TEST)
 
         gl.glBegin(gl.GL_LINES)
-        # X-axis (Red) - Horizontal
-        gl.glColor3f(1, 0, 0)
+        # Z-axis (Blue)
+        gl.glColor3f(0, 0, 1)
         gl.glVertex2f(0, 0)
         gl.glVertex2f(-1, 0.5)
-        # Y-axis (Green) - Vertical
+        # Y-axis (Green)
         gl.glColor3f(0, 1, 0)
         gl.glVertex2f(0, 0)
         gl.glVertex2f(0, -1)
-        # Z-axis (Blue) - Diagonal (simulate depth)
-        gl.glColor3f(0, 0, 1)
+        # X-axis (Red)
+        gl.glColor3f(1, 0, 0)
         gl.glVertex2f(0, 0)
-        gl.glVertex2f(1.0, 0.35)  # Diagonal line
+        gl.glVertex2f(1.0, 0.35)
         gl.glEnd()
 
         gl.glMatrixMode(gl.GL_PROJECTION)

@@ -15,6 +15,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.connect_signals()
 
     def setup_ui(self) -> None:
+        self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setAlignment(QtCore.Qt.AlignTop)
         self.buttons = deque()
@@ -42,6 +43,17 @@ class OptionsWidget(QtWidgets.QWidget):
         self.buttons.append(self.set_yaw_btn)
         self.buttons.append(self.save_path_btn)
 
+        self.toggle_sign_btn.setToolTip("Toggle Signs")
+        self.toggle_lanes_btn.setToolTip("Toggle Lanes")
+        self.toggle_cars_btn.setToolTip("Toggle Cars")
+        self.toggle_destinations_btn.setToolTip("Toggle Destinations")
+        self.toggle_path_btn.setToolTip("Toggle Path")
+        self.toggle_gt_btn.setToolTip("Toggle Objects")
+        self.toggle_depth_btn.setToolTip("Toggle Depth")
+        self.set_states_btn.setToolTip("Set States")
+        self.set_yaw_btn.setToolTip("Set Yaw")
+        self.save_path_btn.setToolTip("Save Path")
+
         # Add buttons to layout with spacing
         for btn in self.buttons:
             self.layout.addWidget(btn)
@@ -61,6 +73,13 @@ class OptionsWidget(QtWidgets.QWidget):
             }
             QPushButton:pressed {
                 background-color: #1c6da8;
+            }
+            QToolTip {
+                background-color: black;
+                color: white;
+                border: none;
+                font-size: 14px;
+                padding: 5px;
             }
         """)
 

@@ -38,6 +38,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.timer_label.setText(f'{minutes:02d}:{seconds:02d}:{centiseconds:02d}')
 
     def setup_ui(self) -> None:
+        self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setAlignment(QtCore.Qt.AlignTop)
         self.buttons = deque()
@@ -47,6 +48,9 @@ class ButtonsWidget(QtWidgets.QWidget):
 
         self.buttons.append(self.start_btn)
         self.buttons.append(self.goto_btn)
+
+        self.start_btn.setToolTip("Start/Stop")
+        self.goto_btn.setToolTip("Go To")
 
         for btn in self.buttons:
             self.layout.addWidget(btn)
@@ -68,6 +72,13 @@ class ButtonsWidget(QtWidgets.QWidget):
             }
             QPushButton:pressed {
                 background-color: #1c6da8;
+            }
+            QToolTip {
+                background-color: black;
+                color: white;
+                border: none;
+                font-size: 14px;
+                padding: 5px;
             }
         """)
 

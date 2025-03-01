@@ -40,7 +40,11 @@ class MainWindow(QMainWindow):
         self.comm = CommunicationHandler()
 
         self.setWindowTitle("BFMC DASHBOARD")
-        self.setStyleSheet("background-color: black;")
+
+        self.setStyleSheet("""
+            background-color: black;
+        """)
+
         self.load_nerd_font()
 
         self.map_widget = MapWidget(self)
