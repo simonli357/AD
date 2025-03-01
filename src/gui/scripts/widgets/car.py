@@ -50,37 +50,79 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(8, 8, 8, 0, 0, 0, 0, 1, 0)  # Camera position
+        glu.gluLookAt(10, 8, 10, 0, 0, 0, 0, 1, 0)  # Camera position
         if self.model:
             gl.glPushMatrix()
-            gl.glScalef(1, 1, -1)
+            gl.glScalef(0.8, 0.8, -0.8)
             gl.glRotatef(-self.yaw, 0, 1, 0)  # Yaw rotation
+            gl.glTranslatef(-1, -2, -1)
             self.draw_model()
             gl.glPopMatrix()
         self.draw_axes()
+        self.draw_grid()
+
+    def draw_grid(self):
+        gl.glPushMatrix()
+        gl.glColor3f(0.3, 0.3, 0.3)  # Grid color (dark gray)
+        grid_size = 8  # Total size of grid (half in each direction)
+        step = 2       # Distance between lines
+        gl.glTranslatef(0, -0.8 - 2, 0)  # Adjust Y position based on car's scaling
+        gl.glBegin(gl.GL_LINES)
+        for z in range(-grid_size, grid_size + 1, step):
+            gl.glVertex3f(-grid_size, 0, z)
+            gl.glVertex3f(grid_size, 0, z)
+        for x in range(-grid_size, grid_size + 1, step):
+            gl.glVertex3f(x, 0, -grid_size)
+            gl.glVertex3f(x, 0, grid_size)
+        gl.glEnd()
+        gl.glPopMatrix()
 
     def draw_axes(self):
+        gl.glPushAttrib(gl.GL_ENABLE_BIT)
+        gl.glPushMatrix()
+
+        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPushMatrix()
+        gl.glLoadIdentity()
+        gl.glOrtho(0, viewport[2], viewport[3], 0, -1, 1)
+
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+
+        gl.glTranslatef(viewport[2] - 120, 40, 0)
+        gl.glScalef(20, 20, 20)
+
+        gl.glDisable(gl.GL_DEPTH_TEST)
+
         gl.glBegin(gl.GL_LINES)
-        # X-axis (Red)
-        gl.glColor3f(6, 0, 0)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(6, 0, 0)
-        # Y-axis (Green)
-        gl.glColor3f(0, 6, 0)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(0, 6, 0)
-        # Z-axis (Blue)
-        gl.glColor3f(0, 0, 6)
-        gl.glVertex3f(0, 0, 0)
-        gl.glVertex3f(0, 0, 6)
+        # X-axis (Red) - Horizontal
+        gl.glColor3f(1, 0, 0)
+        gl.glVertex2f(0, 0)
+        gl.glVertex2f(-1, 0.5)
+        # Y-axis (Green) - Vertical
+        gl.glColor3f(0, 1, 0)
+        gl.glVertex2f(0, 0)
+        gl.glVertex2f(0, -1)
+        # Z-axis (Blue) - Diagonal (simulate depth)
+        gl.glColor3f(0, 0, 1)
+        gl.glVertex2f(0, 0)
+        gl.glVertex2f(1.0, 0.35)  # Diagonal line
         gl.glEnd()
+
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPopMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPopMatrix()
+        gl.glPopAttrib()
+        gl.glEnable(gl.GL_DEPTH_TEST)
 
     def draw_model(self):
         # gl.glColor3f(1, 0, 0)  # Default color
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(0.6, 0, 1, 0.3)
+        gl.glColor4f(0, 1, 0, 0.3)
         gl.glLineWidth(1.5)
         gl.glBegin(gl.GL_TRIANGLES)
         for face in self.model.faces:
