@@ -50,9 +50,6 @@ class CameraWidget(QtWidgets.QWidget):
 
         # Styling
         self.setStyleSheet("""
-            border: 2px solid #00FFFF;
-            border-radius: 10px;
-            padding: 2px;
             background-color: black;
         """)
 

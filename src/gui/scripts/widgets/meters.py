@@ -34,15 +34,6 @@ class MeterWidget(QtWidgets.QWidget):
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
             self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.yaw, self.min_yaw, self.max_yaw)
-            self.draw_border(painter)
-
-    def draw_border(self, painter: QPainter) -> None:
-        border_color = QColor(0, 255, 255)  # Cyan
-        border_width = 4
-        border_radius = 10
-        painter.setPen(QPen(border_color, border_width))
-        painter.setBrush(QtCore.Qt.NoBrush)
-        painter.drawRoundedRect(self.rect(), border_radius, border_radius)
 
     def draw_meters(self, painter: QPainter) -> None:
         widget_width = self.width()

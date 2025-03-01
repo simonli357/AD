@@ -17,6 +17,7 @@ from widgets.meters import MeterWidget
 from widgets.map import MapWidget
 from widgets.camera import CameraWidget
 from widgets.message import MessageWidget
+from widgets.car import CarWidget
 
 from std_srvs.srv import TriggerRequest
 
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow):
         self.cam_widget = CameraWidget()
         self.buttons_widget = ButtonsWidget()
         self.meter_widget = MeterWidget()
+        self.car_widget = CarWidget()
         self.msg_widget = MessageWidget()
 
         self.comm.message_signal.connect(self.msg_widget.add_message)
@@ -69,11 +71,16 @@ class MainWindow(QMainWindow):
         self.left_layout.addWidget(self.map_widget)
 
         right_widgets = QWidget()
+        stat_widgets = QWidget()
         self.right_layout = QVBoxLayout(right_widgets)
         self.right_layout.setAlignment(QtCore.Qt.AlignJustify)
         self.right_layout.addWidget(self.cam_widget)
         self.right_layout.addWidget(self.buttons_widget)
-        self.right_layout.addWidget(self.meter_widget)
+        self.stat_layout = QHBoxLayout(stat_widgets)
+        self.stat_layout.setAlignment(QtCore.Qt.AlignJustify)
+        self.stat_layout.addWidget(self.meter_widget)
+        self.stat_layout.addWidget(self.car_widget)
+        self.right_layout.addWidget(stat_widgets)
 
         top_widgets = QWidget()
         self.top_layout = QHBoxLayout(top_widgets)
