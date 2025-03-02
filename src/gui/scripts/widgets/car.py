@@ -20,6 +20,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
         self.setFormat(fmt)
 
+        self.steer = 0
         self.yaw = 0
         self.x_pos = 0
         self.y_pos = 0
@@ -83,7 +84,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(12, 12, 0, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 12, 12, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -92,7 +93,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if self.model:
             gl.glPushMatrix()
             gl.glScalef(-1.0, 1.0, -1.0)
-            gl.glRotatef(self.yaw, 0, 1, 0)
+            gl.glRotatef(-self.steer, 0, 1, 0)
             self.draw_model()
             gl.glPopMatrix()
 
@@ -235,6 +236,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPopMatrix()
         gl.glPopAttrib()
         gl.glEnable(gl.GL_DEPTH_TEST)
+
+    def set_steer(self, steer: float) -> None:
+        self.steer = steer
+        self.update()
 
     def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
         self.yaw = yaw

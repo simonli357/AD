@@ -32,6 +32,7 @@ class CommunicationHandler(QObject):
     waypoint_signal = pyqtSignal(object)
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
+    steer_signal = pyqtSignal(object)
 
 
 class MainWindow(QMainWindow):
@@ -65,6 +66,8 @@ class MainWindow(QMainWindow):
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
+        self.comm.steer_signal.connect(self.car_widget.set_steer)
+        self.comm.steer_signal.connect(self.meter_widget.set_steer)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -150,6 +153,7 @@ class MainWindow(QMainWindow):
             waypoint = self.server.udp_connection.parse_waypoint()
             road_obj = self.server.udp_connection.parse_road_object()
             lane2 = self.server.udp_connection.parse_lane2()
+            steer = self.server.udp_connection.parse_steer()
 
             if rgb_image is not None:
                 self.comm.camera_frame_signal.emit(rgb_image)
@@ -163,6 +167,8 @@ class MainWindow(QMainWindow):
                 self.comm.waypoint_signal.emit(waypoint)
             if sign is not None:
                 self.comm.sign_signal.emit(sign)
+            if steer is not None:
+                self.comm.steer_signal.emit(steer)
 
             time.sleep(0.016)
 

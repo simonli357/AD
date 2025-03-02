@@ -6,6 +6,8 @@ from collections import OrderedDict, deque
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
 
+import struct
+
 
 class UdpConnection:
     def __init__(self, udp_socket=None):
@@ -20,6 +22,7 @@ class UdpConnection:
                 4: self.store_sign,
                 5: self.store_rgb_image,
                 6: self.store_depth_image,
+                7: self.store_steer,
             })
             self.types = list(self.data_actions.keys())
             self.lane2_buf = deque([], 1)
@@ -28,6 +31,7 @@ class UdpConnection:
             self.sign_buf = deque([], 1)
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
+            self.steer_buf = deque([], 1)
             threading.Thread(target=self.receive, daemon=True).start()
 
     def receive(self):
@@ -65,6 +69,9 @@ class UdpConnection:
 
     def store_depth_image(self, bytes):
         self.depth_buf.append(bytes)
+
+    def store_steer(self, bytes):
+        self.steer_buf.append(bytes)
 
     ####################
     # Utility methods
@@ -126,6 +133,16 @@ class UdpConnection:
                 cv_image = (cv_image).astype(np.uint16)
                 bridge = CvBridge()
                 return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
+            return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def parse_steer(self):
+        try:
+            if len(self.steer_buf) > 0:
+                bytes = self.steer_buf[0]
+                return struct.unpack('f', bytes[:4])[0]
             return None
         except Exception as e:
             print(e)
