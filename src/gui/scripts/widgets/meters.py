@@ -10,6 +10,9 @@ class MeterWidget(QtWidgets.QWidget):
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0
+        self.steer = 0
+        self.min_steer = -25
+        self.max_steer = 25
         self.yaw = 0
         self.min_yaw = -180.0
         self.max_yaw = 180.0
@@ -24,6 +27,10 @@ class MeterWidget(QtWidgets.QWidget):
         self.speed = max(self.min_speed, min(speed, self.max_speed))
         self.update()
 
+    def set_steer(self, steer: float) -> None:
+        self.steer = steer
+        self.update()
+
     def set_yaw(self, yaw: float) -> None:
         self.yaw = max(self.min_yaw, min(yaw, self.max_yaw))
         self.update()
@@ -34,7 +41,7 @@ class MeterWidget(QtWidgets.QWidget):
             self.draw_background(painter)
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
-            self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.yaw, self.min_yaw, self.max_yaw)
+            self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.steer, self.min_steer, self.max_steer)
 
     def draw_background(self, painter: QPainter) -> None:
         rect = QtCore.QRectF(self.rect())
@@ -62,8 +69,8 @@ class MeterWidget(QtWidgets.QWidget):
         self.draw_arc(f'SPEED \n {self.speed:.2f} cm/s', painter, self.center1, self.size1, -20, 220)
 
         self.angles2 = self.draw_yaw_ticks(7, painter, self.center2, self.size2, 0.2, -10, 140)
-        self.draw_yaw_increments(painter, self.center2, self.size2, self.angles2, self.min_yaw, self.max_yaw)
-        self.draw_arc('YAW \n', painter, self.center2, self.size2, -20, 150)
+        self.draw_yaw_increments(painter, self.center2, self.size2, self.angles2, self.min_steer, self.max_steer)
+        self.draw_arc(f'STEER \n {self.steer:.2f} °', painter, self.center2, self.size2, -20, 150)
 
     from PyQt5.QtGui import QConicalGradient
 

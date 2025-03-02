@@ -55,6 +55,7 @@ class TcpClient {
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);
+    void send_steer(float steer);
 	void send_message(const String &msg);
 	void send_trigger(std_srvs::Trigger &trigger);
 	void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);

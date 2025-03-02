@@ -89,6 +89,7 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x04); // Signs
 	udp_data_types.push_back(0x05); // RGB Images
 	udp_data_types.push_back(0x06); // Depth Images
+    udp_data_types.push_back(0x07); // Steer
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -346,7 +347,7 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 	
 	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
 	std::memcpy(bytes.data(), &length, message_size);
-	bytes[4] = tcp_data_types[3];
+	bytes[4] = udp_data_types[3];
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
 	
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
@@ -392,6 +393,17 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 		std::memcpy(segment.data() + header_size, &image[0], image.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
+}
+
+void TcpClient::send_steer(float steer) {
+	uint32_t length = sizeof(steer);
+	
+	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
+	std::memcpy(bytes.data(), &length, message_size);
+	bytes[4] = udp_data_types[6];
+	std::memcpy(bytes.data() + header_size, &steer, length);
+	
+	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
