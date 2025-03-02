@@ -925,6 +925,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     }
 
     float steer = steering_angle;
+    tcp_client->send_steer(steer);
     if(true) {
         send_speed_and_steer(vel, steer);
     }
