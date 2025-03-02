@@ -62,7 +62,7 @@ class ButtonsWidget(QtWidgets.QWidget):
 
         self.setStyleSheet("""
             QPushButton {
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: rgba(255, 255, 255, 0.08);
                 padding: 12px 36px 12px 32px;
                 margin-right: 12px;
                 color: white;
@@ -84,7 +84,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                 padding: 5px;
             }
             QLabel {
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
                 color: #00FF00;  /* Neon green text */
                 font-size: 28px;

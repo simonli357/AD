@@ -84,6 +84,7 @@ class MainWindow(QMainWindow):
         self.right_layout.addWidget(self.buttons_widget)
         self.stat_layout = QHBoxLayout(stat_widgets)
         self.stat_layout.setAlignment(QtCore.Qt.AlignJustify)
+        self.stat_layout.setSpacing(20)
         self.stat_layout.addWidget(self.meter_widget)
         self.stat_layout.addWidget(self.car_widget)
         self.right_layout.addWidget(stat_widgets)

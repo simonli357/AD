@@ -40,7 +40,7 @@ class CameraWidget(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(10, 10, 10, 10)
 
         # Camera display label
         self.camera_label = QtWidgets.QLabel(self)
@@ -50,7 +50,7 @@ class CameraWidget(QtWidgets.QWidget):
 
         # Styling
         self.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(255, 255, 255, 0.08);
             border-radius: 12px;
         """)
 

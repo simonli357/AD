@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
@@ -14,7 +14,12 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setMaximumHeight(185)
+        self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+
+        fmt = self.format()
+        fmt.setAlphaBufferSize(8)  # Enable alpha channel
+        self.setFormat(fmt)
+
         self.yaw = 0
         self.x_pos = 0
         self.y_pos = 0
@@ -50,10 +55,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        gl.glClearColor(1.0, 1.0, 1.0, 0.05)
 
         # Initialize grid VBO
-        grid_size = 8
+        grid_size = 6
         step = 2
         grid_vertices = []
         for z in range(-grid_size, grid_size + 1, step):
@@ -78,7 +83,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(10, 8, 10, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(12, 12, 0, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -86,9 +91,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw car model
         if self.model:
             gl.glPushMatrix()
-            gl.glScalef(0.8, 0.8, -0.8)
-            gl.glRotatef(-self.yaw, 0, 1, 0)
-            gl.glTranslatef(1, -2, -1)
+            gl.glScalef(-1.0, 1.0, -1.0)
+            gl.glRotatef(self.yaw, 0, 1, 0)
             self.draw_model()
             gl.glPopMatrix()
 
@@ -165,7 +169,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def draw_grid(self):
         gl.glPushMatrix()
-        gl.glTranslatef(0, -2.8, 0)  # Adjusted Y position
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
@@ -181,8 +184,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(0, 1, 1, 0.3)
-        gl.glLineWidth(1.5)
+        gl.glColor4f(0, 1, 1, 1.0)
+        gl.glLineWidth(0.01)
 
         self.model.vbo.bind()
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
@@ -206,7 +209,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 50, 20, 0)
+        gl.glTranslatef(viewport[2] - 20, 35, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -215,7 +218,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Z-axis (Blue)
         gl.glColor3f(0, 0, 1)
         gl.glVertex2f(0, 0)
-        gl.glVertex2f(-1, 0.5)
+        gl.glVertex2f(-1, 0.0)
         # Y-axis (Green)
         gl.glColor3f(0, 1, 0)
         gl.glVertex2f(0, 0)
@@ -223,7 +226,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # X-axis (Red)
         gl.glColor3f(1, 0, 0)
         gl.glVertex2f(0, 0)
-        gl.glVertex2f(1.0, 0.35)
+        gl.glVertex2f(0.5, 0.7)
         gl.glEnd()
 
         gl.glMatrixMode(gl.GL_PROJECTION)

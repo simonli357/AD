@@ -6,7 +6,6 @@ class MessageWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.message_history = deque([], 1000)
-        self.setMaximumHeight(250)
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -17,7 +16,7 @@ class MessageWidget(QtWidgets.QWidget):
 
         self.message_display.setStyleSheet("""
             QTextEdit {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: rgba(255, 255, 255, 0.08);
                 color: #00FF00;
                 margin: 12px;
                 font-family: 'Roboto';

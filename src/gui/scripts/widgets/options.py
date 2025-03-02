@@ -61,7 +61,7 @@ class OptionsWidget(QtWidgets.QWidget):
         # Styling
         self.setStyleSheet("""
             QPushButton {
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: rgba(255, 255, 255, 0.08);
                 padding: 12px 18px 12px 12px;
                 color: white;
                 border: none;

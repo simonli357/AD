@@ -101,7 +101,7 @@ class MapWidget(QtWidgets.QWidget):
         self.setup_ui()
 
         # Map configuration
-        self.scale_factor = 1.40
+        self.scale_factor = 1.38
         self.image_width_real = 20.696
         self.image_height_real = 13.786
         self.image_width = int(800 * self.scale_factor)
