@@ -12,7 +12,7 @@ class WaypointsSrv : public Decoder<WaypointsSrv>, public Encoder {
   public:
     WaypointsSrv();
 	WaypointsSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
-	WaypointsSrv(std::string pathName, std::string vrefName, float x0, float y0, float yaw0);
+	WaypointsSrv(float vrefName, std::string pathName, float x0, float y0, float yaw0);
 	WaypointsSrv(WaypointsSrv &&) = default;
 	WaypointsSrv(const WaypointsSrv &) = default;
 	WaypointsSrv &operator=(WaypointsSrv &&) = delete;
@@ -20,8 +20,8 @@ class WaypointsSrv : public Decoder<WaypointsSrv>, public Encoder {
 	~WaypointsSrv() = default;
 
 	// Request
+	float vrefName;
 	std::string pathName;
-	std::string vrefName;
 	float x0;
 	float y0;
 	float yaw0;

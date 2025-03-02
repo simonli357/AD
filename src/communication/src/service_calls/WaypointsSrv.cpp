@@ -19,16 +19,16 @@ WaypointsSrv::WaypointsSrv(Float32MultiArray &state_refs, Float32MultiArray &inp
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length;
 }
 
-WaypointsSrv::WaypointsSrv(std::string pathName, std::string vrefName, float x0, float y0, float yaw0) : pathName(pathName), vrefName(vrefName), x0(x0), y0(y0), yaw0(yaw0) {}
+WaypointsSrv::WaypointsSrv(float vrefName, std::string pathName, float x0, float y0, float yaw0) : vrefName(vrefName), pathName(pathName), x0(x0), y0(y0), yaw0(yaw0) {}
 
 std::unique_ptr<WaypointsSrv> WaypointsSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);
-	std::string pathName(datatypes[0].begin(), datatypes[0].end());
-	std::string vrefName(datatypes[1].begin(), datatypes[1].end());
+	float vrefName = float_from_bytes(datatypes[0]);
+	std::string pathName(datatypes[1].begin(), datatypes[1].end());
 	float x0 = float_from_bytes(datatypes[2]);
 	float y0 = float_from_bytes(datatypes[3]);
 	float yaw0 = float_from_bytes(datatypes[4]);
-	return std::make_unique<WaypointsSrv>(pathName, vrefName, x0, y0, yaw0);
+	return std::make_unique<WaypointsSrv>(vrefName, pathName, x0, y0, yaw0);
 }
 
 uint32_t WaypointsSrv::compute_lengths_length() { return lengths_length; }
