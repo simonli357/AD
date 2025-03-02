@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import time
 import numpy as np
 import os
 from scipy.interpolate import UnivariateSpline, splprep, splev
@@ -9,7 +8,9 @@ import yaml
 import math
 import rospy
 from std_msgs.msg import Float32MultiArray
-from utils.srv import waypoints, waypointsResponse, go_to, go_toResponse
+from utils.srv import waypoints, waypointsResponse, go_to, go_to_multiple, go_toResponse, go_to_multipleResponse
+
+import numpy as np
 
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
@@ -19,6 +20,7 @@ def smooth_yaw_angles(yaw_angles):
     # Compute the smoothed yaw angles
     smooth_yaw = np.concatenate(([yaw_angles[0]], yaw_angles[0] + np.cumsum(diffs)))
     return smooth_yaw
+
 
 def compute_smooth_curvature(waypoints_x, waypoints_y, smooth_factor=0.1):
     # Step 1: set up a spline interpolation
@@ -33,8 +35,8 @@ def compute_smooth_curvature(waypoints_x, waypoints_y, smooth_factor=0.1):
     ddy_dt = spline_y.derivative(n=2)(t_smooth)
     # Step 3: compute curvature
     # κ = |dx/dt * d²y/dt² - dy/dt * d²x/dt²| / (dx/dt² + dy/dt²)^(3/2)
-    curvature = np.abs(dx_dt * ddy_dt - dy_dt * ddx_dt) / (dx_dt**2 + dy_dt**2)**(3/2)
-    # Step 4: compute tangent 
+    curvature = np.abs(dx_dt * ddy_dt - dy_dt * ddx_dt) / (dx_dt**2 + dy_dt**2)**(3 / 2)
+    # Step 4: compute tangent
     tangent_angles = np.arctan2(dy_dt, dx_dt)
     # Step 5: compute normal
     normal_angles = tangent_angles + np.pi / 2
@@ -44,22 +46,29 @@ def compute_smooth_curvature(waypoints_x, waypoints_y, smooth_factor=0.1):
     normals = np.vstack((dx, dy)).T
     return curvature, tangent_angles, normals
 
+
 def filter_waypoints(waypoints, threshold):
     filtered_waypoints = [waypoints[0]]
     for i in range(1, len(waypoints)):
-        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i-1])) >= threshold:
+        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) >= threshold:
             filtered_waypoints.append(waypoints[i])
-        else: 
+        else:
             # print("filtered out waypoint: ",i, waypoints[i])
             continue
     return np.array(filtered_waypoints)
+
 
 def filter_waypoints_and_attributes(waypoints, attributes, threshold):
     filtered_waypoints = [waypoints[0]]
     filtered_attributes = [attributes[0]]
 
     for i in range(1, len(waypoints)):
-        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i-1])) >= threshold:
+        thresh = threshold
+        if attributes[i] == 1:
+            thresh /= 1.5
+        if attributes[i] == 4 or attributes[i] == 5:
+            thresh *= 1.33
+        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) <= thresh:
             filtered_waypoints.append(waypoints[i])
             filtered_attributes.append(attributes[i])
         else:
@@ -68,6 +77,7 @@ def filter_waypoints_and_attributes(waypoints, attributes, threshold):
             continue
 
     return np.array(filtered_waypoints), np.array(filtered_attributes)
+
 
 def interpolate_waypoints(waypoints, num_points):
     # Extract x and y coordinates
@@ -82,7 +92,13 @@ def interpolate_waypoints(waypoints, num_points):
     normalized_length = cumulative_length / cumulative_length[-1]
 
     # Fit the spline using the normalized arc-length as parameter
-    tck, u = splprep([x, y], u=normalized_length, s=0)
+    try:
+        tck, u = splprep([x, y], u=normalized_length, s=0)
+    except Exception as e:
+        points = np.vstack((x, y)).T
+        print("error at: ", points)
+        print("Error in splprep: ", e)
+        return waypoints
 
     # Generate equally spaced parameter values in normalized arc-length
     u_new = np.linspace(0, 1, num_points)
@@ -91,6 +107,8 @@ def interpolate_waypoints(waypoints, num_points):
     # Stack the x and y coordinates to get new waypoints
     new_waypoints = np.vstack((x_new, y_new)).T
     return new_waypoints
+
+
 def interpolate_attributes(waypoints, attributes, new_waypoints):
     num_new = len(new_waypoints)
     new_attributes = np.zeros(num_new, dtype=int)
@@ -104,7 +122,9 @@ def interpolate_attributes(waypoints, attributes, new_waypoints):
         new_attributes[i] = attributes[nearest_index]
 
     return new_attributes
-def replace_segments(waypoints, waypoints_cw, attributes, attributes_cw, density_factor=1.5, values = [1]):
+
+
+def replace_segments(waypoints, waypoints_cw, attributes, attributes_cw, density_factor=1.5, values=[1]):
     # Find segments where attribute is 1 in 'attributes'
     segments = find_segments(attributes, values=values)
 
@@ -133,6 +153,7 @@ def replace_segments(waypoints, waypoints_cw, attributes, attributes_cw, density
 
     return np.array(new_waypoints), np.array(new_attributes)
 
+
 def find_segments(array, values):
     """ Find start and end indices of segments in an array where the value matches. """
     segments = []
@@ -146,6 +167,7 @@ def find_segments(array, values):
     if start is not None:
         segments.append((start, len(array)))
     return segments
+
 
 def interpolate_waypoints2(waypoints, num_points):
     # Initialize an array to hold the new interpolated waypoints
@@ -172,8 +194,9 @@ def interpolate_waypoints2(waypoints, num_points):
 
     return new_waypoints
 
+
 class Path:
-    def __init__(self, v_ref, N, T, x0=None, name="speedrun", dest = None):
+    def __init__(self, v_ref, N, T, x0=None, name="speedrun", dest=None):
         self.hw_density_factor = rospy.get_param('hw', default=1.33)
 
         self.v_ref = v_ref
@@ -183,15 +206,24 @@ class Path:
         if name is not None:
             self.name = name
             current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
+            with open(os.path.join(current_path, 'config/runs0215_modified.yaml'), 'r') as stream:
                 data = yaml.safe_load(stream)
                 destinations = data[name]
         else:
-            dest_x = dest[0]
-            dest_y = dest[1]
-            destination = self.global_planner.find_closest_node(dest_x, dest_y)
-            print("destination: ", destination, type(destination))
-            destinations = [destination]
+            destinations = []
+            # check if dest is a list with x and y coordinates or a list containing a list with x and y coordinates
+            if dest is not None and isinstance(dest[0], list):
+                for d in dest:
+                    dest_x = d[0]
+                    dest_y = d[1]
+                    destination = self.global_planner.find_closest_node(dest_x, dest_y)
+                    destinations.append(destination)
+            else:
+                dest_x = dest[0]
+                dest_y = dest[1]
+                destination = self.global_planner.find_closest_node(dest_x, dest_y)
+                print("destination: ", destination, type(destination))
+                destinations = [destination]
 
         # Plan runs between sequential destinations
         runs = []
@@ -218,63 +250,58 @@ class Path:
                 attributes.append(attribute)
 
         runs1 = np.hstack(runs)
-        
-        # for undetected in self.undetectable_areas:
-        #     print("undetected: ", len(undetected))
-        # print("runs1: ", runs1.shape, "x0: ", x0)
-        # runs1:  (2, 168) x0:  [3 2 0]
-        
-        #find closest index to x0
-        # if x0 is not None:
-        #     def calculate_distances(run, x0):
-        #         return np.sqrt(np.sum((run[:2, :] - x0[:2, None])**2, axis=0))
-        #     # Find the closest point across all runs
-        #     min_distance = np.inf
-        #     min_distance_run_index = -1
-        #     min_distance_point_index = -1
 
-        #     for i, run in enumerate(runs):
-        #         distances = calculate_distances(run, x0)
-        #         min_index = np.argmin(distances)
-        #         min_dist = distances[min_index]
-                
-        #         if min_dist < min_distance:
-        #             min_distance = min_dist
-        #             min_distance_run_index = i
-        #             min_distance_point_index = min_index
-
-        #     # Now modify the list of runs as per the instructions
-        #     if min_distance_run_index != -1:
-        #         closest_run = runs[min_distance_run_index]
-        #         # Append x0 to the closest run before the closest waypoint
-        #         modified_run = np.hstack((closest_run[:, :min_distance_point_index], x0[:2, None], closest_run[:, min_distance_point_index:]))
-        #         # Eliminate the waypoints before x0
-        #         modified_run = modified_run[:, min_distance_point_index:]
-        #         # Update the list of runs
-        #         runs = [modified_run] + runs[min_distance_run_index+1:]
-                
-        # print("runs: ", len(runs))
-        # Compute path lengths 
+        # Compute path lengths
         path_lengths = [np.sum(np.linalg.norm(run[:, 1:] - run[:, :-1], axis=0)) for run in runs]
-        self.density = 1/abs(self.v_ref)/T # wp/m
-        self.region_of_acceptance = 0.05*10/self.density
+        self.density = 1 / abs(self.v_ref) / T  # wp/m
+        self.region_of_acceptance = 0.05 * 10 / self.density
         # print("density: ", self.density, ", region_of_acceptance: ", self.region_of_acceptance)
 
         runs_hw = []
         runs_cw = []
         attributes_hw = []
         attributes_cw = []
+        n = len(runs)
+        for i in range(n):
+            if i >= n:
+                break
+            run = runs[i]
+            if run.shape[1] < 4:
+                if i == len(runs) - 1:
+                    # if last, append to the previous run
+                    # remove the first element of run
+                    run = run[:, 1:]
+                    runs[i - 1] = np.hstack((runs[i - 1], run))
+                    attributes[i - 1] = attributes[i - 1] + attributes[i]
+                    path_lengths[i - 1] += path_lengths[i]
+                    runs.pop(i)
+                    attributes.pop(i)
+                    path_lengths.pop(i)
+                    break
+                else:
+                    # if has less than 4 waypoints, append to the next run
+                    # remove the last element of run
+                    run = run[:, :-1]
+                    runs[i + 1] = np.hstack((run, runs[i + 1]))
+                    attributes[i + 1] = attributes[i] + attributes[i + 1]
+                    path_lengths[i + 1] += path_lengths[i]
+                    runs.pop(i)
+                    attributes.pop(i)
+                    path_lengths.pop(i)
+                    i -= 1
+                    n -= 1
+                i += 1
         for i, length in enumerate(path_lengths):
             # print(i, ") path length: ", length)
-            runs_hw.append(interpolate_waypoints(runs[i].T, int(np.ceil(length*self.density/self.hw_density_factor))))
-            runs_cw.append(interpolate_waypoints(runs[i].T, int(np.ceil(length*self.density*1.5))))
+            runs_hw.append(interpolate_waypoints(runs[i].T, int(np.ceil(length * self.density / self.hw_density_factor))))
+            runs_cw.append(interpolate_waypoints(runs[i].T, int(np.ceil(length * self.density * 1.5))))
             old_run = runs[i].copy()
-            runs[i] = interpolate_waypoints(runs[i].T, int(np.ceil(length*self.density)))
+            runs[i] = interpolate_waypoints(runs[i].T, int(np.ceil(length * self.density)))
             # print("old shape: ", old_run.shape, ", new shape: ", runs[i].shape)
             attributes_cw.append(interpolate_attributes(old_run.T, attributes[i], runs_cw[i]))
             attributes_hw.append(interpolate_attributes(old_run.T, attributes[i], runs_hw[i]))
             attributes[i] = interpolate_attributes(old_run.T, attributes[i], runs[i])
-        
+
         # print("run1: \n", runs[0].shape)
         # print("attr1: \n", attributes[0].shape)
         # print("run_hw1: \n", runs_hw[0].shape)
@@ -298,8 +325,8 @@ class Path:
             for segment in segments_cw:
                 segment = list(segment)  # Convert tuple to list
                 segment.append(1)
-                segments_cw_with_attributes.append(segment)     
-            segments_hw = find_segments(self.attributes, values=[4,5, 104, 105])
+                segments_cw_with_attributes.append(segment)
+            segments_hw = find_segments(self.attributes, values=[4, 5, 104, 105])
             segments_hw_with_attributes = []
             for segment in segments_hw:
                 segment = list(segment)  # Convert tuple to list
@@ -314,13 +341,13 @@ class Path:
             starts_cw = []
             ends_cw = []
             # for i in range(len(segments)):
-                # start, end, attribute = segments[i]
+            # start, end, attribute = segments[i]
             for segment in segments:
                 start, end, attribute = segment
                 if attribute == 1:
                     density_factor = 1.5
                 elif attribute == 4 or attribute == 5:
-                    density_factor = 1/self.hw_density_factor
+                    density_factor = 1 / self.hw_density_factor
                 starts_cw.append(int(math.floor(start * density_factor)))
                 ends_cw.append(int(math.ceil(end * density_factor)))
             self.starts_cw = starts_cw
@@ -336,7 +363,7 @@ class Path:
                 ends.append(end)
             self.starts = starts
             self.ends = ends
-            
+
             new_waypoints = []
             new_attributes = []
             i = 0
@@ -344,7 +371,7 @@ class Path:
             self.true_starts = []
             self.true_ends = []
             for i in range(len(segments)):
-            # for i in range(2):
+                # for i in range(2):
                 start = starts[i]
                 end = ends[i]
                 # Add non-replaced segments to waypoints and attributes
@@ -368,12 +395,12 @@ class Path:
                     attrs = self.attributes_hw
                 new_waypoints.extend(wpts[start_cw:end_cw])
                 new_attributes.extend(attrs[start_cw:end_cw])
-                
+
                 last_end = end
 
-                true_end = start + end_cw-start_cw
-                self.true_ends.append(start + end_cw-start_cw)
-                
+                true_end = start + end_cw - start_cw
+                self.true_ends.append(start + end_cw - start_cw)
+
             # Add the remaining part of the run after the last segment to waypoints and attributes
             new_waypoints.extend(self.waypoints[last_end:])
             new_attributes.extend(self.attributes[last_end:])
@@ -381,13 +408,14 @@ class Path:
             self.attributes = np.array(new_attributes)
 
         # self.waypoints = filter_waypoints(self.waypoints, 0.01).T
-        self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, 0.01)
+        thresh = v_ref * T * 1.5
+        self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, thresh)
         self.waypoints = self.waypoints.T
 
         # Calculate the total path length of the waypoints
         total_path_length = np.sum(np.linalg.norm(self.waypoints[:, 1:] - self.waypoints[:, :-1], axis=0))
         print("total path length: ", total_path_length)
-        
+
         self.waypoints_x = self.waypoints[0, :]
         self.waypoints_y = self.waypoints[1, :]
 
@@ -395,54 +423,126 @@ class Path:
         # print("num_waypoints: ", self.num_waypoints)
         self.kappa, self.wp_theta, self.wp_normals = compute_smooth_curvature(self.waypoints_x, self.waypoints_y)
         # linear speed profile
-        self.v_refs  = self.v_ref / (1 + np.abs(self.kappa))*(1 + np.abs(self.kappa))
+        self.v_refs = self.v_ref / (1 + np.abs(self.kappa)) * (1 + np.abs(self.kappa))
         mask_cw = self.attributes == 1
         mask_hw1 = (self.attributes == 4)
         mask_hw2 = (self.attributes == 5)
-        self.v_refs[mask_cw] *= 1/1.5
+        self.v_refs[mask_cw] *= 1 / 1.5
         self.v_refs[mask_hw1] *= self.hw_density_factor
         self.v_refs[mask_hw2] *= self.hw_density_factor
         # print("v_refs: \n", self.v_refs, ", wpts: ", self.waypoints.shape, ", attributes: ", self.attributes.shape)
-        
-        #nonlinear speed profile
+
+        # nonlinear speed profile
         # K=1
         # epsilon=1
         # self.v_refs = self.v_ref * (K/(abs(self.kappa) + epsilon))**0.5
-        num_ramp_waypoints = int(1 * self.density) # 1 meters
+        num_ramp_waypoints = int(1 * self.density)  # 1 meters
         num_ramp_waypoints = min(num_ramp_waypoints, len(self.v_refs))
         # Linearly increase the reference speed from 0 to v_ref over the first 1 meters
         self.v_refs[:num_ramp_waypoints] = np.linspace(0, self.v_ref, num_ramp_waypoints)
-        self.v_refs[-2:] = 0 # stop at the end
+        self.v_refs[-2:] = 0  # stop at the end
         # print("v_ref: ", self.v_ref)
         # print("vrefs: ", self.v_refs[0:100])
-        k_steer = 0 #0.4/np.amax(np.abs(self.kappa))
+        k_steer = 0  # 0.4/np.amax(np.abs(self.kappa))
         self.steer_ref = k_steer * self.kappa
         # self.steer_ref = np.arctan(0.27 * self.kappa)
         # Extend waypoints and reference values by N
-        self.waypoints_x = np.pad(self.waypoints_x, (0,self.N+4), 'edge')
-        self.waypoints_y = np.pad(self.waypoints_y, (0,self.N+4), 'edge')
-        self.kappa = np.pad(self.kappa, (0,self.N+5), 'edge')
-        self.wp_theta = np.pad(self.wp_theta, (0,self.N+5), 'edge')
-        self.wp_normals = np.pad(self.wp_normals, ((0,self.N+5),(0,0)), 'edge')
-        self.v_refs = np.pad(self.v_refs, (0,self.N+5), 'edge')
-        self.steer_ref = np.pad(self.steer_ref, (0,self.N+5), 'edge')
+        self.waypoints_x = np.pad(self.waypoints_x, (0, self.N + 4), 'edge')
+        self.waypoints_y = np.pad(self.waypoints_y, (0, self.N + 4), 'edge')
+        self.kappa = np.pad(self.kappa, (0, self.N + 5), 'edge')
+        self.wp_theta = np.pad(self.wp_theta, (0, self.N + 5), 'edge')
+        self.wp_normals = np.pad(self.wp_normals, ((0, self.N + 5), (0, 0)), 'edge')
+        self.v_refs = np.pad(self.v_refs, (0, self.N + 5), 'edge')
+        self.steer_ref = np.pad(self.steer_ref, (0, self.N + 5), 'edge')
         self.state_refs = np.vstack((self.waypoints_x, self.waypoints_y, self.wp_theta[1:])).T
         self.input_refs = np.vstack((self.v_refs, self.steer_ref)).T
         self.waypoints = np.vstack((self.waypoints_x, self.waypoints_y)).T
-        self.state_refs[:,2] = smooth_yaw_angles(self.state_refs[:,2])
-        
-        self.attributes = np.pad(self.attributes, (0,self.N+5), 'edge')
+        self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
 
-        # print(self.attributes.shape, self.attributes)
+        self.attributes = np.pad(self.attributes, (0, self.N + 5), 'edge')
 
-        # for i in range(len(self.state_refs)):
-        #     print(i, self.state_refs[i])
-        # exit()
-        # print("state_refs: ", self.state_refs.shape, ", input_refs: ", self.input_refs.shape)
+        bad_idx = self.remove_bad_waypoints()
+        self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
+        self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
+        self.kappa      = np.delete(self.kappa, bad_idx)
+        self.wp_theta   = np.delete(self.wp_theta, bad_idx)
+        self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
+        self.v_refs     = np.delete(self.v_refs, bad_idx)
+        self.steer_ref  = np.delete(self.steer_ref, bad_idx)
+        self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
+        self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
+        self.attributes = np.delete(self.attributes, bad_idx)
+        self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
+        self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
+        # visualize_waypoints2(self.state_refs)
+    
+    def remove_bad_waypoints(self):
+        max_yaw_change = np.pi * 0.35
+        max_yaw_change2 = np.pi * 0.57
 
-    def change_lane(self, start_index, end_index, normals, shift_distance=0.36-0.1):
-        self.state_refs[start_index:end_index,0] += normals[start_index:end_index, 0] * shift_distance
-        self.state_refs[start_index:end_index,1] += normals[start_index:end_index, 1] * shift_distance
+        # Convert inputs to numpy arrays (if they aren't already)
+        state_refs = np.array(self.state_refs)  # shape: (n, 3)
+        n = state_refs.shape[0]
+
+        # We always keep the first waypoint.
+        valid_indices = [0]
+        indices_to_fix = []
+
+        # Iterate through intermediate waypoints
+        count = 0
+        for i in range(1, n - 1):
+            current = state_refs[i]
+            previous = state_refs[valid_indices[-1]]  # use the last valid waypoint
+            next_wp = state_refs[i + 1]
+
+            # Compute yaw difference from the last valid waypoint
+            yaw_change = np.abs(current[2] - previous[2])
+            if yaw_change > max_yaw_change and yaw_change < 2 * np.pi - max_yaw_change * 2:
+                count += 1
+                # if count >= 30:
+                #     exit()
+                d1 = np.linalg.norm(next_wp[:2] - previous[:2])
+                d2 = np.linalg.norm(next_wp[:2] - current[:2])
+                if (yaw_change < max_yaw_change2 and d1 > d2 and d1 > self.v_refs[i] * 0.1 * 1.42 and (d1-d2) > self.v_refs[i] * 0.1 /3):
+                    indices_to_fix.append(i)
+                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to fix")
+                    continue
+                else:
+                    # Skip adding this waypoint (i.e. mark for removal)
+                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to remove")
+                    continue
+            # Otherwise, the waypoint is valid.
+            valid_indices.append(i)
+
+        # Always keep the final waypoint.
+        if (n - 1) not in valid_indices:
+            valid_indices.append(n - 1)
+
+        # Compute the indices of the waypoints that were not kept.
+        # add indices to fix from valid indices
+        valid_indices += indices_to_fix
+        all_indices = set(range(n))
+        valid_set = set(valid_indices)
+        removed_indices = sorted(list(all_indices - valid_set))
+        # print(f"indices to fix: {indices_to_fix}")
+        # print(f"removed indices: {removed_indices}")
+        # cur_dir = os.path.dirname(os.path.abspath(__file__))      
+        # np.savetxt(cur_dir + "/state_refs2.txt", self.state_refs, fmt="%.3f")
+        # exit()  
+        for idx in indices_to_fix:
+            diff = state_refs[idx + 1, 2] - state_refs[idx - 1, 2]
+            while diff > np.pi:
+                diff -= 2 * np.pi
+            while diff < -np.pi:
+                diff += 2 * np.pi
+            self.state_refs[idx, 2] = self.state_refs[idx - 1, 2] + diff/2
+            self.state_refs[idx, 1] = self.state_refs[idx - 1, 1] + (self.state_refs[idx + 1, 1] - self.state_refs[idx - 1, 1]) / 2
+            self.state_refs[idx, 0] = self.state_refs[idx - 1, 0] + (self.state_refs[idx + 1, 0] - self.state_refs[idx - 1, 0]) / 2
+        return removed_indices
+
+    def change_lane(self, start_index, end_index, normals, shift_distance=0.36 - 0.1):
+        self.state_refs[start_index:end_index, 0] += normals[start_index:end_index, 0] * shift_distance
+        self.state_refs[start_index:end_index, 1] += normals[start_index:end_index, 1] * shift_distance
         return self.state_refs
 
     def illustrate_path(self, state_refs):
@@ -452,36 +552,35 @@ class Path:
         # plt.show()
 
         import cv2
-        self.map = cv2.imread(os.path.dirname(os.path.realpath(__file__))+'/maps/Track.png')
+        self.map = cv2.imread(os.path.dirname(os.path.realpath(__file__)) + '/maps/Track.png')
         size1 = 1000
-        self.map = cv2.resize(self.map, (size1, int(1/1.38342246*size1)))
+        self.map = cv2.resize(self.map, (size1, int(1 / 1.38342246 * size1)))
         for i in range(0, state_refs.shape[1], 8):
             radius = 2
             color = (0, 255, 255)
-            if self.attributes[i] == 4 or self.attributes[i] == 5: # hard waypoints
+            if self.attributes[i] == 4 or self.attributes[i] == 5:  # hard waypoints
                 color = (0, 0, 255)
-            if self.attributes[i] == 1: # crosswalk
-                color = (0, 255, 0) # green
-            if self.attributes[i] == 9: # color is red
+            if self.attributes[i] == 1:  # crosswalk
+                color = (0, 255, 0)  # green
+            if self.attributes[i] == 9:  # color is red
                 color = (255, 0, 0)
-            if self.attributes[i] == 7: # color is yellow
+            if self.attributes[i] == 7:  # color is yellow
                 color = (255, 255, 0)
-            if self.attributes[i] == 6: # color is white
+            if self.attributes[i] == 6:  # color is white
                 color = (255, 255, 255)
-            if self.attributes[i] >= 100: # orange
+            if self.attributes[i] >= 100:  # orange
                 color = (0, 165, 255)
-            if self.attributes[i] == 2 or self.attributes[i] == 102: # color is purple
+            if self.attributes[i] == 2 or self.attributes[i] == 102:  # color is purple
                 color = (255, 0, 255)
-            cv2.circle(self.map, (int(state_refs[0, i]/20.696*self.map.shape[1]),int((13.786-state_refs[1, i])/13.786*self.map.shape[0])), radius=int(radius), color=color, thickness=-1)
+            cv2.circle(self.map, (int(state_refs[0, i] / 20.696 * self.map.shape[1]), int((13.786 - state_refs[1, i]) / 13.786 * self.map.shape[0])), radius=int(radius), color=color, thickness=-1)
         cv2.imshow('map357', self.map)
         cv2.waitKey(0)
+
 
 def handle_goto_service(req):
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
-    config_path='config/mpc_config' + vrefName + '.yaml'
+    config_path = 'config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
         config = yaml.safe_load(f)
@@ -496,15 +595,47 @@ def handle_goto_service(req):
 
     v_ref = config[constraint_name]['v_ref']
     # print(f"v_ref: {v_ref}, N: {N}, T: {T}, x0: {initial_state}, dest: [{req.dest_x}, {req.dest_y}]")
-    path = Path(v_ref = v_ref, N = N, T = T, x0= initial_state, name = None, dest = [req.dest_x, req.dest_y])
+    path = Path(v_ref=v_ref, N=N, T=T, x0=initial_state, name=None, dest=[req.dest_x, req.dest_y])
 
     # path.illustrate_path(path.state_refs.T)
-    state_refs = Float32MultiArray(data = path.state_refs.flatten())
-    input_refs = Float32MultiArray(data = path.input_refs.flatten())
-    attributes = Float32MultiArray(data = path.attributes.flatten())
-    normals = Float32MultiArray(data = path.wp_normals.flatten())
-    
+    state_refs = Float32MultiArray(data=path.state_refs.flatten())
+    input_refs = Float32MultiArray(data=path.input_refs.flatten())
+    attributes = Float32MultiArray(data=path.attributes.flatten())
+    normals = Float32MultiArray(data=path.wp_normals.flatten())
+
     return go_toResponse(state_refs, input_refs, attributes, normals)
+
+
+def handle_goto_multiple_service(req):
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    vrefName = req.vrefName
+    config_path = 'config/mpc_config' + vrefName + '.yaml'
+    path = os.path.join(current_path, config_path)
+    with open(path, 'r') as f:
+        config = yaml.safe_load(f)
+    T = config['T']
+    N = config['N']
+    constraint_name = 'constraints'
+
+    if req.x0 <= -1 or req.y0 <= -1:
+        initial_state = None
+    else:
+        initial_state = np.array([req.x0, req.y0, req.yaw0])
+
+    destinations = [[point.x, point.y] for point in req.destinations]
+
+    v_ref = config[constraint_name]['v_ref']
+    # print(f"v_ref: {v_ref}, N: {N}, T: {T}, x0: {initial_state}, dest: [{req.dest_x}, {req.dest_y}]")
+    path = Path(v_ref=v_ref, N=N, T=T, x0=initial_state, name=None, dest=destinations)
+
+    # path.illustrate_path(path.state_refs.T)
+    state_refs = Float32MultiArray(data=path.state_refs.flatten())
+    input_refs = Float32MultiArray(data=path.input_refs.flatten())
+    attributes = Float32MultiArray(data=path.attributes.flatten())
+    normals = Float32MultiArray(data=path.wp_normals.flatten())
+
+    return go_to_multipleResponse(state_refs, input_refs, attributes, normals)
+
 
 def handle_array_service(req):
     """
@@ -512,9 +643,7 @@ def handle_array_service(req):
     """
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
-    config_path='config/mpc_config' + vrefName + '.yaml'
+    config_path = 'config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -532,18 +661,20 @@ def handle_array_service(req):
     v_ref = config[constraint_name]['v_ref']
     # print("v_reeeeeeeeeeeeeeefffffffffff: ", v_ref)
 
-    path = Path(v_ref = v_ref, N = N, T = T, x0= initial_state, name = req.pathName)
+    print("request received: ", req.pathName, ", x0: ", initial_state)
+    path = Path(v_ref=v_ref, N=N, T=T, x0=initial_state, name=req.pathName)
 
     # path.illustrate_path(path.state_refs.T)
-    state_refs = Float32MultiArray(data = path.state_refs.flatten())
-    input_refs = Float32MultiArray(data = path.input_refs.flatten())
-    attributes = Float32MultiArray(data = path.attributes.flatten())
-    normals = Float32MultiArray(data = path.wp_normals.flatten())
-    
+    state_refs = Float32MultiArray(data=path.state_refs.flatten())
+    input_refs = Float32MultiArray(data=path.input_refs.flatten())
+    attributes = Float32MultiArray(data=path.attributes.flatten())
+    normals = Float32MultiArray(data=path.wp_normals.flatten())
+
     # print("sizes: ", len(state_refs.data), len(input_refs.data), len(attributes.data), len(normals.data))
     # import threading
     # threading.Thread(target=initiate_shutdown).start()
     return waypointsResponse(state_refs, input_refs, attributes, normals)
+
 
 def initiate_shutdown():
     """
@@ -551,40 +682,75 @@ def initiate_shutdown():
     """
     rospy.sleep(1)  # Short delay
     rospy.signal_shutdown("Service request processed. Shutting down.")
+
+
 def visualize_waypoints2(waypoints):
     import matplotlib.pyplot as plt
-    # Extract x, y, and yaw from waypoints
+    import numpy as np
+
+    # Extract coordinates and orientations
     x = waypoints[:, 0]
     y = waypoints[:, 1]
     yaw = waypoints[:, 2]
-    # skip every other point for better visualization
-    x = x[::32]
-    y = y[::32]
-    yaw = yaw[::32]
-    
-    # Create a plot
-    plt.figure(figsize=(8, 8))
-    plt.plot(x, y, 'o', label="Waypoints Path", markersize=1, color='blue')
-    
-    # Add arrows for yaw
-    for i in range(len(x)):
-        dx = np.cos(yaw[i]) * 0.2  # Scale for better visualization
-        dy = np.sin(yaw[i]) * 0.2
-        plt.arrow(x[i], y[i], dx, dy, head_width=0.1, head_length=0.1, fc='red', ec='red')
-    
-    # Label the axes
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Waypoint Visualization')
-    plt.legend()
+
+    # Create figure with larger size
+    plt.figure(figsize=(12, 12))
+
+    # Plot complete path with semi-transparent line
+    plt.plot(x, y, color='royalblue', alpha=0.4, linewidth=2, label='Path')
+
+    # Highlight every 8th waypoint with markers and arrows
+    step = 8
+    highlight_x = x[::step]
+    highlight_y = y[::step]
+    highlight_yaw = yaw[::step]
+
+    # Draw main waypoint markers
+    plt.scatter(highlight_x, highlight_y, s=80, c='deepskyblue',
+                edgecolors='navy', linewidths=0.5, marker='o',
+                label='Key Waypoints', zorder=3)
+
+    # Add orientation arrows
+    for xi, yi, yiaw in zip(highlight_x, highlight_y, highlight_yaw):
+        dx = np.cos(yiaw) * 0.6  # Increased arrow length
+        dy = np.sin(yiaw) * 0.6
+        plt.arrow(xi, yi, dx, dy, head_width=0.4, head_length=0.4,
+                  fc='crimson', ec='darkred', width=0.05, zorder=4)
+
+    # Emphasize start and end points
+    start_marker = dict(color='limegreen', marker='s', s=250,
+                        edgecolor='darkgreen', linewidth=2, zorder=5)
+    end_marker = dict(color='orangered', marker='X', s=250,
+                      edgecolor='darkred', linewidth=2, zorder=5)
+
+    plt.scatter(x[0], y[0], **start_marker, label='Start')
+    plt.scatter(x[-1], y[-1], **end_marker, label='End')
+
+    # Add text annotations for start/end
+    plt.annotate('START', (x[0], y[0]),
+                 textcoords="offset points", xytext=(10, -5),
+                 ha='left', color='darkgreen', fontweight='bold')
+    plt.annotate('END', (x[-1], y[-1]),
+                 textcoords="offset points", xytext=(10, -5),
+                 ha='left', color='darkred', fontweight='bold')
+
+    # Configure plot aesthetics
+    plt.title('Enhanced Waypoint Visualization', fontsize=14, pad=20)
+    plt.xlabel('X Coordinate', fontweight='bold')
+    plt.ylabel('Y Coordinate', fontweight='bold')
+    plt.legend(loc='upper right', framealpha=0.9)
+    plt.grid(True, color='gainsboro', linestyle='--')
     plt.axis('equal')
-    plt.grid()
+    plt.tight_layout()
     plt.show()
+
+
 if __name__ == "__main__":
     rospy.init_node('waypointPathServer')
     s = rospy.Service('waypoint_path', waypoints, handle_array_service)
     rospy.loginfo("waypoint_path service is ready.")
     goto_service = rospy.Service('go_to', go_to, handle_goto_service)
+    goto_multiple = rospy.Service('go_to_multiple', go_to_multiple, handle_goto_multiple_service)
     rospy.loginfo("go_to service is ready.")
     # global hw_density_factor
     # hw_density_factor = rospy.get_param('hw', default=1.33)
@@ -592,7 +758,7 @@ if __name__ == "__main__":
     while not rospy.is_shutdown():
         # rospy.spin()
         rate.sleep()
-        
+
     # current_dir = os.path.dirname(os.path.abspath(__file__))
     # print("current_dir: ", current_dir)
     # config_path=os.path.join(current_dir, 'config/mpc_config25.yaml')
@@ -608,9 +774,9 @@ if __name__ == "__main__":
 
     # v_ref = config[constraint_name]['v_ref']
     # print("v_ref: ", v_ref)
-    # x0 = np.array([0.35,2.726,-1.5708])
-    # name = "run1"
+    # # x0 = np.array([0.35,2.726,-1.5708])
+    # x0 = None
+    # name = "run136"
     # path = Path(v_ref = v_ref, N = N, T = T, x0= x0, name = name)
     # np.savetxt(os.path.join(current_dir,'state_refs.txt'), path.state_refs, fmt='%.4f')
     # visualize_waypoints2(path.state_refs)
-    

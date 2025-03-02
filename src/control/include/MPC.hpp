@@ -12,101 +12,120 @@
 #include <cmath>
 #include "acados/utils/math.h"
 #include "acados_c/ocp_nlp_interface.h"
-#include "acados_sim_solver_mobile_robot.h"
-#include "acados_solver_mobile_robot.h"
 #include "acados_sim_solver_mobile_robot_25.h"
 #include "acados_solver_mobile_robot_25.h"
-#include "acados_sim_solver_mobile_robot_18.h"
-#include "acados_solver_mobile_robot_18.h"
+#include "acados_sim_solver_mobile_robot_32.h"
+#include "acados_solver_mobile_robot_32.h"
+#include "acados_sim_solver_mobile_robot_25_beta.h"
+#include "acados_solver_mobile_robot_25_beta.h"
+#include "acados_sim_solver_mobile_robot_32_beta.h"
+#include "acados_solver_mobile_robot_32_beta.h"
 #include "utils/constants.h"
 
 class MPC {
 public:
-    MPC(double T, int N, double v_ref):
-        T(T), N(N), v_ref(v_ref)
+    MPC(double T, int N, double v_ref, bool use_beta):
+        T(T), N(N), v_ref(v_ref), use_beta(use_beta)
     {
         std::cout << "MPC Constructor" << std::endl;
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         status = 0; // Assuming 0 is a default 'no error' state
 
-        if (v_ref_int >= 30) {
-            std::cout << "reference speed is 35. cm/s" << std::endl;
-            // Create a capsule according to the pre-defined model
-            acados_ocp_capsule = mobile_robot_acados_create_capsule();
-            // Initialize the optimizer
-            status = mobile_robot_acados_create(acados_ocp_capsule);
-            if (status) {
-                printf("mobile_robot_acados_create() returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-            // Create and initialize simulator capsule
-            sim_capsule = mobile_robot_acados_sim_solver_create_capsule();
-            status = mobile_robot_acados_sim_create(sim_capsule);
-
-            mobile_robot_sim_config = mobile_robot_acados_get_sim_config(sim_capsule);
-            mobile_robot_sim_dims = mobile_robot_acados_get_sim_dims(sim_capsule);
-            mobile_robot_sim_in = mobile_robot_acados_get_sim_in(sim_capsule);
-            mobile_robot_sim_out = mobile_robot_acados_get_sim_out(sim_capsule);
-
-            if (status) {
-                printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-
-            // Initialize some important structure of ocp
-            nlp_config = mobile_robot_acados_get_nlp_config(acados_ocp_capsule);
-            nlp_dims = mobile_robot_acados_get_nlp_dims(acados_ocp_capsule);
-            nlp_in = mobile_robot_acados_get_nlp_in(acados_ocp_capsule);
-            nlp_out = mobile_robot_acados_get_nlp_out(acados_ocp_capsule);
-        } else if(v_ref_int == 25) {
+        if(v_ref_int == 25) {
             std::cout << "reference speed is 25 cm/s" << std::endl;
             use25 = true;
-            acados_ocp_capsule_25 = mobile_robot_25_acados_create_capsule();
-            status = mobile_robot_25_acados_create(acados_ocp_capsule_25);
-            if (status) {
-                printf("mobile_robot_25_acados_create() returned status %d. Exiting.\n", status);
-                exit(1);
+            if (use_beta) {
+                acados_ocp_capsule_25_beta = mobile_robot_25_beta_acados_create_capsule();
+                status = mobile_robot_25_beta_acados_create(acados_ocp_capsule_25_beta);
+                if (status) {
+                    printf("mobile_robot_25_beta_acados_create() returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                sim_capsule_25_beta = mobile_robot_25_beta_acados_sim_solver_create_capsule();
+                status = mobile_robot_25_beta_acados_sim_create(sim_capsule_25_beta);
+                mobile_robot_sim_config = mobile_robot_25_beta_acados_get_sim_config(sim_capsule_25_beta);
+                mobile_robot_sim_dims = mobile_robot_25_beta_acados_get_sim_dims(sim_capsule_25_beta);
+                mobile_robot_sim_in = mobile_robot_25_beta_acados_get_sim_in(sim_capsule_25_beta);
+                mobile_robot_sim_out = mobile_robot_25_beta_acados_get_sim_out(sim_capsule_25_beta);
+                if (status) {
+                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                nlp_config = mobile_robot_25_beta_acados_get_nlp_config(acados_ocp_capsule_25_beta);
+                nlp_dims = mobile_robot_25_beta_acados_get_nlp_dims(acados_ocp_capsule_25_beta);
+                nlp_in = mobile_robot_25_beta_acados_get_nlp_in(acados_ocp_capsule_25_beta);
+                nlp_out = mobile_robot_25_beta_acados_get_nlp_out(acados_ocp_capsule_25_beta);
+            } else {
+                acados_ocp_capsule_25 = mobile_robot_25_acados_create_capsule();
+                status = mobile_robot_25_acados_create(acados_ocp_capsule_25);
+                if (status) {
+                    printf("mobile_robot_25_acados_create() returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                sim_capsule_25 = mobile_robot_25_acados_sim_solver_create_capsule();
+                status = mobile_robot_25_acados_sim_create(sim_capsule_25);
+                mobile_robot_sim_config = mobile_robot_25_acados_get_sim_config(sim_capsule_25);
+                mobile_robot_sim_dims = mobile_robot_25_acados_get_sim_dims(sim_capsule_25);
+                mobile_robot_sim_in = mobile_robot_25_acados_get_sim_in(sim_capsule_25);
+                mobile_robot_sim_out = mobile_robot_25_acados_get_sim_out(sim_capsule_25);
+                if (status) {
+                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                nlp_config = mobile_robot_25_acados_get_nlp_config(acados_ocp_capsule_25);
+                nlp_dims = mobile_robot_25_acados_get_nlp_dims(acados_ocp_capsule_25);
+                nlp_in = mobile_robot_25_acados_get_nlp_in(acados_ocp_capsule_25);
+                nlp_out = mobile_robot_25_acados_get_nlp_out(acados_ocp_capsule_25);
             }
-            sim_capsule_25 = mobile_robot_25_acados_sim_solver_create_capsule();
-            status = mobile_robot_25_acados_sim_create(sim_capsule_25);
-            mobile_robot_sim_config = mobile_robot_25_acados_get_sim_config(sim_capsule_25);
-            mobile_robot_sim_dims = mobile_robot_25_acados_get_sim_dims(sim_capsule_25);
-            mobile_robot_sim_in = mobile_robot_25_acados_get_sim_in(sim_capsule_25);
-            mobile_robot_sim_out = mobile_robot_25_acados_get_sim_out(sim_capsule_25);
-            if (status) {
-                printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-            nlp_config = mobile_robot_25_acados_get_nlp_config(acados_ocp_capsule_25);
-            nlp_dims = mobile_robot_25_acados_get_nlp_dims(acados_ocp_capsule_25);
-            nlp_in = mobile_robot_25_acados_get_nlp_in(acados_ocp_capsule_25);
-            nlp_out = mobile_robot_25_acados_get_nlp_out(acados_ocp_capsule_25);
-        } else if(v_ref_int == 18) {
-            std::cout << "reference speed is 18 cm/s" << std::endl;
-            use18 = true;
+        } else if(v_ref_int == 32) {
+            std::cout << "reference speed is 32 cm/s" << std::endl;
+            use32 = true;
             use25 = false;
-            acados_ocp_capsule_18 = mobile_robot_18_acados_create_capsule();
-            status = mobile_robot_18_acados_create(acados_ocp_capsule_18);
-            if (status) {
-                printf("mobile_robot_18_acados_create() returned status %d. Exiting.\n", status);
-                exit(1);
+            if (use_beta) {
+                acados_ocp_capsule_32_beta = mobile_robot_32_beta_acados_create_capsule();
+                status = mobile_robot_32_beta_acados_create(acados_ocp_capsule_32_beta);
+                if (status) {
+                    printf("mobile_robot_32_beta_acados_create() returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                sim_capsule_32_beta = mobile_robot_32_beta_acados_sim_solver_create_capsule();
+                status = mobile_robot_32_beta_acados_sim_create(sim_capsule_32_beta);
+                mobile_robot_sim_config = mobile_robot_32_beta_acados_get_sim_config(sim_capsule_32_beta);
+                mobile_robot_sim_dims = mobile_robot_32_beta_acados_get_sim_dims(sim_capsule_32_beta);
+                mobile_robot_sim_in = mobile_robot_32_beta_acados_get_sim_in(sim_capsule_32_beta);
+                mobile_robot_sim_out = mobile_robot_32_beta_acados_get_sim_out(sim_capsule_32_beta);
+                if (status) {
+                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                nlp_config = mobile_robot_32_beta_acados_get_nlp_config(acados_ocp_capsule_32_beta);
+                nlp_dims = mobile_robot_32_beta_acados_get_nlp_dims(acados_ocp_capsule_32_beta);
+                nlp_in = mobile_robot_32_beta_acados_get_nlp_in(acados_ocp_capsule_32_beta);
+                nlp_out = mobile_robot_32_beta_acados_get_nlp_out(acados_ocp_capsule_32_beta);
+            } else {
+                acados_ocp_capsule_32 = mobile_robot_32_acados_create_capsule();
+                status = mobile_robot_32_acados_create(acados_ocp_capsule_32);
+                if (status) {
+                    printf("mobile_robot_32_acados_create() returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                sim_capsule_32 = mobile_robot_32_acados_sim_solver_create_capsule();
+                status = mobile_robot_32_acados_sim_create(sim_capsule_32);
+                mobile_robot_sim_config = mobile_robot_32_acados_get_sim_config(sim_capsule_32);
+                mobile_robot_sim_dims = mobile_robot_32_acados_get_sim_dims(sim_capsule_32);
+                mobile_robot_sim_in = mobile_robot_32_acados_get_sim_in(sim_capsule_32);
+                mobile_robot_sim_out = mobile_robot_32_acados_get_sim_out(sim_capsule_32);
+                if (status) {
+                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
+                    exit(1);
+                }
+                nlp_config = mobile_robot_32_acados_get_nlp_config(acados_ocp_capsule_32);
+                nlp_dims = mobile_robot_32_acados_get_nlp_dims(acados_ocp_capsule_32);
+                nlp_in = mobile_robot_32_acados_get_nlp_in(acados_ocp_capsule_32);
+                nlp_out = mobile_robot_32_acados_get_nlp_out(acados_ocp_capsule_32);
             }
-            sim_capsule_18 = mobile_robot_18_acados_sim_solver_create_capsule();
-            status = mobile_robot_18_acados_sim_create(sim_capsule_18);
-            mobile_robot_sim_config = mobile_robot_18_acados_get_sim_config(sim_capsule_18);
-            mobile_robot_sim_dims = mobile_robot_18_acados_get_sim_dims(sim_capsule_18);
-            mobile_robot_sim_in = mobile_robot_18_acados_get_sim_in(sim_capsule_18);
-            mobile_robot_sim_out = mobile_robot_18_acados_get_sim_out(sim_capsule_18);
-            if (status) {
-                printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                exit(1);
-            }
-            nlp_config = mobile_robot_18_acados_get_nlp_config(acados_ocp_capsule_18);
-            nlp_dims = mobile_robot_18_acados_get_nlp_dims(acados_ocp_capsule_18);
-            nlp_in = mobile_robot_18_acados_get_nlp_in(acados_ocp_capsule_18);
-            nlp_out = mobile_robot_18_acados_get_nlp_out(acados_ocp_capsule_18);
         } else {
-            std::cerr << "Invalid reference speed, please use 18, 25 or 50" << std::endl;
+            std::cerr << "Invalid reference speed, please use 18, 25 or 32" << std::endl;
             exit(1);
         }
 
@@ -120,11 +139,21 @@ public:
         x_state[2] = 0.0;
         x_state[3] = 0.0;
         x_state[4] = 0.0;
+        x_state[5] = 0.0;
+        x_state[6] = 0.0;
+        u_current[0] = 0.0;
+        u_current[1] = 0.0;
     }
-    MPC(): MPC(0.125, 40, 0.25) {}
+    MPC(): MPC(0.1, 40, 0.3, true) {}
     ~MPC() {
-        free(acados_ocp_capsule);
-        free(sim_capsule);
+        free(acados_ocp_capsule_25);
+        free(sim_capsule_25);
+        free(acados_ocp_capsule_32);
+        free(sim_capsule_32);
+        free(acados_ocp_capsule_25_beta);
+        free(sim_capsule_25_beta);
+        free(acados_ocp_capsule_32_beta);
+        free(sim_capsule_32_beta);
         free(mobile_robot_sim_config);
         free(mobile_robot_sim_dims);
         free(mobile_robot_sim_in);
@@ -136,20 +165,24 @@ public:
     }
 
     int status; // acados operation state
-    double x_state[5];
+    double x_state[7];
     double u_current[2];
     int N, nx, nu, iter = 0;
     int v_ref_int;
-    bool use25 = false;
-    bool use18 = false;
+    bool use25 = true;
+    bool use32 = false;
+    bool use_beta = true;
     double v_ref, t0, T;
    
-    mobile_robot_solver_capsule *acados_ocp_capsule;
-    mobile_robot_sim_solver_capsule *sim_capsule;
     mobile_robot_25_solver_capsule *acados_ocp_capsule_25;
     mobile_robot_25_sim_solver_capsule *sim_capsule_25;
-    mobile_robot_18_solver_capsule *acados_ocp_capsule_18;
-    mobile_robot_18_sim_solver_capsule *sim_capsule_18;
+    mobile_robot_32_solver_capsule *acados_ocp_capsule_32;
+    mobile_robot_32_sim_solver_capsule *sim_capsule_32;
+    mobile_robot_25_beta_solver_capsule *acados_ocp_capsule_25_beta;
+    mobile_robot_25_beta_sim_solver_capsule *sim_capsule_25_beta;
+    mobile_robot_32_beta_solver_capsule *acados_ocp_capsule_32_beta;
+    mobile_robot_32_beta_sim_solver_capsule *sim_capsule_32_beta;
+
     sim_config *mobile_robot_sim_config;
     void *mobile_robot_sim_dims;
     sim_in *mobile_robot_sim_in;
@@ -191,12 +224,18 @@ public:
     
     int reset_solver() {
         int reset_status;
-        if(use25) {
-            reset_status = mobile_robot_25_acados_reset(acados_ocp_capsule_25, 1);
-        } else if(use18) {
-            reset_status = mobile_robot_18_acados_reset(acados_ocp_capsule_18, 1);
+        if (use_beta) {
+            if(use25) {
+                reset_status = mobile_robot_25_beta_acados_reset(acados_ocp_capsule_25_beta, 1);
+            } else if(use32) {
+                reset_status = mobile_robot_32_beta_acados_reset(acados_ocp_capsule_32_beta, 1);
+            }
         } else {
-            reset_status = mobile_robot_acados_reset(acados_ocp_capsule, 1);
+            if(use25) {
+                reset_status = mobile_robot_25_acados_reset(acados_ocp_capsule_25, 1);
+            } else if(use32) {
+                reset_status = mobile_robot_32_acados_reset(acados_ocp_capsule_32, 1);
+            }
         }
         return reset_status;
     }
@@ -209,15 +248,16 @@ public:
         */
         
         int idx = 0;
+        // --- Set terminal cost (stage N) ---
+        static double x_ref_terminal[3] = {0.0};
         for(int i=0; i<3; i++) {
-            // x_state[i] = (*state_refs_ptr)(target_waypoint_index, i);
-            x_state[i] = state_refs(0, i);
+            x_ref_terminal[i] = state_refs(0, i);
         }
-        x_state[3] = 0.0; // v ref is 0
-        x_state[4] = 0.0; // steer is 0
+        x_ref_terminal[3] = 0.0; // v ref is 0
+        x_ref_terminal[4] = 0.0; // steer is 0
 
         // Set the reference trajectory for the optimization problem
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", x_state);
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", x_ref_terminal);
 
         // Set the reference trajectory for next N steps
         for (int j = 0; j < N; ++j) {
@@ -236,8 +276,24 @@ public:
                     x_state[i + 3] = input_refs(idx + j, i);
                 }
             }
-            x_state[4] = 0.0; // set steer rate to 0
+            x_state[4] = 0.0; // set steer reference to 0
+            // Delta_u terms (penalize change from previous control)
+            x_state[5] = 0.0; // delta_v_ref (always 0)
+            x_state[6] = 0.0; // delta_steer_ref (always 0)
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, j, "yref", x_state);
+            if (use_beta) {
+                if (use25) {
+                    mobile_robot_25_beta_acados_update_params(acados_ocp_capsule_25_beta, j, u_current, 2);
+                } else if (use32) {
+                    mobile_robot_32_beta_acados_update_params(acados_ocp_capsule_32_beta, j, u_current, 2);
+                }
+            } else {
+                if (use25) {
+                    mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2);
+                } else if (use32) {
+                    mobile_robot_32_acados_update_params(acados_ocp_capsule_32, j, u_current, 2);
+                }
+            }
         }
 
         // Set the constraints for the current state
@@ -245,19 +301,25 @@ public:
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "ubx", i_current_state.data());
 
         // Solve the optimization problem
-        if(use25) {
-            status = mobile_robot_25_acados_solve(acados_ocp_capsule_25);
-        } else if(use18) {
-            status = mobile_robot_18_acados_solve(acados_ocp_capsule_18);
+        if (use_beta) {
+            if (use25) {
+                status = mobile_robot_25_beta_acados_solve(acados_ocp_capsule_25_beta);
+            } else if (use32) {
+                status = mobile_robot_32_beta_acados_solve(acados_ocp_capsule_32_beta);
+            }
         } else {
-            status = mobile_robot_acados_solve(acados_ocp_capsule);
+            if(use25) {
+                status = mobile_robot_25_acados_solve(acados_ocp_capsule_25);
+            } else if(use32) {
+                status = mobile_robot_32_acados_solve(acados_ocp_capsule_32);
+            }
         }
         if (status != 0) {
             std::cout << "ERROR!!! acados acados_ocp_solver returned status " << status << ". Exiting." << std::endl;
             return 1; 
         }
 
-        // Get the optimal control for the next step
+        // get the optimal control for the next step
         ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, 0, "u", &u_current);
 
         return 0;
@@ -269,10 +331,18 @@ public:
 
         // Run the simulation
         int status_s;
-        if(use25) {
-            status_s  = mobile_robot_25_acados_sim_solve(sim_capsule_25);
+        if (use_beta) {
+            if(use25) {
+                status_s  = mobile_robot_25_beta_acados_sim_solve(sim_capsule_25_beta);
+            } else if(use32) {
+                status_s  = mobile_robot_32_beta_acados_sim_solve(sim_capsule_32_beta);
+            }
         } else {
-            status_s  = mobile_robot_acados_sim_solve(sim_capsule);
+            if(use25) {
+                status_s  = mobile_robot_25_acados_sim_solve(sim_capsule_25);
+            } else if(use32) {
+                status_s  = mobile_robot_32_acados_sim_solve(sim_capsule_32);
+            }
         }
         if (status_s != ACADOS_SUCCESS) {
             throw std::runtime_error("acados integrator returned status " + std::to_string(status_s) + ". Exiting.");

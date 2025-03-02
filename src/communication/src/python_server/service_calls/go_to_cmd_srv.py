@@ -1,7 +1,8 @@
 from python_server import decoder
 from python_server import encoder
 import struct
-from std_msgs.msg import Float32MultiArray
+import io
+from std_msgs.msg import Float32MultiArray, Float64MultiArray
 
 
 class GoToCmdSrv:
@@ -16,17 +17,32 @@ class GoToCmdSrv:
         self.success = False
 
     def decode(self, bytes):
-        splits = decoder.split(bytes)
-        self.state_refs.deserialize(splits[0])
-        self.input_refs.deserialize(splits[1])
-        self.wp_attributes.deserialize(splits[2])
-        self.wp_normals.deserialize(splits[3])
-        self.success = splits[4] == b'\x01'
+        try:
+            splits = decoder.split(bytes)
+            self.state_refs.deserialize(splits[0])
+            self.input_refs.deserialize(splits[1])
+            self.wp_attributes.deserialize(splits[2])
+            self.wp_normals.deserialize(splits[3])
+            self.success = splits[4] == b'\x01'
+        except Exception as e:
+            print(e)
 
-    def encode(self, dest_x, dest_y):
+    def encode(self, cursor_coords):
+        x_coords = [x for x, y in cursor_coords]
+        y_coords = [y for x, y in cursor_coords]
+        msg_x = Float64MultiArray()
+        msg_y = Float64MultiArray()
+        msg_x.data = x_coords
+        msg_y.data = y_coords
+        x_buff = io.BytesIO()
+        y_buff = io.BytesIO()
+        msg_x.serialize(x_buff)
+        msg_y.serialize(y_buff)
         data_bytes = []
-        data_bytes.append(str(dest_x).encode('utf-8'))
-        data_bytes.append(str(dest_y).encode('utf-8'))
+        data_bytes.append(x_buff.getvalue())
+        data_bytes.append(y_buff.getvalue())
+        x_buff.seek(0)
+        y_buff.seek(0)
         data_lengths = [len(element) for element in data_bytes]
         data_length = sum(data_lengths)
         lengths_length = (self.num_elements + 1) * self.bytes_length

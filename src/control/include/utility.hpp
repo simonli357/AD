@@ -28,6 +28,20 @@
 #include "RoadObject.hpp"
 #include <algorithm>
 
+#include "LaneDetector.hpp"
+#include "SignFastest.hpp"
+#include "cv_bridge/cv_bridge.h"
+#include "image_transport/image_transport.h"
+#include "ros/ros.h"
+#include "sensor_msgs/image_encodings.h"
+#include "std_msgs/Header.h"
+#include "yolo-fastestv2.h"
+#include <chrono>
+#include <librealsense2/rs.hpp>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Float32MultiArray.h>
+
 using namespace VehicleConstants;
 
 class Utility {
@@ -61,15 +75,15 @@ public:
 
     bool emergency = false;
     int num_obj = 0;
-    std::mutex lock;
+    std::mutex general_mutex;
     bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
     int debugLevel = 5;
     std_msgs::String debug_msg;
-    bool real;
+    bool real, use_beta, camera = false;
     double rateVal;
     ros::Rate* rate;
 
-    double wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
+    double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     // bool stopline = false;
     int stopline = -1;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
@@ -95,7 +109,7 @@ public:
     tf2_ros::Buffer tfBuffer;
 
     // Client
-    std::unique_ptr<TcpClient> tcp_client;
+    std::shared_ptr<TcpClient> tcp_client;
 
     // publishers
     ros::Publisher odom_pub;
@@ -148,7 +162,9 @@ public:
 
     // Callbacks
     void lane_callback(const utils::Lane2::ConstPtr& msg);
+    void process_lane_data(const utils::Lane2& msg);
     void sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
+    void process_sign_data(const std_msgs::Float32MultiArray& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
@@ -162,6 +178,8 @@ public:
     int object_index(int obj_id);
     std::vector<int> object_indices(int obj_id);
     double object_distance(int index);
+    // std::array<double, 3> object_world_pose(int index);
+    Eigen::Vector2d object_world_pose(int index);
     std::array<double, 4> object_box(int index);
     void object_box(int index, std::array<double, 4>& oBox);
     void set_initial_pose(double x, double y, double yaw);
@@ -189,6 +207,7 @@ public:
         return 0;
     }
     int get_states(double &x_, double &y_, double &yaw_) {
+        // std::lock_guard<std::mutex> lock(general_mutex);
         if (subModel) {
             x_ = gps_x;
             y_ = gps_y;
@@ -197,28 +216,10 @@ public:
             y_ = odomY + y0;
         }
         yaw_ = yaw;
-        // if(useEkf) {
-        //     // ROS_INFO("Using ekf: %.3f, %.3f", ekf_x, ekf_y);
-        //     if (hasGps) {
-        //         x_ = ekf_x;
-        //         y_ = ekf_y;
-        //     } else {
-        //         ROS_INFO("Using ekf without gps: %.3f, %.3f", ekf_x, ekf_y);
-        //         x_ = ekf_x + x0;
-        //         y_ = ekf_y + y0;
-        //     }
-        // } else if(subModel) {
-        //     // ROS_INFO("Using gps: %.3f, %.3f", gps_x, gps_y);
-        //     x_ = gps_x;
-        //     y_ = gps_y;
-        // } else {
-        //     // ROS_INFO("Using odom: %.3f, %.3f", odomX, odomY);
-        //     x_ = odomX + x0;
-        //     y_ = odomY + y0;
-        // }
         return 0;
     }
     void update_states(Eigen::Vector3d& o_state) {
+        // std::lock_guard<std::mutex> lock(general_mutex);
         if (subModel) {
             o_state << gps_x, gps_y, yaw;
         } else {
@@ -412,15 +413,36 @@ public:
 
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
+        static bool first = true;
+        static bool use_pid = false;
         if (serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
+
+        if (first && use_pid) {
+            first = false;
+        
+            float f_active = 1.0;
+            float f_proportional = 1.25;
+            float f_integral = 0.625;
+            float f_derivative = 0.15125;
+            
+            std::stringstream pid_str;
+            char pid_buff[100];
+            snprintf(pid_buff, sizeof(pid_buff), "%.4f:%.4f:%.4f:%.4f;;\r\n", f_active, f_proportional, f_integral, f_derivative);
+            pid_str << "#" << "12" << ":" << pid_buff;
+            std::cout << pid_str.str() << std::endl;
+            
+            boost::asio::write(*serial, boost::asio::buffer(pid_str.str()));
+        }
+
         if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
-        strs << "#" << "11" << ":" << buff;
+        std::string number = use_pid ? "13" : "11";
+        strs << "#" << number << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }
@@ -484,22 +506,17 @@ public:
         return closest_index;
     }
 
-    static double yaw_mod(double yaw, double ref=0) {
+    static double yaw_mod(double& io_yaw, double ref=0) {
+        double yaw = io_yaw;
         while (yaw - ref > M_PI) yaw -= 2 * M_PI;
         while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+        io_yaw = yaw;
         return yaw;
     }
-    
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__); 
-        size_t last_dir_sep = file_path.rfind('/');
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\'); 
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
+    static double compare_yaw(double yaw1, double yaw2) {
+        double diff = yaw1 - yaw2;
+        diff = yaw_mod(diff);
+        return std::abs(diff);
     }
 
     void debug(const std::string& message, int level) {
@@ -517,7 +534,38 @@ public:
     bool is_known_static_object(int obj) {
         return is_known_static_object(static_cast<OBJECT>(obj));
     }
+    
     const std::vector<std::vector<double>>& get_relevant_signs(int type, std::string& o_string) {
+        OBJECT obj = static_cast<OBJECT>(type);
+        if (obj == OBJECT::ROUNDABOUT) {
+            o_string = "ALL ROUNDABOUTS";
+            return ALL_ROUNDABOUTS;
+        } else if (obj == OBJECT::STOPSIGN || obj == OBJECT::PRIORITY) {
+            o_string = (obj == OBJECT::STOPSIGN) ? "STOPSIGN" :
+                        (obj == OBJECT::PRIORITY) ? "PRIORITY" :
+                        "UNKNOWN";
+            return ALL_SIGNS;
+        } else if (obj == OBJECT::CROSSWALK) {
+            o_string = "ALL CROSSWALKS";
+            return ALL_CROSSWALKS;
+        } else if (obj == OBJECT::LIGHTS) {
+            o_string = "ALL LIGHTS";
+            return ALL_LIGHTS;
+        } else if (obj == OBJECT::HIGHWAYENTRANCE) {
+            o_string = "ALL_HIGHWAYENTRANCES";
+            return ALL_HIGHWAYENTRANCES;
+        } else if (obj == OBJECT::HIGHWAYEXIT) {
+            o_string = "ALL_HIGHWAYEXITS";
+            return ALL_HIGHWAYEXITS;
+        } else if (obj == OBJECT::PARK) {
+            o_string = "PARKING SIGNS";
+            return PARKING_SIGN_POSES;
+        }
+        o_string = "UNKNOWN";
+        return EMPTY;
+    }
+
+    const std::vector<std::vector<double>>& get_relevant_signs_old(int type, std::string& o_string) {
         int nearestDirectionIndex = nearest_direction_index(this->yaw);
         OBJECT obj = static_cast<OBJECT>(type);
         if (obj == OBJECT::ROUNDABOUT) {
@@ -549,12 +597,20 @@ public:
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
                                                                     SOUTH_FACING_CROSSWALKS;
+            o_string = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
+                                        (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
+                                        (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
+                                                                    "CROSSWALK SOUTH";
             return objects;
         } else if (obj == OBJECT::LIGHTS) {
             const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_LIGHTS :
                                         (nearestDirectionIndex == 1) ? NORTH_FACING_LIGHTS :
                                         (nearestDirectionIndex == 2) ? WEST_FACING_LIGHTS :
                                                                     SOUTH_FACING_LIGHTS;
+            o_string = (nearestDirectionIndex == 0) ? "LIGHTS EAST" :
+                                        (nearestDirectionIndex == 1) ? "LIGHTS NORTH" :
+                                        (nearestDirectionIndex == 2) ? "LIGHTS WEST" :
+                                                                    "LIGHTS SOUTH";
             return objects;
         } else if (obj == OBJECT::HIGHWAYENTRANCE) {
             const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_HIGHWAYENTRANCES :
@@ -603,4 +659,251 @@ public:
             return true;
         }
     }
+
+    //----------- Camera Node ------------
+    void cameraNodeConstructor(ros::NodeHandle& nh)
+    {
+        sign_ptr = std::make_unique<SignFastest>(nh);
+        lane_ptr = std::make_unique<LaneDetector>(nh);
+		depthImage = cv::Mat::zeros(480, 640, CV_16UC1);
+		colorImage = cv::Mat::zeros(480, 640, CV_8UC3);
+		std::string nodeName = ros::this_node::getName();
+		nh.param(nodeName + "/lane", doLane, true);
+		nh.param(nodeName + "/sign", doSign, true);
+		nh.param(nodeName + "/realsense", realsense, false);
+		nh.param(nodeName + "/rate", realsense_rate, 30.0);
+        nh.param(nodeName + "/sign_rate", sign_rate, 30.0);
+        nh.param(nodeName + "/lane_rate", lane_rate, 60.0);
+		nh.param(nodeName + "/pubImage", pubImage, false);
+		nh.param(nodeName + "/thread", useRosTimer, false);
+
+		if (!realsense) {
+			if (sign_ptr->hasDepthImage) {
+				std::string topic;
+				bool is_real;
+				if (!nh.getParam(nodeName + "/real", is_real)) {
+					ROS_WARN("Failed to get 'real' parameter. Defaulting to false.");
+				}
+				if (is_real) {
+					std::cout << "real, depth topic is /camera/aligned_depth_to_color/image_raw" << std::endl;
+					topic = "/camera/aligned_depth_to_color/image_raw";
+				} else {
+					std::cout << "not real, depth topic is /camera/depth/image_raw" << std::endl;
+					topic = "/camera/depth/image_raw";
+				}
+				depth_sub = it.subscribe(topic, 3, &Utility::depthCallback, this);
+				std::cout << "depth_sub created, waiting for " << topic << std::endl;
+				ros::topic::waitForMessage<sensor_msgs::Image>(topic, nh);
+				std::cout << "got it" << std::endl;
+			}
+			rgb_sub = it.subscribe("/camera/color/image_raw", 3, &Utility::imageCallback, this);
+			std::cout << "waiting for rgb image" << std::endl;
+			ros::topic::waitForMessage<sensor_msgs::Image>("/camera/color/image_raw", nh);
+			std::cout << "got color image" << std::endl;
+		} else {
+			align_to_color = std::make_unique<rs2::align>(RS2_STREAM_COLOR);
+			depth_frame = rs2::frame();
+			color_frame = rs2::frame();
+			data = rs2::frameset();
+
+			cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
+			cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
+			cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
+			cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
+			pipe.start(cfg);
+
+			auto profiles = pipe.get_active_profile().get_streams();
+
+			for (auto &&p : profiles)
+			{
+                if (p.stream_type() == RS2_STREAM_COLOR)
+                {
+                    auto vid_profile = p.as<rs2::video_stream_profile>();
+                    rs2_intrinsics intr = vid_profile.get_intrinsics();
+
+                    double fx = intr.fx;
+                    double fy = intr.fy;
+                    double cx = intr.ppx; // principal point x
+                    double cy = intr.ppy; // principal point y
+                    ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
+                    break;
+                }
+			}
+
+			std::cout.precision(4);
+			if (pubImage) {
+				color_pub = nh.advertise<sensor_msgs::Image>("/camera/color/image_raw", 1);
+				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
+				std::cout << "pub created" << std::endl;
+			}
+			cameraThreadRunning = true;
+			cameraThread = std::thread(&Utility::cameraThreadFunc, this);
+			std::cout << "camera thread created" << std::endl;
+		}
+
+		if (!doLane) {
+			ROS_WARN("Lane detection is disabled");
+		}
+		if (!doSign) {
+			ROS_WARN("Sign detection is disabled");
+		}
+		if (useRosTimer) {
+			ROS_INFO("RosTimer is enabled");
+		} else {
+			ROS_INFO("RosTimer is disabled");
+		}
+
+		if (useRosTimer) {
+			if (doLane) {
+				ROS_INFO("starting lane timer");
+				laneTimer = nh.createTimer(ros::Duration(1.0 / lane_rate), &Utility::lane_timer_callback, this);
+			}
+			if (doSign) {
+				ROS_INFO("starting sign timer");
+				signTimer = nh.createTimer(ros::Duration(1.0 / sign_rate), &Utility::sign_timer_callback, this);
+			}
+            if (realsense) {
+                ROS_INFO("starting realsense timer");
+                realsenseTimer = nh.createTimer(ros::Duration(1.0 / realsense_rate), &Utility::realsense_timer_callback, this);
+            }
+		}
+	}
+
+	// SignFastest Sign;
+	// LaneDetector Lane;
+    std::unique_ptr<SignFastest> sign_ptr;
+    std::unique_ptr<LaneDetector> lane_ptr;
+    
+	sensor_msgs::ImagePtr color_msg, depth_msg;
+
+	image_transport::Subscriber rgb_sub;
+	image_transport::Subscriber depth_sub;
+	image_transport::ImageTransport it;
+	cv::Mat depthImage, colorImage;
+	cv_bridge::CvImagePtr cv_ptr;
+	cv_bridge::CvImagePtr cv_ptr_depth;
+	ros::Timer signTimer, laneTimer, realsenseTimer;
+
+	bool doLane, doSign, realsense, pubImage, useRosTimer;
+	double realsense_rate, sign_rate, lane_rate;
+
+	// lock
+	std::thread cameraThread;
+	bool cameraThreadRunning;
+	std::mutex image_mutex;
+	void cameraThreadFunc() {
+        ros::Rate cameraRate(30);
+        while (ros::ok() && cameraThreadRunning) {
+            get_frame();
+            cameraRate.sleep();
+        }
+	}
+
+	// rs
+	ros::Publisher color_pub, depth_pub;
+
+	rs2::pipeline pipe;
+	rs2::config cfg;
+	rs2::frame color_frame;
+	rs2::frame depth_frame;
+	rs2::frameset data;
+	rs2::frame gyro_frame;
+	rs2::frame accel_frame;
+	std::unique_ptr<rs2::align> align_to_color;
+
+	void depthCallback(const sensor_msgs::ImageConstPtr &msg) {
+		cv_ptr_depth = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+		if (cv_ptr_depth == nullptr) {
+			ROS_WARN("cv_ptr_depth is null");
+			return;
+		}
+		{
+			std::lock_guard<std::mutex> lock(image_mutex);
+			depthImage = cv_ptr_depth->image.clone();
+		}
+		if (sign_ptr->tcp_client != nullptr) {
+        	sign_ptr->tcp_client->send_image_depth(*msg);
+		}
+	}
+	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
+		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+		if (cv_ptr == nullptr) {
+			ROS_WARN("cv_ptr is null");
+			return;
+		}
+		{
+			std::lock_guard<std::mutex> lock(image_mutex);
+            colorImage = cv_ptr->image.clone();
+		}
+		if (sign_ptr->tcp_client != nullptr) {
+        	sign_ptr->tcp_client->send_image_rgb(*msg);
+		}
+	}
+
+	void lane_timer_callback(const ros::TimerEvent &event) { run_lane_once(); }
+	void sign_timer_callback(const ros::TimerEvent &event) { run_sign_once(); }
+    void realsense_timer_callback(const ros::TimerEvent &event) { get_frame(); }
+	void run_lane_once() {
+		if (colorImage.empty()) {
+			ROS_WARN("colorImage is empty");
+			return;
+		}
+        {
+            std::lock_guard<std::mutex> lock(image_mutex);
+		    lane_ptr->publish_lane(colorImage);
+        }
+        process_lane_data(lane_ptr->lane_msg);
+	}
+	void run_sign_once() {
+		if (colorImage.empty()) {
+			ROS_WARN("colorImage is empty");
+			return;
+		}
+		if (depthImage.empty()) {
+			ROS_WARN("depthImage is empty");
+			return;
+		}
+        {
+            std::lock_guard<std::mutex> lock(image_mutex);
+		    sign_ptr->publish_sign(colorImage, depthImage);
+        }
+        process_sign_data(sign_ptr->sign_msg);
+	}
+
+    void get_frame() {
+		data = pipe.wait_for_frames();
+		auto aligned_frames = align_to_color->process(data);
+		color_frame = aligned_frames.get_color_frame();
+		depth_frame = aligned_frames.get_depth_frame();
+		gyro_frame = data.first_or_default(RS2_STREAM_GYRO);
+		accel_frame = data.first_or_default(RS2_STREAM_ACCEL);
+		if (!color_frame || !depth_frame) {
+			ROS_WARN("No frame received");
+			return;
+		}
+        {
+            std::lock_guard<std::mutex> lock(image_mutex);
+            colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
+            depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
+        }
+
+		// if (!useRosTimer) {
+		// 	if (doLane) {
+		// 		run_lane_once();
+		// 	}
+		// 	if (doSign) {
+		// 		run_sign_once();
+		// 	}
+		// }
+		if (pubImage) {
+			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
+			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
+			if (sign_ptr->tcp_client != nullptr) {
+				sign_ptr->tcp_client->send_image_rgb(*color_msg);
+				sign_ptr->tcp_client->send_image_depth(*depth_msg);
+			}
+			color_pub.publish(color_msg);
+			depth_pub.publish(depth_msg);
+		}
+	}
 };

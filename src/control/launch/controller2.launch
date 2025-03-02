@@ -1,0 +1,272 @@
+<launch>
+
+  <arg name="sign" default="true"/>
+  <arg name="ekf" default="false"/>
+  <arg name="lane" default="true"/>
+  <arg name="name" default="car1"/>
+  <arg name="v" default="32"/>
+  <arg name="vref" default="0.$(arg v)"/>
+
+  <!-- speed challenge -->
+  <!-- <arg name="x0" default="11.71"/>
+  <arg name="y0" default="1.896"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="speedrun"/> -->
+
+  <!-- speedcurve -->
+  <!-- <arg name="x0" default="3.66"/>
+  <arg name="y0" default="12.186"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="speedcurve"/> -->
+
+  <!-- highway_east -->
+  <!-- <arg name="x0" default="2.48"/>
+  <arg name="y0" default="11.788"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="highway_east"/> -->
+
+  <!-- bus_lane -->
+  <!-- <arg name="x0" default="15.3"/>
+  <arg name="y0" default="6.196"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="bus_lane"/> -->
+
+  <!-- parking -->
+  <!-- <arg name="x0" default="0.35"/>
+  <arg name="y0" default="2.726"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="parking"/> -->
+
+  <!-- oneway -->
+  <!-- <arg name="x0" default="4.76"/>
+  <arg name="y0" default="2.706"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="oneway"/> -->
+
+  <!-- run2 -->
+  <!-- <arg name="x0" default="4.76"/>
+  <arg name="y0" default="2.706"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run2"/> -->
+
+  <!-- run1 -->
+  <!-- <arg name="x0" default="0.35"/>
+  <arg name="y0" default="2.726"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run1"/> -->
+
+  <!-- run3 -->
+  <!-- <arg name="x0" default="4.76"/>
+  <arg name="y0" default="2.706"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run3easy"/> -->
+
+  <!-- run107 -->
+  <!-- <arg name="x0" default="2.88"/>
+  <arg name="y0" default="2.086"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run107"/>   -->
+
+  <!-- run112 -->
+  <!-- <arg name="x0" default="2.52"/>
+  <arg name="y0" default="1.956"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run112"/>  -->
+
+  <!-- run117 -->
+  <!-- <arg name="x0" default="0.73"/>
+  <arg name="y0" default="1.366"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run117"/>  -->
+
+  <!-- run125 -->
+  <!-- <arg name="x0" default="0.34"/>
+  <arg name="y0" default="1.586"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run125"/>  -->
+
+  <!-- run131 -->
+  <arg name="x0" default="3.79"/>
+  <arg name="y0" default="4.046"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="run131"/> 
+
+  <!-- run132 -->
+  <!-- <arg name="x0" default="3.85"/>
+  <arg name="y0" default="3.676"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="run132"/>  -->
+
+  <!-- run133 -->
+  <!-- <arg name="x0" default="1.55"/>
+  <arg name="y0" default="4.046"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="run133"/>  -->
+
+  <!-- run134 -->
+  <!-- <arg name="x0" default="1.67"/>
+  <arg name="y0" default="3.676"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="run134"/>  -->
+
+  <!-- run136 -->
+  <!-- <arg name="x0" default="2.88"/>
+  <arg name="y0" default="5.396"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run136"/>  -->
+
+  <!-- run139 -->
+  <!-- <arg name="x0" default="2.52"/>
+  <arg name="y0" default="5.196"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run139"/>  -->
+
+  <!-- run142 -->
+  <!-- <arg name="x0" default="0.74"/>
+  <arg name="y0" default="5.376"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run142"/>  -->
+
+  <!-- run145 -->
+  <!-- <arg name="x0" default="0.34"/>
+  <arg name="y0" default="5.236"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run145"/>  -->
+
+  <!-- run147 -->
+  <!-- <arg name="x0" default="1.67"/>
+  <arg name="y0" default="6.556"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="run147"/>  -->
+
+  <!-- run148 -->
+  <!-- <arg name="x0" default="1.55"/>
+  <arg name="y0" default="6.906"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="run148"/>  -->
+
+  <!-- run149 -->
+  <!-- <arg name="x0" default="3.85"/>
+  <arg name="y0" default="6.546"/>
+  <arg name="yaw0" default="0"/>
+  <arg name = "path" default="run149"/>  -->
+
+  <!-- run150 -->
+  <!-- <arg name="x0" default="3.79"/>
+  <arg name="y0" default="6.906"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name = "path" default="run150"/>  -->
+
+  <!-- run203 -->
+  <!-- <arg name="x0" default="4.76"/>
+  <arg name="y0" default="2.336"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run203"/> -->
+
+  <!-- run218 -->
+  <!-- <arg name="x0" default="5.13"/>
+  <arg name="y0" default="5.396"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run218"/> -->
+
+  <!-- run214 -->
+  <!-- <arg name="x0" default="5.15"/>
+  <arg name="y0" default="2.096"/>
+  <arg name="yaw0" default="1.5708"/>
+  <arg name = "path" default="run214"/> -->
+
+  <!-- run221 -->
+  <!-- <arg name="x0" default="4.75"/>
+  <arg name="y0" default="5.206"/>
+  <arg name="yaw0" default="-1.5708"/>
+  <arg name = "path" default="run221"/> -->
+
+  <param name="x0" value="$(arg x0)"/>
+  <param name="y0" value="$(arg y0)"/>
+  <param name="yaw0" value="$(arg yaw0)"/>
+
+  <arg name="test" default="0"/>
+  <param name="/test" value="$(arg test)"/>
+  <arg name="real" default="false"/>
+  <param name="/is_real" value="$(arg real)"/>
+  <arg name="subModel" default="false"/>
+  <arg name = "rate" default="300"/>
+  <param name="pathName" value="$(arg path)"/>
+  <param name="vrefInt" value="$(arg v)"/>
+  <arg name = "dashboard" default="true"/>
+  <param name="dashboard" value="$(arg dashboard)"/>
+  <arg name = "realsense_imu" default="false"/>
+  <param name="realsense_imu" value="$(arg realsense_imu)"/>
+  <arg name = "kb" default="false"/>
+  <param name="kb" value="$(arg kb)"/>
+  <arg name = "hw" default="1.33"/>
+  <param name="hw" value="$(arg hw)"/>
+  <arg name = "gps" default="false"/>
+  <param name="gps" value="$(arg gps)"/>
+  <arg name = "pub_wpts" default="true"/>
+  <param name="pub_wpts" value="$(arg pub_wpts)"/>
+  <arg name = "debug_level" default="2"/>
+  <param name="debug_level" value="$(arg debug_level)"/>
+  <arg name = "emergency" default="false"/>
+  <param name="emergency" value="$(arg emergency)"/>
+  <arg name="use_tcp" default="false"/>
+  <param name="use_tcp" value="$(arg use_tcp)"/>
+  <arg name="ip" default="127.0.0.1"/>
+  <param name="ip" value="$(arg ip)"/>
+  <rosparam command="load" file="$(find planning)/scripts/config/mpc_config$(arg v).yaml" />
+  <rosparam command="load" file="$(find control)/config/tunable_params.yaml" />
+  <rosparam command="load" file="$(find planning)/scripts/config/mpc_config_park.yaml" />
+
+  <!-- cameraNode params -->
+  <rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+  <arg name="show" default="false"/>
+  <arg name="print" default="false"/>
+  <arg name="print_duration" default="false"/>
+  <arg name="depth" default="true"/>
+  <param name="/is_real" value="$(arg real)"/>
+  <arg name="pub" default="true"/>
+  <arg name="ncnn" default="false"/>
+  <arg name="newlane" default="true"/>
+  <arg name="realsense" default="false"/>
+  <arg name="camera_rate" default="50"/>
+  <arg name="lane_rate" default="100"/>
+  <arg name="sign_rate" default="30"/>
+  <arg name="pubImage" default="true"/>
+  <arg name="thread" default="true"/>
+  <arg name="use_emergency" default="false"/>
+  <arg name="debug" default=""/>
+
+  <!-- <node pkg="control" type="path2.py" name="path_planner" output="screen"></node>  -->
+  <node pkg="control" type="controller2" name="$(anon mpc_controller)" output="screen" 
+    launch-prefix="$(arg debug)">
+    <param name="sign" value="$(arg sign)"/>
+    <param name="ekf" value="$(arg ekf)"/>
+    <param name="lane" value="$(arg lane)"/>
+    <param name="name" value="$(arg name)"/>
+    <param name="/robot_name" value="$(arg name)"/>
+    <param name="vref" value="$(arg vref)"/>
+    <param name="x0" value="$(arg x0)"/>
+    <param name="y0" value="$(arg y0)"/>
+    <param name="yaw0" value="$(arg yaw0)"/>
+    <param name="real" value="$(arg real)"/>
+    <param name="subModel" value="$(arg subModel)"/>
+    <param name="rate" value="$(arg rate)"/>
+
+    <!-- cameraNode params -->
+    <param name="/use_emergency" value="$(arg use_emergency)"/>
+    <param name="/showFlag" value="$(arg show)"/>
+    <param name="/printFlag" value="$(arg print)"/>
+    <param name="/printDuration" value="$(arg print_duration)"/>
+    <param name="/hasDepthImage" value="$(arg depth)"/>
+    <param name="/pub" value="$(arg pub)"/>
+    <param name="/ncnn" value="$(arg ncnn)"/>
+    <param name="/newlane" value="$(arg newlane)"/>
+    <param name="/realsense" value="$(arg realsense)"/>
+    <param name="/camera_rate" value="$(arg camera_rate)"/>
+    <!-- publish camera image if realsense enabled -->
+    <param name="/pubImage" value="$(arg pubImage)"/>
+    <param name="/thread" value="$(arg thread)"/>
+    <param name="/lane_rate" value="$(arg lane_rate)"/>
+    <param name="/sign_rate" value="$(arg sign_rate)"/>
+  </node>
+</launch>

@@ -264,9 +264,9 @@
   <data key="d2">2</data>
 </node>
 <node id="60">
-  <data key="d0">15.48</data>
-  <data key="d1">9.75</data>
-  <data key="d2">2</data>
+  <data key="d0">15.268</data>
+  <data key="d1">9.61</data>
+  <data key="d2">0</data>
 </node>
 <node id="75">
   <data key="d0">1.94</data>
@@ -295,7 +295,7 @@
 </node>
 <node id="71">
   <data key="d0">3.45</data>
-  <data key="d1">13.03</data>
+  <data key="d1">13.06</data>
   <data key="d2">7</data>
 </node>
 <node id="76">
@@ -851,12 +851,12 @@
 <node id="186">
   <data key="d0">4.59</data>
   <data key="d1">13.41</data>
-  <data key="d2">2</data>
+  <data key="d2">0</data>
 </node>
 <node id="187">
   <data key="d0">4.97</data>
   <data key="d1">13.41</data>
-  <data key="d2">2</data>
+  <data key="d2">0</data>
 </node>
 <node id="188">
   <data key="d0">5.34</data>
@@ -921,7 +921,7 @@
 <node id="200">
   <data key="d0">6.45</data>
   <data key="d1">9.93</data>
-  <data key="d2">2</data>
+  <data key="d2">0</data>
 </node>
 <node id="201">
   <data key="d0">6.1</data>
@@ -945,27 +945,27 @@
 </node>
 <node id="205">
   <data key="d0">4.75</data>
-  <data key="d1">12.21</data>
+  <data key="d1">12.19</data>
   <data key="d2">0</data>
 </node>
 <node id="206">
   <data key="d0">4.75</data>
-  <data key="d1">12.59</data>
+  <data key="d1">12.47</data>
   <data key="d2">7</data>
 </node>
 <node id="207">
-  <data key="d0">4.57</data>
-  <data key="d1">12.87</data>
-  <data key="d2">2</data>
+  <data key="d0">4.85</data>
+  <data key="d1">13.246</data>
+  <data key="d2">0</data>
 </node>
 <node id="208">
-  <data key="d0">4.35</data>
-  <data key="d1">12.99</data>
+  <data key="d0">4.22</data>
+  <data key="d1">13.06</data>
   <data key="d2">2</data>
 </node>
 <node id="209">
-  <data key="d0">3.97</data>
-  <data key="d1">13.01</data>
+  <data key="d0">3.83</data>
+  <data key="d1">13.06</data>
   <data key="d2">0</data>
 </node>
 <node id="210">
@@ -976,7 +976,7 @@
 <node id="211">
   <data key="d0">5.07</data>
   <data key="d1">12.83</data>
-  <data key="d2">2</data>
+  <data key="d2">0</data>
 </node>
 <node id="212">
   <data key="d0">5.14</data>
@@ -2763,7 +2763,7 @@
 <edge source="60" target="49">
   <data key="d3">False</data>
 </edge>
-<edge source="60" target="51">
+<edge source="56" target="51">
   <data key="d3">False</data>
 </edge>
 <edge source="75" target="78">
@@ -3222,7 +3222,7 @@
 <edge source="206" target="207">
   <data key="d3">False</data>
 </edge>
-<edge source="207" target="208">
+<edge source="206" target="208">
   <data key="d3">False</data>
 </edge>
 <edge source="207" target="187">

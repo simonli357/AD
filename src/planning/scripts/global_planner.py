@@ -25,11 +25,15 @@ class GlobalPlanner:
             self.pos[node] = (x, 13.786 - y)
             self.attribute[node] = data.get('new_attribute', 0)
         
+        for u, v, data in self.G.edges(data=True):
+            pos_u = np.array(self.pos[u])
+            pos_v = np.array(self.pos[v])
+            data['weight'] = np.linalg.norm(pos_u - pos_v)
+            
         self.wp_x = []
         self.wp_y = []
         self.place_names = {}
         self.undetectable_areas = [398, 399, 403, 404, 405, 400, 366, 367, 368, 369, 342, 343, 396, 397, 318, 317, 316]
-        
         for i in range(263, 271):
             self.undetectable_areas.append(i)
         for i in range(292, 296):
@@ -94,12 +98,26 @@ class GlobalPlanner:
         else:
             raise ValueError(f"Invalid destination identifier: {identifier}")
 
+    def get_node_coordinates(self, node):
+        return np.array(self.pos[node])
+    
+    def get_distance(self, start, end):
+        return nx.dijkstra_path_length(self.G, source=start, target=end, weight='weight')
+    
+    def get_total_distance(self, sequence):
+        total_distance = 0.0
+        for i in range(len(sequence) - 1):
+            start = sequence[i]
+            end = sequence[i + 1]
+            total_distance += self.get_distance(start, end)
+        return total_distance
+    
     def plan_path(self, start, end):
         if not isinstance(start, str):
             start = str(start)
         if not isinstance(end, str):
             end = str(end)
-        print("start: ", start, "end: ", end)
+        # print("start: ", start, "end: ", end)
         path = nx.dijkstra_path(self.G, source=start, target=end)
         path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
         print("path: ", path)
@@ -123,12 +141,13 @@ class GlobalPlanner:
                 prev_node2 = path[path.index(node)-2]
                 prev_node = path[path.index(node)-1]
                 #get next node
-                next_node = path[path.index(node)+1]
                 try:
+                    next_node = path[path.index(node)+1]
                     next_node2 = path[path.index(node)+2]
                 except:
-                    print("end of path at node: ", node)
+                    print("ERROR: end of path at node: ", node)
                     continue
+                # print(f"prev2: {prev_node2}, prev: {prev_node}, node: {node}, next: {next_node}, next2: {next_node2}")
                 #calculate the vector from prev to current
                 prev_x2, prev_y2 = self.pos[prev_node2]
                 prev_x, prev_y = self.pos[prev_node]
@@ -145,19 +164,19 @@ class GlobalPlanner:
                 if normalized_cross > 0.75: #left
                     # print(f"node {node} is a left turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     x, y = self.pos[node]
-                    x += vec1[0] / mag1 * 0.005 #15
-                    y += vec1[1] / mag1 * 0.005 #15
+                    x += vec1[0] / mag1 * 0.2 #15
+                    y += vec1[1] / mag1 * 0.2 #15
                     # adjust with vec2
-                    x += vec2[0] / mag2 * 0.23 #15
-                    y += vec2[1] / mag2 * 0.23 #15
+                    x += vec2[0] / mag2 * 0.43 #15
+                    y += vec2[1] / mag2 * 0.43 #15
                     wp_x.append(x)
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
                     # x = prev_x + vec1[0] / mag1 * 0.0015#0.001
                     # y = prev_y + vec1[1] / mag1 * 0.0015#0.001
-                    x = prev_x + vec1[0] / mag1 * 0.3#0.001
-                    y = prev_y + vec1[1] / mag1 * 0.3#0.001
+                    x = prev_x + vec1[0] / mag1 * 0.4#0.001
+                    y = prev_y + vec1[1] / mag1 * 0.4#0.001
                     # adjust with vec2
                     # x += vec2[0] / mag2 * 0.0005 #15
                     # y += vec2[1] / mag2 * 0.0005 #15
@@ -166,10 +185,10 @@ class GlobalPlanner:
                     wp_x.append(x)
                     wp_y.append(y)
                 else:
-                    if int(node) == 80:
-                        print("node 80 straight")
-                        exit()
-                    pass
+                    # if int(node) == 80:
+                    #     print("node 80 straight")
+                    #     exit()
+                    continue
         return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
     def find_closest_node(self, x, y):
@@ -207,5 +226,5 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    # planner.plan_path(18, 15)
-    planner.illustrate_path(399, 427)
+    # planner.plan_path(56, 54)
+    planner.illustrate_path(56, 54)

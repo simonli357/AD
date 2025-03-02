@@ -2,6 +2,7 @@
 #define PathManager_HPP
 
 #include <ros/ros.h>
+#include <thread>
 #include <vector>
 #include <string>
 #include <Eigen/Dense>
@@ -13,10 +14,18 @@
 #include <unistd.h>
 #include <limits.h>
 #include <cmath>
+#include "TcpClient.hpp"
+#include "std_msgs/Float32MultiArray.h"
+#include "std_srvs/TriggerResponse.h"
+#include "utils/Point2D.h"
 #include "utils/constants.h"
+#include "utils/goto_command.h"
 #include "utils/waypoints.h"
 #include "utils/go_to.h"
+#include "utils/go_to_multiple.h"
 #include <std_srvs/Trigger.h>
+#include "utility.hpp"
+#include "utils/helper.h"
 
 class PathManager {
 public:
@@ -27,26 +36,21 @@ public:
         std::cout << "Path Manager Constructor" << std::endl;
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         
-        // get relative path
-        std::string dir = getSourceDirectory();
-        // dir.replace(dir.rfind("src"), 3, "scripts");
-        std::string v_ref_int_str = std::to_string(v_ref_int);
-        std::string path_name = "_speedrun";
-        // path_name = "";
-        path_name = "_path1";
-        state_refs = loadTxt(dir + "/../scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
-        remove_large_yaw_jump();
-        input_refs = loadTxt(dir + "/../scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
-        state_attributes = loadTxt(dir + "/../scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
-        
-        state_refs_ptr = &state_refs;
-        normals = loadTxt(dir + "/../scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
+        // std::string dir = helper::getSourceDirectory();
+        // std::string v_ref_int_str = std::to_string(v_ref_int);
+        // std::string path_name = "_speedrun";
+        // path_name = "_path1";
+        // state_refs = loadTxt(dir + "/../../../control/scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
+        // remove_large_yaw_jump();
+        // input_refs = loadTxt(dir + "/../../../control/scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
+        // state_attributes = loadTxt(dir + "/../../../control/scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
+        // normals = loadTxt(dir + "/../../../control/scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
 
+        state_refs_ptr = &state_refs;
         target_waypoint_index = 0;
         last_waypoint_index = target_waypoint_index;
 
         std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
-        if(v_ref > 0.3) v_ref = 0.35;
 
         waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
         if(!nh.getParam("/pathName", pathName)) {
@@ -55,14 +59,17 @@ public:
         }
 
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
+        go_to_multiple_client = nh.serviceClient<utils::go_to_multiple>("/go_to_multiple");
         trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
+
     PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
     ~PathManager() {}
 
     ros::NodeHandle nh;
     ros::ServiceClient waypoints_client;
     ros::ServiceClient go_to_client;
+    ros::ServiceClient go_to_multiple_client;
     ros::ServiceClient trigger_client;
     std::string pathName;
     int target_waypoint_index=0, last_waypoint_index=0, closest_waypoint_index=0;
@@ -87,7 +94,26 @@ public:
     bool is_not_detectable(int idx) {
         return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
     }
-
+    bool lane_detectable(int start_idx, int end_idx) {
+        const static std::vector<int> detectable_attributes = {ATTRIBUTE::NORMAL, ATTRIBUTE::ONEWAY, ATTRIBUTE::DOTTED, ATTRIBUTE::CROSSWALK};
+        if (start_idx < 0 || start_idx >= state_attributes.size()) {
+            return false;
+        }
+        if (end_idx >= state_attributes.size()) {
+            return false;
+        }
+        bool start_idx_detectable = false;
+        bool end_idx_detectable = false;
+        for (int i = 0; i < detectable_attributes.size(); i++) {
+            if (attribute_cmp(start_idx_detectable, detectable_attributes[i])) {
+                start_idx_detectable = true;
+            }
+            if (attribute_cmp(end_idx, detectable_attributes[i])) {
+                end_idx_detectable = true;
+            }
+        }
+        return start_idx_detectable && end_idx_detectable;
+    }
     void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36-0.1) {
         if (shift_right) shift_distance *= -1;
         // state_refs.block(start_index, 0, end_index-start_index, 2) += normals.block(start_index, 0, end_index-start_index, 2) * shift_distance;
@@ -193,6 +219,7 @@ public:
                 closest = i;
             }
         }
+        closest_waypoint_index = closest;
         return closest;
     }
 
@@ -200,7 +227,30 @@ public:
         target_waypoint_index = find_closest_waypoint(x_current);
     }
     
-    utils::waypoints call_waypoint_service(double x, double y, double yaw) {
+    bool is_straight_line(int start_idx, int num_waypoints, double target_angle, double threshold) {
+        int N = state_refs.rows();
+        
+        // Ensure the start index and number of waypoints are within valid bounds
+        if (start_idx < 0 || start_idx >= N || num_waypoints <= 0 || start_idx + num_waypoints > N) {
+            std::cerr << "Invalid index range." << std::endl;
+            return false;
+        }
+        
+        target_angle = Utility::yaw_mod(target_angle); // now between -pi and pi
+        for (int i = start_idx; i < start_idx + num_waypoints; ++i) {
+            double yaw = state_refs(i, 2);
+            yaw = Utility::yaw_mod(yaw); // between -pi and pi
+            double diff = Utility::compare_yaw(target_angle, yaw);
+            // Check if yaw is within the threshold of target_angle
+            if (diff > threshold) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    bool call_waypoint_service(double x, double y, double yaw, std::shared_ptr<TcpClient> tcp_client) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -212,13 +262,12 @@ public:
             ROS_ERROR("Failed to get param 'vrefInt'");
             vrefInt = 25;
         }
-        if (vrefInt > 30) vrefInt = 35;
         srv.request.vrefName = std::to_string(vrefInt);
         if(waypoints_client.waitForExistence(ros::Duration(5))) {
             ROS_INFO("waypoints service found");
         } else {
             ROS_INFO("waypoints service not found after 5 seconds");
-            return srv;
+            return false;
         }
         if(waypoints_client.call(srv)) {
             std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
@@ -233,11 +282,12 @@ public:
             normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
             ROS_INFO("initialize(): Received waypoints of size %d", N);
-            set_params();
-            return srv;
+            tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
+            set_params(tcp_client);
+            return true;
         } else {
             ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-            return srv;
+            return false;
         }
     }
     
@@ -254,7 +304,6 @@ public:
             ROS_ERROR("Failed to get param 'vrefInt'");
             vrefInt = 25;
         }
-        if (vrefInt > 30) vrefInt = 35;
         srv.request.vrefName = std::to_string(vrefInt);
         if(go_to_client.waitForExistence(ros::Duration(5))) {
             ROS_INFO("go_to service found");
@@ -284,6 +333,56 @@ public:
             return false;
         }
     }
+
+    bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>> &destinations) {
+        utils::go_to_multiple srv;
+        srv.request.x0 = x;
+        srv.request.y0 = y;
+        srv.request.yaw0 = yaw;
+        for (const auto& dest : destinations) {
+            srv.request.destinations.push_back(tuple_to_point(dest));
+        }
+        int vrefInt;
+        if(!nh.getParam("/vrefInt", vrefInt)) {
+            ROS_ERROR("Failed to get param 'vrefInt'");
+            vrefInt = 25;
+        }
+        srv.request.vrefName = std::to_string(vrefInt);
+        if(go_to_multiple_client.waitForExistence(ros::Duration(5))) {
+            ROS_INFO("go_to_multiple service found");
+        } else {
+            ROS_INFO("go_to_multiple service not found after 5 seconds");
+            return false;
+        }
+        if(go_to_multiple_client.call(srv)) {
+            std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end()); // N by 3
+            std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end()); // N by 2
+            std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
+            std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end()); // N by 2
+            int N = state_refs_v.size() / 3;
+            state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+            remove_large_yaw_jump();
+            input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+            state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+            normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+
+            ROS_INFO("initialize(): Received waypoints of size %d", N);
+            target_waypoint_index = 0;
+            last_waypoint_index = target_waypoint_index;
+            closest_waypoint_index = 0;
+            return true;
+        } else {
+            ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
+            return false;
+        }
+    }
+
+    utils::Point2D tuple_to_point(const std::tuple<float, float>& p) {
+        utils::Point2D pt;
+        pt.x = std::get<0>(p);
+        pt.y = std::get<1>(p);
+        return pt;
+    }
     
     void remove_large_yaw_jump() {
         for (int i = 2; i < state_refs.rows(); i++) {
@@ -304,14 +403,35 @@ public:
             }
         }
     }
-    bool set_params() {
+    bool set_params(std::shared_ptr<TcpClient> tcp_client) {
         std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
         nh.setParam("/state_refs", state_refs_v);
         std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
         nh.setParam("/state_attributes", state_attributes_v);
         std_srvs::Trigger trigger_srv;
-        if (trigger_client.call(trigger_srv)) {
-            if (trigger_srv.response.success) {
+        
+        tcp_client->send_trigger(trigger_srv);
+        tcp_client->send_params(state_refs_v, state_attributes_v);
+
+        bool success = false;
+        size_t retries = 50;
+        size_t try_count = 0;
+        std::optional<std_srvs::TriggerResponse> response;
+        
+        while (try_count < retries) {
+            if (tcp_client->get_trigger_msgs().size() > 0) {
+                response = tcp_client->get_trigger_msgs().front()->response;
+                tcp_client->get_trigger_msgs().pop();
+                success = true;
+                std::cout << "ROS node set params notification ack = success." << std::endl;
+                break;
+            }
+            try_count++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        if (success) {
+            if (response.value().success) {
                 ROS_INFO("Python node notified successfully.");
             } else {
                 ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str());
@@ -319,22 +439,21 @@ public:
         } else {
             ROS_ERROR("Failed to call the notification service.");
         }
+
+        /* if (trigger_client.call(trigger_srv)) { */
+        /*     if (trigger_srv.response.success) { */
+        /*         ROS_INFO("Python node notified successfully."); */
+        /*     } else { */
+        /*         ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str()); */
+        /*     } */
+        /* } else { */
+        /*     ROS_ERROR("Failed to call the notification service."); */
+        /* } */
         return true;
-    }
-    static std::string getSourceDirectory() {
-        std::string file_path(__FILE__);  // __FILE__ is the full path of the source file
-        size_t last_dir_sep = file_path.rfind('/');  // For Unix/Linux path
-        if (last_dir_sep == std::string::npos) {
-            last_dir_sep = file_path.rfind('\\');  // For Windows path
-        }
-        if (last_dir_sep != std::string::npos) {
-            return file_path.substr(0, last_dir_sep);  // Extract directory path
-        }
-        return "";  // Return empty string if path not found
     }
     template <typename EigenType>
     static void saveToFile(const EigenType &data, const std::string &filename) {
-        std::string dir = getSourceDirectory();
+        std::string dir = helper::getSourceDirectory();
         std::string file_path = dir + "/" + filename;
         std::ofstream file(file_path);
         if (file.is_open()) {

@@ -312,23 +312,22 @@ public:
                 centers.push_back((lanes[2 * i] + lanes[2 * i + 1]) / 2.0);
             }
         }
-        // std::cout << "centers: " << std::endl;
-        // for (auto center : centers) {
-        //     std::cout << center << std::endl;
+
+        // std::cout << "centers size: " << centers.size() << std::endl;
+        double center = -1;
+        if (centers.size() == 2) center = (centers[0] + centers.back()) / 2;
+        // if (centers.empty()) {
+        //     if (robust) center = -1;
+        //     else center = w / 2.0;
+        // } else if (centers.size() == 1) {
+        //     if (robust) center = -1;
+        //     else center = (centers[0] > (w / 2.0)) ? (centers[0] - 0) / 2 : (centers[0] * 2 + w) / 2;
+        // } else if (abs(centers[0] - centers.back()) < 200) {
+        //     if (robust) center = -1;
+        //     else center = ((centers[0] + centers.back()) > w) ? ((centers[0] + centers.back()) / 2 + 0) / 2.0 : ((centers[0] + centers.back()) + w) / 2;
+        // } else {
+        //     center = (centers[0] + centers.back()) / 2;
         // }
-        double center;
-        if (centers.empty()) {
-            if (robust) center = -1;
-            else center = w / 2.0;
-        } else if (centers.size() == 1) {
-            if (robust) center = -1;
-            else center = (centers[0] > (w / 2.0)) ? (centers[0] - 0) / 2 : (centers[0] * 2 + w) / 2;
-        } else if (abs(centers[0] - centers.back()) < 200) {
-            if (robust) center = -1;
-            else center = ((centers[0] + centers.back()) > w) ? ((centers[0] + centers.back()) / 2 + 0) / 2.0 : ((centers[0] + centers.back()) + w) / 2;
-        } else {
-            center = (centers[0] + centers.back()) / 2;
-        }
 
         // if(std::abs(center - previous_center) > 250) {
         //     center = previous_center;
@@ -463,7 +462,7 @@ public:
 
         // Define an adaptive threshold based on the mean and standard deviation
         int adaptive_threshold = static_cast<int>(mean + 0.5 * stddev);
-        std::cout << "adaptive_threshold: " << adaptive_threshold << ", threshold: " << threshold << ", mean: " << mean << ", stddev: " << stddev << std::endl;
+        // std::cout << "adaptive_threshold: " << adaptive_threshold << ", threshold: " << threshold << ", mean: " << mean << ", stddev: " << stddev << std::endl;
         // Find indices above the adaptive threshold
         std::vector<int> above_threshold;
         for (int i = 0; i < hist.size(); ++i) {
@@ -793,7 +792,7 @@ public:
         count++;
         static long int sum = 0;
         sum += duration.count();
-        ROS_INFO("average duration: %ld", sum/count);
+        // ROS_INFO("average duration: %ld", sum/count);
         // Make and return tuple of required values
         ret = std::make_tuple(number_of_fits,left_fit,right_fit,stop_line,stop_index,cross_walk);
         return ret;

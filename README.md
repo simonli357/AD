@@ -1,199 +1,198 @@
-# AD
-Autonomous Driving Pipeline For Bosch Future Mobility Challenge: https://boschfuturemobility.com/
+# AD: Autonomous Driving Pipeline
 
-## Description
+**Autonomous Driving Pipeline for the Bosch Future Mobility Challenge**  
+[Official Challenge Website](https://boschfuturemobility.com/)
 
-tbd
+---
 
-## Structure
+## 🏎️ Description
 
-- **control**: 
-- **localization**: 
-- **perception**: 
-- **planning**: 
-- **utils**: contains custom msgs and srvs used by the other packages.
+This repository contains the Autonomous Driving (AD) pipeline developed for the Bosch Future Mobility Challenge. Designed for a 1:10 scale autonomous vehicle, the project includes core modules for:
 
-## Dependencies
+- **Perception**: Object detection and lane recognition using deep learning.
+- **Localization**: Sensor fusion with Extended Kalman Filtering (EKF).
+- **Planning**: Path optimization and decision-making.
+- **Control**: Model Predictive Control (MPC) for smooth trajectory execution.
 
-### ROS
-#### Installation:
-http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html
+Built on **ROS (Robot Operating System)**, the pipeline supports both **simulation (Gazebo)** and real-world deployment, leveraging an **STM32-based embedded platform** for low-level control.
 
-### Gazebo Simulator With RC Car and Track:
-#### Installation:
-https://github.com/simonli357/Simulator
+---
 
-### opencv (version 4.6.0 or above)
-#### Installation:
+## 🏗️ Project Structure
 
-1. Go to this link: https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html
+- **Embedded_Platform/** - Interfaces with STM32 for motor, servo, and sensor control.
+- **src/** - Contains the main modules:
+  - **control/** - Implements Model Predictive Control (MPC) and state machine logic.
+  - **localization/** - Fuses sensor data using an Extended Kalman Filter (EKF).
+  - **perception/** - Uses deep learning models for object detection and lane recognition.
+  - **planning/** - Generates optimized paths from global waypoints.
+  - **gui/** - Provides visualization and manual control using PyQt5.
+  - **utils/** - Defines custom ROS messages and services used by other packages.
 
-2. Follow instructions in Build with opencv_contrib to install
+Each of these modules is described in detail below, with figures where applicable.
 
-3. Build cv_bridge:
-    clone this repository if you haven't done so yet:
-    ```bash
-    cd
-    git clone https://github.com/slsecrets357/AD.git
-    ```
-    locate where your opencv build, then build cv_bridge
-    ```bash
-    cd ~/AD
-    # Replace /path/to/opencv-4.9.0 with the actual path to your OpenCV installation
-    catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
-    ```
+---
 
-### Python libraries
-#### Installation:
-    ```bash
-    pip install -r ~/AD/requirements.txt
-    ```
+## 🔍 Detailed Package Overview
 
-### robot_localization
-#### Installation:
+### 🖥️ Embedded Platform
+This package contains firmware modified from Bosch’s provided code to interface with the **STM32 microcontroller**, controlling the vehicle’s **motor, servo, and sensors** (e.g., IMU, camera, encoders).
 
-1. Install it as follows:
-    ```bash
-    sudo apt update
-    sudo apt install ros-noetic-robot-localization
-    ```
+### 🏎️ Control
+- Uses **Model Predictive Control (MPC)** for smooth trajectory tracking.
+- Implements a **finite state machine** for handling autonomous behaviors.
+![MPC Preview](assets/mpc_sim.gif)
 
-### ncnn
-#### Installation:
+### 🌍 Localization
+- Employs the `robot_localization` package to integrate GPS, IMU, and odometry data using an **Extended Kalman Filter (EKF)**.
+- Simulated GPS delay and noise are added for realism in **Gazebo**.
 
-1. Go to this link: https://github.com/Tencent/ncnn/wiki/how-to-build
+### 👀 Perception
+- **Lane Detection**: Uses a **histogram-based** approach.
+- **Sign Detection**:
+  - **YOLOFastestV2 using NCNN (CPU inference)** or **YOLOv8 using TensorRT (GPU inference)** for real-time inference.
+  - Detects competition-relevant **traffic signs, traffic lights (with color classification), vehicles, and pedestrian dolls**.
 
-2. Follow instructions in to install for your specific machine.
+### 🛤️ Planning
+- Loads **global waypoints** from a **GraphML file**.
+- Plans optimal path that goes through all desired destination points.
+- Uses **spline interpolation** to generate a smooth, drivable path.
 
-3. Create an folder named "ncnn" in src/perception/include, then copy the "bin", "include" and "lib" folders from the installed ncnn directory into the new folder
+### 📊 GUI
+- Built with **PyQt5** for real-time visualization of:
+  - Camera feed
+  - Vehicle state estimation
+  - Planned paths and detected objects
+- Provides manual override for:
+  - **Start/stop controls**
+  - **Path re-planning**
+  - **Object toggling**
+![MPC Preview](assets/gui.png)
 
-### TensorRT
-#### Installation:
 
-1. Follow instructions in Cuda&TrtInstall.md to install.
-2. add these lines in the cmakelist.txt to avoid NvInfer.h and cuda_runtime.h not found error. Replace with the actual path to your TensorRT and Cuda directories.
-    ```bash
-    include_directories(/home/{user}/TensorRT-8.6.1.6/include) 
-    link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
-    include_directories(/usr/local/cuda/targets/x86_64-linux/include) 
-    link_directories(/usr/local/cuda/targets/x86_64-linux/lib)"
-    ```
-### Librealsense
+---
 
-#### Installation:
+## 📦 Dependencies
 
-1. Install dependencies:
+### 🐧 Ubuntu 20.04
+- Recommended OS. Not sure if ROS Noetic compatible with other versions.
+
+### 🔧 ROS Installation
+- Follow the [ROS Installation Guide](http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html).
+
+### 🏁 Simulation Platform
+- Install the [Gazebo-based simulator](https://github.com/simonli357/Simulator).
+
+### 📷 OpenCV (4.6.0+)
+- Install using [this guide](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html) with `opencv_contrib`.
+- Build `cv_bridge`:
+  ```bash
+  catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
+  ```
+
+### 📦 Required Python Libraries
+- Install dependencies:
+  ```bash
+  pip install -r ~/AD/requirements.txt
+  ```
+
+### 🛰️ Robot Localization
+- Install:
+  ```bash
+  sudo apt update && sudo apt install ros-noetic-robot-localization
+  ```
+
+### ⚡ NCNN for YOLO Deployment
+- Follow [this NCNN build guide](https://github.com/Tencent/ncnn/wiki/how-to-build).
+
+### 🚀 TensorRT for GPU Inference
+- Follow `Cuda&TrtInstall.md` instructions for installation.
+- Add paths to `CMakeLists.txt`:
+  ```bash
+  include_directories(/home/{user}/TensorRT-8.6.1.6/include)
+  link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
+  ```
+
+### 🎥 Intel RealSense
+- Install using [this guide](https://github.com/IntelRealSense/librealsense).
+  ```bash
+  sudo apt-get update && sudo apt-get install autoconf libudev-dev
+  ```
+
+### 📏 Acados for Optimization
+- Follow [Acados installation steps](https://github.com/acados/acados) to install dependencies.
+- Configure:
+  ```bash
+  echo 'export ACADOS_SOURCE_DIR="/home/{user}/acados"' >> ~/.bashrc
+  ```
+
+---
+
+## 🔨 Build Instructions
+
+1. Build the packages:
+  ```bash
+  catkin_make --pkg utils
+  catkin_make
+  ```
+
+---
+
+## 🚀 Usage
+
+### Simulation
+
+#### Start Simulation
+- cd to where the simulator workspace is located.
 ```bash
-    sudo apt-get update
-    sudo apt-get install autoconf libudev-dev
+source devel/setup.bash
+roslaunch sim_pkg run132.launch
 ```
-2. Install vcpkg and librealsense2 with the following commands or follow instructions on https://github.com/IntelRealSense/librealsense:
+
+#### Run Path Planner Server
 ```bash
-    cd ~/AD
-    git clone https://github.com/Microsoft/vcpkg.git
-    cd vcpkg
-    ./bootstrap-vcpkg.sh
-    ./vcpkg integrate install
-    ./vcpkg install realsense2
+rosrun planning path2.py
 ```
 
-### Acados
+#### Run Camera Node
+```bash
+roslaunch control perception cameraNode.launch
+```
 
-#### Installation:
+#### Run Control Node
+```bash
+roslaunch control controller.launch v:=32 camera:=false
+```
+- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
 
-1. Clone the Acados repository and navigate into it:
-    ```bash
-    git clone https://github.com/acados/acados.git
-    cd acados
-    git submodule update --recursive --init
-    ```
+#### Start GUI
+```bash
+rosrun gui gui.py --use_tcp
+```
+Press **start** to follow the planned path. To change the path, **double-click on a destination** and press **goto**. 
 
-2. Create a build directory, navigate into it and run cmake:
-    ```bash
-    mkdir -p build
-    cd build
-    cmake .. -DACADOS_WITH_QPOASES=ON -DACADOS_EXAMPLES=ON -DHPIPM_TARGET=GENERIC -DBLASFEO_TARGET=ARMV8A_ARM_CORTEX_A57
-    # Note: Replace ARMV8A_ARM_CORTEX_A57 with your device's architecture or use GENERIC if unsure.
-    ```
+### Real Vehicle Run
 
-3. Update the Makefile:
-    ```bash
-    # Set the following in <acados_root_folder>/Makefile.rule
-    BLASFEO_TARGET = ARMV8A_ARM_CORTEX_A57
-    ACADOS_WITH_QPOASES = 1
-    ```
+#### Run Path Planner Server
+```bash
+rosrun planning path2.py
+```
 
-4. Build and install Acados:
-    ```bash
-    make -j4
-    sudo make install -j4
-    cd ..
-    make shared_library
-    ```
+#### Run Camera Node
+```bash
+roslaunch control perception cameraNode.launch real:=true realsense:=true
+```
 
-5. Install Python interface for Acados:
-    ```bash
-    pip3 install -e /home/{your user name}/acados/interfaces/acados_template
-    ```
-
-6. Update your `.bashrc` and source it:
-    ```bash
-    echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/home/{your user name}/acados/lib"' >> ~/.bashrc
-    echo 'export ACADOS_SOURCE_DIR="/home/{your user name}/acados"' >> ~/.bashrc
-    source ~/.bashrc
-    ```
-
-7. If you encounter issues with `t_renderer`, compile it natively:
-    ```bash
-    git clone https://github.com/acados/tera_renderer.git
-    cd tera_renderer
-    cargo build --verbose --release
-    # Replace the file <acados_root_dir>/bin/t_renderer with the one compiled natively i.e. <tera_renderer_dir>/target/release/t_renderer
-    ```
-
-### Other Stuff
-    ```bash
-    sudo apt install nlohmann-json3-dev
-    sudo apt-get install libncurses5-dev libncursesw5-dev
-    ```
-
-## Build
-
-1. Build the packages using
-    ```bash
-    catkin_make --pkg utils
-    catkin_make
-    ```
-
-## Usage
-
-1. Run the simulation
-
-2. Run the path planner server:
-    ```bash
-    source devel/setup.bash
-    rosrun planning path2.py
-    ```
-
-3. Run the camera node in a new terminal:
-    ```bash
-    source devel/setup.bash
-    roslaunch perception cameraNode.launch newlane:=false
-    ```
-
-4. Run the control node in a new terminal:
-    ```bash
-    source devel/setup.bash
-    roslaunch control controller.launch sign:=true v:=25
-    ```
-
-4. Run the gui a new terminal:
-    ```bash
-    source devel/setup.bash
-    rosrun perception gui.py
-    ```
-    Press start to follow the planned path as illustrated. To change the path, double click on a desired destination on the map, then press the goto button.
-
-
-
+#### Run Control Node + CameraNode
+```bash
+roslaunch control controller.launch real:=true v:=32 camera:=false
+```
+- replace {ip_address} by ip address of computer on which the gui is run
+- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
+ 
+#### Start GUI
+```bash
+rosrun gui gui.py --use_tcp
+```
+- run this on another computer to see what the car is doing.
 
