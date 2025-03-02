@@ -154,7 +154,7 @@ class CameraWidget(QtWidgets.QWidget):
         if image is None:
             return image
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
-        cv2.putText(image, f"center: {self.center}",
+        cv2.putText(image, f"center: {self.center:.2f}",
                     (int(image.shape[1] * 0.5), int(image.shape[0] * 0.1)),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # Add text if stopline or crosswalk is detected

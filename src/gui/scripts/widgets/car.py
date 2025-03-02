@@ -84,7 +84,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(12, 12, 0, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 12, 12, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -93,7 +93,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if self.model:
             gl.glPushMatrix()
             gl.glScalef(-1.0, 1.0, -1.0)
-            gl.glRotatef(self.steer, 0, 1, 0)
+            gl.glRotatef(-self.steer, 0, 1, 0)
             self.draw_model()
             gl.glPopMatrix()
 

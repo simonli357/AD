@@ -53,7 +53,7 @@ class MeterWidget(QtWidgets.QWidget):
         min_length = min(widget_width, widget_height)
         main_radius = min_length
         secondary_radius = main_radius / 1.35
-        center1_y = min_length / 1.6
+        center1_y = min_length / 1.75
         center2_y = center1_y + ((main_radius - secondary_radius)) / 4
         center1_x = widget_width / 2 - main_radius / 2 + secondary_radius / 3.7
         center2_x = center1_x + secondary_radius
