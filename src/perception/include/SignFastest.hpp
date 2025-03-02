@@ -101,8 +101,8 @@ class SignFastest {
             sign_counter.resize(OBJECT_COUNT, 0);
 
             if (ncnn) {
-                std::string filePathBin = helper::getSourceDirectory() + "/../models/ncnn/" + model + ".bin";
-                std::string filePathParam = helper::getSourceDirectory() + "/../models/ncnn/" + model + ".param";
+                std::string filePathBin = helper::getSourceDirectory() + "/../../../perception/models/ncnn/" + model + ".bin";
+                std::string filePathParam = helper::getSourceDirectory() + "/../../../perception/models/ncnn/" + model + ".param";
                 const char* bin = filePathBin.c_str();
                 const char* param = filePathParam.c_str();
 
@@ -112,7 +112,7 @@ class SignFastest {
                 nh.param("model_name", model_name, std::string("citycocov2lgtclab_20")); 
                 // model_name = "v2originalTRT"; 
                 std::string current_path = helper::getSourceDirectory();
-                std::string modelPath = current_path + "/../models/trt/" + model_name + ".onnx";
+                std::string modelPath = current_path + "/../../../perception/models/trt/" + model_name + ".onnx";
                 yolov8 = std::make_unique<YoloV8>(modelPath, config);
             }
 

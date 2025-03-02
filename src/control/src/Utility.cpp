@@ -229,6 +229,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     timerpid = ros::Time::now();
     if (subSign) {
         if (camera) {
+            std::cout << "camera enabled in control node" << std::endl;
             cameraNodeConstructor(nh);
         } else {
             sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
