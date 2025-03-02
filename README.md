@@ -180,19 +180,21 @@ rosrun planning path2.py
 
 #### Run Camera Node
 ```bash
-roslaunch control perception cameraNode.launch real:=true realsense:=true
+roslaunch control perception cameraNode.launch real:=true realsense:=true ip=ip:={ip_address}
 ```
+- replace {ip_address} with the ip address of the computer running the gui
 
-#### Run Control Node + CameraNode
+#### Run Control Node
 ```bash
-roslaunch control controller.launch real:=true v:=32 camera:=false
+roslaunch control controller.launch real:=true v:=32 camera:=false ip:={ip_address}
 ```
 - replace {ip_address} by ip address of computer on which the gui is run
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
+- supported speed modes: 25, 32
  
 #### Start GUI
 ```bash
-rosrun gui gui.py --use_tcp
+rosrun gui main.py --use_tcp
 ```
 - run this on another computer to see what the car is doing.
 
