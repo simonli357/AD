@@ -8,6 +8,7 @@ from python_server.service_calls.set_states_srv import SetStatesSrv
 from python_server.service_calls.waypoints_srv import WaypointsSrv
 from python_server.msg.trigger_msg import TriggerMsg
 from python_server.msg.params_msg import ParamsMsg
+from python_server.msg.run_msg import RunMsg
 
 
 class TcpConnection:
@@ -25,11 +26,13 @@ class TcpConnection:
                 b'\x07': self.parse_waypoints_srv,
                 b'\x08': self.parse_start_srv,
                 b'\x09': self.parse_params,
+                b'\x0a': self.parse_run
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
             self.triggers = TriggerMsg(b'\x02')
             self.messages = deque()
+            self.run_msg = deque()
             self.go_to_srv_msg = GoToSrv(b'\x04')
             self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
@@ -104,8 +107,8 @@ class TcpConnection:
         bytes = self.set_states_srv_msg.encode(x, y)
         self.socket.sendall(bytes)
 
-    def send_waypoints_srv(self, pathName, vrefName, x0, y0, yaw0):
-        bytes = self.waypoints_srv_msg.encode(pathName, vrefName, x0, y0, yaw0)
+    def send_waypoints_srv(self, vrefName, pathName, x0, y0, yaw0):
+        bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
         self.socket.sendall(bytes)
 
     ###################
@@ -167,5 +170,11 @@ class TcpConnection:
     def parse_start_srv(self, bytes):
         try:
             self.start_srv_msg = bytes == b'\x01'
+        except Exception as e:
+            print(e)
+
+    def parse_run(self, bytes):
+        try:
+            self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
         except Exception as e:
             print(e)

@@ -1,4 +1,4 @@
-from PyQt5.QtGui import QPainter, QPen, QColor, QPolygonF
+from PyQt5.QtGui import QPainter, QPen, QColor, QPolygonF, QConicalGradient
 from PyQt5 import QtCore, QtWidgets
 import math
 
@@ -6,6 +6,7 @@ import math
 class MeterWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0
@@ -18,7 +19,6 @@ class MeterWidget(QtWidgets.QWidget):
         self.size2 = None
         self.angles1 = None
         self.angles2 = None
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
     def set_speed(self, speed: float) -> None:
         self.speed = max(self.min_speed, min(speed, self.max_speed))
@@ -31,18 +31,24 @@ class MeterWidget(QtWidgets.QWidget):
     def paintEvent(self, event):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
+            self.draw_background(painter)
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
             self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.yaw, self.min_yaw, self.max_yaw)
 
+    def draw_background(self, painter: QPainter) -> None:
+        rect = QtCore.QRectF(self.rect())
+        painter.fillRect(rect, QColor(255, 255, 255, 12))
+
     def draw_meters(self, painter: QPainter) -> None:
         widget_width = self.width()
         widget_height = self.height()
-        main_radius = widget_width / 2.5
+        min_length = min(widget_width, widget_height)
+        main_radius = min_length
         secondary_radius = main_radius / 1.35
-        center1_y = widget_height / 1.5
+        center1_y = min_length / 1.6
         center2_y = center1_y + ((main_radius - secondary_radius)) / 4
-        center1_x = main_radius
+        center1_x = widget_width / 2 - main_radius / 2 + secondary_radius / 3.7
         center2_x = center1_x + secondary_radius
 
         self.center1 = QtCore.QPointF(center1_x, center1_y)
@@ -50,14 +56,31 @@ class MeterWidget(QtWidgets.QWidget):
         self.size1 = QtCore.QSizeF(main_radius, main_radius)
         self.size2 = QtCore.QSizeF(secondary_radius, secondary_radius)
 
-        self.angles1 = self.draw_speed_ticks(15, painter, self.center1, self.size1, 0.1, -10, 210)
+        self.angles1 = self.draw_speed_ticks(15, painter, self.center1, self.size1, 0.2, -10, 210)
         self.angles1.reverse()
         self.draw_speed_increments(painter, self.center1, self.size1, self.angles1, self.min_speed, self.max_speed)
         self.draw_arc(f'SPEED \n {self.speed:.2f} cm/s', painter, self.center1, self.size1, -20, 220)
 
-        self.angles2 = self.draw_yaw_ticks(7, painter, self.center2, self.size2, 0.1, -10, 140)
+        self.angles2 = self.draw_yaw_ticks(7, painter, self.center2, self.size2, 0.2, -10, 140)
         self.draw_yaw_increments(painter, self.center2, self.size2, self.angles2, self.min_yaw, self.max_yaw)
-        self.draw_arc(f'YAW \n {self.yaw:.2f} deg', painter, self.center2, self.size2, -20, 150)
+        self.draw_arc('YAW \n', painter, self.center2, self.size2, -20, 150)
+
+    from PyQt5.QtGui import QConicalGradient
+
+    def draw_inner(self, painter: QPainter, center: QtCore.QPointF, size: QtCore.QSizeF, start_angle: int, span_angle: int) -> None:
+        s = size * 0.97
+        rect = QtCore.QRectF(
+            center.x() - s.width() / 2,
+            center.y() - s.height() / 2,
+            s.width(),
+            s.height()
+        )
+        gradient = QConicalGradient(center, start_angle - 5)
+        gradient.setColorAt(0.00, QColor(255, 0, 0))    # Red
+        gradient.setColorAt(0.33, QColor(255, 255, 0))  # Yellow
+        gradient.setColorAt(0.66, QColor(0, 255, 0))    # Green
+        painter.setPen(QPen(gradient, 4))
+        painter.drawArc(rect, start_angle * 16, span_angle * 16)
 
     def draw_arc(self, title: str, painter: QPainter, center: QtCore.QPointF, size: QtCore.QSizeF, start_angle: int, span_angle: int) -> None:
         rect = QtCore.QRectF(
@@ -66,12 +89,14 @@ class MeterWidget(QtWidgets.QWidget):
             size.width(),
             size.height()
         )
-        painter.setPen(QPen(QColor(0, 51, 204), 2))
+        painter.setPen(QPen(QtCore.Qt.lightGray, 3))
         painter.drawArc(rect, start_angle * 16, span_angle * 16)
+        self.draw_inner(painter, center, size, start_angle, span_angle)
 
         font = painter.font()
         font.setPointSize(10)
         font.setFamily("Arial")
+        font.setBold(True)
         painter.setFont(font)
         painter.setPen(QPen(QtCore.Qt.lightGray, 2))
 
@@ -163,13 +188,13 @@ class MeterWidget(QtWidgets.QWidget):
             angle_rad = math.radians(angle)
 
             outer_point = QtCore.QPointF(
-                center.x() + (radius_x * 0.8) * math.cos(angle_rad),
-                center.y() - (radius_y * 0.8) * math.sin(angle_rad)
+                center.x() + (radius_x * 0.7) * math.cos(angle_rad),
+                center.y() - (radius_y * 0.7) * math.sin(angle_rad)
             )
 
             outer_point_half = QtCore.QPointF(
-                center.x() + (radius_x * 0.85) * math.cos(angle_rad),
-                center.y() - (radius_y * 0.85) * math.sin(angle_rad)
+                center.x() + (radius_x * 0.80) * math.cos(angle_rad),
+                center.y() - (radius_y * 0.80) * math.sin(angle_rad)
             )
 
             outer_point_neg = QtCore.QPointF(
@@ -216,13 +241,13 @@ class MeterWidget(QtWidgets.QWidget):
             angle_rad = math.radians(angle)
 
             outer_point = QtCore.QPointF(
-                center.x() + (radius_x * 0.8) * math.cos(angle_rad),
-                center.y() - (radius_y * 0.8) * math.sin(angle_rad)
+                center.x() + (radius_x * 0.7) * math.cos(angle_rad),
+                center.y() - (radius_y * 0.7) * math.sin(angle_rad)
             )
 
             outer_point_neg = QtCore.QPointF(
-                center.x() + (radius_x * 0.7) * math.cos(angle_rad),
-                center.y() - (radius_y * 0.7) * math.sin(angle_rad)
+                center.x() + (radius_x * 0.6) * math.cos(angle_rad),
+                center.y() - (radius_y * 0.6) * math.sin(angle_rad)
             )
 
             x = outer_point_neg.x() if value < 0 else outer_point.x()
@@ -246,8 +271,8 @@ class MeterWidget(QtWidgets.QWidget):
         radius_y = size.height() / 2
         angle_rad = math.radians(angle)
         outer_point = QtCore.QPointF(
-            center.x() + (radius_x * 0.5) * math.cos(angle_rad),
-            center.y() - (radius_y * 0.5) * math.sin(angle_rad)
+            center.x() + (radius_x * 0.4) * math.cos(angle_rad),
+            center.y() - (radius_y * 0.4) * math.sin(angle_rad)
         )
 
         needle_width = 4
@@ -282,8 +307,8 @@ class MeterWidget(QtWidgets.QWidget):
         radius_y = size.height() / 2
         angle_rad = math.radians(angle)
         outer_point = QtCore.QPointF(
-            center.x() + (radius_x * 0.7) * math.cos(angle_rad),
-            center.y() - (radius_y * 0.7) * math.sin(angle_rad)
+            center.x() + (radius_x * 0.6) * math.cos(angle_rad),
+            center.y() - (radius_y * 0.6) * math.sin(angle_rad)
         )
 
         needle_width = 4
