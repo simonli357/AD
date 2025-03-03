@@ -7,8 +7,6 @@ class MeterWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setFixedWidth(310)
-        self.setFixedHeight(200)
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0
@@ -40,7 +38,6 @@ class MeterWidget(QtWidgets.QWidget):
     def paintEvent(self, event):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
-            self.draw_background(painter)
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
             self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.steer, self.min_steer, self.max_steer)

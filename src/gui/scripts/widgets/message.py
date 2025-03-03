@@ -10,17 +10,16 @@ class MessageWidget(QtWidgets.QWidget):
 
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignJustify)
         self.message_display = QtWidgets.QTextEdit()
         self.message_display.setReadOnly(True)
 
         self.message_display.setStyleSheet("""
             QTextEdit {
                 background-color: rgba(255, 255, 255, 0.08);
-                color: #00FF00;
-                margin: 12px;
                 font-family: 'Roboto';
-                font-size: 24px;
+                font-size: 20px;
+                color: white;
+                margin-left: 8px;
                 border-radius: 12px;
                 padding: 5px;
             }

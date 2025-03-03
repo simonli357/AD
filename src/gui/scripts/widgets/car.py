@@ -15,7 +15,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
-        self.setFixedWidth(310)
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -78,7 +77,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glClearColor(1.0, 1.0, 1.0, 0.05)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # Initialize grid VBO
         grid_size_z = 8
