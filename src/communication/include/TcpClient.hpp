@@ -32,9 +32,9 @@ class TcpClient {
 	TcpClient &operator=(TcpClient &&) = delete;
 	TcpClient &operator=(const TcpClient &) = delete;
 	~TcpClient();
-    // Fields
+	// Fields
 	bool tcp_can_send = false;
-    bool run_sent = false;
+	bool run_sent = false;
 	// Methods
 	void initialize();
 	// Storage
@@ -55,7 +55,8 @@ class TcpClient {
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);
-    void send_steer(float steer);
+	void send_steer(float steer);
+    void send_detected_obj(std::string &type, float x, float y);
 	void send_message(const String &msg);
 	void send_trigger(std_srvs::Trigger &trigger);
 	void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);

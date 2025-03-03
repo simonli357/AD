@@ -40,7 +40,7 @@ class ButtonsWidget(QtWidgets.QWidget):
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
+        self.layout.setAlignment(QtCore.Qt.AlignCenter)
         self.buttons = deque()
 
         self.start_btn = QtWidgets.QPushButton("")
@@ -64,11 +64,11 @@ class ButtonsWidget(QtWidgets.QWidget):
             QPushButton {
                 background-color: rgba(255, 255, 255, 0.08);
                 padding: 12px 36px 12px 32px;
-                margin-right: 12px;
                 color: white;
                 border: none;
                 border-radius: 8px;
                 font-size: 32px;
+                margin-left: 10px;
             }
             QPushButton:hover {
                 background-color: #9933ff;
@@ -86,8 +86,10 @@ class ButtonsWidget(QtWidgets.QWidget):
             QLabel {
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
-                color: #00FF00;  /* Neon green text */
+                color: white;
                 font-size: 28px;
+                margin-right: 10px;
+                margin-left: 10px;
             }
         """)
 

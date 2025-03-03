@@ -25,20 +25,19 @@ class MeterWidget(QtWidgets.QWidget):
 
     def set_speed(self, speed: float) -> None:
         self.speed = max(self.min_speed, min(speed, self.max_speed))
-        self.update()
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
-        self.update()
 
     def set_yaw(self, yaw: float) -> None:
         self.yaw = max(self.min_yaw, min(yaw, self.max_yaw))
+
+    def render_widget(self) -> None:
         self.update()
 
     def paintEvent(self, event):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
-            self.draw_background(painter)
             self.draw_meters(painter)
             self.draw_needle_left(painter, self.center1, self.size1, self.angles1, self.speed, self.min_speed, self.max_speed)
             self.draw_needle_right(painter, self.center2, self.size2, self.angles2, self.steer, self.min_steer, self.max_steer)
@@ -51,7 +50,7 @@ class MeterWidget(QtWidgets.QWidget):
         widget_width = self.width()
         widget_height = self.height()
         min_length = min(widget_width, widget_height)
-        main_radius = min_length
+        main_radius = min_length - 25
         secondary_radius = main_radius / 1.35
         center1_y = min_length / 1.75
         center2_y = center1_y + ((main_radius - secondary_radius)) / 4

@@ -1,5 +1,6 @@
 #include "TcpClient.hpp"
 #include <ros/ros.h>
+#include "msg/ObjectMsg.hpp"
 #include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
 #include "msg/TriggerMsg.hpp"
@@ -90,6 +91,7 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x05); // RGB Images
 	udp_data_types.push_back(0x06); // Depth Images
     udp_data_types.push_back(0x07); // Steer
+    udp_data_types.push_back(0x08); // Objects
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -404,6 +406,15 @@ void TcpClient::send_steer(float steer) {
 	std::memcpy(bytes.data() + header_size, &steer, length);
 	
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_detected_obj(std::string &type, float x, float y) {
+	std::vector<uint8_t> bytes = ObjectMsg(type, x, y).serialize(udp_data_types[7]);
+
+	std::vector<uint8_t> segment(MAX_DGRAM, 0);
+    std::memcpy(segment.data(), bytes.data(), bytes.size());
+
+    sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
