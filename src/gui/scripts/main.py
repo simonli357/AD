@@ -75,13 +75,20 @@ class MainWindow(QMainWindow):
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
-        root_layout = QVBoxLayout(root_widget)
+        root_layout = QHBoxLayout(root_widget)
 
         left_widgets = QWidget()
-        self.left_layout = QHBoxLayout(left_widgets)
+        self.left_layout = QVBoxLayout(left_widgets)
         self.left_layout.setAlignment(QtCore.Qt.AlignJustify)
-        self.left_layout.addWidget(self.opt_widget)
-        self.left_layout.addWidget(self.map_widget)
+
+        top_widgets = QWidget()
+        self.top_layout = QHBoxLayout(top_widgets)
+        self.top_layout.setAlignment(QtCore.Qt.AlignJustify)
+        self.top_layout.addWidget(self.opt_widget)
+        self.top_layout.addWidget(self.map_widget)
+
+        self.left_layout.addWidget(top_widgets)
+        self.left_layout.addWidget(self.msg_widget)
 
         right_widgets = QWidget()
         stat_widgets = QWidget()
@@ -96,14 +103,8 @@ class MainWindow(QMainWindow):
         self.stat_layout.addWidget(self.car_widget)
         self.right_layout.addWidget(stat_widgets)
 
-        top_widgets = QWidget()
-        self.top_layout = QHBoxLayout(top_widgets)
-        self.top_layout.setAlignment(QtCore.Qt.AlignJustify)
-        self.top_layout.addWidget(left_widgets)
-        self.top_layout.addWidget(right_widgets)
-
-        root_layout.addWidget(top_widgets)
-        root_layout.addWidget(self.msg_widget)
+        root_layout.addWidget(left_widgets)
+        root_layout.addWidget(right_widgets)
 
         self.msg_widget.add_message("BFMC DASHBOARD INITIALIZED")
 

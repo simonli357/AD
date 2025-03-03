@@ -558,6 +558,7 @@ public:
         auto estimated_sign_pose = utils.object_world_pose(sign_idx);
         double x = estimated_sign_pose[0];
         double y = estimated_sign_pose[1];
+        utils.tcp_client->send_detected_obj("sign", x, y);
         int closest_idx = path_manager.closest_waypoint_index;
         int num_index = static_cast<int>(search_dist * path_manager.density);
         double min_dist_sq = std::numeric_limits<double>::max();
@@ -1137,6 +1138,7 @@ public:
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
+                utils.tcp_client->send_detected_obj("car", car_pose.x(), car_pose.y());
                 // auto car_pose = utils.detected_cars[car_index];
                 // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;

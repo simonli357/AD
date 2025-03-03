@@ -16,7 +16,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.setFixedWidth(310)
-        self.setFixedHeight(200)
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -73,8 +72,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(1.0, 1.0, 1.0, 0.05)
 
         # Initialize grid VBO
-        grid_size = 6
-        step = 2
+        grid_size = 5
+        step = 1
         grid_vertices = []
         for z in range(-grid_size, grid_size + 1, step):
             grid_vertices.extend([-grid_size, 0, z, grid_size, 0, z])
@@ -98,7 +97,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 12, 12, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 13, 13, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -106,7 +105,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw car model
         if self.model:
             gl.glPushMatrix()
-            gl.glScalef(-1.0, 1.0, -1.0)
+            gl.glScalef(0.5, 0.5, -0.5)
+            gl.glTranslatef(0, -5, 0)
             gl.glRotatef(-self.steer, 0, 1, 0)
             self.draw_model()
             gl.glPopMatrix()
@@ -230,16 +230,16 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glDisable(gl.GL_DEPTH_TEST)
 
         gl.glBegin(gl.GL_LINES)
-        # Z-axis (Blue)
-        gl.glColor3f(0, 0, 1)
+        # Z-axis (Red)
+        gl.glColor3f(1, 0, 0)
         gl.glVertex2f(0, 0)
         gl.glVertex2f(-1, 0.0)
-        # Y-axis (Green)
-        gl.glColor3f(0, 1, 0)
+        # Y-axis (Blue)
+        gl.glColor3f(0, 0, 1)
         gl.glVertex2f(0, 0)
         gl.glVertex2f(0, -1)
-        # X-axis (Red)
-        gl.glColor3f(1, 0, 0)
+        # X-axis (Green)
+        gl.glColor3f(0, 1, 0)
         gl.glVertex2f(0, 0)
         gl.glVertex2f(0.5, 0.7)
         gl.glEnd()
