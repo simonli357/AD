@@ -6,7 +6,7 @@
 class ObjectMsg : public Encoder {
   public:
 	ObjectMsg();
-	ObjectMsg(const std::string &type, float x, float y);
+	ObjectMsg(std::string &type, float x, float y);
 	ObjectMsg(ObjectMsg &&) = default;
 	ObjectMsg(const ObjectMsg &) = default;
 	ObjectMsg &operator=(ObjectMsg &&) = delete;

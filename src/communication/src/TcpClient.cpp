@@ -408,7 +408,7 @@ void TcpClient::send_steer(float steer) {
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
-void TcpClient::send_detected_obj(const std::string &type, float x, float y) {
+void TcpClient::send_detected_obj(std::string &type, float x, float y) {
 	std::vector<uint8_t> bytes = ObjectMsg(type, x, y).serialize(udp_data_types[7]);
 
 	std::vector<uint8_t> segment(MAX_DGRAM, 0);

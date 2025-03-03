@@ -4,7 +4,7 @@ from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 import numpy as np
-from collections import namedtuple
+from collections import namedtuple, deque
 import os
 
 Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
@@ -28,11 +28,17 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.z_pos = 0
         self.grid_vbo = None
         self.model = None
+        self.car_model = None
+        self.sign_model = None
+        self.objects = deque()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        sign_model_path = os.path.join(current_dir, 'assets', 'stop.obj')
         if os.path.exists(model_path):
             self.model = self.load_obj(model_path)
+        if os.path.exists(sign_model_path):
+            self.sign_model = self.load_obj(sign_model_path)
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
@@ -42,6 +48,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
+
+    def add_object(self, obj) -> None:
+        self.objects.append(obj)
 
     def render_widget(self) -> None:
         self.update()
@@ -72,13 +81,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(1.0, 1.0, 1.0, 0.05)
 
         # Initialize grid VBO
-        grid_size = 5
+        grid_size_z = 8
+        grid_size_x = 4
         step = 1
         grid_vertices = []
-        for z in range(-grid_size, grid_size + 1, step):
-            grid_vertices.extend([-grid_size, 0, z, grid_size, 0, z])
-        for x in range(-grid_size, grid_size + 1, step):
-            grid_vertices.extend([x, 0, -grid_size, x, 0, grid_size])
+        for z in range(-grid_size_z, grid_size_z + 1, step):
+            grid_vertices.extend([-grid_size_x, 0, z, grid_size_x, 0, z])
+        for x in range(-grid_size_x, grid_size_x + 1, step):
+            grid_vertices.extend([x, 0, -grid_size_z, x, 0, grid_size_z])
 
         self.grid_vbo = vbo.VBO(np.array(grid_vertices, dtype=np.float32))
         self.grid_vertex_count = len(grid_vertices) // 3
@@ -97,7 +107,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 13, 13, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 15, 15, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -107,9 +117,12 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             gl.glPushMatrix()
             gl.glScalef(0.5, 0.5, -0.5)
             gl.glTranslatef(0, -5, 0)
-            gl.glRotatef(-self.steer, 0, 1, 0)
+            gl.glRotatef(self.steer, 0, 1, 0)
             self.draw_model()
             gl.glPopMatrix()
+
+        # Draw detected objects if any
+        self.draw_detected_object()
 
         # Draw axes overlay
         self.draw_axes()
@@ -187,6 +200,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
+        gl.glTranslatef(0, 2, 0)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
@@ -210,6 +224,63 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.model.vbo.unbind()
 
         gl.glDisable(gl.GL_BLEND)
+
+    def draw_car(self):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(1, 0, 0, 1.0)
+        gl.glLineWidth(0.01)
+
+        self.model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
+
+    def draw_sign(self):
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(1, 1, 0, 1.0)
+        gl.glLineWidth(0.01)
+
+        self.sign_model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.sign_model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
+
+    def draw_detected_object(self):
+        if len(self.objects) == 0:
+            return
+        obj = self.objects.popleft()
+        obj_type = obj.obj_type
+        if obj_type == "car":
+            x = obj.y * 8
+            y = obj.x * 8
+            if self.model:
+                gl.glPushMatrix()
+                gl.glScalef(0.5, 0.5, -0.5)
+                gl.glTranslatef(-x, 0, y)
+                self.draw_car()
+                gl.glPopMatrix()
+        elif obj_type == "sign":
+            x = obj.y * 100
+            y = obj.x * 100
+            if self.sign_model:
+                gl.glPushMatrix()
+                gl.glScalef(-0.03, 0.03, 0.03)
+                gl.glRotatef(210, 0, 1, 0)
+                gl.glTranslatef(-x, 0, y)
+                self.draw_sign()
+                gl.glPopMatrix()
 
     def draw_axes(self):
         gl.glPushAttrib(gl.GL_ENABLE_BIT)
