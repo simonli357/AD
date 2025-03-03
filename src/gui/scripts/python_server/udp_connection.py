@@ -34,7 +34,7 @@ class UdpConnection:
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
             self.steer_buf = deque([], 1)
-            self.object_buf = deque()
+            self.object_buf = deque([], 60)
             threading.Thread(target=self.receive, daemon=True).start()
 
     def receive(self):
