@@ -262,8 +262,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         obj = self.objects.popleft()
         obj_type = obj.obj_type
         if obj_type == "car":
-            x = obj.y * 8
-            y = obj.x * 8
+            x = obj.y * 12
+            y = obj.x * 12
             if self.model:
                 gl.glPushMatrix()
                 gl.glScalef(0.5, 0.5, -0.5)
@@ -271,8 +271,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 self.draw_car()
                 gl.glPopMatrix()
         elif obj_type == "sign":
-            x = obj.y * 100
-            y = obj.x * 100
+            x = obj.y * 150
+            y = obj.x * 150
             if self.sign_model:
                 gl.glPushMatrix()
                 gl.glScalef(-0.03, 0.03, 0.03)
@@ -311,7 +311,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # X-axis (Green)
         gl.glColor3f(0, 1, 0)
         gl.glVertex2f(0, 0)
-        gl.glVertex2f(0.5, 0.7)
+        gl.glVertex2f(-0.5, -0.5)
         gl.glEnd()
 
         gl.glMatrixMode(gl.GL_PROJECTION)

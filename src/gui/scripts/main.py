@@ -18,6 +18,7 @@ from widgets.map import MapWidget
 from widgets.camera import CameraWidget
 from widgets.message import MessageWidget
 from widgets.car import CarWidget
+from widgets.objects import ObjectWidget
 
 from std_srvs.srv import TriggerRequest
 
@@ -58,6 +59,7 @@ class MainWindow(QMainWindow):
         self.msg_widget = MessageWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
+        self.object_widget = ObjectWidget(self)
 
         self.comm.message_signal.connect(self.msg_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -71,9 +73,11 @@ class MainWindow(QMainWindow):
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.steer_signal.connect(self.meter_widget.set_steer)
         self.comm.obj_signal.connect(self.car_widget.add_object)
+        self.comm.obj_signal.connect(self.object_widget.add_object)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.object_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -102,7 +106,7 @@ class MainWindow(QMainWindow):
         self.left_wrapper_layout = QVBoxLayout(left_wrapper)
         self.left_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
         self.left_wrapper_layout.addWidget(self.meter_widget)
-        self.left_wrapper_layout.addStretch()
+        self.left_wrapper_layout.addWidget(self.object_widget)
         self.right_wrapper_layout = QVBoxLayout(right_wrapper)
         self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
         self.right_wrapper_layout.addWidget(self.car_widget)
