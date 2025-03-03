@@ -15,7 +15,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.started = False
         self.start_time = None
         self.accumulated_centiseconds = 0
-        self.timer_label = QLabel(f' 00:00:<font size="1">00</font>')
+        self.timer_label = QLabel(' 00:00:<font size="1">00</font>')
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
@@ -179,12 +179,9 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.toggle_start_icon()
 
     def handle_stop_click(self) -> None:
-        self.call_start_service(False)
-        self.started = False
         self.time_timer.stop()
         self.start_time = None
-        self.timer_label.setText(f' 00:00:<font size="1">00</font>')
-        self.toggle_start_icon()
+        self.timer_label.setText(' 00:00:<font size="1">00</font>')
 
     def handle_goto_click(self) -> None:
         print("Planning Path")
