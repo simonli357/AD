@@ -562,6 +562,7 @@ class CustomGraphicsView(QGraphicsView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setMinimumHeight(850)
         self.setRenderHints(
             QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
         )

@@ -25,14 +25,14 @@ class MeterWidget(QtWidgets.QWidget):
 
     def set_speed(self, speed: float) -> None:
         self.speed = max(self.min_speed, min(speed, self.max_speed))
-        self.update()
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
-        self.update()
 
     def set_yaw(self, yaw: float) -> None:
         self.yaw = max(self.min_yaw, min(yaw, self.max_yaw))
+
+    def render_widget(self) -> None:
         self.update()
 
     def paintEvent(self, event):

@@ -33,6 +33,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if os.path.exists(model_path):
             self.model = self.load_obj(model_path)
 
+    def set_steer(self, steer: float) -> None:
+        self.steer = steer
+
+    def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
+        self.yaw = yaw
+        self.x_pos = x
+        self.y_pos = y
+        self.z_pos = z
+
+    def render_widget(self) -> None:
+        self.update()
+
     def load_obj(self, model_path) -> Model:
         vertices = []
         faces = []
@@ -236,17 +248,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPopMatrix()
         gl.glPopAttrib()
         gl.glEnable(gl.GL_DEPTH_TEST)
-
-    def set_steer(self, steer: float) -> None:
-        self.steer = steer
-        self.update()
-
-    def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
-        self.yaw = yaw
-        self.x_pos = x
-        self.y_pos = y
-        self.z_pos = z
-        self.update()
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
