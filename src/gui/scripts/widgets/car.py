@@ -15,6 +15,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.setFixedWidth(310)
+        self.setFixedHeight(200)
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
