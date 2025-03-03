@@ -133,6 +133,9 @@ class OptionsWidget(QtWidgets.QWidget):
             QPushButton {{
                 background-color: {color};
             }}
+            QPushButton:hover {{
+                background-color: #9933ff;
+            }}
         """)
 
     def handle_sign_btn_click(self) -> None:

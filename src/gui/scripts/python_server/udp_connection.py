@@ -5,7 +5,6 @@ import cv2
 from collections import OrderedDict, deque
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
-from python_server.msg.object_msg import ObjectMsg
 
 import struct
 
@@ -24,17 +23,15 @@ class UdpConnection:
                 5: self.store_rgb_image,
                 6: self.store_depth_image,
                 7: self.store_steer,
-                8: self.store_object
             })
             self.types = list(self.data_actions.keys())
             self.lane2_buf = deque([], 1)
             self.road_object_buf = deque([], 1)
             self.waypoint_buf = deque([], 1)
-            self.sign_buf = deque([], 1)
+            self.sign_buf = deque([], 60)
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
             self.steer_buf = deque([], 1)
-            self.object_buf = deque([], 60)
             threading.Thread(target=self.receive, daemon=True).start()
 
     def receive(self):
@@ -76,9 +73,6 @@ class UdpConnection:
     def store_steer(self, bytes):
         self.steer_buf.append(bytes)
 
-    def store_object(self, bytes):
-        self.object_buf.append(bytes)
-
     ####################
     # Utility methods
     ####################
@@ -113,7 +107,7 @@ class UdpConnection:
     def parse_sign(self):
         try:
             if len(self.sign_buf) > 0:
-                return Float32MultiArray().deserialize(self.sign_buf[0])
+                return Float32MultiArray().deserialize(self.sign_buf.popleft())
             return None
         except Exception as e:
             print(e)
@@ -149,16 +143,6 @@ class UdpConnection:
             if len(self.steer_buf) > 0:
                 bytes = self.steer_buf[0]
                 return struct.unpack('f', bytes[:4])[0]
-            return None
-        except Exception as e:
-            print(e)
-            return None
-
-    def parse_object(self):
-        try:
-            if len(self.object_buf) > 0:
-                bytes = self.object_buf.popleft()
-                return ObjectMsg('b\x08').decode(bytes)
             return None
         except Exception as e:
             print(e)

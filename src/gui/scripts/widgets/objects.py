@@ -2,12 +2,19 @@ from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5 import QtCore, QtWidgets
 from collections import deque
 
+import numpy as np
+
 
 class ObjectWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.objects = deque()
+        self.main_window = self.parent()
+
+        self.obj_dict = self.main_window.map_widget.object_dict
+        self.rev_obj_dict = self.main_window.map_widget.reverse_object_dict
+
+        self.objects = deque([], 60)
         # Real-world extents (meters)
         self.x_min, self.x_max = -1.5, 1.5  # X-axis range
         self.y_min, self.y_max = -1.5, 1.5  # Y-axis range
@@ -74,10 +81,12 @@ class ObjectWidget(QtWidgets.QWidget):
                              pixels_per_meter_x: float, pixels_per_meter_y: float):
         if not self.objects:
             return
-        obj = self.objects.popleft()  # Note: Consider using a different data structure if all objects should be drawn
+        obj = np.array(self.objects.popleft().data)
         # Convert real-world coordinates to widget coordinates
-        widget_x = mid_w - obj.y * pixels_per_meter_x
-        widget_y = mid_h - obj.x * pixels_per_meter_y
+        if len(obj) < 8:
+            return
+        widget_x = mid_w - obj[8] * pixels_per_meter_x
+        widget_y = mid_h - obj[7] * pixels_per_meter_y
 
         painter.setPen(QPen(QColor(0, 255, 255), 5))
         painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
@@ -90,4 +99,4 @@ class ObjectWidget(QtWidgets.QWidget):
         )
 
         painter.setPen(QPen(QtCore.Qt.yellow, 2))
-        painter.drawText(text_rec, QtCore.Qt.AlignCenter, f"x: {obj.x:.2f} \n y: {-obj.y:.2f}")
+        painter.drawText(text_rec, QtCore.Qt.AlignCenter, f"x: {obj[7]:.2f} \n y: {obj[8]:.2f}")
