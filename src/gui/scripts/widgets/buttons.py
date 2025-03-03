@@ -15,7 +15,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.started = False
         self.start_time = None
         self.accumulated_centiseconds = 0
-        self.timer_label = QLabel(f' 00:00:<font size="1">00</font>')
+        self.timer_label = QLabel(' 00:00:<font size="1">00</font>')
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
@@ -93,6 +93,20 @@ class ButtonsWidget(QtWidgets.QWidget):
             }
         """)
 
+        self.update_button_style(self.start_btn, self.started)
+
+    def update_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "#FF0000" if is_active else "rgba(0, 255, 0, 1.0);"  # Light green/red
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: #9933ff;
+            }}
+        """)
+
     def connect_signals(self) -> None:
         self.stop_btn.clicked.connect(self.handle_stop_click)
         self.start_btn.clicked.connect(self.handle_start_click)
@@ -103,6 +117,7 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
+        self.update_button_style(self.start_btn, self.started)
 
     def call_start_service(self, start) -> None:
         try:
@@ -164,13 +179,13 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.toggle_start_icon()
 
     def handle_stop_click(self) -> None:
-        self.call_start_service(False)
-        self.started = False
         self.time_timer.stop()
         self.start_time = None
-        self.timer_label.setText(f' 00:00:<font size="1">00</font>')
-        self.toggle_start_icon()
+        self.timer_label.setText(' 00:00:<font size="1">00</font>')
 
     def handle_goto_click(self) -> None:
         print("Planning Path")
-        self.call_goto_service(self.main_window.map_widget.cursor_coords)
+        if self.main_window.map_widget.cursor_coords:
+            self.call_goto_service(self.main_window.map_widget.cursor_coords)
+        else:
+            print("Not a valid destination")

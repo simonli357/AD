@@ -245,7 +245,7 @@
   <param name="/is_real" value="$(arg real)"/>
   <arg name="pub" default="true"/>
   <arg name="ncnn" default="false"/>
-  <arg name="newlane" default="true"/>
+  <arg name="newlane" default="false"/>
   <arg name="realsense" default="false"/>
   <arg name="camera_rate" default="50"/>
   <arg name="lane_rate" default="100"/>

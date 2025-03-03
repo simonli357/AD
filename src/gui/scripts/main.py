@@ -4,6 +4,8 @@ import sys
 import os
 import time
 import threading
+import signal
+import sys
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -34,13 +36,13 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
-    obj_signal = pyqtSignal(object)
     render_widget_signal = pyqtSignal()
 
 
 class MainWindow(QMainWindow):
     def __init__(self, server):
         super().__init__()
+        signal.signal(signal.SIGINT, self.handle_signal)
         self.server = server
         self.comm = CommunicationHandler()
 
@@ -72,8 +74,8 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.steer_signal.connect(self.meter_widget.set_steer)
-        self.comm.obj_signal.connect(self.car_widget.add_object)
-        self.comm.obj_signal.connect(self.object_widget.add_object)
+        self.comm.sign_signal.connect(self.car_widget.add_object)
+        self.comm.sign_signal.connect(self.object_widget.add_object)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
@@ -119,9 +121,12 @@ class MainWindow(QMainWindow):
 
         self.msg_widget.add_message("BFMC DASHBOARD INITIALIZED")
 
-        threading.Thread(target=self.udp_callbacks, args=(), daemon=True).start()
-        threading.Thread(target=self.tcp_callbacks, args=(), daemon=True).start()
-        threading.Thread(target=self.render_callbacks, args=(), daemon=True).start()
+        self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
+        self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
+        self.render_thread = threading.Thread(target=self.render_callbacks, args=(), daemon=True)
+        self.udp_thread.start()
+        self.tcp_thread.start()
+        self.render_thread.start()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -171,7 +176,6 @@ class MainWindow(QMainWindow):
             road_obj = self.server.udp_connection.parse_road_object()
             lane2 = self.server.udp_connection.parse_lane2()
             steer = self.server.udp_connection.parse_steer()
-            detected_object = self.server.udp_connection.parse_object()
 
             if rgb_image is not None:
                 self.comm.camera_frame_signal.emit(rgb_image)
@@ -187,14 +191,21 @@ class MainWindow(QMainWindow):
                 self.comm.sign_signal.emit(sign)
             if steer is not None:
                 self.comm.steer_signal.emit(steer)
-            if detected_object is not None:
-                self.comm.obj_signal.emit(detected_object)
             time.sleep(0.016)
 
     def render_callbacks(self) -> None:
         while True:
             self.comm.render_widget_signal.emit()
             time.sleep(0.016)
+
+    def handle_signal(self, signal, frame):
+        print("Caught SIGINT (Ctrl+C), closing sockets...")
+        self.close()
+        if self.server.tcp_socket:
+            self.server.tcp_socket.close()
+            self.server.udp_socket.close()
+        print("sockets closed")
+        sys.exit(0)
 
 
 if __name__ == '__main__':

@@ -363,14 +363,6 @@ class SignFastest {
                 sign_msg.data.push_back(object_pose_body_frame[0]);
                 sign_msg.data.push_back(object_pose_body_frame[1]);
                 sign_msg.data.push_back(object_pose_body_frame[2]);
-                if (is_car) {
-                    std::string type = "car";
-                    tcp_client->send_detected_obj(type, object_pose_body_frame[0], object_pose_body_frame[1]);
-                } else {
-                    std::string type = "sign";
-                    tcp_client->send_detected_obj(type, object_pose_body_frame[0], object_pose_body_frame[1]);
-                }
-
                 return 1;
             }
             return 0;

@@ -15,6 +15,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.main_window = self.parent()
+        self.detected_objects = self.main_window.map_widget.detected_objects
+        self.obj_dict = self.main_window.map_widget.object_dict
+        self.rev_obj_dict = self.main_window.map_widget.reverse_object_dict
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -29,7 +33,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.model = None
         self.car_model = None
         self.sign_model = None
-        self.objects = deque()
+        self.objects = deque([], 60)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(current_dir, 'assets', 'car.obj')
@@ -259,27 +263,28 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_object(self):
         if len(self.objects) == 0:
             return
-        obj = self.objects.popleft()
-        obj_type = obj.obj_type
-        if obj_type == "car":
-            x = obj.y * 12
-            y = obj.x * 12
-            if self.model:
-                gl.glPushMatrix()
-                gl.glScalef(0.5, 0.5, -0.5)
-                gl.glTranslatef(-x, 0, y)
-                self.draw_car()
-                gl.glPopMatrix()
-        elif obj_type == "sign":
-            x = obj.y * 150
-            y = obj.x * 150
-            if self.sign_model:
-                gl.glPushMatrix()
-                gl.glScalef(-0.03, 0.03, 0.03)
-                gl.glRotatef(210, 0, 1, 0)
-                gl.glTranslatef(-x, 0, y)
-                self.draw_sign()
-                gl.glPopMatrix()
+        obj = np.array(self.objects.popleft().data)
+        for i in range(1, len(obj)):
+            obj_type = obj[6]
+            if self.obj_dict[obj_type] == 'Car':
+                x = obj[8] * 12
+                y = obj[7] * 12
+                if self.model:
+                    gl.glPushMatrix()
+                    gl.glScalef(0.5, 0.5, -0.5)
+                    gl.glTranslatef(-x, 0, y)
+                    self.draw_car()
+                    gl.glPopMatrix()
+            elif self.obj_dict[obj_type] == 'Stopsign':
+                x = obj[8] * 150
+                y = obj[7] * 150
+                if self.sign_model:
+                    gl.glPushMatrix()
+                    gl.glScalef(-0.03, 0.03, 0.03)
+                    gl.glRotatef(210, 0, 1, 0)
+                    gl.glTranslatef(-x, 0, y)
+                    self.draw_sign()
+                    gl.glPopMatrix()
 
     def draw_axes(self):
         gl.glPushAttrib(gl.GL_ENABLE_BIT)
