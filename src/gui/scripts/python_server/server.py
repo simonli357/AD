@@ -10,6 +10,7 @@ class Server:
         self.tcp_port = 49153
         self.udp_port = 49154
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.utility_node_client = TcpConnection()
         self.sign_node_client = TcpConnection()
@@ -19,7 +20,7 @@ class Server:
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
-        self.tcp_socket.bind(('', self.tcp_port))
+        self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
         self.tcp_socket.listen(2)
         listener = threading.Thread(target=self.listen, daemon=True)
         listener.start()
