@@ -1,6 +1,4 @@
 import socket
-import signal
-import sys
 import struct
 import threading
 from python_server.tcp_connection import TcpConnection
@@ -16,25 +14,20 @@ class Server:
         self.utility_node_client = TcpConnection()
         self.sign_node_client = TcpConnection()
         self.udp_connection = UdpConnection(self.udp_socket)
+        self.alive = True
+        self.listener = None
 
     def initialize(self):
-        signal.signal(signal.SIGINT, self.handle_signal)
         self.udp_socket.bind(('', self.udp_port))
         self.tcp_socket.bind(('', self.tcp_port))
         self.tcp_socket.listen(2)
-        threading.Thread(target=self.listen, daemon=True).start()
+        listener = threading.Thread(target=self.listen, daemon=True)
+        listener.start()
 
     def listen(self):
-        while True:
+        while self.alive:
             client_tcp_socket, _ = self.tcp_socket.accept()
             threading.Thread(target=self.process_client, args=(client_tcp_socket,), daemon=True).start()
-
-    def handle_signal(self, signal, frame):
-        print("Caught SIGINT (Ctrl+C), closing sockets...")
-        if self.tcp_socket:
-            self.tcp_socket.close()
-            self.udp_socket.close()
-        sys.exit(0)
 
     def get_client_type(self, socket):
         header_size = 5
