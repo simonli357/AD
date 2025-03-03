@@ -21,7 +21,7 @@ class Optimizer(object):
     def __init__(self, x0 = None):
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
-        name = 'run107'
+        name = 'run132'
         self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
         self.waypoints_x_global = self.path.waypoints_x
         self.waypoints_y_global = self.path.waypoints_y

@@ -19,7 +19,7 @@ import argparse
 
 class Optimizer(object):
     def __init__(self, name = None, x0 = None):
-        self.configuration = '25beta'
+        self.configuration = '32beta'
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
         if name is None:
@@ -374,7 +374,7 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    mpc = Optimizer('run136')
+    mpc = Optimizer('run132')
     
     mpc.target_waypoint_index = 0
     maxiter = 4000

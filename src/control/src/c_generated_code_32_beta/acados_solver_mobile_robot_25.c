@@ -38,84 +38,83 @@
 #include "acados_c/external_function_interface.h"
 
 // example specific
-#include "mobile_robot_32_beta_model/mobile_robot_32_beta_model.h"
-#include "mobile_robot_32_beta_cost/mobile_robot_32_beta_cost.h"
+#include "mobile_robot_25_model/mobile_robot_25_model.h"
 
 
 
-#include "acados_solver_mobile_robot_32_beta.h"
+#include "acados_solver_mobile_robot_25.h"
 
-#define NX     MOBILE_ROBOT_32_BETA_NX
-#define NZ     MOBILE_ROBOT_32_BETA_NZ
-#define NU     MOBILE_ROBOT_32_BETA_NU
-#define NP     MOBILE_ROBOT_32_BETA_NP
-#define NY0    MOBILE_ROBOT_32_BETA_NY0
-#define NY     MOBILE_ROBOT_32_BETA_NY
-#define NYN    MOBILE_ROBOT_32_BETA_NYN
+#define NX     MOBILE_ROBOT_25_NX
+#define NZ     MOBILE_ROBOT_25_NZ
+#define NU     MOBILE_ROBOT_25_NU
+#define NP     MOBILE_ROBOT_25_NP
+#define NY0    MOBILE_ROBOT_25_NY0
+#define NY     MOBILE_ROBOT_25_NY
+#define NYN    MOBILE_ROBOT_25_NYN
 
-#define NBX    MOBILE_ROBOT_32_BETA_NBX
-#define NBX0   MOBILE_ROBOT_32_BETA_NBX0
-#define NBU    MOBILE_ROBOT_32_BETA_NBU
-#define NG     MOBILE_ROBOT_32_BETA_NG
-#define NBXN   MOBILE_ROBOT_32_BETA_NBXN
-#define NGN    MOBILE_ROBOT_32_BETA_NGN
+#define NBX    MOBILE_ROBOT_25_NBX
+#define NBX0   MOBILE_ROBOT_25_NBX0
+#define NBU    MOBILE_ROBOT_25_NBU
+#define NG     MOBILE_ROBOT_25_NG
+#define NBXN   MOBILE_ROBOT_25_NBXN
+#define NGN    MOBILE_ROBOT_25_NGN
 
-#define NH     MOBILE_ROBOT_32_BETA_NH
-#define NHN    MOBILE_ROBOT_32_BETA_NHN
-#define NH0    MOBILE_ROBOT_32_BETA_NH0
-#define NPHI   MOBILE_ROBOT_32_BETA_NPHI
-#define NPHIN  MOBILE_ROBOT_32_BETA_NPHIN
-#define NPHI0  MOBILE_ROBOT_32_BETA_NPHI0
-#define NR     MOBILE_ROBOT_32_BETA_NR
+#define NH     MOBILE_ROBOT_25_NH
+#define NHN    MOBILE_ROBOT_25_NHN
+#define NH0    MOBILE_ROBOT_25_NH0
+#define NPHI   MOBILE_ROBOT_25_NPHI
+#define NPHIN  MOBILE_ROBOT_25_NPHIN
+#define NPHI0  MOBILE_ROBOT_25_NPHI0
+#define NR     MOBILE_ROBOT_25_NR
 
-#define NS     MOBILE_ROBOT_32_BETA_NS
-#define NS0    MOBILE_ROBOT_32_BETA_NS0
-#define NSN    MOBILE_ROBOT_32_BETA_NSN
+#define NS     MOBILE_ROBOT_25_NS
+#define NS0    MOBILE_ROBOT_25_NS0
+#define NSN    MOBILE_ROBOT_25_NSN
 
-#define NSBX   MOBILE_ROBOT_32_BETA_NSBX
-#define NSBU   MOBILE_ROBOT_32_BETA_NSBU
-#define NSH0   MOBILE_ROBOT_32_BETA_NSH0
-#define NSH    MOBILE_ROBOT_32_BETA_NSH
-#define NSHN   MOBILE_ROBOT_32_BETA_NSHN
-#define NSG    MOBILE_ROBOT_32_BETA_NSG
-#define NSPHI0 MOBILE_ROBOT_32_BETA_NSPHI0
-#define NSPHI  MOBILE_ROBOT_32_BETA_NSPHI
-#define NSPHIN MOBILE_ROBOT_32_BETA_NSPHIN
-#define NSGN   MOBILE_ROBOT_32_BETA_NSGN
-#define NSBXN  MOBILE_ROBOT_32_BETA_NSBXN
+#define NSBX   MOBILE_ROBOT_25_NSBX
+#define NSBU   MOBILE_ROBOT_25_NSBU
+#define NSH0   MOBILE_ROBOT_25_NSH0
+#define NSH    MOBILE_ROBOT_25_NSH
+#define NSHN   MOBILE_ROBOT_25_NSHN
+#define NSG    MOBILE_ROBOT_25_NSG
+#define NSPHI0 MOBILE_ROBOT_25_NSPHI0
+#define NSPHI  MOBILE_ROBOT_25_NSPHI
+#define NSPHIN MOBILE_ROBOT_25_NSPHIN
+#define NSGN   MOBILE_ROBOT_25_NSGN
+#define NSBXN  MOBILE_ROBOT_25_NSBXN
 
 
 
 // ** solver data **
 
-mobile_robot_32_beta_solver_capsule * mobile_robot_32_beta_acados_create_capsule(void)
+mobile_robot_25_solver_capsule * mobile_robot_25_acados_create_capsule(void)
 {
-    void* capsule_mem = malloc(sizeof(mobile_robot_32_beta_solver_capsule));
-    mobile_robot_32_beta_solver_capsule *capsule = (mobile_robot_32_beta_solver_capsule *) capsule_mem;
+    void* capsule_mem = malloc(sizeof(mobile_robot_25_solver_capsule));
+    mobile_robot_25_solver_capsule *capsule = (mobile_robot_25_solver_capsule *) capsule_mem;
 
     return capsule;
 }
 
 
-int mobile_robot_32_beta_acados_free_capsule(mobile_robot_32_beta_solver_capsule *capsule)
+int mobile_robot_25_acados_free_capsule(mobile_robot_25_solver_capsule *capsule)
 {
     free(capsule);
     return 0;
 }
 
 
-int mobile_robot_32_beta_acados_create(mobile_robot_32_beta_solver_capsule* capsule)
+int mobile_robot_25_acados_create(mobile_robot_25_solver_capsule* capsule)
 {
-    int N_shooting_intervals = MOBILE_ROBOT_32_BETA_N;
+    int N_shooting_intervals = MOBILE_ROBOT_25_N;
     double* new_time_steps = NULL; // NULL -> don't alter the code generated time-steps
-    return mobile_robot_32_beta_acados_create_with_discretization(capsule, N_shooting_intervals, new_time_steps);
+    return mobile_robot_25_acados_create_with_discretization(capsule, N_shooting_intervals, new_time_steps);
 }
 
 
-int mobile_robot_32_beta_acados_update_time_steps(mobile_robot_32_beta_solver_capsule* capsule, int N, double* new_time_steps)
+int mobile_robot_25_acados_update_time_steps(mobile_robot_25_solver_capsule* capsule, int N, double* new_time_steps)
 {
     if (N != capsule->nlp_solver_plan->N) {
-        fprintf(stderr, "mobile_robot_32_beta_acados_update_time_steps: given number of time steps (= %d) " \
+        fprintf(stderr, "mobile_robot_25_acados_update_time_steps: given number of time steps (= %d) " \
             "differs from the currently allocated number of " \
             "time steps (= %d)!\n" \
             "Please recreate with new discretization and provide a new vector of time_stamps!\n",
@@ -136,9 +135,9 @@ int mobile_robot_32_beta_acados_update_time_steps(mobile_robot_32_beta_solver_ca
 }
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 1
+ * Internal function for mobile_robot_25_acados_create: step 1
  */
-void mobile_robot_32_beta_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_plan, const int N)
+void mobile_robot_25_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_plan, const int N)
 {
     assert(N == nlp_solver_plan->N);
 
@@ -150,11 +149,11 @@ void mobile_robot_32_beta_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_pl
 
     nlp_solver_plan->ocp_qp_solver_plan.qp_solver = PARTIAL_CONDENSING_HPIPM;
 
-    nlp_solver_plan->nlp_cost[0] = NONLINEAR_LS;
+    nlp_solver_plan->nlp_cost[0] = LINEAR_LS;
     for (int i = 1; i < N; i++)
-        nlp_solver_plan->nlp_cost[i] = NONLINEAR_LS;
+        nlp_solver_plan->nlp_cost[i] = LINEAR_LS;
 
-    nlp_solver_plan->nlp_cost[N] = NONLINEAR_LS;
+    nlp_solver_plan->nlp_cost[N] = LINEAR_LS;
 
     for (int i = 0; i < N; i++)
     {
@@ -175,9 +174,9 @@ void mobile_robot_32_beta_acados_create_1_set_plan(ocp_nlp_plan_t* nlp_solver_pl
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 2
+ * Internal function for mobile_robot_25_acados_create: step 2
  */
-ocp_nlp_dims* mobile_robot_32_beta_acados_create_2_create_and_set_dimensions(mobile_robot_32_beta_solver_capsule* capsule)
+ocp_nlp_dims* mobile_robot_25_acados_create_2_create_and_set_dimensions(mobile_robot_25_solver_capsule* capsule)
 {
     ocp_nlp_plan_t* nlp_solver_plan = capsule->nlp_solver_plan;
     const int N = nlp_solver_plan->N;
@@ -303,9 +302,9 @@ ocp_nlp_dims* mobile_robot_32_beta_acados_create_2_create_and_set_dimensions(mob
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 3
+ * Internal function for mobile_robot_25_acados_create: step 3
  */
-void mobile_robot_32_beta_acados_create_3_create_and_set_functions(mobile_robot_32_beta_solver_capsule* capsule)
+void mobile_robot_25_acados_create_3_create_and_set_functions(mobile_robot_25_solver_capsule* capsule)
 {
     const int N = capsule->nlp_solver_plan->N;
 
@@ -321,72 +320,46 @@ void mobile_robot_32_beta_acados_create_3_create_and_set_functions(mobile_robot_
         capsule->__CAPSULE_FNC__.casadi_sparsity_in = & __MODEL_BASE_FNC__ ## _sparsity_in; \
         capsule->__CAPSULE_FNC__.casadi_sparsity_out = & __MODEL_BASE_FNC__ ## _sparsity_out; \
         capsule->__CAPSULE_FNC__.casadi_work = & __MODEL_BASE_FNC__ ## _work; \
-        external_function_param_casadi_create(&capsule->__CAPSULE_FNC__ , 2); \
+        external_function_param_casadi_create(&capsule->__CAPSULE_FNC__ , 1); \
     } while(false)
 
 
     // explicit ode
     capsule->forw_vde_casadi = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
     for (int i = 0; i < N; i++) {
-        MAP_CASADI_FNC(forw_vde_casadi[i], mobile_robot_32_beta_expl_vde_forw);
+        MAP_CASADI_FNC(forw_vde_casadi[i], mobile_robot_25_expl_vde_forw);
     }
 
     capsule->expl_ode_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*N);
     for (int i = 0; i < N; i++) {
-        MAP_CASADI_FNC(expl_ode_fun[i], mobile_robot_32_beta_expl_ode_fun);
+        MAP_CASADI_FNC(expl_ode_fun[i], mobile_robot_25_expl_ode_fun);
     }
 
 
-    // nonlinear least squares function
-    MAP_CASADI_FNC(cost_y_0_fun, mobile_robot_32_beta_cost_y_0_fun);
-    MAP_CASADI_FNC(cost_y_0_fun_jac_ut_xt, mobile_robot_32_beta_cost_y_0_fun_jac_ut_xt);
-    MAP_CASADI_FNC(cost_y_0_hess, mobile_robot_32_beta_cost_y_0_hess);
-    // nonlinear least squares cost
-    capsule->cost_y_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_fun[i], mobile_robot_32_beta_cost_y_fun);
-    }
-
-    capsule->cost_y_fun_jac_ut_xt = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_fun_jac_ut_xt[i], mobile_robot_32_beta_cost_y_fun_jac_ut_xt);
-    }
-
-    capsule->cost_y_hess = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi)*(N-1));
-    for (int i = 0; i < N-1; i++)
-    {
-        MAP_CASADI_FNC(cost_y_hess[i], mobile_robot_32_beta_cost_y_hess);
-    }
-    // nonlinear least square function
-    MAP_CASADI_FNC(cost_y_e_fun, mobile_robot_32_beta_cost_y_e_fun);
-    MAP_CASADI_FNC(cost_y_e_fun_jac_ut_xt, mobile_robot_32_beta_cost_y_e_fun_jac_ut_xt);
-    MAP_CASADI_FNC(cost_y_e_hess, mobile_robot_32_beta_cost_y_e_hess);
 
 #undef MAP_CASADI_FNC
 }
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 4
+ * Internal function for mobile_robot_25_acados_create: step 4
  */
-void mobile_robot_32_beta_acados_create_4_set_default_parameters(mobile_robot_32_beta_solver_capsule* capsule) {
+void mobile_robot_25_acados_create_4_set_default_parameters(mobile_robot_25_solver_capsule* capsule) {
     const int N = capsule->nlp_solver_plan->N;
     // initialize parameters to nominal value
     double* p = calloc(NP, sizeof(double));
 
     for (int i = 0; i <= N; i++) {
-        mobile_robot_32_beta_acados_update_params(capsule, i, p, NP);
+        mobile_robot_25_acados_update_params(capsule, i, p, NP);
     }
     free(p);
 }
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 5
+ * Internal function for mobile_robot_25_acados_create: step 5
  */
-void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver_capsule* capsule, const int N, double* new_time_steps)
+void mobile_robot_25_acados_create_5_set_nlp_in(mobile_robot_25_solver_capsule* capsule, const int N, double* new_time_steps)
 {
     assert(N == capsule->nlp_solver_plan->N);
     ocp_nlp_config* nlp_config = capsule->nlp_config;
@@ -403,7 +376,7 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
 
     if (new_time_steps)
     {
-        mobile_robot_32_beta_acados_update_time_steps(capsule, N, new_time_steps);
+        mobile_robot_25_acados_update_time_steps(capsule, N, new_time_steps);
     }
     else
     {double time_step = 0.1;
@@ -431,12 +404,23 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     // change only the non-zero elements:
     W_0[0+(NY0) * 0] = 2;
     W_0[1+(NY0) * 1] = 2;
-    W_0[2+(NY0) * 2] = 0.5;
+    W_0[2+(NY0) * 2] = 1;
     W_0[3+(NY0) * 3] = 1;
-    W_0[5+(NY0) * 5] = 0.5;
-    W_0[6+(NY0) * 6] = 1;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", W_0);
     free(W_0);
+    double* Vx_0 = calloc(NY0*NX, sizeof(double));
+    // change only the non-zero elements:
+    Vx_0[0+(NY0) * 0] = 1;
+    Vx_0[1+(NY0) * 1] = 1;
+    Vx_0[2+(NY0) * 2] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "Vx", Vx_0);
+    free(Vx_0);
+    double* Vu_0 = calloc(NY0*NU, sizeof(double));
+    // change only the non-zero elements:
+    Vu_0[3+(NY0) * 0] = 1;
+    Vu_0[4+(NY0) * 1] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "Vu", Vu_0);
+    free(Vu_0);
     double* yref = calloc(NY, sizeof(double));
     // change only the non-zero elements:
 
@@ -449,16 +433,37 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     // change only the non-zero elements:
     W[0+(NY) * 0] = 2;
     W[1+(NY) * 1] = 2;
-    W[2+(NY) * 2] = 0.5;
+    W[2+(NY) * 2] = 1;
     W[3+(NY) * 3] = 1;
-    W[5+(NY) * 5] = 0.5;
-    W[6+(NY) * 6] = 1;
 
     for (int i = 1; i < N; i++)
     {
         ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "W", W);
     }
     free(W);
+    double* Vx = calloc(NY*NX, sizeof(double));
+    // change only the non-zero elements:
+    Vx[0+(NY) * 0] = 1;
+    Vx[1+(NY) * 1] = 1;
+    Vx[2+(NY) * 2] = 1;
+    for (int i = 1; i < N; i++)
+    {
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "Vx", Vx);
+    }
+    free(Vx);
+
+    
+    double* Vu = calloc(NY*NU, sizeof(double));
+    // change only the non-zero elements:
+    
+    Vu[3+(NY) * 0] = 1;
+    Vu[4+(NY) * 1] = 1;
+
+    for (int i = 1; i < N; i++)
+    {
+        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "Vu", Vu);
+    }
+    free(Vu);
     double* yref_e = calloc(NYN, sizeof(double));
     // change only the non-zero elements:
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "yref", yref_e);
@@ -468,21 +473,17 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     // change only the non-zero elements:
     W_e[0+(NYN) * 0] = 2;
     W_e[1+(NYN) * 1] = 2;
-    W_e[2+(NYN) * 2] = 0.5;
+    W_e[2+(NYN) * 2] = 1;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "W", W_e);
     free(W_e);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_fun", &capsule->cost_y_0_fun);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_fun_jac", &capsule->cost_y_0_fun_jac_ut_xt);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "nls_y_hess", &capsule->cost_y_0_hess);
-    for (int i = 1; i < N; i++)
-    {
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_fun", &capsule->cost_y_fun[i-1]);
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_fun_jac", &capsule->cost_y_fun_jac_ut_xt[i-1]);
-        ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, i, "nls_y_hess", &capsule->cost_y_hess[i-1]);
-    }
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_fun", &capsule->cost_y_e_fun);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_fun_jac", &capsule->cost_y_e_fun_jac_ut_xt);
-    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "nls_y_hess", &capsule->cost_y_e_hess);
+    double* Vx_e = calloc(NYN*NX, sizeof(double));
+    // change only the non-zero elements:
+    
+    Vx_e[0+(NYN) * 0] = 1;
+    Vx_e[1+(NYN) * 1] = 1;
+    Vx_e[2+(NYN) * 2] = 1;
+    ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, N, "Vx", Vx_e);
+    free(Vx_e);
 
 
 
@@ -534,8 +535,8 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     double* lbu = lubu;
     double* ubu = lubu + NBU;
     
-    lbu[0] = -0.5;
-    ubu[0] = 0.5;
+    lbu[0] = -0.45;
+    ubu[0] = 0.45;
     lbu[1] = -0.3578;
     ubu[1] = 0.3578;
 
@@ -564,10 +565,10 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     double* lbx = lubx;
     double* ubx = lubx + NBX;
     
-    lbx[0] = -3;
-    ubx[0] = 25;
-    lbx[1] = -3;
-    ubx[1] = 19;
+    lbx[0] = -10;
+    ubx[0] = 10;
+    lbx[1] = -10;
+    ubx[1] = 10;
 
     for (int i = 1; i < N; i++)
     {
@@ -602,9 +603,9 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 6
+ * Internal function for mobile_robot_25_acados_create: step 6
  */
-void mobile_robot_32_beta_acados_create_6_set_opts(mobile_robot_32_beta_solver_capsule* capsule)
+void mobile_robot_25_acados_create_6_set_opts(mobile_robot_25_solver_capsule* capsule)
 {
     const int N = capsule->nlp_solver_plan->N;
     ocp_nlp_config* nlp_config = capsule->nlp_config;
@@ -683,9 +684,9 @@ int fixed_hess = 0;
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 7
+ * Internal function for mobile_robot_25_acados_create: step 7
  */
-void mobile_robot_32_beta_acados_create_7_set_nlp_out(mobile_robot_32_beta_solver_capsule* capsule)
+void mobile_robot_25_acados_create_7_set_nlp_out(mobile_robot_25_solver_capsule* capsule)
 {
     const int N = capsule->nlp_solver_plan->N;
     ocp_nlp_config* nlp_config = capsule->nlp_config;
@@ -715,17 +716,17 @@ void mobile_robot_32_beta_acados_create_7_set_nlp_out(mobile_robot_32_beta_solve
 
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 8
+ * Internal function for mobile_robot_25_acados_create: step 8
  */
-//void mobile_robot_32_beta_acados_create_8_create_solver(mobile_robot_32_beta_solver_capsule* capsule)
+//void mobile_robot_25_acados_create_8_create_solver(mobile_robot_25_solver_capsule* capsule)
 //{
 //    capsule->nlp_solver = ocp_nlp_solver_create(capsule->nlp_config, capsule->nlp_dims, capsule->nlp_opts);
 //}
 
 /**
- * Internal function for mobile_robot_32_beta_acados_create: step 9
+ * Internal function for mobile_robot_25_acados_create: step 9
  */
-int mobile_robot_32_beta_acados_create_9_precompute(mobile_robot_32_beta_solver_capsule* capsule) {
+int mobile_robot_25_acados_create_9_precompute(mobile_robot_25_solver_capsule* capsule) {
     int status = ocp_nlp_precompute(capsule->nlp_solver, capsule->nlp_in, capsule->nlp_out);
 
     if (status != ACADOS_SUCCESS) {
@@ -737,14 +738,14 @@ int mobile_robot_32_beta_acados_create_9_precompute(mobile_robot_32_beta_solver_
 }
 
 
-int mobile_robot_32_beta_acados_create_with_discretization(mobile_robot_32_beta_solver_capsule* capsule, int N, double* new_time_steps)
+int mobile_robot_25_acados_create_with_discretization(mobile_robot_25_solver_capsule* capsule, int N, double* new_time_steps)
 {
     // If N does not match the number of shooting intervals used for code generation, new_time_steps must be given.
-    if (N != MOBILE_ROBOT_32_BETA_N && !new_time_steps) {
-        fprintf(stderr, "mobile_robot_32_beta_acados_create_with_discretization: new_time_steps is NULL " \
+    if (N != MOBILE_ROBOT_25_N && !new_time_steps) {
+        fprintf(stderr, "mobile_robot_25_acados_create_with_discretization: new_time_steps is NULL " \
             "but the number of shooting intervals (= %d) differs from the number of " \
             "shooting intervals (= %d) during code generation! Please provide a new vector of time_stamps!\n", \
-             N, MOBILE_ROBOT_32_BETA_N);
+             N, MOBILE_ROBOT_25_N);
         return 1;
     }
 
@@ -753,37 +754,37 @@ int mobile_robot_32_beta_acados_create_with_discretization(mobile_robot_32_beta_
 
     // 1) create and set nlp_solver_plan; create nlp_config
     capsule->nlp_solver_plan = ocp_nlp_plan_create(N);
-    mobile_robot_32_beta_acados_create_1_set_plan(capsule->nlp_solver_plan, N);
+    mobile_robot_25_acados_create_1_set_plan(capsule->nlp_solver_plan, N);
     capsule->nlp_config = ocp_nlp_config_create(*capsule->nlp_solver_plan);
 
     // 3) create and set dimensions
-    capsule->nlp_dims = mobile_robot_32_beta_acados_create_2_create_and_set_dimensions(capsule);
-    mobile_robot_32_beta_acados_create_3_create_and_set_functions(capsule);
+    capsule->nlp_dims = mobile_robot_25_acados_create_2_create_and_set_dimensions(capsule);
+    mobile_robot_25_acados_create_3_create_and_set_functions(capsule);
 
     // 4) set default parameters in functions
-    mobile_robot_32_beta_acados_create_4_set_default_parameters(capsule);
+    mobile_robot_25_acados_create_4_set_default_parameters(capsule);
 
     // 5) create and set nlp_in
     capsule->nlp_in = ocp_nlp_in_create(capsule->nlp_config, capsule->nlp_dims);
-    mobile_robot_32_beta_acados_create_5_set_nlp_in(capsule, N, new_time_steps);
+    mobile_robot_25_acados_create_5_set_nlp_in(capsule, N, new_time_steps);
 
     // 6) create and set nlp_opts
     capsule->nlp_opts = ocp_nlp_solver_opts_create(capsule->nlp_config, capsule->nlp_dims);
-    mobile_robot_32_beta_acados_create_6_set_opts(capsule);
+    mobile_robot_25_acados_create_6_set_opts(capsule);
 
     // 7) create and set nlp_out
     // 7.1) nlp_out
     capsule->nlp_out = ocp_nlp_out_create(capsule->nlp_config, capsule->nlp_dims);
     // 7.2) sens_out
     capsule->sens_out = ocp_nlp_out_create(capsule->nlp_config, capsule->nlp_dims);
-    mobile_robot_32_beta_acados_create_7_set_nlp_out(capsule);
+    mobile_robot_25_acados_create_7_set_nlp_out(capsule);
 
     // 8) create solver
     capsule->nlp_solver = ocp_nlp_solver_create(capsule->nlp_config, capsule->nlp_dims, capsule->nlp_opts);
-    //mobile_robot_32_beta_acados_create_8_create_solver(capsule);
+    //mobile_robot_25_acados_create_8_create_solver(capsule);
 
     // 9) do precomputations
-    int status = mobile_robot_32_beta_acados_create_9_precompute(capsule);
+    int status = mobile_robot_25_acados_create_9_precompute(capsule);
 
     return status;
 }
@@ -791,7 +792,7 @@ int mobile_robot_32_beta_acados_create_with_discretization(mobile_robot_32_beta_
 /**
  * This function is for updating an already initialized solver with a different number of qp_cond_N. It is useful for code reuse after code export.
  */
-int mobile_robot_32_beta_acados_update_qp_solver_cond_N(mobile_robot_32_beta_solver_capsule* capsule, int qp_solver_cond_N)
+int mobile_robot_25_acados_update_qp_solver_cond_N(mobile_robot_25_solver_capsule* capsule, int qp_solver_cond_N)
 {
     // 1) destroy solver
     ocp_nlp_solver_destroy(capsule->nlp_solver);
@@ -802,17 +803,17 @@ int mobile_robot_32_beta_acados_update_qp_solver_cond_N(mobile_robot_32_beta_sol
         printf("Warning: qp_solver_cond_N = %d > N = %d\n", qp_solver_cond_N, N);
     ocp_nlp_solver_opts_set(capsule->nlp_config, capsule->nlp_opts, "qp_cond_N", &qp_solver_cond_N);
 
-    // 3) continue with the remaining steps from mobile_robot_32_beta_acados_create_with_discretization(...):
+    // 3) continue with the remaining steps from mobile_robot_25_acados_create_with_discretization(...):
     // -> 8) create solver
     capsule->nlp_solver = ocp_nlp_solver_create(capsule->nlp_config, capsule->nlp_dims, capsule->nlp_opts);
 
     // -> 9) do precomputations
-    int status = mobile_robot_32_beta_acados_create_9_precompute(capsule);
+    int status = mobile_robot_25_acados_create_9_precompute(capsule);
     return status;
 }
 
 
-int mobile_robot_32_beta_acados_reset(mobile_robot_32_beta_solver_capsule* capsule, int reset_qp_solver_mem)
+int mobile_robot_25_acados_reset(mobile_robot_25_solver_capsule* capsule, int reset_qp_solver_mem)
 {
 
     // set initialization to all zeros
@@ -856,11 +857,11 @@ int mobile_robot_32_beta_acados_reset(mobile_robot_32_beta_solver_capsule* capsu
 
 
 
-int mobile_robot_32_beta_acados_update_params(mobile_robot_32_beta_solver_capsule* capsule, int stage, double *p, int np)
+int mobile_robot_25_acados_update_params(mobile_robot_25_solver_capsule* capsule, int stage, double *p, int np)
 {
     int solver_status = 0;
 
-    int casadi_np = 2;
+    int casadi_np = 1;
     if (casadi_np != np) {
         printf("acados_update_params: trying to set %i parameters for external functions."
             " External function has %i parameters. Exiting.\n", np, casadi_np);
@@ -884,15 +885,9 @@ int mobile_robot_32_beta_acados_update_params(mobile_robot_32_beta_solver_capsul
         // cost
         if (stage == 0)
         {
-            capsule->cost_y_0_fun.set_param(&capsule->cost_y_0_fun, p);
-            capsule->cost_y_0_fun_jac_ut_xt.set_param(&capsule->cost_y_0_fun_jac_ut_xt, p);
-            capsule->cost_y_0_hess.set_param(&capsule->cost_y_0_hess, p);
         }
         else // 0 < stage < N
         {
-            capsule->cost_y_fun[stage-1].set_param(capsule->cost_y_fun+stage-1, p);
-            capsule->cost_y_fun_jac_ut_xt[stage-1].set_param(capsule->cost_y_fun_jac_ut_xt+stage-1, p);
-            capsule->cost_y_hess[stage-1].set_param(capsule->cost_y_hess+stage-1, p);
         }
     }
 
@@ -900,9 +895,6 @@ int mobile_robot_32_beta_acados_update_params(mobile_robot_32_beta_solver_capsul
     {
         // terminal shooting node has no dynamics
         // cost
-        capsule->cost_y_e_fun.set_param(&capsule->cost_y_e_fun, p);
-        capsule->cost_y_e_fun_jac_ut_xt.set_param(&capsule->cost_y_e_fun_jac_ut_xt, p);
-        capsule->cost_y_e_hess.set_param(&capsule->cost_y_e_hess, p);
         // constraints
     }
 
@@ -910,20 +902,20 @@ int mobile_robot_32_beta_acados_update_params(mobile_robot_32_beta_solver_capsul
 }
 
 
-int mobile_robot_32_beta_acados_update_params_sparse(mobile_robot_32_beta_solver_capsule * capsule, int stage, int *idx, double *p, int n_update)
+int mobile_robot_25_acados_update_params_sparse(mobile_robot_25_solver_capsule * capsule, int stage, int *idx, double *p, int n_update)
 {
     int solver_status = 0;
 
-    int casadi_np = 2;
+    int casadi_np = 1;
     if (casadi_np < n_update) {
-        printf("mobile_robot_32_beta_acados_update_params_sparse: trying to set %d parameters for external functions."
+        printf("mobile_robot_25_acados_update_params_sparse: trying to set %d parameters for external functions."
             " External function has %d parameters. Exiting.\n", n_update, casadi_np);
         exit(1);
     }
     // for (int i = 0; i < n_update; i++)
     // {
     //     if (idx[i] > casadi_np) {
-    //         printf("mobile_robot_32_beta_acados_update_params_sparse: attempt to set parameters with index %d, while"
+    //         printf("mobile_robot_25_acados_update_params_sparse: attempt to set parameters with index %d, while"
     //             " external functions only has %d parameters. Exiting.\n", idx[i], casadi_np);
     //         exit(1);
     //     }
@@ -940,17 +932,11 @@ int mobile_robot_32_beta_acados_update_params_sparse(mobile_robot_32_beta_solver
         if (stage == 0)
         {
             // cost
-            capsule->cost_y_0_fun.set_param_sparse(&capsule->cost_y_0_fun, n_update, idx, p);
-            capsule->cost_y_0_fun_jac_ut_xt.set_param_sparse(&capsule->cost_y_0_fun_jac_ut_xt, n_update, idx, p);
-            capsule->cost_y_0_hess.set_param_sparse(&capsule->cost_y_0_hess, n_update, idx, p);
             // constraints
         
         }
         else // 0 < stage < N
         {
-            capsule->cost_y_fun[stage-1].set_param_sparse(capsule->cost_y_fun+stage-1, n_update, idx, p);
-            capsule->cost_y_fun_jac_ut_xt[stage-1].set_param_sparse(capsule->cost_y_fun_jac_ut_xt+stage-1, n_update, idx, p);
-            capsule->cost_y_hess[stage-1].set_param_sparse(capsule->cost_y_hess+stage-1, n_update, idx, p);
 
         
         }
@@ -960,9 +946,6 @@ int mobile_robot_32_beta_acados_update_params_sparse(mobile_robot_32_beta_solver
     {
         // terminal shooting node has no dynamics
         // cost
-        capsule->cost_y_e_fun.set_param_sparse(&capsule->cost_y_e_fun, n_update, idx, p);
-        capsule->cost_y_e_fun_jac_ut_xt.set_param_sparse(&capsule->cost_y_e_fun_jac_ut_xt, n_update, idx, p);
-        capsule->cost_y_e_hess.set_param_sparse(&capsule->cost_y_e_hess, n_update, idx, p);
         // constraints
     
     }
@@ -971,7 +954,7 @@ int mobile_robot_32_beta_acados_update_params_sparse(mobile_robot_32_beta_solver
     return solver_status;
 }
 
-int mobile_robot_32_beta_acados_solve(mobile_robot_32_beta_solver_capsule* capsule)
+int mobile_robot_25_acados_solve(mobile_robot_25_solver_capsule* capsule)
 {
     // solve NLP
     int solver_status = ocp_nlp_solve(capsule->nlp_solver, capsule->nlp_in, capsule->nlp_out);
@@ -980,7 +963,7 @@ int mobile_robot_32_beta_acados_solve(mobile_robot_32_beta_solver_capsule* capsu
 }
 
 
-int mobile_robot_32_beta_acados_free(mobile_robot_32_beta_solver_capsule* capsule)
+int mobile_robot_25_acados_free(mobile_robot_25_solver_capsule* capsule)
 {
     // before destroying, keep some info
     const int N = capsule->nlp_solver_plan->N;
@@ -1005,21 +988,6 @@ int mobile_robot_32_beta_acados_free(mobile_robot_32_beta_solver_capsule* capsul
     free(capsule->expl_ode_fun);
 
     // cost
-    external_function_param_casadi_free(&capsule->cost_y_0_fun);
-    external_function_param_casadi_free(&capsule->cost_y_0_fun_jac_ut_xt);
-    external_function_param_casadi_free(&capsule->cost_y_0_hess);
-    for (int i = 0; i < N - 1; i++)
-    {
-        external_function_param_casadi_free(&capsule->cost_y_fun[i]);
-        external_function_param_casadi_free(&capsule->cost_y_fun_jac_ut_xt[i]);
-        external_function_param_casadi_free(&capsule->cost_y_hess[i]);
-    }
-    free(capsule->cost_y_fun);
-    free(capsule->cost_y_fun_jac_ut_xt);
-    free(capsule->cost_y_hess);
-    external_function_param_casadi_free(&capsule->cost_y_e_fun);
-    external_function_param_casadi_free(&capsule->cost_y_e_fun_jac_ut_xt);
-    external_function_param_casadi_free(&capsule->cost_y_e_hess);
 
     // constraints
 
@@ -1027,7 +995,7 @@ int mobile_robot_32_beta_acados_free(mobile_robot_32_beta_solver_capsule* capsul
 }
 
 
-void mobile_robot_32_beta_acados_print_stats(mobile_robot_32_beta_solver_capsule* capsule)
+void mobile_robot_25_acados_print_stats(mobile_robot_25_solver_capsule* capsule)
 {
     int sqp_iter, stat_m, stat_n, tmp_int;
     ocp_nlp_get(capsule->nlp_config, capsule->nlp_solver, "sqp_iter", &sqp_iter);
@@ -1056,7 +1024,7 @@ void mobile_robot_32_beta_acados_print_stats(mobile_robot_32_beta_solver_capsule
     }
 }
 
-int mobile_robot_32_beta_acados_custom_update(mobile_robot_32_beta_solver_capsule* capsule, double* data, int data_len)
+int mobile_robot_25_acados_custom_update(mobile_robot_25_solver_capsule* capsule, double* data, int data_len)
 {
     (void)capsule;
     (void)data;
@@ -1069,11 +1037,11 @@ int mobile_robot_32_beta_acados_custom_update(mobile_robot_32_beta_solver_capsul
 
 
 
-ocp_nlp_in *mobile_robot_32_beta_acados_get_nlp_in(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_in; }
-ocp_nlp_out *mobile_robot_32_beta_acados_get_nlp_out(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_out; }
-ocp_nlp_out *mobile_robot_32_beta_acados_get_sens_out(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->sens_out; }
-ocp_nlp_solver *mobile_robot_32_beta_acados_get_nlp_solver(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_solver; }
-ocp_nlp_config *mobile_robot_32_beta_acados_get_nlp_config(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_config; }
-void *mobile_robot_32_beta_acados_get_nlp_opts(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_opts; }
-ocp_nlp_dims *mobile_robot_32_beta_acados_get_nlp_dims(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_dims; }
-ocp_nlp_plan_t *mobile_robot_32_beta_acados_get_nlp_plan(mobile_robot_32_beta_solver_capsule* capsule) { return capsule->nlp_solver_plan; }
+ocp_nlp_in *mobile_robot_25_acados_get_nlp_in(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_in; }
+ocp_nlp_out *mobile_robot_25_acados_get_nlp_out(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_out; }
+ocp_nlp_out *mobile_robot_25_acados_get_sens_out(mobile_robot_25_solver_capsule* capsule) { return capsule->sens_out; }
+ocp_nlp_solver *mobile_robot_25_acados_get_nlp_solver(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_solver; }
+ocp_nlp_config *mobile_robot_25_acados_get_nlp_config(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_config; }
+void *mobile_robot_25_acados_get_nlp_opts(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_opts; }
+ocp_nlp_dims *mobile_robot_25_acados_get_nlp_dims(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_dims; }
+ocp_nlp_plan_t *mobile_robot_25_acados_get_nlp_plan(mobile_robot_25_solver_capsule* capsule) { return capsule->nlp_solver_plan; }
