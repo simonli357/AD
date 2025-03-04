@@ -5,7 +5,6 @@ import os
 import time
 import threading
 import signal
-import sys
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -74,8 +73,6 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.steer_signal.connect(self.meter_widget.set_steer)
-        self.comm.sign_signal.connect(self.car_widget.add_object)
-        self.comm.sign_signal.connect(self.object_widget.add_object)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
