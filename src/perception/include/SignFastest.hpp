@@ -109,7 +109,7 @@ class SignFastest {
                 api.loadModel(param, bin);
             } else {
                 std::string model_name;
-                nh.param("model_name", model_name, std::string("citycocov2lgtclab_20")); 
+                nh.getParam("/v8_model", model_name); 
                 // model_name = "v2originalTRT"; 
                 std::string current_path = helper::getSourceDirectory();
                 std::string modelPath = current_path + "/../../../perception/models/trt/" + model_name + ".onnx";
