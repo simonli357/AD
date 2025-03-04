@@ -80,7 +80,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal =  1/mpc.T;
+        double rateVal = 10.0;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
@@ -1330,6 +1330,9 @@ void StateMachine::update_mpc_states() {
     x_current(2) = yaw;
 }
 void StateMachine::solve() {
+    // static bool toggle = false;
+    // toggle = !toggle;
+    // if (!toggle) return;
     int success = path_manager.find_next_waypoint(path_manager.target_waypoint_index, x_current);
     // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
     // std::cout << "closest waypoint index: " << path_manager.closest_waypoint_index << ", at x: " << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", y: " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ", yaw: " << path_manager.state_refs(path_manager.closest_waypoint_index, 2) << std::endl;
@@ -1347,6 +1350,10 @@ void StateMachine::solve() {
         
         Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
         Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
+        // x_current(2) = Utility::yaw_mod(x_current(2));
+        // auto state_refs = utils.waypoints_to_world(utils.lane_waypoints, x_current);
+        // state_refs = PathManager::smooth_yaw_angles(state_refs);
+        // int status = mpc.solve(state_refs, input_refs_block, x_current);
         int status = mpc.solve(state_refs_block, input_refs_block, x_current);
     } else {
         ROS_WARN("Block indices are out of bounds, skipping solve.");
