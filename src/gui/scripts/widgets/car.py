@@ -6,6 +6,7 @@ from OpenGL.arrays import vbo
 import numpy as np
 from collections import namedtuple, deque
 import os
+import math
 
 Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
@@ -16,9 +17,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.main_window = self.parent()
-        self.detected_objects = self.main_window.map_widget.detected_objects
         self.obj_dict = self.main_window.map_widget.object_dict
-        self.rev_obj_dict = self.main_window.map_widget.reverse_object_dict
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -29,10 +28,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = 0
         self.y_pos = 0
         self.z_pos = 0
+
         self.grid_vbo = None
+        self.path_node_vbo = None
         self.model = None
         self.car_model = None
         self.sign_model = None
+
         self.objects = deque([], 60)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -96,6 +98,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.grid_vbo = vbo.VBO(np.array(grid_vertices, dtype=np.float32))
         self.grid_vertex_count = len(grid_vertices) // 3
 
+        # Initialize path node VBO
+        third_z = 0.25 - (math.sqrt(3) / 2)
+        path_node_vertices = [
+            # Vertex 1: (-0.5, 0, 0.5) with color blue
+            -0.25, 0.0, 0.25, 0, 0, 0,
+            # Vertex 2: (0.5, 0, 0.5) with color green
+            0.25, 0.0, 0.25, 0, 0, 0,
+            # Vertex 3: (0.0, 0, third_z) with color red
+            0.0, 0.0, -third_z, 0, 0, 0
+        ]
+        self.path_node_vbo = vbo.VBO(np.array(path_node_vertices, dtype=np.float32))
+
     def paintGL(self):
         self.qt_save_gl_state()
 
@@ -126,6 +140,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         # Draw detected objects if any
         self.draw_detected_object()
+
+        # Draw predicted path
+        self.draw_path()
 
         # Draw axes overlay
         self.draw_axes()
@@ -260,10 +277,33 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         gl.glDisable(gl.GL_BLEND)
 
-    def draw_detected_object(self):
-        if len(self.objects) == 0:
+    def draw_path_node(self, x, y) -> None:
+        gl.glPushMatrix()
+        gl.glColor3f(1, 1, 0)
+
+        self.path_node_vbo.bind()
+        gl.glTranslatef(x, 0, y)
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.path_node_vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.path_node_vbo.unbind()
+
+        gl.glPopMatrix()
+
+    def draw_path(self) -> None:
+        waypoints = self.main_window.map_widget.waypoints
+        if waypoints is None:
             return
-        obj = np.array(self.objects.popleft().data)
+        for i in range(0, len(waypoints) - 1, 8):
+            x = waypoints[i]
+            y = waypoints[i + 1]
+            self.draw_path_node(x, y)
+
+    def draw_detected_object(self):
+        obj = self.main_window.map_widget.detected_objects
+        if obj is None:
+            return
         for i in range(1, len(obj)):
             obj_type = obj[6]
             if self.obj_dict[obj_type] == 'Car':

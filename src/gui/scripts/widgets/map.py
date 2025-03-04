@@ -534,6 +534,7 @@ class MapWidget(QtWidgets.QWidget):
                 self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
         else:
             self.numObj = 0
+            self.detected_objects = None
 
     def call_waypoint_service(self, run):
         try:

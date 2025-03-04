@@ -1,6 +1,5 @@
 from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5 import QtCore, QtWidgets
-from collections import deque
 
 import numpy as np
 
@@ -12,9 +11,7 @@ class ObjectWidget(QtWidgets.QWidget):
         self.main_window = self.parent()
 
         self.obj_dict = self.main_window.map_widget.object_dict
-        self.rev_obj_dict = self.main_window.map_widget.reverse_object_dict
 
-        self.objects = deque([], 60)
         # Real-world extents (meters)
         self.x_min, self.x_max = -1.5, 1.5  # X-axis range
         self.y_min, self.y_max = -1.5, 1.5  # Y-axis range
@@ -58,10 +55,9 @@ class ObjectWidget(QtWidgets.QWidget):
 
         return (h1, h2, w1, w2, mid_h, mid_w)
 
-    def draw_grid(self, painter: QPainter, h1: float, h2: float, w1: float, w2: float, mid_w: float,
-                  pixels_per_meter_x: float, pixels_per_meter_y: float) -> None:
+    def draw_grid(self, painter: QPainter, h1: float, h2: float, w1: float, w2: float, mid_w: float, pixels_per_meter_x: float, pixels_per_meter_y: float) -> None:
         # Draw vertical grid lines (X-axis)
-        painter.setPen(QPen(QColor(100, 100, 100, 50), 1))
+        painter.setPen(QPen(QColor(100, 100, 100, 180), 1))
         x = mid_w + pixels_per_meter_x / 2
         while x <= w2:
             painter.drawLine(QtCore.QPointF(x, h1), QtCore.QPointF(x, h2))
@@ -73,17 +69,14 @@ class ObjectWidget(QtWidgets.QWidget):
 
         # Draw horizontal grid lines (Y-axis)
         y = h2 - pixels_per_meter_y / 2
-        while y >= h1:
+        while y > h1:
             painter.drawLine(QtCore.QPointF(w1, y), QtCore.QPointF(w2, y))
             y -= pixels_per_meter_y / 2
 
-    def draw_detected_object(self, painter: QPainter, mid_h: float, mid_w: float, h2: float,
-                             pixels_per_meter_x: float, pixels_per_meter_y: float):
-        if not self.objects:
-            return
-        obj = np.array(self.objects.popleft().data)
+    def draw_detected_object(self, painter: QPainter, mid_h: float, mid_w: float, h2: float, pixels_per_meter_x: float, pixels_per_meter_y: float):
+        obj = self.main_window.map_widget.detected_objects
         # Convert real-world coordinates to widget coordinates
-        if len(obj) < 8:
+        if obj is None or (obj[8] == 0 and obj[7] == 0):
             return
         widget_x = mid_w - obj[8] * pixels_per_meter_x
         widget_y = mid_h - obj[7] * pixels_per_meter_y

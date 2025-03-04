@@ -28,7 +28,7 @@ class UdpConnection:
             self.lane2_buf = deque([], 1)
             self.road_object_buf = deque([], 1)
             self.waypoint_buf = deque([], 1)
-            self.sign_buf = deque([], 60)
+            self.sign_buf = deque([], 1)
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
             self.steer_buf = deque([], 1)
