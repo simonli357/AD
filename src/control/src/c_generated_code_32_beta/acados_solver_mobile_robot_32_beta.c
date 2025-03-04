@@ -433,8 +433,8 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     W_0[1+(NY0) * 1] = 2;
     W_0[2+(NY0) * 2] = 0.5;
     W_0[3+(NY0) * 3] = 1;
-    W_0[5+(NY0) * 5] = 0.5;
-    W_0[6+(NY0) * 6] = 1;
+    W_0[5+(NY0) * 5] = 0.375;
+    W_0[6+(NY0) * 6] = 0.75;
     ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, 0, "W", W_0);
     free(W_0);
     double* yref = calloc(NY, sizeof(double));
@@ -451,8 +451,8 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     W[1+(NY) * 1] = 2;
     W[2+(NY) * 2] = 0.5;
     W[3+(NY) * 3] = 1;
-    W[5+(NY) * 5] = 0.5;
-    W[6+(NY) * 6] = 1;
+    W[5+(NY) * 5] = 0.375;
+    W[6+(NY) * 6] = 0.75;
 
     for (int i = 1; i < N; i++)
     {
