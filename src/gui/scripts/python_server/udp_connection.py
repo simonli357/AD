@@ -28,7 +28,7 @@ class UdpConnection:
             self.lane2_buf = deque([], 1)
             self.road_object_buf = deque([], 1)
             self.waypoint_buf = deque([], 1)
-            self.sign_buf = deque([], 60)
+            self.sign_buf = deque([], 1)
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
             self.steer_buf = deque([], 1)
@@ -107,7 +107,7 @@ class UdpConnection:
     def parse_sign(self):
         try:
             if len(self.sign_buf) > 0:
-                return Float32MultiArray().deserialize(self.sign_buf.popleft())
+                return Float32MultiArray().deserialize(self.sign_buf[0])
             return None
         except Exception as e:
             print(e)

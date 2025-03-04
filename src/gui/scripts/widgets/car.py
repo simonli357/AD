@@ -4,8 +4,9 @@ from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 import numpy as np
-from collections import namedtuple, deque
+from collections import namedtuple
 import os
+import math
 
 Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
@@ -16,9 +17,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.main_window = self.parent()
-        self.detected_objects = self.main_window.map_widget.detected_objects
         self.obj_dict = self.main_window.map_widget.object_dict
-        self.rev_obj_dict = self.main_window.map_widget.reverse_object_dict
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -29,19 +28,27 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = 0
         self.y_pos = 0
         self.z_pos = 0
+
         self.grid_vbo = None
-        self.model = None
+        self.path_node_vbo = None
         self.car_model = None
         self.sign_model = None
-        self.objects = deque([], 60)
+        self.tf_light_model = None
+        self.pedestrian_model = None
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(current_dir, 'assets', 'car.obj')
-        sign_model_path = os.path.join(current_dir, 'assets', 'stop.obj')
-        if os.path.exists(model_path):
-            self.model = self.load_obj(model_path)
+        car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        sign_model_path = os.path.join(current_dir, 'assets', 'sign.obj')
+        tf_light_model_path = os.path.join(current_dir, 'assets', 'tf_light.obj')
+        pedestrian_model_path = os.path.join(current_dir, 'assets', 'pedestrian.obj')
+        if os.path.exists(car_model_path):
+            self.car_model = self.load_obj(car_model_path)
         if os.path.exists(sign_model_path):
             self.sign_model = self.load_obj(sign_model_path)
+        if os.path.exists(tf_light_model_path):
+            self.tf_light_model = self.load_obj(tf_light_model_path)
+        if os.path.exists(pedestrian_model_path):
+            self.pedestrian_model = self.load_obj(pedestrian_model_path)
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
@@ -51,9 +58,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
-
-    def add_object(self, obj) -> None:
-        self.objects.append(obj)
 
     def render_widget(self) -> None:
         self.update()
@@ -84,8 +88,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # Initialize grid VBO
-        grid_size_z = 8
-        grid_size_x = 4
+        grid_size_z = 12
+        grid_size_x = 6
         step = 1
         grid_vertices = []
         for z in range(-grid_size_z, grid_size_z + 1, step):
@@ -95,6 +99,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.grid_vbo = vbo.VBO(np.array(grid_vertices, dtype=np.float32))
         self.grid_vertex_count = len(grid_vertices) // 3
+
+        # Initialize path node VBO
+        third_z = 0.1 - (math.sqrt(3) / 2)
+        path_node_vertices = [
+            # Vertex 1: (-0.5, 0, 0.5) with color blue
+            -0.1, 0.0, 0.1, 0, 0, 0,
+            # Vertex 2: (0.5, 0, 0.5) with color green
+            0.1, 0.0, 0.1, 0, 0, 0,
+            # Vertex 3: (0.0, 0, third_z) with color red
+            0.0, 0.0, -third_z, 0, 0, 0
+        ]
+        self.path_node_vbo = vbo.VBO(np.array(path_node_vertices, dtype=np.float32))
 
     def paintGL(self):
         self.qt_save_gl_state()
@@ -110,22 +126,19 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 15, 15, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 12, 16, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
 
         # Draw car model
-        if self.model:
-            gl.glPushMatrix()
-            gl.glScalef(0.5, 0.5, -0.5)
-            gl.glTranslatef(0, -5, 0)
-            gl.glRotatef(self.steer, 0, 1, 0)
-            self.draw_model()
-            gl.glPopMatrix()
+        self.draw_car_self((0, 1, 1, 1))
 
         # Draw detected objects if any
         self.draw_detected_object()
+
+        # Draw predicted path
+        self.draw_path()
 
         # Draw axes overlay
         self.draw_axes()
@@ -133,9 +146,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.qt_restore_gl_state()
 
         self.render_text(f'Yaw: {self.yaw:.2f}°', (0, 255, 255, 255), 10, 20)
-        self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 35)
-        self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 50)
-        self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 65)
+        self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 45)
+        self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 70)
+        self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 95)
 
     def qt_save_gl_state(self):
         gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
@@ -182,14 +195,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         )
 
         # Set up font
-        font = QFont("Arial", 8)
+        font = QFont("Arial")
         font.setBold(True)
         font.setStyleStrategy(QFont.PreferAntialias)
 
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(12 * scale_factor)
+        font.setPixelSize(20 * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -203,7 +216,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
-        gl.glTranslatef(0, 2, 0)
+        gl.glScalef(0.6, 0.6, 0.6)
+        gl.glTranslatef(0, 2, 1.5)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
@@ -212,79 +226,175 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         gl.glPopMatrix()
 
-    def draw_model(self):
+    def draw_car_self(self, color: (float, float, float, float)):
+        gl.glPushMatrix()
+        gl.glScalef(0.5, 0.5, -0.5)
+        gl.glTranslatef(0, -5, 0)
+        gl.glRotatef(self.steer, 0, 1, 0)
+
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(0, 1, 1, 1.0)
+        gl.glColor4f(*color)
         gl.glLineWidth(0.01)
 
-        self.model.vbo.bind()
+        self.car_model.vbo.bind()
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.car_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        self.model.vbo.unbind()
+        self.car_model.vbo.unbind()
 
         gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
 
-    def draw_car(self):
+    def draw_car(self, x, y, color: (float, float, float, float)):
+        gl.glPushMatrix()
+        gl.glScalef(0.5, 0.5, -0.5)
+        gl.glTranslatef(-x * 24, -5, y * 24)
+
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(1, 0, 0, 1.0)
+        gl.glColor4f(*color)
         gl.glLineWidth(0.01)
 
-        self.model.vbo.bind()
+        self.car_model.vbo.bind()
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.car_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        self.model.vbo.unbind()
+        self.car_model.vbo.unbind()
 
         gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
 
-    def draw_sign(self):
+    def draw_sign(self, x, y, color: (float, float, float, float)):
+        gl.glPushMatrix()
+        gl.glScalef(0.03, 0.03, 0.03)
+        gl.glTranslatef(-x * 400, -5, -y * 400 + 100)
+        gl.glRotatef(210, 0, 1, 0)
+
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(1, 1, 0, 1.0)
+        gl.glColor4f(*color)
         gl.glLineWidth(0.01)
 
         self.sign_model.vbo.bind()
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.model.vbo)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.model.vertex_count)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.sign_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.sign_model.vertex_count)
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
         self.sign_model.vbo.unbind()
 
         gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
+
+    def draw_traffic_light(self, x, y, color: (float, float, float, float)):
+        gl.glPushMatrix()
+        gl.glScalef(0.5, 0.5, 0.5)
+        gl.glTranslatef(-x * 20, -5, -y * 20)
+        gl.glRotatef(5, 0, 1, 0)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(*color)
+        gl.glLineWidth(0.01)
+
+        self.tf_light_model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.tf_light_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.tf_light_model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.tf_light_model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
+
+    def draw_pedestrian(self, x, y, color: (float, float, float, float)):
+        gl.glPushMatrix()
+        gl.glScalef(6, 6, 6)
+        gl.glTranslatef(-x * 5, -5, -y * 5 - 3)
+        gl.glRotatef(45, 0, 1, 0)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(*color)
+        gl.glLineWidth(0.01)
+
+        self.pedestrian_model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.pedestrian_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.pedestrian_model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.pedestrian_model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
+
+    def draw_path_node(self, x, y) -> None:
+        gl.glPushMatrix()
+        gl.glColor3f(1, 1, 0)
+        self.path_node_vbo.bind()
+        gl.glRotatef(-self.steer, 0, 1, 0)
+        gl.glRotatef(-self.yaw, 0, 1, 0)
+        gl.glTranslatef(-y, -2.5, -x)
+        gl.glRotatef(self.yaw, 0, 1, 0)
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.path_node_vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.path_node_vbo.unbind()
+        gl.glPopMatrix()
+
+    def draw_path(self) -> None:
+        waypoints = self.main_window.map_widget.waypoints
+        if waypoints is None:
+            return
+        for i in range(0, len(waypoints) - 1, 4):
+            x = waypoints[i] - self.x_pos
+            y = waypoints[i + 1] - self.y_pos
+            self.draw_path_node(x * 4, y * 4)
 
     def draw_detected_object(self):
-        if len(self.objects) == 0:
+        obj = self.main_window.cam_widget.detected_objects
+        if obj is None:
             return
-        obj = np.array(self.objects.popleft().data)
-        for i in range(1, len(obj)):
-            obj_type = obj[6]
+        for i in range(0, self.main_window.cam_widget.numObj):
+            obj_type = obj[10 * i + 6]
+            x = obj[10 * i + 8]
+            y = obj[10 * i + 7]
             if self.obj_dict[obj_type] == 'Car':
-                x = obj[8] * 12
-                y = obj[7] * 12
-                if self.model:
-                    gl.glPushMatrix()
-                    gl.glScalef(0.5, 0.5, -0.5)
-                    gl.glTranslatef(-x, 0, y)
-                    self.draw_car()
-                    gl.glPopMatrix()
-            elif self.obj_dict[obj_type] == 'Stopsign':
-                x = obj[8] * 150
-                y = obj[7] * 150
-                if self.sign_model:
-                    gl.glPushMatrix()
-                    gl.glScalef(-0.03, 0.03, 0.03)
-                    gl.glRotatef(210, 0, 1, 0)
-                    gl.glTranslatef(-x, 0, y)
-                    self.draw_sign()
-                    gl.glPopMatrix()
+                self.draw_car(x, y, (0, 0.6, 0.6, 1))               # #009999
+            if self.obj_dict[obj_type] == 'No Entry':
+                self.draw_sign(x, y, (1, 0.4, 0, 1))                # #ff6600
+            if self.obj_dict[obj_type] == 'Stopsign':
+                self.draw_sign(x, y, (1, 0, 0, 1))                  # #ff0000
+            if self.obj_dict[obj_type] == 'Oneway':
+                self.draw_sign(x, y, (1, 1, 1, 1))                  # #ffffff
+            if self.obj_dict[obj_type] == 'Highway Entrance':
+                self.draw_sign(x, y, (0, 0.2, 0, 1))                # #004d00
+            if self.obj_dict[obj_type] == 'Roundabout':
+                self.draw_sign(x, y, (0, 0, 1, 1))                  # #0000ff
+            if self.obj_dict[obj_type] == 'Parking':
+                self.draw_sign(x, y, (0, 1, 0, 1))                  # #00ff00
+            if self.obj_dict[obj_type] == 'Crosswalk':
+                self.draw_sign(x, y, (1, 1, 0, 1))                  # #ffff00
+            if self.obj_dict[obj_type] == 'Highway Exit':
+                self.draw_sign(x, y, (0, 0.2, 0, 1))                # #004d00
+            if self.obj_dict[obj_type] == 'Priority':
+                self.draw_sign(x, y, (0, 0.4, 1, 1))                # #0066ff
+            if self.obj_dict[obj_type] == 'Green Light':
+                self.draw_traffic_light(x, y, (0, 1, 0, 1))         # #00ff00
+            if self.obj_dict[obj_type] == 'Yellow Light':
+                self.draw_traffic_light(x, y, (1, 1, 0, 1))         # #ffff00
+            if self.obj_dict[obj_type] == 'Red Light':
+                self.draw_traffic_light(x, y, (1, 0, 0, 1))         # #ff0000
+            if self.obj_dict[obj_type] == 'Pedestrian':
+                self.draw_pedestrian(x, y, (1, 0.2, 0.6, 1))        # #ff3399
 
     def draw_axes(self):
         gl.glPushAttrib(gl.GL_ENABLE_BIT)
