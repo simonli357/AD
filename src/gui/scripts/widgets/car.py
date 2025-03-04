@@ -4,7 +4,7 @@ from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 import numpy as np
-from collections import namedtuple, deque
+from collections import namedtuple
 import os
 import math
 
@@ -58,9 +58,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
-
-    def add_object(self, obj) -> None:
-        self.objects.append(obj)
 
     def render_widget(self) -> None:
         self.update()
@@ -254,7 +251,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPushMatrix()
         gl.glScalef(0.5, 0.5, -0.5)
         gl.glTranslatef(-x * 24, -5, y * 24)
-        gl.glRotatef(-90, 0, 1, 0)
 
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)

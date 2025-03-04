@@ -1,8 +1,6 @@
 from PyQt5.QtGui import QPainter, QPen, QColor
 from PyQt5 import QtCore, QtWidgets
 
-import numpy as np
-
 
 class ObjectWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -15,9 +13,6 @@ class ObjectWidget(QtWidgets.QWidget):
         # Real-world extents (meters)
         self.x_min, self.x_max = -1.5, 1.5  # X-axis range
         self.y_min, self.y_max = -1.5, 1.5  # Y-axis range
-
-    def add_object(self, obj):
-        self.objects.append(obj)
 
     def render_widget(self) -> None:
         self.update()
