@@ -107,7 +107,7 @@ class UdpConnection:
     def parse_sign(self):
         try:
             if len(self.sign_buf) > 0:
-                return Float32MultiArray().deserialize(self.sign_buf.popleft())
+                return Float32MultiArray().deserialize(self.sign_buf[0])
             return None
         except Exception as e:
             print(e)

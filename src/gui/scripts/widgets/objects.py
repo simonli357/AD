@@ -74,22 +74,23 @@ class ObjectWidget(QtWidgets.QWidget):
             y -= pixels_per_meter_y / 2
 
     def draw_detected_object(self, painter: QPainter, mid_h: float, mid_w: float, h2: float, pixels_per_meter_x: float, pixels_per_meter_y: float):
-        obj = self.main_window.map_widget.detected_objects
+        obj = self.main_window.cam_widget.detected_objects
         # Convert real-world coordinates to widget coordinates
-        if obj is None or (obj[8] == 0 and obj[7] == 0):
-            return
-        widget_x = mid_w - obj[8] * pixels_per_meter_x
-        widget_y = mid_h - obj[7] * pixels_per_meter_y
+        for i in range(0, self.main_window.cam_widget.numObj):
+            if obj is None:
+                return
+            widget_x = mid_w - obj[i * 10 + 8] * pixels_per_meter_x
+            widget_y = mid_h - obj[i * 10 + 7] * pixels_per_meter_y
 
-        painter.setPen(QPen(QColor(0, 255, 255), 5))
-        painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
+            painter.setPen(QPen(QColor(0, 255, 255), 5))
+            painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
 
-        text_rec = QtCore.QRectF(
-            widget_x,
-            widget_y - 20,
-            80,
-            40
-        )
+            text_rec = QtCore.QRectF(
+                widget_x,
+                widget_y - 20,
+                80,
+                40
+            )
 
-        painter.setPen(QPen(QtCore.Qt.yellow, 2))
-        painter.drawText(text_rec, QtCore.Qt.AlignCenter, f"x: {obj[7]:.2f} \n y: {obj[8]:.2f}")
+            painter.setPen(QPen(QtCore.Qt.yellow, 2))
+            painter.drawText(text_rec, QtCore.Qt.AlignCenter, f"x: {-obj[i * 10 + 8]:.2f} \n y: {obj[i * 10 + 7]:.2f}")
