@@ -110,20 +110,14 @@ class CameraNode {
 		if (useRosTimer) {
 			if (doLane) {
 				ROS_INFO("starting lane timer");
-				laneTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::lane_timer_callback, this);
+				// laneTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::lane_timer_callback, this);
+				lane_thread = std::thread(&CameraNode::run_lane, this);
 			}
 			if (doSign) {
 				ROS_INFO("starting sign timer");
-				signTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::sign_timer_callback, this);
+				// signTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::sign_timer_callback, this);
+				sign_thread = std::thread(&CameraNode::run_sign, this);
 			}
-			// if (doLane) {
-			//     std::thread t1(&CameraNode::run_lane, this);
-			//     t1.detach();
-			// }
-			// if (doSign) {
-			//     std::thread t2(&CameraNode::run_sign, this);
-			//     t2.detach();
-			// }
 		}
 	}
 
@@ -132,6 +126,12 @@ class CameraNode {
 			cameraThreadRunning = false;
 			if (cameraThread.joinable()) {
 					cameraThread.join();
+			}
+			if (lane_thread.joinable()) {
+					lane_thread.join();
+			}
+			if (sign_thread.joinable()) {
+					sign_thread.join();
 			}
 	}
 
@@ -161,6 +161,7 @@ class CameraNode {
 	ros::Timer signTimer, laneTimer;
 
 	bool doLane, doSign, realsense, pubImage, useRosTimer;
+	std::thread lane_thread, sign_thread;
 	int mainLoopRate;
 
 	// lock
@@ -232,25 +233,36 @@ class CameraNode {
 	void lane_timer_callback(const ros::TimerEvent &event) { run_lane_once(); }
 	void sign_timer_callback(const ros::TimerEvent &event) { run_sign_once(); }
 	void run_lane_once() {
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
+		cv::Mat img;
+		{
+				std::lock_guard<std::mutex> lock(mutex);
+				if (colorImage.empty()) {
+						ROS_WARN("colorImage is empty");
+						return;
+				}
+				img = colorImage.clone();
 		}
-		Lane.publish_lane(colorImage);
+		Lane.publish_lane(img);
 	}
 	void run_sign_once() {
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
+		cv::Mat color_img, depth_img;
+		{
+				std::lock_guard<std::mutex> lock(mutex);
+				if (colorImage.empty()) {
+						ROS_WARN("colorImage is empty");
+						return;
+				}
+				if (depthImage.empty()) {
+						ROS_WARN("depthImage is empty");
+						return;
+				}
+				color_img = colorImage.clone();
+				depth_img = depthImage.clone();
 		}
-		if (depthImage.empty()) {
-			ROS_WARN("depthImage is empty");
-			return;
-		}
-		Sign.publish_sign(colorImage, depthImage);
+		Sign.publish_sign(color_img, depth_img);
 	}
 	void run_lane() {
-		static ros::Rate lane_rate(50);
+		static ros::Rate lane_rate(30);
 		if (!doLane) {
 			return;
 		}
@@ -260,7 +272,7 @@ class CameraNode {
 		}
 	}
 	void run_sign() {
-		static ros::Rate sign_rate(50);
+		static ros::Rate sign_rate(30);
 		if (!doSign) {
 			return;
 		}

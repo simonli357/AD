@@ -221,6 +221,9 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
     if (!camera) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+        int horizon = 40;
+        lane_waypoints = Eigen::MatrixXd(horizon, 3);
+        waypoints_sub = nh.subscribe("/lane_waypoints", 3, &Utility::waypoints_callback, this);
         // std::cout << "waiting for lane message" << std::endl;
         // ros::topic::waitForMessage<utils::Lane2>("/lane");
         // std::cout << "received message from lane" << std::endl;
@@ -556,6 +559,17 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
 
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     process_lane_data(*msg);
+}
+void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
+    if(msg->data.size() < lane_waypoints.size()/3) {
+        ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg->data.size());
+        return;
+    }
+    for(int i = 0; i < lane_waypoints.size(); i+=3) {
+        lane_waypoints(i/3, 0) = msg->data[i];
+        lane_waypoints(i/3, 1) = msg->data[i+1];
+        lane_waypoints(i/3, 2) = msg->data[i+2];
+    }
 }
 void Utility::process_lane_data(const utils::Lane2& msg) {
     tcp_client->send_lane2(msg);
@@ -899,7 +913,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
     dyaw = yaw_rate;
-    printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
+    // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }
 void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip) {
