@@ -1,5 +1,7 @@
-from PyQt5.QtGui import QPainter, QPen, QColor
+from PyQt5.QtGui import QPainter, QPen, QColor, QImage, QPixmap
 from PyQt5 import QtCore, QtWidgets
+
+import cv2
 
 
 class ObjectWidget(QtWidgets.QWidget):
@@ -9,6 +11,7 @@ class ObjectWidget(QtWidgets.QWidget):
         self.main_window = self.parent()
 
         self.obj_dict = self.main_window.map_widget.object_dict
+        self.sign_images = self.main_window.map_widget.sign_images
 
         # Real-world extents (meters)
         self.x_min, self.x_max = -1.5, 1.5  # X-axis range
@@ -30,6 +33,19 @@ class ObjectWidget(QtWidgets.QWidget):
                 return  # Avoid division by zero if extents are not set properly
             self.draw_grid(painter, h1, h2, w1, w2, mid_w, pixels_per_meter_x, pixels_per_meter_y)
             self.draw_detected_object(painter, mid_h, mid_w, h2, pixels_per_meter_x, pixels_per_meter_y)
+
+    def draw_sign(self, painter: QPainter, x, y, size, sign_type):
+        img = self.sign_images[int(sign_type)]
+        if img is not None:
+            size = max(5, size)
+            img = cv2.resize(img, (size, size))
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            height, width, _ = rgb_img.shape
+            bytes_per_line = 3 * width
+            qimg = QImage(rgb_img.data, width, height, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qimg)
+            image_rect = QtCore.QRectF(x - size + 10, y - size - 15, size, size)
+            painter.drawPixmap(image_rect.topLeft(), pixmap)
 
     def draw_axis(self, painter: QPainter) -> tuple:
         # Calculate axis positions
@@ -74,10 +90,43 @@ class ObjectWidget(QtWidgets.QWidget):
         for i in range(0, self.main_window.cam_widget.numObj):
             if obj is None:
                 return
+
+            obj_type = obj[10 * i + 6]
+
             widget_x = mid_w - obj[i * 10 + 8] * pixels_per_meter_x
             widget_y = mid_h - obj[i * 10 + 7] * pixels_per_meter_y
 
-            painter.setPen(QPen(QColor(0, 255, 255), 5))
+            if self.obj_dict[obj_type] == 'Car':
+                painter.setPen(QPen(QColor('#009999'), 5))
+            if self.obj_dict[obj_type] == 'No Entry':
+                painter.setPen(QPen(QColor('#ff6600'), 5))
+            if self.obj_dict[obj_type] == 'Stopsign':
+                painter.setPen(QPen(QColor('#ff0000'), 5))
+            if self.obj_dict[obj_type] == 'Oneway':
+                painter.setPen(QPen(QColor('#ffffff'), 5))
+            if self.obj_dict[obj_type] == 'Highway Entrance':
+                painter.setPen(QPen(QColor('#004d00'), 5))
+            if self.obj_dict[obj_type] == 'Roundabout':
+                painter.setPen(QPen(QColor('#0000ff'), 5))
+            if self.obj_dict[obj_type] == 'Parking':
+                painter.setPen(QPen(QColor('#00ff00'), 5))
+            if self.obj_dict[obj_type] == 'Crosswalk':
+                painter.setPen(QPen(QColor('#ffff00'), 5))
+            if self.obj_dict[obj_type] == 'Highway Exit':
+                painter.setPen(QPen(QColor('#004d00'), 5))
+            if self.obj_dict[obj_type] == 'Priority':
+                painter.setPen(QPen(QColor('#0066ff'), 5))
+            if self.obj_dict[obj_type] == 'Green Light':
+                painter.setPen(QPen(QColor('#00ff00'), 5))
+            if self.obj_dict[obj_type] == 'Yellow Light':
+                painter.setPen(QPen(QColor('#ffff00'), 5))
+            if self.obj_dict[obj_type] == 'Red Light':
+                painter.setPen(QPen(QColor('#ff0000'), 5))
+            if self.obj_dict[obj_type] == 'Pedestrian':
+                painter.setPen(QPen(QColor('#ff3399'), 5))
+
+            self.draw_sign(painter, widget_x, widget_y, 25, obj_type)
+
             painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
 
             text_rec = QtCore.QRectF(

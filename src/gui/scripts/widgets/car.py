@@ -88,8 +88,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # Initialize grid VBO
-        grid_size_z = 8
-        grid_size_x = 4
+        grid_size_z = 12
+        grid_size_x = 6
         step = 1
         grid_vertices = []
         for z in range(-grid_size_z, grid_size_z + 1, step):
@@ -126,7 +126,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 15, 15, 0, 0, 0, 0, 1, 0)
+        glu.gluLookAt(0, 12, 16, 0, 0, 0, 0, 1, 0)
 
         # Draw grid
         self.draw_grid()
@@ -146,9 +146,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.qt_restore_gl_state()
 
         self.render_text(f'Yaw: {self.yaw:.2f}°', (0, 255, 255, 255), 10, 20)
-        self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 35)
-        self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 50)
-        self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 65)
+        self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 45)
+        self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 70)
+        self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 95)
 
     def qt_save_gl_state(self):
         gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
@@ -195,14 +195,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         )
 
         # Set up font
-        font = QFont("Arial", 8)
+        font = QFont("Arial")
         font.setBold(True)
         font.setStyleStrategy(QFont.PreferAntialias)
 
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(12 * scale_factor)
+        font.setPixelSize(20 * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -216,7 +216,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
-        gl.glTranslatef(0, 2, 0)
+        gl.glScalef(0.6, 0.6, 0.6)
+        gl.glTranslatef(0, 2, 1.5)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
@@ -251,27 +252,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPushMatrix()
         gl.glScalef(0.5, 0.5, -0.5)
         gl.glTranslatef(-x * 24, -5, y * 24)
-
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        gl.glColor4f(*color)
-        gl.glLineWidth(0.01)
-
-        self.car_model.vbo.bind()
-        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.car_model.vbo)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
-        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        self.car_model.vbo.unbind()
-
-        gl.glDisable(gl.GL_BLEND)
-        gl.glPopMatrix()
-
-    def draw_no_entry(self, x, y, color: (float, float, float, float)):
-        gl.glPushMatrix()
-        gl.glScalef(0.5, 0.5, -0.5)
-        gl.glTranslatef(-x * 32, -5, y * 32)
 
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
@@ -356,8 +336,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPopMatrix()
 
     def draw_path_node(self, x, y) -> None:
-        if abs(x) < 3.0 and abs(y) < 3.0:
-            return
         gl.glPushMatrix()
         gl.glColor3f(1, 1, 0)
         self.path_node_vbo.bind()
@@ -379,7 +357,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         for i in range(0, len(waypoints) - 1, 4):
             x = waypoints[i] - self.x_pos
             y = waypoints[i + 1] - self.y_pos
-            self.draw_path_node(x * 7, y * 7)
+            self.draw_path_node(x * 4, y * 4)
 
     def draw_detected_object(self):
         obj = self.main_window.cam_widget.detected_objects
@@ -392,7 +370,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if self.obj_dict[obj_type] == 'Car':
                 self.draw_car(x, y, (0, 0.6, 0.6, 1))               # #009999
             if self.obj_dict[obj_type] == 'No Entry':
-                self.draw_no_entry(x, y, (1, 0.4, 0, 1))            # #ff6600
+                self.draw_sign(x, y, (1, 0.4, 0, 1))                # #ff6600
             if self.obj_dict[obj_type] == 'Stopsign':
                 self.draw_sign(x, y, (1, 0, 0, 1))                  # #ff0000
             if self.obj_dict[obj_type] == 'Oneway':
