@@ -15,7 +15,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.started = False
         self.start_time = None
         self.accumulated_centiseconds = 0
-        self.timer_label = QLabel(f' 00:00:<font size="1">00</font>')
+        self.timer_label = QLabel(' 00:00:<font size="1">00</font>')
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
         self.time_timer = QTimer(self)
         self.time_timer.timeout.connect(self.update_stopwatch)
@@ -40,7 +40,7 @@ class ButtonsWidget(QtWidgets.QWidget):
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
+        self.layout.setAlignment(QtCore.Qt.AlignCenter)
         self.buttons = deque()
 
         self.start_btn = QtWidgets.QPushButton("")
@@ -64,11 +64,11 @@ class ButtonsWidget(QtWidgets.QWidget):
             QPushButton {
                 background-color: rgba(255, 255, 255, 0.08);
                 padding: 12px 36px 12px 32px;
-                margin-right: 12px;
                 color: white;
                 border: none;
                 border-radius: 8px;
                 font-size: 32px;
+                margin-left: 10px;
             }
             QPushButton:hover {
                 background-color: #9933ff;
@@ -86,9 +86,25 @@ class ButtonsWidget(QtWidgets.QWidget):
             QLabel {
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
-                color: #00FF00;  /* Neon green text */
+                color: white;
                 font-size: 28px;
+                margin-right: 10px;
+                margin-left: 10px;
             }
+        """)
+
+        self.update_button_style(self.start_btn, self.started)
+
+    def update_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "#FF0000" if is_active else "rgba(0, 255, 0, 1.0);"  # Light green/red
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: #9933ff;
+            }}
         """)
 
     def connect_signals(self) -> None:
@@ -101,6 +117,7 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
+        self.update_button_style(self.start_btn, self.started)
 
     def call_start_service(self, start) -> None:
         try:
@@ -162,13 +179,13 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.toggle_start_icon()
 
     def handle_stop_click(self) -> None:
-        self.call_start_service(False)
-        self.started = False
         self.time_timer.stop()
         self.start_time = None
-        self.timer_label.setText(f' 00:00:<font size="1">00</font>')
-        self.toggle_start_icon()
+        self.timer_label.setText(' 00:00:<font size="1">00</font>')
 
     def handle_goto_click(self) -> None:
         print("Planning Path")
-        self.call_goto_service(self.main_window.map_widget.cursor_coords)
+        if self.main_window.map_widget.cursor_coords:
+            self.call_goto_service(self.main_window.map_widget.cursor_coords)
+        else:
+            print("Not a valid destination")

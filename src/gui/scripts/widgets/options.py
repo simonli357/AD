@@ -2,6 +2,8 @@ from PyQt5 import QtWidgets, QtCore
 from collections import deque
 
 import time
+import os
+import numpy as np
 
 
 class OptionsWidget(QtWidgets.QWidget):
@@ -83,6 +85,14 @@ class OptionsWidget(QtWidgets.QWidget):
             }
         """)
 
+        self.update_button_style(self.toggle_sign_btn, self.map_widget.show_signs)
+        self.update_button_style(self.toggle_lanes_btn, self.map_widget.show_lanes)
+        self.update_button_style(self.toggle_cars_btn, self.map_widget.show_cars)
+        self.update_button_style(self.toggle_destinations_btn, self.map_widget.show_destinations)
+        self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
+        self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
+        self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
+
     def call_set_states_service(self, x=None, y=None):
         print("set states service called")
         try:
@@ -116,26 +126,45 @@ class OptionsWidget(QtWidgets.QWidget):
         self.set_yaw_btn.clicked.connect(self.handle_yaw_btn_click)
         self.save_path_btn.clicked.connect(self.handle_save_path_btn_click)
 
+    def update_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "#9933FF" if is_active else "rgba(255, 255, 255, 0.08);"  # Light green/red
+        button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: #9933ff;
+            }}
+        """)
+
     def handle_sign_btn_click(self) -> None:
         self.map_widget.show_signs = not self.map_widget.show_signs
+        self.update_button_style(self.toggle_sign_btn, self.map_widget.show_signs)
 
     def handle_lanes_btn_click(self) -> None:
         self.map_widget.show_lanes = not self.map_widget.show_lanes
+        self.update_button_style(self.toggle_lanes_btn, self.map_widget.show_lanes)
 
     def handle_cars_btn_click(self) -> None:
         self.map_widget.show_cars = not self.map_widget.show_cars
+        self.update_button_style(self.toggle_cars_btn, self.map_widget.show_cars)
 
     def handle_destinations_btn_click(self) -> None:
         self.map_widget.show_destinations = not self.map_widget.show_destinations
+        self.update_button_style(self.toggle_destinations_btn, self.map_widget.show_destinations)
 
     def handle_path_btn_click(self) -> None:
         self.map_widget.show_path = not self.map_widget.show_path
+        self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
 
     def handle_gt_btn_click(self) -> None:
         self.map_widget.show_gt = not self.map_widget.show_gt
+        self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
 
     def handle_depth_btn_click(self) -> None:
         self.cam_widget.show_depth = not self.cam_widget.show_depth
+        self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
 
     def handle_states_btn_click(self) -> None:
         self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)

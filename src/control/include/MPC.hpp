@@ -240,7 +240,10 @@ public:
         return reset_status;
     }
     
-    int solve(const Eigen::Block<Eigen::MatrixXd>& state_refs, const Eigen::Block<Eigen::MatrixXd>& input_refs, Eigen::Vector3d &i_current_state) {
+    int solve(const Eigen::Ref<const Eigen::MatrixXd>& state_refs,
+        const Eigen::Ref<const Eigen::MatrixXd>& input_refs,
+        Eigen::Vector3d &i_current_state)
+    {
         /*
         * Update the reference trajectory and solve the optimization problem
         * Computed control input is stored in u_current

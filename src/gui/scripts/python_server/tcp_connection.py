@@ -14,6 +14,7 @@ from python_server.msg.run_msg import RunMsg
 class TcpConnection:
     def __init__(self, client_socket=None):
         self.socket = client_socket
+        self.alive = True
         if client_socket is not None:
             self.socket.settimeout(None)
             self.data_actions = OrderedDict({
@@ -39,7 +40,8 @@ class TcpConnection:
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
             self.params = ParamsMsg(b'\x09')
-            threading.Thread(target=self.receive, daemon=True).start()
+            self.receiver = threading.Thread(target=self.receive, daemon=True)
+            self.receiver.start()
             self.send_string("ack")
 
     def recvall(self, length):
@@ -58,10 +60,10 @@ class TcpConnection:
     def receive(self):
         header_size = 5
         message_size = 4
-        while True:
+        while self.alive:
             try:
                 # Receive the header (5 bytes)
-                while True:
+                while self.alive:
                     try:
                         header = self.socket.recv(header_size)
                         if len(header) < header_size:

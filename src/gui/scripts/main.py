@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import threading
+import signal
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -18,6 +19,7 @@ from widgets.map import MapWidget
 from widgets.camera import CameraWidget
 from widgets.message import MessageWidget
 from widgets.car import CarWidget
+from widgets.objects import ObjectWidget
 
 from std_srvs.srv import TriggerRequest
 
@@ -33,11 +35,13 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
+    render_widget_signal = pyqtSignal()
 
 
 class MainWindow(QMainWindow):
     def __init__(self, server):
         super().__init__()
+        signal.signal(signal.SIGINT, self.handle_signal)
         self.server = server
         self.comm = CommunicationHandler()
 
@@ -56,6 +60,7 @@ class MainWindow(QMainWindow):
         self.msg_widget = MessageWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
+        self.object_widget = ObjectWidget(self)
 
         self.comm.message_signal.connect(self.msg_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -69,42 +74,56 @@ class MainWindow(QMainWindow):
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.steer_signal.connect(self.meter_widget.set_steer)
 
+        self.comm.render_widget_signal.connect(self.car_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.object_widget.render_widget)
+
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
-        root_layout = QVBoxLayout(root_widget)
+        root_layout = QHBoxLayout(root_widget)
+        root_layout.setAlignment(QtCore.Qt.AlignLeft)
 
         left_widgets = QWidget()
-        self.left_layout = QHBoxLayout(left_widgets)
-        self.left_layout.setAlignment(QtCore.Qt.AlignJustify)
-        self.left_layout.addWidget(self.opt_widget)
-        self.left_layout.addWidget(self.map_widget)
+        self.left_layout = QVBoxLayout(left_widgets)
+
+        top_widgets = QWidget()
+        self.top_layout = QHBoxLayout(top_widgets)
+        self.top_layout.addWidget(self.opt_widget)
+        self.top_layout.addWidget(self.map_widget)
+
+        self.left_layout.addWidget(top_widgets)
+        self.left_layout.addWidget(self.msg_widget)
 
         right_widgets = QWidget()
         stat_widgets = QWidget()
         self.right_layout = QVBoxLayout(right_widgets)
-        self.right_layout.setAlignment(QtCore.Qt.AlignJustify)
         self.right_layout.addWidget(self.cam_widget)
         self.right_layout.addWidget(self.buttons_widget)
         self.stat_layout = QHBoxLayout(stat_widgets)
-        self.stat_layout.setAlignment(QtCore.Qt.AlignJustify)
-        self.stat_layout.setSpacing(20)
-        self.stat_layout.addWidget(self.meter_widget)
-        self.stat_layout.addWidget(self.car_widget)
+        left_wrapper = QWidget()
+        right_wrapper = QWidget()
+        self.left_wrapper_layout = QVBoxLayout(left_wrapper)
+        self.left_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.left_wrapper_layout.addWidget(self.meter_widget)
+        self.left_wrapper_layout.addWidget(self.object_widget)
+        self.right_wrapper_layout = QVBoxLayout(right_wrapper)
+        self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.right_wrapper_layout.addWidget(self.car_widget)
+        self.stat_layout.addWidget(left_wrapper)
+        self.stat_layout.addWidget(right_wrapper)
         self.right_layout.addWidget(stat_widgets)
 
-        top_widgets = QWidget()
-        self.top_layout = QHBoxLayout(top_widgets)
-        self.top_layout.setAlignment(QtCore.Qt.AlignJustify)
-        self.top_layout.addWidget(left_widgets)
-        self.top_layout.addWidget(right_widgets)
-
-        root_layout.addWidget(top_widgets)
-        root_layout.addWidget(self.msg_widget)
+        root_layout.addWidget(left_widgets, 2)
+        root_layout.addWidget(right_widgets, 1)
 
         self.msg_widget.add_message("BFMC DASHBOARD INITIALIZED")
 
-        threading.Thread(target=self.udp_callbacks, args=(), daemon=True).start()
-        threading.Thread(target=self.tcp_callbacks, args=(), daemon=True).start()
+        self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
+        self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
+        self.render_thread = threading.Thread(target=self.render_callbacks, args=(), daemon=True)
+        self.udp_thread.start()
+        self.tcp_thread.start()
+        self.render_thread.start()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -169,8 +188,21 @@ class MainWindow(QMainWindow):
                 self.comm.sign_signal.emit(sign)
             if steer is not None:
                 self.comm.steer_signal.emit(steer)
-
             time.sleep(0.016)
+
+    def render_callbacks(self) -> None:
+        while True:
+            self.comm.render_widget_signal.emit()
+            time.sleep(0.016)
+
+    def handle_signal(self, signal, frame):
+        print("Caught SIGINT (Ctrl+C), closing sockets...")
+        self.close()
+        if self.server.tcp_socket:
+            self.server.tcp_socket.close()
+            self.server.udp_socket.close()
+        print("sockets closed")
+        sys.exit(0)
 
 
 if __name__ == '__main__':
