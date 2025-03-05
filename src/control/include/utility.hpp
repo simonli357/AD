@@ -414,7 +414,7 @@ public:
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         static bool first = true;
-        static bool use_pid = false;
+        static bool use_pid = true;
         if (serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
@@ -424,9 +424,9 @@ public:
             first = false;
         
             float f_active = 1.0;
-            float f_proportional = 1.25;
-            float f_integral = 0.625;
-            float f_derivative = 0.15125;
+            float f_proportional = 1.00;
+            float f_integral = 0.0;
+            float f_derivative = 0.0;
             
             std::stringstream pid_str;
             char pid_buff[100];

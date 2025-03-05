@@ -1366,7 +1366,8 @@ void StateMachine::publish_commands() {
     // steer = 0;
     // speed = 0.32;
     
-    // std::cout << "steer: " << steer << ", speed: " << speed << std::endl;
+    std::cout << "@steer:" << steer << std::endl;
+    std::cout << "@speed:" << speed << std::endl;
     // std::cout << speed*100 << ", " << steer << std::endl;
     utils.publish_cmd_vel(steer, speed);
 }

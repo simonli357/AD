@@ -22,6 +22,8 @@
 #include <mutex>
 #include <cmath>
 #include <robot_localization/SetPose.h>
+#include <iostream>
+#include <fstream>
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
@@ -264,6 +266,19 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     static size_t length = 0;
     static std::string buffer; // Buffer to accumulate the received data
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
+
+    // Malo Debug Serial commands
+    // Append the received data to output.txt
+    std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
+    if (outFile.is_open()) {
+        outFile.write(data, length);
+        outFile.flush();
+        outFile.close();
+    } else {
+    std::cerr << "Unable to open output.txt" << std::endl;
+    }
+    // End of Malo Serial Debug commands
+
     buffer.append(data, length);
     if (buffer.find("@7") == std::string::npos) {
         // ROS_WARN("cant find @7");
@@ -899,7 +914,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
     dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
     dyaw = yaw_rate;
-    printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
+    // printf("dt: %.3f, v: %.3f, yaw: %.3f, steer: %.3f, dx: %.3f, dy: %.3f, dyaw: %.3f\n", dt, speed, yaw, steering_angle, dx, dy, dyaw);
     return 1;
 }
 void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip) {
