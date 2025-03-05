@@ -22,6 +22,8 @@
 #include <mutex>
 #include <cmath>
 #include <robot_localization/SetPose.h>
+#include <iostream>
+#include <fstream>
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
@@ -267,6 +269,19 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     static size_t length = 0;
     static std::string buffer; // Buffer to accumulate the received data
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
+
+    // Malo Debug Serial commands
+    // Append the received data to output.txt
+    std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
+    if (outFile.is_open()) {
+        outFile.write(data, length);
+        outFile.flush();
+        outFile.close();
+    } else {
+    std::cerr << "Unable to open output.txt" << std::endl;
+    }
+    // End of Malo Serial Debug commands
+
     buffer.append(data, length);
     if (buffer.find("@7") == std::string::npos) {
         // ROS_WARN("cant find @7");
