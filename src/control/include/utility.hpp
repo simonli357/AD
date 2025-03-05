@@ -86,6 +86,10 @@ public:
     double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     // bool stopline = false;
     int stopline = -1;
+    double speed_offset = 0.0;
+    double steer_offset = 0.0;
+    double steer_offset_minimum = 2.0;
+    double steer_offset_maximum = 9.0;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
