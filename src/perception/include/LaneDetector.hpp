@@ -6,18 +6,18 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
 #include <chrono>
+#include <Eigen/Dense>
+#include "Eigen/src/Core/Matrix.h"
 #include "utils/Lane2.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <tuple>
 #include "interpolation.h"
 #include "stdafx.h"
 #include <iostream>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include "OldLaneDetector.hpp"
-#include <Eigen/Dense>
 #include "utils/constants.h"
 
 using namespace std::chrono;
@@ -256,7 +256,7 @@ public:
     std::vector<double> getWaypoints(std::vector<int> &y_Values) {
         int offset = 175;
         std::vector<double> wayPoint(y_Values.size()); // Resized wayPoint to match the size of y_Values
-            std::vector<double> L_x(y_Values.size());     // Resized L_x
+        std::vector<double> L_x(y_Values.size());     // Resized L_x
         std::vector<double> R_x(y_Values.size());     // Resized R_x
         auto& fit_L = left_fit;
         auto& fit_R = right_fit;
@@ -353,6 +353,66 @@ public:
             }
         }
         return result_pair;
+    }
+
+
+    int combination(int n, int k) {
+        if (k < 0 || k > n) return 0;
+        if (k == 0 || k == n) return 1;
+        k = std::min(k, n - k);
+        long res = 1;
+        for (int i = 1; i <= k; ++i) {
+            res *= n - k + i;
+            res /= i;
+        }
+        return res;
+    }
+
+    std::vector<double> lane_fit(std::vector<double>& x_s, std::vector<double>& y_s) {
+        using namespace Eigen;
+
+        if (x_s.size() != y_s.size() || x_s.size() < 4) {
+            return std::vector<double>();
+        }
+
+        const VectorXd x_orig = Map<VectorXd>(x_s.data(), x_s.size());
+        const VectorXd y_orig = Map<VectorXd>(y_s.data(), y_s.size());
+
+        // Normalization parameters
+        const double x_mean = x_orig.mean();
+        const double y_mean = y_orig.mean();
+        const double y_std = (y_orig.array() - y_mean).matrix().norm() / sqrt(y_orig.size() - 1) + 1e-8;
+
+        // Standardize coordinates
+        VectorXd x = x_orig.array() - x_mean;
+        VectorXd y = (y_orig.array() - y_mean) / y_std;
+
+        int degree = 2;
+
+        // Final fit with best degree
+        MatrixXd X(x.size(), degree + 1);
+        for (int i = 0; i < x.size(); ++i) {
+            X(i, 0) = 1.0;
+            double y_power = y[i];
+            for (int j = 1; j <= degree; ++j) {
+                X(i, j) = y_power;
+                y_power *= y[i];
+            }
+        }
+
+        VectorXd coeffs = X.colPivHouseholderQr().solve(x);
+
+        // Convert coefficients to original space
+        VectorXd c_orig = VectorXd::Zero(degree + 1);
+        for (int k = 0; k <= degree; ++k) {
+            double scaled_coeff = coeffs[k] / std::pow(y_std, k);
+            for (int i = 0; i <= k; ++i) {
+                c_orig[i] += scaled_coeff * combination(k, i) * std::pow(-y_mean, k - i);
+            }
+        }
+        c_orig[0] += x_mean;
+
+        return std::vector<double>(c_orig.data(), c_orig.data() + c_orig.size());
     }
 
     bool line_fit(const cv::Mat& binary_warped){
@@ -500,7 +560,7 @@ public:
         std::vector<double> rightx;
         std::vector<double> righty;
         
-        int m = 3; // degree of the polynomial
+        // int m = 3; // degree of the polynomial
 
         if (number_of_fits == 1 || number_of_fits == 2) {
             // Populate leftx and lefty vectors
@@ -508,23 +568,25 @@ public:
                 leftx.push_back(nonzerox[idx]);
                 lefty.push_back(nonzeroy[idx]);            
             }
+            
+            left_fit = lane_fit(leftx, lefty);
 
             // Perform polynomial fitting
-            static alglib::real_1d_array x_left, y_left;           // Declare alglib array type
-            x_left.setcontent(leftx.size(), leftx.data());  // Populate X array
-            y_left.setcontent(lefty.size(), lefty.data());  // Populate Y array
-            static alglib::polynomialfitreport rep_left;
-            static alglib::barycentricinterpolant p_left;
-            alglib::polynomialfit(y_left, x_left, m, p_left, rep_left);     // Perform polynomial fit
-            // Convert polynomial coefficients to standard form
-            static alglib::real_1d_array a1;
-            alglib::polynomialbar2pow(p_left, a1);
-            left_fit.clear();
-            int size = a1.length();        
-            left_fit.reserve(size);  
-            for (int i = 0; i < size; ++i) {    // Iterate over to to transform
-                left_fit.push_back(a1[i]);
-            }
+            /* static alglib::real_1d_array x_left, y_left;           // Declare alglib array type */
+            /* x_left.setcontent(leftx.size(), leftx.data());  // Populate X array */
+            /* y_left.setcontent(lefty.size(), lefty.data());  // Populate Y array */
+            /* static alglib::polynomialfitreport rep_left; */
+            /* static alglib::barycentricinterpolant p_left; */
+            /* alglib::polynomialfit(y_left, x_left, m, p_left, rep_left);     // Perform polynomial fit */
+            /* // Convert polynomial coefficients to standard form */
+            /* static alglib::real_1d_array a1; */
+            /* alglib::polynomialbar2pow(p_left, a1); */
+            /* left_fit.clear(); */
+            /* int size = a1.length(); */        
+            /* left_fit.reserve(size); */  
+            /* for (int i = 0; i < size; ++i) {    // Iterate over to to transform */
+            /*     left_fit.push_back(a1[i]); */
+            /* } */
         }
 
         if (number_of_fits == 3 || number_of_fits == 2) {
@@ -534,22 +596,24 @@ public:
                 righty.push_back(nonzeroy[idx]);
             }
 
+            right_fit = lane_fit(rightx, righty);
+
             // Perform polynomial fitting
-            static alglib::real_1d_array x_right, y_right;             // Declare alglib array type
-            x_right.setcontent(rightx.size(), rightx.data());   // Populate X array
-            y_right.setcontent(righty.size(), righty.data());   // Populate Y array
-            static alglib::polynomialfitreport rep_right; 
-            static alglib::barycentricinterpolant p_right;
-            alglib::polynomialfit(y_right, x_right, m, p_right, rep_right);     // Perform polynomial fit
-            // Convert polynomial coefficients to standard form
-            static alglib::real_1d_array a3;
-            alglib::polynomialbar2pow(p_right, a3);
-            right_fit.clear();
-            int size = a3.length();        
-            right_fit.reserve(size);  
-            for (int i = 0; i < size; ++i) { 
-                right_fit.push_back(a3[i]);
-            }
+            /* static alglib::real_1d_array x_right, y_right;             // Declare alglib array type */
+            /* x_right.setcontent(rightx.size(), rightx.data());   // Populate X array */
+            /* y_right.setcontent(righty.size(), righty.data());   // Populate Y array */
+            /* static alglib::polynomialfitreport rep_right; */ 
+            /* static alglib::barycentricinterpolant p_right; */
+            /* alglib::polynomialfit(y_right, x_right, m, p_right, rep_right);     // Perform polynomial fit */
+            /* // Convert polynomial coefficients to standard form */
+            /* static alglib::real_1d_array a3; */
+            /* alglib::polynomialbar2pow(p_right, a3); */
+            /* right_fit.clear(); */
+            /* int size = a3.length(); */        
+            /* right_fit.reserve(size); */  
+            /* for (int i = 0; i < size; ++i) { */ 
+            /*     right_fit.push_back(a3[i]); */
+            /* } */
         }
         return true;
     }
