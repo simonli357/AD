@@ -113,7 +113,7 @@ class LaneDetector {
 		if (newlane) {
 			// lane_detection(image);
 			if (!maps_initialized) {
-				initializeMaps(cameraMatrix, distCoeff, transMatrix, image.size());
+				initializeMaps(cameraMatrix, distCoeff, transMatrix_scaled, image.size());
 			}
 			cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
 			if (!getIPM(grayscale_image, ipm_grayscale))
@@ -145,7 +145,7 @@ class LaneDetector {
 			lane_pub.publish(lane_msg);
 
 			if (showflag) {
-				if (!getIPM(image, ipm_color))
+				if (!getIPMFull(image, ipm_color))
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
 				cv::imshow("Binary Image", gyu_img);
@@ -168,10 +168,11 @@ class LaneDetector {
 	// NEW LANE
 	std::vector<int> y_Values = {650, 625, 600, 575, 550, 525, 500, 475, 450, 425, 400, 375, 350, 325, 300};
 	std::vector<double> waypoints;
-	cv::Mat grayscale_image = cv::Mat::zeros(480, 640, CV_8UC1);
-	cv::Mat ipm_color = cv::Mat::zeros(480, 640, CV_8UC3);
-	cv::Mat ipm_grayscale = cv::Mat::zeros(480, 640, CV_8UC1);
-	cv::Mat binary_image = cv::Mat::zeros(480, 640, CV_8UC1);
+    const double scale_factor = 0.40;
+	cv::Mat grayscale_image = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
+	cv::Mat ipm_color = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC3);
+	cv::Mat ipm_grayscale = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
+	cv::Mat binary_image = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
 
 	std_msgs::Float32MultiArray waypoints_msg;
 	std_msgs::MultiArrayDimension dimension;
@@ -191,13 +192,18 @@ class LaneDetector {
 
 	// Define initial coordinates of input image as a constant global variable
 	const cv::Mat initial = (cv::Mat_<float>(4, 2) << 0, 300, 640, 300, 0, 480, 640, 480);
+	const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << 0, 300 * scale_factor, 640 * scale_factor, 300 * scale_factor, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
 
 	// Define where the initial coordinates will end up on the final image as a constant global variable
 	const cv::Mat final = (cv::Mat_<float>(4, 2) << 0, 0, 640, 0, 0, 480, 640, 480);
+	const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, 640 * scale_factor, 0, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
 
 	// Compute the transformation matrix
 	cv::Mat transMatrix = cv::getPerspectiveTransform(initial, final);
 	cv::Mat invMatrix = cv::getPerspectiveTransform(final, initial);
+
+	cv::Mat transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
+	cv::Mat invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
 
 	double fx = VehicleConstants::CAMERA_PARAMS[0];
 	double fy = VehicleConstants::CAMERA_PARAMS[1];
@@ -213,7 +219,16 @@ class LaneDetector {
 	}
 
 	// NEW LANE
-	int getIPM(const cv::Mat &input, cv::Mat &output) {
+	int getIPM(const cv::Mat &in, cv::Mat &output) {
+		static cv::Mat remapped;
+        cv::Mat input;
+        cv::resize(in, input, cv::Size(), scale_factor, scale_factor, cv::INTER_NEAREST);
+		cv::remap(input, remapped, map1, map2, cv::INTER_LINEAR);
+		cv::warpPerspective(remapped, output, transMatrix_scaled, input.size(), cv::INTER_LINEAR);
+		return !output.empty();
+	}
+
+	int getIPMFull(const cv::Mat &input, cv::Mat &output) {
 		static cv::Mat remapped;
 		cv::remap(input, remapped, map1, map2, cv::INTER_LINEAR);
 		cv::warpPerspective(remapped, output, transMatrix, input.size(), cv::INTER_LINEAR);
@@ -395,16 +410,16 @@ class LaneDetector {
 
 	bool line_fit(const cv::Mat &binary_warped) {
 		// Declare variables to be used
-		static int lane_width = 350; // HARD CODED LANE WIDTH
+		static int lane_width = 350 * scale_factor; // HARD CODED LANE WIDTH
 		static int n_windows = 9;	 // HARD CODED WINDOW NUMBER FOR LANE PARSING
 		static int threshold = 2000; // HARD CODED THRESHOLD
 		static int leftx_base = 0;
-		static int rightx_base = 640;
+		static int rightx_base = 640 * scale_factor;
 		number_of_fits = 0;
 		left_fit = {0.0};
 		right_fit = {0.0};
 
-		cv::reduce(binary_warped(cv::Range(200, 480), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
+		cv::reduce(binary_warped(cv::Range(200 * scale_factor, 480 * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
 
 		find_center_indices(histogram, threshold); // Get the center indices
 
@@ -416,7 +431,7 @@ class LaneDetector {
 		}
 
 		if (size_indices == 1) {		   // If only one lane line is detected
-			if (center_indices[0] < 320) { // Check on which side of the car it is
+			if (center_indices[0] < 320 * scale_factor) { // Check on which side of the car it is
 				number_of_fits = 1;		   // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 				leftx_base = center_indices[0];
 				rightx_base = 0;
@@ -434,7 +449,7 @@ class LaneDetector {
 			int delta = std::abs(center_indices[0] - center_indices[1]); // Check to see if the two lane lines are close enough to be the same
 			if (delta < 160) {
 				center_indices[0] = 0.5 * (center_indices[0] + center_indices[1]);
-				if (center_indices[0] < 320) {
+				if (center_indices[0] < 320 * scale_factor) {
 					number_of_fits = 1; // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 					leftx_base = center_indices[0];
 					rightx_base = 0;
@@ -468,10 +483,10 @@ class LaneDetector {
 		int rightx_current = rightx_base;
 
 		// Set the width of the windows +/- margin
-		int margin = 50;
+		int margin = 50 * scale_factor;
 
 		// Set minimum number of pixels found to recenter window
-		int minpix = 50;
+		int minpix = 50 * scale_factor;
 
 		// Create empty vectors to receive left and right lane pixel indices
 		std::vector<int> left_lane_inds;
@@ -541,6 +556,11 @@ class LaneDetector {
 			}
 
 			left_fit = lane_fit(leftx, lefty);
+            
+            if (scale_factor != 1.0) {
+                left_fit[0] /= scale_factor;       // a0' → a0 = a0'/scale
+                left_fit[2] *= scale_factor;       // a2' → a2 = a2' * scale
+            }
 
 			// Perform polynomial fitting
 			/* static alglib::real_1d_array x_left, y_left;           // Declare alglib array type */
@@ -569,6 +589,11 @@ class LaneDetector {
 
 			right_fit = lane_fit(rightx, righty);
 
+            if (scale_factor != 1.0) {
+                right_fit[0] /= scale_factor;       // a0' → a0 = a0'/scale
+                right_fit[2] *= scale_factor;       // a2' → a2 = a2' * scale
+            }
+
 			// Perform polynomial fitting
 			/* static alglib::real_1d_array x_right, y_right;             // Declare alglib array type */
 			/* x_right.setcontent(rightx.size(), rightx.data());   // Populate X array */
@@ -589,9 +614,7 @@ class LaneDetector {
 		return true;
 	}
 
-	cv::Mat viz3(const cv::Mat &binary_warped, const cv::Mat &non_warped, const std::vector<float> waypoints, bool IPM = true)
-
-	{
+	cv::Mat viz3(const cv::Mat &binary_warped, const cv::Mat &non_warped, const std::vector<float> waypoints, bool IPM = true) {
 
 		// Generate y values for plotting
 		std::vector<double> ploty;
