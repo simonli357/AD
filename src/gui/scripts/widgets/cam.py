@@ -120,7 +120,7 @@ class CameraWidget(QDialog):
         default_config = {
             'ssh_target': 'scandy@10.0.0.250',
             'passwd': 'alex',
-            'remote_catkin_ws': '/path/to/catkin_ws'
+            'remote_catkin_ws': '/path/to/remote_catkin_ws'
         }
         os.makedirs(os.path.dirname(self.ssh_config), exist_ok=True)
         with open(self.ssh_config, 'w') as file:
@@ -131,7 +131,7 @@ class CameraWidget(QDialog):
         src_devel = 'source devel/setup.bash'
         if self.args_cached == 'args':
             self.args_cached = ''
-        if self.use_ssh:
+        if not self.use_ssh:
             target = self.ssh_target.text()
             passwd = self.passwd.text()
             catkin_ws = self.remote_catkin_ws.text()

@@ -61,25 +61,21 @@ class SimulatorWidget(QDialog):
     def accept(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
-        if not self.catkin_ws.text() or not self.args.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch sim_pkg {self.args_cached}'
-        elif not self.catkin_ws.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch sim_pkg {self.args.text()}'
-            self.cache['args'] = self.args.text()
-            with open(self.config, 'w') as file:
-                yaml.dump(self.cache, file)
-        elif not self.args.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch sim_pkg {self.args_cached}'
-            self.cache['catkin_ws'] = self.catkin_ws.text()
-            with open(self.config, 'w') as file:
-                yaml.dump(self.cache, file)
+        if self.args_cached == 'args':
+            self.args_cached = ''
+        catkin_ws = self.catkin_ws.text()
+        args = self.args.text()
+        if not catkin_ws:
+            catkin_ws = self.catkin_ws_cached
         else:
-            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch sim_pkg {self.args.text()}'
-            self.cache['catkin_ws'] = self.catkin_ws.text()
-            self.cache['args'] = self.args.text()
-            with open(self.config, 'w') as file:
-                yaml.dump(self.cache, file)
-
+            self.cache['catkin_ws'] = catkin_ws
+        if not args:
+            args = self.args_cached
+        else:
+            self.cache['args'] = args
+        self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch sim_pkg {args}'
+        with open(self.config, 'w') as file:
+            yaml.dump(self.cache, file)
         self.catkin_ws.clear()
         self.args.clear()
         super().accept()

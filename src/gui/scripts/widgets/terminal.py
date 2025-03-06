@@ -29,19 +29,15 @@ class TerminalWidget(QtWidgets.QWidget):
         # Simulator
         self.sim_display = None
         self.sim_process = None
-        self.sim_widget = SimulatorWidget()
         # Control
         self.ctrl_display = None
         self.ctrl_process = None
-        self.ctrl_widget = ControllerWidget()
         # Camera
         self.cam_display = None
         self.cam_process = None
-        self.cam_widget = CameraWidget()
         # Path planner
         self.path_display = None
         self.path_process = None
-        self.path_widget = PathPlannerWidget()
         self.setup_ui()
         self.connect_signals()
 
@@ -187,8 +183,9 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.SIM:
             return
         if self.sim_display is None:
-            self.sim_widget.exec()
-            cmd = self.sim_widget.get_cmd()
+            modal = SimulatorWidget()
+            modal.exec()
+            cmd = modal.get_cmd()
             if cmd is None:
                 return
             self.create_sim_display()
@@ -249,8 +246,9 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.CONTROL:
             return
         if self.ctrl_display is None:
-            self.ctrl_widget.exec()
-            cmd = self.ctrl_widget.get_cmd()
+            modal = ControllerWidget()
+            modal.exec()
+            cmd = modal.get_cmd()
             if cmd is None:
                 return
             self.create_ctrl_display()
@@ -311,8 +309,9 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.CAM:
             return
         if self.cam_display is None:
-            self.cam_widget.exec()
-            cmd = self.cam_widget.get_cmd()
+            modal = CameraWidget()
+            modal.exec()
+            cmd = modal.get_cmd()
             if cmd is None:
                 return
             self.create_cam_display()
@@ -374,8 +373,9 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.PATH:
             return
         if self.path_display is None:
-            self.path_widget.exec()
-            cmd = self.path_widget.get_cmd()
+            modal = PathPlannerWidget()
+            modal.exec()
+            cmd = modal.get_cmd()
             if cmd is None:
                 return
             self.create_path_display()
