@@ -4,11 +4,14 @@ from PyQt5.QtWidgets import QWidget
 from collections import deque
 from enum import Enum
 from .simulator import SimulatorWidget
+from .path_planner import PathPlannerWidget
 
 
 class TerminalType(Enum):
     ROS = 1
     SIM = 2
+    CONTROL = 3
+    PATH = 4
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -18,10 +21,16 @@ class TerminalWidget(QtWidgets.QWidget):
         self.kill_thread = None
         self.terminals = deque()
         self.terminals.append(TerminalType.ROS)
+        # ROS debug
         self.message_history = deque([], 1000)
+        # Simulator
         self.sim_display = None
         self.sim_process = None
         self.sim_widget = SimulatorWidget()
+        # Path planner
+        self.path_display = None
+        self.path_process = None
+        self.path_widget = PathPlannerWidget()
         self.setup_ui()
         self.connect_signals()
 
@@ -35,9 +44,13 @@ class TerminalWidget(QtWidgets.QWidget):
         self.stop_btn = QtWidgets.QPushButton(' Stop')
         self.ros_btn = QtWidgets.QPushButton(' ROS Debug')
         self.sim_btn = QtWidgets.QPushButton('󰘨 Simulator')
+        self.controller_btn = QtWidgets.QPushButton('󱡸 Controller')
+        self.path_planner_btn = QtWidgets.QPushButton('  Planner')
         self.buttons.append(self.stop_btn)
         self.buttons.append(self.ros_btn)
         self.buttons.append(self.sim_btn)
+        self.buttons.append(self.controller_btn)
+        self.buttons.append(self.path_planner_btn)
         for btn in self.buttons:
             self.button_wrapper.addWidget(btn)
         self.button_wrapper.addStretch()
@@ -87,6 +100,8 @@ class TerminalWidget(QtWidgets.QWidget):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
         self.ros_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
+        self.controller_btn.clicked.connect(self.handle_controller_btn_click)
+        self.path_planner_btn.clicked.connect(self.handle_path_planner_btn_click)
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -104,6 +119,8 @@ class TerminalWidget(QtWidgets.QWidget):
         current_terminal_type = self.get_current_terminal_type()
         self.update_button_style(self.ros_btn, current_terminal_type == TerminalType.ROS)
         self.update_button_style(self.sim_btn, current_terminal_type == TerminalType.SIM)
+        self.update_button_style(self.controller_btn, current_terminal_type == TerminalType.CONTROL)
+        self.update_button_style(self.path_planner_btn, current_terminal_type == TerminalType.PATH)
 
     def find_widget_index(self, term_type):
         if term_type not in self.terminals:
@@ -139,6 +156,8 @@ class TerminalWidget(QtWidgets.QWidget):
         current_terminal_type = self.get_current_terminal_type()
         if current_terminal_type == TerminalType.SIM:
             self.stop_sim_process()
+        if current_terminal_type == TerminalType.PATH:
+            self.stop_path_process()
 
     ################
     # Simulator
@@ -175,24 +194,101 @@ class TerminalWidget(QtWidgets.QWidget):
         """)
         self.stacked_widget.addWidget(self.sim_display)
 
+    def read_sim_output(self):
+        stdout = self.sim_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.sim_display.append(stdout.strip())
+
+    def read_sim_err_output(self):
+        stderr = self.sim_process.readAllStandardOutput().data().decode()
+        if stderr:
+            self.sim_display.append(stderr.strip())
+
     def start_sim_process(self, cmd):
         self.sim_process = QProcess(self)
         self.sim_process.readyReadStandardOutput.connect(self.read_sim_output)
-        self.sim_process.start('bash', ['-i', '-c', cmd])
+        self.sim_process.readyReadStandardError.connect(self.read_sim_err_output)
+        self.sim_process.start('bash', ['-c', cmd])
 
     def stop_sim_process(self):
         if hasattr(self, 'sim_process') and self.sim_process:
             try:
                 self.sim_process.readyReadStandardOutput.disconnect()
+                self.sim_process.readyReadStandardError.disconnect()
             except Exception as e:
                 print(e)
             self.kill_process(self.sim_process, self.sim_btn, self.sim_display, TerminalType.SIM)
             self.sim_process = None
             self.sim_display = None
 
-    def read_sim_output(self):
-        data = self.sim_process.readAllStandardOutput().data().decode()
-        self.sim_display.append(data.strip())
+    ################
+    # Controller
+    ################
+
+    def handle_controller_btn_click(self):
+        pass
+
+    ################
+    # Path Planner
+    ################
+
+    def handle_path_planner_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.PATH:
+            return
+        if self.path_display is None:
+            self.path_widget.exec()
+            cmd = self.path_widget.get_cmd()
+            if cmd is None:
+                return
+            self.create_path_display()
+            self.set_terminal(TerminalType.PATH)
+            self.start_path_process(cmd)
+        else:
+            self.set_terminal(TerminalType.PATH)
+
+    def create_path_display(self):
+        self.path_display = QtWidgets.QTextEdit()
+        self.path_display.setReadOnly(True)
+        self.path_display.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                margin-left: 8px;
+                border-radius: 12px;
+                padding: 5px;
+            }
+        """)
+        self.stacked_widget.addWidget(self.path_display)
+
+    def read_path_output(self):
+        stdout = self.path_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.path_display.append(stdout.strip())
+
+    def read_path_err_output(self):
+        stderr = self.path_process.readAllStandardError().data().decode()
+        if stderr:
+            self.path_display.append(stderr.strip())
+
+    def start_path_process(self, cmd):
+        self.path_process = QProcess(self)
+        self.path_process.readyReadStandardOutput.connect(self.read_path_output)
+        self.path_process.readyReadStandardError.connect(self.read_path_err_output)
+        self.path_process.start('bash', ['-c', cmd])
+
+    def stop_path_process(self):
+        if hasattr(self, 'path_process') and self.path_process:
+            try:
+                self.path_process.readyReadStandardOutput.disconnect()
+                self.path_process.readyReadStandardError.disconnect()
+            except Exception as e:
+                print(e)
+            self.kill_process(self.path_process, self.path_planner_btn, self.path_display, TerminalType.PATH)
+            self.path_process = None
+            self.path_display = None
 
     ################
     # ROS Debug
