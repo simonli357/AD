@@ -304,6 +304,7 @@ class TerminalWidget(QtWidgets.QWidget):
     ################
     # Camera Node
     ################
+
     def handle_cam_btn_click(self):
         current_terminal_type = self.get_current_terminal_type()
         if current_terminal_type == TerminalType.CAM:

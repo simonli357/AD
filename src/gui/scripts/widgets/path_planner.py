@@ -9,7 +9,7 @@ import yaml
 class PathPlannerWidget(QDialog):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(QtCore.QSize(400, 250))
+        self.setMinimumSize(QtCore.QSize(400, 275))
         current_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(current_dir, 'appdata')
         self.config = os.path.join(data_dir, 'path_planner.yaml')
@@ -72,10 +72,26 @@ class PathPlannerWidget(QDialog):
         self.layout.addStretch()
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
 
+        title = QLabel("  Path Planner")
+        title.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                margin-left: 6px;
+            }
+        """)
+        self.layout.addWidget(title)
+
+        ssh_opt = QLabel(" Use SSH")
+        ssh_opt.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+            }
+        """)
+
         wrapper = QWidget()
         wrapper_layout = QHBoxLayout(wrapper)
         wrapper_layout.setAlignment(QtCore.Qt.AlignLeft)
-        wrapper_layout.addWidget(QLabel(" Use SSH"))
+        wrapper_layout.addWidget(ssh_opt)
         wrapper_layout.addWidget(self.ssh)
         wrapper_layout.addStretch()
 

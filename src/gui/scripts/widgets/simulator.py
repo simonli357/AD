@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QDialog, QDialogButtonBox
+from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QDialog, QDialogButtonBox, QLabel
 from PyQt5 import QtCore
 
 import os
@@ -8,7 +8,7 @@ import yaml
 class SimulatorWidget(QDialog):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(QtCore.QSize(800, 150))
+        self.setMinimumSize(QtCore.QSize(400, 150))
         current_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(current_dir, 'appdata')
         self.config = os.path.join(data_dir, 'simulator.yaml')
@@ -39,10 +39,19 @@ class SimulatorWidget(QDialog):
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
+        title = QLabel("󰘨 Simulator")
+        title.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                margin-left: 6px;
+            }
+        """)
+
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
+        layout.addWidget(title)
         layout.addWidget(self.catkin_ws)
         layout.addWidget(self.args)
         layout.addWidget(self.buttonBox)
