@@ -427,9 +427,9 @@ public:
             first = false;
         
             float f_active = 1.0;
-            float f_proportional = 1.25;
-            float f_integral = 0.625;
-            float f_derivative = 0.15125;
+            float f_proportional = 1.00;
+            float f_integral = 0.0;
+            float f_derivative = 0.0;
             
             std::stringstream pid_str;
             char pid_buff[100];

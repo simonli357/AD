@@ -173,6 +173,11 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 # file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
 # add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
 # target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
+# file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
+# file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
+# file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
+# add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
+# target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -205,6 +210,7 @@ ocp_shared_lib
 sim_shared_lib
 ${catkin_LIBRARIES}
 ${CURSES_LIBRARIES}
+# htn
 communication
 object_detection_lib
 )

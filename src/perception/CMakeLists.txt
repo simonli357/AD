@@ -186,14 +186,14 @@ add_library(alglib SHARED ${ALGLIB_SOURCES})
 #   communication
 # )
 
-add_executable(videoDetector
-  src/videoDetector.cpp
-  src/yolo-fastestv2.cpp
-)
-target_link_libraries(videoDetector
-  ${catkin_LIBRARIES}
-  ncnn ${OpenCV_LIBS}
-)
+# add_executable(videoDetector
+#   src/videoDetector.cpp
+#   src/yolo-fastestv2.cpp
+# )
+# target_link_libraries(videoDetector
+#   ${catkin_LIBRARIES}
+#   ncnn ${OpenCV_LIBS}
+# )
 
 add_executable(cameraNode
   src/cameraNode.cpp
@@ -222,25 +222,25 @@ target_link_libraries(cameraNode
 #   ${OpenCV_LIBS}
 #   realsense2::realsense2
 # )
-add_executable(testNode
-  src/testNode.cpp
-  src/yolo-fastestv2.cpp
-  src/engine.cpp
-  src/yolov8.cpp
-)
-target_link_libraries(testNode
-  ${catkin_LIBRARIES}
-  ncnn
-  ${OpenCV_LIBS}
-  realsense2::realsense2
-  ${CUDA_LIBRARIES}
-  nvinfer
-  nvparsers
-  nvonnxparser
-  alglib
-  ${Python3_LIBRARIES}
-  communication
-)
+# add_executable(testNode
+#   src/testNode.cpp
+#   src/yolo-fastestv2.cpp
+#   src/engine.cpp
+#   src/yolov8.cpp
+# )
+# target_link_libraries(testNode
+#   ${catkin_LIBRARIES}
+#   ncnn
+#   ${OpenCV_LIBS}
+#   realsense2::realsense2
+#   ${CUDA_LIBRARIES}
+#   nvinfer
+#   nvparsers
+#   nvonnxparser
+#   alglib
+#   ${Python3_LIBRARIES}
+#   communication
+# )
 
 # configure_file(
 #   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in
