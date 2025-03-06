@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 # # Enable Link Time Optimization (LTO)
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-# # Enable CUDA optimizations
+# # # Enable CUDA optimizations
 # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
 
 find_package(PkgConfig)
@@ -85,9 +85,9 @@ else()
     message("OpenCV not found")
 endif()
 
-# set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
-# set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
-# set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
+set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
+set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 
 include_directories(
   include
@@ -169,22 +169,22 @@ catkin_package(
 file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
 add_library(alglib SHARED ${ALGLIB_SOURCES})
 
-add_executable(lane
-  src/lane.cpp
-)
-target_link_libraries(lane
-  ${catkin_LIBRARIES}
-)
+# add_executable(lane
+#   src/lane.cpp
+# )
+# target_link_libraries(lane
+#   ${catkin_LIBRARIES}
+# )
 
-add_executable(signFastest
-  src/signFastest.cpp
-  src/yolo-fastestv2.cpp
-)
-target_link_libraries(signFastest
-  ${catkin_LIBRARIES}
-  ncnn ${OpenCV_LIBS}
-  communication
-)
+# add_executable(signFastest
+#   src/signFastest.cpp
+#   src/yolo-fastestv2.cpp
+# )
+# target_link_libraries(signFastest
+#   ${catkin_LIBRARIES}
+#   ncnn ${OpenCV_LIBS}
+#   communication
+# )
 
 add_executable(videoDetector
   src/videoDetector.cpp
@@ -214,14 +214,14 @@ target_link_libraries(cameraNode
   ${Python3_LIBRARIES}
   communication
 )
-add_executable(rs
-  src/rs.cpp
-)
-target_link_libraries(rs
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  realsense2::realsense2
-)
+# add_executable(rs
+#   src/rs.cpp
+# )
+# target_link_libraries(rs
+#   ${catkin_LIBRARIES}
+#   ${OpenCV_LIBS}
+#   realsense2::realsense2
+# )
 add_executable(testNode
   src/testNode.cpp
   src/yolo-fastestv2.cpp
