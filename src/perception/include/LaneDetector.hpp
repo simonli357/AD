@@ -347,10 +347,10 @@ class LaneDetector {
 		return res;
 	}
 
-	std::vector<double> lane_fit(std::vector<double> &x_s, std::vector<double> &y_s, int degree = 3) {
+	std::vector<double> lane_fit(std::vector<double> &x_s, std::vector<double> &y_s, int degree = 2) {
 		using namespace Eigen;
 
-		if (x_s.size() != y_s.size() || x_s.size() < 4) {
+		if (x_s.size() != y_s.size() || x_s.size() < 3) {
 			return std::vector<double>();
 		}
 
@@ -360,10 +360,11 @@ class LaneDetector {
 		// Normalization parameters
 		const double x_mean = x_orig.mean();
 		const double y_mean = y_orig.mean();
+		const double x_std = (x_orig.array() - x_mean).matrix().norm() / sqrt(x_orig.size() - 1) + 1e-8;
 		const double y_std = (y_orig.array() - y_mean).matrix().norm() / sqrt(y_orig.size() - 1) + 1e-8;
 
 		// Standardize coordinates
-		VectorXd x = x_orig.array() - x_mean;
+		VectorXd x = (x_orig.array() - x_mean) / x_std;
 		VectorXd y = (y_orig.array() - y_mean) / y_std;
 
 		// Final fit with best degree
@@ -382,7 +383,7 @@ class LaneDetector {
 		// Convert coefficients to original space
 		VectorXd c_orig = VectorXd::Zero(degree + 1);
 		for (int k = 0; k <= degree; ++k) {
-			double scaled_coeff = coeffs[k] / std::pow(y_std, k);
+			double scaled_coeff = coeffs[k] * x_std / std::pow(y_std, k);
 			for (int i = 0; i <= k; ++i) {
 				c_orig[i] += scaled_coeff * combination(k, i) * std::pow(-y_mean, k - i);
 			}
