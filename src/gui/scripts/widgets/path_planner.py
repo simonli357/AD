@@ -63,6 +63,16 @@ class PathPlannerWidget(QDialog):
         src_devel = 'source devel/setup.bash'
         if not self.catkin_ws.text() or not self.args.text():
             self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && rosrun planning {self.args_cached}'
+        elif not self.catkin_ws.text():
+            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && rosrun planning {self.args.text()}'
+            self.cache['args'] = self.args.text()
+            with open(self.config, 'w') as file:
+                yaml.dump(self.cache, file)
+        elif not self.args.text():
+            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && rosrun planning {self.args_cached}'
+            self.cache['catkin_ws'] = self.catkin_ws.text()
+            with open(self.config, 'w') as file:
+                yaml.dump(self.cache, file)
         else:
             self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && rosrun planning {self.args.text()}'
             self.cache['catkin_ws'] = self.catkin_ws.text()

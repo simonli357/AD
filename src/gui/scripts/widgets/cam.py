@@ -5,13 +5,13 @@ import os
 import yaml
 
 
-class ControllerWidget(QDialog):
+class CameraWidget(QDialog):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(QtCore.QSize(800, 150))
         current_dir = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(current_dir, 'appdata')
-        self.config = os.path.join(data_dir, 'controller.yaml')
+        self.config = os.path.join(data_dir, 'cam.yaml')
 
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
@@ -52,7 +52,7 @@ class ControllerWidget(QDialog):
     def create_default_config(self):
         default_config = {
             'catkin_ws': '/path/to/catkin_ws',
-            'args': 'args'
+            'args': 'sign:=true newlane:=true'
         }
         os.makedirs(os.path.dirname(self.config), exist_ok=True)
         with open(self.config, 'w') as file:
@@ -61,22 +61,20 @@ class ControllerWidget(QDialog):
     def accept(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
-        if self.args_cached == 'args':
-            self.args_cached = ''
-        if not self.catkin_ws.text() or not self.args.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch control controller.launch {self.args_cached}'
+        if not self.catkin_ws.text() and not self.args.text():
+            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch perception cameraNode.launch {self.args_cached}'
         elif not self.catkin_ws.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch control controller.launch {self.args.text()}'
+            self.cmd = f'{src_ros} && cd {self.catkin_ws_cached} && {src_devel} && roslaunch perception cameraNode.launch {self.args.text()}'
             self.cache['args'] = self.args.text()
             with open(self.config, 'w') as file:
                 yaml.dump(self.cache, file)
         elif not self.args.text():
-            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch control controller.launch {self.args_cached}'
+            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch perception cameraNode.launch {self.args_cached}'
             self.cache['catkin_ws'] = self.catkin_ws.text()
             with open(self.config, 'w') as file:
                 yaml.dump(self.cache, file)
         else:
-            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch control controller.launch {self.args.text()}'
+            self.cmd = f'{src_ros} && cd {self.catkin_ws.text()} && {src_devel} && roslaunch perception cameraNode.launch {self.args.text()}'
             self.cache['catkin_ws'] = self.catkin_ws.text()
             self.cache['args'] = self.args.text()
             with open(self.config, 'w') as file:

@@ -6,13 +6,15 @@ from enum import Enum
 from .simulator import SimulatorWidget
 from .path_planner import PathPlannerWidget
 from .controller import ControllerWidget
+from .cam import CameraWidget
 
 
 class TerminalType(Enum):
     ROS = 1
     SIM = 2
     CONTROL = 3
-    PATH = 4
+    CAM = 4
+    PATH = 5
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -32,6 +34,10 @@ class TerminalWidget(QtWidgets.QWidget):
         self.ctrl_display = None
         self.ctrl_process = None
         self.ctrl_widget = ControllerWidget()
+        # Camera
+        self.cam_display = None
+        self.cam_process = None
+        self.cam_widget = CameraWidget()
         # Path planner
         self.path_display = None
         self.path_process = None
@@ -50,8 +56,8 @@ class TerminalWidget(QtWidgets.QWidget):
         self.ros_btn = QtWidgets.QPushButton(' ROS')
         self.sim_btn = QtWidgets.QPushButton('󰘨 Simulator')
         self.controller_btn = QtWidgets.QPushButton('󱡸 Controller')
+        self.cam_btn = QtWidgets.QPushButton('  Camera')
         self.path_planner_btn = QtWidgets.QPushButton('  Planner')
-        self.cam_btn = QtWidgets.QPushButton(' Camera')
         self.buttons.append(self.stop_btn)
         self.buttons.append(self.ros_btn)
         self.buttons.append(self.sim_btn)
@@ -69,7 +75,7 @@ class TerminalWidget(QtWidgets.QWidget):
             QPushButton {
                 border: none;
                 background-color: rgba(255, 255, 255, 0.08);
-                padding: 5px 40px 5px 40px;
+                padding: 5px 30px 5px 30px;
                 color: white;
                 font-size: 20px;
             }
@@ -108,6 +114,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.ros_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
         self.controller_btn.clicked.connect(self.handle_controller_btn_click)
+        self.cam_btn.clicked.connect(self.handle_cam_btn_click)
         self.path_planner_btn.clicked.connect(self.handle_path_planner_btn_click)
 
     def update_button_style(self, button, is_active):
@@ -127,6 +134,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.update_button_style(self.ros_btn, current_terminal_type == TerminalType.ROS)
         self.update_button_style(self.sim_btn, current_terminal_type == TerminalType.SIM)
         self.update_button_style(self.controller_btn, current_terminal_type == TerminalType.CONTROL)
+        self.update_button_style(self.cam_btn, current_terminal_type == TerminalType.CAM)
         self.update_button_style(self.path_planner_btn, current_terminal_type == TerminalType.PATH)
 
     def find_widget_index(self, term_type):
@@ -163,7 +171,11 @@ class TerminalWidget(QtWidgets.QWidget):
         current_terminal_type = self.get_current_terminal_type()
         if current_terminal_type == TerminalType.SIM:
             self.stop_sim_process()
-        if current_terminal_type == TerminalType.PATH:
+        elif current_terminal_type == TerminalType.CONTROL:
+            self.stop_ctrl_process()
+        elif current_terminal_type == TerminalType.CAM:
+            self.stop_cam_process()
+        elif current_terminal_type == TerminalType.PATH:
             self.stop_path_process()
 
     ################
@@ -290,6 +302,68 @@ class TerminalWidget(QtWidgets.QWidget):
             self.kill_process(self.ctrl_process, self.ctrl_display, TerminalType.CONTROL)
             self.ctrl_process = None
             self.ctrl_display = None
+
+    ################
+    # Camera Node
+    ################
+    def handle_cam_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.CAM:
+            return
+        if self.cam_display is None:
+            self.cam_widget.exec()
+            cmd = self.cam_widget.get_cmd()
+            if cmd is None:
+                return
+            self.create_cam_display()
+            self.set_terminal(TerminalType.CAM)
+            self.start_cam_process(cmd)
+        else:
+            self.set_terminal(TerminalType.CAM)
+
+    def create_cam_display(self):
+        self.cam_display = QtWidgets.QTextEdit()
+        self.cam_display.setReadOnly(True)
+        self.cam_display.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                margin-left: 8px;
+                border-radius: 12px;
+                padding: 5px;
+            }
+        """)
+        self.stacked_widget.addWidget(self.cam_display)
+
+    def read_cam_output(self):
+        stdout = self.cam_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.cam_display.append(stdout.strip())
+
+    def read_cam_err_output(self):
+        stderr = self.cam_process.readAllStandardError().data().decode()
+        if stderr:
+            self.cam_display.append(stderr.strip())
+
+    def start_cam_process(self, cmd):
+        self.cam_process = QProcess(self)
+        self.cam_process.readyReadStandardOutput.connect(self.read_cam_output)
+        self.cam_process.readyReadStandardError.connect(self.read_cam_err_output)
+        print(cmd)
+        self.cam_process.start('bash', ['-c', cmd])
+
+    def stop_cam_process(self):
+        if hasattr(self, 'cam_process') and self.cam_process:
+            try:
+                self.cam_process.readyReadStandardOutput.disconnect()
+                self.cam_process.readyReadStandardError.disconnect()
+            except Exception as e:
+                print(e)
+            self.kill_process(self.cam_process, self.cam_display, TerminalType.CAM)
+            self.cam_process = None
+            self.cam_display = None
 
     ################
     # Path Planner
