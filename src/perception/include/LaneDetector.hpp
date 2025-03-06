@@ -130,9 +130,9 @@ public:
             bool success = line_fit(binary_image);
 
             auto wpts = getWorldWaypointsWithYaw(0, left_fit, right_fit, 40, 0.032);
-            for (int i = 0; i < wpts.size()/3; i+=3) {
-                std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i+1] << ", yaw: " << wpts[i+2] << std::endl;
-            }
+            // for (int i = 0; i < wpts.size()/3; i+=3) {
+            //     std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i+1] << ", yaw: " << wpts[i+2] << std::endl;
+            // }
             
             waypoints_msg.data.clear();
             waypoints_msg.layout.dim.clear();

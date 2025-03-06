@@ -1816,7 +1816,7 @@ int main(int argc, char **argv) {
     std::thread callback_thread;
     std::unique_ptr<ros::AsyncSpinner> spinner;
     if (async) {
-        int num_threads = 0;
+        int num_threads = 4;
         spinner = std::make_unique<ros::AsyncSpinner>(num_threads);
         spinner->start();
         std::cout << "Async spinner started with " << num_threads << " threads" << std::endl;

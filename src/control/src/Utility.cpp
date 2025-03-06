@@ -216,7 +216,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             debug("getting imu from serial port", 1);
             // create a ros timer to read from serial port
             imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
-            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / rateVal), &Utility::imu_pub_timer_callback, this);
+            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
         }
     }
     if (!camera) {
