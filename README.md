@@ -148,31 +148,15 @@ This package contains firmware modified from Bosch’s provided code to interfac
 source devel/setup.bash
 roslaunch sim_pkg run132.launch
 ```
-
-#### Run Path Planner Server
-```bash
-rosrun planning path2.py
-```
-
-#### Run Camera Node
-```bash
-roslaunch control perception cameraNode.launch
-```
-
-#### Run Control Node
-```bash
-roslaunch control controller.launch v:=32 camera:=false
-```
-- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
-
-#### Start GUI
-```bash
-rosrun gui gui.py --use_tcp
-```
-Press **start** to follow the planned path. To change the path, **double-click on a destination** and press **goto**. 
+- rest is the same as real run.
 
 ### Real Vehicle Run
 
+#### Activate ROS master
+```bash
+roscore
+```
+
 #### Run Path Planner Server
 ```bash
 rosrun planning path2.py
@@ -180,7 +164,7 @@ rosrun planning path2.py
 
 #### Run Camera Node
 ```bash
-roslaunch control perception cameraNode.launch real:=true realsense:=true ip=ip:={ip_address}
+roslaunch perception cameraNode.launch real:=true realsense:=true ip:={ip_address}
 ```
 - replace {ip_address} with the ip address of the computer running the gui
 
@@ -194,7 +178,7 @@ roslaunch control controller.launch real:=true v:=32 camera:=false ip:={ip_addre
  
 #### Start GUI
 ```bash
-rosrun gui main.py --use_tcp
+rosrun gui main.py
 ```
 - run this on another computer to see what the car is doing.
 

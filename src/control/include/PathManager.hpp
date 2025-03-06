@@ -164,6 +164,35 @@ public:
         output = state_refs.block(start, 0, end, 3);
     }
     
+    // int find_next_waypoint(int &output_target, const Eigen::Vector3d &i_current_state, int min_index = -1, int max_index = -1) {
+    //     int target = 0;
+    //     int closest_index = find_closest_waypoint(i_current_state, min_index, max_index);
+        
+    //     // If no valid waypoint was found, default to index 0.
+    //     if (closest_index < 0) {
+    //         target = 0;
+    //     } else {
+    //         Eigen::Vector2d current_pos = i_current_state.head(2);
+    //         Eigen::Vector2d waypoint_pos = (*state_refs_ptr).row(closest_index).head(2);
+    //         double yaw = i_current_state(2);
+    //         Eigen::Vector2d heading(cos(yaw), sin(yaw));
+            
+    //         // Compute the vector from the current position to the waypoint.
+    //         Eigen::Vector2d vec_to_waypoint = waypoint_pos - current_pos;
+            
+    //         // If the dot product is negative, the waypoint is behind the vehicle,
+    //         // so we use the next waypoint.
+    //         if (heading.dot(vec_to_waypoint) < 0.0) {
+    //             target = std::min(closest_index + 1, static_cast<int>((*state_refs_ptr).rows()) - 1);
+    //         } else {
+    //             target = closest_index;
+    //         }
+    //     }
+        
+    //     output_target = std::min(target, static_cast<int>((*state_refs_ptr).rows()) - 1);
+    //     last_waypoint_index = output_target;
+    //     return 1;
+    // }
     int find_next_waypoint(int &output_target, const Eigen::Vector3d &i_current_state, int min_index = -1, int max_index = -1) {
         int target = 0;
         static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
@@ -402,6 +431,39 @@ public:
                 diff = state_refs(i, 2) - state_refs(i-1, 2);
             }
         }
+    }
+    static Eigen::MatrixXd smooth_yaw_angles(const Eigen::MatrixXd& state_refs) {
+        int N = state_refs.rows();
+        if (N == 0) return state_refs; // Return empty if no data
+        
+        Eigen::MatrixXd smoothed_refs = state_refs;
+        
+        // Extract yaw values
+        Eigen::VectorXd yaw_angles = state_refs.col(2);
+        
+        // Compute differences between consecutive yaw values
+        Eigen::VectorXd diffs = yaw_angles.tail(N - 1) - yaw_angles.head(N - 1);
+        
+        // Adjust large jumps in yaw angles
+        for (int i = 0; i < diffs.size(); ++i) {
+            if (diffs(i) > M_PI * 0.8) {
+                diffs(i) -= 2 * M_PI;
+            } else if (diffs(i) < -M_PI * 0.8) {
+                diffs(i) += 2 * M_PI;
+            }
+        }
+        
+        // Compute the smoothed yaw angles
+        Eigen::VectorXd smooth_yaw(N);
+        smooth_yaw(0) = yaw_angles(0);
+        for (int i = 1; i < N; ++i) {
+            smooth_yaw(i) = smooth_yaw(i - 1) + diffs(i - 1);
+        }
+        
+        // Update the yaw column in the result matrix
+        smoothed_refs.col(2) = smooth_yaw;
+        
+        return smoothed_refs;
     }
     bool set_params(std::shared_ptr<TcpClient> tcp_client) {
         std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());

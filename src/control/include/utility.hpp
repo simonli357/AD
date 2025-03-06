@@ -144,6 +144,7 @@ public:
     // subscribers
     ros::Subscriber lane_sub;
     ros::Subscriber sign_sub;
+    ros::Subscriber waypoints_sub;
     std::vector<float> detected_objects;
     ros::Subscriber model_sub;
     ros::Subscriber imu_sub;
@@ -162,6 +163,8 @@ public:
 
     // Callbacks
     void lane_callback(const utils::Lane2::ConstPtr& msg);
+    void waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
+    Eigen::MatrixXd lane_waypoints;
     void process_lane_data(const utils::Lane2& msg);
     void sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     void process_sign_data(const std_msgs::Float32MultiArray& msg);
@@ -424,9 +427,9 @@ public:
             first = false;
         
             float f_active = 1.0;
-            float f_proportional = 1.25;
-            float f_integral = 0.625;
-            float f_derivative = 0.15125;
+            float f_proportional = 1.00;
+            float f_integral = 0.0;
+            float f_derivative = 0.0;
             
             std::stringstream pid_str;
             char pid_buff[100];
@@ -445,6 +448,37 @@ public:
         strs << "#" << number << ":" << buff;
         boost::asio::write(*serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
+    }
+
+    Eigen::MatrixXd waypoints_to_world(const Eigen::MatrixXd& bodyWaypoints,
+        const Eigen::Vector3d& vehiclePose)
+    {
+        double car_x   = vehiclePose(0);
+        double car_y   = vehiclePose(1);
+        double car_yaw = vehiclePose(2);
+
+        // Construct the 2x2 rotation matrix based on the vehicle's yaw.
+        Eigen::Matrix2d R;
+        R << std::cos(car_yaw), -std::sin(car_yaw),
+        std::sin(car_yaw),  std::cos(car_yaw);
+
+        // Extract the position columns (n x 2) from the input.
+        Eigen::MatrixXd positions = bodyWaypoints.leftCols(2);
+        // Apply rotation: each row is rotated by R.
+        // Note: multiplying by R.transpose() applies R to each row.
+        Eigen::MatrixXd world_positions = (positions * R.transpose())
+                    .rowwise() + Eigen::RowVector2d(car_x, car_y);
+
+        // Compute the world-frame yaw for each waypoint.
+        // Add the vehicle's yaw to each waypoint's yaw.
+        Eigen::VectorXd world_yaw = bodyWaypoints.col(2).array() + car_yaw;
+
+        // Combine the rotated positions and yaw into one (n x 3) matrix.
+        Eigen::MatrixXd worldWaypoints(bodyWaypoints.rows(), 3);
+        worldWaypoints.block(0, 0, bodyWaypoints.rows(), 2) = world_positions;
+        worldWaypoints.col(2) = world_yaw;
+
+        return worldWaypoints;
     }
 
     std::array<double, 3> object_to_world(double object_x, double object_y, double object_yaw, 
