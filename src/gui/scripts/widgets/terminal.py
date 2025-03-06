@@ -5,6 +5,7 @@ from collections import deque
 from enum import Enum
 from .simulator import SimulatorWidget
 from .path_planner import PathPlannerWidget
+from .controller import ControllerWidget
 
 
 class TerminalType(Enum):
@@ -27,6 +28,10 @@ class TerminalWidget(QtWidgets.QWidget):
         self.sim_display = None
         self.sim_process = None
         self.sim_widget = SimulatorWidget()
+        # Control
+        self.ctrl_display = None
+        self.ctrl_process = None
+        self.ctrl_widget = ControllerWidget()
         # Path planner
         self.path_display = None
         self.path_process = None
@@ -42,14 +47,16 @@ class TerminalWidget(QtWidgets.QWidget):
         self.button_wrapper = QtWidgets.QHBoxLayout(buttons)
         self.buttons = deque()
         self.stop_btn = QtWidgets.QPushButton(' Stop')
-        self.ros_btn = QtWidgets.QPushButton(' ROS Debug')
+        self.ros_btn = QtWidgets.QPushButton(' ROS')
         self.sim_btn = QtWidgets.QPushButton('󰘨 Simulator')
         self.controller_btn = QtWidgets.QPushButton('󱡸 Controller')
         self.path_planner_btn = QtWidgets.QPushButton('  Planner')
+        self.cam_btn = QtWidgets.QPushButton(' Camera')
         self.buttons.append(self.stop_btn)
         self.buttons.append(self.ros_btn)
         self.buttons.append(self.sim_btn)
         self.buttons.append(self.controller_btn)
+        self.buttons.append(self.cam_btn)
         self.buttons.append(self.path_planner_btn)
         for btn in self.buttons:
             self.button_wrapper.addWidget(btn)
@@ -139,7 +146,7 @@ class TerminalWidget(QtWidgets.QWidget):
         widget_index = self.stacked_widget.currentIndex()
         return self.terminals[widget_index]
 
-    def kill_process(self, process, button, display, terminal_type):
+    def kill_process(self, process, display, terminal_type):
         process.terminate()
         process.waitForFinished()
         self.stacked_widget.removeWidget(display)
@@ -217,7 +224,7 @@ class TerminalWidget(QtWidgets.QWidget):
                 self.sim_process.readyReadStandardError.disconnect()
             except Exception as e:
                 print(e)
-            self.kill_process(self.sim_process, self.sim_btn, self.sim_display, TerminalType.SIM)
+            self.kill_process(self.sim_process, self.sim_display, TerminalType.SIM)
             self.sim_process = None
             self.sim_display = None
 
@@ -226,7 +233,63 @@ class TerminalWidget(QtWidgets.QWidget):
     ################
 
     def handle_controller_btn_click(self):
-        pass
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.CONTROL:
+            return
+        if self.ctrl_display is None:
+            self.ctrl_widget.exec()
+            cmd = self.ctrl_widget.get_cmd()
+            if cmd is None:
+                return
+            self.create_ctrl_display()
+            self.set_terminal(TerminalType.CONTROL)
+            self.start_ctrl_process(cmd)
+        else:
+            self.set_terminal(TerminalType.CONTROL)
+
+    def create_ctrl_display(self):
+        self.ctrl_display = QtWidgets.QTextEdit()
+        self.ctrl_display.setReadOnly(True)
+        self.ctrl_display.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                margin-left: 8px;
+                border-radius: 12px;
+                padding: 5px;
+            }
+        """)
+        self.stacked_widget.addWidget(self.ctrl_display)
+
+    def read_ctrl_output(self):
+        stdout = self.ctrl_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.ctrl_display.append(stdout.strip())
+
+    def read_ctrl_err_output(self):
+        stderr = self.ctrl_process.readAllStandardError().data().decode()
+        if stderr:
+            self.ctrl_display.append(stderr.strip())
+
+    def start_ctrl_process(self, cmd):
+        self.ctrl_process = QProcess(self)
+        self.ctrl_process.readyReadStandardOutput.connect(self.read_ctrl_output)
+        self.ctrl_process.readyReadStandardError.connect(self.read_ctrl_err_output)
+        print(cmd)
+        self.ctrl_process.start('bash', ['-c', cmd])
+
+    def stop_ctrl_process(self):
+        if hasattr(self, 'ctrl_process') and self.ctrl_process:
+            try:
+                self.ctrl_process.readyReadStandardOutput.disconnect()
+                self.ctrl_process.readyReadStandardError.disconnect()
+            except Exception as e:
+                print(e)
+            self.kill_process(self.ctrl_process, self.ctrl_display, TerminalType.CONTROL)
+            self.ctrl_process = None
+            self.ctrl_display = None
 
     ################
     # Path Planner
@@ -286,7 +349,7 @@ class TerminalWidget(QtWidgets.QWidget):
                 self.path_process.readyReadStandardError.disconnect()
             except Exception as e:
                 print(e)
-            self.kill_process(self.path_process, self.path_planner_btn, self.path_display, TerminalType.PATH)
+            self.kill_process(self.path_process, self.path_display, TerminalType.PATH)
             self.path_process = None
             self.path_display = None
 
