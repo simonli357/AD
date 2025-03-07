@@ -169,7 +169,8 @@ class PathPlannerWidget(QDialog):
             else:
                 self.cache['args'] = args
             ssh = f'sshpass -p {passwd} ssh {target}'
-            self.cmd = f'{ssh} && {src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
+            self.cmd = f'{ssh} {remote_command}'
         else:
             catkin_ws = self.catkin_ws.text()
             args = self.args.text()
@@ -181,8 +182,7 @@ class PathPlannerWidget(QDialog):
                 args = self.args_cached
             else:
                 self.cache['args'] = args
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
-            self.cmd = f'{ssh} {remote_command}'
+            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
         with open(self.ssh_config, 'w') as file:
             yaml.dump(self.ssh_cache, file)
         with open(self.config, 'w') as file:

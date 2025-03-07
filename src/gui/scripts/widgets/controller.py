@@ -169,7 +169,7 @@ class ControllerWidget(QDialog):
             else:
                 self.cache['args'] = args
             ssh = f'sshpass -p {passwd} ssh {target}'
-            remote_command = f'"{ssh} && {src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}"'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}"'
             self.cmd = f'{ssh} {remote_command}'
         else:
             catkin_ws = self.catkin_ws.text()
