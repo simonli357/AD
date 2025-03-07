@@ -287,7 +287,6 @@ class TerminalWidget(QtWidgets.QWidget):
         self.ctrl_process = QProcess(self)
         self.ctrl_process.readyReadStandardOutput.connect(self.read_ctrl_output)
         self.ctrl_process.readyReadStandardError.connect(self.read_ctrl_err_output)
-        print(cmd)
         self.ctrl_process.start('bash', ['-c', cmd])
 
     def stop_ctrl_process(self):
@@ -351,7 +350,6 @@ class TerminalWidget(QtWidgets.QWidget):
         self.cam_process = QProcess(self)
         self.cam_process.readyReadStandardOutput.connect(self.read_cam_output)
         self.cam_process.readyReadStandardError.connect(self.read_cam_err_output)
-        print(cmd)
         self.cam_process.start('bash', ['-c', cmd])
 
     def stop_cam_process(self):
