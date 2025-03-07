@@ -1,4 +1,7 @@
 real:
+  sign_lon_offset: 0.0
+  sign_lat_offset: 0.0
+  sign_latency: 0.035 # seconds
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
   parking_base_yaw_target: 0.23 # times pi
@@ -29,6 +32,9 @@ real:
   use_beta: false
 
 sim:
+  sign_lon_offset: 0.0
+  sign_lat_offset: 0.0
+  sign_latency: 0.013 # seconds
   change_lane_yaw: 0.25 # times pi
   change_lane_speed: 0.2
   change_lane_thresh: 0.05
@@ -46,7 +52,7 @@ sim:
   stop_duration: 1.5
   use_stopline: true
   pedestrian_count_thresh: 8
-  parking_base_yaw_target: 0.29 # times pi
+  parking_base_yaw_target: 0.26 # times pi
   parking_base_speed: -0.2
   parking_base_thresh: 0.1
   NORMAL_SPEED: 0.23

@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 # # Enable Link Time Optimization (LTO)
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-# # Enable CUDA optimizations
+# # # Enable CUDA optimizations
 # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
 
 find_package(PkgConfig)
@@ -85,9 +85,9 @@ else()
     message("OpenCV not found")
 endif()
 
-# set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
-# set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
-# set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
+set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
+set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 
 include_directories(
   include

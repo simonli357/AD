@@ -1,6 +1,7 @@
 <launch>
 
 <rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+<rosparam command="load" file="$(find perception)/config/lane_params.yaml" />
 <arg name="show" default="false"/>
 <arg name="print" default="false"/>
 <arg name="print_duration" default="false"/>
