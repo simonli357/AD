@@ -558,8 +558,8 @@ class CustomGraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)  # Key setting
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -567,3 +567,29 @@ class CustomGraphicsView(QGraphicsView):
         self.setRenderHints(
             QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
         )
+
+        # Zoom control variables
+        self.zoom_factor = 1.25
+        self.min_zoom = 0.1
+        self.max_zoom = 10
+        self.current_zoom = 1.0
+
+    def wheelEvent(self, event):
+        # Determine zoom direction
+        if event.angleDelta().y() > 0:
+            new_zoom = self.current_zoom * self.zoom_factor
+        else:
+            new_zoom = self.current_zoom / self.zoom_factor
+
+        # Apply zoom constraints
+        if new_zoom < self.min_zoom or new_zoom > self.max_zoom:
+            return
+
+        # Perform scaling
+        self.current_zoom = new_zoom
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.scale(self.zoom_factor if event.angleDelta().y() > 0 else 1 / self.zoom_factor,
+                   self.zoom_factor if event.angleDelta().y() > 0 else 1 / self.zoom_factor)
+
+        event.accept()
