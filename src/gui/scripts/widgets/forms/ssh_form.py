@@ -43,7 +43,7 @@ class SSHFormWidget(QDialog):
         title.setStyleSheet("""
             QLabel {
                 font-size: 32px;
-                color: purple;
+                color: orange;
             }
         """)
 
@@ -110,8 +110,8 @@ class SSHFormWidget(QDialog):
         """)
 
         self.layout = QVBoxLayout()
-        self.layout.addStretch()
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
+        self.layout.addStretch()
 
         self.layout.addWidget(title)
 
@@ -121,9 +121,9 @@ class SSHFormWidget(QDialog):
         wrapper.setStyleSheet("""
             QLabel {
                 background-color: transparent;
-                color: orange;
+                color: green;
                 font-size: 24px;
-                margin: 0px;
+                margin-left: 24px;
             }
         """)
         wrapper_layout = QHBoxLayout(wrapper)
@@ -161,6 +161,7 @@ class SSHFormWidget(QDialog):
             QLabel {
                 background-color: transparent;
                 padding: 5px 5px 5px 5px;
+                color: #0099ff;
             }
         """)
         form_layout = QHBoxLayout(form)
