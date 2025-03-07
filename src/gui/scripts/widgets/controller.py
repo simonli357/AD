@@ -136,7 +136,7 @@ class ControllerWidget(QDialog):
         default_config = {
             'ssh_target': 'scandy@10.0.0.250',
             'passwd': 'alex',
-            'remote_catkin_ws': '/path/to/remote_catkin_ws'
+            'remote_catkin_ws': '/home/scandy/AD'
         }
         os.makedirs(os.path.dirname(self.ssh_config), exist_ok=True)
         with open(self.ssh_config, 'w') as file:
@@ -169,7 +169,8 @@ class ControllerWidget(QDialog):
             else:
                 self.cache['args'] = args
             ssh = f'sshpass -p {passwd} ssh {target}'
-            self.cmd = f'{ssh} && {src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
+            remote_command = f'"{ssh} && {src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}"'
+            self.cmd = f'{ssh} {remote_command}'
         else:
             catkin_ws = self.catkin_ws.text()
             args = self.args.text()

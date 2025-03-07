@@ -136,7 +136,7 @@ class PathPlannerWidget(QDialog):
         default_config = {
             'ssh_target': 'scandy@10.0.0.250',
             'passwd': 'alex',
-            'remote_catkin_ws': '/path/to/remote_catkin_ws'
+            'remote_catkin_ws': '/home/scandy/AD'
         }
         os.makedirs(os.path.dirname(self.ssh_config), exist_ok=True)
         with open(self.ssh_config, 'w') as file:
@@ -181,7 +181,8 @@ class PathPlannerWidget(QDialog):
                 args = self.args_cached
             else:
                 self.cache['args'] = args
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
+            self.cmd = f'{ssh} {remote_command}'
         with open(self.ssh_config, 'w') as file:
             yaml.dump(self.ssh_cache, file)
         with open(self.config, 'w') as file:
