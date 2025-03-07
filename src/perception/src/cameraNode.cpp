@@ -90,9 +90,6 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
-			cameraThreadRunning = true;
-			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
-			std::cout << "camera thread created" << std::endl;
 		}
 
 		if (!doLane) {
@@ -122,11 +119,6 @@ class CameraNode {
 	}
 
 	~CameraNode() {
-			// Signal the camera thread to exit and join it
-			cameraThreadRunning = false;
-			if (cameraThread.joinable()) {
-					cameraThread.join();
-			}
 			if (lane_thread.joinable()) {
 					lane_thread.join();
 			}
@@ -136,14 +128,22 @@ class CameraNode {
 	}
 
 	void cameraNodeSpin() {
-			ros::Rate loopRate(mainLoopRate);
-			while (ros::ok()) {
-					ros::spinOnce();
-					if (!realsense && !useRosTimer) {
-							// If not using realsense or timers, 
-							// detection might happen in imageCallback.
-					}
-					loopRate.sleep();
+			if (realsense) {
+				ros::Rate cameraRate(30);
+				while (ros::ok()) {
+					get_frame();
+					cameraRate.sleep();
+				}
+			} else {
+				ros::Rate loopRate(mainLoopRate);
+				while (ros::ok()) {
+						ros::spinOnce();
+						if (!realsense && !useRosTimer) {
+								// If not using realsense or timers, 
+								// detection might happen in imageCallback.
+						}
+						loopRate.sleep();
+				}
 			}
 	}
 
@@ -165,16 +165,7 @@ class CameraNode {
 	int mainLoopRate;
 
 	// lock
-	std::thread cameraThread;
-	bool cameraThreadRunning;
 	std::mutex mutex;
-	void cameraThreadFunc() {
-			ros::Rate cameraRate(30);
-			while (ros::ok() && cameraThreadRunning) {
-				get_frame();
-				cameraRate.sleep();
-			}
-	}
 
 	// rs
 	ros::Publisher color_pub, depth_pub;
