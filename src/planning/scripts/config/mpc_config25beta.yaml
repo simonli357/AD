@@ -1,9 +1,9 @@
 name: mobile_robot_25_beta
 T: 0.1
 N: 40
-l_r: 0.103
+l_r: 0.107
 l_f: 0.155
-wheelbase: 0.258
+wheelbase: 0.262
 
 constraints:
   v_max: 0.45

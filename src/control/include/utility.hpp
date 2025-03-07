@@ -381,7 +381,7 @@ public:
         // Translate to world coordinates
         Eigen::Vector2d vehicle_pos(x, y);
         Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
-        P_v[0] += sign_latency * velocity_command;
+        P_v[0] -= sign_latency * velocity_command;
         P_v[0] += sign_lon_offset;
         P_v[1] += sign_lat_offset;
         // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;

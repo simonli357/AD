@@ -6,7 +6,7 @@
 
 namespace VehicleConstants {
     // vehicle constants
-    static constexpr double WHEELBASE = 0.258;
+    static constexpr double WHEELBASE = 0.262;
     static constexpr double L_R_SIM = 0.129;
     static constexpr double L_F_SIM = 0.129;
     static constexpr double L_R_REAL = 0.103;
@@ -400,7 +400,7 @@ namespace VehicleConstants {
         244.39398   // cy
     };
     static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0}; // x, y, z, roll, pitch, yaw
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.113, 0.0, 0.26, 0, 0.2617, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.113, 0.0, 0.263, 0, 0.2617, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
