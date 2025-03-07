@@ -69,6 +69,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam("/steer_offset_minimum", steer_offset_minimum);
     success = success && nh.getParam("/steer_offset_maximum", steer_offset_maximum);
     success = success && nh.getParam(mode + "/sign_lon_offset", sign_lon_offset);
+    success = success && nh.getParam(mode + "/sign_lon_offset_slope", sign_lon_offset_slope);
     success = success && nh.getParam(mode + "/sign_lat_offset", sign_lat_offset);
     success = success && nh.getParam(mode + "/sign_latency", sign_latency);
 
