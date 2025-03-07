@@ -5,7 +5,7 @@ import os
 import yaml
 
 
-class SimulatorWidget(QDialog):
+class SimulatorFormWidget(QDialog):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(QtCore.QSize(400, 150))

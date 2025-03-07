@@ -2,19 +2,9 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QProcess
 from PyQt5.QtWidgets import QWidget
 from collections import deque
-from enum import Enum
-from .simulator import SimulatorWidget
-from .path_planner import PathPlannerWidget
-from .controller import ControllerWidget
-from .cam import CameraWidget
-
-
-class TerminalType(Enum):
-    ROS = 1
-    SIM = 2
-    CONTROL = 3
-    CAM = 4
-    PATH = 5
+from .enums import TerminalType
+from .forms.simulator_form import SimulatorFormWidget
+from .forms.ssh_form import SSHFormWidget
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -23,7 +13,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.main_window = self.parent()
         self.kill_thread = None
         self.terminals = deque()
-        self.terminals.append(TerminalType.ROS)
+        self.terminals.append(TerminalType.DEBUG)
         # ROS debug
         self.message_history = deque([], 1000)
         # Simulator
@@ -38,6 +28,9 @@ class TerminalWidget(QtWidgets.QWidget):
         # Path planner
         self.path_display = None
         self.path_process = None
+        # Roscore
+        self.roscore_display = None
+        self.roscore_process = None
         self.setup_ui()
         self.connect_signals()
 
@@ -49,17 +42,19 @@ class TerminalWidget(QtWidgets.QWidget):
         self.button_wrapper = QtWidgets.QHBoxLayout(buttons)
         self.buttons = deque()
         self.stop_btn = QtWidgets.QPushButton(' Stop')
-        self.ros_btn = QtWidgets.QPushButton(' ROS')
-        self.sim_btn = QtWidgets.QPushButton('󰘨 Simulator')
-        self.controller_btn = QtWidgets.QPushButton('󱡸 Controller')
-        self.cam_btn = QtWidgets.QPushButton('  Camera')
-        self.path_planner_btn = QtWidgets.QPushButton('  Planner')
+        self.debug_btn = QtWidgets.QPushButton(' debug')
+        self.sim_btn = QtWidgets.QPushButton('󰘨 simulator')
+        self.controller_btn = QtWidgets.QPushButton('󱡸 controller')
+        self.cam_btn = QtWidgets.QPushButton('  camera')
+        self.path_planner_btn = QtWidgets.QPushButton('  planner')
+        self.roscore_btn = QtWidgets.QPushButton(' roscore')
         self.buttons.append(self.stop_btn)
-        self.buttons.append(self.ros_btn)
+        self.buttons.append(self.debug_btn)
         self.buttons.append(self.sim_btn)
         self.buttons.append(self.controller_btn)
         self.buttons.append(self.cam_btn)
         self.buttons.append(self.path_planner_btn)
+        self.buttons.append(self.roscore_btn)
         for btn in self.buttons:
             self.button_wrapper.addWidget(btn)
         self.button_wrapper.addStretch()
@@ -71,7 +66,7 @@ class TerminalWidget(QtWidgets.QWidget):
             QPushButton {
                 border: none;
                 background-color: rgba(255, 255, 255, 0.08);
-                padding: 5px 30px 5px 30px;
+                padding: 5px 25px 5px 25px;
                 color: white;
                 font-size: 20px;
             }
@@ -99,6 +94,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.stop_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ff0000;
+                padding: 5px 15px 5px 15px;
             }
             QPushButton:hover {
                 background-color: #ff4d4d;
@@ -107,11 +103,12 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def connect_signals(self):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
-        self.ros_btn.clicked.connect(self.handle_ros_btn_click)
+        self.debug_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
         self.controller_btn.clicked.connect(self.handle_controller_btn_click)
         self.cam_btn.clicked.connect(self.handle_cam_btn_click)
         self.path_planner_btn.clicked.connect(self.handle_path_planner_btn_click)
+        self.roscore_btn.clicked.connect(self.handle_roscore_btn_click)
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -127,11 +124,12 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def update_buttons_style(self):
         current_terminal_type = self.get_current_terminal_type()
-        self.update_button_style(self.ros_btn, current_terminal_type == TerminalType.ROS)
+        self.update_button_style(self.debug_btn, current_terminal_type == TerminalType.DEBUG)
         self.update_button_style(self.sim_btn, current_terminal_type == TerminalType.SIM)
         self.update_button_style(self.controller_btn, current_terminal_type == TerminalType.CONTROL)
         self.update_button_style(self.cam_btn, current_terminal_type == TerminalType.CAM)
         self.update_button_style(self.path_planner_btn, current_terminal_type == TerminalType.PATH)
+        self.update_button_style(self.roscore_btn, current_terminal_type == TerminalType.ROSCORE)
 
     def find_widget_index(self, term_type):
         if term_type not in self.terminals:
@@ -173,6 +171,8 @@ class TerminalWidget(QtWidgets.QWidget):
             self.stop_cam_process()
         elif current_terminal_type == TerminalType.PATH:
             self.stop_path_process()
+        elif current_terminal_type == TerminalType.ROSCORE:
+            self.stop_roscore_process()
 
     ################
     # Simulator
@@ -183,7 +183,7 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.SIM:
             return
         if self.sim_display is None:
-            modal = SimulatorWidget()
+            modal = SimulatorFormWidget()
             modal.exec()
             cmd = modal.get_cmd()
             if cmd is None:
@@ -246,7 +246,7 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.CONTROL:
             return
         if self.ctrl_display is None:
-            modal = ControllerWidget()
+            modal = SSHFormWidget(TerminalType.CONTROL)
             modal.exec()
             cmd = modal.get_cmd()
             if cmd is None:
@@ -309,7 +309,7 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.CAM:
             return
         if self.cam_display is None:
-            modal = CameraWidget()
+            modal = SSHFormWidget(TerminalType.CAM)
             modal.exec()
             cmd = modal.get_cmd()
             if cmd is None:
@@ -372,7 +372,7 @@ class TerminalWidget(QtWidgets.QWidget):
         if current_terminal_type == TerminalType.PATH:
             return
         if self.path_display is None:
-            modal = PathPlannerWidget()
+            modal = SSHFormWidget(TerminalType.PATH)
             modal.exec()
             cmd = modal.get_cmd()
             if cmd is None:
@@ -427,12 +427,75 @@ class TerminalWidget(QtWidgets.QWidget):
             self.path_display = None
 
     ################
-    # ROS Debug
+    # Roscore
+    ################
+
+    def handle_roscore_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.ROSCORE:
+            return
+        if self.roscore_display is None:
+            modal = SSHFormWidget(TerminalType.ROSCORE)
+            modal.exec()
+            cmd = modal.get_cmd()
+            if cmd is None:
+                return
+            self.create_roscore_display()
+            self.set_terminal(TerminalType.ROSCORE)
+            self.start_roscore_process(cmd)
+        else:
+            self.set_terminal(TerminalType.ROSCORE)
+
+    def create_roscore_display(self):
+        self.roscore_display = QtWidgets.QTextEdit()
+        self.roscore_display.setReadOnly(True)
+        self.roscore_display.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                margin-left: 8px;
+                border-radius: 12px;
+                padding: 5px;
+            }
+        """)
+        self.stacked_widget.addWidget(self.roscore_display)
+
+    def read_roscore_output(self):
+        stdout = self.roscore_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.roscore_display.append(stdout.strip())
+
+    def read_roscore_err_output(self):
+        stderr = self.roscore_process.readAllStandardError().data().decode()
+        if stderr:
+            self.roscore_display.append(stderr.strip())
+
+    def start_roscore_process(self, cmd):
+        self.roscore_process = QProcess(self)
+        self.roscore_process.readyReadStandardOutput.connect(self.read_roscore_output)
+        self.roscore_process.readyReadStandardError.connect(self.read_roscore_err_output)
+        self.roscore_process.start('bash', ['-c', cmd])
+
+    def stop_roscore_process(self):
+        if hasattr(self, 'roscore_process') and self.roscore_process:
+            try:
+                self.roscore_process.readyReadStandardOutput.disconnect()
+                self.roscore_process.readyReadStandardError.disconnect()
+            except Exception as e:
+                print(e)
+            self.kill_process(self.roscore_process, self.roscore_display, TerminalType.ROSCORE)
+            self.roscore_process = None
+            self.roscore_display = None
+
+    ################
+    # Debug
     ################
 
     def handle_ros_btn_click(self):
         current_terminal_type = self.get_current_terminal_type()
-        if current_terminal_type == TerminalType.ROS:
+        if current_terminal_type == TerminalType.DEBUG:
             return
         self.stacked_widget.setCurrentIndex(0)
         self.update_buttons_style()
