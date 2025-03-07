@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLineEdit, QDialog, QDialogButtonBox, QWidget, QLabel
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from .animated_toggle import AnimatedToggle
 from ..enums import TerminalType
 
@@ -10,13 +10,19 @@ import yaml
 class SSHFormWidget(QDialog):
     def __init__(self, terminal_type):
         super().__init__()
-        self.setMinimumSize(QtCore.QSize(400, 275))
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMinimumWidth(600)
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.data_dir = os.path.join(current_dir, 'appdata')
         self.ssh_config = os.path.join(self.data_dir, 'ssh.yaml')
         self.config = None
         self.terminal_type = terminal_type
         self.setup_ui()
+        self.setStyleSheet("""
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 16px;
+        """)
 
     def setup_ui(self):
         title = None
@@ -33,66 +39,136 @@ class SSHFormWidget(QDialog):
             self.config = os.path.join(self.data_dir, 'roscore.yaml')
             title = QLabel(' roscore')
 
+        title.setAlignment(QtCore.Qt.AlignCenter)
+        title.setStyleSheet("""
+            QLabel {
+                font-size: 32px;
+                color: purple;
+            }
+        """)
+
         self.load_cache()
 
         self.ssh = AnimatedToggle()
         self.ssh.stateChanged.connect(self.handle_ssh_toggle)
 
         self.catkin_ws = QLineEdit(self)
-        self.catkin_ws.setPlaceholderText(self.catkin_ws_cached)
+        self.catkin_ws.setText(self.catkin_ws_cached)
+        self.catkin_ws_label = QLabel('Path  ')
+        self.catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.args = QLineEdit(self)
-        self.args.setPlaceholderText(self.args_cached)
+        self.args.setText(self.args_cached)
+        self.args_label = QLabel('Args 󰦨 ')
+        self.args_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.ssh_target = QLineEdit(self)
-        self.ssh_target.setPlaceholderText(self.ssh_target_cached)
+        self.ssh_target.setText(self.ssh_target_cached)
+        self.ssh_target_label = QLabel('SSH Identity  ')
+        self.ssh_target_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.passwd = QLineEdit(self)
-        self.passwd.setPlaceholderText(self.passwd_cached)
+        self.passwd.setText(self.passwd_cached)
+        self.passwd_label = QLabel('SSH Password  ')
+        self.passwd_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.remote_catkin_ws = QLineEdit(self)
-        self.remote_catkin_ws.setPlaceholderText(self.remote_catkin_ws_cached)
+        self.remote_catkin_ws.setText(self.remote_catkin_ws_cached)
+        self.remote_catkin_ws_label = QLabel('Path  ')
+        self.remote_catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
+        # Get the OK and Cancel buttons
+        ok_button = self.buttonBox.button(QDialogButtonBox.Ok)
+        cancel_button = self.buttonBox.button(QDialogButtonBox.Cancel)
+
+        # Assign unique object names for styling
+        ok_button.setObjectName("okButton")
+        cancel_button.setObjectName("cancelButton")
+
+        # Apply styles
+        self.buttonBox.setStyleSheet("""
+            QPushButton#okButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+            }
+            QPushButton#cancelButton {
+                background-color: #f44336;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                opacity: 0.9;
+            }
+        """)
 
         self.layout = QVBoxLayout()
         self.layout.addStretch()
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
 
-        title.setStyleSheet("""
-            QLabel {
-                font-size: 16px;
-                margin-left: 6px;
-            }
-        """)
         self.layout.addWidget(title)
 
         ssh_opt = QLabel(" Use SSH")
-        ssh_opt.setStyleSheet("""
-            QLabel {
-                font-size: 16px;
-            }
-        """)
 
         wrapper = QWidget()
+        wrapper.setStyleSheet("""
+            QLabel {
+                background-color: transparent;
+                color: orange;
+                font-size: 24px;
+                margin: 0px;
+            }
+        """)
         wrapper_layout = QHBoxLayout(wrapper)
         wrapper_layout.setAlignment(QtCore.Qt.AlignLeft)
         wrapper_layout.addWidget(ssh_opt)
         wrapper_layout.addWidget(self.ssh)
         wrapper_layout.addStretch()
 
+        labels = QWidget()
+        labels_layout = QVBoxLayout(labels)
+        labels_layout.setAlignment(QtCore.Qt.AlignLeft)
+        labels_layout.addWidget(self.ssh_target_label)
+        labels_layout.addWidget(self.passwd_label)
+        labels_layout.addWidget(self.catkin_ws_label)
+        labels_layout.addWidget(self.remote_catkin_ws_label)
+        labels_layout.addWidget(self.args_label)
+
+        text_fields = QWidget()
+        text_fields_layout = QVBoxLayout(text_fields)
+        text_fields_layout.setAlignment(QtCore.Qt.AlignLeft)
+        text_fields_layout.addWidget(self.ssh_target)
+        text_fields_layout.addWidget(self.passwd)
+        text_fields_layout.addWidget(self.catkin_ws)
+        text_fields_layout.addWidget(self.remote_catkin_ws)
+        text_fields_layout.addWidget(self.args)
+
+        form = QWidget()
+        form.setStyleSheet("""
+            QLineEdit {
+                background-color: transparent;
+                padding: 5px 5px 5px 5px;
+                border: 1px solid rgba(255,255,255,0.25);
+                border-radius: 4px;
+            }
+            QLabel {
+                background-color: transparent;
+                padding: 5px 5px 5px 5px;
+            }
+        """)
+        form_layout = QHBoxLayout(form)
+        form_layout.addWidget(labels)
+        form_layout.addWidget(text_fields)
+
         self.layout.addWidget(wrapper)
-
-        self.layout.addWidget(self.catkin_ws)
-        self.layout.addWidget(self.args)
-
-        self.layout.addWidget(self.ssh_target)
-        self.layout.addWidget(self.passwd)
-        self.layout.addWidget(self.remote_catkin_ws)
+        self.layout.addWidget(form)
 
         self.layout.addWidget(self.buttonBox)
         self.layout.addStretch()
@@ -103,14 +179,22 @@ class SSHFormWidget(QDialog):
     def handle_ssh_toggle(self):
         if self.use_ssh:
             self.catkin_ws.setVisible(False)
+            self.catkin_ws_label.setVisible(False)
             self.ssh_target.setVisible(True)
+            self.ssh_target_label.setVisible(True)
             self.passwd.setVisible(True)
+            self.passwd_label.setVisible(True)
             self.remote_catkin_ws.setVisible(True)
+            self.remote_catkin_ws_label.setVisible(True)
         else:
             self.catkin_ws.setVisible(True)
+            self.catkin_ws_label.setVisible(True)
             self.ssh_target.setVisible(False)
+            self.ssh_target_label.setVisible(False)
             self.passwd.setVisible(False)
+            self.passwd_label.setVisible(False)
             self.remote_catkin_ws.setVisible(False)
+            self.remote_catkin_ws_label.setVisible(False)
         self.use_ssh = not self.use_ssh
 
     def load_cache(self):
