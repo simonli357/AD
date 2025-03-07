@@ -6,6 +6,14 @@
   <arg name="name" default="car1"/>
   <arg name="v" default="32"/>
   <arg name="vref" default="0.$(arg v)"/>
+  <arg name="steer_offset" default="0"/>
+  <param name="steer_offset" value="$(arg steer_offset)"/>
+  <arg name="steer_offset_min" default="2"/>
+  <param name="steer_offset_minimum" value="$(arg steer_offset_min)"/>
+  <arg name="steer_offset_max" default="9"/>
+  <param name="steer_offset_maximum" value="$(arg steer_offset_max)"/>
+  <arg name="speed_offset" default="0"/>
+  <param name="speed_offset" value="$(arg speed_offset)"/>
 
   <!-- speed challenge -->
   <!-- <arg name="x0" default="11.71"/>
