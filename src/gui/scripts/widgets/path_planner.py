@@ -145,6 +145,7 @@ class PathPlannerWidget(QDialog):
     def accept(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
+        catkin_make = 'catkin_make'
         if self.args_cached == 'args':
             self.args_cached = ''
         if not self.use_ssh:
@@ -169,7 +170,7 @@ class PathPlannerWidget(QDialog):
             else:
                 self.cache['args'] = args
             ssh = f'sshpass -p {passwd} ssh {target}'
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && rosrun planning path2.py {args}"'
             self.cmd = f'{ssh} {remote_command}'
         else:
             catkin_ws = self.catkin_ws.text()
@@ -182,7 +183,7 @@ class PathPlannerWidget(QDialog):
                 args = self.args_cached
             else:
                 self.cache['args'] = args
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            self.cmd = f'{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && rosrun planning path2.py {args}'
         with open(self.ssh_config, 'w') as file:
             yaml.dump(self.ssh_cache, file)
         with open(self.config, 'w') as file:
