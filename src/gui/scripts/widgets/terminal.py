@@ -69,6 +69,7 @@ class TerminalWidget(QtWidgets.QWidget):
                 padding: 5px 25px 5px 25px;
                 color: white;
                 font-size: 20px;
+                border-radius: 8px;
             }
         """)
 
@@ -112,7 +113,20 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
-        color = "#ffa500" if is_active else "rgba(255, 255, 255, 0.08);"
+        if (is_active):
+            color = "#ffa500"
+            button.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color};
+                }}
+                QPushButton:hover {{
+                    background-color: #9933ff;
+                }}
+            """)
+
+    def activate_button(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "rgba(255, 255, 0, 0.25)" if is_active else "rgba(255, 255, 255, 0.08);"
         button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {color};
@@ -124,6 +138,12 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def update_buttons_style(self):
         current_terminal_type = self.get_current_terminal_type()
+        self.activate_button(self.debug_btn, TerminalType.DEBUG in self.terminals)
+        self.activate_button(self.sim_btn, TerminalType.SIM in self.terminals)
+        self.activate_button(self.controller_btn, TerminalType.CONTROL in self.terminals)
+        self.activate_button(self.cam_btn, TerminalType.CAM in self.terminals)
+        self.activate_button(self.path_planner_btn, TerminalType.PATH in self.terminals)
+        self.activate_button(self.roscore_btn, TerminalType.ROSCORE in self.terminals)
         self.update_button_style(self.debug_btn, current_terminal_type == TerminalType.DEBUG)
         self.update_button_style(self.sim_btn, current_terminal_type == TerminalType.SIM)
         self.update_button_style(self.controller_btn, current_terminal_type == TerminalType.CONTROL)
