@@ -4,12 +4,12 @@ import os
 
 # Load the CSV file
 current_dir = os.path.dirname(os.path.abspath(__file__))
-name = "old"
+name = "test2"
 input_path = os.path.join(current_dir, name + '.csv')
 df = pd.read_csv(input_path)
 
 measured_lateral = df['measured_lateral']
-measured_longitudinal = df['measured_longitudinal'] - 0.113
+measured_longitudinal = df['measured_longitudinal']
 estimated_lateral = df['estimated_lateral']
 estimated_longitudinal = df['estimated_longitudinal']
 # First scatter plot: Measured vs. Estimated Lateral

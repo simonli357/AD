@@ -1,6 +1,7 @@
 real:
-  sign_lon_offset: 0.0
-  sign_lat_offset: 0.0
+  sign_lon_offset: -0.01
+  sign_lon_offset_slope: 0.05
+  sign_lat_offset: 0.015
   sign_latency: 0.035 # seconds
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
@@ -34,6 +35,7 @@ real:
 sim:
   sign_lon_offset: 0.0
   sign_lat_offset: 0.0
+  sign_lon_offset_slope: 0.0
   sign_latency: 0.013 # seconds
   change_lane_yaw: 0.25 # times pi
   change_lane_speed: 0.2
