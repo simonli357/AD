@@ -23,7 +23,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.buttons = deque()
 
         # Create buttons
-        self.toggle_sign_btn = QtWidgets.QPushButton("󰞁")
+        self.toggle_sign_btn = QtWidgets.QPushButton("󰇐")
         self.toggle_lanes_btn = QtWidgets.QPushButton("󰑢")
         self.toggle_cars_btn = QtWidgets.QPushButton("󰭮")
         self.toggle_destinations_btn = QtWidgets.QPushButton("󰍐")
