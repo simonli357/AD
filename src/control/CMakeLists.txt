@@ -23,7 +23,7 @@ message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 # link_directories(~/TensorRT-8.6.1.6/lib)
 find_package(CUDA REQUIRED)
 if(CUDA_FOUND)
-  message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}")
+  message("-- CUDA found ${CUDA_VERSION_STRING}, ${CUDA_INCLUDE_DIRS}") 
 else()
   message("-- CUDA not found")
 endif()
@@ -173,6 +173,11 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 # file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
 # add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
 # target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
+# file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
+# file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
+# file(GLOB ACTIONS ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/actions/*.cpp)
+# add_library(htn ${HTN} ${OBJECT_DETECTION} ${ACTIONS})
+# target_link_libraries(htn ocp_shared_lib sim_shared_lib realsense2::realsense2)
 
 # add_executable(opt
 # src/optimizer_main.cpp
@@ -224,3 +229,4 @@ object_detection_lib
 # communication
 # object_detection_lib
 # )
+# link_directories(~/TensorRT-8.6.1.6/include)

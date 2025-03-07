@@ -64,6 +64,14 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam("/gps", hasGps);
     success = success && nh.getParam("/use_beta", use_beta);
     success = success && nh.getParam("/camera", camera);
+    success = success && nh.getParam("/steer_offset", steer_offset);
+    success = success && nh.getParam("/speed_offset", speed_offset);
+    success = success && nh.getParam("/steer_offset_minimum", steer_offset_minimum);
+    success = success && nh.getParam("/steer_offset_maximum", steer_offset_maximum);
+    success = success && nh.getParam(mode + "/sign_lon_offset", sign_lon_offset);
+    success = success && nh.getParam(mode + "/sign_lat_offset", sign_lat_offset);
+    success = success && nh.getParam(mode + "/sign_latency", sign_latency);
+
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
         exit(1);
@@ -218,7 +226,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             debug("getting imu from serial port", 1);
             // create a ros timer to read from serial port
             imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
-            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / rateVal), &Utility::imu_pub_timer_callback, this);
+            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
         }
     }
     if (!camera) {
@@ -272,14 +280,14 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
 
     // Malo Debug Serial commands
     // Append the received data to output.txt
-    std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
-    if (outFile.is_open()) {
-        outFile.write(data, length);
-        outFile.flush();
-        outFile.close();
-    } else {
-    std::cerr << "Unable to open output.txt" << std::endl;
-    }
+    // std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
+    // if (outFile.is_open()) {
+    //     outFile.write(data, length);
+    //     outFile.flush();
+    //     outFile.close();
+    // } else {
+    // std::cerr << "Unable to open output.txt" << std::endl;
+    // }
     // End of Malo Serial Debug commands
 
     buffer.append(data, length);
@@ -428,7 +436,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     if (msg.data.size()) {
         num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
         {
-            std::lock_guard<std::mutex> lock(general_mutex);
+            // std::lock_guard<std::mutex> lock(general_mutex);
             detected_objects.assign(msg.data.begin(), msg.data.end());
         }
     } else {
@@ -589,7 +597,7 @@ void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& ms
 void Utility::process_lane_data(const utils::Lane2& msg) {
     tcp_client->send_lane2(msg);
     {
-        std::lock_guard<std::mutex> lock(general_mutex);
+        // std::lock_guard<std::mutex> lock(general_mutex);
         center = msg.center;
         stopline = msg.stopline;
     }
@@ -828,7 +836,7 @@ double Utility::object_distance(int index) {
 }
 // std::array<double, 3> Utility::object_world_pose(int index) {
 Eigen::Vector2d Utility::object_world_pose(int index) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     double object_x, object_y, object_yaw;
     if (num_obj == 1) {
         object_x = detected_objects[x_rel];
@@ -845,7 +853,7 @@ Eigen::Vector2d Utility::object_world_pose(int index) {
     return Eigen::Vector2d(world_pose_array[0], world_pose_array[1]);
 }
 std::array<double, 4> Utility::object_box(int index) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     std::array<double, 4> box;
 
     if (num_obj == 1) {
@@ -864,7 +872,7 @@ std::array<double, 4> Utility::object_box(int index) {
     return box;
 }
 void Utility::object_box(int index, std::array<double, 4>& oBox) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     if (num_obj == 1) {
         oBox[0] = detected_objects[VehicleConstants::x1];
         oBox[1] = detected_objects[VehicleConstants::y1];
@@ -937,6 +945,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
         if (steering_angle > HARD_MAX_STEERING) steering_angle = HARD_MAX_STEERING;
         if (steering_angle < -HARD_MAX_STEERING) steering_angle = -HARD_MAX_STEERING;
     }
+    
     // Check for NaN values and handle them
     if (std::isnan(steering_angle)) {
         std::cerr << "Error: Steering angle is NaN!" << std::endl;
@@ -947,12 +956,21 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
         std::cerr << "Error: Velocity is NaN!" << std::endl;
         velocity = 0.0;
     }
-    float vel = velocity;
     {
         steer_command = steering_angle;
         velocity_command = velocity;
     }
+    std::cout << "before: " << steering_angle << ", " << velocity << std::endl;
+    // apply offset correction
+    if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
+        steering_angle += steer_offset * std::abs(steering_angle) / steering_angle;
+    }
+    if(std::abs(velocity) > 0.1) {
+        velocity += speed_offset * std::abs(velocity) / velocity;
+    }
+    std::cout << "after: " << steering_angle << ", " << velocity << std::endl;
 
+    float vel = velocity;
     float steer = steering_angle;
     tcp_client->send_steer(steer);
     if(true) {

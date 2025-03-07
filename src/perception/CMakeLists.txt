@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 # # Enable Link Time Optimization (LTO)
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-# # Enable CUDA optimizations
+# # # Enable CUDA optimizations
 # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
 
 find_package(PkgConfig)
@@ -100,8 +100,8 @@ include_directories(
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
-include_directories(~/TensorRT-8.6.1.6/include)
-link_directories(~/TensorRT-8.6.1.6/lib)
+# include_directories(~/TensorRT-8.6.1.6/include)
+# link_directories(~/TensorRT-8.6.1.6/lib)
 link_directories(${TENSORRT_LIB_DIR})
 
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)

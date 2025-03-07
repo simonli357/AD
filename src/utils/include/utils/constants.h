@@ -6,7 +6,7 @@
 
 namespace VehicleConstants {
     // vehicle constants
-    static constexpr double WHEELBASE = 0.258;
+    static constexpr double WHEELBASE = 0.262;
     static constexpr double L_R_SIM = 0.129;
     static constexpr double L_F_SIM = 0.129;
     static constexpr double L_R_REAL = 0.103;
@@ -329,7 +329,10 @@ namespace VehicleConstants {
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;
     static constexpr double park_ofs2 = 0.05325;
-    static const std::vector<std::vector<double>> PARKING_SIGN_POSES = {{{{8.99-park_ofs2, 0.703367-park_ofs1_right}}, {{8.99-park_ofs2, 1.1522+park_ofs1_left}}}};
+    static const std::vector<std::vector<double>> PARKING_SIGN_POSES = {{
+        {{8.99-park_ofs2, 0.703367-park_ofs1_right, 0}}, 
+        // {{8.99-park_ofs2, 1.1522+park_ofs1_left, 0}}
+    }};
     
     // ROUNDABOUT COORDINATES
     static constexpr double rdb_ofs1 = 0.107834;
@@ -396,8 +399,8 @@ namespace VehicleConstants {
         322.97223,  // cx
         244.39398   // cy
     };
-    static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0};
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.113, 0.0, 0.26, 0, 0.2617, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.12, 0.0, 0.25, 0, 0.2617, 0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.113, 0.0, 0.263, 0, 0.2617, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 

@@ -164,15 +164,15 @@ rosrun planning path2.py
 
 #### Run Camera Node
 ```bash
-roslaunch perception cameraNode.launch real:=true realsense:=true ip:={ip_address}
+roslaunch perception cameraNode.launch real:=true realsense:=true ip:=10.121.105.18
 ```
-- replace {ip_address} with the ip address of the computer running the gui
+- replace 10.121.105.18 with the ip address of the computer running the gui
 
 #### Run Control Node
 ```bash
-roslaunch control controller.launch real:=true v:=32 camera:=false ip:={ip_address}
+roslaunch control controller.launch real:=true v:=32 camera:=false ip:=10.121.105.18
 ```
-- replace {ip_address} by ip address of computer on which the gui is run
+- replace 10.121.105.18 by ip address of computer on which the gui is run
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
 - supported speed modes: 25, 32
  

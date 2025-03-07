@@ -51,10 +51,11 @@ public:
     ~Utility();
     void callTriggerService();
 // private:
-
+    
     std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
     double gps_offset_x, gps_offset_y;
+    double sign_lon_offset, sign_lat_offset, sign_latency;
 
     typedef double (Utility::*TrajectoryFunction)(double x);
     TrajectoryFunction trajectoryFunction;
@@ -86,6 +87,10 @@ public:
     double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
     // bool stopline = false;
     int stopline = -1;
+    double speed_offset = 0.0;
+    double steer_offset = 0.0;
+    double steer_offset_minimum = 2.0;
+    double steer_offset_maximum = 9.0;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
@@ -376,6 +381,9 @@ public:
         // Translate to world coordinates
         Eigen::Vector2d vehicle_pos(x, y);
         Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+        P_v[0] -= sign_latency * velocity_command;
+        P_v[0] += sign_lon_offset;
+        P_v[1] += sign_lat_offset;
         // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;
         // std::cout << "relative position: " << P_v_2d[0] << ", " << P_v_2d[1] << ", yaw:" << yaw<< std::endl;
         Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
@@ -548,6 +556,7 @@ public:
         return yaw;
     }
     static double compare_yaw(double yaw1, double yaw2) {
+        // returns the absolute difference between two yaw angles
         double diff = yaw1 - yaw2;
         diff = yaw_mod(diff);
         return std::abs(diff);
