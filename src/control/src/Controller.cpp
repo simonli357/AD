@@ -856,10 +856,11 @@ public:
         //     change_state(STATE::DONE);
         // }
     }
-    int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string& sign_type = "") {
+    int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string& sign_type = "", double thresh = -1.0) {
         int min_index = 0;
         double min_error_sq = 1000.0;
-        if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, sign_localization_threshold)) {
+        if (thresh < 0) thresh = sign_localization_threshold;
+        if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
             double yaw = utils.get_yaw();
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = Utility::compare_yaw(sign_direction, yaw);
@@ -1373,8 +1374,6 @@ void StateMachine::publish_commands() {
     // steer = 0;
     // speed = 0.32;
     
-    std::cout << "@steer:" << steer << std::endl;
-    std::cout << "@speed:" << speed << std::endl;
     // std::cout << speed*100 << ", " << steer << std::endl;
     utils.publish_cmd_vel(steer, speed);
 }
@@ -1434,8 +1433,14 @@ void StateMachine::run() {
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
                     double detected_dist = utils.object_distance(park_index);
                     double abs_error = std::abs(detected_dist - distance_to_parking_spot);
-                    if (abs_error < 1.) {
-                        // utils.debug("parking sign detected, proceeding to parking...", 3);
+                    // double error_threshold = 1.0;
+                    double error_threshold = 100.0;
+                    if (abs_error < error_threshold ) {
+                        utils.debug("parking sign detected, proceeding to parking...", 3);
+                        if (sign_relocalize) {
+                            auto park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
+                            int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING", 20.0); // relocalize to parking sign
+                        }
                         change_state(STATE::PARKING);
                         park_count++;
                         continue;
@@ -1488,11 +1493,6 @@ void StateMachine::run() {
                 } else {
                     ROS_WARN("parking sign invalid... returning to STATE::MOVING");
                     change_state(STATE::MOVING);
-                }
-                // if (1) {
-                if (sign_relocalize) {
-                    auto park_sign_pose = utils.estimate_object_pose2d(x0, y0, yaw0, utils.object_box(park_index), detected_dist);
-                    int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING");
                 }
                 utils.debug("PARKING(): target spot: " + helper::d2str(target_spot), 2);
                 for(int i = 0; i<PARKING_SPOTS.size(); i++) {

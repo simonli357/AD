@@ -37,7 +37,21 @@ class LaneDetector {
 		y_Values.clear();
 		for (int i = 0; i < 50; i++) {
 			y_Values.push_back(300 + i * 25);
-		};
+		}
+		int trapezoidal_width = 640;
+		int trapezoidal_height = 280;
+		nh.getParam("trapezoidal_width", trapezoidal_width);
+		nh.getParam("trapezoidal_height", trapezoidal_height);
+		const cv::Mat initial = (cv::Mat_<float>(4, 2) << 320-trapezoidal_width/2, 480-trapezoidal_height, 320+trapezoidal_width/2, 480-trapezoidal_height, 0, 480, 640, 480);
+		const cv::Mat final = (cv::Mat_<float>(4, 2) << 0, 0, 640, 0, 0, 480, 640, 480);
+		transMatrix = cv::getPerspectiveTransform(initial, final);
+		invMatrix = cv::getPerspectiveTransform(final, initial);
+
+		const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << (320-trapezoidal_width/2) * scale_factor, (480-trapezoidal_height) * scale_factor, (320+trapezoidal_width/2) * scale_factor, (480-trapezoidal_height) * scale_factor, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
+		const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, 640 * scale_factor, 0, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
+		transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
+		invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
+
 	}
 
 	const double PIXEL_X_TO_METERS = 0.4 / 420;
@@ -122,9 +136,9 @@ class LaneDetector {
 			bool success = line_fit(binary_image);
 
 			auto wpts = getWorldWaypointsWithYaw(0, left_fit, right_fit, 40, 0.032);
-			for (int i = 0; i < wpts.size() / 3; i += 3) {
-				std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
-			}
+			// for (int i = 0; i < wpts.size() / 3; i += 3) {
+			// 	std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
+			// }
 
 			waypoints_msg.data.clear();
 			waypoints_msg.layout.dim.clear();
@@ -148,6 +162,8 @@ class LaneDetector {
 				if (!getIPMFull(image, ipm_color))
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
+				// resize by reducing width by factor of 2
+				cv::resize(gyu_img, gyu_img, cv::Size(196, 480));
 				cv::imshow("Binary Image", gyu_img);
 				cv::waitKey(1);
 			}
@@ -190,20 +206,7 @@ class LaneDetector {
 	cv::Mat map1, map2;
 	bool maps_initialized = false;
 
-	// Define initial coordinates of input image as a constant global variable
-	const cv::Mat initial = (cv::Mat_<float>(4, 2) << 0, 300, 640, 300, 0, 480, 640, 480);
-	const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << 0, 300 * scale_factor, 640 * scale_factor, 300 * scale_factor, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
-
-	// Define where the initial coordinates will end up on the final image as a constant global variable
-	const cv::Mat final = (cv::Mat_<float>(4, 2) << 0, 0, 640, 0, 0, 480, 640, 480);
-	const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, 640 * scale_factor, 0, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
-
-	// Compute the transformation matrix
-	cv::Mat transMatrix = cv::getPerspectiveTransform(initial, final);
-	cv::Mat invMatrix = cv::getPerspectiveTransform(final, initial);
-
-	cv::Mat transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
-	cv::Mat invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
+	cv::Mat transMatrix, invMatrix, transMatrix_scaled, invMatrix_scaled;
 
 	double fx = VehicleConstants::CAMERA_PARAMS[0];
 	double fy = VehicleConstants::CAMERA_PARAMS[1];

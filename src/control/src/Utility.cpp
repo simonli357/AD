@@ -64,6 +64,9 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam("/gps", hasGps);
     success = success && nh.getParam("/use_beta", use_beta);
     success = success && nh.getParam("/camera", camera);
+    success = success && nh.getParam(mode + "/sign_lon_offset", sign_lon_offset);
+    success = success && nh.getParam(mode + "/sign_lat_offset", sign_lat_offset);
+    success = success && nh.getParam(mode + "/sign_latency", sign_latency);
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
         exit(1);
@@ -428,7 +431,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     if (msg.data.size()) {
         num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
         {
-            std::lock_guard<std::mutex> lock(general_mutex);
+            // std::lock_guard<std::mutex> lock(general_mutex);
             detected_objects.assign(msg.data.begin(), msg.data.end());
         }
     } else {
@@ -589,7 +592,7 @@ void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& ms
 void Utility::process_lane_data(const utils::Lane2& msg) {
     tcp_client->send_lane2(msg);
     {
-        std::lock_guard<std::mutex> lock(general_mutex);
+        // std::lock_guard<std::mutex> lock(general_mutex);
         center = msg.center;
         stopline = msg.stopline;
     }
@@ -828,7 +831,7 @@ double Utility::object_distance(int index) {
 }
 // std::array<double, 3> Utility::object_world_pose(int index) {
 Eigen::Vector2d Utility::object_world_pose(int index) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     double object_x, object_y, object_yaw;
     if (num_obj == 1) {
         object_x = detected_objects[x_rel];
@@ -845,7 +848,7 @@ Eigen::Vector2d Utility::object_world_pose(int index) {
     return Eigen::Vector2d(world_pose_array[0], world_pose_array[1]);
 }
 std::array<double, 4> Utility::object_box(int index) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     std::array<double, 4> box;
 
     if (num_obj == 1) {
@@ -864,7 +867,7 @@ std::array<double, 4> Utility::object_box(int index) {
     return box;
 }
 void Utility::object_box(int index, std::array<double, 4>& oBox) {
-    std::lock_guard<std::mutex> lock(general_mutex);
+    // std::lock_guard<std::mutex> lock(general_mutex);
     if (num_obj == 1) {
         oBox[0] = detected_objects[VehicleConstants::x1];
         oBox[1] = detected_objects[VehicleConstants::y1];
