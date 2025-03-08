@@ -961,7 +961,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
         steer_command = steering_angle;
         velocity_command = velocity;
     }
-    std::cout << "before: " << steering_angle << ", " << velocity << std::endl;
+    // std::cout << "before: " << steering_angle << ", " << velocity << std::endl;
     // apply offset correction
     if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
         steering_angle += steer_offset * std::abs(steering_angle) / steering_angle;
@@ -969,7 +969,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     if(std::abs(velocity) > 0.1) {
         velocity += speed_offset * std::abs(velocity) / velocity;
     }
-    std::cout << "after: " << steering_angle << ", " << velocity << std::endl;
+    // std::cout << "after: " << steering_angle << ", " << velocity << std::endl;
 
     float vel = velocity;
     float steer = steering_angle;

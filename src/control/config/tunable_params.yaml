@@ -1,7 +1,10 @@
 real:
-  sign_lon_offset: -0.01
-  sign_lon_offset_slope: 0.05
-  sign_lat_offset: 0.015
+  # sign_lon_offset: -0.01
+  sign_lon_offset: -0.0
+  # sign_lon_offset_slope: 0.05
+  sign_lon_offset_slope: 0.0
+  # sign_lat_offset: 0.015
+  sign_lat_offset: 0.0
   sign_latency: 0.035 # seconds
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
@@ -15,7 +18,7 @@ real:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-  change_lane_offset_scaler: 0.9
+  change_lane_offset_scaler: 1.3
   cw_speed_ratio: 0.85
   hw_speed_ratio: 1.25
   sign_localization_threshold: 0.357
