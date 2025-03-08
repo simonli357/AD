@@ -17,7 +17,7 @@ from widgets.buttons import ButtonsWidget
 from widgets.meters import MeterWidget
 from widgets.map import MapWidget
 from widgets.camera import CameraWidget
-from widgets.message import MessageWidget
+from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget
 from widgets.objects import ObjectWidget
 
@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         self.cam_widget = CameraWidget(self)
         self.meter_widget = MeterWidget(self)
         self.car_widget = CarWidget(self)
-        self.msg_widget = MessageWidget(self)
+        self.msg_widget = TerminalWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
         self.object_widget = ObjectWidget(self)
