@@ -6,10 +6,12 @@
 
 namespace VehicleConstants {
     // vehicle constants
-    static constexpr double WHEELBASE = 0.262;
-    static constexpr double L_R_SIM = 0.129;
-    static constexpr double L_F_SIM = 0.129;
-    static constexpr double L_R_REAL = 0.103;
+    static constexpr double WHEELBASE = 0.260;
+    // static constexpr double L_R_SIM = 0.130;
+    // static constexpr double L_F_SIM = 0.130;
+    static constexpr double L_R_SIM = 0.105;
+    static constexpr double L_F_SIM = 0.155;
+    static constexpr double L_R_REAL = 0.105;
     static constexpr double L_F_REAL = 0.155;
     const std::array<std::string, 13> state_names = {
         "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",

@@ -19,7 +19,7 @@ import argparse
 
 class Optimizer(object):
     def __init__(self, name = None, x0 = None):
-        self.configuration = '25beta'
+        self.configuration = '25'
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
         if name is None:
