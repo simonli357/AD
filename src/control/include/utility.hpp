@@ -362,10 +362,12 @@ public:
         double Z_c = object_distance;
 
         // 3D point in the camera frame
-        Eigen::Vector3d P_c(X_c, Y_c, Z_c);
+        static Eigen::Vector3d P_c;
+        P_c << X_c, Y_c, Z_c;
 
         // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
-        Eigen::Vector3d P_v(Z_c, -X_c, 0);
+        static Eigen::Vector3d P_v;
+        P_v << Z_c, -X_c, 0;
 
         if (real) {
             P_v[0] += REALSENSE_TF_REAL[0];
@@ -374,23 +376,23 @@ public:
         }
 
         // Rotation matrix from vehicle to world coordinates
-        Eigen::Matrix2d R_vw;
+        static Eigen::Matrix2d R_vw;
         R_vw << std::cos(yaw), -std::sin(yaw),
                 std::sin(yaw), std::cos(yaw);
 
         // Translate to world coordinates
-        Eigen::Vector2d vehicle_pos(x, y);
+        static Eigen::Vector2d vehicle_pos;
+        vehicle_pos << x, y;
+
         P_v[0] -= sign_latency * velocity_command;
-        // std::cout << "before: " << P_v[0] << ", slope: " << sign_lon_offset_slope << ", offset: " << sign_lon_offset << std::endl;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
-        // std::cout << "after: " << P_v[0] << std::endl;
         P_v[1] += sign_lat_offset;
-        Eigen::Vector2d P_v_2d(P_v[0], P_v[1]);
+        static Eigen::Vector2d P_v_2d;
+        P_v_2d << P_v[0], P_v[1];
         // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;
         // std::cout << "relative position: " << P_v_2d[0] << ", " << P_v_2d[1] << ", yaw:" << yaw<< std::endl;
-        Eigen::Vector2d world_coordinates = vehicle_pos + R_vw * P_v_2d;
 
-        return world_coordinates;
+        return vehicle_pos + R_vw * P_v_2d;
     }
     Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, const std::array<double, 4>& bounding_box, double object_distance, bool is_car = false) {
         double x1 = bounding_box[0];

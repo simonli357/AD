@@ -163,7 +163,7 @@ class LaneDetector {
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
 				// resize by reducing width by factor of 2
-				cv::resize(gyu_img, gyu_img, cv::Size(196, 480));
+				cv::resize(gyu_img, gyu_img, cv::Size(160, 480));
 				cv::imshow("Binary Image", gyu_img);
 				cv::waitKey(1);
 			}
