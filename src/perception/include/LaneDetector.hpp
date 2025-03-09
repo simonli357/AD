@@ -10,7 +10,6 @@
 #include <cmath>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
-#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -19,6 +18,7 @@
 #include <vector>
 
 using namespace std::chrono;
+using namespace Eigen;
 
 class LaneDetector {
   public:
@@ -42,22 +42,25 @@ class LaneDetector {
 		int trapezoidal_height = 280;
 		nh.getParam("trapezoidal_width", trapezoidal_width);
 		nh.getParam("trapezoidal_height", trapezoidal_height);
-		const cv::Mat initial = (cv::Mat_<float>(4, 2) << 320-trapezoidal_width/2, 480-trapezoidal_height, 320+trapezoidal_width/2, 480-trapezoidal_height, 0, 480, 640, 480);
+		const cv::Mat initial = (cv::Mat_<float>(4, 2) << 320 - trapezoidal_width / 2, 480 - trapezoidal_height, 320 + trapezoidal_width / 2, 480 - trapezoidal_height, 0, 480, 640, 480);
 		const cv::Mat final = (cv::Mat_<float>(4, 2) << 0, 0, 640, 0, 0, 480, 640, 480);
 		transMatrix = cv::getPerspectiveTransform(initial, final);
 		invMatrix = cv::getPerspectiveTransform(final, initial);
 
-		const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << (320-trapezoidal_width/2) * scale_factor, (480-trapezoidal_height) * scale_factor, (320+trapezoidal_width/2) * scale_factor, (480-trapezoidal_height) * scale_factor, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
+		const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << (320 - trapezoidal_width / 2) * scale_factor, (480 - trapezoidal_height) * scale_factor, (320 + trapezoidal_width / 2) * scale_factor,
+										(480 - trapezoidal_height) * scale_factor, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
 		const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, 640 * scale_factor, 0, 0, 480 * scale_factor, 640 * scale_factor, 480 * scale_factor);
 		transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
 		invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
-
 	}
 
 	const double PIXEL_X_TO_METERS = 0.4 / 420;
 	const double PIXEL_Y_TO_METERS = 0.37 / 254;
+	const double IMG_REAL_WIDTH = 680;
+	const double IMG_REAL_HEIGHT = 480;
+	const double scale_factor = 0.4;
 
-	std::vector<float> getWorldWaypointsWithYaw(double start_y, const std::vector<double> &left_fit, const std::vector<double> &right_fit, int num_waypoints, double density) {
+	std::vector<float> getWorldWaypointsWithYaw(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
 		world_waypoints.reserve(num_waypoints);
 
@@ -68,8 +71,8 @@ class LaneDetector {
 			double y_pixel = 480 - (start_y + i * density / PIXEL_Y_TO_METERS);
 
 			// Evaluate the left and right lane polynomials.
-			double left_x = left_fit[0] + left_fit[1] * y_pixel + left_fit[2] * y_pixel * y_pixel;
-			double right_x = right_fit[0] + right_fit[1] * y_pixel + right_fit[2] * y_pixel * y_pixel;
+			double left_x = evaluate_poly(y_pixel, left_fit);
+			double right_x = evaluate_poly(y_pixel, right_fit);
 
 			// Use the midpoint between the lanes as the waypoint's x coordinate.
 			double waypoint_x = 0.5 * (left_x + right_x);
@@ -151,7 +154,7 @@ class LaneDetector {
 			waypoints_pub.publish(waypoints_msg);
 
 			static std::vector<double> waypoints;
-			waypoints = getWaypoints(y_Values);
+			waypoints = getWaypoints(y_Values, left_fit, right_fit);
 
 			lane_msg.center = waypoints[5];
 			lane_msg.stopline = stop_loc;
@@ -184,7 +187,6 @@ class LaneDetector {
 	// NEW LANE
 	std::vector<int> y_Values = {650, 625, 600, 575, 550, 525, 500, 475, 450, 425, 400, 375, 350, 325, 300};
 	std::vector<double> waypoints;
-    const double scale_factor = 0.40;
 	cv::Mat grayscale_image = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
 	cv::Mat ipm_color = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC3);
 	cv::Mat ipm_grayscale = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
@@ -196,8 +198,8 @@ class LaneDetector {
 	// LINE FIT
 	int stop_loc = -1;
 	int number_of_fits = 0;
-	std::vector<double> left_fit = {0.0};
-	std::vector<double> right_fit = {0.0};
+	VectorXd left_fit = VectorXd(4);
+	VectorXd right_fit = VectorXd(4);
 	bool stop_line = false;
 	int stop_index = 0;
 	bool cross_walk = false;
@@ -224,8 +226,8 @@ class LaneDetector {
 	// NEW LANE
 	int getIPM(const cv::Mat &in, cv::Mat &output) {
 		static cv::Mat remapped;
-        cv::Mat input;
-        cv::resize(in, input, cv::Size(), scale_factor, scale_factor, cv::INTER_NEAREST);
+		cv::Mat input;
+		cv::resize(in, input, cv::Size(), scale_factor, scale_factor, cv::INTER_NEAREST);
 		cv::remap(input, remapped, map1, map2, cv::INTER_LINEAR);
 		cv::warpPerspective(remapped, output, transMatrix_scaled, input.size(), cv::INTER_LINEAR);
 		return !output.empty();
@@ -249,28 +251,26 @@ class LaneDetector {
 		outputImage = binary_thresholded;
 	}
 
-	std::vector<double> getWaypoints(std::vector<int> &y_Values) {
+	std::vector<double> getWaypoints(std::vector<int> &y_Values, const VectorXd &left_fit, const VectorXd &right_fit) {
 		int offset = 175;
 		std::vector<double> wayPoint(y_Values.size()); // Resized wayPoint to match the size of y_Values
 		std::vector<double> L_x(y_Values.size());	   // Resized L_x
 		std::vector<double> R_x(y_Values.size());	   // Resized R_x
-		auto &fit_L = left_fit;
-		auto &fit_R = right_fit;
 		if (number_of_fits == 2) {
 			for (size_t i = 0; i < y_Values.size(); ++i) {
-				L_x[i] = fit_L[0] + y_Values[i] * fit_L[1] + fit_L[2] * (y_Values[i]) * (y_Values[i]);
-				R_x[i] = fit_R[0] + y_Values[i] * fit_R[1] + fit_R[2] * (y_Values[i]) * (y_Values[i]);
+				L_x[i] = evaluate_poly(y_Values[i], left_fit);
+				R_x[i] = evaluate_poly(y_Values[i], right_fit);
 				wayPoint[i] = 0.5 * (L_x[i] + R_x[i]);
 				wayPoint[i] = static_cast<int>(std::max(0.0, std::min(static_cast<double>(wayPoint[i]), 639.0)));
 			}
 		} else if (number_of_fits == 1) {
 			for (size_t i = 0; i < y_Values.size(); ++i) {
-				L_x[i] = (offset - (480 - y_Values[i]) * 0.05) + fit_L[0] + y_Values[i] * fit_L[1] + fit_L[2] * (y_Values[i]) * (y_Values[i]);
+				L_x[i] = (offset - (480 - y_Values[i]) * 0.05) + evaluate_poly(y_Values[i], left_fit);
 				wayPoint[i] = std::max(0.0, std::min(L_x[i], 639.0));
 			}
 		} else if (number_of_fits == 3) {
 			for (size_t i = 0; i < y_Values.size(); ++i) {
-				R_x[i] = -(offset - (480 - y_Values[i]) * 0.08) + fit_R[0] + y_Values[i] * fit_R[1] + fit_R[2] * (y_Values[i]) * (y_Values[i]);
+				R_x[i] = -(offset - (480 - y_Values[i]) * 0.08) + evaluate_poly(y_Values[i], right_fit);
 				wayPoint[i] = std::max(0.0, std::min(R_x[i], 639.0));
 			}
 		} else {
@@ -351,76 +351,67 @@ class LaneDetector {
 		return result_pair;
 	}
 
-	int combination(int n, int k) {
-		if (k < 0 || k > n)
-			return 0;
-		if (k == 0 || k == n)
-			return 1;
-		k = std::min(k, n - k);
-		long res = 1;
-		for (int i = 1; i <= k; ++i) {
-			res *= n - k + i;
-			res /= i;
+	double binomial(int n, int k) { return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1)); }
+
+	void polyfit(VectorXd &x, VectorXd &y_raw, VectorXd &coeffs, int order = 3) {
+		const int n = y_raw.size();
+		const int k = order + 1;
+
+		// 1. Normalize y-values to [-1, 1] range
+		const double y_mean = y_raw.mean();
+		const double y_std = std::sqrt((y_raw.array() - y_mean).square().mean());
+		const VectorXd y = (y_raw.array() - y_mean) / y_std;
+
+		// 2. Initialize weights and design matrix
+		VectorXd weights = VectorXd::Ones(n);
+		MatrixXd X(n, k);
+		X.col(0) = VectorXd::Ones(n);
+
+		// 3. Build Vandermonde matrix with normalized y
+		for (int j = 1; j < k; ++j) {
+			X.col(j) = X.col(j - 1).cwiseProduct(y);
 		}
-		return res;
+
+		// 4. Least squares
+		MatrixXd XW = X.array().colwise() * weights.array();
+		coeffs = (XW.transpose() * X).ldlt().solve(XW.transpose() * x);
+
+		// 5. Denormalize coefficients to original y scale
+		VectorXd normalized_coeffs = coeffs;
+		coeffs = VectorXd::Zero(k);
+
+		for (int j = 0; j < k; ++j) {
+			const double scale = std::pow(y_std, -j);
+			for (int i = 0; i <= j; ++i) {
+				const double binom = binomial(j, i);
+				coeffs[i] += normalized_coeffs[j] * std::pow(-y_mean, j - i) * scale * binom;
+			}
+		}
 	}
 
-	std::vector<double> lane_fit(std::vector<double> &x_s, std::vector<double> &y_s, int degree = 2) {
-		using namespace Eigen;
-
-		if (x_s.size() != y_s.size() || x_s.size() < 3) {
-			return std::vector<double>();
+	double evaluate_poly(double y, const VectorXd &coeffs) {
+		// Horner's method: x = c0 + y*(c1 + y*(c2 + y*(c3 + ...)))
+		double x = 0.0;
+		for (int i = coeffs.size() - 1; i >= 0; --i) {
+			x = x * y + coeffs[i];
 		}
+		return x;
+	}
 
-		const VectorXd x_orig = Map<VectorXd>(x_s.data(), x_s.size());
-		const VectorXd y_orig = Map<VectorXd>(y_s.data(), y_s.size());
-
-		// Normalization parameters
-		const double x_mean = x_orig.mean();
-		const double y_mean = y_orig.mean();
-		const double x_std = (x_orig.array() - x_mean).matrix().norm() / sqrt(x_orig.size() - 1) + 1e-8;
-		const double y_std = (y_orig.array() - y_mean).matrix().norm() / sqrt(y_orig.size() - 1) + 1e-8;
-
-		// Standardize coordinates
-		VectorXd x = (x_orig.array() - x_mean) / x_std;
-		VectorXd y = (y_orig.array() - y_mean) / y_std;
-
-		// Final fit with best degree
-		MatrixXd X(x.size(), degree + 1);
-		for (int i = 0; i < x.size(); ++i) {
-			X(i, 0) = 1.0;
-			double y_power = y[i];
-			for (int j = 1; j <= degree; ++j) {
-				X(i, j) = y_power;
-				y_power *= y[i];
-			}
+	void scale_poly(VectorXd &coeffs, double scale) {
+		for (int i = 0; i < coeffs.size(); ++i) {
+			coeffs[i] *= std::pow(scale, i - 1);
 		}
-
-		VectorXd coeffs = X.colPivHouseholderQr().solve(x);
-
-		// Convert coefficients to original space
-		VectorXd c_orig = VectorXd::Zero(degree + 1);
-		for (int k = 0; k <= degree; ++k) {
-			double scaled_coeff = coeffs[k] * x_std / std::pow(y_std, k);
-			for (int i = 0; i <= k; ++i) {
-				c_orig[i] += scaled_coeff * combination(k, i) * std::pow(-y_mean, k - i);
-			}
-		}
-		c_orig[0] += x_mean;
-
-		return std::vector<double>(c_orig.data(), c_orig.data() + c_orig.size());
 	}
 
 	bool line_fit(const cv::Mat &binary_warped) {
 		// Declare variables to be used
 		static int lane_width = 350 * scale_factor; // HARD CODED LANE WIDTH
-		static int n_windows = 9;	 // HARD CODED WINDOW NUMBER FOR LANE PARSING
-		static int threshold = 2000; // HARD CODED THRESHOLD
+		static int n_windows = 9;					// HARD CODED WINDOW NUMBER FOR LANE PARSING
+		static int threshold = 2000;				// HARD CODED THRESHOLD
 		static int leftx_base = 0;
 		static int rightx_base = 640 * scale_factor;
 		number_of_fits = 0;
-		left_fit = {0.0};
-		right_fit = {0.0};
 
 		cv::reduce(binary_warped(cv::Range(200 * scale_factor, 480 * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
 
@@ -433,9 +424,9 @@ class LaneDetector {
 			return false;
 		}
 
-		if (size_indices == 1) {		   // If only one lane line is detected
+		if (size_indices == 1) {						  // If only one lane line is detected
 			if (center_indices[0] < 320 * scale_factor) { // Check on which side of the car it is
-				number_of_fits = 1;		   // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
+				number_of_fits = 1;						  // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 				leftx_base = center_indices[0];
 				rightx_base = 0;
 			} else {
@@ -544,75 +535,47 @@ class LaneDetector {
 		}
 
 		// Declare vectors to contain the pixel coordinates to fit
-		std::vector<double> leftx;
-		std::vector<double> lefty;
-		std::vector<double> rightx;
-		std::vector<double> righty;
+		Eigen::VectorXd leftx;
+		Eigen::VectorXd lefty;
+		Eigen::VectorXd rightx;
+		Eigen::VectorXd righty;
 
 		// int m = 3; // degree of the polynomial
 
 		if (number_of_fits == 1 || number_of_fits == 2) {
-			// Populate leftx and lefty vectors
-			for (int idx : left_lane_inds) {
-				leftx.push_back(nonzerox[idx]);
-				lefty.push_back(nonzeroy[idx]);
+			// Initialize left vectors with correct size
+			const int num_left = left_lane_inds.size();
+			leftx.resize(num_left);
+			lefty.resize(num_left);
+
+			// Fill using Eigen vector indexing
+			for (int i = 0; i < num_left; ++i) {
+				const int idx = left_lane_inds[i];
+				leftx(i) = nonzerox[idx]; // Eigen uses operator() for access
+				lefty(i) = nonzeroy[idx];
 			}
-
-			left_fit = lane_fit(leftx, lefty);
-            
-            if (scale_factor != 1.0) {
-                left_fit[0] /= scale_factor;       // a0' → a0 = a0'/scale
-                left_fit[2] *= scale_factor;       // a2' → a2 = a2' * scale
-            }
-
-			// Perform polynomial fitting
-			/* static alglib::real_1d_array x_left, y_left;           // Declare alglib array type */
-			/* x_left.setcontent(leftx.size(), leftx.data());  // Populate X array */
-			/* y_left.setcontent(lefty.size(), lefty.data());  // Populate Y array */
-			/* static alglib::polynomialfitreport rep_left; */
-			/* static alglib::barycentricinterpolant p_left; */
-			/* alglib::polynomialfit(y_left, x_left, m, p_left, rep_left);     // Perform polynomial fit */
-			/* // Convert polynomial coefficients to standard form */
-			/* static alglib::real_1d_array a1; */
-			/* alglib::polynomialbar2pow(p_left, a1); */
-			/* left_fit.clear(); */
-			/* int size = a1.length(); */
-			/* left_fit.reserve(size); */
-			/* for (int i = 0; i < size; ++i) {    // Iterate over to to transform */
-			/*     left_fit.push_back(a1[i]); */
-			/* } */
+			polyfit(leftx, lefty, left_fit);
+			if (scale_factor != 1.0) {
+				scale_poly(left_fit, scale_factor);
+			}
 		}
 
 		if (number_of_fits == 3 || number_of_fits == 2) {
-			// Populate rightx and righty vectors
-			for (int idx : right_lane_inds) {
-				rightx.push_back(nonzerox[idx]);
-				righty.push_back(nonzeroy[idx]);
+			// Initialize right vectors with correct size
+			const int num_right = right_lane_inds.size();
+			rightx.resize(num_right);
+			righty.resize(num_right);
+
+			// Fill using Eigen vector indexing
+			for (int i = 0; i < num_right; ++i) {
+				const int idx = right_lane_inds[i];
+				rightx(i) = nonzerox[idx];
+				righty(i) = nonzeroy[idx];
 			}
-
-			right_fit = lane_fit(rightx, righty);
-
-            if (scale_factor != 1.0) {
-                right_fit[0] /= scale_factor;       // a0' → a0 = a0'/scale
-                right_fit[2] *= scale_factor;       // a2' → a2 = a2' * scale
-            }
-
-			// Perform polynomial fitting
-			/* static alglib::real_1d_array x_right, y_right;             // Declare alglib array type */
-			/* x_right.setcontent(rightx.size(), rightx.data());   // Populate X array */
-			/* y_right.setcontent(righty.size(), righty.data());   // Populate Y array */
-			/* static alglib::polynomialfitreport rep_right; */
-			/* static alglib::barycentricinterpolant p_right; */
-			/* alglib::polynomialfit(y_right, x_right, m, p_right, rep_right);     // Perform polynomial fit */
-			/* // Convert polynomial coefficients to standard form */
-			/* static alglib::real_1d_array a3; */
-			/* alglib::polynomialbar2pow(p_right, a3); */
-			/* right_fit.clear(); */
-			/* int size = a3.length(); */
-			/* right_fit.reserve(size); */
-			/* for (int i = 0; i < size; ++i) { */
-			/*     right_fit.push_back(a3[i]); */
-			/* } */
+			polyfit(rightx, righty, right_fit);
+			if (scale_factor != 1.0) {
+				scale_poly(right_fit, scale_factor);
+			}
 		}
 		return true;
 	}
@@ -632,16 +595,8 @@ class LaneDetector {
 		std::vector<double> left_fitx, right_fitx;
 		if (number_of_fits == 1 || number_of_fits == 2) {
 			for (double y : ploty) {
-				left_fitx.push_back(left_fit[0] + y * left_fit[1] + left_fit[2] * (y * y));
+				left_fitx.push_back(evaluate_poly(y, left_fit));
 			}
-		}
-		if (number_of_fits == 3 || number_of_fits == 2) {
-			for (double y : ploty) {
-				right_fitx.push_back(right_fit[0] + y * right_fit[1] + right_fit[2] * (y * y));
-			}
-		}
-
-		if (number_of_fits == 1 || number_of_fits == 2) {
 			std::vector<cv::Point> left_points;
 			for (size_t i = 0; i < left_fitx.size(); ++i) {
 				left_points.push_back(cv::Point(left_fitx[i], ploty[i]));
@@ -649,6 +604,9 @@ class LaneDetector {
 			cv::polylines(result, left_points, false, cv::Scalar(255, 255, 0), 15);
 		}
 		if (number_of_fits == 3 || number_of_fits == 2) {
+			for (double y : ploty) {
+				right_fitx.push_back(evaluate_poly(y, right_fit));
+			}
 			std::vector<cv::Point> right_points;
 			for (size_t i = 0; i < right_fitx.size(); ++i) {
 				right_points.push_back(cv::Point(right_fitx[i], ploty[i]));
