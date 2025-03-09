@@ -56,8 +56,9 @@ class LaneDetector {
 
 	const double PIXEL_X_TO_METERS = 0.4 / 420;
 	const double PIXEL_Y_TO_METERS = 0.37 / 254;
-    const double IMG_REAL_WIDTH = 680;
-    const double IMG_REAL_HEIGHT = 480;
+	const double IMG_REAL_WIDTH = 680;
+	const double IMG_REAL_HEIGHT = 480;
+	const double scale_factor = 0.4;
 
 	std::vector<float> getWorldWaypointsWithYaw(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
@@ -186,7 +187,6 @@ class LaneDetector {
 	// NEW LANE
 	std::vector<int> y_Values = {650, 625, 600, 575, 550, 525, 500, 475, 450, 425, 400, 375, 350, 325, 300};
 	std::vector<double> waypoints;
-	const double scale_factor = 1.0;
 	cv::Mat grayscale_image = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
 	cv::Mat ipm_color = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC3);
 	cv::Mat ipm_grayscale = cv::Mat::zeros(480 * scale_factor, 640 * scale_factor, CV_8UC1);
@@ -351,9 +351,7 @@ class LaneDetector {
 		return result_pair;
 	}
 
-    double binomial(int n, int k) {
-        return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1));
-    }
+	double binomial(int n, int k) { return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1)); }
 
 	void polyfit(VectorXd &x, VectorXd &y_raw, VectorXd &coeffs, int order = 3) {
 		const int n = y_raw.size();
@@ -375,29 +373,35 @@ class LaneDetector {
 		}
 
 		// 4. Least squares
-        MatrixXd XW = X.array().colwise() * weights.array();
-        coeffs = (XW.transpose() * X).ldlt().solve(XW.transpose() * x);
+		MatrixXd XW = X.array().colwise() * weights.array();
+		coeffs = (XW.transpose() * X).ldlt().solve(XW.transpose() * x);
 
 		// 5. Denormalize coefficients to original y scale
 		VectorXd normalized_coeffs = coeffs;
 		coeffs = VectorXd::Zero(k);
 
-        for (int j = 0; j < k; ++j) {
-            const double scale = std::pow(y_std, -j);
-            for (int i = 0; i <= j; ++i) {
-                const double binom = binomial(j, i);
-                coeffs[i] += normalized_coeffs[j] * std::pow(-y_mean, j - i) * scale * binom;
-            }
-        }
+		for (int j = 0; j < k; ++j) {
+			const double scale = std::pow(y_std, -j);
+			for (int i = 0; i <= j; ++i) {
+				const double binom = binomial(j, i);
+				coeffs[i] += normalized_coeffs[j] * std::pow(-y_mean, j - i) * scale * binom;
+			}
+		}
 	}
 
-	double evaluate_poly(double y, const Eigen::VectorXd &coeffs) {
+	double evaluate_poly(double y, const VectorXd &coeffs) {
 		// Horner's method: x = c0 + y*(c1 + y*(c2 + y*(c3 + ...)))
 		double x = 0.0;
 		for (int i = coeffs.size() - 1; i >= 0; --i) {
 			x = x * y + coeffs[i];
 		}
 		return x;
+	}
+
+	void scale_poly(VectorXd &coeffs, double scale) {
+		for (int i = 0; i < coeffs.size(); ++i) {
+			coeffs[i] *= std::pow(scale, i - 1);
+		}
 	}
 
 	bool line_fit(const cv::Mat &binary_warped) {
@@ -550,8 +554,10 @@ class LaneDetector {
 				leftx(i) = nonzerox[idx]; // Eigen uses operator() for access
 				lefty(i) = nonzeroy[idx];
 			}
-
 			polyfit(leftx, lefty, left_fit);
+			if (scale_factor != 1.0) {
+				scale_poly(left_fit, scale_factor);
+			}
 		}
 
 		if (number_of_fits == 3 || number_of_fits == 2) {
@@ -566,8 +572,10 @@ class LaneDetector {
 				rightx(i) = nonzerox[idx];
 				righty(i) = nonzeroy[idx];
 			}
-
 			polyfit(rightx, righty, right_fit);
+			if (scale_factor != 1.0) {
+				scale_poly(right_fit, scale_factor);
+			}
 		}
 		return true;
 	}
