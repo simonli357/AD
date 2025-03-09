@@ -56,6 +56,8 @@ class LaneDetector {
 
 	const double PIXEL_X_TO_METERS = 0.4 / 420;
 	const double PIXEL_Y_TO_METERS = 0.37 / 254;
+    const double IMG_REAL_WIDTH = 680;
+    const double IMG_REAL_HEIGHT = 480;
 
 	std::vector<float> getWorldWaypointsWithYaw(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
@@ -349,51 +351,11 @@ class LaneDetector {
 		return result_pair;
 	}
 
-	void polyfit(const VectorXd &x, const VectorXd &y_raw, VectorXd &coeffs) {
-		// Step 1: Initial fit with quadratic polynomial (degree 2)
-		m_estimator(x, y_raw, coeffs, 2);
+    double binomial(int n, int k) {
+        return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1));
+    }
 
-		// Ensure quadratic coefficients are valid (c0, c1, c2)
-		if (coeffs.size() < 3) {
-			return; // Handle error or keep quadratic fit
-		}
-
-		// Step 2: Compute x range
-		const double x_min = x.minCoeff();
-		const double x_max = x.maxCoeff();
-
-		// Extract quadratic coefficients: x = c0 + c1*y + c2*y²
-		const double c1 = coeffs[1];
-		const double c2 = coeffs[2];
-
-		int min_index, max_index;
-		x.minCoeff(&min_index); // Get index of x_min
-		x.maxCoeff(&max_index); // Get index of x_max
-		const double y_at_xmin = y_raw[min_index];
-		const double y_at_xmax = y_raw[max_index];
-
-		// Compute dx/dy at these y-values
-		const double dxdy_min = c1 + 2 * c2 * y_at_xmin;
-		const double dxdy_max = c1 + 2 * c2 * y_at_xmax;
-
-		// Compute dy/dx (slope of the curve)
-		const double dydx_min = (dxdy_min != 0) ? 1.0 / dxdy_min : 1e6; // Handle near-vertical
-		const double dydx_max = (dxdy_max != 0) ? 1.0 / dxdy_max : 1e6;
-
-		// Step 3: Compute angular change in radians
-		const double theta_min = std::atan(dydx_min);
-		const double theta_max = std::atan(dydx_max);
-		const double delta_theta = std::abs(theta_max - theta_min);
-
-		// Step 4: Check against threshold (e.g., 30 degrees ≈ 0.5236 radians)
-		const double theta_threshold = 30.0 * M_PI / 180.0;
-		if (delta_theta > theta_threshold) {
-			// Refit with cubic polynomial (degree 3)
-			m_estimator(x, y_raw, coeffs, 3);
-		}
-	}
-
-	void m_estimator(const VectorXd &x, const VectorXd &y_raw, VectorXd &coeffs, int order = 3, int max_iters = 5, double tune = 4.685) {
+	void polyfit(VectorXd &x, VectorXd &y_raw, VectorXd &coeffs, int order = 3) {
 		const int n = y_raw.size();
 		const int k = order + 1;
 
@@ -412,55 +374,21 @@ class LaneDetector {
 			X.col(j) = X.col(j - 1).cwiseProduct(y);
 		}
 
-		// 4. Iterative reweighted least squares
-		VectorXd x_est;
-		for (int iter = 0; iter < max_iters; ++iter) {
-			// Weighted least squares
-			MatrixXd XW = X.array().colwise() * weights.array();
-			coeffs = (XW.transpose() * X).ldlt().solve(XW.transpose() * x);
-
-			// Compute residuals
-			x_est = X * coeffs;
-			VectorXd residuals = (x_est - x).cwiseAbs();
-
-			// Robust scaling using MAD
-			VectorXd sorted_res = residuals;
-			std::sort(sorted_res.data(), sorted_res.data() + n);
-			const double mad = 1.4826 * sorted_res(n / 2); // Median Absolute Deviation
-
-			// Update weights with Tukey's biweight
-			const double cutoff = tune * mad;
-			for (int i = 0; i < n; ++i) {
-				const double r = residuals[i];
-				weights[i] = (r <= cutoff) ? std::pow(1 - std::pow(r / cutoff, 2), 2) : 0;
-			}
-
-			// Early exit if converged
-			if ((weights.array() == 0).count() > n / 2) {
-				break;
-			}
-		}
+		// 4. Least squares
+        MatrixXd XW = X.array().colwise() * weights.array();
+        coeffs = (XW.transpose() * X).ldlt().solve(XW.transpose() * x);
 
 		// 5. Denormalize coefficients to original y scale
 		VectorXd normalized_coeffs = coeffs;
 		coeffs = VectorXd::Zero(k);
 
-		for (int j = 0; j < k; ++j) {
-			const double scale = std::pow(y_std, -j);
-			for (int i = 0; i <= j; ++i) {
-				double binom = 1.0;
-
-				// Hardcoded binomial coefficients for degree ≤ 3
-				if (j == 2 && i == 1) {
-					binom = 2.0;
-				} else if (j == 3 && (i == 1 || i == 2)) {
-					binom = 3.0;
-				}
-				// All other coefficients are 1.0 for j ≤ 3
-
-				coeffs[i] += normalized_coeffs[j] * std::pow(-y_mean, j - i) * scale * binom;
-			}
-		}
+        for (int j = 0; j < k; ++j) {
+            const double scale = std::pow(y_std, -j);
+            for (int i = 0; i <= j; ++i) {
+                const double binom = binomial(j, i);
+                coeffs[i] += normalized_coeffs[j] * std::pow(-y_mean, j - i) * scale * binom;
+            }
+        }
 	}
 
 	double evaluate_poly(double y, const Eigen::VectorXd &coeffs) {
