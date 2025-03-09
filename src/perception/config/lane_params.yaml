@@ -1,2 +1,5 @@
-trapezoidal_width: 200
-trapezoidal_height: 280
+trapezoidal_width: 168
+trapezoidal_height: 300
+window_min_pixels: 30
+window_margin: 100
+scale_factor: 0.4
