@@ -247,7 +247,7 @@ class SSHFormWidget(QDialog):
             yaml.dump(default_config, file)
 
     def set_remote_cmd(self):
-        src_ros = 'source /opt/ros/noetic/setup.sh'
+        src_ros = 'use_ros1 && source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
         catkin_make = 'catkin_make'
         target = self.ssh_target.text()
@@ -273,11 +273,11 @@ class SSHFormWidget(QDialog):
         ssh = f'sshpass -p {passwd} ssh {target}'
         remote_command = ''
         if self.terminal_type == TerminalType.CONTROL:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && roslaunch control controller.launch {args}"'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}"'
         elif self.terminal_type == TerminalType.CAM:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && roslaunch perception cameraNode.launch {args}"'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}"'
         elif self.terminal_type == TerminalType.PATH:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && rosrun planning path2.py {args}"'
+            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
         elif self.terminal_type == TerminalType.ROSCORE:
             remote_command = '"roscore"'
         self.cmd = f'{ssh} {remote_command}'
@@ -297,11 +297,11 @@ class SSHFormWidget(QDialog):
         else:
             self.cache['args'] = args
         if self.terminal_type == TerminalType.CONTROL:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && roslaunch control controller.launch {args}'
+            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
         elif self.terminal_type == TerminalType.CAM:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && roslaunch perception cameraNode.launch {args}'
+            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {catkin_make} && {src_devel} && rosrun planning path2.py {args}'
+            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
             self.cmd = 'roscore'
 
