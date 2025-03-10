@@ -1,9 +1,8 @@
 #include "TcpClient.hpp"
-#include <ros/ros.h>
-#include "msg/ParamsMsg.hpp"
 #include "msg/Lane2Msg.hpp"
-#include "msg/TriggerMsg.hpp"
+#include "msg/ParamsMsg.hpp"
 #include "msg/RunMsg.hpp"
+#include "msg/TriggerMsg.hpp"
 #include "ros/serialization.h"
 #include "sensor_msgs/Image.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -23,18 +22,21 @@
 #include <netinet/in.h>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
+#include <ros/ros.h>
 #include <sys/socket.h>
 #include <thread>
 #include <vector>
+#include <fcntl.h>
 
-TcpClient::TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address)
-	: buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
+TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
 	create_udp_socket();
-	set_tcp_data_types();
 	set_udp_data_types();
-	set_tcp_data_actions();
-	receive = std::thread(&TcpClient::initialize, this);
-	poll = std::thread(&TcpClient::poll_connection, this);
+    if (use_tcp) {
+        set_tcp_data_types();
+        set_tcp_data_actions();
+        receive = std::thread(&TcpClient::initialize, this);
+        poll = std::thread(&TcpClient::poll_connection, this);
+    }
 }
 
 TcpClient::~TcpClient() {
@@ -58,15 +60,19 @@ TcpClient::~TcpClient() {
 void TcpClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
 	tcp_address.sin_family = AF_INET;
-	tcp_address.sin_port = htons(49153);
+	tcp_address.sin_port = htons(tcp_port);
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
+    int flags = fcntl(tcp_socket, F_GETFL, 0);
+    fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void TcpClient::create_udp_socket() {
 	udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	udp_address.sin_family = AF_INET;
-	udp_address.sin_port = htons(49154);
+	udp_address.sin_port = htons(udp_port);
 	inet_pton(AF_INET, server_address.c_str(), &udp_address.sin_addr);
+    int flags = fcntl(udp_socket, F_GETFL, 0);
+    fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void TcpClient::set_tcp_data_types() {
@@ -78,8 +84,8 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x06); // SetStates Srv
 	tcp_data_types.push_back(0x07); // Waypoints Srv
 	tcp_data_types.push_back(0x08); // Start Srv
-    tcp_data_types.push_back(0x09); // Params
-    tcp_data_types.push_back(0x0a); // Run params
+	tcp_data_types.push_back(0x09); // Params
+	tcp_data_types.push_back(0x0a); // Run params
 }
 
 void TcpClient::set_udp_data_types() {
@@ -89,7 +95,7 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x04); // Signs
 	udp_data_types.push_back(0x05); // RGB Images
 	udp_data_types.push_back(0x06); // Depth Images
-    udp_data_types.push_back(0x07); // Steer
+	udp_data_types.push_back(0x07); // Steer
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -109,10 +115,11 @@ void TcpClient::initialize() {
 		if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
 			break;
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
-	std::cout << "Connection request established with GUI\n" << std::endl;
+	std::cout << "Connection request established with GUI \n" << std::endl;
 	connected = true;
-	std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	if (!client_type.empty()) {
 		send_type(client_type);
 	}
@@ -123,10 +130,10 @@ void TcpClient::poll_connection() {
 	while (alive) {
 		char buffer[32];
 		if (connected && recv(tcp_socket, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) == 0) {
-			std::cout << "GUI disconnected\n" << std::endl;
+			std::cout << "GUI disconnected \n" << std::endl;
 			connected = false;
-            tcp_can_send = false;
-            run_sent = false;
+			tcp_can_send = false;
+			run_sent = false;
 			pthread_cancel(receive.native_handle());
 			if (receive.joinable()) {
 				receive.join();
@@ -280,18 +287,18 @@ void TcpClient::send_start_srv(bool started) {
 }
 
 void TcpClient::send_params(std::vector<double> &state_refs, std::vector<double> &attributes) {
-    if (tcp_can_send) {
-        std::vector<uint8_t> bytes = ParamsMsg(state_refs, attributes).serialize(tcp_data_types[8]);
-        send(tcp_socket, bytes.data(), bytes.size(), 0);
-    }
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = ParamsMsg(state_refs, attributes).serialize(tcp_data_types[8]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+	}
 }
 
 void TcpClient::send_run(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init) {
-    if (tcp_can_send) {
-        std::vector<uint8_t> bytes = RunMsg(v_ref, path_name, x_init, y_init, yaw_init).serialize(tcp_data_types[9]);
-        send(tcp_socket, bytes.data(), bytes.size(), 0);
-        run_sent = true;
-    }
+	if (tcp_can_send) {
+		std::vector<uint8_t> bytes = RunMsg(v_ref, path_name, x_init, y_init, yaw_init).serialize(tcp_data_types[9]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+		run_sent = true;
+	}
 }
 
 // ------------------- //
@@ -306,9 +313,9 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(udp_data_types[0]);
 
 	std::vector<uint8_t> segment(MAX_DGRAM, 0);
-    std::memcpy(segment.data(), bytes.data(), bytes.size());
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
 
-    sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
@@ -344,12 +351,12 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
 	ros::serialization::serialize(stream, array);
-	
+
 	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
 	std::memcpy(bytes.data(), &length, message_size);
 	bytes[4] = udp_data_types[3];
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
-	
+
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
@@ -367,8 +374,8 @@ void TcpClient::send_image_rgb(const sensor_msgs::Image &img) {
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-        std::memcpy(segment.data(), &length, message_size);
-        segment[4] = udp_data_types[4];
+		std::memcpy(segment.data(), &length, message_size);
+		segment[4] = udp_data_types[4];
 		std::memcpy(segment.data() + header_size, &image[0], image.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
@@ -388,8 +395,8 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-        std::memcpy(segment.data(), &length, message_size);
-        segment[4] = udp_data_types[5];
+		std::memcpy(segment.data(), &length, message_size);
+		segment[4] = udp_data_types[5];
 		std::memcpy(segment.data() + header_size, &image[0], image.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
@@ -397,12 +404,12 @@ void TcpClient::send_image_depth(const sensor_msgs::Image &img) {
 
 void TcpClient::send_steer(float steer) {
 	uint32_t length = sizeof(steer);
-	
+
 	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
 	std::memcpy(bytes.data(), &length, message_size);
 	bytes[4] = udp_data_types[6];
 	std::memcpy(bytes.data() + header_size, &steer, length);
-	
+
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 

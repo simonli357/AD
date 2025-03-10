@@ -19,6 +19,7 @@
 #include <array>
 #include <eigen3/Eigen/Dense>
 #include "TcpClient.hpp"
+#include "TrafficClient.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -115,6 +116,7 @@ public:
 
     // Client
     std::shared_ptr<TcpClient> tcp_client;
+    std::unique_ptr<TrafficClient> traffic_client;
 
     // publishers
     ros::Publisher odom_pub;

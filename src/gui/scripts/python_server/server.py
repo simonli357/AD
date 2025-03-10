@@ -13,7 +13,6 @@ class Server:
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.utility_node_client = TcpConnection()
-        self.sign_node_client = TcpConnection()
         self.udp_connection = UdpConnection(self.udp_socket)
         self.alive = True
         self.listener = None
@@ -50,6 +49,3 @@ class Server:
         if client_type == "utility_node_client":
             print("Utility Client connected")
             self.utility_node_client = TcpConnection(client_socket)
-        if client_type == "sign_node_client":
-            print("Sign Client connected")
-            self.sign_node_client = TcpConnection(client_socket)

@@ -26,7 +26,7 @@ using std_msgs::String;
 class TcpClient {
   public:
 	// Constructors
-	TcpClient(const size_t buffer_size, const std::string client_type, const std::string ip_address);
+	TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address);
 	TcpClient(TcpClient &&) = default;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
@@ -68,9 +68,11 @@ class TcpClient {
 
   private:
 	// Fields
+	const uint16_t tcp_port = 49153;
+	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
 	std::string client_type;
-	const size_t buffer_size;
+	const size_t buffer_size = 1024;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	const uint32_t MAX_DGRAM = 65507;
