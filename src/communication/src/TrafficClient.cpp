@@ -1,5 +1,7 @@
 #include "TrafficClient.hpp"
+#include "utils/constants.h"
 #include <arpa/inet.h>
+#include <chrono>
 #include <cstring>
 #include <cv_bridge/cv_bridge.h>
 #include <fcntl.h>
@@ -9,24 +11,17 @@
 #include <opencv2/opencv.hpp>
 #include <ros/ros.h>
 #include <sys/socket.h>
-#include "utils/constants.h"
 
 using namespace VehicleConstants;
 using json = nlohmann::json;
 
-TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
-	receive = std::thread(&TrafficClient::initialize, this);
-	poll = std::thread(&TrafficClient::poll_connection, this);
-}
+TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) { poll = std::thread(&TrafficClient::initialize, this); }
 
 TrafficClient::~TrafficClient() {
 	alive = false;
 	connected = false;
 	if (tcp_socket != -1) {
 		close(tcp_socket);
-	}
-	if (receive.joinable()) {
-		receive.join();
 	}
 	if (poll.joinable()) {
 		poll.join();
@@ -47,19 +42,22 @@ void TrafficClient::create_tcp_socket() {
 }
 
 void TrafficClient::initialize() {
-	create_tcp_socket();
-	std::cout << "Connecting to Traffic Server \n" << std::endl;
 	while (true) {
-		if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
-			break;
+		create_tcp_socket();
+		std::cout << "Connecting to Traffic Server \n" << std::endl;
+		while (true) {
+			if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
+				break;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::cout << "Successfully connected to Traffic Server \n" << std::endl;
+		connected = true;
+		send_car_id();
+		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+		tcp_can_send = true;
+		poll_connection();
 	}
-	std::cout << "Connection request established with Traffic Server \n" << std::endl;
-	connected = true;
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	tcp_can_send = true;
-	listen();
 }
 
 void TrafficClient::poll_connection() {
@@ -69,118 +67,109 @@ void TrafficClient::poll_connection() {
 			std::cout << "Traffic Server Disconnected \n" << std::endl;
 			connected = false;
 			tcp_can_send = false;
-			pthread_cancel(receive.native_handle());
-			if (receive.joinable()) {
-				receive.join();
-			}
 			close(tcp_socket);
-			receive = std::thread(&TrafficClient::initialize, this);
+			break;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 }
 
-void TrafficClient::listen() {
-	std::string buffer;
-	char temp[buffer_size];
-
-	while (connected) {
-		ssize_t bytes_received = recv(tcp_socket, temp, sizeof(temp), 0);
-		if (bytes_received <= 0)
-			break;
-
-		buffer.append(temp, bytes_received);
-		size_t processed = 0;
-		while (processed < buffer.size()) {
-			try {
-				json msg = json::parse(buffer.substr(processed));
-				if (msg.contains("error")) {
-					std::cerr << "Server error: " << msg["error"] << std::endl;
-					processed += msg.dump().size();
-					continue;
-				}
-				processed += msg.dump().size();
-			} catch (const json::parse_error &e) {
-				break;
-			}
-		}
-		buffer.erase(0, processed);
-	}
+bool TrafficClient::can_send() {
+    using namespace std::chrono;
+    time_point now = high_resolution_clock::now();
+    duration elapsed = now - last_send;
+    if (elapsed >= freq) {
+        last_send = now;
+        return true;
+    }
+    return false;
 }
 
 // ------------------- //
 // TCP Encoding
 // ------------------- //
 
+void TrafficClient::send_car_id() {
+	json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", frequency}, {"locID", car_id}};
+	std::string chars = msg.dump();
+	send(tcp_socket, chars.data(), chars.size(), 0);
+}
+
 void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
-    static auto road_obj_to_str = [](OBJECT &obj) -> std::string {
-        switch (obj) {
-            case OBJECT::BLOCK: return "BLOCK";
-            case OBJECT::CAR: return "CAR";
-            case OBJECT::CROSSWALK: return "CROSSWALK";
-            case OBJECT::GREENLIGHT: return "GREENLIGHT";
-            case OBJECT::HIGHWAYENTRANCE: return "HIGHWAYENTRANCE";
-            case OBJECT::HIGHWAYEXIT: return "HIGHWAYEXIT";
-            case OBJECT::LIGHTS: return "LIGHTS";
-            case OBJECT::NOENTRY: return "NOENTRY";
-            case OBJECT::NONE: return "NONE";
-            case OBJECT::ONEWAY: return "ONEWAY";
-            case OBJECT::PARK: return "PARK";
-            case OBJECT::PEDESTRIAN: return "PEDESTRIAN";
-            case OBJECT::PRIORITY: return "PRIORITY";
-            case OBJECT::REDLIGHT: return "REDLIGHT";
-            case OBJECT::ROUNDABOUT: return "ROUNDABOUT";
-            case OBJECT::STOPSIGN: return "STOPSIGN";
-            case OBJECT::YELLOWLIGHT: return "YELLOWLIGHT";
-            default: return "UNKNOWN";
-        }
-    };
+    if (!can_send()) {
+        return;
+    }
+	static auto road_obj_to_str = [](OBJECT &obj) -> std::string {
+		switch (obj) {
+		case OBJECT::BLOCK:
+			return "BLOCK";
+		case OBJECT::CAR:
+			return "CAR";
+		case OBJECT::CROSSWALK:
+			return "CROSSWALK";
+		case OBJECT::GREENLIGHT:
+			return "GREENLIGHT";
+		case OBJECT::HIGHWAYENTRANCE:
+			return "HIGHWAYENTRANCE";
+		case OBJECT::HIGHWAYEXIT:
+			return "HIGHWAYEXIT";
+		case OBJECT::LIGHTS:
+			return "LIGHTS";
+		case OBJECT::NOENTRY:
+			return "NOENTRY";
+		case OBJECT::NONE:
+			return "NONE";
+		case OBJECT::ONEWAY:
+			return "ONEWAY";
+		case OBJECT::PARK:
+			return "PARK";
+		case OBJECT::PEDESTRIAN:
+			return "PEDESTRIAN";
+		case OBJECT::PRIORITY:
+			return "PRIORITY";
+		case OBJECT::REDLIGHT:
+			return "REDLIGHT";
+		case OBJECT::ROUNDABOUT:
+			return "ROUNDABOUT";
+		case OBJECT::STOPSIGN:
+			return "STOPSIGN";
+		case OBJECT::YELLOWLIGHT:
+			return "YELLOWLIGHT";
+		default:
+			return "UNKNOWN";
+		}
+	};
 
-	send_vehicle_pos(road_object.data[1], road_object.data[2]);
-	send_vehicle_rot(road_object.data[3]);
-	send_vehicle_speed(road_object.data[4]);
-
-	for (size_t i = 7; i < road_object.data.size(); i += 7) {
-        OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
-		send_encountered_obstacle(road_obj_to_str(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
+	if (tcp_can_send) {
+		std::string v_pos = create_vehicle_pos(road_object.data[1], road_object.data[2]);
+		std::string v_rot = create_vehicle_rot(road_object.data[3]);
+		std::string v_speed = create_vehicle_speed(road_object.data[4]);
+        std::string objcts = "";
+		for (size_t i = 7; i < road_object.data.size(); i += 7) {
+			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
+			objcts += create_encountered_obstacle(road_obj_to_str(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
+		}
+        std::string msg = v_pos + v_rot + v_speed + objcts;
+        send(tcp_socket, msg.data(), msg.size(), 0);
 	}
 }
 
-void TrafficClient::send_vehicle_pos(double x, double y) {
-    json msg = {
-        {"reqORinfo", "info"},
-        {"type", "devicePos"},
-        {"value1", x},
-        {"value2", y}
-    };
-    send(tcp_socket, msg.dump().data(), msg.dump().size(), 0);
+std::string TrafficClient::create_vehicle_pos(double x, double y) {
+	json msg = {{"reqORinfo", "info"}, {"type", "devicePos"}, {"value1", x}, {"value2", y}};
+	return msg.dump();
 }
 
-void TrafficClient::send_vehicle_rot(double yaw) {
-    json msg = {
-        {"reqORinfo", "info"},
-        {"type", "deviceRot"},
-        {"value1", yaw}
-    };
-    send(tcp_socket, msg.dump().data(), msg.dump().size(), 0);
+std::string TrafficClient::create_vehicle_rot(double yaw) {
+	json msg = {{"reqORinfo", "info"}, {"type", "deviceRot"}, {"value1", yaw}};
+	return msg.dump();
 }
 
-void TrafficClient::send_vehicle_speed(double speed) {
-    json msg = {
-        {"reqORinfo", "info"},
-        {"type", "deviceSpeed"},
-        {"value1", speed}
-    };
-    send(tcp_socket, msg.dump().data(), msg.dump().size(), 0);
+std::string TrafficClient::create_vehicle_speed(double speed) {
+	json msg = {{"reqORinfo", "info"}, {"type", "deviceSpeed"}, {"value1", speed}};
+	return msg.dump();
 }
 
-void TrafficClient::send_encountered_obstacle(const std::string &type, double x, double y) {
-    json msg = {
-        {"reqORinfo", "info"},
-        {"type", "historyData"},
-        {"value1", type},
-        {"value2", x},
-        {"value3", y}
-    };
-    send(tcp_socket, msg.dump().data(), msg.dump().size(), 0);
+std::string TrafficClient::create_encountered_obstacle(const std::string &type, double x, double y) {
+	json msg = {{"reqORinfo", "info"}, {"type", "historyData"}, {"value1", type}, {"value2", x}, {"value3", y}};
+    return msg.dump();
 }

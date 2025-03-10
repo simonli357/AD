@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cv_bridge/cv_bridge.h>
+#include <fcntl.h>
 #include <iostream>
 #include <netinet/in.h>
 #include <opencv2/imgcodecs.hpp>
@@ -26,17 +27,15 @@
 #include <sys/socket.h>
 #include <thread>
 #include <vector>
-#include <fcntl.h>
 
 TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : buffer_size(buffer_size), client_type(client_type), server_address(ip_address) {
 	create_udp_socket();
 	set_udp_data_types();
-    if (use_tcp) {
-        set_tcp_data_types();
-        set_tcp_data_actions();
-        receive = std::thread(&TcpClient::initialize, this);
-        poll = std::thread(&TcpClient::poll_connection, this);
-    }
+	if (use_tcp) {
+		set_tcp_data_types();
+		set_tcp_data_actions();
+		receive = std::thread(&TcpClient::initialize, this);
+	}
 }
 
 TcpClient::~TcpClient() {
@@ -47,9 +46,6 @@ TcpClient::~TcpClient() {
 	}
 	if (receive.joinable()) {
 		receive.join();
-	}
-	if (poll.joinable()) {
-		poll.join();
 	}
 }
 
@@ -62,8 +58,8 @@ void TcpClient::create_tcp_socket() {
 	tcp_address.sin_family = AF_INET;
 	tcp_address.sin_port = htons(tcp_port);
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
-    int flags = fcntl(tcp_socket, F_GETFL, 0);
-    fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
+	int flags = fcntl(tcp_socket, F_GETFL, 0);
+	fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void TcpClient::create_udp_socket() {
@@ -71,8 +67,8 @@ void TcpClient::create_udp_socket() {
 	udp_address.sin_family = AF_INET;
 	udp_address.sin_port = htons(udp_port);
 	inet_pton(AF_INET, server_address.c_str(), &udp_address.sin_addr);
-    int flags = fcntl(udp_socket, F_GETFL, 0);
-    fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
+	int flags = fcntl(udp_socket, F_GETFL, 0);
+	fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
 }
 
 void TcpClient::set_tcp_data_types() {
@@ -109,75 +105,93 @@ void TcpClient::set_tcp_data_actions() {
 }
 
 void TcpClient::initialize() {
-	create_tcp_socket();
-	std::cout << "Connecting to GUI \n" << std::endl;
-	while (true) {
-		if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
-			break;
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	}
-	std::cout << "Connection request established with GUI \n" << std::endl;
-	connected = true;
-	std::this_thread::sleep_for(std::chrono::milliseconds(500));
-	if (!client_type.empty()) {
-		send_type(client_type);
-	}
-	listen();
-}
-
-void TcpClient::poll_connection() {
-	while (alive) {
-		char buffer[32];
-		if (connected && recv(tcp_socket, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) == 0) {
-			std::cout << "GUI disconnected \n" << std::endl;
-			connected = false;
-			tcp_can_send = false;
-			run_sent = false;
-			pthread_cancel(receive.native_handle());
-			if (receive.joinable()) {
-				receive.join();
-			}
-			close(tcp_socket);
-			receive = std::thread(&TcpClient::initialize, this);
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
-	}
+    while(true) {
+        create_tcp_socket();
+        std::cout << "Connecting to GUI \n" << std::endl;
+        while (true) {
+            if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+        std::cout << "Connection request established with GUI \n" << std::endl;
+        connected = true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        if (!client_type.empty()) {
+            send_type(client_type);
+        }
+        listen();
+    }
 }
 
 void TcpClient::listen() {
-	std::vector<uint8_t> buffer(buffer_size);
+	std::vector<uint8_t> header_buffer(5); // Fixed size for header (4 + 1 bytes)
 	while (connected) {
-		uint8_t type;
-		uint32_t length = 0;
-		// Receive the header
-		ssize_t bytes_received = 0;
-		while (bytes_received < header_size) {
-			bytes_received = recv(tcp_socket, buffer.data() + bytes_received, 5 - bytes_received, 0);
-			if (bytes_received <= 0) {
-				continue;
-			}
-		}
-		std::memcpy(&length, buffer.data(), 4);
-		type = buffer[4];
-		// Receive the actual data based on the length from header
-		std::vector<uint8_t> data(length);
-		size_t total_bytes_received = 0;
-		while (total_bytes_received < length) {
-			ssize_t bytes = recv(tcp_socket, data.data() + total_bytes_received, length - total_bytes_received, 0);
-			if (bytes <= 0) {
+		// --- Header Reception ---
+		ssize_t total_header_received = 0;
+		while (total_header_received < 5) {
+			ssize_t bytes = recv(tcp_socket, header_buffer.data() + total_header_received, 5 - total_header_received, 0);
+
+			if (bytes > 0) {
+				total_header_received += bytes;
+			} else if (bytes == 0) {
+				// Connection closed
+				connected = false;
 				break;
+			} else { // bytes == -1
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					// Non-blocking retry
+					usleep(10000); // 10ms delay (adjust as needed)
+					continue;
+				} else {
+					// Handle other errors
+					connected = false;
+					break;
+				}
 			}
-			total_bytes_received += bytes;
 		}
-		// Process data if full message is received
-		if (total_bytes_received == length) {
-			auto it = tcp_data_actions.find(type);
-			if (it != tcp_data_actions.end()) {
-				it->second(this, data);
+
+		if (!connected || total_header_received != 5)
+			break;
+
+		// --- Process Header ---
+		uint32_t length;
+		uint8_t type;
+		std::memcpy(&length, header_buffer.data(), 4);
+		type = header_buffer[4];
+
+		// --- Data Reception ---
+		std::vector<uint8_t> data_buffer(length);
+		ssize_t total_data_received = 0;
+		while (total_data_received < length) {
+			ssize_t bytes = recv(tcp_socket, data_buffer.data() + total_data_received, length - total_data_received, 0);
+
+			if (bytes > 0) {
+				total_data_received += bytes;
+			} else if (bytes == 0) {
+				connected = false;
+				break;
+			} else {
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					usleep(10000);
+					continue;
+				} else {
+					connected = false;
+					break;
+				}
 			}
+		}
+
+		if (total_data_received == length) {
+			auto handler = tcp_data_actions.find(type);
+			if (handler != tcp_data_actions.end()) {
+				handler->second(this, data_buffer);
+			}
+		} else {
+			connected = false;
 		}
 	}
+    tcp_can_send = false;
 }
 
 // ------------------- //

@@ -44,12 +44,12 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
     if(use_traffic_server) {
         debug("Utility constructor: Attempting to create Traffic Server TCP client...", 1);
-        std::string traffic_server_ip_address;
-        if(!nh.getParam("/traffic_server_ip", traffic_server_ip_address)) {
+        std::string traffic_server_ip;
+        if(!nh.getParam("/traffic_server_ip", traffic_server_ip)) {
             debug("Utility constructor: ERROR: Failed to get 'traffic_server_ip_address' parameter. Traffic Server TCP client not created.", 1);
             traffic_client = nullptr;
         } else {
-            traffic_client = std::make_unique<TrafficClient>(traffic_server_ip_address);
+            traffic_client = std::make_unique<TrafficClient>(traffic_server_ip);
             debug("Utility constructor: TCP client created successfully.", 1);
         }
     }
