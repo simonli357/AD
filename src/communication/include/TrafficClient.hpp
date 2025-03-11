@@ -28,7 +28,7 @@ class TrafficClient {
 
   private:
 	// Fields
-	const std::string car_id = "PotholeAvoidance";
+	int car_id = 3;
     const std::chrono::high_resolution_clock::duration freq = std::chrono::milliseconds(250);
     const double frequency = 0.25;
     std::chrono::high_resolution_clock::time_point last_send = std::chrono::high_resolution_clock::now();
