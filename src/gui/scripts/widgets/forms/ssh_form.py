@@ -295,14 +295,17 @@ class SSHFormWidget(QDialog):
             args = self.args_cached
         else:
             self.cache['args'] = args
+        command = ''
+        bash = 'exec bash -c'
         if self.terminal_type == TerminalType.CONTROL:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
         elif self.terminal_type == TerminalType.CAM:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
-            self.cmd = 'roscore'
+            command = 'roscore'
+        self.cmd = f'{bash} "{command}"'
 
     def clear_inputs(self):
         self.catkin_ws.clear()

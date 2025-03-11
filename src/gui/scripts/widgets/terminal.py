@@ -41,6 +41,20 @@ class TerminalWidget(QtWidgets.QWidget):
         self.setup_ui()
         self.connect_signals()
 
+    def terminate_processes(self):
+        if self.compile_process is not None:
+            self.compile_process.terminate()
+        if self.ctrl_process is not None:
+            self.stop_ctrl_process()
+        if self.cam_process is not None:
+            self.stop_cam_process()
+        if self.path_process is not None:
+            self.stop_path_process()
+        if self.roscore_process is not None:
+            self.stop_roscore_process()
+        if self.sim_process is not None:
+            self.stop_sim_process()
+
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setAlignment(QtCore.Qt.AlignTop)

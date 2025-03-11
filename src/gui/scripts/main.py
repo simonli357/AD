@@ -57,12 +57,12 @@ class MainWindow(QMainWindow):
         self.cam_widget = CameraWidget(self)
         self.meter_widget = MeterWidget(self)
         self.car_widget = CarWidget(self)
-        self.msg_widget = TerminalWidget(self)
+        self.terminal_widget = TerminalWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
         self.object_widget = ObjectWidget(self)
 
-        self.comm.message_signal.connect(self.msg_widget.add_message)
+        self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
@@ -92,7 +92,7 @@ class MainWindow(QMainWindow):
         self.top_layout.addWidget(self.map_widget)
 
         self.left_layout.addWidget(top_widgets)
-        self.left_layout.addWidget(self.msg_widget)
+        self.left_layout.addWidget(self.terminal_widget)
 
         right_widgets = QWidget()
         stat_widgets = QWidget()
@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
 
-        self.msg_widget.add_message("BFMC DASHBOARD INITIALIZED")
+        self.terminal_widget.add_message("BFMC DASHBOARD INITIALIZED")
 
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
@@ -197,12 +197,14 @@ class MainWindow(QMainWindow):
             time.sleep(0.016)
 
     def handle_signal(self, signal, frame):
+        self.terminal_widget.terminate_processes()
+        print("processes terminated")
         print("Caught SIGINT (Ctrl+C), closing sockets...")
-        self.close()
         if self.server.tcp_socket:
             self.server.tcp_socket.close()
             self.server.udp_socket.close()
         print("sockets closed")
+        self.close()
         sys.exit(0)
 
 

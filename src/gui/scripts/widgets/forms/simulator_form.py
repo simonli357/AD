@@ -160,7 +160,9 @@ class SimulatorFormWidget(QDialog):
             args = self.args_cached
         else:
             self.cache['args'] = args
-        self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch sim_pkg {args}'
+        bash = 'exec bash -c'
+        command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch sim_pkg {args}'
+        self.cmd = f'{bash} "{command}"'
         with open(self.config, 'w') as file:
             yaml.dump(self.cache, file)
         self.clear_inputs()
