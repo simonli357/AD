@@ -2,6 +2,7 @@ from PyQt5.QtGui import QPainter, QPen, QColor, QImage, QPixmap
 from PyQt5 import QtCore, QtWidgets
 
 import cv2
+import os
 
 
 class ObjectWidget(QtWidgets.QWidget):
@@ -9,6 +10,9 @@ class ObjectWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.main_window = self.parent()
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.car_icon_path = os.path.join(current_dir, 'assets', 'car_top.png')
 
         self.obj_dict = self.main_window.map_widget.object_dict
         self.sign_images = self.main_window.map_widget.sign_images
@@ -47,14 +51,41 @@ class ObjectWidget(QtWidgets.QWidget):
             image_rect = QtCore.QRectF(x - size + 10, y - size - 15, size, size)
             painter.drawPixmap(image_rect.topLeft(), pixmap)
 
+    def draw_car(self, painter: QPainter, x, y, size):
+        img = cv2.imread(self.car_icon_path, cv2.IMREAD_UNCHANGED)  # Loads BGRA (if PNG with alpha)
+        if img is not None:
+            size = max(5, size)
+            img = cv2.resize(img, (size, size))
+            if img.shape[2] == 4:  # Check if alpha channel exists
+                rgb_img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
+                qt_format = QImage.Format_RGBA8888
+                bytes_per_line = 4 * img.shape[1]  # 4 channels (RGBA)
+            else:
+                rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                qt_format = QImage.Format_RGB888
+                bytes_per_line = 3 * img.shape[1]
+            height, width, _ = rgb_img.shape
+            qimg = QImage(
+                rgb_img.data,
+                width,
+                height,
+                bytes_per_line,
+                qt_format
+            )
+            pixmap = QPixmap.fromImage(qimg)
+            image_rect = QtCore.QRectF(x - size + 10, y - size - 15, size, size)
+            painter.drawPixmap(image_rect.topLeft(), pixmap)
+
     def draw_axis(self, painter: QPainter) -> tuple:
         # Calculate axis positions
         h1 = 0.0
         h2 = self.height()
         w1 = 0.0
         w2 = self.width()
-        mid_h = self.height() / 2
+        mid_h = self.height() / 1.5
         mid_w = self.width() / 2
+
+        self.draw_car(painter, mid_w + 28, mid_h + 75, 75)
 
         # Draw vertical axis (Y-axis)
         painter.setPen(QPen(QColor(0, 255, 0), 1))

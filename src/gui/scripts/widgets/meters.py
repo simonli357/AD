@@ -7,6 +7,7 @@ class MeterWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMaximumHeight(240)
         self.speed = 0
         self.min_speed = 0.0
         self.max_speed = 70.0

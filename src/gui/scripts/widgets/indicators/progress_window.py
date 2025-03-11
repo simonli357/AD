@@ -9,7 +9,7 @@ class ProgressWindow(QDialog):
         self.setMinimumWidth(600)
         self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.setRange(0, 1000)
-        self.progress_bar.setValue(0)
+        self.progress_bar.setValue(1)
         self.setup_ui()
         self.setStyleSheet("""
             background-color: rgba(255, 255, 255, 0.05);
@@ -28,7 +28,7 @@ class ProgressWindow(QDialog):
 
     def set_progress(self, progress):
         if progress * 10 > self.progress_bar.value():
-            self.progress_bar.setValue(progress * 10) - 1
+            self.progress_bar.setValue((progress * 10) - 1)
 
     def end(self):
         self.close()

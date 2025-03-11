@@ -131,7 +131,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw grid
         self.draw_grid()
 
-        gl.glTranslatef(2.25, 0, 0)
+        gl.glTranslatef(0.5, 0, 0)
 
         # Draw car model
         self.draw_car_self((0, 1, 1, 1))
@@ -218,8 +218,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
-        gl.glScalef(0.8, 0.8, 0.8)
-        gl.glTranslatef(2, 2, -3)
+        gl.glScalef(0.75, 0.75, 0.75)
+        gl.glTranslatef(0.5, 2, -3)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
@@ -411,7 +411,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 20, 35, 0)
+        gl.glTranslatef(viewport[2] - 30, 20, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)
