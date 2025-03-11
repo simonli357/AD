@@ -240,10 +240,18 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def read_compile_output(self):
         stdout = self.compile_process.readAllStandardOutput().data().decode()
+        stderr = self.compile_process.readAllStandardError().data().decode()
+        if stderr:
+            for line in stderr.splitlines():
+                line = line.strip()
+                self.message_display.append(line)
+                if "failed" in line or "Error" in line:
+                    if self.compile_progress is not None:
+                        self.compile_progress.end()
         if stdout:
-            # Process each line to find the latest percentage
             for line in stdout.splitlines():
                 line = line.strip()
+                self.message_display.append(line)
                 match = re.search(r'(\d+)%', line)
                 if match:
                     val = int(match.group(1))
@@ -257,6 +265,7 @@ class TerminalWidget(QtWidgets.QWidget):
     def start_compile_process(self, cmd):
         self.compile_process = QProcess(self)
         self.compile_process.readyReadStandardOutput.connect(self.read_compile_output)
+        self.compile_process.readyReadStandardError.connect(self.read_compile_output)
         self.compile_process.start('bash', ['-c', cmd])
         self.compile_progress = ProgressWindow()
         self.compile_progress.exec()

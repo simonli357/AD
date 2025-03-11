@@ -90,6 +90,7 @@ class TcpClient {
 	int udp_socket;
 	std::thread receiver;
 	std::thread sender;
+    std::thread perfmon;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;

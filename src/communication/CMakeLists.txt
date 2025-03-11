@@ -39,6 +39,8 @@ catkin_package(
 ## Build ##
 ###########
 
+link_directories(/usr/lib/x86_64-linux-gnu)
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -84,6 +86,7 @@ target_link_libraries(${PROJECT_NAME}
   ${roscpp_LIBRARIES}
   ${OpenCV_LIBS}
   TBB::tbb
+  hwloc
 )
 
 #############

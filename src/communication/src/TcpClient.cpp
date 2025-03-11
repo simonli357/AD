@@ -2,6 +2,7 @@
 #include "msg/Lane2Msg.hpp"
 #include "msg/ParamsMsg.hpp"
 #include "msg/RunMsg.hpp"
+#include "msg/SWLoadMsg.hpp"
 #include "msg/TriggerMsg.hpp"
 #include "ros/serialization.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -9,6 +10,7 @@
 #include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Header.h"
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
@@ -37,6 +39,7 @@ TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::str
 		set_tcp_data_actions();
 		receiver = std::thread(&TcpClient::initialize, this);
 		sender = std::thread(&TcpClient::send_data, this);
+		perfmon = std::thread(&TcpClient::send_swload, this);
 	}
 }
 
@@ -51,6 +54,9 @@ TcpClient::~TcpClient() {
 	}
 	if (sender.joinable()) {
 		sender.join();
+	}
+	if (perfmon.joinable()) {
+		perfmon.join();
 	}
 }
 
@@ -111,7 +117,7 @@ void TcpClient::set_tcp_data_actions() {
 }
 
 void TcpClient::initialize() {
-	while (true) {
+	while (alive) {
 		create_tcp_socket();
 		std::cout << "Connecting to GUI \n" << std::endl;
 		while (true) {
@@ -201,7 +207,7 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
-	while (true) {
+	while (alive) {
 		if (!stream_tasks.empty() && tcp_can_send) {
 			std::any stream_task;
 			if (stream_tasks.try_pop(stream_task)) {
@@ -457,7 +463,25 @@ void TcpClient::send_steer(float steer) {
 	add_dgram_task(std::move(fn));
 }
 
-void TcpClient::send_swload() { return; }
+void TcpClient::send_swload() {
+	while (alive) {
+		SWLoadMsg msg;
+		std_msgs::Float64MultiArray cores_usage = msg.get_cores_usage();
+		float ram_usage = msg.get_ram_usage();
+		float temp = msg.get_temperature();
+		float heap = msg.get_heap_usage();
+		float stack = msg.get_stack_usage();
+		/* std::cout << "No cores: " << cores_usage.data.size() << std::endl; */
+		/* std::cout << "RAM: " << ram_usage << std::endl; */
+		/* std::cout << "Temp: " << temp << std::endl; */
+		/* std::cout << "Heap use: " << heap << std::endl; */
+		/* std::cout << "Stack use: " << stack << std::endl; */
+		std::vector<uint8_t> bytes = SWLoadMsg(cores_usage, ram_usage, temp, heap, stack).serialize(udp_data_types[7]);
+		std::vector<uint8_t> segment(MAX_DGRAM, 0);
+		std::memcpy(segment.data(), bytes.data(), bytes.size());
+		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	}
+}
 
 // ------------------- //
 // TCP Decoding

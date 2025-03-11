@@ -48,7 +48,7 @@ void TrafficClient::create_tcp_socket() {
 }
 
 void TrafficClient::initialize() {
-	while (true) {
+	while (alive) {
 		create_tcp_socket();
 		std::cout << "Connecting to Traffic Server \n" << std::endl;
 		while (true) {
@@ -81,7 +81,7 @@ void TrafficClient::poll_connection() {
 }
 
 void TrafficClient::send_data() {
-	while (true) {
+	while (alive) {
 		if (!stream_tasks.empty() && tcp_can_send) {
             std::any stream_task;
             if (stream_tasks.try_pop(stream_task)) {
