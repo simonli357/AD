@@ -299,8 +299,6 @@ class CompileFormWidget(QDialog):
         self.cmd.clear()
 
     def accept(self):
-        if self.args_cached == 'args':
-            self.args_cached = ''
         if not self.use_ssh:
             self.set_remote_cmd()
         else:

@@ -6,6 +6,9 @@ from .enums import TerminalType
 from .forms.simulator_form import SimulatorFormWidget
 from .forms.compile_form import CompileFormWidget
 from .forms.ssh_form import SSHFormWidget
+from .indicators.progress_window import ProgressWindow
+
+import re
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -220,16 +223,26 @@ class TerminalWidget(QtWidgets.QWidget):
             return
         self.start_compile_process(cmd)
 
-    def read_sim_output(self):
+    def read_compile_output(self):
         stdout = self.compile_process.readAllStandardOutput().data().decode()
         if stdout:
-            print(stdout.strip())
+            # Process each line to find the latest percentage
+            for line in stdout.splitlines():
+                line = line.strip()
+                match = re.search(r'(\d+)%', line)
+                if match:
+                    val = int(match.group(1))
+                    if self.compile_progress is not None:
+                        self.compile_progress.set_progress(val)
+                else:
+                    self.compile_progress.increment(1)
 
     def start_compile_process(self, cmd):
         self.compile_process = QProcess(self)
-        self.compile_process.readyReadStandardOutput.connect(self.read_sim_output)
+        self.compile_process.readyReadStandardOutput.connect(self.read_compile_output)
         self.compile_process.start('bash', ['-c', cmd])
-
+        self.compile_progress = ProgressWindow()
+        self.compile_progress.exec()
 
     ################
     # Simulator

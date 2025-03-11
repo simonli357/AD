@@ -131,16 +131,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw grid
         self.draw_grid()
 
+        gl.glTranslatef(2.25, 0, 0)
+
         # Draw car model
-        gl.glTranslatef(2.5, 0, 0)
         self.draw_car_self((0, 1, 1, 1))
 
         # Draw detected objects if any
-        gl.glTranslatef(2.5, 0, 0)
         self.draw_detected_object()
 
         # Draw predicted path
-        gl.glTranslatef(2.5, 0, 0)
         self.draw_path()
 
         # Draw axes overlay
@@ -205,7 +204,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(20 * scale_factor)
+        font.setPixelSize(18 * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -220,7 +219,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.grid_vbo.bind()
         gl.glScalef(0.8, 0.8, 0.8)
-        gl.glTranslatef(2, 2, -4)
+        gl.glTranslatef(2, 2, -3)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
