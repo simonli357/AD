@@ -28,6 +28,7 @@ class ProgressWindow(QDialog):
 
     def set_progress(self, progress):
         if progress * 10 > self.progress_bar.value():
-            self.progress_bar.setValue(progress * 10)
-            if self.progress_bar.value() == 1000:
-                self.close()
+            self.progress_bar.setValue(progress * 10) - 1
+
+    def end(self):
+        self.close()
