@@ -18,9 +18,9 @@
 #include <queue>
 #include <sensor_msgs/Image.h>
 #include <sys/types.h>
+#include <tbb/concurrent_queue.h>
 #include <thread>
 #include <vector>
-#include <tbb/concurrent_queue.h>
 
 using sensor_msgs::Image;
 using std_msgs::Float32MultiArray;
@@ -54,13 +54,14 @@ class TcpClient {
 	void send_string(const std::string &str);
 	void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const cv::Mat &img);
-    void send_current_rgb_image();
+	void send_current_rgb_image();
 	void send_image_depth(const cv::Mat &img);
-    void send_current_depth_image();
+	void send_current_depth_image();
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);
 	void send_steer(float steer);
+    void send_swload();
 	void send_message(const String &msg);
 	void send_trigger(const std_srvs::Trigger &trigger);
 	void send_params(const std::vector<double> &state_refs, const std::vector<double> &attributes);
@@ -93,7 +94,7 @@ class TcpClient {
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
 	// Task Queue
-    tbb::concurrent_queue<std::any> stream_tasks;
+	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
 	// Storage
 	std::queue<std::string> strings;
