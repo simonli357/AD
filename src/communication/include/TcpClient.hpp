@@ -10,14 +10,17 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
+#include <any>
 #include <cstdint>
 #include <functional>
 #include <netinet/in.h>
+#include <opencv2/core/mat.hpp>
 #include <queue>
 #include <sensor_msgs/Image.h>
 #include <sys/types.h>
 #include <thread>
 #include <vector>
+#include <tbb/concurrent_queue.h>
 
 using sensor_msgs::Image;
 using std_msgs::Float32MultiArray;
@@ -47,24 +50,26 @@ class TcpClient {
 	std::queue<std::unique_ptr<WaypointsSrv>> &get_waypoints_srv_msgs();
 	std::queue<bool> &get_start_srv_msgs();
 	// Encode
-	void send_type(std::string &str);
-	void send_string(std::string &str);
+	void send_type(const std::string &str);
+	void send_string(const std::string &str);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(const Image &img);
-	void send_image_depth(const Image &img);
+	void send_image_rgb(const cv::Mat &img);
+    void send_current_rgb_image();
+	void send_image_depth(const cv::Mat &img);
+    void send_current_depth_image();
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);
 	void send_steer(float steer);
 	void send_message(const String &msg);
-	void send_trigger(std_srvs::Trigger &trigger);
-	void send_params(std::vector<double> &state_refs, std::vector<double> &attributes);
-	void send_go_to_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
-	void send_go_to_cmd_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
+	void send_trigger(const std_srvs::Trigger &trigger);
+	void send_params(const std::vector<double> &state_refs, const std::vector<double> &attributes);
+	void send_go_to_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
+	void send_go_to_cmd_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success);
 	void send_set_states_srv(bool success);
-	void send_waypoints_srv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
+	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
-	void send_run(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init);
+	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
 
   private:
 	// Fields
@@ -82,10 +87,14 @@ class TcpClient {
 	sockaddr_in udp_address;
 	int tcp_socket;
 	int udp_socket;
-	std::thread receive;
+	std::thread receiver;
+	std::thread sender;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
+	// Task Queue
+    tbb::concurrent_queue<std::any> stream_tasks;
+	tbb::concurrent_queue<std::any> dgram_tasks;
 	// Storage
 	std::queue<std::string> strings;
 	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
@@ -103,6 +112,9 @@ class TcpClient {
 	void set_udp_data_types();
 	void poll_connection();
 	void listen();
+	void send_data();
+	template <typename Callable> void add_stream_task(Callable &&lambda);
+	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);

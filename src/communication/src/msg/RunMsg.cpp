@@ -3,7 +3,7 @@
 
 RunMsg::RunMsg() {}
 
-RunMsg::RunMsg(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init)
+RunMsg::RunMsg(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init)
 	: v_ref(v_ref), path_name(path_name), x_init(x_init), y_init(y_init), yaw_init(yaw_init) {
     v_ref_length = sizeof(v_ref);
     path_name_length = path_name.size();
