@@ -15,7 +15,10 @@
 using namespace VehicleConstants;
 using json = nlohmann::json;
 
-TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) { poll = std::thread(&TrafficClient::initialize, this); }
+TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
+    poll = std::thread(&TrafficClient::initialize, this); 
+    sender = std::thread(&TrafficClient::send_data, this);
+}
 
 TrafficClient::~TrafficClient() {
 	alive = false;
@@ -25,6 +28,9 @@ TrafficClient::~TrafficClient() {
 	}
 	if (poll.joinable()) {
 		poll.join();
+	}
+	if (sender.joinable()) {
+		sender.join();
 	}
 }
 
@@ -74,31 +80,33 @@ void TrafficClient::poll_connection() {
 	}
 }
 
-bool TrafficClient::can_send() {
-    using namespace std::chrono;
-    time_point now = high_resolution_clock::now();
-    duration elapsed = now - last_send;
-    if (elapsed >= freq) {
-        last_send = now;
-        return true;
-    }
-    return false;
+void TrafficClient::send_data() {
+	while (true) {
+		if (!stream_tasks.empty() && tcp_can_send) {
+            std::any stream_task;
+            if (stream_tasks.try_pop(stream_task)) {
+                std::function<void()> task = std::any_cast<std::function<void()>>(stream_task);
+                task();
+            }
+            stream_tasks.clear();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(frequency));
+	}
 }
+
+template <typename Callable> void TrafficClient::add_stream_task(Callable &&lambda) { stream_tasks.push(std::function<void()>(std::forward<Callable>(lambda))); }
 
 // ------------------- //
 // TCP Encoding
 // ------------------- //
 
 void TrafficClient::send_car_id() {
-	json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", frequency}, {"locID", car_id}};
+	json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
 	std::string chars = msg.dump();
 	send(tcp_socket, chars.data(), chars.size(), 0);
 }
 
 void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
-    if (!can_send()) {
-        return;
-    }
 	static auto road_obj_to_str = [](OBJECT &obj) -> std::string {
 		switch (obj) {
 		case OBJECT::BLOCK:
@@ -139,8 +147,7 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 			return "UNKNOWN";
 		}
 	};
-
-	if (tcp_can_send) {
+    auto fn = [this, road_object]() {
 		std::string v_pos = create_vehicle_pos(road_object.data[1], road_object.data[2]);
 		std::string v_rot = create_vehicle_rot(road_object.data[3]);
 		std::string v_speed = create_vehicle_speed(road_object.data[4]);
@@ -151,7 +158,8 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 		}
         std::string msg = v_pos + v_rot + v_speed + objcts;
         send(tcp_socket, msg.data(), msg.size(), 0);
-	}
+    };
+    add_stream_task(std::move(fn));
 }
 
 std::string TrafficClient::create_vehicle_pos(double x, double y) {
