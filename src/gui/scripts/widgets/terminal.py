@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget
 from collections import deque
 from .enums import TerminalType
 from .forms.simulator_form import SimulatorFormWidget
+from .forms.compile_form import CompileFormWidget
 from .forms.ssh_form import SSHFormWidget
 
 
@@ -16,6 +17,8 @@ class TerminalWidget(QtWidgets.QWidget):
         self.terminals.append(TerminalType.DEBUG)
         # ROS debug
         self.message_history = deque([], 1000)
+        # Compile
+        self.compile_process = None
         # Simulator
         self.sim_display = None
         self.sim_process = None
@@ -41,7 +44,8 @@ class TerminalWidget(QtWidgets.QWidget):
         buttons = QWidget()
         self.button_wrapper = QtWidgets.QHBoxLayout(buttons)
         self.buttons = deque()
-        self.stop_btn = QtWidgets.QPushButton(' Stop')
+        self.stop_btn = QtWidgets.QPushButton(' stop')
+        self.compile_btn = QtWidgets.QPushButton(' build')
         self.debug_btn = QtWidgets.QPushButton(' debug')
         self.sim_btn = QtWidgets.QPushButton('󰘨 simulator')
         self.controller_btn = QtWidgets.QPushButton('󱡸 controller')
@@ -49,6 +53,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.path_planner_btn = QtWidgets.QPushButton('  planner')
         self.roscore_btn = QtWidgets.QPushButton(' roscore')
         self.buttons.append(self.stop_btn)
+        self.buttons.append(self.compile_btn)
         self.buttons.append(self.debug_btn)
         self.buttons.append(self.sim_btn)
         self.buttons.append(self.controller_btn)
@@ -66,9 +71,9 @@ class TerminalWidget(QtWidgets.QWidget):
             QPushButton {
                 border: none;
                 background-color: rgba(255, 255, 255, 0.08);
-                padding: 5px 25px 5px 25px;
+                padding: 5px 20px 5px 20px;
                 color: white;
-                font-size: 20px;
+                font-size: 18px;
                 border-radius: 8px;
             }
         """)
@@ -101,9 +106,19 @@ class TerminalWidget(QtWidgets.QWidget):
                 background-color: #ff4d4d;
             }
         """)
+        self.compile_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #008000;
+                padding: 5px 15px 5px 15px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0,144,0,0.25);
+            }
+        """)
 
     def connect_signals(self):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
+        self.compile_btn.clicked.connect(self.handle_compile_btn_click)
         self.debug_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
         self.controller_btn.clicked.connect(self.handle_controller_btn_click)
@@ -178,7 +193,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.update_buttons_style()
 
     ################
-    # Stop Button
+    # Stop
     ################
 
     def handle_stop_btn_click(self):
@@ -193,6 +208,28 @@ class TerminalWidget(QtWidgets.QWidget):
             self.stop_path_process()
         elif current_terminal_type == TerminalType.ROSCORE:
             self.stop_roscore_process()
+
+    ################
+    # Compile
+    ################
+    def handle_compile_btn_click(self):
+        modal = CompileFormWidget()
+        modal.exec()
+        cmd = modal.get_cmd()
+        if cmd is None:
+            return
+        self.start_compile_process(cmd)
+
+    def read_sim_output(self):
+        stdout = self.compile_process.readAllStandardOutput().data().decode()
+        if stdout:
+            print(stdout.strip())
+
+    def start_compile_process(self, cmd):
+        self.compile_process = QProcess(self)
+        self.compile_process.readyReadStandardOutput.connect(self.read_sim_output)
+        self.compile_process.start('bash', ['-c', cmd])
+
 
     ################
     # Simulator

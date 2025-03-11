@@ -23,12 +23,12 @@ class SimulatorFormWidget(QDialog):
 
     def setup_ui(self):
         self.catkin_ws = QLineEdit(self)
-        self.catkin_ws.setPlaceholderText(self.catkin_ws_cached)
+        self.catkin_ws.setText(self.catkin_ws_cached)
         self.catkin_ws_label = QLabel('Path  ')
         self.catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         self.args = QLineEdit(self)
-        self.args.setPlaceholderText(self.args_cached)
+        self.args.setText(self.args_cached)
         self.args_label = QLabel('Args 󰦨 ')
         self.args_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
@@ -141,6 +141,10 @@ class SimulatorFormWidget(QDialog):
         with open(self.config, 'w') as file:
             yaml.dump(default_config, file)
 
+    def clear_inputs(self):
+        self.catkin_ws.clear()
+        self.args.clear()
+
     def accept(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
@@ -159,13 +163,11 @@ class SimulatorFormWidget(QDialog):
         self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch sim_pkg {args}'
         with open(self.config, 'w') as file:
             yaml.dump(self.cache, file)
-        self.catkin_ws.clear()
-        self.args.clear()
+        self.clear_inputs()
         super().accept()
 
     def reject(self):
-        self.catkin_ws.clear()
-        self.args.clear()
+        self.clear_inputs()
         super().reject()
 
     def get_cmd(self):
