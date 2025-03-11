@@ -522,6 +522,8 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         // safety check
         if (tcp_client != nullptr) {
             tcp_client->send_road_object(road_object_msg);
+        }
+        if (traffic_client != nullptr) {
             traffic_client->send_car_data(road_object_msg);
         }
     }
