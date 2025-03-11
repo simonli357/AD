@@ -88,7 +88,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # Initialize grid VBO
-        grid_size_z = 12
+        grid_size_z = 15
         grid_size_x = 6
         step = 1
         grid_vertices = []
@@ -132,12 +132,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.draw_grid()
 
         # Draw car model
+        gl.glTranslatef(2.5, 0, 0)
         self.draw_car_self((0, 1, 1, 1))
 
         # Draw detected objects if any
+        gl.glTranslatef(2.5, 0, 0)
         self.draw_detected_object()
 
         # Draw predicted path
+        gl.glTranslatef(2.5, 0, 0)
         self.draw_path()
 
         # Draw axes overlay
@@ -216,8 +219,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
-        gl.glScalef(0.6, 0.6, 0.6)
-        gl.glTranslatef(0, 2, 1.5)
+        gl.glScalef(0.8, 0.8, 0.8)
+        gl.glTranslatef(2, 2, -4)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)

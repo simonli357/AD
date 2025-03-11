@@ -108,6 +108,7 @@ class MainWindow(QMainWindow):
         self.left_wrapper_layout.addWidget(self.object_widget)
         self.right_wrapper_layout = QVBoxLayout(right_wrapper)
         self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
+        self.right_wrapper_layout.addStretch()
         self.right_wrapper_layout.addWidget(self.car_widget)
         self.stat_layout.addWidget(left_wrapper)
         self.stat_layout.addWidget(right_wrapper)
