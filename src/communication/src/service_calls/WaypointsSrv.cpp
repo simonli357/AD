@@ -10,7 +10,7 @@ using std_msgs::Float32MultiArray;
 
 WaypointsSrv::WaypointsSrv() {}
 
-WaypointsSrv::WaypointsSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals)
+WaypointsSrv::WaypointsSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals)
 	: state_refs(state_refs), input_refs(input_refs), wp_attributes(wp_attributes), wp_normals(wp_normals) {
 	state_refs_length = ros::serialization::serializationLength(state_refs);
 	input_refs_length = ros::serialization::serializationLength(input_refs);
@@ -19,7 +19,7 @@ WaypointsSrv::WaypointsSrv(Float32MultiArray &state_refs, Float32MultiArray &inp
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length;
 }
 
-WaypointsSrv::WaypointsSrv(float vrefName, std::string pathName, float x0, float y0, float yaw0) : vrefName(vrefName), pathName(pathName), x0(x0), y0(y0), yaw0(yaw0) {}
+WaypointsSrv::WaypointsSrv(float vrefName, const std::string &pathName, float x0, float y0, float yaw0) : vrefName(vrefName), pathName(pathName), x0(x0), y0(y0), yaw0(yaw0) {}
 
 std::unique_ptr<WaypointsSrv> WaypointsSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);

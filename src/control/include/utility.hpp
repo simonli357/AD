@@ -19,6 +19,7 @@
 #include <array>
 #include <eigen3/Eigen/Dense>
 #include "TcpClient.hpp"
+#include "TrafficClient.hpp"
 #include "utils/Lane2.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
@@ -115,6 +116,7 @@ public:
 
     // Client
     std::shared_ptr<TcpClient> tcp_client;
+    std::unique_ptr<TrafficClient> traffic_client;
 
     // publishers
     ros::Publisher odom_pub;
@@ -869,7 +871,7 @@ public:
 			depthImage = cv_ptr_depth->image.clone();
 		}
 		if (sign_ptr->tcp_client != nullptr) {
-        	sign_ptr->tcp_client->send_image_depth(*msg);
+        	sign_ptr->tcp_client->send_image_depth(depthImage);
 		}
 	}
 	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
@@ -883,7 +885,7 @@ public:
             colorImage = cv_ptr->image.clone();
 		}
 		if (sign_ptr->tcp_client != nullptr) {
-        	sign_ptr->tcp_client->send_image_rgb(*msg);
+        	sign_ptr->tcp_client->send_image_rgb(colorImage);
 		}
 	}
 
@@ -946,8 +948,8 @@ public:
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
 			if (sign_ptr->tcp_client != nullptr) {
-				sign_ptr->tcp_client->send_image_rgb(*color_msg);
-				sign_ptr->tcp_client->send_image_depth(*depth_msg);
+				sign_ptr->tcp_client->send_image_rgb(colorImage);
+				sign_ptr->tcp_client->send_image_depth(depthImage);
 			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);

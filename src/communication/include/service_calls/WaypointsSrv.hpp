@@ -11,8 +11,8 @@ using std_msgs::Float32MultiArray;
 class WaypointsSrv : public Decoder<WaypointsSrv>, public Encoder {
   public:
     WaypointsSrv();
-	WaypointsSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
-	WaypointsSrv(float vrefName, std::string pathName, float x0, float y0, float yaw0);
+	WaypointsSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
+	WaypointsSrv(float vrefName, const std::string &pathName, float x0, float y0, float yaw0);
 	WaypointsSrv(WaypointsSrv &&) = default;
 	WaypointsSrv(const WaypointsSrv &) = default;
 	WaypointsSrv &operator=(WaypointsSrv &&) = delete;

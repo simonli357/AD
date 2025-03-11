@@ -4,7 +4,7 @@
 
 ParamsMsg::ParamsMsg() {}
 
-ParamsMsg::ParamsMsg(std::vector<double> &state_refs, std::vector<double> &attributes)
+ParamsMsg::ParamsMsg(const std::vector<double> &state_refs, const std::vector<double> &attributes)
 	: state_refs(state_refs), attributes(attributes) {
     state_refs_arr = double_vector_to_arr(state_refs);
     attributes_arr = double_vector_to_arr(attributes);

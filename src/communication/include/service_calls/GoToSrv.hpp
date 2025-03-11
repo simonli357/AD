@@ -11,8 +11,8 @@ using std_msgs::Float32MultiArray;
 class GoToSrv : public Decoder<GoToSrv>, public Encoder {
   public:
     GoToSrv();
-	GoToSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals);
-	GoToSrv(std::string vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y);
+	GoToSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
+	GoToSrv(const std::string &vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y);
 	GoToSrv(GoToSrv &&) = default;
 	GoToSrv(const GoToSrv &) = default;
 	GoToSrv &operator=(GoToSrv &&) = delete;
