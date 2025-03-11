@@ -20,6 +20,7 @@ from widgets.camera import CameraWidget
 from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget
 from widgets.objects import ObjectWidget
+from widgets.jetson.sw_load import SoftwareMetricsWidget
 
 from std_srvs.srv import TriggerRequest
 
@@ -61,6 +62,7 @@ class MainWindow(QMainWindow):
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
         self.object_widget = ObjectWidget(self)
+        self.sw_widget = SoftwareMetricsWidget(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -116,7 +118,7 @@ class MainWindow(QMainWindow):
         self.left_wrapper_layout.addWidget(self.object_widget)
         self.right_wrapper_layout = QVBoxLayout(right_wrapper)
         self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
-        self.right_wrapper_layout.addStretch()
+        self.right_wrapper_layout.addWidget(self.sw_widget)
         self.right_wrapper_layout.addWidget(self.car_widget)
         self.stat_layout.addWidget(left_wrapper)
         self.stat_layout.addWidget(right_wrapper)
