@@ -3,6 +3,8 @@
 #include "Encoder.hpp"
 #include "std_msgs/Float64MultiArray.h"
 #include <cstdint>
+#include <hwloc.h>
+#include <unordered_map>
 #include <vector>
 
 class SWLoadMsg : public Encoder {
@@ -21,6 +23,11 @@ class SWLoadMsg : public Encoder {
 	float heap_usage;
 	float stack_usage;
 
+	struct CoreUsage {
+		unsigned long long total;
+		unsigned long long idle;
+	};
+
   private:
 	const size_t bytes_length = 4;
 	const size_t num_elements = 6;
@@ -36,4 +43,7 @@ class SWLoadMsg : public Encoder {
 	uint32_t compute_data_length() override;
 	std::vector<uint8_t> get_lengths() override;
 	std::vector<uint8_t> get_data() override;
+
+	std::unordered_map<int, CoreUsage> read_proc_stat();
+    std_msgs::Float64MultiArray get_cores_usage();
 };
