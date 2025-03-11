@@ -7,6 +7,7 @@ from .forms.simulator_form import SimulatorFormWidget
 from .forms.compile_form import CompileFormWidget
 from .forms.ssh_form import SSHFormWidget
 from .indicators.progress_window import ProgressWindow
+from .indicators.loading_window import LoadingWindow
 
 import re
 
@@ -188,7 +189,7 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def kill_process(self, process, display, terminal_type):
         process.terminate()
-        process.waitForFinished()
+        LoadingWindow(process).exec()
         self.stacked_widget.removeWidget(display)
         display.deleteLater()
         self.terminals.remove(terminal_type)
@@ -235,7 +236,7 @@ class TerminalWidget(QtWidgets.QWidget):
                     if self.compile_progress is not None:
                         self.compile_progress.set_progress(val)
                 else:
-                    self.compile_progress.increment(1)
+                    self.compile_progress.increment(2)
 
     def start_compile_process(self, cmd):
         self.compile_process = QProcess(self)
