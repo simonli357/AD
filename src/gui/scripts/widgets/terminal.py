@@ -10,6 +10,8 @@ from .indicators.progress_window import ProgressWindow
 from .indicators.loading_window import LoadingWindow
 
 import re
+import os
+import signal
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -55,15 +57,15 @@ class TerminalWidget(QtWidgets.QWidget):
         if self.compile_process is not None:
             self.compile_process.terminate()
         if self.ctrl_process is not None:
-            self.stop_ctrl_process()
+            self.halt_process(self.ctrl_process)
         if self.cam_process is not None:
-            self.stop_cam_process()
+            self.halt_process(self.cam_process)
         if self.path_process is not None:
-            self.stop_path_process()
+            self.halt_process(self.path_process)
         if self.roscore_process is not None:
-            self.stop_roscore_process()
+            self.halt_process(self.roscore_process)
         if self.sim_process is not None:
-            self.stop_sim_process()
+            self.halt_process(self.sim_process)
 
     def setup_ui(self) -> None:
         buttons = QWidget()
@@ -92,7 +94,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.ctrl_buttons_wrapper.setAlignment(QtCore.Qt.AlignTop)
         self.ctrl_buttons = deque()
         self.compile_btn = QtWidgets.QPushButton('')
-        self.sig_btn = QtWidgets.QPushButton('')
+        self.sig_btn = QtWidgets.QPushButton('')
         self.stop_btn = QtWidgets.QPushButton('')
         self.compile_btn.setToolTip('Compile')
         self.sig_btn.setToolTip('SIGTERM')
@@ -122,7 +124,6 @@ class TerminalWidget(QtWidgets.QWidget):
                 background-color: black;
                 color: white;
                 border: none;
-                font-size: 16px;
             }
         """)
 
@@ -131,32 +132,41 @@ class TerminalWidget(QtWidgets.QWidget):
 
         self.stop_btn.setStyleSheet("""
             QPushButton {
-                background-color: #ff0000;
-                color: white;
-                padding: 5px 10px 5px 5px;
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(255, 0, 0, 0.3);
+                color: #ff0000;
+                padding: 5px 12px 5px 5px;
             }
             QPushButton:hover {
-                background-color: #ff4d4d;
+                background-color: rgba(255, 0, 0, 0.5);
             }
         """)
         self.sig_btn.setStyleSheet("""
             QPushButton {
-                background-color: #ff6600;
-                color: white;
-                padding: 5px 10px 5px 5px;
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(255, 120, 0, 0.3);
+                color: #ffa500;
+                padding: 5px 12px 5px 5px;
             }
             QPushButton:hover {
-                background-color: #ffc299;
+                background-color: rgba(255, 120, 0, 0.5);
             }
         """)
         self.compile_btn.setStyleSheet("""
             QPushButton {
-                background-color: #008000;
-                color: white;
-                padding: 5px 10px 5px 5px;
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(0, 255, 0, 0.3);
+                color: #00ff00;
+                padding: 5px 12px 5px 5px;
             }
             QPushButton:hover {
-                background-color: rgba(0,144,0,0.25);
+                background-color: rgba(0, 255, 0, 0.5);
             }
         """)
 
@@ -173,6 +183,7 @@ class TerminalWidget(QtWidgets.QWidget):
 
     def connect_signals(self):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
+        self.sig_btn.clicked.connect(self.handle_sig_btn_click)
         self.compile_btn.clicked.connect(self.handle_compile_btn_click)
         self.debug_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
@@ -239,13 +250,38 @@ class TerminalWidget(QtWidgets.QWidget):
         return self.terminals[widget_index]
 
     def kill_process(self, process, display, terminal_type):
-        process.terminate()
-        LoadingWindow(process).exec()
+        if process and process.state() == QProcess.Running:
+            process.terminate()
+            LoadingWindow(process).exec()
         self.stacked_widget.removeWidget(display)
         display.deleteLater()
         self.terminals.remove(terminal_type)
         self.stacked_widget.setCurrentIndex(0)
         self.update_buttons_style()
+
+    ################
+    # SIGTERM
+    ################
+    def handle_sig_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.SIM:
+            self.halt_process(self.sim_process)
+        elif current_terminal_type == TerminalType.CONTROL:
+            self.halt_process(self.ctrl_process)
+        elif current_terminal_type == TerminalType.CAM:
+            self.halt_process(self.cam_process)
+        elif current_terminal_type == TerminalType.PATH:
+            self.halt_process(self.path_process)
+        elif current_terminal_type == TerminalType.ROSCORE:
+            self.halt_process(self.roscore_process)
+
+    def halt_process(self, process):
+        if process and process.state() == QProcess.Running:
+            try:
+                pid = process.processId()
+                os.kill(pid, signal.SIGINT)
+            except Exception as e:
+                print(e)
 
     ################
     # Stop

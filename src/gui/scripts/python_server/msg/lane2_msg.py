@@ -15,7 +15,7 @@ class Lane2Msg:
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
-        lane_msg = Lane2Msg(self.data_type)
+        lane_msg = Lane2Msg()
         lane_msg.header = Header().deserialize(splits[0])
         lane_msg.center = struct.unpack('f', splits[1])[0]
         lane_msg.stopline = struct.unpack('i', splits[2])[0]
