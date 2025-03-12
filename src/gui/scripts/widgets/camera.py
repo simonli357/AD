@@ -12,7 +12,6 @@ class CameraWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.show_depth = False
-        self.bridge = CvBridge()
         self.numObj = 0
         self.detected_objects = np.zeros(10)
 
@@ -57,13 +56,11 @@ class CameraWidget(QtWidgets.QWidget):
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
 
-    def process_camera_frame(self, frame):
+    def process_camera_frame(self, cv_image):
         """Process RGB camera frame"""
         try:
             if self.show_depth:
                 return
-            # Convert ROS image message to OpenCV image
-            cv_image = self.bridge.imgmsg_to_cv2(frame, "bgr8")
 
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
@@ -81,13 +78,13 @@ class CameraWidget(QtWidgets.QWidget):
         except Exception as e:
             print(f"Camera processing error: {e}")
 
-    def process_depth_frame(self, depth_frame):
+    def process_depth_frame(self, depth_image):
         """Process depth camera frame"""
         try:
             if not self.show_depth:
                 return
             # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-            depth_image = self.bridge.imgmsg_to_cv2(depth_frame, "mono16")  # real
+            # depth_image = self.bridge.imgmsg_to_cv2(depth_frame, "mono16")  # real
             # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
             # Apply normalization with a focus on closer objects
             depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)

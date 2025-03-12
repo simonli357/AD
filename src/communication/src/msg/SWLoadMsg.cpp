@@ -100,7 +100,7 @@ std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
 
 	// First measurement
 	auto prev_stats = read_proc_stat();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	auto curr_stats = read_proc_stat();
 
 	std::vector<double> utilizations;
@@ -117,7 +117,6 @@ std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
 
 			if (total_diff > 0) {
 				double utilization = 1.0 * (total_diff - idle_diff) / total_diff;
-				std::cout << utilization << std::endl;
 				utilizations.push_back(utilization);
 			}
 		}

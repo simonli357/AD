@@ -15,6 +15,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMinimumHeight(200)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.main_window = self.parent()
         self.obj_dict = self.main_window.map_widget.object_dict
@@ -411,7 +412,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 30, 20, 0)
+        gl.glTranslatef(viewport[2] - 35, 25, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)
