@@ -225,14 +225,18 @@ class MainWindow(QMainWindow):
             self.comm.render_widget_signal.emit()
             time.sleep(0.016)
 
-    def handle_signal(self, signal, frame):
+    def closeEvent(self, event):
         self.terminal_widget.terminate_processes()
-        print("processes terminated")
-        print("Caught SIGINT (Ctrl+C), closing sockets...")
+        print("Processes terminated")
+        print("Closing sockets...")
         if self.server.tcp_socket:
             self.server.tcp_socket.close()
             self.server.udp_socket.close()
-        print("sockets closed")
+        print("Sockets closed")
+        event.accept()
+
+    def handle_signal(self, signal, frame):
+        print("Caught SIGINT (Ctrl+C), closing application...")
         self.close()
         sys.exit(0)
 
