@@ -1,6 +1,5 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-from cv_bridge import CvBridge
 
 import cv2
 import numpy as np
@@ -39,7 +38,7 @@ class CameraWidget(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setContentsMargins(0, 0, 0, 0)
 
         # Camera display label
         self.camera_label = QtWidgets.QLabel(self)

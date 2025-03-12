@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget
 from PyQt5 import QtCore, QtWidgets
 from .cores import CoresWidget
 from .icon import JetsonIcon
-# from .metrics import MetricsWidget
+from .metrics import MetricsWidget
 
 
 class SoftwareMetricsWidget(QtWidgets.QWidget):
@@ -17,7 +17,7 @@ class SoftwareMetricsWidget(QtWidgets.QWidget):
 
         self.cores_widget = CoresWidget(self)
         self.jetson_icon_widget = JetsonIcon()
-        # self.metrics_widget = MetricsWidget()
+        self.metrics_widget = MetricsWidget(self)
         self.setup_ui()
         self.setStyleSheet("""
             color: white;
@@ -33,18 +33,25 @@ class SoftwareMetricsWidget(QtWidgets.QWidget):
 
     def render_widget(self):
         self.cores_widget.update_usages()
+        self.metrics_widget.update_metrics()
 
     def setup_ui(self):
         self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
         top_wrapper = QWidget()
         top_wrapper_layout = QHBoxLayout(top_wrapper)
+        top_wrapper_layout.setContentsMargins(0, 0, 0, 0)
         top_wrapper_layout.setAlignment(QtCore.Qt.AlignCenter)
-        # top_wrapper_layout.addWidget(self.metrics_widget)
-        top_wrapper_layout.addStretch()
+        top_wrapper_layout.addWidget(self.metrics_widget)
         top_wrapper_layout.addWidget(self.jetson_icon_widget)
 
         self.layout.addWidget(top_wrapper)
-        self.layout.addWidget(self.cores_widget)
+        core_wrapper = QWidget()
+        core_layout = QHBoxLayout(core_wrapper)
+        core_layout.setContentsMargins(0, 0, 0, 15)
+        core_layout.setAlignment(QtCore.Qt.AlignCenter)
+        core_layout.addWidget(self.cores_widget)
+        self.layout.addWidget(core_wrapper)
 
         self.setLayout(self.layout)

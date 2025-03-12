@@ -40,6 +40,16 @@ class TerminalWidget(QtWidgets.QWidget):
         self.roscore_process = None
         self.setup_ui()
         self.connect_signals()
+        self.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                border-radius: 12px;
+                padding: 10px;
+            }
+        """)
 
     def terminate_processes(self):
         if self.compile_process is not None:
@@ -56,22 +66,16 @@ class TerminalWidget(QtWidgets.QWidget):
             self.stop_sim_process()
 
     def setup_ui(self) -> None:
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
-
         buttons = QWidget()
         self.button_wrapper = QtWidgets.QHBoxLayout(buttons)
+        self.button_wrapper.setContentsMargins(0, 0, 0, 0)
         self.buttons = deque()
-        self.stop_btn = QtWidgets.QPushButton(' stop')
-        self.compile_btn = QtWidgets.QPushButton(' build')
         self.debug_btn = QtWidgets.QPushButton(' debug')
         self.sim_btn = QtWidgets.QPushButton('󰘨 simulator')
         self.controller_btn = QtWidgets.QPushButton('󱡸 controller')
         self.cam_btn = QtWidgets.QPushButton('  camera')
         self.path_planner_btn = QtWidgets.QPushButton('  planner')
         self.roscore_btn = QtWidgets.QPushButton(' roscore')
-        self.buttons.append(self.stop_btn)
-        self.buttons.append(self.compile_btn)
         self.buttons.append(self.debug_btn)
         self.buttons.append(self.sim_btn)
         self.buttons.append(self.controller_btn)
@@ -82,6 +86,24 @@ class TerminalWidget(QtWidgets.QWidget):
             self.button_wrapper.addWidget(btn)
         self.button_wrapper.addStretch()
 
+        ctrl_buttons = QWidget()
+        self.ctrl_buttons_wrapper = QtWidgets.QVBoxLayout(ctrl_buttons)
+        self.ctrl_buttons_wrapper.setContentsMargins(0, 0, 0, 0)
+        self.ctrl_buttons_wrapper.setAlignment(QtCore.Qt.AlignTop)
+        self.ctrl_buttons = deque()
+        self.compile_btn = QtWidgets.QPushButton('')
+        self.sig_btn = QtWidgets.QPushButton('')
+        self.stop_btn = QtWidgets.QPushButton('')
+        self.compile_btn.setToolTip('Compile')
+        self.sig_btn.setToolTip('SIGTERM')
+        self.stop_btn.setToolTip('Close')
+        self.ctrl_buttons.append(self.compile_btn)
+        self.ctrl_buttons.append(self.sig_btn)
+        self.ctrl_buttons.append(self.stop_btn)
+        for btn in self.ctrl_buttons:
+            self.ctrl_buttons_wrapper.addWidget(btn)
+        self.ctrl_buttons_wrapper.addStretch()
+
         self.message_display = QtWidgets.QTextEdit()
         self.message_display.setReadOnly(True)
 
@@ -89,50 +111,65 @@ class TerminalWidget(QtWidgets.QWidget):
             QPushButton {
                 border: none;
                 background-color: rgba(255, 255, 255, 0.08);
-                padding: 5px 20px 5px 20px;
+                padding: 5px 25px 5px 25px;
                 color: white;
-                font-size: 18px;
+                font-size: 20px;
                 border-radius: 8px;
+            }
+        """)
+        ctrl_buttons.setStyleSheet("""
+            QToolTip {
+                background-color: black;
+                color: white;
+                border: none;
+                font-size: 16px;
             }
         """)
 
         self.stacked_widget = QtWidgets.QStackedWidget()
         self.stacked_widget.addWidget(self.message_display)
 
-        self.message_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
-
-        self.layout.addWidget(buttons)
-        self.layout.addWidget(self.stacked_widget)
-
-        self.update_buttons_style()
         self.stop_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ff0000;
-                padding: 5px 15px 5px 15px;
+                color: white;
+                padding: 5px 10px 5px 5px;
             }
             QPushButton:hover {
                 background-color: #ff4d4d;
             }
         """)
+        self.sig_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ff6600;
+                color: white;
+                padding: 5px 10px 5px 5px;
+            }
+            QPushButton:hover {
+                background-color: #ffc299;
+            }
+        """)
         self.compile_btn.setStyleSheet("""
             QPushButton {
                 background-color: #008000;
-                padding: 5px 15px 5px 15px;
+                color: white;
+                padding: 5px 10px 5px 5px;
             }
             QPushButton:hover {
                 background-color: rgba(0,144,0,0.25);
             }
         """)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        wrapper = QWidget()
+        wrapper_layout = QtWidgets.QHBoxLayout(wrapper)
+        wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(buttons)
+        wrapper_layout.addWidget(self.stacked_widget)
+        wrapper_layout.addWidget(ctrl_buttons)
+        self.layout.addWidget(wrapper)
+        self.update_buttons_style()
 
     def connect_signals(self):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
@@ -293,17 +330,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_sim_display(self):
         self.sim_display = QtWidgets.QTextEdit()
         self.sim_display.setReadOnly(True)
-        self.sim_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.sim_display)
 
     def read_sim_output(self):
@@ -356,17 +382,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_ctrl_display(self):
         self.ctrl_display = QtWidgets.QTextEdit()
         self.ctrl_display.setReadOnly(True)
-        self.ctrl_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.ctrl_display)
 
     def read_ctrl_output(self):
@@ -419,17 +434,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_cam_display(self):
         self.cam_display = QtWidgets.QTextEdit()
         self.cam_display.setReadOnly(True)
-        self.cam_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.cam_display)
 
     def read_cam_output(self):
@@ -482,17 +486,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_path_display(self):
         self.path_display = QtWidgets.QTextEdit()
         self.path_display.setReadOnly(True)
-        self.path_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.path_display)
 
     def read_path_output(self):
@@ -545,17 +538,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_roscore_display(self):
         self.roscore_display = QtWidgets.QTextEdit()
         self.roscore_display.setReadOnly(True)
-        self.roscore_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.roscore_display)
 
     def read_roscore_output(self):

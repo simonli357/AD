@@ -9,13 +9,12 @@ class JetsonIcon(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setMinimumHeight(50)
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.jetson_icon_path = os.path.join(current_dir, 'assets', 'jetson.png')
 
     def paintEvent(self, event):
         with QPainter(self) as painter:
-            self.draw_jetson(painter, 75)
+            self.draw_jetson(painter, 150)
 
     def draw_jetson(self, painter: QPainter, size):
         img = cv2.imread(self.jetson_icon_path, cv2.IMREAD_UNCHANGED)

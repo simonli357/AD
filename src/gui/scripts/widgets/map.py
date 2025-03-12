@@ -101,7 +101,7 @@ class MapWidget(QtWidgets.QWidget):
         self.setup_ui()
 
         # Map configuration
-        self.scale_factor = 1.25
+        self.scale_factor = 1.39
         self.image_width_real = 20.696
         self.image_height_real = 13.786
         self.image_width = int(800 * self.scale_factor)
@@ -117,6 +117,7 @@ class MapWidget(QtWidgets.QWidget):
 
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setAlignment(QtCore.Qt.AlignLeft)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # Graphics View setup
@@ -563,7 +564,6 @@ class CustomGraphicsView(QGraphicsView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setMaximumHeight(800)
         self.setRenderHints(
             QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
         )

@@ -13,26 +13,26 @@ class CoresWidget(QtWidgets.QWidget):
         self.setup_ui()
         self.create_progress_bars()
         self.setStyleSheet("""
-        CoresWidget {
-            background: transparent;
-        }
-        QLabel {
-            color: orange;
-            font-size: 12px;
-        }
-        QProgressBar {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        QProgressBar::chunk {
-            background: qlineargradient(
-                spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
-                stop:0 rgba(100, 255, 150, 0.8),
-                stop:1 rgba(50, 200, 100, 0.8)
-            );
-            border-radius: 2px;
-        }
+            CoresWidget {
+                background: transparent;
+            }
+            QLabel {
+                color: orange;
+                font-size: 12px;
+            }
+            QProgressBar {
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 3px;
+                background: rgba(255, 255, 255, 0.1);
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(
+                    spread:pad, x1:0.5, y1:0, x2:0.5, y2:1,
+                    stop:0 rgba(100, 255, 150, 0.8),
+                    stop:1 rgba(50, 200, 100, 0.8)
+                );
+                border-radius: 2px;
+            }
         """)
 
     def create_progress_bars(self):
@@ -52,12 +52,11 @@ class CoresWidget(QtWidgets.QWidget):
             pbar.setRange(0, 100)
             pbar.setValue(int(use * 100))
             pbar.setOrientation(QtCore.Qt.Vertical)
-            pbar.setFixedSize(10, 100)  # Fixed size for consistent layout
+            pbar.setMaximumWidth(15)
             pbar.setTextVisible(False)
 
             # Create wrapper with centered elements
             wrapper = QWidget()
-            wrapper.setFixedWidth(50)  # Fixed width per core
             wrapper_layout = QVBoxLayout(wrapper)
             wrapper_layout.setContentsMargins(0, 0, 0, 0)
             wrapper_layout.setSpacing(2)
@@ -92,7 +91,7 @@ class CoresWidget(QtWidgets.QWidget):
             num_bars += 1
 
     def setup_ui(self):
-        self.layout = QVBoxLayout()
+        self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # Main container with centered horizontal layout
@@ -103,5 +102,4 @@ class CoresWidget(QtWidgets.QWidget):
         self.bar_wrapper_layout.addStretch()
 
         self.layout.addWidget(bar_wrapper)
-        self.layout.addStretch()
         self.setLayout(self.layout)

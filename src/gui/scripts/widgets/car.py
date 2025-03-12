@@ -15,7 +15,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setMinimumHeight(200)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.main_window = self.parent()
         self.obj_dict = self.main_window.map_widget.object_dict
