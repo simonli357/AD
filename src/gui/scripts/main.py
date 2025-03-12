@@ -226,13 +226,15 @@ class MainWindow(QMainWindow):
             time.sleep(0.016)
 
     def closeEvent(self, event):
-        self.terminal_widget.terminate_processes()
-        print("Processes terminated")
-        print("Closing sockets...")
-        if self.server.tcp_socket:
-            self.server.tcp_socket.close()
-            self.server.udp_socket.close()
-        print("Sockets closed")
+        try:
+            self.terminal_widget.terminate_processes()
+            print("Processes terminated")
+            if self.server.tcp_socket:
+                self.server.tcp_socket.close()
+                self.server.udp_socket.close()
+            print("Sockets closed")
+        except Exception:
+            pass
         event.accept()
 
     def handle_signal(self, signal, frame):
