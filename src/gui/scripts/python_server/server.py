@@ -18,7 +18,7 @@ class Server:
         self.listener = None
 
     def initialize(self):
-        self.udp_socket.bind(('', self.udp_port))
+        self.udp_socket.bind(('0.0.0.0', self.udp_port))
         self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
         self.tcp_socket.listen(2)
         listener = threading.Thread(target=self.listen, daemon=True)

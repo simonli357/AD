@@ -16,6 +16,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.stop_drawing = False
         self.main_window = self.parent()
         self.obj_dict = self.main_window.map_widget.object_dict
 
@@ -113,6 +114,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.path_node_vbo = vbo.VBO(np.array(path_node_vertices, dtype=np.float32))
 
     def paintGL(self):
+        if self.stop_drawing:
+            return
+
         self.qt_save_gl_state()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -440,3 +444,33 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+
+    def cleanup_gl_resources(self):
+        self.stop_drawing = True
+        try:
+            self.makeCurrent()
+            if self.grid_vbo is not None:
+                self.grid_vbo.delete()
+                self.grid_vbo = None
+            if self.path_node_vbo is not None:
+                self.path_node_vbo.delete()
+                self.path_node_vbo = None
+            models = [
+                self.car_model, self.sign_model,
+                self.tf_light_model, self.pedestrian_model
+            ]
+            for model in models:
+                if model and model.vbo:
+                    model.vbo.delete()
+                    model.vbo = None
+            gl.glFlush()
+            self.doneCurrent()
+        except Exception:
+            pass
+
+    def __del__(self):
+        self.cleanup_gl_resources()
+
+    def deleteLater(self):
+        self.cleanup_gl_resources()
+        super().deleteLater()

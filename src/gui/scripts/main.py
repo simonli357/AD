@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
     def __init__(self, server):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
+        self.alive = True
         self.server = server
         self.comm = CommunicationHandler()
 
@@ -173,7 +174,7 @@ class MainWindow(QMainWindow):
         self.cam_widget.sign_callback(sign)
 
     def tcp_callbacks(self) -> None:
-        while True:
+        while self.alive:
             if self.server.utility_node_client.socket is not None:
                 if self.server.utility_node_client.messages:
                     msg = self.server.utility_node_client.messages.popleft()
@@ -187,7 +188,7 @@ class MainWindow(QMainWindow):
             time.sleep(0.016)
 
     def udp_callbacks(self) -> None:
-        while True:
+        while self.alive:
             rgb_image = None
             depth_image = None
             if self.cam_widget.show_depth:
@@ -221,13 +222,16 @@ class MainWindow(QMainWindow):
             time.sleep(0.016)
 
     def render_callbacks(self) -> None:
-        while True:
+        while self.alive:
             self.comm.render_widget_signal.emit()
             time.sleep(0.016)
 
     def closeEvent(self, event):
         try:
+            self.alive = False
+            self.car_widget.cleanup_gl_resources()
             self.terminal_widget.terminate_processes()
+            time.sleep(0.2)
             print("Processes terminated")
             if self.server.tcp_socket:
                 self.server.tcp_socket.close()

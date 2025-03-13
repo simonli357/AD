@@ -57,15 +57,15 @@ class TerminalWidget(QtWidgets.QWidget):
         if self.compile_process is not None:
             self.compile_process.terminate()
         if self.ctrl_process is not None:
-            self.halt_process(self.ctrl_process)
+            self.halt_process(self.ctrl_process, True)
         if self.cam_process is not None:
-            self.halt_process(self.cam_process)
+            self.halt_process(self.cam_process, True)
         if self.path_process is not None:
-            self.halt_process(self.path_process)
+            self.halt_process(self.path_process, True)
         if self.roscore_process is not None:
-            self.halt_process(self.roscore_process)
+            self.halt_process(self.roscore_process, True)
         if self.sim_process is not None:
-            self.halt_process(self.sim_process)
+            self.halt_process(self.sim_process, True)
 
     def setup_ui(self) -> None:
         buttons = QWidget()
@@ -275,13 +275,15 @@ class TerminalWidget(QtWidgets.QWidget):
         elif current_terminal_type == TerminalType.ROSCORE:
             self.halt_process(self.roscore_process)
 
-    def halt_process(self, process):
+    def halt_process(self, process, show_loading=False):
         if process and process.state() == QProcess.Running:
             try:
                 pid = process.processId()
                 os.kill(pid, signal.SIGINT)
-            except Exception as e:
-                print(e)
+                if show_loading:
+                    LoadingWindow(process).exec()
+            except Exception:
+                pass
 
     ################
     # Stop
