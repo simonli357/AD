@@ -42,9 +42,13 @@ class LaneDetector {
 		nh.getParam("scale_factor", scale_factor);
 		nh.getParam("window_margin", WINDOW_MARGIN);
 		nh.getParam("window_min_pixels", WINDOW_MIN_PIXELS);
+		nh.getParam("n_windows", n_windows);
+		nh.getParam("display_width_factor", display_width_factor);
+		nh.getParam("pixel_to_meter_y_slope", pixel_to_meter_y_slope);
+		nh.getParam("pixel_to_meter_y_intercept", pixel_to_meter_y_intercept);
 		WINDOW_MARGIN *= scale_factor;
 		WINDOW_MIN_PIXELS *= scale_factor;
-		LANE_WIDTH_PIXEL = 0.375 / METER_PER_PIXEL_X;
+		LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
 		LANE_WIDTH_PIXEL_SCALED = LANE_WIDTH_PIXEL * scale_factor;
 		
 		const cv::Mat initial = (cv::Mat_<float>(4, 2) << 320 - trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height, 320 + trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height, 0, IMG_HEIGHT, IMG_WIDTH, IMG_HEIGHT);
@@ -62,69 +66,20 @@ class LaneDetector {
 	enum LANES { NONE = 0, LEFT = 1, BOTH = 2, RIGHT = 3};
 	const double IMG_WIDTH = 640;
 	const double IMG_HEIGHT = 480;
-	const double METER_PER_PIXEL_X = (0.375 / 124) / (IMG_WIDTH/160);
+	const double METER_PER_PIXEL_X = (0.37 / 124) / (IMG_WIDTH/160);
+	// const double METER_PER_PIXEL_X = 0.37/(1034/2);
 	const double METER_PER_PIXEL_Y = 1.93 / 445;
 	double scale_factor = 0.4;
-	int LANE_WIDTH_PIXEL = 0.375 / METER_PER_PIXEL_X;
-	int LANE_WIDTH_PIXEL_SCALED = LANE_WIDTH_PIXEL * scale_factor;
-
-
-	// Set the width of the windows +/- WINDOW_MARGIN
+	double LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
+	double LANE_WIDTH_PIXEL_SCALED = LANE_WIDTH_PIXEL * scale_factor;
+	int n_windows = 9;
+	double display_width_factor = 0.25;
 	int WINDOW_MARGIN = 50 * scale_factor;
-	// Set minimum number of pixels found to recenter window
 	int WINDOW_MIN_PIXELS = 50 * scale_factor;
-
-	std::vector<float> getWorldWaypointsWithYaw(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
-		std::vector<cv::Point2f> world_waypoints;
-		world_waypoints.reserve(num_waypoints);
-
-		// 1. Compute world coordinates from pixel samples.
-		for (int i = 0; i < num_waypoints; ++i) {
-			// Sample the y coordinate in pixel space.
-			// double y_pixel = start_y + i * density / METER_PER_PIXEL_Y;
-			double y_pixel = IMG_HEIGHT - (start_y + i * density / METER_PER_PIXEL_Y);
-
-			// Evaluate the left and right lane polynomials.
-			double left_x = evaluate_poly(y_pixel, left_fit);
-			double right_x = evaluate_poly(y_pixel, right_fit);
-
-			// Use the midpoint between the lanes as the waypoint's x coordinate.
-			double waypoint_x = 0.5 * (left_x + right_x);
-
-			// Convert pixel coordinates to world coordinates.
-			double world_x = (320 - waypoint_x) * METER_PER_PIXEL_X;
-			// double world_y = y_pixel * METER_PER_PIXEL_Y;
-			double world_y = density * (i + 1);
-
-			world_waypoints.push_back(cv::Point2f(static_cast<float>(world_y), static_cast<float>(world_x))); // body-fixed frame
-		}
-
-		// 2. Compute yaw angles between successive waypoints.
-		std::vector<float> yaw_values;
-		for (size_t i = 0; i < world_waypoints.size() - 1; ++i) {
-			float delta_x = world_waypoints[i + 1].x - world_waypoints[i].x;
-			float delta_y = world_waypoints[i + 1].y - world_waypoints[i].y;
-			// Use atan2 to compute the yaw angle (in radians).
-			float yaw = std::atan2(delta_y, delta_x);
-			yaw_values.push_back(yaw);
-		}
-		// For the last waypoint, replicate the previous yaw value (or set to 0 if none exist).
-		if (!yaw_values.empty()) {
-			yaw_values.push_back(yaw_values.back());
-		} else {
-			yaw_values.push_back(0.0f);
-		}
-
-		// 3. Combine the x, y, and yaw values into a single flat vector.
-		std::vector<float> waypoints_with_yaw;
-		for (size_t i = 0; i < world_waypoints.size(); ++i) {
-			waypoints_with_yaw.push_back(world_waypoints[i].x);
-			waypoints_with_yaw.push_back(world_waypoints[i].y);
-			waypoints_with_yaw.push_back(yaw_values[i]);
-		}
-
-		return waypoints_with_yaw;
-	}
+	double pixel_to_meter_y_slope = 0.003138337;
+	double pixel_to_meter_y_intercept = 0.3778245;
+	double meter_to_pixel_y_slope = 1 / pixel_to_meter_y_slope;
+	double meter_to_pixel_y_intercept = -pixel_to_meter_y_intercept / pixel_to_meter_y_slope;
 
 	ros::NodeHandle nh;
 	ros::Publisher lane_pub;
@@ -134,67 +89,6 @@ class LaneDetector {
 	bool showflag, printflag, newlane, printDuration, publish;
 
 	std::unique_ptr<OldLaneDetector> old_lane_detector;
-
-	void publish_lane(const cv::Mat &image) {
-		if (image.empty()) {
-			ROS_WARN("empty image received in lane detector");
-			return;
-		}
-		auto start = high_resolution_clock::now();
-		if (newlane) {
-			// lane_detection(image);
-			if (!maps_initialized) {
-				initializeMaps(cameraMatrix, distCoeff, transMatrix_scaled, image.size());
-			}
-			cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
-			if (!getIPM(grayscale_image, ipm_grayscale)) return;
-			compute_adaptive_threshold(ipm_grayscale, binary_image);
-			stopline_dist = find_stopline(binary_image);
-			std::cout << "stopline_dist: " << stopline_dist << std::endl;
-			bool success = line_fit(binary_image);
-
-			auto wpts = getWorldWaypointsWithYaw(0, left_fit, right_fit, 40, 0.032);
-			// for (int i = 0; i < wpts.size() / 3; i += 3) {
-			// 	std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
-			// }
-
-			waypoints_msg.data.clear();
-			waypoints_msg.layout.dim.clear();
-			waypoints_msg.layout.data_offset = 0;
-
-			// Populate data array with waypoints
-			for (int i = 0; i < wpts.size(); i++) {
-				waypoints_msg.data.push_back(wpts[i]);
-			}
-			waypoints_pub.publish(waypoints_msg);
-
-			lane_msg.center = 320.0;
-			lane_msg.stopline = stopline_dist;
-			lane_msg.header.stamp = ros::Time::now();
-			lane_pub.publish(lane_msg);
-
-			if (showflag) {
-				if (!getIPMFull(image, ipm_color))
-					return;
-				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
-				// resize by reducing width by factor of 2
-				cv::resize(gyu_img, gyu_img, cv::Size(160, IMG_HEIGHT));
-				cv::imshow("Binary Image", gyu_img);
-				cv::waitKey(1);
-			}
-		} else {
-			double center = old_lane_detector->optimized_histogram(image, showflag, printflag);
-			lane_msg.center = center;
-			lane_msg.stopline = old_lane_detector->stopline_dist;
-			lane_msg.header.stamp = ros::Time::now();
-			lane_pub.publish(lane_msg);
-		}
-		if (printDuration) {
-			auto stop = high_resolution_clock::now();
-			auto duration = duration_cast<microseconds>(stop - start);
-			ROS_INFO("duration: %ld", duration.count());
-		}
-	}
 
 	// NEW LANE
 	cv::Mat grayscale_image = cv::Mat::zeros(IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, CV_8UC1);
@@ -249,24 +143,202 @@ class LaneDetector {
 		return !output.empty();
 	}
 
+	void publish_lane(const cv::Mat &image) {
+		if (image.empty()) {
+			ROS_WARN("empty image received in lane detector");
+			return;
+		}
+		auto start = high_resolution_clock::now();
+		if (newlane) {
+			// lane_detection(image);
+			if (!maps_initialized) {
+				initializeMaps(cameraMatrix, distCoeff, transMatrix_scaled, image.size());
+			}
+			cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
+			if (!getIPM(grayscale_image, ipm_grayscale)) return;
+			compute_adaptive_threshold(ipm_grayscale, binary_image);
+			stopline_dist = find_stopline(binary_image);
+			std::cout << "stopline_dist: " << stopline_dist << std::endl;
+			bool success = line_fit(binary_image);
+
+			auto wpts = getWorldWaypointsWithYaw(0, left_fit, right_fit, 40, 0.032);
+			// for (int i = 0; i < wpts.size() / 3; i += 3) {
+			// 	std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
+			// }
+
+			waypoints_msg.data.clear();
+			waypoints_msg.layout.dim.clear();
+			waypoints_msg.layout.data_offset = 0;
+
+			// Populate data array with waypoints
+			for (int i = 0; i < wpts.size(); i++) {
+				waypoints_msg.data.push_back(wpts[i]);
+			}
+			waypoints_pub.publish(waypoints_msg);
+
+			lane_msg.center = 320.0;
+			lane_msg.stopline = stopline_dist;
+			lane_msg.header.stamp = ros::Time::now();
+			lane_pub.publish(lane_msg);
+
+			if (showflag) {
+				if (!getIPMFull(image, ipm_color))
+					return;
+				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
+				// resize by reducing width by factor of 2
+				cv::resize(gyu_img, gyu_img, cv::Size(IMG_WIDTH * display_width_factor, IMG_HEIGHT), 0, 0, cv::INTER_CUBIC);
+				cv::imshow("Binary Image", gyu_img);
+				cv::waitKey(1);
+			}
+		} else {
+			double center = old_lane_detector->optimized_histogram(image, showflag, printflag);
+			lane_msg.center = center;
+			lane_msg.stopline = old_lane_detector->stopline_dist;
+			lane_msg.header.stamp = ros::Time::now();
+			lane_pub.publish(lane_msg);
+		}
+		if (printDuration) {
+			auto stop = high_resolution_clock::now();
+			auto duration = duration_cast<microseconds>(stop - start);
+			ROS_INFO("duration: %ld", duration.count());
+		}
+	}
+
+	double pixel_to_meter_y(double pixel) { 
+		return pixel * pixel_to_meter_y_slope + pixel_to_meter_y_intercept; 
+	}
+	double meter_to_pixel_y(double meter) { 
+		return meter * meter_to_pixel_y_slope + meter_to_pixel_y_intercept; 
+	}
+	std::vector<float> getWorldWaypointsWithYaw(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
+		std::vector<cv::Point2f> world_waypoints;
+		world_waypoints.reserve(num_waypoints);
+
+		// 1. Compute world coordinates from pixel samples.
+		for (int i = 0; i < num_waypoints; ++i) {
+			// Sample the y coordinate in pixel space.
+			// double y_pixel = start_y + i * density / METER_PER_PIXEL_Y;
+			double y_pixel = IMG_HEIGHT - (start_y + i * density / METER_PER_PIXEL_Y);
+
+			// Evaluate the left and right lane polynomials.
+			double left_x = evaluate_poly(y_pixel, left_fit);
+			double right_x = evaluate_poly(y_pixel, right_fit);
+
+			// Use the midpoint between the lanes as the waypoint's x coordinate.
+			double waypoint_x = 0.5 * (left_x + right_x);
+
+			// Convert pixel coordinates to world coordinates.
+			double world_x = (320 - waypoint_x) * METER_PER_PIXEL_X;
+			// double world_y = y_pixel * METER_PER_PIXEL_Y;
+			double world_y = density * (i + 1);
+
+			world_waypoints.push_back(cv::Point2f(static_cast<float>(world_y), static_cast<float>(world_x))); // body-fixed frame
+		}
+
+		// 2. Compute yaw angles between successive waypoints.
+		std::vector<float> yaw_values;
+		for (size_t i = 0; i < world_waypoints.size() - 1; ++i) {
+			float delta_x = world_waypoints[i + 1].x - world_waypoints[i].x;
+			float delta_y = world_waypoints[i + 1].y - world_waypoints[i].y;
+			// Use atan2 to compute the yaw angle (in radians).
+			float yaw = std::atan2(delta_y, delta_x);
+			yaw_values.push_back(yaw);
+		}
+		// For the last waypoint, replicate the previous yaw value (or set to 0 if none exist).
+		if (!yaw_values.empty()) {
+			yaw_values.push_back(yaw_values.back());
+		} else {
+			yaw_values.push_back(0.0f);
+		}
+
+		// 3. Combine the x, y, and yaw values into a single flat vector.
+		std::vector<float> waypoints_with_yaw;
+		for (size_t i = 0; i < world_waypoints.size(); ++i) {
+			waypoints_with_yaw.push_back(world_waypoints[i].x);
+			waypoints_with_yaw.push_back(world_waypoints[i].y);
+			waypoints_with_yaw.push_back(yaw_values[i]);
+		}
+
+		return waypoints_with_yaw;
+	}
+
+	// double find_stopline(const cv::Mat& image) {
+	// 		stopline_dist = -1;
+	// 		double stop_loc = -1.0;
+	// 		cv::Mat horistogram;
+	// 		cv::reduce(image, horistogram, 1, cv::REDUCE_SUM, CV_32S);
+
+	// 		std::vector<int> hist;
+	// 		for (int i = 0; i < horistogram.rows; ++i) {
+	// 		// for (int i = horistogram.rows-1; i > 0; --i) {
+	// 				hist.push_back(static_cast<int>(horistogram.at<int>(0,i)/255));
+	// 				if (hist[i] >= LANE_WIDTH_PIXEL_SCALED * 0.753) {
+	// 						stop_loc = i;
+	// 						break;
+	// 				}
+	// 		}
+	// 		// stopline_dist = (IMG_HEIGHT - stop_loc / scale_factor) * METER_PER_PIXEL_Y;
+	// 		double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
+	// 		stopline_dist = pixel_to_meter_y(pixel_value);
+	// 		return stopline_dist;
+	// }
 	double find_stopline(const cv::Mat& image) {
 			stopline_dist = -1;
 			double stop_loc = -1.0;
-			cv::Mat horistogram;
-			cv::reduce(image, horistogram, 1, cv::REDUCE_SUM, CV_32S);
+			
+			// Compute vertical histogram (sum of each row)
+			static cv::Mat histogram;
+			cv::reduce(image, histogram, 1, cv::REDUCE_SUM, CV_32S);
 
-			std::vector<int> hist;
-			for (int i = 0; i < horistogram.rows; ++i) {
-			// for (int i = horistogram.rows-1; i > 0; --i) {
-					hist.push_back(static_cast<int>(horistogram.at<int>(0,i)/255));
-					if (hist[i] >= LANE_WIDTH_PIXEL_SCALED * 0.753) {
-							stop_loc = i;
-							break;
+			// Convert histogram to 1D array
+			std::vector<int> hist(histogram.rows);
+			for (int i = 0; i < histogram.rows; ++i) {
+					hist[i] = histogram.at<int>(i, 0) / 255;
+			}
+
+			// Smooth the histogram with a moving average filter
+			const int window_size = 5;
+			std::vector<int> smoothed(hist.size(), 0);
+			for (int i = 0; i < hist.size(); ++i) {
+					int sum = 0, count = 0;
+					for (int j = -window_size / 2; j <= window_size / 2; ++j) {
+							if (i + j >= 0 && i + j < hist.size()) {
+									sum += hist[i + j];
+									count++;
+							}
+					}
+					smoothed[i] = sum / count;
+			}
+
+			// Compute adaptive threshold (e.g., mean + std deviation)
+			double mean = std::accumulate(smoothed.begin(), smoothed.end(), 0.0) / smoothed.size();
+			double std_dev = 0.0;
+			for (auto v : smoothed) std_dev += (v - mean) * (v - mean);
+			std_dev = std::sqrt(std_dev / smoothed.size());
+
+			double threshold = mean + std_dev * 1.5;  // More tolerant for varying conditions
+
+			// Find strongest peak above threshold (most likely stop line location)
+			int best_row = -1;
+			int max_value = 0;
+			for (int i = 0; i < smoothed.size(); ++i) {
+					if (smoothed[i] > threshold && smoothed[i] > max_value) {
+							max_value = smoothed[i];
+							best_row = i;
 					}
 			}
 
-			return (IMG_HEIGHT - stop_loc / scale_factor) * METER_PER_PIXEL_Y;
+			if (best_row != -1) {
+					stop_loc = best_row;
+					double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
+					stopline_dist = pixel_to_meter_y(pixel_value);
+			} else {
+					stopline_dist = -1; // No reliable stopline found
+			}
+
+			return stopline_dist;
 	}
+
 
 	void compute_adaptive_threshold(const cv::Mat &inputImage, cv::Mat &outputImage) {
 		static cv::Mat imageHist;
@@ -280,7 +352,7 @@ class LaneDetector {
 	}
 
 	std::vector<int> center_indices;
-	void find_center_indices(const cv::Mat &histogram, int threshold) {
+	void find_center_indices(const cv::Mat &histogram) {
 		static std::vector<int> hist;
 		hist.clear();
 		for (int i = 0; i < histogram.cols; ++i) {
@@ -404,15 +476,13 @@ class LaneDetector {
 
 	bool line_fit(const cv::Mat &binary_warped) {
 		// Declare variables to be used
-		static int n_windows = 9;					// HARD CODED WINDOW NUMBER FOR LANE PARSING
-		static int threshold = 2000;				// HARD CODED THRESHOLD
 		static int leftx_base = 0;
 		static int rightx_base = IMG_WIDTH * scale_factor;
 		lane_to_fit = NONE;
 
 		cv::reduce(binary_warped(cv::Range(200 * scale_factor, IMG_HEIGHT * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
 
-		find_center_indices(histogram, threshold); // Get the center indices
+		find_center_indices(histogram); // Get the center indices
 
 		int size_indices = center_indices.size(); // Number of lanes detected
 
@@ -514,7 +584,7 @@ class LaneDetector {
 				if (good_left_inds.size() > WINDOW_MIN_PIXELS) { // Recenter mean for the next bounding box
 					int mean_left = sum_left / good_left_inds.size();
 					if (mean_left - WINDOW_MARGIN/2 > IMG_WIDTH * scale_factor || mean_left + WINDOW_MARGIN/2 < 0) {
-						std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
+						// std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
 						left_done = true;
 					} else {
 						num_left_windows++;
@@ -523,7 +593,7 @@ class LaneDetector {
 						cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_left = mean_left- mean_left_prev;
 						mean_left_prev = mean_left;
-						std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
+						// std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
 						if (window == 0) {
 							leftx_current = mean_left;
 						} else {
@@ -531,7 +601,7 @@ class LaneDetector {
 						}
 					}
 				} else {
-					std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
+					// std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
 					left_done = true;
 				}
 			}
@@ -566,7 +636,7 @@ class LaneDetector {
 						cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_right = mean_right - mean_right_prev;
 						mean_right_prev = mean_right;
-						std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
+						// std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
 						if (window == 0) {
 							rightx_current = mean_right;
 						} else {
@@ -588,7 +658,7 @@ class LaneDetector {
 		cv::imshow("Detected Pixels", out_img);
 		cv::waitKey(1);
 
-		std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
+		// std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
 		// Declare vectors to contain the pixel coordinates to fit
 		VectorXd leftx;
 		VectorXd lefty;
@@ -598,11 +668,11 @@ class LaneDetector {
 		if (lane_to_fit == LEFT && num_left_windows > 2) { // left good
 			fit_points(leftx, lefty, left_lane_inds, nonzeroy, nonzerox, left_fit);
 			right_fit = left_fit;
-			right_fit(0) += 0.375 / METER_PER_PIXEL_X;
+			right_fit(0) += LANE_WIDTH_PIXEL;
 		} else if (lane_to_fit == RIGHT && num_right_windows > 2) { // right good
 			fit_points(rightx, righty, right_lane_inds, nonzeroy, nonzerox, right_fit);
 			left_fit = right_fit;
-			left_fit(0) -= 0.375 / METER_PER_PIXEL_X;
+			left_fit(0) -= LANE_WIDTH_PIXEL;
 		} else if (lane_to_fit == BOTH) { // both good
 			if (num_left_windows > 2 && num_right_windows > 2) {
 				fit_points(leftx, lefty, left_lane_inds, nonzeroy, nonzerox, left_fit);
@@ -610,11 +680,11 @@ class LaneDetector {
 			} else if (num_left_windows > 2) { // left good
 				fit_points(leftx, lefty, left_lane_inds, nonzeroy, nonzerox, left_fit);
 				right_fit = left_fit;
-				right_fit(0) += 0.375 / METER_PER_PIXEL_X;
+				right_fit(0) += LANE_WIDTH_PIXEL;
 			} else if (num_right_windows > 2) { // right good
 				fit_points(rightx, righty, right_lane_inds, nonzeroy, nonzerox, right_fit);
 				left_fit = right_fit;
-				left_fit(0) -= 0.375 / METER_PER_PIXEL_X;
+				left_fit(0) -= LANE_WIDTH_PIXEL;
 			} else { // both bad
 				return false;
 			}
@@ -684,7 +754,8 @@ class LaneDetector {
 
 		// // Draw stop line
 		if (stopline_dist > 0) {
-			cv::line(result, cv::Point(0, IMG_HEIGHT - stopline_dist / METER_PER_PIXEL_Y), cv::Point(IMG_WIDTH, IMG_HEIGHT - stopline_dist / METER_PER_PIXEL_Y), cv::Scalar(0, 255, 0), 5);
+			double stopline_y = IMG_HEIGHT - meter_to_pixel_y(stopline_dist);
+			cv::line(result, cv::Point(0, stopline_y), cv::Point(IMG_WIDTH, stopline_y), cv::Scalar(0, 255, 0), 5);
 		}
 		if (IPM) {
 			cv::addWeighted(result, 0.95, binary_warped, 0.3, 0, result);
