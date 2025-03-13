@@ -61,6 +61,7 @@ class LaneDetector {
 		const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, IMG_WIDTH * scale_factor, 0, 0, IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, IMG_HEIGHT * scale_factor);
 		transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
 		invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
+		cv::initUndistortRectifyMap(cameraMatrix, distCoeff, cv::Mat(), cameraMatrix, cv::Size(IMG_WIDTH, IMG_HEIGHT), CV_16SC2, map1, map2);
 	}
 
 	enum LANES { NONE = 0, LEFT = 1, BOTH = 2, RIGHT = 3};
@@ -108,23 +109,15 @@ class LaneDetector {
 	bool cross_walk = false;
 	cv::Mat histogram;
 
-	cv::Mat map1, map2;
-	bool maps_initialized = false;
 
 	cv::Mat transMatrix, invMatrix, transMatrix_scaled, invMatrix_scaled;
-
 	double fx = VehicleConstants::CAMERA_PARAMS[0];
 	double fy = VehicleConstants::CAMERA_PARAMS[1];
 	double cx = VehicleConstants::CAMERA_PARAMS[2];
 	double cy = VehicleConstants::CAMERA_PARAMS[3];
 	const cv::Mat cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
-
 	const cv::Mat distCoeff = cv::Mat();
-
-	void initializeMaps(const cv::Mat &cameraMatrix, const cv::Mat &distCoeff, const cv::Mat &transMatrix, const cv::Size &size) {
-		cv::initUndistortRectifyMap(cameraMatrix, distCoeff, cv::Mat(), cameraMatrix, size, CV_16SC2, map1, map2);
-		maps_initialized = true;
-	}
+	cv::Mat map1, map2;
 
 	// NEW LANE
 	int getIPM(const cv::Mat &in, cv::Mat &output) {
@@ -150,15 +143,44 @@ class LaneDetector {
 		}
 		auto start = high_resolution_clock::now();
 		if (newlane) {
-			// lane_detection(image);
-			if (!maps_initialized) {
-				initializeMaps(cameraMatrix, distCoeff, transMatrix_scaled, image.size());
-			}
 			cv::cvtColor(image, grayscale_image, cv::COLOR_BGR2GRAY);
 			if (!getIPM(grayscale_image, ipm_grayscale)) return;
-			compute_adaptive_threshold(ipm_grayscale, binary_image);
+			preprocess(ipm_grayscale, binary_image);
+			cv::Mat binary_global, binary_adaptive, binary_clahe_otsu, binary_old;
+			preprocess(grayscale_image, binary_global, GLOBAL_HISTOGRAM);
+			preprocess(grayscale_image, binary_adaptive, ADAPTIVE_LOCAL);
+			preprocess(grayscale_image, binary_clahe_otsu, CLAHE_OTSU);
+			preprocess(grayscale_image, binary_old, OLD);
+			cv::Mat ipm, binary_global_ipm, binary_adaptive_ipm, binary_clahe_otsu_ipm, binary_old_ipm;
+			getIPMFull(grayscale_image, ipm);
+			preprocess(ipm, binary_global_ipm, GLOBAL_HISTOGRAM);
+			preprocess(ipm, binary_adaptive_ipm, ADAPTIVE_LOCAL);
+			preprocess(ipm, binary_clahe_otsu_ipm, CLAHE_OTSU);
+			preprocess(ipm, binary_old_ipm, OLD);
+
+			// Annotate each image
+			cv::putText(binary_global, "Global Histogram", cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255), 2);
+			cv::putText(binary_adaptive, "Adaptive Local", cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255), 2);
+			cv::putText(binary_clahe_otsu, "CLAHE + Otsu", cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255), 2);
+			cv::putText(binary_old, "Old Lane Detector", cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255), 2);
+
+			// Concatenate all three images horizontally
+			cv::Mat all_preprocessed;
+			cv::hconcat(std::vector<cv::Mat>{binary_global, binary_adaptive, binary_clahe_otsu, binary_old}, all_preprocessed);
+			cv::Mat all_preprocessed_ipm;
+			cv::hconcat(std::vector<cv::Mat>{binary_global_ipm, binary_adaptive_ipm, binary_clahe_otsu_ipm, binary_old_ipm}, all_preprocessed_ipm);
+			cv::vconcat(all_preprocessed, all_preprocessed_ipm, all_preprocessed);
+			// resize
+			cv::resize(all_preprocessed, all_preprocessed, cv::Size(IMG_WIDTH * 4 /2, IMG_HEIGHT *2 /2), 0, 0, cv::INTER_CUBIC);
+
+			// Display
+			cv::imshow("Preprocessing Comparison: Global vs Adaptive vs CLAHE+Otsu", all_preprocessed);
+			cv::waitKey(1);
+			return;
 			stopline_dist = find_stopline(binary_image);
 			std::cout << "stopline_dist: " << stopline_dist << std::endl;
+			cv::reduce(binary_image(cv::Range(200 * scale_factor, IMG_HEIGHT * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
+			find_lanes(histogram); // Get the center indices
 			bool success = line_fit(binary_image);
 
 			auto wpts = getWorldWaypointsWithYaw(0, left_fit, right_fit, 40, 0.032);
@@ -339,20 +361,100 @@ class LaneDetector {
 			return stopline_dist;
 	}
 
+	enum PreprocessMethod {
+			GLOBAL_HISTOGRAM,
+			ADAPTIVE_LOCAL,
+			CLAHE_OTSU,
+			OLD
+	};
 
-	void compute_adaptive_threshold(const cv::Mat &inputImage, cv::Mat &outputImage) {
-		static cv::Mat imageHist;
-		cv::calcHist(&inputImage, 1, 0, cv::Mat(), imageHist, 1, &inputImage.rows, 0);
-		double minVal, maxVal;
-		cv::minMaxLoc(imageHist, &minVal, &maxVal);
-		int threshold_value = std::min(std::max(static_cast<int>(maxVal) - 75, 30), 200);
-		static cv::Mat binary_thresholded = cv::Mat::zeros(inputImage.size(), CV_8UC1);
-		cv::threshold(inputImage, binary_thresholded, threshold_value, 255, cv::THRESH_BINARY);
-		outputImage = binary_thresholded;
+	bool preprocess(const cv::Mat &inputImage, cv::Mat &outputImage, PreprocessMethod method = GLOBAL_HISTOGRAM) {
+			cv::Mat gray = inputImage.clone();
+			cv::Mat processed;
+
+			if (method == GLOBAL_HISTOGRAM) {
+					// Method 1: Global Histogram Thresholding
+					cv::Mat equalized, blurred, binary;
+					cv::equalizeHist(gray, equalized);
+					cv::GaussianBlur(equalized, blurred, cv::Size(5, 5), 0);
+
+					// Histogram-based threshold
+					cv::Mat imageHist;
+					int histSize = inputImage.rows;
+					cv::calcHist(&blurred, 1, 0, cv::Mat(), imageHist, 1, &histSize, 0);
+					double minVal, maxVal;
+					cv::minMaxLoc(imageHist, &minVal, &maxVal);
+					int threshold_value = std::min(std::max(static_cast<int>(maxVal) - 75, 30), 200);
+					cv::threshold(blurred, binary, threshold_value, 255, cv::THRESH_BINARY);
+
+					// cv::imshow("binaryb4", binary);
+
+					// Morphological cleanup
+					cv::morphologyEx(binary, binary, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+					cv::morphologyEx(binary, binary, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5)));
+					// cv::imshow("binaryafter", binary);
+					// cv::waitKey(1);
+
+					processed = binary;
+			} 
+			else if (method == ADAPTIVE_LOCAL) {
+					// Method 2: Adaptive Thresholding
+					cv::Mat equalized, blurred, binary;
+					cv::equalizeHist(gray, equalized);
+					cv::GaussianBlur(equalized, blurred, cv::Size(5, 5), 0);
+
+					int blockSize = 11;
+					double C = 1;
+					nh.getParam("adaptive_threshold_block_size", blockSize);
+					nh.getParam("adaptive_threshold_c", C);
+
+					// Adaptive Threshold
+					cv::adaptiveThreshold(blurred, binary, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+																cv::THRESH_BINARY, blockSize, C);
+
+					// Morphological cleanup
+					cv::morphologyEx(binary, binary, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+					cv::morphologyEx(binary, binary, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5)));
+					cv::medianBlur(binary, binary, 3);
+					processed = binary;
+			} 
+			else if (method == CLAHE_OTSU) {
+					// Method 3: CLAHE + Otsu (o3 mini-high style)
+					cv::Mat blurred, equalized, binary, morph;
+					cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 0);
+					cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2.0, cv::Size(8, 8));
+					clahe->apply(blurred, equalized);
+
+					// Otsu Threshold
+					cv::threshold(equalized, binary, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
+
+					// Morphological cleanup
+					cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+					cv::morphologyEx(binary, morph, cv::MORPH_CLOSE, kernel);
+					cv::morphologyEx(morph, morph, cv::MORPH_OPEN, kernel);
+
+					processed = morph;
+			} else if (method == OLD) {
+				static cv::Mat imageHist;
+				cv::calcHist(&inputImage, 1, 0, cv::Mat(), imageHist, 1, &inputImage.rows, 0);
+				double minVal, maxVal;
+				cv::minMaxLoc(imageHist, &minVal, &maxVal);
+				int threshold_value = std::min(std::max(static_cast<int>(maxVal) - 75, 30), 200);
+				static cv::Mat binary_thresholded = cv::Mat::zeros(inputImage.size(), CV_8UC1);
+				cv::threshold(inputImage, binary_thresholded, threshold_value, 255, cv::THRESH_BINARY);
+				outputImage = binary_thresholded;
+				return !outputImage.empty();
+			} else {
+					ROS_ERROR("Invalid preprocessing method");
+					return false;
+			}
+
+			outputImage = processed;
+			return !outputImage.empty();
 	}
 
-	std::vector<int> center_indices;
-	void find_center_indices(const cv::Mat &histogram) {
+	std::vector<int> lane_indices;
+	void find_lanes(const cv::Mat &histogram) {
 		static std::vector<int> hist;
 		hist.clear();
 		for (int i = 0; i < histogram.cols; ++i) {
@@ -387,11 +489,11 @@ class LaneDetector {
 			i = j;
 		}
 
-		center_indices.clear();
+		lane_indices.clear();
 		for (const auto &group : consecutive_groups) {
 			if (group.size() >= 5) {
 				int midpoint_index = group.front() + (group.back() - group.front()) / 2;
-				center_indices.push_back(midpoint_index);
+				lane_indices.push_back(midpoint_index);
 			}
 		}
 	}
@@ -480,11 +582,7 @@ class LaneDetector {
 		static int rightx_base = IMG_WIDTH * scale_factor;
 		lane_to_fit = NONE;
 
-		cv::reduce(binary_warped(cv::Range(200 * scale_factor, IMG_HEIGHT * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
-
-		find_center_indices(histogram); // Get the center indices
-
-		int size_indices = center_indices.size(); // Number of lanes detected
+		int size_indices = lane_indices.size(); // Number of lanes detected
 
 		if (size_indices == 0) { // Check to see if lanes detected, if not return
 			lane_to_fit = NONE;
@@ -492,36 +590,36 @@ class LaneDetector {
 		}
 
 		if (size_indices == 1) {						  // If only one lane line is detected
-			if (center_indices[0] < IMG_WIDTH/2 * scale_factor) { // Check on which side of the car it is
+			if (lane_indices[0] < IMG_WIDTH/2 * scale_factor) { // Check on which side of the car it is
 				lane_to_fit = LEFT;						  // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
-				leftx_base = center_indices[0];
+				leftx_base = lane_indices[0];
 				rightx_base = 0;
 			} else {
 				lane_to_fit = RIGHT; // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 				leftx_base = 0;
-				rightx_base = center_indices[0];
+				rightx_base = lane_indices[0];
 			}
 		} else {
 			if (size_indices > 2) { // If more than two lane lines are detected
-				std::vector<int> closest_pair = find_closest_pair(center_indices, LANE_WIDTH_PIXEL_SCALED);
-				center_indices[0] = closest_pair[0]; // Initialize the start of the lane line at bottom of the screen
-				center_indices[1] = closest_pair[1];
+				std::vector<int> closest_pair = find_closest_pair(lane_indices, LANE_WIDTH_PIXEL_SCALED);
+				lane_indices[0] = closest_pair[0]; // Initialize the start of the lane line at bottom of the screen
+				lane_indices[1] = closest_pair[1];
 			}
-			int delta = std::abs(center_indices[0] - center_indices[1]); // Check to see if the two lane lines are close enough to be the same
+			int delta = std::abs(lane_indices[0] - lane_indices[1]); // Check to see if the two lane lines are close enough to be the same
 			if (delta < IMG_WIDTH/4 * scale_factor) {
-				center_indices[0] = 0.5 * (center_indices[0] + center_indices[1]);
-				if (center_indices[0] < IMG_WIDTH/2 * scale_factor) {
+				lane_indices[0] = 0.5 * (lane_indices[0] + lane_indices[1]);
+				if (lane_indices[0] < IMG_WIDTH/2 * scale_factor) {
 					lane_to_fit = LEFT; // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
-					leftx_base = center_indices[0];
+					leftx_base = lane_indices[0];
 					rightx_base = 0;
 				} else {
 					lane_to_fit = RIGHT; // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 					leftx_base = 0;
-					rightx_base = center_indices[0];
+					rightx_base = lane_indices[0];
 				}
 			} else {
-				leftx_base = center_indices[0]; // Initialize the start of the lane line at bottom of the screen
-				rightx_base = center_indices[1];
+				leftx_base = lane_indices[0]; // Initialize the start of the lane line at bottom of the screen
+				rightx_base = lane_indices[1];
 				lane_to_fit = BOTH; // Set number of fits as a reference
 			}
 		}

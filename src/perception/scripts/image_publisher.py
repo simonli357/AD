@@ -7,40 +7,61 @@ import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
+def get_image_files_from_dir(directory):
+    supported_exts = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff')
+    return sorted([os.path.join(directory, f) for f in os.listdir(directory)
+                   if f.lower().endswith(supported_exts)])
+
 def main():
-    # Check if image path is passed
     if len(sys.argv) < 2:
-        print("Usage: rosrun your_package image_publisher.py /path/to/image.jpg")
+        print("Usage: rosrun your_package image_publisher.py /path/to/image_directory")
         return
 
-    image_path = sys.argv[1]
+    image_dir = sys.argv[1]
 
-    # Initialize ROS node
+    if not os.path.isdir(image_dir):
+        rospy.logerr("Provided path is not a directory: {}".format(image_dir))
+        return
+
+    image_files = get_image_files_from_dir(image_dir)
+    if not image_files:
+        rospy.logerr("No images found in directory: {}".format(image_dir))
+        return
+
     rospy.init_node('image_publisher', anonymous=True)
-
-    # Image publisher
     pub = rospy.Publisher('/camera/color/image_raw', Image, queue_size=10)
-
-    # Check if file exists
-    if not os.path.exists(image_path):
-        rospy.logerr("Image file not found at path: {}".format(image_path))
-        return
-
-    # Read the image
-    cv_image = cv2.imread(image_path)
-    if cv_image is None:
-        rospy.logerr("Failed to load image from path: {}".format(image_path))
-        return
-
-    # Create CvBridge
     bridge = CvBridge()
-    rate = rospy.Rate(1)  # 1 Hz
+
+    index = 0
+    cv_image = cv2.imread(image_files[index])
+    if cv_image is None:
+        rospy.logerr("Failed to load initial image.")
+        return
+
+    rate = rospy.Rate(10)  # 10Hz
 
     while not rospy.is_shutdown():
+        # Publish current image continuously
         ros_image = bridge.cv2_to_imgmsg(cv_image, encoding="bgr8")
         pub.publish(ros_image)
-        rospy.loginfo("Published image to /camera/color/image_raw")
+        rospy.loginfo_throttle(1, "Publishing: {}".format(os.path.basename(image_files[index])))
+
+        # Display the image in a window
+        cv2.imshow("Image Viewer (Press 'a'=prev, 'd'=next, 'q'=quit)", cv_image)
+        key = cv2.waitKey(1) & 0xFF  # Non-blocking
+
+        if key == ord('d'):
+            index = (index + 1) % len(image_files)
+            cv_image = cv2.imread(image_files[index])
+        elif key == ord('a'):
+            index = (index - 1) % len(image_files)
+            cv_image = cv2.imread(image_files[index])
+        elif key == ord('q') or key == 27:
+            break
+
         rate.sleep()
+
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     try:
