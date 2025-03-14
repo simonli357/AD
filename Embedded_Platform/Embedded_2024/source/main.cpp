@@ -17,7 +17,7 @@ periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 // periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
 
 // It's a task for sending periodically the IMU values
-periodics::CImu g_imu(0.1 / g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
+periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
 
 //PIN for a motor speed in ms, inferior and superior limit
 drivers::CSpeedingMotor g_speedingDriver(D3, -50.0, 50.0); //speed in cm/s

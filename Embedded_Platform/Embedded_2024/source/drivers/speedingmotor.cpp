@@ -100,9 +100,9 @@ namespace drivers{
         if(f_speed > 0 )
         {
             // Update quadratic function parameters
-            alpha = 1798545.44;
-            beta = -258826.54;
-            gamma = 9311.76;
+            alpha = 1289748.65;
+            beta = -187718.55;
+            gamma = 6826.86;
             // Compute the dutyCycle 
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
         }

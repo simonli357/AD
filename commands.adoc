@@ -112,3 +112,8 @@ roi:
   do_rectify: False
 FOV (deg): (55.56294646186197, 43.14253845277586)
 ---
+
+- mbed
+mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM
+st-flash erase
+
