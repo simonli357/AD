@@ -183,7 +183,7 @@ namespace drivers{
         previous_error = error;
 
         // Adjust steering
-        newSteer =  m_desiredSteer + (m_proportional * error + m_integral * integral + m_derivative * derivative);
+        newSteer =  m_desiredSteer + (m_proportional * error + 0*m_integral * integral + m_derivative * derivative);
 
         float integral_calc = m_integral * integral ;
         float derivative_calc = m_derivative * derivative;
@@ -200,6 +200,7 @@ namespace drivers{
         PWMAngle(newDutyCycle);
         printf("@Y4:%f\n", newSteer);
         printf("@Y5:%f\n", clipSteer);
+        printf("@S1:%f\n", m_desiredSteer);
 
         printf("@E4:%f\n", m_proportional);
         printf("@E2:%f\n", integral_calc);
@@ -244,24 +245,25 @@ namespace drivers{
         // Clip the steering angle for safety
         if(f_angle > 20.8) f_angle = 20.8; 
         if(f_angle < -21.8) f_angle = -21.8;
-        // Function to calculate the positive angle (RIGHT TURN)
 
+        // Function to calculate the positive angle (LEFT TURN)
         if(f_angle < 0)
         {
             // Update quadratic function parameters
-            alpha = -20697;
-            beta = 1815.5;
-            gamma = -17.982;
+            alpha = -22254;
+            beta = 1995.5;
+            gamma = -23.127;
             // Compute the dutyCycle 
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
-        // Function to calculate the negative angles (LEFT TURN)
+
+        // Function to calculate the negative angles (RIGHT TURN)
         if(f_angle > 0)
         {
             // Update quadratic function parameters
-            alpha = -22406;
-            beta = 4884.5;
-            gamma = -245.36;
+            alpha = -18728;
+            beta = 4175;
+            gamma = -211.28;
             // Compute the dutyCycle 
             dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
         }
