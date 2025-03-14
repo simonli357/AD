@@ -1,5 +1,13 @@
-trapezoidal_width: 168
+trapezoidal_width: 150
 trapezoidal_height: 300
 window_min_pixels: 30
 window_margin: 100
 scale_factor: 0.4
+n_windows: 9
+display_width_factor: 0.25
+pixel_to_meter_y_slope: 0.003138337
+pixel_to_meter_y_intercept: 0.3778245
+stopline_distance_threshold: 0.5 # distance to front of car
+
+adaptive_threshold_block_size: 199
+adaptive_threshold_c: -20

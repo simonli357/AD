@@ -45,11 +45,8 @@ class LaneDetector {
 		nh.getParam("window_min_pixels", WINDOW_MIN_PIXELS);
 		nh.getParam("n_windows", n_windows);
 		nh.getParam("display_width_factor", display_width_factor);
-		nh.getParam("stopline_distance_threshold", stopline_distance_threshold);
 		nh.getParam("pixel_to_meter_y_slope", pixel_to_meter_y_slope);
 		nh.getParam("pixel_to_meter_y_intercept", pixel_to_meter_y_intercept);
-		meter_to_pixel_y_slope = 1 / pixel_to_meter_y_slope;
-		meter_to_pixel_y_intercept = -pixel_to_meter_y_intercept / pixel_to_meter_y_slope;
 		WINDOW_MARGIN *= scale_factor;
 		WINDOW_MIN_PIXELS *= scale_factor;
 		LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
@@ -119,13 +116,11 @@ class LaneDetector {
 
 	// LINE FIT
 	double stopline_dist = -1;
-	double stopline_dist_to_front = -1;
-	double stopline_distance_threshold;
-	bool stopline = false;
-	bool cross_walk = false;
 	int lane_to_fit = NONE;
 	VectorXd left_fit = VectorXd(4);
 	VectorXd right_fit = VectorXd(4);
+	int stop_index = 0;
+	bool cross_walk = false;
 	cv::Mat histogram;
 
 	cv::Mat transMatrix, invMatrix, transMatrix_scaled, invMatrix_scaled;
@@ -157,6 +152,7 @@ class LaneDetector {
 			preprocess(image, processed_image);
 			if (!getIPM(processed_image, ipm_processed)) return;
 			stopline_dist = find_stopline(ipm_processed);
+			std::cout << "stopline_dist: " << stopline_dist << std::endl;
 
 			// cv::imshow("processed_image", processed_image);
 			// cv::imshow("ipm_processed", ipm_processed);
@@ -166,19 +162,19 @@ class LaneDetector {
 			bool success = line_fit(ipm_processed);
 
 			auto wpts = get_waypoints(0, left_fit, right_fit, 40, 0.032);
-			// for (size_t i = 0; i + 6 <= wpts.size(); i += 3) {
-			// 		float x1 = wpts[i];
-			// 		float y1 = wpts[i + 1];
-			// 		float x2 = wpts[i + 3];
-			// 		float y2 = wpts[i + 4];
+			for (size_t i = 0; i + 6 <= wpts.size(); i += 3) {
+					float x1 = wpts[i];
+					float y1 = wpts[i + 1];
+					float x2 = wpts[i + 3];
+					float y2 = wpts[i + 4];
 			
-			// 		float dx = x2 - x1;
-			// 		float dy = y2 - y1;
-			// 		float distance = std::sqrt(dx * dx + dy * dy);
+					float dx = x2 - x1;
+					float dy = y2 - y1;
+					float distance = std::sqrt(dx * dx + dy * dy);
 			
-			// 		std::cout << "Distance between waypoint " << i / 3 << " and " << (i / 3 + 1)
-			// 							<< " = " << distance << " meters" << std::endl;
-			// }
+					std::cout << "Distance between waypoint " << i / 3 << " and " << (i / 3 + 1)
+										<< " = " << distance << " meters" << std::endl;
+			}
 			// for (int i = 0; i < wpts.size() / 3; i += 3) {
 			// 	std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
 			// }
@@ -194,8 +190,7 @@ class LaneDetector {
 			waypoints_pub.publish(waypoints_msg);
 
 			lane_msg.center = 320.0;
-			lane_msg.stopline_dist = stopline_dist_to_front;
-			lane_msg.stopline = stopline;
+			lane_msg.stopline = stopline_dist;
 			lane_msg.header.stamp = ros::Time::now();
 			lane_pub.publish(lane_msg);
 
@@ -203,14 +198,15 @@ class LaneDetector {
 				if (!getIPMFull(image, ipm_color))
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
+				// resize by reducing width by factor of 2
+				cv::resize(gyu_img, gyu_img, cv::Size(IMG_WIDTH * display_width_factor, IMG_HEIGHT), 0, 0, cv::INTER_CUBIC);
 				cv::imshow("Binary Image", gyu_img);
 				cv::waitKey(1);
 			}
 		} else {
 			double center = old_lane_detector->optimized_histogram(image, showflag, printflag);
 			lane_msg.center = center;
-			lane_msg.stopline = old_lane_detector->stopline;
-			lane_msg.stopline_dist = old_lane_detector->stopline_dist;
+			lane_msg.stopline = old_lane_detector->stopline_dist;
 			lane_msg.header.stamp = ros::Time::now();
 			lane_pub.publish(lane_msg);
 		}
@@ -227,7 +223,6 @@ class LaneDetector {
 	double meter_to_pixel_y(double meter) { 
 		return meter * meter_to_pixel_y_slope + meter_to_pixel_y_intercept; 
 	}
-	
 	double get_derivative(double y, const VectorXd &coeffs) {
 			// Compute derivative of the polynomial: f(y) = c0 + c1*y + c2*y^2 + ...
 			double derivative = 0.0;
@@ -236,7 +231,6 @@ class LaneDetector {
 			}
 			return derivative;
 	}
-
 	std::vector<float> get_waypoints(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
 		world_waypoints.reserve(num_waypoints);
@@ -265,7 +259,7 @@ class LaneDetector {
 			double right_dxdy = get_derivative(y_pixel, right_fit);
 			double center_dxdy = 0.5 * (left_dxdy + right_dxdy);
 			// Estimate local pixel-to-meter ratio in Y direction at this y_pixel
-			double meter_per_pixel_y = pixel_to_meter_y_slope;
+			double meter_per_pixel_y = pixel_to_meter_y(y_pixel);
 			// Scale dx/dy from pixel space to world space: adjust slope accordingly
 			double center_dxdy_world = center_dxdy * (METER_PER_PIXEL_X / meter_per_pixel_y);
 			// Compute dy using arc length formula
@@ -301,112 +295,92 @@ class LaneDetector {
 		return waypoints_with_yaw;
 	}
 
-	double find_stopline(const cv::Mat& image) {
-			stopline_dist = -1;
-			double stop_loc = -1.0;
-			bool found = false;
-			cv::Mat horistogram;
-			cv::reduce(image, horistogram, 1, cv::REDUCE_SUM, CV_32S);
-
-			std::vector<int> hist;
-			for (int i = 0; i < horistogram.rows; ++i) {
-			// for (int i = horistogram.rows-1; i > 0; --i) {
-					hist.push_back(static_cast<int>(horistogram.at<int>(0,i)/255));
-					if (hist[i] >= LANE_WIDTH_PIXEL_SCALED * 0.753) {
-							stop_loc = i;
-							found = true;
-							break;
-					}
-			}
-			if (!found) {
-					stopline_dist = -1;
-					return stopline_dist;
-			}
-			// stopline_dist = (IMG_HEIGHT - stop_loc / scale_factor) * METER_PER_PIXEL_Y;
-			double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
-			stopline_dist = pixel_to_meter_y(pixel_value);
-			stopline_dist_to_front = stopline_dist;
-			if (real) {
-				stopline_dist_to_front += VehicleConstants::REALSENSE_TF_REAL[0];
-			} else {
-				stopline_dist_to_front += VehicleConstants::REALSENSE_TF[0];
-			}
-			stopline_dist_to_front -= VehicleConstants::CAR_LENGTH / 2;
-			if (stopline_dist_to_front > 0.5) {
-				stopline = true;
-			} else {
-				stopline = false;
-				stopline_dist = -1;
-				stopline_dist_to_front = -1;
-			}
-			return stopline_dist;
-	}
 	// double find_stopline(const cv::Mat& image) {
 	// 		stopline_dist = -1;
 	// 		double stop_loc = -1.0;
-			
-	// 		int img_height = image.rows;
+	// 		cv::Mat horistogram;
+	// 		cv::reduce(image, horistogram, 1, cv::REDUCE_SUM, CV_32S);
 
-	// 		// Define region of interest: ignore top 30% and bottom 10%
-	// 		// int roi_top = static_cast<int>(0.30 * img_height);
-	// 		// int roi_bottom = static_cast<int>(0.90 * img_height);
-	// 		// // Extract the relevant vertical region (ROI)
-	// 		// cv::Mat roi = image(cv::Range(roi_top, roi_bottom), cv::Range::all());
-
-	// 		// Compute vertical histogram (sum of each row)
-	// 		static cv::Mat histogram;
-	// 		// cv::reduce(roi, histogram, 1, cv::REDUCE_SUM, CV_32S);
-	// 		cv::reduce(image, histogram, 1, cv::REDUCE_SUM, CV_32S);
-
-	// 		// Convert histogram to 1D array
-	// 		std::vector<int> hist(histogram.rows);
-	// 		for (int i = 0; i < histogram.rows; ++i) {
-	// 				hist[i] = histogram.at<int>(i, 0) / 255;
-	// 		}
-
-	// 		// Smooth the histogram with a moving average filter
-	// 		const int window_size = 5;
-	// 		std::vector<int> smoothed(hist.size(), 0);
-	// 		for (int i = 0; i < hist.size(); ++i) {
-	// 				int sum = 0, count = 0;
-	// 				for (int j = -window_size / 2; j <= window_size / 2; ++j) {
-	// 						if (i + j >= 0 && i + j < hist.size()) {
-	// 								sum += hist[i + j];
-	// 								count++;
-	// 						}
-	// 				}
-	// 				smoothed[i] = sum / count;
-	// 		}
-
-	// 		// Compute adaptive threshold (mean + 1.5*std deviation)
-	// 		double mean = std::accumulate(smoothed.begin(), smoothed.end(), 0.0) / smoothed.size();
-	// 		double std_dev = 0.0;
-	// 		for (auto v : smoothed) std_dev += (v - mean) * (v - mean);
-	// 		std_dev = std::sqrt(std_dev / smoothed.size());
-
-	// 		double threshold = mean + std_dev * 1.5;  // More tolerant for varying conditions
-
-	// 		// Find strongest peak above threshold (most likely stop line location)
-	// 		int best_row = -1;
-	// 		int max_value = 0;
-	// 		for (int i = 0; i < smoothed.size(); ++i) {
-	// 				if (smoothed[i] > threshold && smoothed[i] > max_value) {
-	// 						max_value = smoothed[i];
-	// 						best_row = i;
+	// 		std::vector<int> hist;
+	// 		for (int i = 0; i < horistogram.rows; ++i) {
+	// 		// for (int i = horistogram.rows-1; i > 0; --i) {
+	// 				hist.push_back(static_cast<int>(horistogram.at<int>(0,i)/255));
+	// 				if (hist[i] >= LANE_WIDTH_PIXEL_SCALED * 0.753) {
+	// 						stop_loc = i;
+	// 						break;
 	// 				}
 	// 		}
-
-	// 		if (best_row != -1) {
-	// 				// stop_loc = roi_top + best_row;
-	// 				stop_loc = best_row;
-	// 				double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
-	// 				stopline_dist = pixel_to_meter_y(pixel_value);
-	// 		} else {
-	// 				stopline_dist = -1; // No reliable stopline found
-	// 		}
-
+	// 		// stopline_dist = (IMG_HEIGHT - stop_loc / scale_factor) * METER_PER_PIXEL_Y;
+	// 		double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
+	// 		stopline_dist = pixel_to_meter_y(pixel_value);
 	// 		return stopline_dist;
 	// }
+	double find_stopline(const cv::Mat& image) {
+			stopline_dist = -1;
+			double stop_loc = -1.0;
+			
+			int img_height = image.rows;
+
+			// Define region of interest: ignore top 30% and bottom 10%
+			// int roi_top = static_cast<int>(0.30 * img_height);
+			// int roi_bottom = static_cast<int>(0.90 * img_height);
+			// // Extract the relevant vertical region (ROI)
+			// cv::Mat roi = image(cv::Range(roi_top, roi_bottom), cv::Range::all());
+
+			// Compute vertical histogram (sum of each row)
+			static cv::Mat histogram;
+			// cv::reduce(roi, histogram, 1, cv::REDUCE_SUM, CV_32S);
+			cv::reduce(image, histogram, 1, cv::REDUCE_SUM, CV_32S);
+
+			// Convert histogram to 1D array
+			std::vector<int> hist(histogram.rows);
+			for (int i = 0; i < histogram.rows; ++i) {
+					hist[i] = histogram.at<int>(i, 0) / 255;
+			}
+
+			// Smooth the histogram with a moving average filter
+			const int window_size = 5;
+			std::vector<int> smoothed(hist.size(), 0);
+			for (int i = 0; i < hist.size(); ++i) {
+					int sum = 0, count = 0;
+					for (int j = -window_size / 2; j <= window_size / 2; ++j) {
+							if (i + j >= 0 && i + j < hist.size()) {
+									sum += hist[i + j];
+									count++;
+							}
+					}
+					smoothed[i] = sum / count;
+			}
+
+			// Compute adaptive threshold (mean + 1.5*std deviation)
+			double mean = std::accumulate(smoothed.begin(), smoothed.end(), 0.0) / smoothed.size();
+			double std_dev = 0.0;
+			for (auto v : smoothed) std_dev += (v - mean) * (v - mean);
+			std_dev = std::sqrt(std_dev / smoothed.size());
+
+			double threshold = mean + std_dev * 1.5;  // More tolerant for varying conditions
+
+			// Find strongest peak above threshold (most likely stop line location)
+			int best_row = -1;
+			int max_value = 0;
+			for (int i = 0; i < smoothed.size(); ++i) {
+					if (smoothed[i] > threshold && smoothed[i] > max_value) {
+							max_value = smoothed[i];
+							best_row = i;
+					}
+			}
+
+			if (best_row != -1) {
+					// stop_loc = roi_top + best_row;
+					stop_loc = best_row;
+					double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
+					stopline_dist = pixel_to_meter_y(pixel_value);
+			} else {
+					stopline_dist = -1; // No reliable stopline found
+			}
+
+			return stopline_dist;
+	}
 
 	bool preprocess(const cv::Mat &inputImage, cv::Mat &outputImage) {
 		if (inputImage.empty()) {
@@ -858,8 +832,7 @@ class LaneDetector {
 
 		for (int i = 0; i < waypoints.size(); i += 3) {
 			int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
-			// int y = IMG_HEIGHT - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
-			int y = IMG_HEIGHT - static_cast<int>(meter_to_pixel_y(waypoints[i]));
+			int y = IMG_HEIGHT - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
 			cv::circle(result, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
 		}
 
@@ -879,11 +852,12 @@ class LaneDetector {
 			cv::addWeighted(non_warped, 0.3, result_ipm, 0.95, 0, result);
 		}
 
-		cv::resize(result, result, cv::Size(IMG_WIDTH * display_width_factor, IMG_HEIGHT), 0, 0, cv::INTER_CUBIC);
-
 		if (stopline_dist > 0) {
-			cv::putText(result, "stop:" + std::to_string(stopline_dist) + " m", cv::Point(0, 48), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-			cv::putText(result, "2front:" + std::to_string(stopline_dist_to_front) + " m", cv::Point(0, 48*4), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+			cv::putText(result, "Stopline detected!", cv::Point(64, 48), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+		}
+
+		if (cross_walk) {
+			cv::putText(result, "Crosswalk detected!", cv::Point(128, 96), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
 		}
 
 		return result;

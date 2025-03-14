@@ -1,6 +1,7 @@
 std_msgs/Header header
 
 float32 center
-int32 stopline
+bool stopline
+float32 stopline_dist
 bool crosswalk
 # bool dotted
