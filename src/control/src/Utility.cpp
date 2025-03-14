@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include "TcpClient.hpp"
+#include "TrafficClient.hpp"
 #include "utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -23,7 +24,6 @@
 #include <cmath>
 #include <robot_localization/SetPose.h>
 #include <iostream>
-#include <fstream>
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
@@ -33,9 +33,25 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
     bool use_tcp = false;
+    bool use_traffic_server = false;
     if(!nh.getParam("/use_tcp", use_tcp)) {
         debug("Utility constructor: WARNING: Failed to get 'use_tcp' parameter. Defaulting to false.", 1);
         use_tcp = false;
+    }
+    if(!nh.getParam("/use_traffic_server", use_traffic_server)) {
+        debug("Utility constructor: WARNING: Failed to get 'use_traffic_server' parameter. Defaulting to false.", 1);
+        use_traffic_server = false;
+    }
+    if(use_traffic_server) {
+        debug("Utility constructor: Attempting to create Traffic Server TCP client...", 1);
+        std::string traffic_server_ip;
+        if(!nh.getParam("/traffic_server_ip", traffic_server_ip)) {
+            debug("Utility constructor: ERROR: Failed to get 'traffic_server_ip_address' parameter. Traffic Server TCP client not created.", 1);
+            traffic_client = nullptr;
+        } else {
+            traffic_client = std::make_unique<TrafficClient>(traffic_server_ip);
+            debug("Utility constructor: TCP client created successfully.", 1);
+        }
     }
     if(use_tcp) {
         debug("Utility constructor: Attempting to create TCP client...", 1);
@@ -44,7 +60,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
             debug("Utility constructor: ERROR: Failed to get 'ip_address' parameter. TCP client not created.", 1);
             tcp_client = nullptr;
         } else {
-            tcp_client = std::make_shared<TcpClient>(1024, "utility_node_client", ip_address);
+            tcp_client = std::make_shared<TcpClient>(true, "utility_node_client", ip_address);
             debug("Utility constructor: TCP client created successfully.", 1);
         }
     } else {
@@ -506,6 +522,9 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         // safety check
         if (tcp_client != nullptr) {
             tcp_client->send_road_object(road_object_msg);
+        }
+        if (traffic_client != nullptr) {
+            traffic_client->send_car_data(road_object_msg);
         }
     }
     static bool populate_car_pose = true;

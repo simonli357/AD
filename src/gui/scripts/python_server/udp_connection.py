@@ -5,6 +5,7 @@ import cv2
 from collections import OrderedDict, deque
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
+from python_server.msg.sw_load_msg import SWLoadMsg
 
 import struct
 
@@ -23,6 +24,7 @@ class UdpConnection:
                 5: self.store_rgb_image,
                 6: self.store_depth_image,
                 7: self.store_steer,
+                8: self.store_sw_load,
             })
             self.types = list(self.data_actions.keys())
             self.lane2_buf = deque([], 1)
@@ -32,6 +34,7 @@ class UdpConnection:
             self.rgb_buf = deque([], 1)
             self.depth_buf = deque([], 1)
             self.steer_buf = deque([], 1)
+            self.sw_load_buf = deque([], 1)
             threading.Thread(target=self.receive, daemon=True).start()
 
     def receive(self):
@@ -73,6 +76,9 @@ class UdpConnection:
     def store_steer(self, bytes):
         self.steer_buf.append(bytes)
 
+    def store_sw_load(self, bytes):
+        self.sw_load_buf.append(bytes)
+
     ####################
     # Utility methods
     ####################
@@ -80,7 +86,7 @@ class UdpConnection:
     def parse_lane2(self):
         try:
             if len(self.lane2_buf) > 0:
-                return Lane2Msg(b'\x02').decode(self.lane2_buf[0])
+                return Lane2Msg().decode(self.lane2_buf[0])
             return None
         except Exception as e:
             print(e)
@@ -118,8 +124,7 @@ class UdpConnection:
             if len(self.rgb_buf) > 0:
                 np_array = np.frombuffer(self.rgb_buf[0], dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-                bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='bgr8')
+                return cv_image
             return None
         except Exception as e:
             print(e)
@@ -131,8 +136,7 @@ class UdpConnection:
                 np_array = np.frombuffer(self.depth_buf[0], dtype=np.uint8)
                 cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 cv_image = (cv_image).astype(np.uint16)
-                bridge = CvBridge()
-                return bridge.cv2_to_imgmsg(cv_image, encoding='mono16')
+                return cv_image
             return None
         except Exception as e:
             print(e)
@@ -143,6 +147,16 @@ class UdpConnection:
             if len(self.steer_buf) > 0:
                 bytes = self.steer_buf[0]
                 return struct.unpack('f', bytes[:4])[0]
+            return None
+        except Exception as e:
+            print(e)
+            return None
+
+    def parse_sw_load(self):
+        try:
+            if len(self.sw_load_buf) > 0:
+                bytes = self.sw_load_buf[0]
+                return SWLoadMsg().decode(bytes)
             return None
         except Exception as e:
             print(e)

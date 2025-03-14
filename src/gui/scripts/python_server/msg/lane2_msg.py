@@ -4,10 +4,9 @@ from std_msgs.msg import Header
 
 
 class Lane2Msg:
-    def __init__(self, data_type):
+    def __init__(self):
         self.bytes_length = 4
         self.num_elements = 5
-        self.data_type = data_type
         self.header = None
         self.center = None
         self.stopline = None
@@ -16,7 +15,7 @@ class Lane2Msg:
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
-        lane_msg = Lane2Msg(self.data_type)
+        lane_msg = Lane2Msg()
         lane_msg.header = Header().deserialize(splits[0])
         lane_msg.center = struct.unpack('f', splits[1])[0]
         lane_msg.stopline = struct.unpack('i', splits[2])[0]

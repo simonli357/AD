@@ -247,9 +247,6 @@ class SSHFormWidget(QDialog):
             yaml.dump(default_config, file)
 
     def set_remote_cmd(self):
-        src_ros = 'use_ros1 && source /opt/ros/noetic/setup.sh'
-        src_devel = 'source devel/setup.bash'
-        catkin_make = 'catkin_make'
         target = self.ssh_target.text()
         passwd = self.passwd.text()
         catkin_ws = self.remote_catkin_ws.text()
@@ -270,22 +267,24 @@ class SSHFormWidget(QDialog):
             args = self.args_cached
         else:
             self.cache['args'] = args
-        ssh = f'sshpass -p {passwd} ssh {target}'
+        bash = 'bash -ic'
+        src_ros = 'source /opt/ros/noetic/setup.sh'
+        src_devel = f'source {catkin_ws}/devel/setup.bash'
+        ssh = f'sshpass -p {passwd} ssh -tt {target}'
         remote_command = ''
         if self.terminal_type == TerminalType.CONTROL:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}"'
+            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch control controller.launch {args}"\''
         elif self.terminal_type == TerminalType.CAM:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}"'
+            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch perception cameraNode.launch {args}"\''
         elif self.terminal_type == TerminalType.PATH:
-            remote_command = f'"{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}"'
+            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && rosrun planning path2.py {args}"\''
         elif self.terminal_type == TerminalType.ROSCORE:
-            remote_command = '"roscore"'
-        self.cmd = f'{ssh} {remote_command}'
+            remote_command = '\'exec bash -c "roscore"\''
+        self.cmd = f'{ssh} "{bash} {remote_command}"'
 
     def set_local_cmd(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = 'source devel/setup.bash'
-        catkin_make = 'catkin_make'
         catkin_ws = self.catkin_ws.text()
         args = self.args.text()
         if not catkin_ws:
@@ -296,14 +295,21 @@ class SSHFormWidget(QDialog):
             args = self.args_cached
         else:
             self.cache['args'] = args
+        command = ''
+        bash = 'exec bash -c'
         if self.terminal_type == TerminalType.CONTROL:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
         elif self.terminal_type == TerminalType.CAM:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
-            self.cmd = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
-            self.cmd = 'roscore'
+            command = 'roscore'
+        self.cmd = f'{bash} "{command}"'
+
+    def clear_inputs(self):
+        self.catkin_ws.clear()
+        self.args.clear()
 
     def accept(self):
         if self.args_cached == 'args':
@@ -316,13 +322,11 @@ class SSHFormWidget(QDialog):
             yaml.dump(self.ssh_cache, file)
         with open(self.config, 'w') as file:
             yaml.dump(self.cache, file)
-        self.catkin_ws.clear()
-        self.args.clear()
+        self.clear_inputs()
         super().accept()
 
     def reject(self):
-        self.catkin_ws.clear()
-        self.args.clear()
+        self.clear_inputs()
         super().reject()
 
     def get_cmd(self):

@@ -10,7 +10,7 @@
 class ParamsMsg : public Decoder<ParamsMsg>, public Encoder {
   public:
 	ParamsMsg();
-	ParamsMsg(std::vector<double> &state_refs, std::vector<double> &attributes);
+	ParamsMsg(const std::vector<double> &state_refs, const std::vector<double> &attributes);
 	ParamsMsg(ParamsMsg &&) = default;
 	ParamsMsg(const ParamsMsg &) = default;
 	ParamsMsg &operator=(ParamsMsg &&) = delete;

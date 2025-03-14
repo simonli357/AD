@@ -228,7 +228,7 @@ namespace brain{
             m_speedingControl.CalculateSpeed(l_speed); // Set the reference speed
             m_steeringControl.m_desiredSteer = l_angle; // Set the desired steering angle
 
-            sprintf(b,a);
+            printf(b,a);
         }
         else
         {

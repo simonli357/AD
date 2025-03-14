@@ -4,7 +4,14 @@ from PyQt5.QtWidgets import QWidget
 from collections import deque
 from .enums import TerminalType
 from .forms.simulator_form import SimulatorFormWidget
+from .forms.compile_form import CompileFormWidget
 from .forms.ssh_form import SSHFormWidget
+from .indicators.progress_window import ProgressWindow
+from .indicators.loading_window import LoadingWindow
+
+import re
+import os
+import signal
 
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -16,6 +23,8 @@ class TerminalWidget(QtWidgets.QWidget):
         self.terminals.append(TerminalType.DEBUG)
         # ROS debug
         self.message_history = deque([], 1000)
+        # Compile
+        self.compile_process = None
         # Simulator
         self.sim_display = None
         self.sim_process = None
@@ -33,22 +42,42 @@ class TerminalWidget(QtWidgets.QWidget):
         self.roscore_process = None
         self.setup_ui()
         self.connect_signals()
+        self.setStyleSheet("""
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 0.08);
+                font-family: 'Roboto';
+                font-size: 20px;
+                color: white;
+                border-radius: 12px;
+                padding: 10px;
+            }
+        """)
+
+    def terminate_processes(self):
+        if self.compile_process is not None:
+            self.compile_process.terminate()
+        if self.ctrl_process is not None:
+            self.halt_process(self.ctrl_process, True)
+        if self.cam_process is not None:
+            self.halt_process(self.cam_process, True)
+        if self.path_process is not None:
+            self.halt_process(self.path_process, True)
+        if self.roscore_process is not None:
+            self.halt_process(self.roscore_process, True)
+        if self.sim_process is not None:
+            self.halt_process(self.sim_process, True)
 
     def setup_ui(self) -> None:
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
-
         buttons = QWidget()
         self.button_wrapper = QtWidgets.QHBoxLayout(buttons)
+        self.button_wrapper.setContentsMargins(0, 0, 0, 0)
         self.buttons = deque()
-        self.stop_btn = QtWidgets.QPushButton(' Stop')
         self.debug_btn = QtWidgets.QPushButton(' debug')
         self.sim_btn = QtWidgets.QPushButton('󰘨 simulator')
         self.controller_btn = QtWidgets.QPushButton('󱡸 controller')
         self.cam_btn = QtWidgets.QPushButton('  camera')
         self.path_planner_btn = QtWidgets.QPushButton('  planner')
         self.roscore_btn = QtWidgets.QPushButton(' roscore')
-        self.buttons.append(self.stop_btn)
         self.buttons.append(self.debug_btn)
         self.buttons.append(self.sim_btn)
         self.buttons.append(self.controller_btn)
@@ -58,6 +87,24 @@ class TerminalWidget(QtWidgets.QWidget):
         for btn in self.buttons:
             self.button_wrapper.addWidget(btn)
         self.button_wrapper.addStretch()
+
+        ctrl_buttons = QWidget()
+        self.ctrl_buttons_wrapper = QtWidgets.QVBoxLayout(ctrl_buttons)
+        self.ctrl_buttons_wrapper.setContentsMargins(0, 0, 0, 0)
+        self.ctrl_buttons_wrapper.setAlignment(QtCore.Qt.AlignTop)
+        self.ctrl_buttons = deque()
+        self.compile_btn = QtWidgets.QPushButton('')
+        self.sig_btn = QtWidgets.QPushButton('')
+        self.stop_btn = QtWidgets.QPushButton('')
+        self.compile_btn.setToolTip('Compile')
+        self.sig_btn.setToolTip('SIGTERM')
+        self.stop_btn.setToolTip('Close')
+        self.ctrl_buttons.append(self.compile_btn)
+        self.ctrl_buttons.append(self.sig_btn)
+        self.ctrl_buttons.append(self.stop_btn)
+        for btn in self.ctrl_buttons:
+            self.ctrl_buttons_wrapper.addWidget(btn)
+        self.ctrl_buttons_wrapper.addStretch()
 
         self.message_display = QtWidgets.QTextEdit()
         self.message_display.setReadOnly(True)
@@ -72,38 +119,72 @@ class TerminalWidget(QtWidgets.QWidget):
                 border-radius: 8px;
             }
         """)
+        ctrl_buttons.setStyleSheet("""
+            QToolTip {
+                background-color: black;
+                color: white;
+                border: none;
+            }
+        """)
 
         self.stacked_widget = QtWidgets.QStackedWidget()
         self.stacked_widget.addWidget(self.message_display)
 
-        self.message_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
-
-        self.layout.addWidget(buttons)
-        self.layout.addWidget(self.stacked_widget)
-
-        self.update_buttons_style()
         self.stop_btn.setStyleSheet("""
             QPushButton {
-                background-color: #ff0000;
-                padding: 5px 15px 5px 15px;
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(255, 0, 0, 0.3);
+                color: #ff0000;
+                padding: 5px 12px 5px 5px;
             }
             QPushButton:hover {
-                background-color: #ff4d4d;
+                background-color: rgba(255, 0, 0, 0.5);
             }
         """)
+        self.sig_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(255, 120, 0, 0.3);
+                color: #ffa500;
+                padding: 5px 12px 5px 5px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 120, 0, 0.5);
+            }
+        """)
+        self.compile_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 20px;
+                border: none;
+                border-radius: 8px;
+                background-color: rgba(0, 255, 0, 0.3);
+                color: #00ff00;
+                padding: 5px 12px 5px 5px;
+            }
+            QPushButton:hover {
+                background-color: rgba(0, 255, 0, 0.5);
+            }
+        """)
+
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        wrapper = QWidget()
+        wrapper_layout = QtWidgets.QHBoxLayout(wrapper)
+        wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(buttons)
+        wrapper_layout.addWidget(self.stacked_widget)
+        wrapper_layout.addWidget(ctrl_buttons)
+        self.layout.addWidget(wrapper)
+        self.update_buttons_style()
 
     def connect_signals(self):
         self.stop_btn.clicked.connect(self.handle_stop_btn_click)
+        self.sig_btn.clicked.connect(self.handle_sig_btn_click)
+        self.compile_btn.clicked.connect(self.handle_compile_btn_click)
         self.debug_btn.clicked.connect(self.handle_ros_btn_click)
         self.sim_btn.clicked.connect(self.handle_sim_btn_click)
         self.controller_btn.clicked.connect(self.handle_controller_btn_click)
@@ -169,8 +250,9 @@ class TerminalWidget(QtWidgets.QWidget):
         return self.terminals[widget_index]
 
     def kill_process(self, process, display, terminal_type):
-        process.terminate()
-        process.waitForFinished()
+        if process and process.state() == QProcess.Running:
+            process.terminate()
+            LoadingWindow(process).exec()
         self.stacked_widget.removeWidget(display)
         display.deleteLater()
         self.terminals.remove(terminal_type)
@@ -178,7 +260,33 @@ class TerminalWidget(QtWidgets.QWidget):
         self.update_buttons_style()
 
     ################
-    # Stop Button
+    # SIGTERM
+    ################
+    def handle_sig_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.SIM:
+            self.halt_process(self.sim_process)
+        elif current_terminal_type == TerminalType.CONTROL:
+            self.halt_process(self.ctrl_process)
+        elif current_terminal_type == TerminalType.CAM:
+            self.halt_process(self.cam_process)
+        elif current_terminal_type == TerminalType.PATH:
+            self.halt_process(self.path_process)
+        elif current_terminal_type == TerminalType.ROSCORE:
+            self.halt_process(self.roscore_process)
+
+    def halt_process(self, process, show_loading=False):
+        if process and process.state() == QProcess.Running:
+            try:
+                pid = process.processId()
+                os.kill(pid, signal.SIGINT)
+                if show_loading:
+                    LoadingWindow(process).exec()
+            except Exception:
+                pass
+
+    ################
+    # Stop
     ################
 
     def handle_stop_btn_click(self):
@@ -193,6 +301,49 @@ class TerminalWidget(QtWidgets.QWidget):
             self.stop_path_process()
         elif current_terminal_type == TerminalType.ROSCORE:
             self.stop_roscore_process()
+
+    ################
+    # Compile
+    ################
+    def handle_compile_btn_click(self):
+        modal = CompileFormWidget()
+        modal.exec()
+        cmd = modal.get_cmd()
+        if cmd is None:
+            return
+        self.start_compile_process(cmd)
+
+    def read_compile_output(self):
+        stdout = self.compile_process.readAllStandardOutput().data().decode()
+        stderr = self.compile_process.readAllStandardError().data().decode()
+        if stderr:
+            for line in stderr.splitlines():
+                line = line.strip()
+                self.message_display.append(line)
+                if "failed" in line or "Error" in line:
+                    if self.compile_progress is not None:
+                        self.compile_progress.end()
+        if stdout:
+            for line in stdout.splitlines():
+                line = line.strip()
+                self.message_display.append(line)
+                match = re.search(r'(\d+)%', line)
+                if match:
+                    val = int(match.group(1))
+                    if self.compile_progress is not None:
+                        self.compile_progress.set_progress(val)
+                    if val == 100:
+                        self.compile_progress.end()
+                else:
+                    self.compile_progress.increment(2)
+
+    def start_compile_process(self, cmd):
+        self.compile_process = QProcess(self)
+        self.compile_process.readyReadStandardOutput.connect(self.read_compile_output)
+        self.compile_process.readyReadStandardError.connect(self.read_compile_output)
+        self.compile_process.start('bash', ['-c', cmd])
+        self.compile_progress = ProgressWindow()
+        self.compile_progress.exec()
 
     ################
     # Simulator
@@ -217,17 +368,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_sim_display(self):
         self.sim_display = QtWidgets.QTextEdit()
         self.sim_display.setReadOnly(True)
-        self.sim_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.sim_display)
 
     def read_sim_output(self):
@@ -280,17 +420,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_ctrl_display(self):
         self.ctrl_display = QtWidgets.QTextEdit()
         self.ctrl_display.setReadOnly(True)
-        self.ctrl_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.ctrl_display)
 
     def read_ctrl_output(self):
@@ -343,17 +472,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_cam_display(self):
         self.cam_display = QtWidgets.QTextEdit()
         self.cam_display.setReadOnly(True)
-        self.cam_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.cam_display)
 
     def read_cam_output(self):
@@ -406,17 +524,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_path_display(self):
         self.path_display = QtWidgets.QTextEdit()
         self.path_display.setReadOnly(True)
-        self.path_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.path_display)
 
     def read_path_output(self):
@@ -469,17 +576,6 @@ class TerminalWidget(QtWidgets.QWidget):
     def create_roscore_display(self):
         self.roscore_display = QtWidgets.QTextEdit()
         self.roscore_display.setReadOnly(True)
-        self.roscore_display.setStyleSheet("""
-            QTextEdit {
-                background-color: rgba(255, 255, 255, 0.08);
-                font-family: 'Roboto';
-                font-size: 20px;
-                color: white;
-                margin-left: 8px;
-                border-radius: 12px;
-                padding: 5px;
-            }
-        """)
         self.stacked_widget.addWidget(self.roscore_display)
 
     def read_roscore_output(self):
