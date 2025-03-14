@@ -16,6 +16,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.stop_drawing = False
         self.main_window = self.parent()
         self.obj_dict = self.main_window.map_widget.object_dict
 
@@ -88,7 +89,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # Initialize grid VBO
-        grid_size_z = 12
+        grid_size_z = 15
         grid_size_x = 6
         step = 1
         grid_vertices = []
@@ -113,6 +114,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.path_node_vbo = vbo.VBO(np.array(path_node_vertices, dtype=np.float32))
 
     def paintGL(self):
+        if self.stop_drawing:
+            return
+
         self.qt_save_gl_state()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -130,6 +134,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         # Draw grid
         self.draw_grid()
+
+        gl.glTranslatef(0.5, 0, 0)
 
         # Draw car model
         self.draw_car_self((0, 1, 1, 1))
@@ -202,7 +208,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(20 * scale_factor)
+        font.setPixelSize(18 * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -216,8 +222,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glColor3f(0.3, 0.3, 0.3)
 
         self.grid_vbo.bind()
-        gl.glScalef(0.6, 0.6, 0.6)
-        gl.glTranslatef(0, 2, 1.5)
+        gl.glScalef(0.75, 0.75, 0.75)
+        gl.glTranslatef(0.5, 2, -3)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
         gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
@@ -409,7 +415,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 20, 35, 0)
+        gl.glTranslatef(viewport[2] - 35, 25, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -438,3 +444,33 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+
+    def cleanup_gl_resources(self):
+        self.stop_drawing = True
+        try:
+            self.makeCurrent()
+            if self.grid_vbo is not None:
+                self.grid_vbo.delete()
+                self.grid_vbo = None
+            if self.path_node_vbo is not None:
+                self.path_node_vbo.delete()
+                self.path_node_vbo = None
+            models = [
+                self.car_model, self.sign_model,
+                self.tf_light_model, self.pedestrian_model
+            ]
+            for model in models:
+                if model and model.vbo:
+                    model.vbo.delete()
+                    model.vbo = None
+            gl.glFlush()
+            self.doneCurrent()
+        except Exception:
+            pass
+
+    def __del__(self):
+        self.cleanup_gl_resources()
+
+    def deleteLater(self):
+        self.cleanup_gl_resources()
+        super().deleteLater()

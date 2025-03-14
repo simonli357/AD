@@ -6,7 +6,7 @@
 class RunMsg : public Encoder {
   public:
 	RunMsg();
-	RunMsg(float v_ref, std::string &path_name, float x_init, float y_init, float yaw_init);
+	RunMsg(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
 	RunMsg(RunMsg &&) = default;
 	RunMsg(const RunMsg &) = default;
 	RunMsg &operator=(RunMsg &&) = delete;

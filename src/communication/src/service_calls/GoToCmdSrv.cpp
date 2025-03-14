@@ -13,7 +13,7 @@ using std_msgs::Float32MultiArray;
 
 GoToCmdSrv::GoToCmdSrv() {}
 
-GoToCmdSrv::GoToCmdSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success)
+GoToCmdSrv::GoToCmdSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success)
 	: state_refs(state_refs), input_refs(input_refs), wp_attributes(wp_attributes), wp_normals(wp_normals), success(success) {
 	state_refs_length = ros::serialization::serializationLength(state_refs);
 	input_refs_length = ros::serialization::serializationLength(input_refs);
@@ -23,7 +23,7 @@ GoToCmdSrv::GoToCmdSrv(Float32MultiArray &state_refs, Float32MultiArray &input_r
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length + success_length;
 }
 
-GoToCmdSrv::GoToCmdSrv(std::vector<std::tuple<float, float>> coords) : coords(coords) {}
+GoToCmdSrv::GoToCmdSrv(const std::vector<std::tuple<float, float>> &coords) : coords(coords) {}
 
 std::unique_ptr<GoToCmdSrv> GoToCmdSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);

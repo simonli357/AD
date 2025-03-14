@@ -7,7 +7,7 @@
 
 TriggerMsg::TriggerMsg() {}
 
-TriggerMsg::TriggerMsg(std_srvs::Trigger &trigger) : trigger(trigger), request(trigger.request), response(trigger.response) {
+TriggerMsg::TriggerMsg(const std_srvs::Trigger &trigger) : trigger(trigger), request(trigger.request), response(trigger.response) {
 	request_length = ros::serialization::serializationLength(request.value());
     response_length = ros::serialization::serializationLength(response.value());
 	data_length = request_length + response_length;

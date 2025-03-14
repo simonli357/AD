@@ -10,7 +10,7 @@ using std_msgs::Float32MultiArray;
 
 GoToSrv::GoToSrv() {}
 
-GoToSrv::GoToSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals)
+GoToSrv::GoToSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals)
 	: state_refs(state_refs), input_refs(input_refs), wp_attributes(wp_attributes), wp_normals(wp_normals) {
 	state_refs_length = ros::serialization::serializationLength(state_refs);
 	input_refs_length = ros::serialization::serializationLength(input_refs);
@@ -19,7 +19,7 @@ GoToSrv::GoToSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, F
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length;
 }
 
-GoToSrv::GoToSrv(std::string vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y)
+GoToSrv::GoToSrv(const std::string &vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y)
 	: vrefName(vrefName), x0(x0), y0(y0), yaw0(yaw0), dest_x(dest_x), dest_y(dest_y) {}
 
 std::unique_ptr<GoToSrv> GoToSrv::deserialize(std::vector<uint8_t> &bytes) {
