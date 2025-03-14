@@ -15,7 +15,7 @@ class LanePreprocessingVisualizer:
     def image_callback(self, msg):
         # Convert ROS image to OpenCV format
         frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-
+        cv2.imshow('frame', frame)
         # Resize frame for better visualization
         # frame = cv2.resize(frame, (640, 360))
 

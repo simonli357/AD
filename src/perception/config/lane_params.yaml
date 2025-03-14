@@ -7,6 +7,7 @@ n_windows: 9
 display_width_factor: 0.25
 pixel_to_meter_y_slope: 0.003138337
 pixel_to_meter_y_intercept: 0.3778245
+stopline_distance_threshold: 0.5 # distance to front of car
 
-adaptive_threshold_block_size: 137
-adaptive_threshold_c: -40
+adaptive_threshold_block_size: 199
+adaptive_threshold_c: -20
