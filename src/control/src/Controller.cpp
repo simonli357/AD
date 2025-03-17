@@ -105,6 +105,7 @@ public:
             FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
     bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, has_light = false, emergency = false;
     bool initialized = false;
+    bool wait_for_green_flag = false;
     int pedestrian_count_thresh = 8;
 
     Eigen::Vector3d x_current;
@@ -130,7 +131,6 @@ public:
 
     // intersection variables
     Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
-    Eigen::Vector2d next_intersection_point = {1000.0, 1000.0};
 
     void receive_services() {
         while(true) {
@@ -196,10 +196,11 @@ public:
         utils.debug("start(): x=" + helper::d2str(x) + ", y=" + helper::d2str(y) + ", yaw=" + helper::d2str(yaw), 2);
         path_manager.call_waypoint_service(x, y, yaw, utils.tcp_client);
         destination = path_manager.state_refs.row(path_manager.state_refs.rows()-1).head(2);
-        utils.debug("initialize(): start: " + helper::d2str(x) + ", " + helper::d2str(y), 2);
-        utils.debug("initialize(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
+        utils.debug("INITIALIZE(): start: " + helper::d2str(x) + ", " + helper::d2str(y), 2);
+        utils.debug("INITIALIZE(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
 
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
+        path_manager.find_intersections(utils);
         mpc.reset_solver();
         initialized = true;
         return 1;
@@ -212,7 +213,6 @@ public:
         if (testing) {
             change_state(STATE::TESTING);
         } else {
-            // find_next_intersection(true);
             change_state(STATE::MOVING);
         }
         return 1;
@@ -388,7 +388,7 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         if(std::abs(yaw_error) > 45 * M_PI / 180) {
-            utils.debug("near_intersection(): FAILURE: yaw error too large: " + helper::d2str(yaw_error), 4);
+            utils.debug("NEAR_INTERSECTION(): FAILURE: yaw error too large: " + helper::d2str(yaw_error), 4);
             return false;
         }
 
@@ -414,95 +414,51 @@ public:
         }
         // exit(0);
         if (min_error_sq < 0.3 * 0.3) {
-            utils.debug("near_intersection(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
+            utils.debug("NEAR_INTERSECTION(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
             return true;
         } else {
-            utils.debug("near_intersection(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
+            utils.debug("NEAR_INTERSECTION(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
             return false;
         }
-    }
-    bool find_next_intersection(bool first = false) {
-        int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
-        double threshold = INTERSECTION_DISTANCE_THRESHOLD;
-        if (first) {
-            threshold = 0.0;
-        }
-        int next_intersection_idx = closest_idx + static_cast<int>(threshold * path_manager.density);
-        int limit = std::max(next_intersection_idx + static_cast<int>(30.0 * path_manager.density), static_cast<int>(path_manager.state_refs.rows() - 1));
-        while(true) {
-            if (path_manager.attribute_cmp(next_intersection_idx, path_manager.ATTRIBUTE::STOPLINE)) {
-                break;
-            }
-            if (next_intersection_idx >= limit) {
-                utils.debug("find_next_intersection(): FAILURE: no waypoint of attribute stopline found", 1);
-                return false;
-            }
-            next_intersection_idx++;
-        }
-        double closest_yaw = path_manager.state_refs(next_intersection_idx, 2);
-        double nearest_direction = Utility::nearest_direction(closest_yaw);
-        auto& INTERSECTIONS = (nearest_direction == 0) ? EAST_FACING_INTERSECTIONS :
-                                (nearest_direction == 1) ? NORTH_FACING_INTERSECTIONS :
-                                (nearest_direction == 2) ? WEST_FACING_INTERSECTIONS :
-                                                            SOUTH_FACING_INTERSECTIONS;
-        bool found = false;
-        double x = path_manager.state_refs(next_intersection_idx, 0);
-        double y = path_manager.state_refs(next_intersection_idx, 1);
-        for(auto& intersection : INTERSECTIONS) {
-            double dist_sq = std::pow(intersection[0] - x, 2) + std::pow(intersection[1] - y, 2);
-            if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
-                utils.debug("find_next_intersection(): found intersection at (" + helper::d2str(intersection[0]) + ", " + helper::d2str(intersection[1]) + ")", 1);
-                next_intersection_point = {intersection[0], intersection[1]};
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            utils.debug("find_next_intersection(): FAILURE: no intersection near (" + helper::d2str(x) + ", " + helper::d2str(y) + ")", 1);
-            return false;
-        }
-        return found;
     }
     bool intersection_reached() {
-        static double lookahead_dist = 0.15;
-        static int num_index = static_cast<int>(lookahead_dist * path_manager.density);
+        if (true) {
+            int idx = path_manager.intersection_index;
+            if (idx == path_manager.intersection_points.size()) {
+                return false;
+            }
+            if (idx > path_manager.intersection_points.size() || idx < 0) {
+                utils.debug("INTERSECTION_REACHED(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(path_manager.intersection_points.size()), 1);
+                stop_for(10*T);
+                exit(1);
+            }
+            auto& next_intersection_point = path_manager.intersection_points[idx];
+            double distance_to_next_intersection_sq = (x_current.head(2) - next_intersection_point.head(2)).squaredNorm();
+            if (distance_to_next_intersection_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
+                double yaw = x_current[2];
+                double yaw_error = Utility::compare_yaw(next_intersection_point[2], yaw);
+                if (yaw_error > 30 * M_PI / 180) {
+                    utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_point[2]) + ", error: " + helper::d2str(yaw_error), 2);
+                    return false;
+                }
+                utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) + "), intersection: (" + helper::d2str(next_intersection_point[0]) + ", " + helper::d2str(next_intersection_point[1]) + "), distance: " + helper::d2str(std::sqrt(distance_to_next_intersection_sq)) + ", index: " + std::to_string(path_manager.intersection_index), 2);
+                last_intersection_point = {x_current[0], x_current[1]};
+                path_manager.intersection_index++;
+                if (path_manager.intersection_index < path_manager.intersection_points.size()) {
+                    utils.debug("INTERSECTION_REACHED(): next intersection: (" + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][0]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][1]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][2]) + ")", 2);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
         if(lane && use_stopline) {
             if (utils.stopline > 0)
             {
                 utils.update_states(x_current);
                 update_mpc_states(x_current[0], x_current[1], x_current[2]);
-                // int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
-                // int num_index = static_cast<int>(0.15 * path_manager.density);
-                // for (int i = closest_idx; i < closest_idx + num_index; i++) {
-                //     if (i >= path_manager.state_refs.rows()) break;
-                //     if (path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::CROSSWALK) || path_manager.attribute_cmp(i, path_manager.ATTRIBUTE::DOTTED_CROSSWALK)) {
-                //         utils.debug("intersection_reached(): waypoint attribute is crosswalk, ignoring...", 2);
-                //         return false;
-                //     }
-                // }
-
-                // if(check_crosswalk() > 0) {
-                //     utils.debug("intersection_reached(): detected crosswalk, ignoring...", 2);
-                //     return false;
-                // }
 
                 bool found = false;
-                // lookahead_dist = 0.8;
-                // double lookbehind_dist = 0.3;
-                // num_index = static_cast<int>(lookahead_dist * path_manager.density);
-                // int lookbehind_index = static_cast<int>(lookbehind_dist * path_manager.density);
-                // for (int i = -lookbehind_index; i < num_index; i++) {
-                //     if (closest_idx + i >= path_manager.state_refs.rows()) {
-                //         utils.debug("intersection_reached(): closest idx + i = " + helper::d2str(closest_idx + i) + " exceeds path_manager.state_refs.rows(): " + helper::d2str(path_manager.state_refs.rows()), 2);
-                //         break;
-                //     }
-                //     if (closest_idx + i < 0) continue;
-                //     // ROS_INFO("checking index %d at (%.2f, %.2f)", closest_idx + i, path_manager.state_refs(closest_idx + i, 0), path_manager.state_refs(closest_idx + i, 1));
-                //     if(path_manager.attribute_cmp(closest_idx+i, path_manager.ATTRIBUTE::STOPLINE)) {
-                //         found = true;
-                //         break;
-                //     }
-                // }
                 if (near_intersection()) {
                     found = true;
                 }
@@ -511,14 +467,13 @@ public:
                     double &y = x_current[1];
                     double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
                     if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
-                        utils.debug("intersection_reached(): intersection detected, but distance (" + helper::d2str(std::sqrt(dist_sq)) + ") too close to previous intersection, ignoring...", 4);
+                        utils.debug("INTERSECTION_REACHED(): intersection detected, but distance (" + helper::d2str(std::sqrt(dist_sq)) + ") too close to previous intersection, ignoring...", 4);
                         return false;
                     }
-                    utils.debug("intersection_reached(): setting last intersection point to (" + helper::d2str(x) + ", " + helper::d2str(y) + ")", 2);
+                    utils.debug("INTERSECTION_REACHED(): setting last intersection point to (" + helper::d2str(x) + ", " + helper::d2str(y) + ")", 2);
                     last_intersection_point = {x, y};
-                    // find_next_intersection();                    
                 } else {
-                    // utils.debug("intersection_reached(): found false, ignoring...", 2);
+                    // utils.debug("INTERSECTION_REACHED(): found false, ignoring...", 2);
                     return false;
                 }
                 // std::cout << "DEBUG: returning true" << std::endl;
@@ -527,30 +482,6 @@ public:
                 }
                 return true;
             } else return false;
-        }
-        utils.update_states(x_current);
-        // utils.get_states(running_x, running_y, running_yaw);
-        update_mpc_states(x_current[0], x_current[1], x_current[2]);
-        int target_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
-        bool found = false;
-        for (int i = 0; i < num_index; i++) {
-            if (target_index + i >= path_manager.state_refs.rows()) break;
-            if(path_manager.attribute_cmp(target_index+i, path_manager.ATTRIBUTE::STOPLINE)) {
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            double x, y, yaw;
-            utils.get_states(x, y, yaw);
-            double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
-            if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
-                // ROS_INFO("intersection detected, but too close to previous intersection: %.3f, ignoring...", std::sqrt(dist_sq));
-                return false;
-            }
-            last_intersection_point = {x, y};
-            utils.debug("intersection_reached(): not using lane, stopline waypoint reached.", 2);
-            return true;
         }
         return false;
     }
@@ -576,7 +507,6 @@ public:
         return false;
     }
     void check_light() {
-        static bool wait_for_green_flag = false;
         if (stopsign_flag == OBJECT::NONE) wait_for_green_flag = false;
         utils.update_states(x_current);
         double &x = x_current[0];
@@ -798,7 +728,7 @@ public:
     double check_highway() {
         utils.update_states(x_current);
         update_mpc_states(x_current[0], x_current[1], x_current[2]);
-        int closest_idx = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1);
+        int closest_idx = path_manager.find_closest_waypoint(x_current);
         return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
     }
     void check_emergency_stop() {
@@ -868,17 +798,16 @@ public:
                 utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
                 return 0;
             }
-            utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold), 2);
             double x,y;
             utils.get_states(x, y, yaw);
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
             utils.update_states(x_current);
-            utils.debug("SIGN_RELOC(" + sign_type + "): old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ")", 2);
+            utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ")", 2);
             path_manager.reset_target_waypoint_index(x_current);
             mpc.reset_solver();
             return 1;
         } else {
-            utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: error too large: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + ")", 2);
+            utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: error too large: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1])  + "), closest: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][2]) + ")", 2);
             return 0;
         }
     }
@@ -1039,30 +968,30 @@ public:
                 }
                 rate->sleep();
             }
-            utils.debug("wait_for_green(): light turned green, proceeding...", 2);
+            utils.debug("WAIT_FOR_GREEN(): light turned green, proceeding...", 2);
             if (utils.useEkf) {
                 utils.x0 = total_x / n - utils.odomX;
                 utils.y0 = total_y / n - utils.odomY;
             }
             return;
         } else if (true) {
-            utils.debug("wait_for_green(): red light detected, waiting for " + helper::d2str(stop_duration * 2) + "s or until light turns green", 2);
+            utils.debug("WAIT_FOR_GREEN(): red light detected, waiting for " + helper::d2str(stop_duration * 2) + "s or until light turns green", 2);
             auto expiring_time = ros::Time::now() + ros::Duration(3.0);
             int green_count = 0;
             while (true) {
                 if (ros::Time::now() > expiring_time) {
-                    utils.debug("wait_for_green(): timer expired, proceeding...", 2);
+                    utils.debug("WAIT_FOR_GREEN(): timer expired, proceeding...", 2);
                     return;
                 }
                 int sign_index = utils.object_index(OBJECT::GREENLIGHT);
                 if (sign_index >= 0) {
-                    utils.debug("wait_for_green(): green light detected, proceeding...", 2);
+                    utils.debug("WAIT_FOR_GREEN(): green light detected, proceeding...", 2);
                     green_count++;
                     if (green_count > 5) return;
                 }
                 if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
                 if (sign_index >= 0) {
-                    utils.debug("wait_for_green(): yellow light detected, proceeding...", 2);
+                    utils.debug("WAIT_FOR_GREEN(): yellow light detected, proceeding...", 2);
                     green_count++;
                     if (green_count > 5) return;
                 }
@@ -1070,7 +999,7 @@ public:
             }
             return;
         } else {
-            utils.debug("wait_for_green(): light detected, but in simulation, proceeding ", 2);
+            utils.debug("WAIT_FOR_GREEN(): light detected, but in simulation, proceeding ", 2);
             // stop_for(stop_duration);
         }
     }
@@ -1275,6 +1204,7 @@ public:
         utils.debug("goto_command_callback(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
 
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
+        path_manager.find_intersections(utils);
         path_manager.overtake_end_index = 0;
         mpc.reset_solver();
         initialized = true;
@@ -1302,8 +1232,9 @@ public:
         // }
         utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
         utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
-    
+        
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1); // search from the beginning to the end
+        path_manager.find_intersections(utils);
         path_manager.overtake_end_index = 0;
         mpc.reset_solver();
         initialized = true;
@@ -1348,7 +1279,6 @@ void StateMachine::solve() {
     }
     int N = std::min(Eigen::Index(path_manager.N), path_manager.state_refs.rows() - idx);
     if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
-        
         Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
         Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
         // x_current(2) = Utility::yaw_mod(x_current(2));
@@ -1374,7 +1304,7 @@ void StateMachine::publish_commands() {
     // steer = 0;
     // speed = 0.32;
     
-    std::cout << "speed: " << speed*100 << ", steer:" << steer << std::endl;
+    // std::cout << "speed: " << speed*100 << ", steer:" << steer << std::endl;
 
     utils.publish_cmd_vel(steer, speed);
 }
@@ -1607,7 +1537,7 @@ void StateMachine::run() {
                 parking_maneuver_hardcode(right_park, true, 1/T_park);
             }
             utils.update_states(x_current);
-            path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows() - 1);
+            path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current);
             std::cout << "exiting_park(): target waypoint index: " << path_manager.target_waypoint_index << ", at (" << path_manager.state_refs(path_manager.target_waypoint_index, 0) << ", " << path_manager.state_refs(path_manager.target_waypoint_index, 1) << ")" << std::endl;
             std::cout << "exiting_park(): closest waypoint index: " << path_manager.closest_waypoint_index << ", at (" << path_manager.state_refs(path_manager.closest_waypoint_index, 0) << ", " << path_manager.state_refs(path_manager.closest_waypoint_index, 1) << ")" << std::endl;
             std::cout << "exiting_park(): current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
