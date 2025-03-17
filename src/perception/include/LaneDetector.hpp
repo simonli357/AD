@@ -163,9 +163,9 @@ class LaneDetector {
 			// cv::waitKey(1);
 
 			find_lanes(ipm_processed); // Get the center indices
-			bool success = line_fit(ipm_processed);
+			if(!line_fit(ipm_processed)) return;
 
-			auto wpts = get_waypoints(0, left_fit, right_fit, 40, 0.032);
+			auto wpts = get_waypoints(left_fit, right_fit, 40, 0.032);
 			// for (size_t i = 0; i + 6 <= wpts.size(); i += 3) {
 			// 		float x1 = wpts[i];
 			// 		float y1 = wpts[i + 1];
@@ -179,9 +179,9 @@ class LaneDetector {
 			// 		std::cout << "Distance between waypoint " << i / 3 << " and " << (i / 3 + 1)
 			// 							<< " = " << distance << " meters" << std::endl;
 			// }
-			// for (int i = 0; i < wpts.size() / 3; i += 3) {
-			// 	std::cout << i << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
-			// }
+			for (int i = 0; i < wpts.size(); i += 3) {
+				std::cout << i/3 << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
+			}
 
 			waypoints_msg.data.clear();
 			waypoints_msg.layout.dim.clear();
@@ -237,28 +237,39 @@ class LaneDetector {
 			return derivative;
 	}
 
-	std::vector<float> get_waypoints(double start_y, const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
+	std::vector<float> get_waypoints(const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
 		world_waypoints.reserve(num_waypoints);
+		std::cout << "get_waypoints" << std::endl;
 
-		double current_y_meter = start_y;
-		// 1. Compute world coordinates from pixel samples.
-		for (int i = 0; i < num_waypoints; ++i) {
-			// Sample the y coordinate in pixel space.
-			// double y_pixel = start_y + i * density / METER_PER_PIXEL_Y;
-			double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+		// add points from car center to first point seen in the image
+		double current_y_meter = pixel_to_meter_y_intercept; // where the image starts
+		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+		double left_x = evaluate_poly(y_pixel, left_fit);
+		double right_x = evaluate_poly(y_pixel, right_fit);
+		double center_x = 0.5 * (left_x + right_x);
+		double world_x = (320 - center_x) * METER_PER_PIXEL_X;
+		double car_center_to_first_waypoint = current_y_meter + VehicleConstants::REALSENSE_TF[0];
+		int num_unseen_waypoints = car_center_to_first_waypoint / density;
+		double slope = world_x / (pixel_to_meter_y_intercept + VehicleConstants::REALSENSE_TF[0]);
+		for (int i = 0; i < num_unseen_waypoints; ++i) {
+    	float y = -VehicleConstants::REALSENSE_TF[0] + i * density;
+			float x = slope * i * density;
+			world_waypoints.push_back(cv::Point2f(y, x));
+		}
 
-			// Evaluate the left and right lane polynomials.
-			double left_x = evaluate_poly(y_pixel, left_fit);
-			double right_x = evaluate_poly(y_pixel, right_fit);
-			double center_x = 0.5 * (left_x + right_x);
+		// add points from first point seen in the image to the last point seen in the image
+		current_y_meter = pixel_to_meter_y_intercept;
+		std::cout << "done adding unseen waypoints, num_unseen_waypoints: " << num_unseen_waypoints << ", current_y_meter: " << current_y_meter << std::endl;
+		for (int i = 0; i < num_waypoints - num_unseen_waypoints; ++i) {
+			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
 
-			// Convert pixel coordinates to world coordinates.
-			double world_x = (320 - center_x) * METER_PER_PIXEL_X;
-			// double world_y = y_pixel * METER_PER_PIXEL_Y;
-			double world_y = current_y_meter;
+			left_x = evaluate_poly(y_pixel, left_fit);
+			right_x = evaluate_poly(y_pixel, right_fit);
+			center_x = 0.5 * (left_x + right_x);
+			world_x = (320 - center_x) * METER_PER_PIXEL_X;
 
-			world_waypoints.push_back(cv::Point2f(static_cast<float>(world_y), static_cast<float>(world_x))); // body-fixed frame
+			world_waypoints.push_back(cv::Point2f(static_cast<float>(current_y_meter), static_cast<float>(world_x))); // body-fixed frame
 
 			// Compute derivatives dx/dy for both lanes at this y
 			double left_dxdy = get_derivative(y_pixel, left_fit);
@@ -272,6 +283,13 @@ class LaneDetector {
 			double dy = density / std::sqrt(1.0 + std::pow(center_dxdy_world, 2.0));
 			// Advance current y (in meters) by this amount
 			current_y_meter += dy;
+		}
+
+		std::cout << "done adding seen waypoints" << std::endl;
+
+		// add VehicleConstants::REALSENSE_TF[0] to x values so that origin is center of car instead of camera
+		for (auto &waypoint : world_waypoints) {
+			waypoint.x += VehicleConstants::REALSENSE_TF[0];
 		}
 
 		// 2. Compute yaw angles between successive waypoints.
@@ -859,7 +877,7 @@ class LaneDetector {
 		for (int i = 0; i < waypoints.size(); i += 3) {
 			int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
 			// int y = IMG_HEIGHT - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
-			int y = IMG_HEIGHT - static_cast<int>(meter_to_pixel_y(waypoints[i]));
+			int y = IMG_HEIGHT - static_cast<int>(meter_to_pixel_y(waypoints[i] - VehicleConstants::REALSENSE_TF[0]));
 			cv::circle(result, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
 		}
 

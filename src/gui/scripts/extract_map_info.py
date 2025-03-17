@@ -70,7 +70,6 @@ west_facing_lane_centers = [
 ]
 
 south_facing_intersections = [
-    [16.075438 - ofs6, 11.684077 - hsw, "Intersection", "SOUTH"],
     [15.46 - ofs6, 4.58 - hsw, "Intersection", "SOUTH"],
     [15.165376 + ofs6, 1.4972 - hsw, "Intersection", "SOUTH"],
     [4.9156 - ofs6, 4.581664 - hsw, "Intersection", "SOUTH"],
@@ -79,7 +78,12 @@ south_facing_intersections = [
     [2.67 - ofs6, 4.584 - hsw, "Intersection", "SOUTH"],
     [0.50684 - ofs6, 4.5849 - hsw, "Intersection", "SOUTH"],
     [0.50684 - ofs6, 7.470675 - hsw, "Intersection", "SOUTH"],
-    [0.50684 - ofs6, 10.584 - hsw, "Intersection", "SOUTH"]
+    [0.50684 - ofs6, 10.584 - hsw, "Intersection", "SOUTH"],
+    # roundabout intersections
+    [16.075438 - ofs6, 11.684077 - hsw, "Intersection", "SOUTH"],
+    # crosswalk intersections
+    [15.3, 3, "Intersection", "SOUTH"],
+    [4.75, 7.92, "Intersection", "SOUTH"]
 ]
 
 north_facing_intersections = [
@@ -91,7 +95,13 @@ north_facing_intersections = [
     [4.9887 + ofs6, 5.958 + hsw, "Intersection", "NORTH"],
     [4.9887 + ofs6, 3.07 + hsw, "Intersection", "NORTH"],
     [6.77784 - ofs6, 3.44261 + hsw, "Intersection", "NORTH"],
-    [16.104 + ofs6, 9.5053 + hsw, "Intersection", "NORTH"]
+    # roundabout intersections
+    [16.104 + ofs6, 9.5053 + hsw, "Intersection", "NORTH"],
+    # crosswalk intersections
+    # {{17.11, 2.367}},
+    #     {{5.15, 7.38}},
+    [17.11, 2.367, "Intersection", "NORTH"],
+    [5.15, 7.38, "Intersection", "NORTH"]
 ]
 
 west_facing_intersections = [
@@ -104,7 +114,13 @@ west_facing_intersections = [
     [1.296 - hsw, 6.754754 + ofs6, "Intersection", "WEST"],
     [7.568552 - hsw, 3.8674 + ofs6, "Intersection", "WEST"],
     [3.45624 - hsw, 0.58153 + ofs6, "Intersection", "WEST"],
-    [16.2485 - hsw, 3.8678 + ofs6, "Intersection", "WEST"]
+    # roundabout intersections
+    [16.2485 - hsw, 3.8678 + ofs6, "Intersection", "WEST"],
+    # crosswalk intersections
+    # {{9.5, 4}},
+    #     {{1.74, 10}},
+    [9.5, 4, "Intersection", "WEST"],
+    [1.74, 10, "Intersection", "WEST"]
 ]
 
 east_facing_intersections = [
@@ -116,7 +132,13 @@ east_facing_intersections = [
     # [6.0735 + hsw, 0.5949 + ofs6, "Intersection", "EAST"],
     [4.194644 + hsw, 0.503836 - ofs6, "Intersection", "EAST"],
     [14.7386 + hsw, 1.07135 - ofs6, "Intersection", "EAST"],
-    [14.983 + hsw, 10.5538 - ofs6, "Intersection", "EAST"]
+    # roundabout intersections
+    [14.983 + hsw, 10.5538 - ofs6, "Intersection", "EAST"],
+    # crosswalk intersections
+    # {{8.2, 0.92}},
+    #     {{1.22, 9.62}},
+    [8.2, 0.92, "Intersection", "EAST"],
+    [1.22, 9.62, "Intersection", "EAST"]
 ]
 
 south_facing_signs = [
@@ -307,4 +329,5 @@ for node_number in destinations:
 # Create DataFrame and save it as a CSV
 df = pd.DataFrame(data, columns=['X', 'Y', 'Type', 'Orientation'])
 df.to_csv(os.path.join(current_path, 'assets', 'coordinates_with_context.csv'), index=False)
+print("saved at: ", os.path.join(current_path, 'assets', 'coordinates_with_context.csv'))
 # df.to_csv('assets/coordinates_with_context.csv', index=False)
