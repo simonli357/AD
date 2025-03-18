@@ -608,7 +608,7 @@ public:
             return ALL_HIGHWAYEXITS;
         } else if (obj == OBJECT::PARK) {
             o_string = "PARKING SIGNS";
-            return PARKING_SIGN_POSES;
+            return PARKING_SIGN_POSES1;
         }
         o_string = "UNKNOWN";
         return EMPTY;
@@ -678,7 +678,7 @@ public:
                                                                     "HIGHWAYEXITS UNKNOWN";
             return objects;
         } else if (obj == OBJECT::PARK) {
-            const auto& objects = (nearestDirectionIndex == 0) ? PARKING_SIGN_POSES :
+            const auto& objects = (nearestDirectionIndex == 0) ? PARKING_SIGN_POSES1 :
                                                                     EMPTY;
             o_string = "PARKING SIGNS";
             return objects;

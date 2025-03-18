@@ -1281,11 +1281,11 @@ void StateMachine::solve() {
     if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
         Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
         Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
-        // x_current(2) = Utility::yaw_mod(x_current(2));
-        // auto state_refs = utils.waypoints_to_world(utils.lane_waypoints, x_current);
-        // state_refs = PathManager::smooth_yaw_angles(state_refs);
-        // int status = mpc.solve(state_refs, input_refs_block, x_current);
-        int status = mpc.solve(state_refs_block, input_refs_block, x_current);
+        x_current(2) = Utility::yaw_mod(x_current(2));
+        auto state_refs = utils.waypoints_to_world(utils.lane_waypoints, x_current);
+        state_refs = PathManager::smooth_yaw_angles(state_refs);
+        int status = mpc.solve(state_refs, input_refs_block, x_current);
+        // int status = mpc.solve(state_refs_block, input_refs_block, x_current);
     } else {
         ROS_WARN("Block indices are out of bounds, skipping solve.");
         ROS_INFO("state_refs rows: %ld, cols: %ld", path_manager.state_refs.rows(), path_manager.state_refs.cols());
@@ -1359,8 +1359,8 @@ void StateMachine::run() {
                 check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {
-                    auto x1 = PARKING_SIGN_POSES[0][0];
-                    auto y1 = PARKING_SIGN_POSES[0][1];
+                    auto x1 = PARKING_SIGN_POSES1[0][0];
+                    auto y1 = PARKING_SIGN_POSES1[0][1];
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
                     double detected_dist = utils.object_distance(park_index);
                     double abs_error = std::abs(detected_dist - distance_to_parking_spot);
@@ -1370,7 +1370,13 @@ void StateMachine::run() {
                         utils.debug("parking sign detected, proceeding to parking...", 3);
                         if (sign_relocalize) {
                             auto park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
-                            int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING", 20.0); // relocalize to parking sign
+                            auto empirical_pose1 = PARKING_SIGN_POSES1[0];
+                            double dist_to_empirical_pose1 = std::pow((park_sign_pose[0] - empirical_pose1[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose1[1]), 2);
+                            auto empirical_pose2 = PARKING_SIGN_POSES2[0];
+                            double dist_to_empirical_pose2 = std::pow((park_sign_pose[0] - empirical_pose2[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose2[1]), 2);
+                            auto& empirical_pose = dist_to_empirical_pose1 < dist_to_empirical_pose2 ? PARKING_SIGN_POSES1 : PARKING_SIGN_POSES2;
+                            // int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING", 20.0); // relocalize to parking sign
+                            int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING"); // relocalize to parking sign
                         }
                         change_state(STATE::PARKING);
                         park_count++;

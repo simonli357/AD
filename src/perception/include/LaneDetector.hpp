@@ -244,7 +244,7 @@ class LaneDetector {
 
 		// add points from car center to first point seen in the image
 		double current_y_meter = pixel_to_meter_y_intercept; // where the image starts
-		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
 		double left_x = evaluate_poly(y_pixel, left_fit);
 		double right_x = evaluate_poly(y_pixel, right_fit);
 		double center_x = 0.5 * (left_x + right_x);
@@ -262,7 +262,7 @@ class LaneDetector {
 		current_y_meter = pixel_to_meter_y_intercept;
 		std::cout << "done adding unseen waypoints, num_unseen_waypoints: " << num_unseen_waypoints << ", current_y_meter: " << current_y_meter << std::endl;
 		for (int i = 0; i < num_waypoints - num_unseen_waypoints; ++i) {
-			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
 
 			left_x = evaluate_poly(y_pixel, left_fit);
 			right_x = evaluate_poly(y_pixel, right_fit);

@@ -331,9 +331,12 @@ namespace VehicleConstants {
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;
     static constexpr double park_ofs2 = 0.05325;
-    static const std::vector<std::vector<double>> PARKING_SIGN_POSES = {{
+    static const std::vector<std::vector<double>> PARKING_SIGN_POSES1 = {{
         {{8.99-park_ofs2, 0.703367-park_ofs1_right, 0}}, 
         // {{8.99-park_ofs2, 1.1522+park_ofs1_left, 0}}
+    }};
+    static const std::vector<std::vector<double>> PARKING_SIGN_POSES2 = {{
+        {{8.99-park_ofs2, 1.1522+park_ofs1_left, 0}}
     }};
     
     // ROUNDABOUT COORDINATES
