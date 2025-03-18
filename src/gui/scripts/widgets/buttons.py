@@ -13,6 +13,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.main_window = self.parent()
         self.server = self.main_window.server
         self.started = False
+        self.recording = False
         self.start_time = None
         self.accumulated_centiseconds = 0
         self.timer_label = QLabel(' 00:00:<font size="1">00</font>')
@@ -21,21 +22,6 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.time_timer.timeout.connect(self.update_stopwatch)
         self.setup_ui()
         self.connect_signals()
-
-    def update_stopwatch(self) -> None:
-        if self.start_time is None:
-            return
-        current_time = time.time()
-        elapsed_seconds = current_time - self.start_time
-        total_centiseconds = int(elapsed_seconds * 100) + self.accumulated_centiseconds
-        minutes = (total_centiseconds // 6000) % 60
-        seconds = (total_centiseconds // 100) % 60
-        centiseconds = total_centiseconds % 100
-        # self.centiseconds += 1
-        # minutes = (self.centiseconds // 6000) % 60
-        # seconds = (self.centiseconds // 100) % 60
-        # centiseconds = self.centiseconds % 100
-        self.timer_label.setText(f' {minutes:02d}:{seconds:02d}:<font size="1">{centiseconds:02d}</font>')
 
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
@@ -46,16 +32,19 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.buttons = deque()
 
         self.start_btn = QtWidgets.QPushButton("")
-        self.stop_btn = QtWidgets.QPushButton("")
+        self.reset_timer_btn = QtWidgets.QPushButton("")
         self.goto_btn = QtWidgets.QPushButton("󰓾")
+        self.record_btn = QtWidgets.QPushButton("󰑋")
 
         self.buttons.append(self.start_btn)
-        self.buttons.append(self.stop_btn)
+        self.buttons.append(self.reset_timer_btn)
         self.buttons.append(self.goto_btn)
+        self.buttons.append(self.record_btn)
 
         self.start_btn.setToolTip("Start/Pause/Resume")
-        self.stop_btn.setToolTip("Stop")
+        self.reset_timer_btn.setToolTip("Reset Timer")
         self.goto_btn.setToolTip("Go To")
+        self.record_btn.setToolTip("Record")
 
         for btn in self.buttons:
             self.layout.addWidget(btn, 1)
@@ -92,31 +81,67 @@ class ButtonsWidget(QtWidgets.QWidget):
             }
         """)
 
-        self.update_button_style(self.start_btn, self.started)
+        self.update_stop_button_style(self.start_btn, self.started)
+        self.update_recording_button_style(self.record_btn, self.recording)
 
-    def update_button_style(self, button, is_active):
+    def connect_signals(self) -> None:
+        self.reset_timer_btn.clicked.connect(self.handle_stop_click)
+        self.start_btn.clicked.connect(self.handle_start_click)
+        self.goto_btn.clicked.connect(self.handle_goto_click)
+        self.record_btn.clicked.connect(self.handle_record_click)
+
+    def update_stop_button_style(self, button, is_active):
         """Update button color based on boolean state"""
-        color = "#FF0000" if is_active else "rgba(0, 255, 0, 1.0);"  # Light green/red
+        color = "rgba(255, 0, 0, 0.3)" if is_active else "rgba(0, 255, 0, 0.3)"
+        hover_color = "rgba(255, 0, 0, 0.5)" if is_active else "rgba(0, 255, 0, 0.5)"
+        font_color = "#ff0000" if is_active else "#00ff00"
         button.setStyleSheet(f"""
             QPushButton {{
+                color: {font_color};
                 background-color: {color};
             }}
             QPushButton:hover {{
-                background-color: #9933ff;
+                background-color: {hover_color};
             }}
         """)
 
-    def connect_signals(self) -> None:
-        self.stop_btn.clicked.connect(self.handle_stop_click)
-        self.start_btn.clicked.connect(self.handle_start_click)
-        self.goto_btn.clicked.connect(self.handle_goto_click)
+    def update_recording_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        font_color = "#ff0000" if is_active else "#00ff00"
+        button.setStyleSheet(f"""
+            QPushButton {{
+                font-size: 42px;
+                padding: 2px 36px 3px 32px;
+                color: {font_color};
+            }}
+            QPushButton:hover {{
+                font-size: 42px;
+                padding: 2px 36px 3px 32px;
+                background-color: rgba(255, 255, 255, 0.3);
+            }}
+        """)
+
+    def update_stopwatch(self) -> None:
+        if self.start_time is None:
+            return
+        current_time = time.time()
+        elapsed_seconds = current_time - self.start_time
+        total_centiseconds = int(elapsed_seconds * 100) + self.accumulated_centiseconds
+        minutes = (total_centiseconds // 6000) % 60
+        seconds = (total_centiseconds // 100) % 60
+        centiseconds = total_centiseconds % 100
+        # self.centiseconds += 1
+        # minutes = (self.centiseconds // 6000) % 60
+        # seconds = (self.centiseconds // 100) % 60
+        # centiseconds = self.centiseconds % 100
+        self.timer_label.setText(f' {minutes:02d}:{seconds:02d}:<font size="1">{centiseconds:02d}</font>')
 
     def toggle_start_icon(self) -> None:
         if self.started:
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
-        self.update_button_style(self.start_btn, self.started)
+        self.update_stop_button_style(self.start_btn, self.started)
 
     def call_start_service(self, start) -> None:
         try:
@@ -188,3 +213,15 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.call_goto_service(self.main_window.map_widget.cursor_coords)
         else:
             print("Not a valid destination")
+
+    def handle_record_click(self) -> None:
+        if self.recording:
+            print("Stopping recording")
+            self.recording = False
+        else:
+            print("Starting recording")
+            self.recording = True
+        self.update_recording_button_style(self.record_btn, self.recording)
+
+    def save_frame(self, frame) -> None:
+        pass

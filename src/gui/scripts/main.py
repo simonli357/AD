@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
+        self.comm.camera_frame_signal.connect(self.buttons_widget.save_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.lane_signal.connect(self.cam_widget.lane_callback)
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
