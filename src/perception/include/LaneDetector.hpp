@@ -207,7 +207,8 @@ class LaneDetector {
 				cv::waitKey(1);
 			}
 		} else {
-			double center = old_lane_detector->optimized_histogram(image, showflag, printflag);
+			preprocess(image, processed_image);
+			double center = old_lane_detector->optimized_histogram(processed_image, showflag, printflag);
 			lane_msg.center = center;
 			lane_msg.stopline = old_lane_detector->stopline;
 			lane_msg.stopline_dist = old_lane_detector->stopline_dist;
