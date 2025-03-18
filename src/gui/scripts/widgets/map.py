@@ -530,8 +530,9 @@ class MapWidget(QtWidgets.QWidget):
                 self.cursor_coords_label.setText(f" ({real_x:.2f}, {real_y:.2f})")
                 self.cursor_coords_label.move(pos.x() - self.cursor_coords_label.width() / 2, pos.y() - 60)
                 self.cursor_coords_label.show()
-            else:
-                self.cursor_coords_label.hide()
+            return False
+        elif event.type() == QtCore.QEvent.Leave:
+            self.cursor_coords_label.hide()
             return False
         return super().eventFilter(source, event)
 
