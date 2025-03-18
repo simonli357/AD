@@ -24,10 +24,6 @@ class MapWidget(QtWidgets.QWidget):
         self.cursor_x = 3.86
         self.cursor_y = 3.62
 
-        self.position_label = QLabel('Position: (x: 0.0, y: 0.0, yaw: 0.0, z: 0.0)')
-        self.cursor_label = QLabel('Cursor: (x: 0.0, y: 0.0, yaw: 0.0)')
-        self.speed_label = QLabel('Speed: 0.0 m/s')
-
         self.show_signs = False
         self.show_lanes = False
         self.show_cars = False
@@ -131,7 +127,20 @@ class MapWidget(QtWidgets.QWidget):
         # Graphics View setup
         self.graphics_view = CustomGraphicsView(self)
         self.layout.addWidget(self.graphics_view)
-        self.graphics_view.installEventFilter(self)
+        self.graphics_view.viewport().installEventFilter(self)
+        self.graphics_view.setMouseTracking(True)
+        self.graphics_view.viewport().setMouseTracking(True)
+
+        # Cursor pos label
+        self.cursor_coords_label = QLabel(self.graphics_view)
+        self.cursor_coords_label.setStyleSheet("""
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 0px 20px 0px 20px;
+            color: #00ff00;
+            font-size: 24px;
+        """)
+        self.cursor_coords_label.hide()
+        self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
 
         # Scene setup
         self.scene = QtWidgets.QGraphicsScene(self)
@@ -292,9 +301,7 @@ class MapWidget(QtWidgets.QWidget):
             y = self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
-            self.position_label.setText(f'Position: (x: {x:.2f}, y: {y:.2f}, yaw: {(yaw / np.pi * 180):.2f}, z: {z:.2f})')
             speed = self.detected_data[0, self.road_msg_dict['speed']]
-            self.speed_label.setText(f'Speed: {speed:.2f} m/s')
             self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
             self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
             self.main_window.meter_widget.set_speed(speed * 100)
@@ -511,6 +518,21 @@ class MapWidget(QtWidgets.QWidget):
             self.graphics_view.scale(factor, factor)
             self.current_zoom = new_zoom
             return True
+        elif event.type() == QtCore.QEvent.MouseMove:
+            pos = event.pos()
+            scene_pos = self.graphics_view.mapToScene(pos)
+            x_scene = scene_pos.x()
+            y_scene = scene_pos.y()
+
+            if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
+                real_x = scene_pos.x() * self.real_x_per_pixel
+                real_y = self.image_height_real - (scene_pos.y() * self.real_y_per_pixel)
+                self.cursor_coords_label.setText(f" ({real_x:.2f}, {real_y:.2f})")
+                self.cursor_coords_label.move(pos.x() - self.cursor_coords_label.width() / 2, pos.y() - 60)
+                self.cursor_coords_label.show()
+            else:
+                self.cursor_coords_label.hide()
+            return False
         return super().eventFilter(source, event)
 
     def mousePressEvent(self, event) -> None:
