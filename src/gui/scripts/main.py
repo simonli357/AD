@@ -9,7 +9,7 @@ import signal
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
 
 from widgets.options import OptionsWidget
@@ -259,6 +259,9 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
     app = QApplication(sys.argv)
 
     server = Server()

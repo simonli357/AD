@@ -180,6 +180,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
+                    self.main_window.map_widget.update_map_display()
                     return
                 retries += 1
                 time.sleep(0.1)

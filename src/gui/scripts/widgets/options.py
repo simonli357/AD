@@ -20,7 +20,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setAlignment(QtCore.Qt.AlignTop)
+        self.layout.setAlignment(QtCore.Qt.AlignCenter)
         self.buttons = deque()
 
         # Create buttons
@@ -142,36 +142,45 @@ class OptionsWidget(QtWidgets.QWidget):
     def handle_sign_btn_click(self) -> None:
         self.map_widget.show_signs = not self.map_widget.show_signs
         self.update_button_style(self.toggle_sign_btn, self.map_widget.show_signs)
+        self.map_widget.update_map_display()
 
     def handle_lanes_btn_click(self) -> None:
         self.map_widget.show_lanes = not self.map_widget.show_lanes
         self.update_button_style(self.toggle_lanes_btn, self.map_widget.show_lanes)
+        self.map_widget.update_map_display()
 
     def handle_cars_btn_click(self) -> None:
         self.map_widget.show_cars = not self.map_widget.show_cars
         self.update_button_style(self.toggle_cars_btn, self.map_widget.show_cars)
+        self.map_widget.update_map_display()
 
     def handle_destinations_btn_click(self) -> None:
         self.map_widget.show_destinations = not self.map_widget.show_destinations
         self.update_button_style(self.toggle_destinations_btn, self.map_widget.show_destinations)
+        self.map_widget.update_map_display()
 
     def handle_path_btn_click(self) -> None:
         self.map_widget.show_path = not self.map_widget.show_path
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
+        self.map_widget.update_map_display()
 
     def handle_gt_btn_click(self) -> None:
         self.map_widget.show_gt = not self.map_widget.show_gt
         self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
+        self.map_widget.update_map_display()
 
     def handle_depth_btn_click(self) -> None:
         self.cam_widget.show_depth = not self.cam_widget.show_depth
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
+        self.map_widget.update_map_display()
 
     def handle_states_btn_click(self) -> None:
         self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)
+        self.map_widget.update_map_display()
 
     def handle_yaw_btn_click(self) -> None:
         self.call_set_states_service()
+        self.map_widget.update_map_display()
 
     def handle_save_path_btn_click(self) -> None:
         path = os.path.dirname(os.path.abspath(__file__))

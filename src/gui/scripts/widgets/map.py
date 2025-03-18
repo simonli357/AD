@@ -38,6 +38,8 @@ class MapWidget(QtWidgets.QWidget):
         self.attributes_np = None
         self.sign_size = 20
 
+        self.cars_drawn = False
+
         self.road_msg_length = 7
         self.road_msg_dict = {
             'type': 0,
@@ -77,6 +79,9 @@ class MapWidget(QtWidgets.QWidget):
         self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_red.png')))
         self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
 
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.car_icon_path = os.path.join(current_dir, 'assets', 'car_top.png')
+
         self.object_dict = {
             0: "Oneway",
             1: "Highway Entrance",
@@ -101,19 +106,22 @@ class MapWidget(QtWidgets.QWidget):
         self.setup_ui()
 
         # Map configuration
-        self.scale_factor = 1.39
+        self.original_map_size = (800, 533)
         self.image_width_real = 20.696
         self.image_height_real = 13.786
-        self.image_width = int(800 * self.scale_factor)
-        self.image_height = int(533 * self.scale_factor)
+
+        self.image_width = 800
+        self.image_height = 533
+        self.real_x_per_pixel = self.image_width_real / self.image_width
+        self.real_y_per_pixel = self.image_height_real / self.image_height
 
         # Initialize map image
         self.load_map_image()
 
         # Timer for updates
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.update_map_display)
-        self.timer.start(100)
+        self.realtime_timer = QtCore.QTimer(self)
+        self.realtime_timer.timeout.connect(self.update_detected_objects)
+        self.realtime_timer.start(100)
 
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -132,20 +140,32 @@ class MapWidget(QtWidgets.QWidget):
         self.scene.addItem(self.map_item)
 
     def load_map_image(self) -> None:
+        self.image_width = max(100, self.width())
+        self.image_height = max(100, self.height())
+        self.real_x_per_pixel = self.image_width_real / self.image_width
+        self.real_y_per_pixel = self.image_height_real / self.image_height
         map_image = cv2.imread(os.path.join(self.assets_dir, 'map1.png'))
         self.map_image = cv2.resize(map_image, (self.image_width, self.image_height))
+        self.empty_map_image = self.map_image.copy()
+        self.scene.setSceneRect(0, 0, self.image_width, self.image_height)
         self.update_map_display()
 
-    def update_map_display(self) -> None:
-        if hasattr(self, 'map_image'):
-            display_image = self.map_image.copy()
+    def resizeEvent(self, event):
+        self.load_map_image()
+        super().resizeEvent(event)
 
+    def update_map_display(self) -> None:
+        if hasattr(self, 'map_image') and hasattr(self, 'empty_map_image'):
+            display_image = self.empty_map_image.copy()
             if self.show_path:
                 display_image = self.illustrate_path(display_image)
-
             self.draw_objects(display_image)
-            self.draw_detected_objects(display_image)
+            self.map_image = display_image
 
+    def update_detected_objects(self) -> None:
+        if hasattr(self, 'map_image'):
+            display_image = self.map_image.copy()
+            self.draw_detected_objects(display_image)
             display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)
             height, width, channel = display_image.shape
             step = channel * width
@@ -202,9 +222,9 @@ class MapWidget(QtWidgets.QWidget):
             #     color = ATTRIBUTES["stopline"]
             # else:
             #     color = (0, 0, 0)
-
-            cv2.circle(image_copy, (int(self.state_refs_np[0, i] / 20.696 * image.shape[1]),
-                                    int((13.786 - self.state_refs_np[1, i]) / 13.786 * image.shape[0])),
+            cv2.circle(image_copy,
+                       (int(self.state_refs_np[0, i] / self.image_width_real * self.image_width),
+                        int((self.image_height_real - self.state_refs_np[1, i]) / self.image_height_real * self.image_height)),
                        radius=radius, color=color, thickness=-1)
 
         # Add legend to the image
@@ -227,10 +247,11 @@ class MapWidget(QtWidgets.QWidget):
     def draw_objects(self, image):
         if self.show_gt:
             for index, row in self.data.iterrows():
-                x, y, entity_type, orientation = row['X'], row['Y'], row['Type'], row['Orientation']
+                entity_type, orientation = row['Type'], row['Orientation']
 
-                pixel_x = int(x * (image.shape[1] / 20.696))
-                pixel_y = int((13.786 - y) * (image.shape[0] / 13.786))
+                pixel_x = int(row['X'] / self.image_width_real * self.image_width)
+                pixel_y = int((self.image_height_real - row['Y']) / self.image_height_real * self.image_height)
+
                 # orientation = 2 * np.pi - orientation
                 orientation = - orientation
 
@@ -242,11 +263,14 @@ class MapWidget(QtWidgets.QWidget):
                         self.draw_lane(image, pixel_x, pixel_y, orientation)
                 elif entity_type == 'Car':
                     if self.show_cars:
-                        self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2)
+                        self.draw_car_obstacle(image, pixel_x, pixel_y, orientation, steer=0.2)
+                        self.cars_drawn = True
                 elif entity_type == 'Destination':
                     if self.show_destinations:
-                        size = int(0.15 / 20.696 * 800 * self.scale_factor)
-                        cv2.circle(image, (pixel_x, pixel_y), size, (235, 206, 135), -1)
+                        axes = (int(0.15 / self.image_width_real * self.image_width),
+                                int(0.15 / self.image_height_real * self.image_height))
+                        cv2.ellipse(image, (pixel_x, pixel_y), axes,
+                                    0, 0, 360, (235, 206, 135), -1)
                 elif entity_type == 'Light':
                     if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)
@@ -294,69 +318,120 @@ class MapWidget(QtWidgets.QWidget):
                 else:
                     self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, obj_type)
 
-    def draw_car(self, image, x, y, yaw, steer=23.0, car_color=(0, 255, 255), wheel_color=(0, 0, 0)):
-        LENGTH = 4.5 * 0.108 * 800 * self.scale_factor / 20.696  # Car length
-        WIDTH = 2.0 * 0.108 * 800 * self.scale_factor / 20.696  # Car width
-        # BACKTOWHEEL = 1.0 * 0.108 * 800 * self.scale_factor / 20.696  # Distance from back to the wheel
-        WHEEL_LEN = 0.6 * 0.108 * 800 * self.scale_factor / 20.696  # Length of the wheel
-        WHEEL_WIDTH = 0.2 * 0.108 * 800 * self.scale_factor / 20.696  # Width of the wheel
-        TREAD = 0.7 * 0.108 * 800 * self.scale_factor / 20.696  # Distance between left and right wheels
-        WB = 0.258 * 800 * self.scale_factor / 20.696  # Wheelbase: distance between the front and rear wheels
-        half_length = LENGTH / 2
-        half_width = WIDTH / 2
-        # yaw = np.pi * 0.25
-        # Define the outline of the car
-        # outline = np.array([[-BACKTOWHEEL, (LENGTH - BACKTOWHEEL), (LENGTH - BACKTOWHEEL), -BACKTOWHEEL, -BACKTOWHEEL],
-        #                     [WIDTH / 2, WIDTH / 2, - WIDTH / 2, -WIDTH / 2, WIDTH / 2]])
-        outline = np.array([[-half_length, half_length, half_length, -half_length, -half_length],
-                            [half_width, half_width, -half_width, -half_width, half_width]])
+    def draw_car_obstacle(self, image, x, y, yaw, steer=23.0, car_color=None, wheel_color=None):
+        # Load car image with transparency
+        car_img = cv2.imread(self.car_icon_path, cv2.IMREAD_UNCHANGED)
 
-        fr_wheel = np.array([[WHEEL_LEN, -WHEEL_LEN, -WHEEL_LEN, WHEEL_LEN, WHEEL_LEN],
-                            [-WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, WHEEL_WIDTH - TREAD, -WHEEL_WIDTH - TREAD]])
-        rr_wheel = np.copy(fr_wheel)
-        fl_wheel = np.copy(fr_wheel)
-        rl_wheel = np.copy(fr_wheel)
+        if car_img is None:
+            return
 
-        fl_wheel[1, :] *= -1  # Flip the y-coordinates for the left wheels
-        rl_wheel[1, :] *= -1
+        car_length_m = 0.64
 
-        Rot1 = np.array([[math.cos(yaw), math.sin(yaw)], [-math.sin(yaw), math.cos(yaw)]])
-        Rot2 = np.array([[math.cos(steer), math.sin(steer)], [-math.sin(steer), math.cos(steer)]])
+        pixels_per_meter_x = self.image_width / self.image_width_real
 
-        fr_wheel = (fr_wheel.T.dot(Rot2)).T
-        fl_wheel = (fl_wheel.T.dot(Rot2)).T
-        fr_wheel[0, :] += WB  # Translate front wheels forward
-        fl_wheel[0, :] += WB
+        orig_height, orig_width = car_img.shape[:2]
+        aspect_ratio = orig_width / orig_height
 
-        fr_wheel = (fr_wheel.T.dot(Rot1)).T
-        fl_wheel = (fl_wheel.T.dot(Rot1)).T
-        rr_wheel = (rr_wheel.T.dot(Rot1)).T
-        rl_wheel = (rl_wheel.T.dot(Rot1)).T
-        outline = (outline.T.dot(Rot1)).T
+        target_width = int(car_length_m * pixels_per_meter_x)
+        target_height = int(target_width / aspect_ratio)
 
-        outline[0, :] += x
-        outline[1, :] += y
-        fr_wheel[0, :] += x
-        fr_wheel[1, :] += y
-        rr_wheel[0, :] += x
-        rr_wheel[1, :] += y
-        fl_wheel[0, :] += x
-        fl_wheel[1, :] += y
-        rl_wheel[0, :] += x
-        rl_wheel[1, :] += y
+        resized_car = cv2.resize(car_img, (target_width, target_height))
 
-        def to_int_coords(shape):
-            return np.array(shape.T, dtype=np.int32).reshape((-1, 1, 2))
+        rotation_matrix = cv2.getRotationMatrix2D(
+            (target_width / 2, target_height / 2),  # Center
+            math.degrees(-yaw) - 90,
+            1.0  # Scale
+        )
 
-        cv2.polylines(image, [to_int_coords(outline)], isClosed=True, color=car_color, thickness=2)
+        rotated = cv2.warpAffine(resized_car, rotation_matrix, (target_width, target_height))
 
-        cv2.polylines(image, [to_int_coords(fr_wheel)], isClosed=True, color=wheel_color, thickness=2)
-        cv2.polylines(image, [to_int_coords(rr_wheel)], isClosed=True, color=wheel_color, thickness=2)
-        cv2.polylines(image, [to_int_coords(fl_wheel)], isClosed=True, color=wheel_color, thickness=2)
-        cv2.polylines(image, [to_int_coords(rl_wheel)], isClosed=True, color=wheel_color, thickness=2)
+        if rotated.shape[2] == 4:
+            mask = rotated[:, :, 3]
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+            mask = mask.astype(float) / 255.0
+            rotated = rotated[:, :, :3]
+            rotated = cv2.cvtColor(rotated, cv2.COLOR_BGR2RGB)
+        else:
+            mask = np.ones_like(rotated, dtype=float)
+            rotated = cv2.cvtColor(rotated, cv2.COLOR_BGR2RGB)
 
-        cv2.circle(image, (int(x), int(y)), int(WIDTH / 2.5), (143, 28, 90), -1)
+        x_start = int(x - target_width / 2)
+        y_start = int(y - target_height / 2)
+        x_end = x_start + target_width
+        y_end = y_start + target_height
 
+        x1 = max(0, x_start)
+        y1 = max(0, y_start)
+        x2 = min(image.shape[1], x_end)
+        y2 = min(image.shape[0], y_end)
+
+        if x1 >= x2 or y1 >= y2:
+            return
+
+        car_region = rotated[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
+        mask_region = mask[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
+        img_region = image[y1:y2, x1:x2]
+
+        image[y1:y2, x1:x2] = (car_region * mask_region + img_region * (1 - mask_region)).astype(np.uint8)
+
+        LENGTH = 0.4 * pixels_per_meter_x
+        self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
+
+    def draw_car(self, image, x, y, yaw, steer=23.0, car_color=None, wheel_color=None):
+        # Load car image with transparency
+        car_img = cv2.imread(self.car_icon_path, cv2.IMREAD_UNCHANGED)
+
+        if car_img is None:
+            return
+
+        car_length_m = 0.64
+
+        pixels_per_meter_x = self.image_width / self.image_width_real
+
+        orig_height, orig_width = car_img.shape[:2]
+        aspect_ratio = orig_width / orig_height
+
+        target_width = int(car_length_m * pixels_per_meter_x)
+        target_height = int(target_width / aspect_ratio)
+
+        resized_car = cv2.resize(car_img, (target_width, target_height))
+
+        rotation_matrix = cv2.getRotationMatrix2D(
+            (target_width / 2, target_height / 2),  # Center
+            math.degrees(-yaw) - 90,
+            1.0  # Scale
+        )
+
+        rotated = cv2.warpAffine(resized_car, rotation_matrix, (target_width, target_height))
+
+        if rotated.shape[2] == 4:
+            mask = rotated[:, :, 3]
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+            mask = mask.astype(float) / 255.0
+            rotated = rotated[:, :, :3]
+        else:
+            mask = np.ones_like(rotated, dtype=float)
+
+        x_start = int(x - target_width / 2)
+        y_start = int(y - target_height / 2)
+        x_end = x_start + target_width
+        y_end = y_start + target_height
+
+        x1 = max(0, x_start)
+        y1 = max(0, y_start)
+        x2 = min(image.shape[1], x_end)
+        y2 = min(image.shape[0], y_end)
+
+        if x1 >= x2 or y1 >= y2:
+            return
+
+        car_region = rotated[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
+        mask_region = mask[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
+        img_region = image[y1:y2, x1:x2]
+
+        image[y1:y2, x1:x2] = (car_region * mask_region + img_region * (1 - mask_region)).astype(np.uint8)
+
+        LENGTH = 0.4 * pixels_per_meter_x
         self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
 
     def draw_intersection(self, image, x, y, orientation, size):
@@ -393,7 +468,7 @@ class MapWidget(QtWidgets.QWidget):
         arrow_length = max(1, size)  # Dynamic size from trackbar
         x_end = int(x + arrow_length * np.cos(orientation))
         y_end = int(y - arrow_length * np.sin(orientation))
-        cv2.arrowedLine(image, (x, y), (x_end, y_end), (0, 0, 255), 2, tipLength=0.3)
+        cv2.arrowedLine(image, (x, y), (x_end, y_end), (0, 255, 0), 1, tipLength=0.3)
 
     def draw_sign(self, image, x, y, orientation, size, sign_type):
         self.draw_arrow(image, x, y, -orientation, 20)
@@ -457,9 +532,8 @@ class MapWidget(QtWidgets.QWidget):
         image_y = scene_pos.y()
 
         if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
-            click_x = image_x * (self.image_width_real / self.image_width)
-            click_y = 13.786 - image_y * (self.image_height_real / self.image_height)
-
+            click_x = image_x * self.real_x_per_pixel
+            click_y = self.image_height_real - (image_y * self.real_y_per_pixel)
             self.cursor_coords.append((click_x, click_y))
             self.cursor_x = click_x
             self.cursor_y = click_y
@@ -547,6 +621,7 @@ class MapWidget(QtWidgets.QWidget):
                     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                    self.update_map_display()
                     return
                 retries += 1
                 time.sleep(0.1)
