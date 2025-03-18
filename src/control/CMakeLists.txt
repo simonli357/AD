@@ -19,9 +19,12 @@ endif()
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 
-
-include_directories(~/TensorRT-8.6.1.6/include)
-link_directories(~/TensorRT-8.6.1.6/lib)
+if (DEFINED ENV{TRT_LIBPATH})
+  message(STATUS "Found TensorRT")
+else()
+  include_directories(~/TensorRT-8.6.1.6/include)
+  link_directories(~/TensorRT-8.6.1.6/lib)
+endif()
 
 find_package(CUDA REQUIRED)
 if(CUDA_FOUND)
