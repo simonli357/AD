@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.server = server
         self.comm = CommunicationHandler()
 
-        self.setWindowTitle("BFMC DASHBOARD")
+        self.setWindowTitle("BFMC IDE")
 
         self.setStyleSheet("""
             background-color: black;
@@ -146,7 +146,7 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
 
-        self.terminal_widget.add_message("BFMC DASHBOARD INITIALIZED")
+        self.terminal_widget.add_message("BFMC IDE INITIALIZED")
 
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)

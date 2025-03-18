@@ -131,9 +131,10 @@ class MapWidget(QtWidgets.QWidget):
         self.graphics_view.setMouseTracking(True)
         self.graphics_view.viewport().setMouseTracking(True)
 
-        # Cursor pos label
+        # Cursor Pos Label
         self.cursor_coords_label = QLabel(self.graphics_view)
         self.cursor_coords_label.setStyleSheet("""
+            border: none;
             background-color: rgba(0, 0, 0, 0.7);
             padding: 0px 20px 0px 20px;
             color: #00ff00;
@@ -141,6 +142,8 @@ class MapWidget(QtWidgets.QWidget):
         """)
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
+
+        
 
         # Scene setup
         self.scene = QtWidgets.QGraphicsScene(self)
@@ -668,6 +671,68 @@ class CustomGraphicsView(QGraphicsView):
         self.zoom_factor = 1.10
         self.min_zoom = 1.0
         self.max_zoom = 10.0
+
+        self.total_dist_label = QtWidgets.QLabel('󰣰 Distance: --:--')
+        self.total_dist_label.setStyleSheet("""
+            border: none;
+            padding: 5px;
+            background-color: transparent;
+            color: yellow;
+            font-size: 20px;
+        """)
+
+        self.current_dist_label = QtWidgets.QLabel('  Traveled: --:--')
+        self.current_dist_label.setStyleSheet("""
+            border: none;
+            padding: 5px;
+            background-color: transparent;
+            color: yellow;
+            font-size: 20px;
+        """)
+
+        self.dest_reached_label = QtWidgets.QLabel('󰪥 Reached: --:--')
+        self.dest_reached_label.setStyleSheet("""
+            border: none;
+            padding: 5px;
+            background-color: transparent;
+            color: yellow;
+            font-size: 20px;
+        """)
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.overlay_widget = QtWidgets.QWidget(self)
+        self.overlay_widget.setStyleSheet("""
+            background: rgba(40, 40, 40, 0.8);
+            border: none;
+            border-radius: 8px;
+        """)
+        self.overlay_widget.setFixedSize(
+            int(self.width() * 0.25),
+            int(self.height() * 0.15)
+        )
+        self.wrapper = QtWidgets.QVBoxLayout(self.overlay_widget)
+        self.wrapper.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignLeft)
+        self.wrapper.setContentsMargins(10, 10, 10, 10)
+        self.wrapper.addWidget(self.total_dist_label)
+        self.wrapper.addWidget(self.current_dist_label)
+        self.wrapper.addWidget(self.dest_reached_label)
+        self.overlay_widget.move(
+            self.width() - self.overlay_widget.width() - 5,
+            5
+        )
+
+    def resizeEvent(self, event):
+        self.overlay_widget.setFixedSize(
+            max(self.total_dist_label.width(), self.current_dist_label.width(), self.dest_reached_label.width()) + 20,
+            self.total_dist_label.height() * 3 + 20
+        ),
+        self.overlay_widget.move(
+            event.size().width() - self.overlay_widget.width() - 5,
+            5
+        ),
+        event.accept()
 
     def wheelEvent(self, event):
         current_scale = self.transform().m11()
