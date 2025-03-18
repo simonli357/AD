@@ -5,12 +5,17 @@ from collections import deque
 
 import time
 import numpy as np
+import cv2
+import os
 
 
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.recording_path = os.path.join(current_dir, 'frames')
+        os.makedirs(self.recording_path, exist_ok=True)
         self.server = self.main_window.server
         self.started = False
         self.recording = False
@@ -224,4 +229,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.update_recording_button_style(self.record_btn, self.recording)
 
     def save_frame(self, frame) -> None:
-        pass
+        now = time.time()
+        if self.recording and self.main_window.meter_widget.speed != 0:
+            filename = self.recording_path + f"/frame_{int(now)}.jpg"
+            cv2.imwrite(filename, frame)

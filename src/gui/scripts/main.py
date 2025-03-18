@@ -29,6 +29,7 @@ class CommunicationHandler(QObject):
     message_signal = pyqtSignal(str)
     params_signal = pyqtSignal(object, object)
     camera_frame_signal = pyqtSignal(object)
+    rgb_frame_signal = pyqtSignal(object)
     depth_frame_signal = pyqtSignal(object)
     lane_signal = pyqtSignal(object)
     road_obj_signal = pyqtSignal(object)
@@ -69,7 +70,7 @@ class MainWindow(QMainWindow):
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
-        self.comm.camera_frame_signal.connect(self.buttons_widget.save_frame)
+        self.comm.rgb_frame_signal.connect(self.buttons_widget.save_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.lane_signal.connect(self.cam_widget.lane_callback)
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
@@ -150,9 +151,11 @@ class MainWindow(QMainWindow):
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
         self.render_thread = threading.Thread(target=self.render_callbacks, args=(), daemon=True)
+        self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
         self.udp_thread.start()
         self.tcp_thread.start()
         self.render_thread.start()
+        self.cam_thread.start()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -221,6 +224,13 @@ class MainWindow(QMainWindow):
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
             time.sleep(0.016)
+
+    def cam_record_callback(self) -> None:
+        while self.alive:
+            rgb_image = self.server.udp_connection.parse_rgb_image()
+            if rgb_image is not None:
+                self.comm.rgb_frame_signal.emit(rgb_image)
+            time.sleep(2.0)
 
     def render_callbacks(self) -> None:
         while self.alive:
