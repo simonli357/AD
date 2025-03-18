@@ -93,7 +93,7 @@ class ObjectWidget(QtWidgets.QWidget):
         painter.setPen(QPen(QColor(255, 0, 0), 1))
         painter.drawLine(QtCore.QPointF(w1, mid_h), QtCore.QPointF(w2, mid_h))
 
-        self.draw_car(painter, mid_w + 28, mid_h + 75, 75)
+        self.draw_car(painter, mid_w + 15, mid_h + 60, 50)
 
         return (h1, h2, w1, w2, mid_h, mid_w)
 
