@@ -3,6 +3,14 @@ from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget
 from .utils import MapUtils
 
 
+class NodeButton(QtWidgets.QPushButton):
+    def __init__(self, node_data, parent=None):
+        super().__init__(parent)
+        self.node_data = node_data
+        self.is_clicked = False
+        self.setToolTip(f"  {node_data[0]}: ({node_data[1]:.2f}, {node_data[2]:.2f})")
+
+
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -19,14 +27,26 @@ class GraphicsView(QGraphicsView):
         map_utils = MapUtils()
         self.nodes = map_utils.get_all_nodes()
         self.node_btns = [
-            QtWidgets.QPushButton(
-                parent=self,
-                toolTip=f"Real-world position: ({node[1]:.2f}, {node[2]:.2f})",
-            )
+            NodeButton(node_data=node, parent=self)
             for node in self.nodes
         ]
         for btn in self.node_btns:
+            btn.clicked.connect(lambda _, b=btn: self.on_node_click(b))
             btn.hide()
+
+        self.setStyleSheet("""
+            QPushButton {
+                border: none;
+                background-color: #0000ff;
+            }
+            QToolTip {
+                background-color: black;
+                color: #00ff00;
+                border: none;
+                font-size: 14px;
+                padding: 5px;
+            }
+        """)
 
         self.total_dist_label = QLabel('󰣰 Distance: --:--')
         self.total_dist_label.setStyleSheet("""
@@ -79,11 +99,27 @@ class GraphicsView(QGraphicsView):
             5
         )
 
+    def update_btn_style(self, button, size, is_active):
+        """Update button color based on boolean state"""
+        color = "#ff00ff" if is_active else "#0000ff"
+        button.setStyleSheet(f"""
+            QPushButton {{
+                border-radius: {size//2}px;
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: #a0ffff;
+            }}
+        """)
+
     def show_nodes(self) -> None:
         if self.map_widget.show_nodes:
             view_width = self.width()
             view_height = self.height()
             for node, btn in zip(self.nodes, self.node_btns):
+                size = 5 * self.map_widget.current_zoom
+                btn.setFixedSize(size, size)
+                self.update_btn_style(btn, size, btn.is_clicked)
                 x_px = node[1] / self.map_widget.real_x_per_pixel
                 y_px = node[2] / self.map_widget.real_y_per_pixel
                 viewport_pos = self.mapFromScene(x_px, y_px)
@@ -97,6 +133,10 @@ class GraphicsView(QGraphicsView):
         else:
             for btn in self.node_btns:
                 btn.hide()
+
+    def on_node_click(self, button):
+        button.is_clicked = not button.is_clicked
+        self.update_btn_style(button)
 
     #################
     # Events
