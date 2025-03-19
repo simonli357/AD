@@ -15,7 +15,7 @@ from python_server.server import Server
 from widgets.options import OptionsWidget
 from widgets.buttons import ButtonsWidget
 from widgets.meters import MeterWidget
-from widgets.map import MapWidget
+from widgets.map.map import MapWidget
 from widgets.camera import CameraWidget
 from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget

@@ -1,8 +1,9 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel
+from PyQt5.QtWidgets import QLabel
 from std_srvs.srv import TriggerResponse
-import pandas as pd
+from .view import GraphicsView
 
+import pandas as pd
 import os
 import cv2
 import time
@@ -52,7 +53,7 @@ class MapWidget(QtWidgets.QWidget):
         self.numObj = 0
         self.detected_objects = np.zeros(10)
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.assets_dir = os.path.join(current_dir, 'assets')
         self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
 
@@ -125,7 +126,7 @@ class MapWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         # Graphics View setup
-        self.graphics_view = CustomGraphicsView(self)
+        self.graphics_view = GraphicsView(self)
         self.layout.addWidget(self.graphics_view)
         self.graphics_view.viewport().installEventFilter(self)
         self.graphics_view.setMouseTracking(True)
@@ -142,8 +143,6 @@ class MapWidget(QtWidgets.QWidget):
         """)
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
-
-        
 
         # Scene setup
         self.scene = QtWidgets.QGraphicsScene(self)
@@ -654,100 +653,3 @@ class MapWidget(QtWidgets.QWidget):
             print("Failed to send waypoints service call")
         except Exception as e:
             raise e
-
-
-class CustomGraphicsView(QGraphicsView):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setRenderHints(
-            QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
-        )
-        self.zoom_factor = 1.10
-        self.min_zoom = 1.0
-        self.max_zoom = 10.0
-
-        self.total_dist_label = QtWidgets.QLabel('󰣰 Distance: --:--')
-        self.total_dist_label.setStyleSheet("""
-            border: none;
-            padding: 5px;
-            background-color: transparent;
-            color: yellow;
-            font-size: 20px;
-        """)
-
-        self.current_dist_label = QtWidgets.QLabel('  Traveled: --:--')
-        self.current_dist_label.setStyleSheet("""
-            border: none;
-            padding: 5px;
-            background-color: transparent;
-            color: yellow;
-            font-size: 20px;
-        """)
-
-        self.dest_reached_label = QtWidgets.QLabel('󰪥 Reached: --:--')
-        self.dest_reached_label.setStyleSheet("""
-            border: none;
-            padding: 5px;
-            background-color: transparent;
-            color: yellow;
-            font-size: 20px;
-        """)
-
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.overlay_widget = QtWidgets.QWidget(self)
-        self.overlay_widget.setStyleSheet("""
-            background: rgba(40, 40, 40, 0.8);
-            border: none;
-            border-radius: 8px;
-        """)
-        self.overlay_widget.setFixedSize(
-            int(self.width() * 0.25),
-            int(self.height() * 0.15)
-        )
-        self.wrapper = QtWidgets.QVBoxLayout(self.overlay_widget)
-        self.wrapper.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignLeft)
-        self.wrapper.setContentsMargins(10, 10, 10, 10)
-        self.wrapper.addWidget(self.total_dist_label)
-        self.wrapper.addWidget(self.current_dist_label)
-        self.wrapper.addWidget(self.dest_reached_label)
-        self.overlay_widget.move(
-            self.width() - self.overlay_widget.width() - 5,
-            5
-        )
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self.overlay_widget.setFixedSize(
-            256,
-            144
-        ),
-        self.overlay_widget.move(
-            event.size().width() - self.overlay_widget.width() - 5,
-            5
-        ),
-        event.accept()
-
-    def wheelEvent(self, event):
-        current_scale = self.transform().m11()
-        if event.angleDelta().y() > 0:
-            new_scale = current_scale * self.zoom_factor
-        else:
-            new_scale = current_scale / self.zoom_factor
-        if new_scale < self.min_zoom or new_scale > self.max_zoom:
-            event.accept()
-            return
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        if event.angleDelta().y() > 0:
-            self.scale(self.zoom_factor, self.zoom_factor)
-        else:
-            self.scale(1 / self.zoom_factor, 1 / self.zoom_factor)
-        event.accept()
