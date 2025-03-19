@@ -8,6 +8,7 @@ class NodeButton(QtWidgets.QPushButton):
         super().__init__(parent)
         self.node_data = node_data
         self.is_clicked = False
+        self.is_start = False
         self.setToolTip(f"  {node_data[0]}: ({node_data[1]:.2f}, {node_data[2]:.2f})")
 
 
@@ -33,6 +34,7 @@ class GraphicsView(QGraphicsView):
         for btn in self.node_btns:
             btn.clicked.connect(lambda _, b=btn: self.on_node_click(b))
             btn.hide()
+        self.path = []
 
         self.setStyleSheet("""
             QPushButton {
@@ -99,9 +101,10 @@ class GraphicsView(QGraphicsView):
             5
         )
 
-    def update_btn_style(self, button, size, is_active):
+    def update_btn_style(self, button, size):
         """Update button color based on boolean state"""
-        color = "#ff00ff" if is_active else "#0000ff"
+        color = "#ff00ff" if button.is_clicked else "#0000ff"
+        color = "#ffff00" if button.is_start else color
         button.setStyleSheet(f"""
             QPushButton {{
                 border-radius: {size//2}px;
@@ -117,9 +120,9 @@ class GraphicsView(QGraphicsView):
             view_width = self.width()
             view_height = self.height()
             for node, btn in zip(self.nodes, self.node_btns):
-                size = 5 * self.map_widget.current_zoom
+                size = 8 * self.map_widget.current_zoom
                 btn.setFixedSize(size, size)
-                self.update_btn_style(btn, size, btn.is_clicked)
+                self.update_btn_style(btn, size)
                 x_px = node[1] / self.map_widget.real_x_per_pixel
                 y_px = node[2] / self.map_widget.real_y_per_pixel
                 viewport_pos = self.mapFromScene(x_px, y_px)
@@ -134,9 +137,31 @@ class GraphicsView(QGraphicsView):
             for btn in self.node_btns:
                 btn.hide()
 
+    def is_button_start(self, button):
+        for btn in self.node_btns:
+            if btn.node_data[0] == button.node_data[0]:
+                continue
+            if btn.is_clicked:
+                return False
+        return True
+
     def on_node_click(self, button):
         button.is_clicked = not button.is_clicked
-        self.update_btn_style(button)
+        if button.is_clicked:
+            button.is_start = self.is_button_start(button)
+            if button.is_start:
+                self.path.insert(0, button)
+            else:
+                self.path.append(button)
+        else:
+            button.is_start = False
+            self.path.remove(button)
+        self.update_btn_style(button, button.size().width())
+
+    def get_path(self):
+        path = []
+        for btn in self.path:
+            path.append((btn.node_data[1], btn.node_data[2]))
 
     #################
     # Events
