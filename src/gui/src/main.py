@@ -19,7 +19,7 @@ from widgets.map.map import MapWidget
 from widgets.camera import CameraWidget
 from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget
-from widgets.objects import ObjectWidget
+from widgets.radar import RadarWidget
 from widgets.jetson.sw_load import SoftwareMetricsWidget
 
 from std_srvs.srv import TriggerRequest
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         self.terminal_widget = TerminalWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
-        self.object_widget = ObjectWidget(self)
+        self.radar_widget = RadarWidget(self)
         self.sw_widget = SoftwareMetricsWidget(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.object_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.radar_widget.render_widget)
         self.comm.render_widget_signal.connect(self.sw_widget.render_widget)
 
         root_widget = QWidget()
@@ -130,11 +130,11 @@ class MainWindow(QMainWindow):
         meter_layout.setContentsMargins(0, 0, 0, 0)
         meter_layout.addWidget(self.meter_widget)
         self.left_wrapper_layout.addWidget(meter_wrapper)
-        object_wrapper = QWidget()
-        object_layout = QHBoxLayout(object_wrapper)
-        object_wrapper.setContentsMargins(5, 0, 5, 5)
-        object_layout.addWidget(self.object_widget)
-        self.left_wrapper_layout.addWidget(object_wrapper)
+        radar_wrapper = QWidget()
+        radar_layout = QHBoxLayout(radar_wrapper)
+        radar_wrapper.setContentsMargins(5, 0, 5, 5)
+        radar_layout.addWidget(self.radar_widget)
+        self.left_wrapper_layout.addWidget(radar_wrapper)
         self.right_wrapper_layout = QHBoxLayout(right_wrapper)
         self.right_wrapper_layout.setContentsMargins(0, 0, 0, 0)
         self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)

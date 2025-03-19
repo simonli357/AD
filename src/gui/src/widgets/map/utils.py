@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import os
 import networkx as nx
 
@@ -8,7 +10,7 @@ class MapUtils:
         graphml = os.path.join(current_dir, 'graph.graphml')
         self.graph = nx.read_graphml(graphml)
 
-    def get_all_nodes_pos(self) -> list[tuple[int, float, float]]:
+    def get_all_nodes(self) -> List[Tuple[int, float, float]]:
         return [
             (
                 int(node_id),

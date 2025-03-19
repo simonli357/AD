@@ -23,7 +23,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.layout.setAlignment(QtCore.Qt.AlignTop)
         self.buttons = deque()
 
-        # Create buttons
         self.toggle_sign_btn = QtWidgets.QPushButton("󰇐")
         self.toggle_lanes_btn = QtWidgets.QPushButton("󰑢")
         self.toggle_cars_btn = QtWidgets.QPushButton("󰭮")
@@ -53,17 +52,16 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_cars_btn.setToolTip("Toggle Cars")
         self.toggle_destinations_btn.setToolTip("Toggle Destinations")
         self.toggle_path_btn.setToolTip("Toggle Path")
+        self.toggle_nodes_btn.setToolTip("Toggle Nodes")
         self.toggle_gt_btn.setToolTip("Toggle Ground Truth")
         self.toggle_depth_btn.setToolTip("Toggle Depth")
         self.set_states_btn.setToolTip("Set States")
         self.set_yaw_btn.setToolTip("Set Yaw")
         self.save_path_btn.setToolTip("Save Path")
 
-        # Add buttons to layout with spacing
         for btn in self.buttons:
             self.layout.addWidget(btn)
 
-        # Styling
         self.setStyleSheet("""
             QPushButton {
                 background-color: rgba(255, 255, 255, 0.08);
@@ -88,11 +86,15 @@ class OptionsWidget(QtWidgets.QWidget):
             }
         """)
 
+        self.initialize_buttons()
+
+    def initialize_buttons(self) -> None:
         self.update_button_style(self.toggle_sign_btn, self.map_widget.show_signs)
         self.update_button_style(self.toggle_lanes_btn, self.map_widget.show_lanes)
         self.update_button_style(self.toggle_cars_btn, self.map_widget.show_cars)
         self.update_button_style(self.toggle_destinations_btn, self.map_widget.show_destinations)
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
+        self.update_button_style(self.toggle_nodes_btn, self.map_widget.show_nodes)
         self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
 
@@ -123,6 +125,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_cars_btn.clicked.connect(self.handle_cars_btn_click)
         self.toggle_destinations_btn.clicked.connect(self.handle_destinations_btn_click)
         self.toggle_path_btn.clicked.connect(self.handle_path_btn_click)
+        self.toggle_nodes_btn.clicked.connect(self.handle_nodes_btn_click)
         self.toggle_gt_btn.clicked.connect(self.handle_gt_btn_click)
         self.toggle_depth_btn.clicked.connect(self.handle_depth_btn_click)
         self.set_states_btn.clicked.connect(self.handle_states_btn_click)
@@ -164,6 +167,11 @@ class OptionsWidget(QtWidgets.QWidget):
     def handle_path_btn_click(self) -> None:
         self.map_widget.show_path = not self.map_widget.show_path
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
+        self.map_widget.update_map_display()
+
+    def handle_nodes_btn_click(self) -> None:
+        self.map_widget.show_nodes = not self.map_widget.show_nodes
+        self.update_button_style(self.toggle_nodes_btn, self.map_widget.show_nodes)
         self.map_widget.update_map_display()
 
     def handle_gt_btn_click(self) -> None:

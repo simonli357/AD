@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QLabel
 from std_srvs.srv import TriggerResponse
 from .view import GraphicsView
+from ..enums import MapData
 
 import pandas as pd
 import os
@@ -20,6 +21,7 @@ class MapWidget(QtWidgets.QWidget):
         self.server = self.main_window.server
         self.current_zoom = 1.0
         self.min_zoom = 1.0
+        self.max_zoom = 8.0
         self.markers = []
         self.cursor_coords = []
         self.cursor_x = 3.86
@@ -30,6 +32,7 @@ class MapWidget(QtWidgets.QWidget):
         self.show_cars = False
         self.show_destinations = True
         self.show_path = True
+        self.show_nodes = True
         self.show_gt = True
         self.state_refs_np = None
         self.attributes_np = None
@@ -103,14 +106,12 @@ class MapWidget(QtWidgets.QWidget):
         self.setup_ui()
 
         # Map configuration
-        self.original_map_size = (800, 533)
-        self.image_width_real = 20.696
-        self.image_height_real = 13.786
-
-        self.image_width = 800
-        self.image_height = 533
-        self.real_x_per_pixel = self.image_width_real / self.image_width
-        self.real_y_per_pixel = self.image_height_real / self.image_height
+        self.image_width_real = MapData.REAL_WORLD_WIDTH.value
+        self.image_height_real = MapData.REAL_WORLD_HEIGHT.value
+        self.image_width = MapData.PNG_WIDTH.value
+        self.image_height = MapData.PNG_HEIGHT.value
+        self.real_x_per_pixel = MapData.REAL_X_PER_PIXEL.value
+        self.real_y_per_pixel = MapData.REAL_Y_PER_PIXEL.value
 
         # Initialize map image
         self.load_map_image()
@@ -168,8 +169,8 @@ class MapWidget(QtWidgets.QWidget):
     def update_map_display(self) -> None:
         if hasattr(self, 'map_image') and hasattr(self, 'empty_map_image'):
             display_image = self.empty_map_image.copy()
-            if self.show_path:
-                display_image = self.illustrate_path(display_image)
+            self.graphics_view.show_nodes()
+            self.illustrate_path(display_image)
             self.draw_objects(display_image)
             self.map_image = display_image
 
@@ -184,11 +185,10 @@ class MapWidget(QtWidgets.QWidget):
             pixmap = QtGui.QPixmap.fromImage(q_img)
             self.map_item.setPixmap(pixmap)
 
-    def illustrate_path(self, image) -> None:
-        if self.state_refs_np is None or self.attributes_np is None:
-            return image
+    def illustrate_path(self, image):
+        if self.state_refs_np is None or self.attributes_np is None or not self.show_path:
+            return
 
-        image_copy = image.copy()
         ATTRIBUTES = {
             "normal": (0, 255, 255),        # Yellow
             "crosswalk": (0, 255, 0),         # Green
@@ -233,7 +233,7 @@ class MapWidget(QtWidgets.QWidget):
             #     color = ATTRIBUTES["stopline"]
             # else:
             #     color = (0, 0, 0)
-            cv2.circle(image_copy,
+            cv2.circle(image,
                        (int(self.state_refs_np[0, i] / self.image_width_real * self.image_width),
                         int((self.image_height_real - self.state_refs_np[1, i]) / self.image_height_real * self.image_height)),
                        radius=radius, color=color, thickness=-1)
@@ -245,12 +245,10 @@ class MapWidget(QtWidgets.QWidget):
 
         for i, (label, color) in enumerate(ATTRIBUTES.items()):
             rect_y = legend_y + i * (legend_height + padding)
-            cv2.rectangle(image_copy, (legend_x, rect_y),
+            cv2.rectangle(image, (legend_x, rect_y),
                           (legend_x + 20, rect_y + legend_height), color, -1)
-            cv2.putText(image_copy, label, (legend_x + 30, rect_y + legend_height - 5),
+            cv2.putText(image, label, (legend_x + 30, rect_y + legend_height - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
-        return image_copy
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
@@ -504,7 +502,7 @@ class MapWidget(QtWidgets.QWidget):
 
     def eventFilter(self, source, event) -> None:
         if event.type() == QtCore.QEvent.Wheel:
-            zoom_in_factor = 1.25
+            zoom_in_factor = 1.15
             zoom_out_factor = 1 / zoom_in_factor
 
             if event.angleDelta().y() > 0:
@@ -516,9 +514,12 @@ class MapWidget(QtWidgets.QWidget):
             if new_zoom < self.min_zoom:
                 factor = self.min_zoom / self.current_zoom
                 new_zoom = self.min_zoom
+            if new_zoom > self.max_zoom:
+                return True
 
             self.graphics_view.scale(factor, factor)
             self.current_zoom = new_zoom
+            self.update_map_display()
             return True
         elif event.type() == QtCore.QEvent.MouseMove:
             pos = event.pos()
@@ -532,6 +533,7 @@ class MapWidget(QtWidgets.QWidget):
                 self.cursor_coords_label.setText(f" ({real_x:.2f}, {real_y:.2f})")
                 self.cursor_coords_label.move(pos.x() - self.cursor_coords_label.width() / 2, pos.y() - 60)
                 self.cursor_coords_label.show()
+            self.update_map_display()
             return False
         elif event.type() == QtCore.QEvent.Leave:
             self.cursor_coords_label.hide()

@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget
+from .utils import MapUtils
 
 
 class GraphicsView(QGraphicsView):
@@ -14,9 +15,18 @@ class GraphicsView(QGraphicsView):
         self.setRenderHints(
             QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
         )
-        self.zoom_factor = 1.10
-        self.min_zoom = 1.0
-        self.max_zoom = 10.0
+        self.map_widget = self.parent()
+        map_utils = MapUtils()
+        self.nodes = map_utils.get_all_nodes()
+        self.node_btns = [
+            QtWidgets.QPushButton(
+                parent=self,
+                toolTip=f"Real-world position: ({node[1]:.2f}, {node[2]:.2f})",
+            )
+            for node in self.nodes
+        ]
+        for btn in self.node_btns:
+            btn.hide()
 
         self.total_dist_label = QLabel('󰣰 Distance: --:--')
         self.total_dist_label.setStyleSheet("""
@@ -69,6 +79,29 @@ class GraphicsView(QGraphicsView):
             5
         )
 
+    def show_nodes(self) -> None:
+        if self.map_widget.show_nodes:
+            view_width = self.width()
+            view_height = self.height()
+            for node, btn in zip(self.nodes, self.node_btns):
+                x_px = node[1] / self.map_widget.real_x_per_pixel
+                y_px = node[2] / self.map_widget.real_y_per_pixel
+                viewport_pos = self.mapFromScene(x_px, y_px)
+                btn_x = viewport_pos.x() - btn.width() // 2
+                btn_y = viewport_pos.y() - btn.height() // 2
+                btn.move(btn_x, btn_y)
+                is_visible = (
+                    btn_x + btn.width() > 0 and btn_x < view_width and btn_y + btn.height() > 0 and btn_y < view_height
+                )
+                btn.setVisible(is_visible)
+        else:
+            for btn in self.node_btns:
+                btn.hide()
+
+    #################
+    # Events
+    #################
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.overlay_widget.setFixedSize(
@@ -79,21 +112,4 @@ class GraphicsView(QGraphicsView):
             event.size().width() - self.overlay_widget.width() - 5,
             5
         ),
-        event.accept()
-
-    def wheelEvent(self, event):
-        current_scale = self.transform().m11()
-        if event.angleDelta().y() > 0:
-            new_scale = current_scale * self.zoom_factor
-        else:
-            new_scale = current_scale / self.zoom_factor
-        if new_scale < self.min_zoom or new_scale > self.max_zoom:
-            event.accept()
-            return
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        if event.angleDelta().y() > 0:
-            self.scale(self.zoom_factor, self.zoom_factor)
-        else:
-            self.scale(1 / self.zoom_factor, 1 / self.zoom_factor)
         event.accept()

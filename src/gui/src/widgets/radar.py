@@ -5,7 +5,7 @@ import cv2
 import os
 
 
-class ObjectWidget(QtWidgets.QWidget):
+class RadarWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -17,9 +17,8 @@ class ObjectWidget(QtWidgets.QWidget):
         self.obj_dict = self.main_window.map_widget.object_dict
         self.sign_images = self.main_window.map_widget.sign_images
 
-        # Real-world extents (meters)
-        self.x_min, self.x_max = -1.25, 1.25  # X-axis range
-        self.y_min, self.y_max = -1.25, 1.25  # Y-axis range
+        self.x_min, self.x_max = -1.25, 1.25
+        self.y_min, self.y_max = -1.25, 1.25
 
     def render_widget(self) -> None:
         self.update()
