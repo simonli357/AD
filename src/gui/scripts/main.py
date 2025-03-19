@@ -101,8 +101,8 @@ class MainWindow(QMainWindow):
         self.top_layout.addWidget(self.opt_widget)
         self.top_layout.addWidget(self.map_widget)
 
-        self.left_layout.addWidget(top_widgets)
-        self.left_layout.addWidget(self.terminal_widget)
+        self.left_layout.addWidget(top_widgets, 3)
+        self.left_layout.addWidget(self.terminal_widget, 1)
 
         right_widgets = QWidget()
         stat_widgets = QWidget()
@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
         self.cam_wrapper_layout.addWidget(self.cam_widget)
         self.right_layout = QVBoxLayout(right_widgets)
         self.right_layout.setContentsMargins(0, 0, 0, 0)
-        self.right_layout.addWidget(cam_wrapper)
+        self.right_layout.addWidget(cam_wrapper, 3)
         self.right_layout.addWidget(self.buttons_widget)
 
         self.stat_layout = QVBoxLayout(stat_widgets)
@@ -141,7 +141,7 @@ class MainWindow(QMainWindow):
         self.right_wrapper_layout.addWidget(self.car_widget)
         self.stat_layout.addWidget(left_wrapper)
         self.stat_layout.addWidget(right_wrapper)
-        self.right_layout.addWidget(stat_widgets)
+        self.right_layout.addWidget(stat_widgets, 2)
 
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)

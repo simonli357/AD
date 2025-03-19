@@ -18,8 +18,8 @@ class ObjectWidget(QtWidgets.QWidget):
         self.sign_images = self.main_window.map_widget.sign_images
 
         # Real-world extents (meters)
-        self.x_min, self.x_max = -1.5, 1.5  # X-axis range
-        self.y_min, self.y_max = -1.5, 1.5  # Y-axis range
+        self.x_min, self.x_max = -1.25, 1.25  # X-axis range
+        self.y_min, self.y_max = -1.25, 1.25  # Y-axis range
 
     def render_widget(self) -> None:
         self.update()
@@ -27,15 +27,16 @@ class ObjectWidget(QtWidgets.QWidget):
     def paintEvent(self, event):
         with QPainter(self) as painter:
             painter.setRenderHint(QPainter.Antialiasing)
-            dimensions = self.draw_axis(painter)
+            dimensions = self.get_dimensions()
             h1, h2, w1, w2, mid_h, mid_w = dimensions
-            # Calculate pixels per meter based on current widget size and real-world extents
             try:
                 pixels_per_meter_x = (w2 - w1) / (self.x_max - self.x_min)
                 pixels_per_meter_y = (h2 - h1) / (self.y_max - self.y_min)
             except ZeroDivisionError:
-                return  # Avoid division by zero if extents are not set properly
-            self.draw_grid(painter, h1, h2, w1, w2, mid_w, pixels_per_meter_x, pixels_per_meter_y)
+                return
+            self.draw_grid(painter, h1, h2, w1, w2, mid_h, mid_w, pixels_per_meter_x, pixels_per_meter_y)
+            self.draw_axis(painter, h1, h2, w1, w2, mid_h, mid_w)
+            self.draw_car(painter, mid_w + 15, mid_h + 60, 50)
             self.draw_detected_object(painter, mid_h, mid_w, h2, pixels_per_meter_x, pixels_per_meter_y)
 
     def draw_sign(self, painter: QPainter, x, y, size, sign_type):
@@ -76,15 +77,17 @@ class ObjectWidget(QtWidgets.QWidget):
             image_rect = QtCore.QRectF(x - size + 10, y - size - 15, size, size)
             painter.drawPixmap(image_rect.topLeft(), pixmap)
 
-    def draw_axis(self, painter: QPainter) -> tuple:
+    def get_dimensions(self) -> tuple:
         # Calculate axis positions
         h1 = 0.0
         h2 = self.height()
         w1 = 0.0
         w2 = self.width()
-        mid_h = self.height() / 1.5
+        mid_h = self.height() / 1.25
         mid_w = self.width() / 2
+        return (h1, h2, w1, w2, mid_h, mid_w)
 
+    def draw_axis(self, painter: QPainter, h1, h2, w1, w2, mid_h, mid_w) -> None:
         # Draw vertical axis (Y-axis)
         painter.setPen(QPen(QColor(0, 255, 0), 1))
         painter.drawLine(QtCore.QPointF(mid_w, h1), QtCore.QPointF(mid_w, h2))
@@ -93,27 +96,25 @@ class ObjectWidget(QtWidgets.QWidget):
         painter.setPen(QPen(QColor(255, 0, 0), 1))
         painter.drawLine(QtCore.QPointF(w1, mid_h), QtCore.QPointF(w2, mid_h))
 
-        self.draw_car(painter, mid_w + 15, mid_h + 60, 50)
-
-        return (h1, h2, w1, w2, mid_h, mid_w)
-
-    def draw_grid(self, painter: QPainter, h1: float, h2: float, w1: float, w2: float, mid_w: float, pixels_per_meter_x: float, pixels_per_meter_y: float) -> None:
-        # Draw vertical grid lines (X-axis)
+    def draw_grid(self, painter: QPainter, h1: float, h2: float, w1: float, w2: float, mid_h: float, mid_w: float, pixels_per_meter_x: float, pixels_per_meter_y: float, divisions=2) -> None:
         painter.setPen(QPen(QColor(100, 100, 100, 180), 1))
-        x = mid_w + pixels_per_meter_x / 2
+        x = mid_w + pixels_per_meter_x / divisions
         while x <= w2:
-            painter.drawLine(QtCore.QPointF(x, h1), QtCore.QPointF(x, h2))
-            x += pixels_per_meter_x / 2
-        x = mid_w - pixels_per_meter_x / 2
-        while x >= w1:
-            painter.drawLine(QtCore.QPointF(x, h1), QtCore.QPointF(x, h2))
-            x -= pixels_per_meter_x / 2
+            if not QtCore.qFuzzyCompare(x, mid_w):
+                painter.drawLine(QtCore.QPointF(x, h1), QtCore.QPointF(x, h2))
+            x += pixels_per_meter_x / divisions
 
-        # Draw horizontal grid lines (Y-axis)
-        y = h2 - pixels_per_meter_y / 2
+        x = mid_w - pixels_per_meter_x / divisions
+        while x >= w1:
+            if not QtCore.qFuzzyCompare(x, mid_w):
+                painter.drawLine(QtCore.QPointF(x, h1), QtCore.QPointF(x, h2))
+            x -= pixels_per_meter_x / divisions
+
+        y = h2 - pixels_per_meter_y / divisions
         while y > h1:
-            painter.drawLine(QtCore.QPointF(w1, y), QtCore.QPointF(w2, y))
-            y -= pixels_per_meter_y / 2
+            if not QtCore.qFuzzyCompare(y, mid_h):
+                painter.drawLine(QtCore.QPointF(w1, y), QtCore.QPointF(w2, y))
+            y -= pixels_per_meter_y / divisions
 
     def draw_detected_object(self, painter: QPainter, mid_h: float, mid_w: float, h2: float, pixels_per_meter_x: float, pixels_per_meter_y: float):
         obj = self.main_window.cam_widget.detected_objects

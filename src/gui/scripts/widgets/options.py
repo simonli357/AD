@@ -20,7 +20,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setAlignment(QtCore.Qt.AlignCenter)
+        self.layout.setAlignment(QtCore.Qt.AlignTop)
         self.buttons = deque()
 
         # Create buttons

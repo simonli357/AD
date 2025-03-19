@@ -724,9 +724,10 @@ class CustomGraphicsView(QGraphicsView):
         )
 
     def resizeEvent(self, event):
+        super().resizeEvent(event)
         self.overlay_widget.setFixedSize(
-            max(self.total_dist_label.width(), self.current_dist_label.width(), self.dest_reached_label.width()) + 20,
-            self.total_dist_label.height() * 3 + 20
+            256,
+            144
         ),
         self.overlay_widget.move(
             event.size().width() - self.overlay_widget.width() - 5,
