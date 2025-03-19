@@ -79,6 +79,12 @@ class CameraNode {
 							double fy = intr.fy;
 							double cx = intr.ppx; // principal point x
 							double cy = intr.ppy; // principal point y
+							cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 
+																												0, fy, cy, 
+																												0, 0, 1);
+
+							distCoeffs = (cv::Mat_<double>(1,5) << intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+							cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, cv::Size(640, 480), CV_16SC2, map1, map2);
 							ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
 						  break;
 					}
@@ -178,6 +184,9 @@ class CameraNode {
 	rs2::frame gyro_frame;
 	rs2::frame accel_frame;
 	std::unique_ptr<rs2::align> align_to_color;
+	cv::Mat cameraMatrix;
+	cv::Mat distCoeffs;
+	cv::Mat map1, map2;
 
 	void depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// mutex.lock();
@@ -285,6 +294,9 @@ class CameraNode {
 		}
 		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
 		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
+		// cv::undistort(colorImage, colorImage, cameraMatrix, distCoeffs);
+		cv::remap(colorImage, colorImage, map1, map2, cv::INTER_LINEAR);
+		cv::remap(depthImage, depthImage, map1, map2, cv::INTER_NEAREST);
 
 		if (!useRosTimer) {
 			if (doLane) {
@@ -294,13 +306,13 @@ class CameraNode {
 				run_sign_once();
 			}
 		}
+		if (Sign.tcp_client != nullptr) {
+			Sign.tcp_client->send_image_rgb(colorImage);
+			// Sign.tcp_client->send_image_depth(depthImage);
+		}
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-			if (Sign.tcp_client != nullptr) {
-				Sign.tcp_client->send_image_rgb(colorImage);
-				// Sign.tcp_client->send_image_depth(depthImage);
-			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);
 		}
