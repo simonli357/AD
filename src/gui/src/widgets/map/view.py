@@ -128,7 +128,7 @@ class GraphicsView(QGraphicsView):
                 background-color: {color};
             }}
             QPushButton:hover {{
-                background-color: #a0ffff;
+                background-color: rgba(0, 255, 0, 0.5);
             }}
         """)
 
