@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget
 from .utils import MapUtils
 from ..enums import MapData
 
+import numpy as np
+
 
 class NodeButton(QtWidgets.QPushButton):
     def __init__(self, node_data, parent=None):
@@ -44,6 +46,7 @@ class GraphicsView(QGraphicsView):
         self.map_widget = self.parent()
         map_utils = MapUtils()
         self.nodes = map_utils.get_all_nodes()
+        self.destinations = map_utils.get_destination_nodes()
         self.node_btns = [
             NodeButton(node_data=node, parent=self)
             for node in self.nodes
@@ -52,6 +55,7 @@ class GraphicsView(QGraphicsView):
             btn.clicked.connect(lambda _, b=btn: self.on_node_click(b))
             btn.hide()
         self.path = []
+        self.visited = {}
 
         self.setStyleSheet("""
             QPushButton {
@@ -76,8 +80,8 @@ class GraphicsView(QGraphicsView):
             font-size: 20px;
         """)
 
-        self.current_dist_label = QLabel('  Traveled: --:--')
-        self.current_dist_label.setStyleSheet("""
+        self.dist_traveled_label = QLabel('  Traveled: --:--')
+        self.dist_traveled_label.setStyleSheet("""
             border: none;
             padding: 5px;
             background-color: transparent;
@@ -111,7 +115,7 @@ class GraphicsView(QGraphicsView):
         self.wrapper.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignLeft)
         self.wrapper.setContentsMargins(10, 10, 10, 10)
         self.wrapper.addWidget(self.total_dist_label)
-        self.wrapper.addWidget(self.current_dist_label)
+        self.wrapper.addWidget(self.dist_traveled_label)
         self.wrapper.addWidget(self.dest_reached_label)
         self.overlay_widget.move(
             self.width() - self.overlay_widget.width() - 5,
@@ -134,22 +138,30 @@ class GraphicsView(QGraphicsView):
 
     def show_nodes(self) -> None:
         if self.map_widget.show_nodes:
+            mouse_pos = self.mapFromGlobal(QtGui.QCursor.pos())
+            mouse_radius = 200
+            mouse_radius_sq = mouse_radius ** 2
             view_width = self.width()
             view_height = self.height()
             for node, btn in zip(self.nodes, self.node_btns):
-                size = 14 * self.map_widget.current_zoom
-                btn.setFixedSize(size, size)
-                self.update_btn_style(btn, size)
                 x_px = node[1] / self.map_widget.real_x_per_pixel
                 y_px = node[2] / self.map_widget.real_y_per_pixel
                 viewport_pos = self.mapFromScene(x_px, y_px)
-                btn_x = viewport_pos.x() - btn.width() // 2
-                btn_y = viewport_pos.y() - btn.height() // 2
-                btn.move(btn_x, btn_y)
-                is_visible = (
-                    btn_x + btn.width() > 0 and btn_x < view_width and btn_y + btn.height() > 0 and btn_y < view_height
-                )
-                btn.setVisible(is_visible)
+                dx = viewport_pos.x() - mouse_pos.x()
+                dy = viewport_pos.y() - mouse_pos.y()
+                distance_sq = dx * dx + dy * dy
+                if distance_sq <= mouse_radius_sq or btn.is_clicked:
+                    size = 14 * self.map_widget.current_zoom
+                    btn.setFixedSize(size, size)
+                    self.update_btn_style(btn, size)
+                    btn_x = viewport_pos.x() - size // 2
+                    btn_y = viewport_pos.y() - size // 2
+                    is_visible = (btn_x + size > 0 and btn_x < view_width and btn_y + size > 0 and btn_y < view_height)
+                    if is_visible:
+                        btn.move(btn_x, btn_y)
+                    btn.setVisible(is_visible)
+                else:
+                    btn.hide()
         else:
             for btn in self.node_btns:
                 btn.hide()
@@ -191,6 +203,37 @@ class GraphicsView(QGraphicsView):
         for btn in self.node_btns:
             btn.is_start = False
             btn.is_clicked = False
+
+    def calculate_total_path_distance(self):
+        if self.map_widget.state_refs_np.shape[1] < 2:
+            return 0.0
+        x_coords = self.state_refs_np[0, :]
+        y_coords = self.state_refs_np[1, :]
+        dx = x_coords[1:] - x_coords[:-1]
+        dy = y_coords[1:] - y_coords[:-1]
+        distances = np.sqrt(dx**2 + dy**2)
+        return np.sum(distances)
+
+    def update_visited_destinations(self, car_x: float, car_y: float):
+        def is_near(x: float, y: float, thresh: float):
+            if cax_x < x + thresh and car_x > x - thresh and car_y < y + tresh and car_y > y - thresh:
+                return True
+            return False
+        for id, x, y in destinations:
+            if is_near(x, y, 0.2):
+                self.visited.append(id)
+                self.set_dest_visited_num(len(self.visited))
+                break
+
+    def set_total_path_distance(self):
+        dist = self.calculate_total_path_distance()
+        self.total_dist_label.setText(f'󰣰 Distance: {dist:.2f}')
+
+    def set_distance_traveled(self, dist: float) -> None:
+        self.dist_traveled_label.setText(f'  Traveled: {dist:.2f}')
+
+    def set_dest_visited_num(self, dest_visited: int) -> None:
+        self.dest_reached_label.setText(f'󰪥 Reached: {dest_visited:.0f}')
 
     #################
     # Events
