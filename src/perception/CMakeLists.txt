@@ -64,7 +64,11 @@ find_package (Eigen3 REQUIRED )
 # For finding FindTensorRT.cmake
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
+if (DEFINED ENV{ncnn_DIR})
+  message("-- NCNN found")
+else()
+  set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
+endif()
 find_package(ncnn REQUIRED)
 if (${ncnn_FOUND})
   message("-- NCNN found.")
@@ -136,7 +140,7 @@ target_include_directories(object_detection_lib PUBLIC
 )
 
 catkin_package(
-  INCLUDE_DIRS include include/ncnn/include ${TENSORRT_INCLUDE_DIR}
+  INCLUDE_DIRS include ${ncnn_INCLUDE} ${TENSORRT_INCLUDE_DIR}
   CATKIN_DEPENDS
   geometry_msgs
   roscpp
