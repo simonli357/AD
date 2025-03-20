@@ -85,7 +85,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
                 color: white;
-                font-size: 28px;
+                font-size: 20px;
             }
         """)
 

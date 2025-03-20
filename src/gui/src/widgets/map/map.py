@@ -137,9 +137,8 @@ class MapWidget(QtWidgets.QWidget):
         self.cursor_coords_label.setStyleSheet("""
             border: none;
             background-color: rgba(0, 0, 0, 0.7);
-            padding: 0px 20px 0px 20px;
             color: #00ff00;
-            font-size: 24px;
+            font-size: 16px;
         """)
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -529,7 +528,7 @@ class MapWidget(QtWidgets.QWidget):
             if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
                 real_x = scene_pos.x() * self.real_x_per_pixel
                 real_y = scene_pos.y() * self.real_y_per_pixel
-                self.cursor_coords_label.setText(f" ({real_x:.2f}, {real_y:.2f})")
+                self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
                 self.cursor_coords_label.move(int(pos.x() - self.cursor_coords_label.width() / 2), int(pos.y() - 60))
                 self.cursor_coords_label.show()
             self.update_map_display()
