@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget
 from .utils import MapUtils
+from ..enums import MapData
 
 
 class NodeButton(QtWidgets.QPushButton):
@@ -160,8 +161,14 @@ class GraphicsView(QGraphicsView):
 
     def get_path(self):
         path = []
-        for btn in self.path:
-            path.append((btn.node_data[1], btn.node_data[2]))
+        for btn in self.path[1:]:
+            path.append((btn.node_data[1], MapData.REAL_WORLD_HEIGHT.value - btn.node_data[2]))
+        return path
+
+    def get_start(self):
+        x_px = self.path[0].node_data[1]
+        y_px = MapData.REAL_WORLD_HEIGHT.value - self.path[0].node_data[2]
+        return (x_px, y_px)
 
     #################
     # Events

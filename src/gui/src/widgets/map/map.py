@@ -79,8 +79,7 @@ class MapWidget(QtWidgets.QWidget):
         self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_red.png')))
         self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.car_icon_path = os.path.join(current_dir, 'assets', 'car_top.png')
+        self.car_icon_path = os.path.join(self.assets_dir, 'car_top.png')
 
         self.object_dict = {
             0: "Oneway",
@@ -529,7 +528,7 @@ class MapWidget(QtWidgets.QWidget):
 
             if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
                 real_x = scene_pos.x() * self.real_x_per_pixel
-                real_y = self.image_height_real - (scene_pos.y() * self.real_y_per_pixel)
+                real_y = scene_pos.y() * self.real_y_per_pixel
                 self.cursor_coords_label.setText(f" ({real_x:.2f}, {real_y:.2f})")
                 self.cursor_coords_label.move(pos.x() - self.cursor_coords_label.width() / 2, pos.y() - 60)
                 self.cursor_coords_label.show()

@@ -98,15 +98,12 @@ class OptionsWidget(QtWidgets.QWidget):
         self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
 
-    def call_set_states_service(self, x=None, y=None):
+    def call_set_states_service(self, x=-200.0, y=-200.0):
         print("set states service called")
         try:
             if self.server.utility_node_client.socket is None:
                 return
-            if x is not None and y is not None:
-                self.server.utility_node_client.send_set_states_srv(x, y)
-            else:
-                self.server.utility_node_client.send_set_states_srv(-200.0, -200.0)
+            self.server.utility_node_client.send_set_states_srv(x, y)
             max_retries = 50
             retries = 0
             while (retries < max_retries):
@@ -185,7 +182,8 @@ class OptionsWidget(QtWidgets.QWidget):
         self.map_widget.update_map_display()
 
     def handle_states_btn_click(self) -> None:
-        self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)
+        x, y = self.map_widget.graphics_view.get_start()
+        self.call_set_states_service(x, y)
         self.map_widget.update_map_display()
 
     def handle_yaw_btn_click(self) -> None:

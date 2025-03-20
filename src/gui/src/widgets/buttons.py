@@ -169,7 +169,8 @@ class ButtonsWidget(QtWidgets.QWidget):
             if self.server.utility_node_client.socket is None:
                 return
             if len(cursor_coords) == 0:
-                self.server.utility_node_client.send_go_to_cmd_srv([(self.main_window.map_widget.cursor_x, self.main_window.map_widget.cursor_y)])
+                print("Invalid path, must contain at least 1 destination")
+                return
             else:
                 self.server.utility_node_client.send_go_to_cmd_srv(cursor_coords)
             max_retries = 50
@@ -215,10 +216,8 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def handle_goto_click(self) -> None:
         print("Planning Path")
-        if self.main_window.map_widget.cursor_coords:
-            self.call_goto_service(self.main_window.map_widget.cursor_coords)
-        else:
-            print("Not a valid destination")
+        cursor_coords = self.main_window.map_widget.graphics_view.get_path()
+        self.call_goto_service(cursor_coords)
 
     def handle_record_click(self) -> None:
         if self.recording:
