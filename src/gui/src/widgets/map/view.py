@@ -19,7 +19,7 @@ class NodeButton(QtWidgets.QPushButton):
         super().paintEvent(event)
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        padding = self.width() * 0.4
+        padding = int(self.width() * 0.4)
         visible_rect = self.rect().adjusted(
             padding,
             padding,
@@ -136,7 +136,7 @@ class GraphicsView(QGraphicsView):
         color = "#ffff00" if button.is_start else color
         button.setStyleSheet(f"""
             QPushButton {{
-                border-radius: {size//2}px;
+                border-radius: {size // 2}px;
                 background-color: {color};
             }}
             QPushButton:hover {{
@@ -160,13 +160,13 @@ class GraphicsView(QGraphicsView):
                 distance_sq = dx * dx + dy * dy
                 if distance_sq <= mouse_radius_sq or btn.is_clicked:
                     size = 14 * self.map_widget.current_zoom
-                    btn.setFixedSize(size, size)
+                    btn.setFixedSize(int(size), int(size))
                     self.update_btn_style(btn, size)
                     btn_x = viewport_pos.x() - size // 2
                     btn_y = viewport_pos.y() - size // 2
                     is_visible = (btn_x + size > 0 and btn_x < view_width and btn_y + size > 0 and btn_y < view_height)
                     if is_visible:
-                        btn.move(btn_x, btn_y)
+                        btn.move(int(btn_x), int(btn_y))
                     btn.setVisible(is_visible)
                 else:
                     btn.hide()
@@ -222,13 +222,14 @@ class GraphicsView(QGraphicsView):
         distances = np.sqrt(dx**2 + dy**2)
         return np.sum(distances)
 
+    def is_near(self, pos_x: float, pos_y: float, x: float, y: float, thresh: float):
+        if pos_x < x + thresh and pos_x > x - thresh and pos_y < y + thresh and pos_y > y - thresh:
+            return True
+        return False
+
     def update_visited_destinations(self, car_x: float, car_y: float):
-        def is_near(x: float, y: float, thresh: float):
-            if cax_x < x + thresh and car_x > x - thresh and car_y < y + tresh and car_y > y - thresh:
-                return True
-            return False
-        for id, x, y in destinations:
-            if is_near(x, y, 0.2):
+        for id, x, y in self.destinations:
+            if self.is_near(car_x, car_y, x, y, 0.2):
                 self.visited.append(id)
                 self.set_dest_visited_num(len(self.visited))
                 break
