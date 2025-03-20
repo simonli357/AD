@@ -200,4 +200,7 @@ class OptionsWidget(QtWidgets.QWidget):
         print("saved state refs")
 
     def handle_fetch_run_btn_click(self) -> None:
-        self.main_window.server.send_string('refresh_run')
+        try:
+            self.main_window.server.send_string('refresh_run')
+        except Exception:
+            pass
