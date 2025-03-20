@@ -10,6 +10,7 @@ class CameraWidget(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(10)
@@ -18,10 +19,6 @@ class CameraWidget(QtWidgets.QWidget):
         self.center = None
         self.crosswalk = False
         self.stopline = False
-
-        # Camera
-        self.camera_w = 640
-        self.camera_h = 480
 
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
@@ -42,7 +39,8 @@ class CameraWidget(QtWidgets.QWidget):
 
         # Camera display label
         self.camera_label = QtWidgets.QLabel(self)
-        self.camera_label.setFixedSize(self.camera_w, self.camera_h)
+        self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.camera_label.setScaledContents(True)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(self.camera_label)
 
@@ -66,13 +64,24 @@ class CameraWidget(QtWidgets.QWidget):
 
             # Convert BGR to RGB
             rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-            rgb_image = cv2.resize(rgb_image, (self.camera_w, self.camera_h))
+            target_width = self.camera_label.width()
+            target_height = self.camera_label.height()
 
-            # Convert to QImage for GUI display
+            h, w = rgb_image.shape[:2]
+            if w != target_width or h != target_height:
+                if target_height > 480 and target_width > 640:
+                    rgb_image = cv2.resize(rgb_image, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
+                else:
+                    rgb_image = cv2.resize(rgb_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
+
+            # Convert to QImage
             h, w, ch = rgb_image.shape
             bytes_per_line = ch * w
             qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
+
+            # Maintain aspect ratio when scaling
+            pixmap = pixmap.scaled(self.camera_label.size(), QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
             print(f"Camera processing error: {e}")
@@ -90,7 +99,17 @@ class CameraWidget(QtWidgets.QWidget):
             depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
             depth_colored = self.add_sign_detection_to_image(depth_colored)
             depth_colored = self.add_lane_detection_to_image(depth_colored)
-            depth_colored = cv2.resize(depth_colored, (self.camera_w, self.camera_h))
+
+            target_width = self.camera_label.width()
+            target_height = self.camera_label.height()
+
+            h, w = depth_colored.shape[:2]
+            if w != target_width or h != target_height:
+                if target_height > 480 and target_width > 640:
+                    depth_colored = cv2.resize(depth_colored, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
+                else:
+                    depth_colored = cv2.resize(depth_colored, (target_width, target_height), interpolation=cv2.INTER_AREA)
+
             h, w, ch = depth_colored.shape
             bytes_per_line = ch * w
             qt_image = QtGui.QImage(depth_colored.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
