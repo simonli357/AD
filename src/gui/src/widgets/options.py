@@ -31,6 +31,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_nodes_btn = QtWidgets.QPushButton("")
         self.toggle_gt_btn = QtWidgets.QPushButton("󰄧")
         self.toggle_depth_btn = QtWidgets.QPushButton("󰤽")
+        self.fetch_run_btn = QtWidgets.QPushButton("󱑤")
         self.set_states_btn = QtWidgets.QPushButton("󰵉")
         self.set_yaw_btn = QtWidgets.QPushButton("󰆋")
         self.save_path_btn = QtWidgets.QPushButton("󰆓")
@@ -43,6 +44,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.buttons.append(self.toggle_nodes_btn)
         self.buttons.append(self.toggle_gt_btn)
         self.buttons.append(self.toggle_depth_btn)
+        self.buttons.append(self.fetch_run_btn)
         self.buttons.append(self.set_states_btn)
         self.buttons.append(self.set_yaw_btn)
         self.buttons.append(self.save_path_btn)
@@ -55,6 +57,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_nodes_btn.setToolTip("Toggle Nodes")
         self.toggle_gt_btn.setToolTip("Toggle Ground Truth")
         self.toggle_depth_btn.setToolTip("Toggle Depth")
+        self.fetch_run_btn.setToolTip("Fetch Simulator Run")
         self.set_states_btn.setToolTip("Set States")
         self.set_yaw_btn.setToolTip("Set Yaw")
         self.save_path_btn.setToolTip("Save Path")
@@ -69,7 +72,7 @@ class OptionsWidget(QtWidgets.QWidget):
                 color: white;
                 border: none;
                 border-radius: 8px;
-                font-size: 32px;
+                font-size: 24px;
             }
             QPushButton:hover {
                 background-color: #9933ff;
@@ -128,6 +131,7 @@ class OptionsWidget(QtWidgets.QWidget):
         self.set_states_btn.clicked.connect(self.handle_states_btn_click)
         self.set_yaw_btn.clicked.connect(self.handle_yaw_btn_click)
         self.save_path_btn.clicked.connect(self.handle_save_path_btn_click)
+        self.fetch_run_btn.clicked.connect(self.handle_fetch_run_btn_click)
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -194,3 +198,6 @@ class OptionsWidget(QtWidgets.QWidget):
         path = os.path.dirname(os.path.abspath(__file__))
         np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
         print("saved state refs")
+
+    def handle_fetch_run_btn_click(self) -> None:
+        self.main_window.server.send_string('refresh_run')

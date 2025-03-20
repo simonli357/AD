@@ -588,6 +588,7 @@ class MapWidget(QtWidgets.QWidget):
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
                     self.update_map_display()
+                    self.graphics_view.set_total_path_distance()
                     return
                 retries += 1
                 time.sleep(0.1)

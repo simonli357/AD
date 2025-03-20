@@ -203,6 +203,7 @@ void TcpClient::listen() {
 			connected = false;
 		}
 	}
+    run_sent = false;
 	tcp_can_send = false;
 }
 
@@ -494,6 +495,10 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}
+    if (decoded_string == "refresh_run") {
+        run_sent = false;
+        return;
+    }
 	strings.push(decoded_string);
 }
 
