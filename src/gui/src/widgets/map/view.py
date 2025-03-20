@@ -34,7 +34,6 @@ class NodeButton(QtWidgets.QPushButton):
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -43,6 +42,8 @@ class GraphicsView(QGraphicsView):
         self.setRenderHints(
             QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
         )
+        self._pan_start = None
+        self._is_dragging = False
         self.map_widget = self.parent()
         map_utils = MapUtils()
         self.nodes = map_utils.get_all_nodes()
@@ -56,7 +57,6 @@ class GraphicsView(QGraphicsView):
             btn.hide()
         self.path = []
         self.visited = {}
-
         self.setStyleSheet("""
             QPushButton {
                 border: none;
@@ -70,7 +70,10 @@ class GraphicsView(QGraphicsView):
                 padding: 5px;
             }
         """)
+        self.setup_ui()
+        self.setup_cursor()
 
+    def setup_ui(self):
         self.total_dist_label = QLabel('󰣰 Distance: --:--')
         self.total_dist_label.setStyleSheet("""
             border: none;
@@ -79,7 +82,6 @@ class GraphicsView(QGraphicsView):
             color: yellow;
             font-size: 20px;
         """)
-
         self.dist_traveled_label = QLabel('  Traveled: --:--')
         self.dist_traveled_label.setStyleSheet("""
             border: none;
@@ -88,7 +90,6 @@ class GraphicsView(QGraphicsView):
             color: yellow;
             font-size: 20px;
         """)
-
         self.dest_reached_label = QLabel('󰪥 Reached: --:--')
         self.dest_reached_label.setStyleSheet("""
             border: none;
@@ -97,10 +98,6 @@ class GraphicsView(QGraphicsView):
             color: yellow;
             font-size: 20px;
         """)
-
-        self.setup_ui()
-
-    def setup_ui(self):
         self.overlay_widget = QWidget(self)
         self.overlay_widget.setStyleSheet("""
             background: rgba(40, 40, 40, 0.8);
@@ -122,6 +119,17 @@ class GraphicsView(QGraphicsView):
             5
         )
 
+    def setup_cursor(self) -> None:
+        crosshair_pixmap = QtGui.QPixmap(16, 16)
+        crosshair_pixmap.fill(QtCore.Qt.transparent)
+        painter = QtGui.QPainter(crosshair_pixmap)
+        painter.setPen(QtGui.QPen(QtGui.QColor(0, 255, 0), 1))
+        painter.drawLine(8, 0, 8, 16)
+        painter.drawLine(0, 8, 16, 8)
+        painter.end()
+        self.setCursor(QtGui.QCursor(crosshair_pixmap, 8, 8))
+        self.viewport().setCursor(QtGui.QCursor(crosshair_pixmap, 8, 8))
+
     def update_btn_style(self, button, size):
         """Update button color based on boolean state"""
         color = "#ff00ff" if button.is_clicked else "rgba(0,0,0,0)"
@@ -139,7 +147,7 @@ class GraphicsView(QGraphicsView):
     def show_nodes(self) -> None:
         if self.map_widget.show_nodes:
             mouse_pos = self.mapFromGlobal(QtGui.QCursor.pos())
-            mouse_radius = 200
+            mouse_radius = 50
             mouse_radius_sq = mouse_radius ** 2
             view_width = self.width()
             view_height = self.height()
@@ -250,3 +258,30 @@ class GraphicsView(QGraphicsView):
             5
         ),
         event.accept()
+
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self._pan_start = event.pos()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._pan_start is not None:
+            delta = event.pos() - self._pan_start
+            self.horizontalScrollBar().setValue(
+                self.horizontalScrollBar().value() - delta.x()
+            )
+            self.verticalScrollBar().setValue(
+                self.verticalScrollBar().value() - delta.y()
+            )
+            self._pan_start = event.pos()
+            event.accept()
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self._pan_start = None
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
