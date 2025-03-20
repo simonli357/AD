@@ -39,16 +39,19 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.start_btn = QtWidgets.QPushButton("")
         self.reset_timer_btn = QtWidgets.QPushButton("")
         self.goto_btn = QtWidgets.QPushButton("󰓾")
-        self.record_btn = QtWidgets.QPushButton("󰑋")
+        self.clear_path_btn = QtWidgets.QPushButton("󰼊")
+        self.record_btn = QtWidgets.QPushButton("󰿎")
 
         self.buttons.append(self.start_btn)
         self.buttons.append(self.reset_timer_btn)
         self.buttons.append(self.goto_btn)
+        self.buttons.append(self.clear_path_btn)
         self.buttons.append(self.record_btn)
 
         self.start_btn.setToolTip("Start/Pause/Resume")
         self.reset_timer_btn.setToolTip("Reset Timer")
         self.goto_btn.setToolTip("Go To")
+        self.clear_path_btn.setToolTip("Clear Path")
         self.record_btn.setToolTip("Record")
 
         for btn in self.buttons:
@@ -59,7 +62,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.setStyleSheet("""
             QPushButton {
                 background-color: rgba(255, 255, 255, 0.08);
-                padding: 12px 36px 12px 32px;
+                padding: 12px 16px 12px 12px;
                 color: white;
                 border: none;
                 border-radius: 8px;
@@ -94,6 +97,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.start_btn.clicked.connect(self.handle_start_click)
         self.goto_btn.clicked.connect(self.handle_goto_click)
         self.record_btn.clicked.connect(self.handle_record_click)
+        self.clear_path_btn.clicked.connect(self.handle_clear_path_click)
 
     def update_stop_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -115,13 +119,9 @@ class ButtonsWidget(QtWidgets.QWidget):
         font_color = "#ff0000" if is_active else "#00ff00"
         button.setStyleSheet(f"""
             QPushButton {{
-                font-size: 42px;
-                padding: 2px 36px 3px 32px;
                 color: {font_color};
             }}
             QPushButton:hover {{
-                font-size: 42px;
-                padding: 2px 36px 3px 32px;
                 background-color: rgba(255, 255, 255, 0.3);
             }}
         """)
@@ -218,6 +218,9 @@ class ButtonsWidget(QtWidgets.QWidget):
         print("Planning Path")
         cursor_coords = self.main_window.map_widget.graphics_view.get_path()
         self.call_goto_service(cursor_coords)
+
+    def handle_clear_path_click(self) -> None:
+        self.main_window.map_widget.graphics_view.clear_path()
 
     def handle_record_click(self) -> None:
         if self.recording:

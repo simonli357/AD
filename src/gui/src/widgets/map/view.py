@@ -12,6 +12,22 @@ class NodeButton(QtWidgets.QPushButton):
         self.is_start = False
         self.setToolTip(f"  {node_data[0]}: ({node_data[1]:.2f}, {node_data[2]:.2f})")
 
+    def paintEvent(self, event):
+        """Custom painting with proper visible area"""
+        super().paintEvent(event)
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        padding = self.width() * 0.4
+        visible_rect = self.rect().adjusted(
+            padding,
+            padding,
+            -padding,
+            -padding
+        )
+        painter.setBrush(QtGui.QColor(255, 255, 255, 128))
+        painter.setPen(QtGui.QPen(QtGui.QColor(0, 255, 0, 200), 2))
+        painter.drawEllipse(visible_rect)
+
 
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
@@ -40,7 +56,7 @@ class GraphicsView(QGraphicsView):
         self.setStyleSheet("""
             QPushButton {
                 border: none;
-                background-color: #0000ff;
+                background-color: rgba(0,0,0,0);
             }
             QToolTip {
                 background-color: black;
@@ -104,7 +120,7 @@ class GraphicsView(QGraphicsView):
 
     def update_btn_style(self, button, size):
         """Update button color based on boolean state"""
-        color = "#ff00ff" if button.is_clicked else "#0000ff"
+        color = "#ff00ff" if button.is_clicked else "rgba(0,0,0,0)"
         color = "#ffff00" if button.is_start else color
         button.setStyleSheet(f"""
             QPushButton {{
@@ -121,7 +137,7 @@ class GraphicsView(QGraphicsView):
             view_width = self.width()
             view_height = self.height()
             for node, btn in zip(self.nodes, self.node_btns):
-                size = 8 * self.map_widget.current_zoom
+                size = 14 * self.map_widget.current_zoom
                 btn.setFixedSize(size, size)
                 self.update_btn_style(btn, size)
                 x_px = node[1] / self.map_widget.real_x_per_pixel
@@ -169,6 +185,12 @@ class GraphicsView(QGraphicsView):
         x_px = self.path[0].node_data[1]
         y_px = MapData.REAL_WORLD_HEIGHT.value - self.path[0].node_data[2]
         return (x_px, y_px)
+
+    def clear_path(self):
+        self.path.clear()
+        for btn in self.node_btns:
+            btn.is_start = False
+            btn.is_clicked = False
 
     #################
     # Events
