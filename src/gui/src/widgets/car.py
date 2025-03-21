@@ -355,7 +355,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.path_node_vbo.bind()
         gl.glRotatef(-self.steer, 0, 1, 0)
         gl.glRotatef(-self.yaw, 0, 1, 0)
-        gl.glTranslatef(-x, -2.5, -y)
+        gl.glTranslatef(-y, -2.5, -x)
         gl.glRotatef(self.yaw, 0, 1, 0)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.path_node_vbo)
@@ -369,7 +369,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if waypoints is None:
             return
         for i in range(0, len(waypoints) - 1, 4):
-            x = waypoints[i] - (MapData.REAL_WORLD_WIDTH.value - self.x_pos)
+            x = waypoints[i] - self.x_pos
             y = waypoints[i + 1] - (MapData.REAL_WORLD_HEIGHT.value - self.y_pos)
             self.draw_path_node(x * 4, y * 4)
 
