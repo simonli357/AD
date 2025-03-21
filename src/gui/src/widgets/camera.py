@@ -69,9 +69,7 @@ class CameraWidget(QtWidgets.QWidget):
 
             h, w = rgb_image.shape[:2]
             if w != target_width or h != target_height:
-                if target_height > 480 and target_width > 640:
-                    rgb_image = cv2.resize(rgb_image, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
-                else:
+                if target_height < 480 and target_width < 640:
                     rgb_image = cv2.resize(rgb_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             # Convert to QImage
@@ -79,9 +77,6 @@ class CameraWidget(QtWidgets.QWidget):
             bytes_per_line = ch * w
             qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
-
-            # Maintain aspect ratio when scaling
-            pixmap = pixmap.scaled(self.camera_label.size(), QtCore.Qt.KeepAspectRatioByExpanding, QtCore.Qt.SmoothTransformation)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
             print(f"Camera processing error: {e}")
@@ -105,9 +100,7 @@ class CameraWidget(QtWidgets.QWidget):
 
             h, w = depth_colored.shape[:2]
             if w != target_width or h != target_height:
-                if target_height > 480 and target_width > 640:
-                    depth_colored = cv2.resize(depth_colored, (target_width, target_height), interpolation=cv2.INTER_LINEAR)
-                else:
+                if target_height < 480 and target_width < 640:
                     depth_colored = cv2.resize(depth_colored, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             h, w, ch = depth_colored.shape
