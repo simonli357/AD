@@ -182,7 +182,8 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
                     self.main_window.map_widget.update_map_display()
-                    self.main_window.car_widget.distance_traveled = 0
+                    self.main_window.map_widget.graphics_view.dist_traveled = 0
+                    self.main_window.map_widget.graphics_view.set_distance_traveled()
                     self.main_window.map_widget.graphics_view.visited.clear()
                     self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
                     self.main_window.map_widget.graphics_view.set_total_path_distance()
@@ -197,7 +198,8 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.call_start_service(not self.started)
         if not self.started:
             print("Starting")
-            self.main_window.car_widget.distance_traveled = 0
+            self.main_window.map_widget.graphics_view.dist_traveled = 0
+            self.main_window.map_widget.graphics_view.set_distance_traveled()
             self.main_window.map_widget.graphics_view.visited.clear()
             self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
             self.started = True

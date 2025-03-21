@@ -29,7 +29,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = 0
         self.y_pos = 0
         self.z_pos = 0
-        self.distance_traveled = 0
 
         self.grid_vbo = None
         self.path_node_vbo = None
@@ -59,8 +58,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         dx = x - self.x_pos
         dy = y - self.y_pos
         displacement = np.sqrt(dx**2 + dy**2)
-        self.distance_traveled += displacement
-        self.main_window.map_widget.graphics_view.set_distance_traveled(self.distance_traveled)
+        self.main_window.map_widget.graphics_view.distance_traveled += displacement
+        self.main_window.map_widget.graphics_view.set_distance_traveled()
         self.main_window.map_widget.graphics_view.update_visited_destinations(x, y)
         self.yaw = yaw
         self.x_pos = x

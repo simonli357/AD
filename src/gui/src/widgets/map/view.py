@@ -57,6 +57,7 @@ class GraphicsView(QGraphicsView):
             btn.hide()
         self.path = []
         self.visited = {}
+        self.dist_traveled = 0
         self.setStyleSheet("""
             QPushButton {
                 border: none;
@@ -236,8 +237,8 @@ class GraphicsView(QGraphicsView):
         dist = self.calculate_total_path_distance()
         self.total_dist_label.setText(f'󰣰 Distance: {dist:.2f}')
 
-    def set_distance_traveled(self, dist: float) -> None:
-        self.dist_traveled_label.setText(f'  Traveled: {dist:.2f}')
+    def set_distance_traveled(self) -> None:
+        self.dist_traveled_label.setText(f'  Traveled: {self.dist_traveled:.2f}')
 
     def set_dest_visited_num(self, dest_visited: int) -> None:
         self.dest_reached_label.setText(f'󰪥 Reached: {dest_visited:.0f}')
