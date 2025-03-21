@@ -302,7 +302,7 @@ class MapWidget(QtWidgets.QWidget):
             if self.detected_data is None or len(self.detected_data) == 0:
                 return
             x = self.detected_data[0, self.road_msg_dict['x']]
-            y = self.detected_data[0, self.road_msg_dict['y']]
+            y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
             speed = self.detected_data[0, self.road_msg_dict['speed']]
