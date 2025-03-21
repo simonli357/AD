@@ -31,6 +31,57 @@ class NodeButton(QtWidgets.QPushButton):
         painter.drawEllipse(visible_rect)
 
 
+class HidableOverlay(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMouseTracking(True)
+        self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
+        self.setStyleSheet("""
+            background-color: rgba(40, 40, 40, 0.7);
+            border: none;
+            border-radius: 8px;
+        """)
+        self.global_rect = QtCore.QRect()
+        self.event_filter_installed = False
+        self.update_global_rect()
+
+    def update_global_rect(self):
+        if self.parent():
+            parent_global = self.parent().mapToGlobal(QtCore.QPoint(0, 0))
+            self_global = parent_global + self.pos()
+            self.global_rect = QtCore.QRect(self_global, self.size())
+        else:
+            self.global_rect = QtCore.QRect(
+                self.mapToGlobal(QtCore.QPoint(0, 0)),
+                self.size()
+            )
+
+    def resizeEvent(self, event):
+        self.update_global_rect()
+        super().resizeEvent(event)
+
+    def moveEvent(self, event):
+        self.update_global_rect()
+        super().moveEvent(event)
+
+    def enterEvent(self, event):
+        self.hide()
+        if not self.event_filter_installed:
+            QtWidgets.QApplication.instance().installEventFilter(self)
+            self.event_filter_installed = True
+        super().enterEvent(event)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.MouseMove:
+            self.update_global_rect()
+            pos = event.globalPos()
+            if not self.global_rect.contains(pos):
+                self.show()
+                QtWidgets.QApplication.instance().removeEventFilter(self)
+                self.event_filter_installed = False
+        return super().eventFilter(obj, event)
+
+
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -99,12 +150,7 @@ class GraphicsView(QGraphicsView):
             color: yellow;
             font-size: 20px;
         """)
-        self.overlay_widget = QWidget(self)
-        self.overlay_widget.setStyleSheet("""
-            background: rgba(40, 40, 40, 0.8);
-            border: none;
-            border-radius: 8px;
-        """)
+        self.overlay_widget = HidableOverlay(self)
         self.overlay_widget.setFixedSize(
             int(self.width() * 0.25),
             int(self.height() * 0.15)
