@@ -354,7 +354,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.path_node_vbo.bind()
         gl.glRotatef(-self.steer, 0, 1, 0)
         gl.glRotatef(-self.yaw, 0, 1, 0)
-        gl.glTranslatef(-y, -2.5, -x)
+        gl.glTranslatef(-x, -2.5, -y)
         gl.glRotatef(self.yaw, 0, 1, 0)
         gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
         gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.path_node_vbo)
