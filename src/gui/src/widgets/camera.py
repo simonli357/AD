@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QImage
 
 import cv2
 import numpy as np
@@ -32,21 +33,14 @@ class CameraWidget(QtWidgets.QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        # Create a container widget that will hold the camera_label
         container_widget = QtWidgets.QWidget(self)
-        
-        # Set the background for the container widget
         container_widget.setStyleSheet("""
             background-color: rgba(255, 255, 255, 0.08);
             border-radius: 12px;
         """)
-
-        # Create a layout for the container widget
         container_layout = QtWidgets.QVBoxLayout(container_widget)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setAlignment(QtCore.Qt.AlignCenter)  # This centers the widget inside the container
-
-        # Camera display label
         self.camera_label = QtWidgets.QLabel(container_widget)
         self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.camera_label.setMaximumWidth(640)
@@ -54,8 +48,6 @@ class CameraWidget(QtWidgets.QWidget):
         self.camera_label.setScaledContents(True)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)  # Center the text inside the label (if needed)
         container_layout.addWidget(self.camera_label)
-
-        # Add the container widget to the main layout
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -81,7 +73,7 @@ class CameraWidget(QtWidgets.QWidget):
             # Convert to QImage
             h, w, ch = rgb_image.shape
             bytes_per_line = ch * w
-            qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_BGR888)
+            qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
@@ -111,7 +103,7 @@ class CameraWidget(QtWidgets.QWidget):
 
             h, w, ch = depth_colored.shape
             bytes_per_line = ch * w
-            qt_image = QtGui.QImage(depth_colored.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+            qt_image = QtGui.QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
