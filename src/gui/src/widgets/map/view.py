@@ -222,14 +222,12 @@ class GraphicsView(QGraphicsView):
         distances = np.sqrt(dx**2 + dy**2)
         return np.sum(distances)
 
-    def is_near(self, pos_x: float, pos_y: float, x: float, y: float, thresh: float):
-        if pos_x < x + thresh and pos_x > x - thresh and pos_y < y + thresh and pos_y > y - thresh:
-            return True
-        return False
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def update_visited_destinations(self, car_x: float, car_y: float):
         for id, x, y in self.destinations:
-            if self.is_near(car_x, car_y, x, y, 0.2):
+            if self.is_near(car_x, car_y, x, y, 0.2, 0.2):
                 self.visited.append(id)
                 self.set_dest_visited_num(len(self.visited))
                 break
