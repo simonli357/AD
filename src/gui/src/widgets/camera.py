@@ -65,6 +65,7 @@ class CameraWidget(QtWidgets.QWidget):
 
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
+            cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
             target_width = self.camera_label.width()
             target_height = self.camera_label.height()
