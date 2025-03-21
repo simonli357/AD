@@ -3,6 +3,7 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
+from .enums import MapData
 import numpy as np
 from collections import namedtuple
 import os
@@ -369,7 +370,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             return
         for i in range(0, len(waypoints) - 1, 4):
             x = waypoints[i] - self.x_pos
-            y = waypoints[i + 1] - self.y_pos
+            y = waypoints[i + 1] - (MapData.REAL_WORLD_HEIGHT.value - self.y_pos)
             self.draw_path_node(x * 4, y * 4)
 
     def draw_detected_object(self):
