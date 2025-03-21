@@ -215,8 +215,8 @@ class GraphicsView(QGraphicsView):
     def calculate_total_path_distance(self):
         if self.map_widget.state_refs_np.shape[1] < 2:
             return 0.0
-        x_coords = self.state_refs_np[0, :]
-        y_coords = self.state_refs_np[1, :]
+        x_coords = self.map_widget.state_refs_np[0, :]
+        y_coords = self.map_widget.state_refs_np[1, :]
         dx = x_coords[1:] - x_coords[:-1]
         dy = y_coords[1:] - y_coords[:-1]
         distances = np.sqrt(dx**2 + dy**2)
