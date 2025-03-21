@@ -112,6 +112,8 @@ class OptionsWidget(QtWidgets.QWidget):
             while (retries < max_retries):
                 if self.server.utility_node_client.set_states_srv_msg.success:
                     print("Successful set_states service call")
+                    time.sleep(0.5)
+                    self.main_window.map_widget.graphics_view.set_distance_traveled(0)
                     return
                 retries += 1
                 time.sleep(0.1)
