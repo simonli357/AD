@@ -120,6 +120,12 @@ class MapWidget(QtWidgets.QWidget):
         self.realtime_timer.timeout.connect(self.update_detected_objects)
         self.realtime_timer.start(100)
 
+        self.mouse_updates = 0
+        self.timer = QtCore.QTimer(self)
+        self.timer.setInterval(100)
+        self.timer.timeout.connect(self.update_scene)
+        self.timer.start()
+
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setAlignment(QtCore.Qt.AlignLeft)
@@ -520,23 +526,29 @@ class MapWidget(QtWidgets.QWidget):
             self.update_map_display()
             return True
         elif event.type() == QtCore.QEvent.MouseMove:
-            pos = event.pos()
-            scene_pos = self.graphics_view.mapToScene(pos)
-            x_scene = scene_pos.x()
-            y_scene = scene_pos.y()
-
-            if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
-                real_x = scene_pos.x() * self.real_x_per_pixel
-                real_y = scene_pos.y() * self.real_y_per_pixel
-                self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
-                self.cursor_coords_label.move(int(pos.x() - self.cursor_coords_label.width() / 2), int(pos.y() - 60))
-                self.cursor_coords_label.show()
-            self.update_map_display()
+            self.mouse_pos = event.pos()
+            self.mouse_updates += 1
             return False
         elif event.type() == QtCore.QEvent.Leave:
             self.cursor_coords_label.hide()
             return False
         return super().eventFilter(source, event)
+
+    def update_scene(self):
+        if hasattr(self, 'mouse_pos') and hasattr(self, 'mouse_updates'):
+            if self.mouse_updates == 0:
+                return
+            scene_pos = self.graphics_view.mapToScene(self.mouse_pos)
+            x_scene = scene_pos.x()
+            y_scene = scene_pos.y()
+            if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
+                real_x = scene_pos.x() * self.real_x_per_pixel
+                real_y = scene_pos.y() * self.real_y_per_pixel
+                self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
+                self.cursor_coords_label.move(int(self.mouse_pos.x() - self.cursor_coords_label.width() / 2), int(self.mouse_pos.y() - 60))
+                self.cursor_coords_label.show()
+            self.update_map_display()
+            self.mouse_updates -= 1
 
     def update_params(self, req) -> None:
         try:
