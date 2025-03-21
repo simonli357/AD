@@ -109,7 +109,6 @@ class MainWindow(QMainWindow):
         cam_wrapper = QWidget()
         self.cam_wrapper_layout = QVBoxLayout(cam_wrapper)
         self.cam_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.cam_wrapper_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignVCenter)
         self.cam_wrapper_layout.addWidget(self.cam_widget)
         self.cam_wrapper_layout.addWidget(self.buttons_widget)
         self.right_layout = QVBoxLayout(right_widgets)

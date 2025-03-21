@@ -31,27 +31,35 @@ class CameraWidget(QtWidgets.QWidget):
 
         self.setup_ui()
 
-        self.update_camera_signal.connect(self.update_camera_display)
-
     def setup_ui(self):
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
-        # Camera display label
-        self.camera_label = QtWidgets.QLabel(self)
-        self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.camera_label.setScaledContents(True)
-        self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.layout.addWidget(self.camera_label)
-
-        # Styling
-        self.setStyleSheet("""
+        # Create a container widget that will hold the camera_label
+        container_widget = QtWidgets.QWidget(self)
+        
+        # Set the background for the container widget
+        container_widget.setStyleSheet("""
             background-color: rgba(255, 255, 255, 0.08);
             border-radius: 12px;
         """)
 
-    def update_camera_display(self, pixmap):
-        self.camera_label.setPixmap(pixmap)
+        # Create a layout for the container widget
+        container_layout = QtWidgets.QVBoxLayout(container_widget)
+        container_layout.setContentsMargins(0, 0, 0, 0)
+        container_layout.setAlignment(QtCore.Qt.AlignCenter)  # This centers the widget inside the container
+
+        # Camera display label
+        self.camera_label = QtWidgets.QLabel(container_widget)
+        self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.camera_label.setMaximumWidth(640)
+        self.camera_label.setMaximumHeight(480)
+        self.camera_label.setScaledContents(True)
+        self.camera_label.setAlignment(QtCore.Qt.AlignCenter)  # Center the text inside the label (if needed)
+        container_layout.addWidget(self.camera_label)
+
+        # Add the container widget to the main layout
+        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setAlignment(QtCore.Qt.AlignCenter)
+        self.layout.addWidget(container_widget)  # Add the container widget to the main layout
 
     def process_camera_frame(self, cv_image):
         """Process RGB camera frame"""
@@ -62,20 +70,18 @@ class CameraWidget(QtWidgets.QWidget):
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
 
-            # Convert BGR to RGB
-            rgb_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
             target_width = self.camera_label.width()
             target_height = self.camera_label.height()
 
-            h, w = rgb_image.shape[:2]
+            h, w = cv_image.shape[:2]
             if w != target_width or h != target_height:
                 if target_height < 480 and target_width < 640:
-                    rgb_image = cv2.resize(rgb_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
+                    rgb_image = cv2.resize(cv_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             # Convert to QImage
             h, w, ch = rgb_image.shape
             bytes_per_line = ch * w
-            qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
+            qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_BGR888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
