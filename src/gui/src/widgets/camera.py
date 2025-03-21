@@ -68,7 +68,7 @@ class CameraWidget(QtWidgets.QWidget):
             h, w = cv_image.shape[:2]
             if w != target_width or h != target_height:
                 if target_height < 480 and target_width < 640:
-                    rgb_image = cv2.resize(cv_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
+                    cv_image = cv2.resize(cv_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             # Convert to QImage
             h, w, ch = rgb_image.shape
