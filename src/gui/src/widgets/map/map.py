@@ -118,11 +118,11 @@ class MapWidget(QtWidgets.QWidget):
         # Timer for updates
         self.realtime_timer = QtCore.QTimer(self)
         self.realtime_timer.timeout.connect(self.update_detected_objects)
-        self.realtime_timer.start(100)
+        self.realtime_timer.start(150)
 
         self.mouse_updates = 0
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(100)
+        self.timer.setInterval(150)
         self.timer.timeout.connect(self.update_scene)
         self.timer.start()
 

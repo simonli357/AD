@@ -151,12 +151,15 @@ class MainWindow(QMainWindow):
 
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
-        self.render_thread = threading.Thread(target=self.render_callbacks, args=(), daemon=True)
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
         self.udp_thread.start()
         self.tcp_thread.start()
-        self.render_thread.start()
         self.cam_thread.start()
+
+        self.timer = QtCore.QTimer(self)
+        self.timer.setInterval(32)
+        self.timer.timeout.connect(self.render_callbacks)
+        self.timer.start()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -190,7 +193,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-            time.sleep(0.016)
+            time.sleep(0.032)
 
     def udp_callbacks(self) -> None:
         while self.alive:
@@ -224,19 +227,19 @@ class MainWindow(QMainWindow):
                 self.comm.steer_signal.emit(steer)
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
-            time.sleep(0.016)
+            time.sleep(0.017)
 
     def cam_record_callback(self) -> None:
         while self.alive:
-            rgb_image = self.server.udp_connection.parse_rgb_image()
-            if rgb_image is not None:
-                self.comm.rgb_frame_signal.emit(rgb_image)
-            time.sleep(2.0)
+            if self.buttons_widget.recording:
+                rgb_image = self.server.udp_connection.parse_rgb_image()
+                if rgb_image is not None:
+                    self.comm.rgb_frame_signal.emit(rgb_image)
+                time.sleep(2.0)
+            time.sleep(0.2)
 
     def render_callbacks(self) -> None:
-        while self.alive:
-            self.comm.render_widget_signal.emit()
-            time.sleep(0.016)
+        self.comm.render_widget_signal.emit()
 
     def closeEvent(self, event):
         try:
