@@ -369,7 +369,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if waypoints is None:
             return
         for i in range(0, len(waypoints) - 1, 4):
-            x = waypoints[i] - self.x_pos
+            x = waypoints[i] - (MapData.REAL_WORLD_WIDTH.value - self.x_pos)
             y = waypoints[i + 1] - (MapData.REAL_WORLD_HEIGHT.value - self.y_pos)
             self.draw_path_node(x * 4, y * 4)
 
