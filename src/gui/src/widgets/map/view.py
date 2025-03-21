@@ -228,7 +228,7 @@ class GraphicsView(QGraphicsView):
 
     def update_visited_destinations(self, car_x: float, car_y: float):
         for id, x, y in self.destinations:
-            if self.is_near(car_x, car_y, x, y, 0.2, 0.2):
+            if self.is_near(car_x, car_y, x, y, 0.05, 0.05):
                 self.visited.add(id)
                 self.set_dest_visited_num(len(self.visited))
                 break
