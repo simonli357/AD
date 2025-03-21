@@ -31,6 +31,7 @@ class CameraWidget(QtWidgets.QWidget):
         ]
 
         self.setup_ui()
+        self.update_camera_signal.connect(self.update_camera_display)
 
     def setup_ui(self):
         container_widget = QtWidgets.QWidget(self)
@@ -40,18 +41,21 @@ class CameraWidget(QtWidgets.QWidget):
         """)
         container_layout = QtWidgets.QVBoxLayout(container_widget)
         container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setAlignment(QtCore.Qt.AlignCenter)  # This centers the widget inside the container
+        container_layout.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label = QtWidgets.QLabel(container_widget)
         self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.camera_label.setMaximumWidth(640)
         self.camera_label.setMaximumHeight(480)
         self.camera_label.setScaledContents(True)
-        self.camera_label.setAlignment(QtCore.Qt.AlignCenter)  # Center the text inside the label (if needed)
+        self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         container_layout.addWidget(self.camera_label)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setAlignment(QtCore.Qt.AlignCenter)
-        self.layout.addWidget(container_widget)  # Add the container widget to the main layout
+        self.layout.addWidget(container_widget)
+
+    def update_camera_display(self, pixmap):
+        self.camera_label.setPixmap(pixmap)
 
     def process_camera_frame(self, cv_image):
         """Process RGB camera frame"""
