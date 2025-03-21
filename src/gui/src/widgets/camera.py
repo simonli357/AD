@@ -71,9 +71,9 @@ class CameraWidget(QtWidgets.QWidget):
                     cv_image = cv2.resize(cv_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             # Convert to QImage
-            h, w, ch = rgb_image.shape
+            h, w, ch = cv_image.shape
             bytes_per_line = ch * w
-            qt_image = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            qt_image = QtGui.QImage(cv_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
