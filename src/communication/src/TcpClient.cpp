@@ -372,9 +372,10 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	auto fn = [this, lane]() {
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
-		int stopline = lane.stopline;
+		bool stopline = lane.stopline;
+        float stopline_dist = lane.stopline_dist;
 		bool crosswalk = lane.crosswalk;
-		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, crosswalk, false).serialize(udp_data_types[0]);
+		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, stopline_dist, crosswalk, false).serialize(udp_data_types[0]);
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
 		std::memcpy(segment.data(), bytes.data(), bytes.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
