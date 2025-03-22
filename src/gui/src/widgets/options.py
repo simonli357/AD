@@ -204,6 +204,6 @@ class OptionsWidget(QtWidgets.QWidget):
 
     def handle_fetch_run_btn_click(self) -> None:
         try:
-            self.main_window.server.send_string('refresh_run')
+            self.main_window.server.utility_node_client.send_string('refresh_run')
         except Exception:
             pass

@@ -497,6 +497,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	}
     if (decoded_string == "refresh_run") {
         run_sent = false;
+        std::cout << "Resending Run Parameters to GUI" << std::endl;
         return;
     }
 	strings.push(decoded_string);
