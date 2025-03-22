@@ -251,6 +251,8 @@ class SSHFormWidget(QDialog):
         passwd = self.passwd.text()
         catkin_ws = self.remote_catkin_ws.text()
         args = self.args.text()
+        if args == 'args':
+            args = ''
         if not target:
             target = self.ssh_target_cached
         else:
@@ -287,6 +289,8 @@ class SSHFormWidget(QDialog):
         src_devel = 'source devel/setup.bash'
         catkin_ws = self.catkin_ws.text()
         args = self.args.text()
+        if args == 'args':
+            args = ''
         if not catkin_ws:
             catkin_ws = self.catkin_ws_cached
         else:
@@ -297,6 +301,10 @@ class SSHFormWidget(QDialog):
             self.cache['args'] = args
         command = ''
         bash = 'exec bash -c'
+        if 'IN_NIX_SHELL' in os.environ:
+            bash = 'exec zsh -c'
+            src_ros = 'echo ""'
+            src_devel = 'source devel/setup.zsh'
         if self.terminal_type == TerminalType.CONTROL:
             command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
         elif self.terminal_type == TerminalType.CAM:
