@@ -11,7 +11,7 @@ Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, bool stopline, float 
     stopline_dist_length = sizeof(stopline_dist);
 	crosswalk_length = sizeof(crosswalk);
 	dotted_length = sizeof(dotted);
-	data_length = header_length + center_length + stopline_length + crosswalk_length + dotted_length;
+	data_length = header_length + center_length + stopline_length + stopline_dist_length + crosswalk_length + dotted_length;
 }
 
 std::unique_ptr<Lane2Msg> Lane2Msg::deserialize(std::vector<uint8_t> &bytes) {

@@ -20,6 +20,7 @@ class CameraWidget(QtWidgets.QWidget):
         self.center = None
         self.crosswalk = False
         self.stopline = False
+        self.stopline_dist = None
 
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
@@ -169,18 +170,22 @@ class CameraWidget(QtWidgets.QWidget):
             return image
         cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
         cv2.putText(image, f"center: {self.center:.2f}",
-                    (int(image.shape[1] * 0.5), int(image.shape[0] * 0.1)),
+                    (int(image.shape[1] * 0.05), int(image.shape[0] * 0.1)),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # Add text if stopline or crosswalk is detected
-        if self.stopline > 0:
+        if self.stopline:
             cv2.putText(image, "Stopline detected!",
-                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.3)),
+                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.3)),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         if self.crosswalk:
             cv2.putText(image, "Crosswalk detected!",
-                        (int(image.shape[1] * 0.5), int(image.shape[0] * 0.4)),
+                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.4)),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+        if self.stopline_dist:
+            cv2.putText(image, f"Stopline distance: {self.stopline_dist:.2f}",
+                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.2)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         return image
 
     def toggle_depth_display(self, show_depth):
@@ -198,3 +203,4 @@ class CameraWidget(QtWidgets.QWidget):
         self.center = lane.center
         self.crosswalk = lane.crosswalk
         self.stopline = lane.stopline
+        self.stopline_dist = lane.stopline_dist

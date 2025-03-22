@@ -19,7 +19,7 @@ class Lane2Msg:
         lane_msg = Lane2Msg()
         lane_msg.header = Header().deserialize(splits[0])
         lane_msg.center = struct.unpack('f', splits[1])[0]
-        lane_msg.stopline = splits[3] == b'\x01'
+        lane_msg.stopline = splits[2] == b'\x01'
         lane_msg.stopline_dist = struct.unpack('f', splits[3])[0]
         lane_msg.crosswalk = splits[4] == b'\x01'
         lane_msg.dotted = splits[5] == b'\x01'
