@@ -387,7 +387,7 @@ public:
         return true;
     }
 
-    bool call_waypoint_service(double x, double y, double yaw, std::shared_ptr<TcpClient> tcp_client) {
+    bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient>& tcp_client) {
         utils::waypoints srv;
         srv.request.pathName = pathName;
         srv.request.x0 = x;
@@ -573,7 +573,7 @@ public:
         
         return smoothed_refs;
     }
-    bool set_params(std::shared_ptr<TcpClient> tcp_client) {
+    bool set_params(const std::shared_ptr<TcpClient>& tcp_client) {
         std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
         nh.setParam("/state_refs", state_refs_v);
         std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
