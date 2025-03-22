@@ -204,7 +204,6 @@ class RunOverlay(QWidget):
 
     def show_menu(self) -> None:
         original_point = self.change_run_btn.mapToGlobal(self.change_run_btn.rect().topRight())
-        print(original_point)
         self.menu.exec_(original_point)
 
     def on_action_triggered(self, run):
