@@ -1,12 +1,13 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget
+from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget, QPushButton, QApplication, QVBoxLayout
 from .utils import MapUtils
 from ..enums import MapData
+from .run import RunOverlay
 
 import numpy as np
 
 
-class NodeButton(QtWidgets.QPushButton):
+class NodeButton(QPushButton):
     def __init__(self, node_data, parent=None):
         super().__init__(parent)
         self.node_data = node_data
@@ -31,7 +32,7 @@ class NodeButton(QtWidgets.QPushButton):
         painter.drawEllipse(visible_rect)
 
 
-class HidableOverlay(QtWidgets.QWidget):
+class HidableOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMouseTracking(True)
@@ -67,7 +68,7 @@ class HidableOverlay(QtWidgets.QWidget):
     def enterEvent(self, event):
         self.hide()
         if not self.event_filter_installed:
-            QtWidgets.QApplication.instance().installEventFilter(self)
+            QApplication.instance().installEventFilter(self)
             self.event_filter_installed = True
         super().enterEvent(event)
 
@@ -77,7 +78,7 @@ class HidableOverlay(QtWidgets.QWidget):
             pos = event.globalPos()
             if not self.global_rect.contains(pos):
                 self.show()
-                QtWidgets.QApplication.instance().removeEventFilter(self)
+                QApplication.instance().removeEventFilter(self)
                 self.event_filter_installed = False
         return super().eventFilter(obj, event)
 
@@ -99,13 +100,6 @@ class GraphicsView(QGraphicsView):
         map_utils = MapUtils()
         self.nodes = map_utils.get_all_nodes()
         self.destinations = map_utils.get_destination_nodes()
-        self.node_btns = [
-            NodeButton(node_data=node, parent=self)
-            for node in self.nodes
-        ]
-        for btn in self.node_btns:
-            btn.clicked.connect(lambda _, b=btn: self.on_node_click(b))
-            btn.hide()
         self.path = []
         self.visited = set()
         self.dist_traveled = 0
@@ -126,6 +120,13 @@ class GraphicsView(QGraphicsView):
         self.setup_cursor()
 
     def setup_ui(self):
+        self.node_btns = [
+            NodeButton(node_data=node, parent=self)
+            for node in self.nodes
+        ]
+        for btn in self.node_btns:
+            btn.clicked.connect(lambda _, b=btn: self.on_node_click(b))
+            btn.hide()
         self.total_dist_label = QLabel('󰣰 Distance: --:--')
         self.total_dist_label.setStyleSheet("""
             border: none;
@@ -155,7 +156,7 @@ class GraphicsView(QGraphicsView):
             int(self.width() * 0.25),
             int(self.height() * 0.15)
         )
-        self.wrapper = QtWidgets.QVBoxLayout(self.overlay_widget)
+        self.wrapper = QVBoxLayout(self.overlay_widget)
         self.wrapper.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignLeft)
         self.wrapper.setContentsMargins(10, 10, 10, 10)
         self.wrapper.addWidget(self.total_dist_label)
@@ -165,6 +166,8 @@ class GraphicsView(QGraphicsView):
             self.width() - self.overlay_widget.width() - 5,
             5
         )
+        self.run_overlay = RunOverlay(self)
+        self.run_overlay.move(15, 0)
 
     def setup_cursor(self) -> None:
         crosshair_pixmap = QtGui.QPixmap(16, 16)
@@ -295,14 +298,12 @@ class GraphicsView(QGraphicsView):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.overlay_widget.setFixedSize(
-            256,
-            144
-        ),
+        self.overlay_widget.setFixedSize(256, 144)
         self.overlay_widget.move(
             event.size().width() - self.overlay_widget.width() - 5,
             5
-        ),
+        )
+        self.run_overlay.move(15, 0)
         event.accept()
 
     def mousePressEvent(self, event):
