@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QImage
+from .enums import CameraParams
 
 import cv2
 import numpy as np
@@ -44,10 +45,8 @@ class CameraWidget(QtWidgets.QWidget):
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label = QtWidgets.QLabel(container_widget)
-        self.camera_label.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.camera_label.setMaximumWidth(640)
-        self.camera_label.setMaximumHeight(480)
-        self.camera_label.setScaledContents(True)
+        self.camera_label.setFixedWidth(CameraParams.MIN_WIDTH.value)
+        self.camera_label.setFixedHeight(CameraParams.MIN_HEIGHT.value)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label.setStyleSheet("""
             background-color: transparent;
@@ -70,14 +69,6 @@ class CameraWidget(QtWidgets.QWidget):
             cv_image = self.add_sign_detection_to_image(cv_image)
             cv_image = self.add_lane_detection_to_image(cv_image)
             cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-
-            target_width = self.camera_label.width()
-            target_height = self.camera_label.height()
-
-            h, w = cv_image.shape[:2]
-            if w != target_width or h != target_height:
-                if target_height < 480 and target_width < 640:
-                    cv_image = cv2.resize(cv_image, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
             # Convert to QImage
             h, w, ch = cv_image.shape
@@ -102,14 +93,7 @@ class CameraWidget(QtWidgets.QWidget):
             depth_colored = self.add_sign_detection_to_image(depth_colored)
             depth_colored = self.add_lane_detection_to_image(depth_colored)
 
-            target_width = self.camera_label.width()
-            target_height = self.camera_label.height()
-
-            h, w = depth_colored.shape[:2]
-            if w != target_width or h != target_height:
-                if target_height < 480 and target_width < 640:
-                    depth_colored = cv2.resize(depth_colored, (target_width, target_height), interpolation=cv2.INTER_AREA)
-
+            # Convert to QImage
             h, w, ch = depth_colored.shape
             bytes_per_line = ch * w
             qt_image = QtGui.QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)

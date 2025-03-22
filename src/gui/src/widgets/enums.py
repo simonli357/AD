@@ -17,3 +17,11 @@ class MapData(Enum):
     REAL_WORLD_HEIGHT = 13.786
     REAL_X_PER_PIXEL = REAL_WORLD_WIDTH / PNG_WIDTH
     REAL_Y_PER_PIXEL = REAL_WORLD_HEIGHT / PNG_HEIGHT
+
+
+class CameraParams(Enum):
+    MIN_WIDTH = 640
+    MIN_HEIGHT = 480
+    FPS_60 = 0.017  # 60FPS
+    FPS_30 = 0.034  # 30 FPS
+    RECORDING_REFRESH_RATE = 2.0  # Capture 1 frame every 2 seconds if recording

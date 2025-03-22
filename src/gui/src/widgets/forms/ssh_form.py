@@ -317,7 +317,7 @@ class SSHFormWidget(QDialog):
     def accept(self):
         if self.args_cached == 'args':
             self.args_cached = ''
-        if not self.use_ssh:
+        if self.use_ssh:
             self.set_remote_cmd()
         else:
             self.set_local_cmd()
