@@ -174,8 +174,24 @@ class RunOverlay(QWidget):
 
         self.menu = QMenu(self)
         self.menu.setStyleSheet("""
-            color: white;
-            background-color: rgba(255, 255, 255, 0.08);
+            QMenu {
+                color: white;
+                font-size: 16px;
+                border: none;
+                background-color: transparent;
+            }
+            QMenu::item {
+                background-color: rgba(40, 40, 40, 0.5);
+                margin: 1px;
+                padding-left: 30px;
+                padding-right: 30px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                border-radius: 8px;
+            }
+            QMenu::item:selected {
+                background-color: purple;
+            }
         """)
         for run in self.runs:
             path_name = run.get('path', 'Unknown')
@@ -187,7 +203,9 @@ class RunOverlay(QWidget):
         self.adjustSize()
 
     def show_menu(self) -> None:
-        self.menu.exec_(self.change_run_btn.mapToGlobal(self.change_run_btn.rect().bottomLeft()))
+        original_point = self.change_run_btn.mapToGlobal(self.change_run_btn.rect().topRight())
+        print(original_point)
+        self.menu.exec_(original_point)
 
     def on_action_triggered(self, run):
         x0 = run.get('x0')
