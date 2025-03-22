@@ -36,8 +36,6 @@ class LaneDetector {
 			old_lane_detector = std::make_unique<OldLaneDetector>(showflag, printflag);
 		}
 
-		int trapezoidal_width = IMG_WIDTH;
-		int trapezoidal_height = 280;
 		nh.getParam("trapezoidal_width", trapezoidal_width);
 		nh.getParam("trapezoidal_height", trapezoidal_height);
 		nh.getParam("scale_factor", scale_factor);
@@ -98,6 +96,8 @@ class LaneDetector {
 	double pixel_to_meter_y_intercept = 0.3778245;
 	double meter_to_pixel_y_slope = 1 / pixel_to_meter_y_slope;
 	double meter_to_pixel_y_intercept = -pixel_to_meter_y_intercept / pixel_to_meter_y_slope;
+	int trapezoidal_width = IMG_WIDTH;
+	int trapezoidal_height = 280;
 
 	ros::NodeHandle nh;
 	ros::Publisher lane_pub;
@@ -158,9 +158,25 @@ class LaneDetector {
 			if (!getIPM(processed_image, ipm_processed)) return;
 			stopline_dist = find_stopline(ipm_processed);
 
-			// cv::imshow("processed_image", processed_image);
-			// cv::imshow("ipm_processed", ipm_processed);
-			// cv::waitKey(1);
+			cv::imshow("processed_image", processed_image);
+			cv::waitKey(1);
+
+			const cv::Mat initial = (cv::Mat_<float>(4, 2) <<
+				0, IMG_HEIGHT,                                                 // Bottom-left
+				IMG_WIDTH, IMG_HEIGHT,                                         // Bottom-right
+				320 + trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height,  // Top-right
+				320 - trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height); // Top-left
+			// Convert ROI to vector of cv::Point
+			std::vector<cv::Point> roi_pts;
+			for (int i = 0; i < initial.rows; ++i) {
+					roi_pts.emplace_back(cv::Point(initial.at<float>(i, 0), initial.at<float>(i, 1)));
+			}
+			// Draw the polygon outline
+			std::vector<std::vector<cv::Point>> pts = { roi_pts };
+			cv::polylines(image, pts, true, cv::Scalar(0, 0, 255), 2); // red lines
+			// Show the result
+			cv::imshow("ROI Lane", image);
+			cv::waitKey(1);
 
 			find_lanes(ipm_processed); // Get the center indices
 			if(!line_fit(ipm_processed)) return;
@@ -207,7 +223,8 @@ class LaneDetector {
 				cv::waitKey(1);
 			}
 		} else {
-			double center = old_lane_detector->optimized_histogram(image, showflag, printflag);
+			preprocess(image, processed_image);
+			double center = old_lane_detector->optimized_histogram(processed_image, showflag, printflag);
 			lane_msg.center = center;
 			lane_msg.stopline = old_lane_detector->stopline;
 			lane_msg.stopline_dist = old_lane_detector->stopline_dist;
@@ -244,7 +261,7 @@ class LaneDetector {
 
 		// add points from car center to first point seen in the image
 		double current_y_meter = pixel_to_meter_y_intercept; // where the image starts
-		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
 		double left_x = evaluate_poly(y_pixel, left_fit);
 		double right_x = evaluate_poly(y_pixel, right_fit);
 		double center_x = 0.5 * (left_x + right_x);
@@ -262,7 +279,7 @@ class LaneDetector {
 		current_y_meter = pixel_to_meter_y_intercept;
 		std::cout << "done adding unseen waypoints, num_unseen_waypoints: " << num_unseen_waypoints << ", current_y_meter: " << current_y_meter << std::endl;
 		for (int i = 0; i < num_waypoints - num_unseen_waypoints; ++i) {
-			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter);
+			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
 
 			left_x = evaluate_poly(y_pixel, left_fit);
 			right_x = evaluate_poly(y_pixel, right_fit);

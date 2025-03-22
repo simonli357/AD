@@ -1049,12 +1049,10 @@ public:
     }
     void check_car() {
         double dist;
-        std::list<int> cars = utils.recent_car_indices;
-        // std::cout << "number of cars detected: " << cars.size() << std::endl;
+        auto& cars = utils.detected_cars;
         utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
-        // for (int car_index: cars) {
             utils.update_states(x_current);
             update_mpc_states(x_current[0], x_current[1], x_current[2]);
             utils.debug("CHECK_CAR(): current state: " + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]), 4);
@@ -1128,11 +1126,6 @@ public:
                 double min_dist = std::sqrt(min_dist_sq);
                 double min_dist_adj = std::sqrt(min_dist_sq_adj);
                 auto detected_car_state = DETECTED_CAR_STATE::NOT_SURE;
-                // if (min_dist < LANE_OFFSET - CAR_WIDTH * 0.8) {
-                //     detected_car_state = DETECTED_CAR_STATE::SAME_LANE;
-                // } else if (min_dist > LANE_OFFSET - CAR_WIDTH * 1.2) {
-                //     detected_car_state = DETECTED_CAR_STATE::ADJACENT_LANE;
-                // }
                 utils.debug("CHECK_CAR(): min_dist: " + helper::d2str(min_dist) + ", min_dist_adj: " + helper::d2str(min_dist_adj), 4);
                 if (on_highway && min_dist > LANE_OFFSET - CAR_WIDTH && min_dist_adj > LANE_OFFSET - CAR_WIDTH) {
                         detected_car_state = DETECTED_CAR_STATE::OPPOSITE_LANE;
@@ -1281,11 +1274,12 @@ void StateMachine::solve() {
     if (idx >= 0 && idx <= path_manager.state_refs.rows() - 2 && N > 0) {
         Eigen::Block<Eigen::MatrixXd> state_refs_block = path_manager.state_refs.block(idx, 0, N, 3);
         Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
+        int status = mpc.solve(state_refs_block, input_refs_block, x_current);
+        
         // x_current(2) = Utility::yaw_mod(x_current(2));
         // auto state_refs = utils.waypoints_to_world(utils.lane_waypoints, x_current);
         // state_refs = PathManager::smooth_yaw_angles(state_refs);
         // int status = mpc.solve(state_refs, input_refs_block, x_current);
-        int status = mpc.solve(state_refs_block, input_refs_block, x_current);
     } else {
         ROS_WARN("Block indices are out of bounds, skipping solve.");
         ROS_INFO("state_refs rows: %ld, cols: %ld", path_manager.state_refs.rows(), path_manager.state_refs.cols());
@@ -1359,8 +1353,8 @@ void StateMachine::run() {
                 check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {
-                    auto x1 = PARKING_SIGN_POSES[0][0];
-                    auto y1 = PARKING_SIGN_POSES[0][1];
+                    auto x1 = PARKING_SIGN_POSES1[0][0];
+                    auto y1 = PARKING_SIGN_POSES1[0][1];
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
                     double detected_dist = utils.object_distance(park_index);
                     double abs_error = std::abs(detected_dist - distance_to_parking_spot);
@@ -1370,7 +1364,13 @@ void StateMachine::run() {
                         utils.debug("parking sign detected, proceeding to parking...", 3);
                         if (sign_relocalize) {
                             auto park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
-                            int success = sign_based_relocalization(park_sign_pose, PARKING_SIGN_POSES, "PARKING", 20.0); // relocalize to parking sign
+                            auto empirical_pose1 = PARKING_SIGN_POSES1[0];
+                            double dist_to_empirical_pose1 = std::pow((park_sign_pose[0] - empirical_pose1[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose1[1]), 2);
+                            auto empirical_pose2 = PARKING_SIGN_POSES2[0];
+                            double dist_to_empirical_pose2 = std::pow((park_sign_pose[0] - empirical_pose2[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose2[1]), 2);
+                            auto& empirical_pose = dist_to_empirical_pose1 < dist_to_empirical_pose2 ? PARKING_SIGN_POSES1 : PARKING_SIGN_POSES2;
+                            // int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING", 20.0); // relocalize to parking sign
+                            int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING"); // relocalize to parking sign
                         }
                         change_state(STATE::PARKING);
                         park_count++;

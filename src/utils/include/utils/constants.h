@@ -87,7 +87,7 @@ namespace VehicleConstants {
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
     static constexpr double MAX_SIGN_DIST = 1.2;
-    static constexpr double MAX_LIGHT_DIST = 1.2;
+    static constexpr double MAX_LIGHT_DIST = 0.9;
     static constexpr double MAX_SIGN_DIST2 = 1.5;
     // static constexpr double MAX_SIGN_DIST = 0.753;
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
@@ -331,9 +331,12 @@ namespace VehicleConstants {
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;
     static constexpr double park_ofs2 = 0.05325;
-    static const std::vector<std::vector<double>> PARKING_SIGN_POSES = {{
+    static const std::vector<std::vector<double>> PARKING_SIGN_POSES1 = {{
         {{8.99-park_ofs2, 0.703367-park_ofs1_right, 0}}, 
         // {{8.99-park_ofs2, 1.1522+park_ofs1_left, 0}}
+    }};
+    static const std::vector<std::vector<double>> PARKING_SIGN_POSES2 = {{
+        {{8.99-park_ofs2, 1.1522+park_ofs1_left, 0}}
     }};
     
     // ROUNDABOUT COORDINATES
