@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 import cv2
@@ -83,7 +83,17 @@ class LanePreprocessingVisualizer:
         mask_roi_gray = np.zeros_like(adaptive_refined_gray)
         mask_roi_gray[int(adaptive_refined_gray.shape[0] / 2.5):, :] = 255
         # adaptive_refined_gray = cv2.bitwise_and(adaptive_refined_gray, mask_roi_gray)
-
+        
+        # alex thresholding
+        # img_roi = img_gray(cv::Rect(0, 384, 640, 96));
+        # cv::minMaxLoc(img_roi, &minVal, &maxVal, &minLoc, &maxLoc);
+        # double threshold_value = std::min(std::max(maxVal - 55.0, 30.0), 200.0);
+        # cv::threshold(img_roi, thresh, threshold_value, 255, cv::THRESH_BINARY);
+        img_roi = gray[384:480, :]
+        minVal, maxVal, _, _ = cv2.minMaxLoc(img_roi)
+        alex_thresh_val = np.clip(maxVal - 55.0, 30.0, 200.0)
+        _, alex_thresh = cv2.threshold(gray, alex_thresh_val, 255, cv2.THRESH_BINARY)
+        
         def resize_disp(img): return cv2.resize(img, (320, 180))
         
         # Resize all images for side-by-side display
@@ -97,6 +107,7 @@ class LanePreprocessingVisualizer:
         adaptive_refined_disp = resize_disp(adaptive_refined)
         adaptive_refined_disp2 = resize_disp(adaptive_refined2)
         adaptive_refined_disp_gray = resize_disp(adaptive_refined_gray)
+        alex_thresh_disp = resize_disp(alex_thresh)
 
         # Stack all preprocessing results in 2 rows
         row2 = np.hstack((gray_disp, clahe_disp, canny_disp))
@@ -146,7 +157,8 @@ class LanePreprocessingVisualizer:
         old_disp = resize_disp(old_thresh)
         
         # Create a placeholder for 3rd image in row4 (optional or duplicate any if needed)
-        row4 = np.hstack((global_morph_disp, otsu_morph_disp, old_disp))
+        # row4 = np.hstack((global_morph_disp, otsu_morph_disp, old_disp))
+        row4 = np.hstack((global_morph_disp, alex_thresh_disp, old_disp))
 
         # Update final visual stack
         final_vis = np.vstack((row1, row2, row3, row4))

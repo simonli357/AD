@@ -195,7 +195,6 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 # add_executable(utility 
 # src/utility_main.cpp
 # src/Utility.cpp
-# src/RoadObject.cpp
 # )
 # target_link_libraries(utility
 # ${catkin_LIBRARIES}
@@ -205,7 +204,6 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 add_executable(controller 
 src/Controller.cpp
 src/Utility.cpp
-src/RoadObject.cpp
 )
 target_link_libraries(controller
 ocp_shared_lib 
@@ -220,7 +218,6 @@ object_detection_lib
 # add_executable(controller2
 # src/Controller2.cpp
 # src/Utility.cpp
-# src/RoadObject.cpp
 # )
 # target_link_libraries(controller2
 # ocp_shared_lib 

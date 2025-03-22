@@ -271,7 +271,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
         car_pose_msg.data.push_back(0.0); // self
         car_pose_msg.data.push_back(0.0);
-        road_objects.push_back(std::make_shared<RoadObject>(OBJECT::CAR, x0, y0, yaw, velocity_command, 0.0));
+        road_objects.push_back(std::make_shared<CarObject>(x0, y0, yaw, 1.0, velocity_command));
     }
 
     timerodom = ros::Time::now();
@@ -466,7 +466,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    road_objects[0]->merge(x, y, yaw, velocity_command, 1.0, height); // ego car
+    road_objects[0]->update(x, y, yaw, velocity_command, height); // ego car
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -488,7 +488,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                 if (obj->is_same_object(world_states[0], world_states[1])) {
                     found_same = true;
                     if (!is_known_static) { // known static objects only need to be added once since we know their gt pose
-                        obj->merge(world_states[0], world_states[1], world_states[2], 0.0, confidence);
+                        obj->merge(world_states[0], world_states[1], world_states[2], confidence);
                     }
                     break;
                 }
@@ -505,16 +505,21 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = compare_yaw(sign_yaw, yaw);
                     if(yaw_error < 35 * M_PI / 180) {
-                        road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 0.0, 1.0));
+                        road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 1.0));
                         debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
                     }
                 }
             } else {
-                road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], 0.0, confidence));
+                if (type == OBJECT::CAR) {
+                    road_objects.push_back(std::make_shared<CarObject>(world_states[0], world_states[1], world_states[2], confidence, 0.0));
+                } else {
+                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], confidence));
+                }
                 debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
             }
         }
     }
+    RoadObject::cleanup_stale_objects(road_objects);
     auto road_object_msg = RoadObject::create_msg(road_objects);
     static bool publish_objects = true;
     if(publish_objects) {

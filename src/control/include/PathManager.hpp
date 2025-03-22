@@ -165,8 +165,8 @@ public:
                         current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.33);
                         continue;
                     }
-                    std::cout << "currentPoint: " << currentPoint.transpose() << ", intersectionPoint: " << intersectionPoint.transpose() << ", nextPoint: " << Eigen::Vector2d(state_refs(current_idx + 1, 0), state_refs(current_idx + 1, 1)).transpose() << std::endl;
-                    std::cout << "vecToIntersection: " << vecToIntersection.transpose() << ", pathDirection: " << pathDirection.transpose() << ", dot: " << vecToIntersection.dot(pathDirection) << std::endl;
+                    // std::cout << "currentPoint: " << currentPoint.transpose() << ", intersectionPoint: " << intersectionPoint.transpose() << ", nextPoint: " << Eigen::Vector2d(state_refs(current_idx + 1, 0), state_refs(current_idx + 1, 1)).transpose() << std::endl;
+                    // std::cout << "vecToIntersection: " << vecToIntersection.transpose() << ", pathDirection: " << pathDirection.transpose() << ", dot: " << vecToIntersection.dot(pathDirection) << std::endl;
                     intersection_points.push_back(intersection);
                     current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.9);
                     continue;

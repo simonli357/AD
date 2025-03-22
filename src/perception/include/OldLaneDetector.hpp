@@ -51,7 +51,6 @@ public:
     cv::Mat hists;
     bool showflag, printflag;
     
-    // std::vector<int> extract_lanes(const cv::Mat& hist_data) {
     void extract_lanes(const cv::Mat& hist_data) {
         // std::vector<int> lane_indices;
         lanes.clear();
@@ -74,15 +73,20 @@ public:
 
     double optimized_histogram(const cv::Mat& image, bool show = false, bool print = false, bool robust=true) {
         stopline = false;
-        cv::cvtColor(image, img_gray, cv::COLOR_BGR2GRAY);
 
-        // apply maskh
-        img_roi = img_gray(cv::Rect(0, 384, 640, 96));
-        // cv::imshow("L", img_roi);
-        // cv::waitKey(1);
-        cv::minMaxLoc(img_roi, &minVal, &maxVal, &minLoc, &maxLoc);
+        // cv::cvtColor(image, img_gray, cv::COLOR_BGR2GRAY);
+        // // apply maskh
+        // img_roi = img_gray(cv::Rect(0, 384, 640, 96));
+        // cv::minMaxLoc(img_roi, &minVal, &maxVal, &minLoc, &maxLoc);
         double threshold_value = std::min(std::max(maxVal - 55.0, 30.0), 200.0);
-        cv::threshold(img_roi, thresh, threshold_value, 255, cv::THRESH_BINARY);
+        // cv::threshold(img_roi, thresh, threshold_value, 255, cv::THRESH_BINARY);
+
+        img_roi = image(cv::Rect(0, 384, 640, 96));
+
+        // DISPLAY
+        // cv::imshow("img_roi", img_roi);
+        // cv::waitKey(1);
+
         hist = cv::Mat::zeros(1, w, CV_32SC1);
         cv::reduce(thresh, hist, 0, cv::REDUCE_SUM, CV_32S);
 
@@ -113,29 +117,6 @@ public:
         // std::cout << "centers size: " << centers.size() << std::endl;
         double center = -1;
         if (centers.size() == 2) center = (centers[0] + centers.back()) / 2;
-        // if (centers.empty()) {
-        //     if (robust) center = -1;
-        //     else center = w / 2.0;
-        // } else if (centers.size() == 1) {
-        //     if (robust) center = -1;
-        //     else center = (centers[0] > (w / 2.0)) ? (centers[0] - 0) / 2 : (centers[0] * 2 + w) / 2;
-        // } else if (abs(centers[0] - centers.back()) < 200) {
-        //     if (robust) center = -1;
-        //     else center = ((centers[0] + centers.back()) > w) ? ((centers[0] + centers.back()) / 2 + 0) / 2.0 : ((centers[0] + centers.back()) + w) / 2;
-        // } else {
-        //     center = (centers[0] + centers.back()) / 2;
-        // }
-
-        // if(std::abs(center - previous_center) > 250) {
-        //     center = previous_center;
-        // }
-        // if (std::abs(center - 320) < 1) {
-        //     double temp = center;
-        //     center = previous_center;
-        //     previous_center = temp;
-        // } else {
-        //     previous_center = center;
-        // }
 
         if (show) {
             // Create the new cv::Mat object and initialize it with zeros

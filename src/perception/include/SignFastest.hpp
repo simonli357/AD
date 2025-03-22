@@ -101,12 +101,13 @@ class SignFastest {
             sign_counter.resize(OBJECT_COUNT, 0);
 
             if (ncnn) {
+                yolo_fastestv2_api = std::make_unique<yoloFastestv2>();
                 std::string filePathBin = helper::getSourceDirectory() + "/../../../perception/models/ncnn/" + model + ".bin";
                 std::string filePathParam = helper::getSourceDirectory() + "/../../../perception/models/ncnn/" + model + ".param";
                 const char* bin = filePathBin.c_str();
                 const char* param = filePathParam.c_str();
 
-                api.loadModel(param, bin);
+                yolo_fastestv2_api->loadModel(param, bin);
             } else {
                 std::string model_name;
                 nh.getParam("/v8_model", model_name); 
@@ -213,7 +214,8 @@ class SignFastest {
 
         static constexpr int OBJECT_COUNT = 13;
         // private:
-        yoloFastestv2 api;
+        // yoloFastestv2 yolo_fastestv2_api;
+        std::unique_ptr<yoloFastestv2> yolo_fastestv2_api;
         LightClassifier light_classifier;
     
         std::unique_ptr<TcpClient> tcp_client;
@@ -403,7 +405,7 @@ class SignFastest {
             std::fill(detected_indices.begin(), detected_indices.end(), 0);
 
             if (ncnn) {
-                api.detection(image, boxes);
+                yolo_fastestv2_api->detection(image, boxes);
                 for (const auto &box : boxes) {
                     int class_id = box.cate;
                     detected_indices[class_id] = 1;
