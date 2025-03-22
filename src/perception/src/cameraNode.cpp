@@ -68,6 +68,7 @@ class CameraNode {
 
 			auto profiles = pipe.get_active_profile().get_streams();
 
+			bool found_profile = false;
 			for (auto &&p : profiles)
 			{
 					if (p.stream_type() == RS2_STREAM_COLOR)
@@ -86,8 +87,15 @@ class CameraNode {
 							distCoeffs = (cv::Mat_<double>(1,5) << intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
 							cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, cv::Size(640, 480), CV_16SC2, map1, map2);
 							ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
-						  break;
+							ROS_INFO("distortion coefficients: %.2f, %.2f, %.2f, %.2f, %.2f", intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+						  found_profile = true;
+							break;
 					}
+			}
+
+			if (!found_profile) {
+				ROS_ERROR("FATAL ERROR: No color profile found");
+				exit(1);
 			}
 
 			std::cout.precision(4);
@@ -294,9 +302,8 @@ class CameraNode {
 		}
 		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
 		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
-		// cv::undistort(colorImage, colorImage, cameraMatrix, distCoeffs);
-		cv::remap(colorImage, colorImage, map1, map2, cv::INTER_LINEAR);
-		cv::remap(depthImage, depthImage, map1, map2, cv::INTER_NEAREST);
+		// cv::remap(colorImage, colorImage, map1, map2, cv::INTER_LINEAR);
+		// cv::remap(depthImage, depthImage, map1, map2, cv::INTER_NEAREST);
 
 		if (!useRosTimer) {
 			if (doLane) {

@@ -27,6 +27,7 @@
 #include <boost/asio.hpp>
 #include "utils/constants.h"
 #include "RoadObject.hpp"
+#include "CarObject.hpp"
 #include <algorithm>
 
 #include "LaneDetector.hpp"
