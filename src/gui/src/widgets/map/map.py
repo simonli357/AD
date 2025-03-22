@@ -32,7 +32,7 @@ class MapWidget(QtWidgets.QWidget):
         self.show_cars = False
         self.show_destinations = True
         self.show_path = True
-        self.show_nodes = True
+        self.show_nodes = False
         self.show_gt = True
         self.state_refs_np = None
         self.attributes_np = None
@@ -533,6 +533,67 @@ class MapWidget(QtWidgets.QWidget):
             self.cursor_coords_label.hide()
             return False
         return super().eventFilter(source, event)
+
+    def mousePressEvent(self, event) -> None:
+        if not self.show_nodes:
+            if event.button() == QtCore.Qt.RightButton:
+                self.clear_markers()
+            elif event.button() == QtCore.Qt.LeftButton:
+                self.handle_left_click(event)
+
+    def clear_markers(self):
+        for marker in self.markers:
+            if marker.scene() == self.scene:
+                self.scene.removeItem(marker)
+        self.markers.clear()
+        self.cursor_coords.clear()
+
+    def handle_left_click(self, event) -> None:
+        scene_pos = self.graphics_view.mapToScene(event.pos())
+        image_x = scene_pos.x()
+        image_y = scene_pos.y()
+
+        if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
+            real_x = scene_pos.x() * self.real_x_per_pixel
+            real_y = MapData.REAL_WORLD_HEIGHT.value - scene_pos.y() * self.real_y_per_pixel
+
+            self.cursor_coords.append((real_x, real_y))
+            self.cursor_x = real_x
+            self.cursor_y = real_y
+            self.add_marker(image_x, image_y)
+
+    def add_marker(self, x, y) -> None:
+        # Create new markers
+        cursor_radius = 10
+        pen = QtGui.QPen(QtGui.QColor(0, 150, 255), 2)
+
+        circle = self.scene.addEllipse(
+            x - cursor_radius,
+            y - cursor_radius,
+            cursor_radius * 2,
+            cursor_radius * 2,
+            pen
+        )
+        self.markers.append(circle)
+
+        marker_size = 20
+        red_pen = QtGui.QPen(QtGui.QColor(255, 0, 0), 3)
+
+        x_line1 = self.scene.addLine(
+            x - marker_size / 2,
+            y - marker_size / 2,
+            x + marker_size / 2,
+            y + marker_size / 2,
+            red_pen
+        )
+        x_line2 = self.scene.addLine(
+            x - marker_size / 2,
+            y + marker_size / 2,
+            x + marker_size / 2,
+            y - marker_size / 2,
+            red_pen
+        )
+        self.markers.extend([x_line1, x_line2])
 
     def update_scene(self):
         if hasattr(self, 'mouse_pos') and hasattr(self, 'mouse_updates'):
