@@ -49,6 +49,7 @@ class MeterWidget(QtWidgets.QWidget):
     def draw_meters(self, painter: QPainter) -> None:
         widget_width = self.width()
         widget_height = max(215, self.height() * 0.6)
+        self.setMinimumHeight(widget_height)
         min_length = min(widget_width, widget_height)
         main_radius = min_length - 25
         secondary_radius = main_radius / 1.35
@@ -111,7 +112,7 @@ class MeterWidget(QtWidgets.QWidget):
 
         text_rect = QtCore.QRectF(
             center.x() - text_width / 2,
-            center.y() + 15,
+            center.y() + 12,
             text_width,
             text_height * 2
         )

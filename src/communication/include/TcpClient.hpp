@@ -61,7 +61,7 @@ class TcpClient {
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const Float32MultiArray &array);
 	void send_steer(float steer);
-    void send_swload();
+	void send_swload();
 	void send_message(const String &msg);
 	void send_trigger(const std_srvs::Trigger &trigger);
 	void send_params(const std::vector<double> &state_refs, const std::vector<double> &attributes);
@@ -90,7 +90,7 @@ class TcpClient {
 	int udp_socket;
 	std::thread receiver;
 	std::thread sender;
-    std::thread perfmon;
+	std::thread perfmon;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;

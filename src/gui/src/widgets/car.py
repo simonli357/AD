@@ -3,6 +3,7 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
+from .enums import MapData
 import numpy as np
 from collections import namedtuple
 import os
@@ -55,6 +56,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.steer = steer
 
     def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
+        if self.main_window.buttons_widget.started:
+            dx = x - self.x_pos
+            dy = y - self.y_pos
+            displacement = np.sqrt(dx**2 + dy**2)
+            self.main_window.map_widget.graphics_view.dist_traveled += displacement
+            self.main_window.map_widget.graphics_view.set_distance_traveled()
+            self.main_window.map_widget.graphics_view.update_visited_destinations(x, y)
         self.yaw = yaw
         self.x_pos = x
         self.y_pos = y
@@ -362,7 +370,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             return
         for i in range(0, len(waypoints) - 1, 4):
             x = waypoints[i] - self.x_pos
-            y = waypoints[i + 1] - self.y_pos
+            y = waypoints[i + 1] - (MapData.REAL_WORLD_HEIGHT.value - self.y_pos)
             self.draw_path_node(x * 4, y * 4)
 
     def draw_detected_object(self):

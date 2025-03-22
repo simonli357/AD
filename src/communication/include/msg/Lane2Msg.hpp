@@ -8,7 +8,7 @@
 
 class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
   public:
-	Lane2Msg(std_msgs::Header &header, float center, int stopline, bool crosswalk, bool dotted);
+	Lane2Msg(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted);
 	Lane2Msg(Lane2Msg &&) = default;
 	Lane2Msg(const Lane2Msg &) = default;
 	Lane2Msg &operator=(Lane2Msg &&) = delete;
@@ -17,19 +17,21 @@ class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
 
 	std_msgs::Header &header;
 	float center;
-	int stopline;
+	bool stopline;
+	float stopline_dist;
 	bool crosswalk;
 	bool dotted;
 
 	std::unique_ptr<Lane2Msg> deserialize(std::vector<uint8_t> &bytes) override;
 
   private:
-	const size_t num_elements = 5;
+	const size_t num_elements = 6;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;
 	uint32_t header_length;
 	uint32_t center_length;
 	uint32_t stopline_length;
+	uint32_t stopline_dist_length;
 	uint32_t crosswalk_length;
 	uint32_t dotted_length;
 	uint32_t compute_lengths_length() override;
