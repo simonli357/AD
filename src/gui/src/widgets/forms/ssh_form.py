@@ -44,6 +44,7 @@ class SSHFormWidget(QDialog):
             QLabel {
                 font-size: 32px;
                 color: orange;
+                padding: 10px;
             }
         """)
 
@@ -110,8 +111,8 @@ class SSHFormWidget(QDialog):
         """)
 
         self.layout = QVBoxLayout()
-        self.layout.setAlignment(QtCore.Qt.AlignCenter)
-        self.layout.addStretch()
+        self.layout.setAlignment(QtCore.Qt.AlignTop)
+        self.layout.setContentsMargins(10, 10, 10, 10)
 
         self.layout.addWidget(title)
 
@@ -168,35 +169,29 @@ class SSHFormWidget(QDialog):
         form_layout.addWidget(labels)
         form_layout.addWidget(text_fields)
 
-        self.layout.addWidget(wrapper)
-        self.layout.addWidget(form)
-
-        self.layout.addWidget(self.buttonBox)
         self.layout.addStretch()
+        self.layout.addWidget(wrapper)
+        self.layout.addStretch()
+        self.layout.addWidget(form)
+        self.layout.addStretch()
+        self.layout.addWidget(self.buttonBox)
 
         self.setLayout(self.layout)
         self.handle_ssh_toggle()
 
     def handle_ssh_toggle(self):
-        if self.use_ssh:
-            self.catkin_ws.setVisible(False)
-            self.catkin_ws_label.setVisible(False)
-            self.ssh_target.setVisible(True)
-            self.ssh_target_label.setVisible(True)
-            self.passwd.setVisible(True)
-            self.passwd_label.setVisible(True)
-            self.remote_catkin_ws.setVisible(True)
-            self.remote_catkin_ws_label.setVisible(True)
-        else:
-            self.catkin_ws.setVisible(True)
-            self.catkin_ws_label.setVisible(True)
-            self.ssh_target.setVisible(False)
-            self.ssh_target_label.setVisible(False)
-            self.passwd.setVisible(False)
-            self.passwd_label.setVisible(False)
-            self.remote_catkin_ws.setVisible(False)
-            self.remote_catkin_ws_label.setVisible(False)
-        self.use_ssh = not self.use_ssh
+        use_ssh = self.ssh.isChecked()
+        self.ssh_target.setVisible(use_ssh)
+        self.ssh_target_label.setVisible(use_ssh)
+        self.passwd.setVisible(use_ssh)
+        self.passwd_label.setVisible(use_ssh)
+        self.remote_catkin_ws.setVisible(use_ssh)
+        self.remote_catkin_ws_label.setVisible(use_ssh)
+        self.catkin_ws.setVisible(not use_ssh)
+        self.catkin_ws_label.setVisible(not use_ssh)
+        self.layout.invalidate()
+        self.layout.activate()
+        self.adjustSize()
 
     def load_cache(self):
         if not os.path.exists(self.data_dir):
@@ -322,7 +317,7 @@ class SSHFormWidget(QDialog):
     def accept(self):
         if self.args_cached == 'args':
             self.args_cached = ''
-        if not self.use_ssh:
+        if self.use_ssh:
             self.set_remote_cmd()
         else:
             self.set_local_cmd()
