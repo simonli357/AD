@@ -1,0 +1,3 @@
+catkin_ws: ~/AD
+cmd: catkin_make
+remote_cmd: catkin_make
