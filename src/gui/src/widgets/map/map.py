@@ -604,7 +604,7 @@ class MapWidget(QtWidgets.QWidget):
             y_scene = scene_pos.y()
             if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
                 real_x = scene_pos.x() * self.real_x_per_pixel
-                real_y = scene_pos.y() * self.real_y_per_pixel
+                real_y = MapData.REAL_WORLD_HEIGHT.value - scene_pos.y() * self.real_y_per_pixel
                 self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
                 self.cursor_coords_label.move(int(self.mouse_pos.x() - self.cursor_coords_label.width() / 2), int(self.mouse_pos.y() - 60))
                 self.cursor_coords_label.show()

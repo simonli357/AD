@@ -13,7 +13,7 @@ class NodeButton(QPushButton):
         self.node_data = node_data
         self.is_clicked = False
         self.is_start = False
-        self.setToolTip(f"  {node_data[0]}: ({node_data[1]:.2f}, {node_data[2]:.2f})")
+        self.setToolTip(f"  {node_data[0]}: ({node_data[1]:.2f}, {MapData.REAL_WORLD_HEIGHT.value - node_data[2]:.2f})")
 
     def paintEvent(self, event):
         """Custom painting with proper visible area"""
