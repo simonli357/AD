@@ -25,9 +25,10 @@ else()
   else()
     message(STATUS "Found acados source directory: $ENV{ACADOS_SOURCE_DIR}")
   endif()
-  include_directories(${Eigen3_INCLUDE_DIRS})
-  message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 endif()
+
+include_directories(${Eigen3_INCLUDE_DIRS})
+message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 
 if (DEFINED ENV{TRT_LIBPATH})
   message(STATUS "Found TensorRT")
