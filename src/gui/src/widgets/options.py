@@ -189,9 +189,12 @@ class OptionsWidget(QtWidgets.QWidget):
         self.map_widget.update_map_display()
 
     def handle_states_btn_click(self) -> None:
-        x, y = self.map_widget.graphics_view.get_start()
-        self.call_set_states_service(x, y)
-        self.map_widget.update_map_display()
+        if not self.map_widget.show_nodes:
+            self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)
+        else:
+            x, y = self.map_widget.graphics_view.get_start()
+            self.call_set_states_service(x, y)
+            self.map_widget.update_map_display()
 
     def handle_yaw_btn_click(self) -> None:
         self.call_set_states_service()

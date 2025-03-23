@@ -21,6 +21,7 @@ from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget
 from widgets.radar import RadarWidget
 from widgets.jetson.sw_load import SoftwareMetricsWidget
+from widgets.enums import CameraParams
 
 from std_srvs.srv import TriggerRequest
 
@@ -192,7 +193,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-            time.sleep(0.032)
+            time.sleep(CameraParams.FPS_30.value)
 
     def udp_callbacks(self) -> None:
         while self.alive:
@@ -226,7 +227,7 @@ class MainWindow(QMainWindow):
                 self.comm.steer_signal.emit(steer)
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
-            time.sleep(0.017)
+            time.sleep(CameraParams.FPS_60.value)
 
     def cam_record_callback(self) -> None:
         while self.alive:
@@ -234,8 +235,8 @@ class MainWindow(QMainWindow):
                 rgb_image = self.server.udp_connection.parse_rgb_image()
                 if rgb_image is not None:
                     self.comm.rgb_frame_signal.emit(rgb_image)
-                time.sleep(2.0)
-            time.sleep(0.2)
+                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
+            time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
 
     def render_callbacks(self) -> None:
         self.comm.render_widget_signal.emit()

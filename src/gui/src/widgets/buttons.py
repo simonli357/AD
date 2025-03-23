@@ -225,9 +225,15 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def handle_goto_click(self) -> None:
         print("Planning Path")
-        cursor_coords = self.main_window.map_widget.graphics_view.get_path()
-        self.call_goto_service(cursor_coords)
-        self.main_window.map_widget.graphics_view.set_total_path_distance()
+        if not self.main_window.map_widget.show_nodes:
+            if self.main_window.map_widget.cursor_coords:
+                self.call_goto_service(self.main_window.map_widget.cursor_coords)
+            else:
+                print("Not a valid destination")
+        else:
+            cursor_coords = self.main_window.map_widget.graphics_view.get_path()
+            self.call_goto_service(cursor_coords)
+            self.main_window.map_widget.graphics_view.set_total_path_distance()
 
     def handle_clear_path_click(self) -> None:
         self.main_window.map_widget.graphics_view.clear_path()
