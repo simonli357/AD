@@ -67,6 +67,8 @@ This package contains firmware modified from Bosch’s provided code to interfac
   - **Start/stop controls**
   - **Path re-planning**
   - **Object toggling**
+  - **Ros node launching**
+  - **Real time object detection**
 ![MPC Preview](assets/gui.png)
 
 
