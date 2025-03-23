@@ -1,14 +1,13 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLineEdit, QDialog, QDialogButtonBox, QWidget, QLabel
 from PyQt5 import QtCore, QtWidgets
 from .animated_toggle import AnimatedToggle
-from ..enums import TerminalType
 
 import os
 import yaml
 
 
-class SSHFormWidget(QDialog):
-    def __init__(self, terminal_type):
+class CompileFormWidget(QDialog):
+    def __init__(self):
         super().__init__()
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMinimumWidth(600)
@@ -16,7 +15,6 @@ class SSHFormWidget(QDialog):
         self.data_dir = os.path.join(current_dir, 'appdata')
         self.ssh_config = os.path.join(self.data_dir, 'ssh.yaml')
         self.config = None
-        self.terminal_type = terminal_type
         self.setup_ui()
         self.setStyleSheet("""
             background-color: rgba(255, 255, 255, 0.05);
@@ -25,19 +23,8 @@ class SSHFormWidget(QDialog):
         """)
 
     def setup_ui(self):
-        title = None
-        if self.terminal_type == TerminalType.CONTROL:
-            self.config = os.path.join(self.data_dir, 'controller.yaml')
-            title = QLabel('󱡸 controller node')
-        elif self.terminal_type == TerminalType.CAM:
-            self.config = os.path.join(self.data_dir, 'cam.yaml')
-            title = QLabel('  camera node')
-        elif self.terminal_type == TerminalType.PATH:
-            self.config = os.path.join(self.data_dir, 'path_planner.yaml')
-            title = QLabel('  path planner')
-        elif self.terminal_type == TerminalType.ROSCORE:
-            self.config = os.path.join(self.data_dir, 'roscore.yaml')
-            title = QLabel(' roscore')
+        self.config = os.path.join(self.data_dir, 'compile.yaml')
+        title = QLabel(' compile')
 
         title.setAlignment(QtCore.Qt.AlignCenter)
         title.setStyleSheet("""
@@ -52,16 +39,6 @@ class SSHFormWidget(QDialog):
         self.ssh = AnimatedToggle()
         self.ssh.stateChanged.connect(self.handle_ssh_toggle)
 
-        self.catkin_ws = QLineEdit(self)
-        self.catkin_ws.setText(self.catkin_ws_cached)
-        self.catkin_ws_label = QLabel('Path  ')
-        self.catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-
-        self.args = QLineEdit(self)
-        self.args.setText(self.args_cached)
-        self.args_label = QLabel('Args 󰦨 ')
-        self.args_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-
         self.ssh_target = QLineEdit(self)
         self.ssh_target.setText(self.ssh_target_cached)
         self.ssh_target_label = QLabel('SSH Identity  ')
@@ -72,10 +49,25 @@ class SSHFormWidget(QDialog):
         self.passwd_label = QLabel('SSH Password  ')
         self.passwd_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
+        self.catkin_ws = QLineEdit(self)
+        self.catkin_ws.setText(self.catkin_ws_cached)
+        self.catkin_ws_label = QLabel('Path  ')
+        self.catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
         self.remote_catkin_ws = QLineEdit(self)
         self.remote_catkin_ws.setText(self.remote_catkin_ws_cached)
         self.remote_catkin_ws_label = QLabel('Path  ')
         self.remote_catkin_ws_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.cmd = QLineEdit(self)
+        self.cmd.setText(self.cmd_cached)
+        self.cmd_label = QLabel('CMD ')
+        self.cmd_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.remote_cmd = QLineEdit(self)
+        self.remote_cmd.setText(self.remote_cmd_cached)
+        self.remote_cmd_label = QLabel('CMD ')
+        self.remote_cmd_label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
 
@@ -139,7 +131,8 @@ class SSHFormWidget(QDialog):
         labels_layout.addWidget(self.passwd_label)
         labels_layout.addWidget(self.catkin_ws_label)
         labels_layout.addWidget(self.remote_catkin_ws_label)
-        labels_layout.addWidget(self.args_label)
+        labels_layout.addWidget(self.cmd_label)
+        labels_layout.addWidget(self.remote_cmd_label)
 
         text_fields = QWidget()
         text_fields_layout = QVBoxLayout(text_fields)
@@ -148,7 +141,8 @@ class SSHFormWidget(QDialog):
         text_fields_layout.addWidget(self.passwd)
         text_fields_layout.addWidget(self.catkin_ws)
         text_fields_layout.addWidget(self.remote_catkin_ws)
-        text_fields_layout.addWidget(self.args)
+        text_fields_layout.addWidget(self.cmd)
+        text_fields_layout.addWidget(self.remote_cmd)
 
         form = QWidget()
         form.setStyleSheet("""
@@ -181,21 +175,29 @@ class SSHFormWidget(QDialog):
         if self.use_ssh:
             self.catkin_ws.setVisible(False)
             self.catkin_ws_label.setVisible(False)
+            self.cmd.setVisible(False)
+            self.cmd_label.setVisible(False)
             self.ssh_target.setVisible(True)
             self.ssh_target_label.setVisible(True)
             self.passwd.setVisible(True)
             self.passwd_label.setVisible(True)
             self.remote_catkin_ws.setVisible(True)
             self.remote_catkin_ws_label.setVisible(True)
+            self.remote_cmd.setVisible(True)
+            self.remote_cmd_label.setVisible(True)
         else:
             self.catkin_ws.setVisible(True)
             self.catkin_ws_label.setVisible(True)
+            self.cmd.setVisible(True)
+            self.cmd_label.setVisible(True)
             self.ssh_target.setVisible(False)
             self.ssh_target_label.setVisible(False)
             self.passwd.setVisible(False)
             self.passwd_label.setVisible(False)
             self.remote_catkin_ws.setVisible(False)
             self.remote_catkin_ws_label.setVisible(False)
+            self.remote_cmd.setVisible(False)
+            self.remote_cmd_label.setVisible(False)
         self.use_ssh = not self.use_ssh
 
     def load_cache(self):
@@ -207,19 +209,21 @@ class SSHFormWidget(QDialog):
             self.create_default_ssh_config()
 
         self.catkin_ws_cached = None
-        self.args_cached = None
+        self.cmd_cached = None
+        self.remote_cmd_cached = None
         self.ssh_target_cached = None
         self.passwd_cached = None
         self.remote_catkin_ws_cached = None
         self.cache = None
         self.ssh_cache = None
-        self.cmd = None
+        self.command = None
         self.use_ssh = False
 
         with open(self.config, 'r') as file:
             self.cache = yaml.safe_load(file)
             self.catkin_ws_cached = self.cache['catkin_ws']
-            self.args_cached = self.cache['args']
+            self.cmd_cached = self.cache['cmd']
+            self.remote_cmd_cached = self.cache['remote_cmd']
 
         with open(self.ssh_config, 'r') as file:
             self.ssh_cache = yaml.safe_load(file)
@@ -230,7 +234,8 @@ class SSHFormWidget(QDialog):
     def create_default_config(self):
         default_config = {
             'catkin_ws': '/path/to/catkin_ws',
-            'args': 'args'
+            'cmd': 'catkin_make',
+            'remote_cmd': 'catkin_make'
         }
         os.makedirs(os.path.dirname(self.config), exist_ok=True)
         with open(self.config, 'w') as file:
@@ -250,7 +255,7 @@ class SSHFormWidget(QDialog):
         target = self.ssh_target.text()
         passwd = self.passwd.text()
         catkin_ws = self.remote_catkin_ws.text()
-        args = self.args.text()
+        cmd = self.remote_cmd.text()
         if not target:
             target = self.ssh_target_cached
         else:
@@ -263,57 +268,35 @@ class SSHFormWidget(QDialog):
             catkin_ws = self.remote_catkin_ws_cached
         else:
             self.ssh_cache['remote_catkin_ws'] = catkin_ws
-        if not args:
-            args = self.args_cached
+        if not cmd:
+            cmd = self.remote_cmd_cached
         else:
-            self.cache['args'] = args
+            self.cache['remote_cmd'] = cmd
         bash = 'bash -ic'
         src_ros = 'source /opt/ros/noetic/setup.sh'
-        src_devel = f'source {catkin_ws}/devel/setup.bash'
         ssh = f'sshpass -p {passwd} ssh -tt {target}'
-        remote_command = ''
-        if self.terminal_type == TerminalType.CONTROL:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch control controller.launch {args}"\''
-        elif self.terminal_type == TerminalType.CAM:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch perception cameraNode.launch {args}"\''
-        elif self.terminal_type == TerminalType.PATH:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && rosrun planning path2.py {args}"\''
-        elif self.terminal_type == TerminalType.ROSCORE:
-            remote_command = '\'exec bash -c "roscore"\''
-        self.cmd = f'{ssh} "{bash} {remote_command}"'
+        remote_command = f'\'exec bash -c "{src_ros} && {cmd}"\''
+        self.command = f'{ssh} "{bash} {remote_command}"'
 
     def set_local_cmd(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
-        src_devel = 'source devel/setup.bash'
         catkin_ws = self.catkin_ws.text()
-        args = self.args.text()
+        cmd = self.cmd.text()
         if not catkin_ws:
             catkin_ws = self.catkin_ws_cached
         else:
             self.cache['catkin_ws'] = catkin_ws
-        if not args:
-            args = self.args_cached
+        if not cmd:
+            cmd = self.cmd_cached
         else:
-            self.cache['args'] = args
-        command = ''
-        bash = 'exec bash -c'
-        if self.terminal_type == TerminalType.CONTROL:
-            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch control controller.launch {args}'
-        elif self.terminal_type == TerminalType.CAM:
-            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
-        elif self.terminal_type == TerminalType.PATH:
-            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
-        elif self.terminal_type == TerminalType.ROSCORE:
-            command = 'roscore'
-        self.cmd = f'{bash} "{command}"'
+            self.cache['cmd'] = cmd
+        self.command = f'{src_ros} && cd {catkin_ws} && {cmd}'
 
     def clear_inputs(self):
         self.catkin_ws.clear()
-        self.args.clear()
+        self.cmd.clear()
 
     def accept(self):
-        if self.args_cached == 'args':
-            self.args_cached = ''
         if not self.use_ssh:
             self.set_remote_cmd()
         else:
@@ -330,6 +313,6 @@ class SSHFormWidget(QDialog):
         super().reject()
 
     def get_cmd(self):
-        cmd = self.cmd
-        self.cmd = None
+        cmd = self.command
+        self.command = None
         return cmd
