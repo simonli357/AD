@@ -18,7 +18,7 @@ real:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-  change_lane_offset_scaler: 1.1
+  change_lane_offset_scaler: 1.2
   cw_speed_ratio: 0.85
   hw_speed_ratio: 1.25
   sign_localization_threshold: 0.537 #0.357
@@ -66,5 +66,5 @@ sim:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-  change_lane_offset_scaler: 1.1
+  change_lane_offset_scaler: 1.25
   use_beta: true

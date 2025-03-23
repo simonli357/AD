@@ -80,7 +80,7 @@ namespace VehicleConstants {
     static constexpr double CAR_LENGTH = 0.464;
     static constexpr double CAR_WIDTH = 0.1885;
     static constexpr double CAR_HEIGHT = 0.1155;
-    static constexpr double SAME_LANE_SAFETY_FACTOR = 0.0753;
+    static constexpr double SAME_LANE_SAFETY_FACTOR = 0.0357;//0.0753;
     static constexpr double LANE_CENTER_TO_EDGE = 0.0777;
     static constexpr int IMAGE_HEIGHT = 480;
     static constexpr int IMAGE_WIDTH = 640;
