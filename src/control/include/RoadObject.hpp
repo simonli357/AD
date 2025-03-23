@@ -55,7 +55,7 @@ public:
     RoadObject(int type, double x, double y, double yaw, double confidence)
     : RoadObject(static_cast<OBJECT>(type), x, y, yaw, confidence) {}
     
-    ~RoadObject() {
+    virtual ~RoadObject() { // virtual makes sure this class is polymorphic
         OBJECT_COUNT--;
     }
 
@@ -76,7 +76,7 @@ public:
     ros::Time last_detection_time;
     double lifetime = 3600.0;  // 1 hour
     
-    bool is_same_object(double x, double y) {
+    virtual bool is_same_object(double x, double y) {
         int type = static_cast<int>(this->type);
         if (type == OBJECT::CAR) {
             return (std::abs(this->x - x) < OBJECT_SIZE[type][0]*2 && std::abs(this->y - y) < OBJECT_SIZE[type][1]*2);
@@ -87,7 +87,7 @@ public:
             return (dx * dx + dy * dy < 0.537 * 0.537);
         }
     }
-    void merge(double x, double y, double yaw, double confidence, double speed=0, double z = 0) {
+    virtual void merge(double x, double y, double yaw, double confidence, double speed=0, double z = 0) {
         if(confidence >= 1.) {
             this->x = x;
             this->y = y;

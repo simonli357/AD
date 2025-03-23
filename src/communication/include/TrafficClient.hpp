@@ -30,7 +30,7 @@ class TrafficClient {
   private:
 	// Fields
 	int car_id = 3;
-    const std::chrono::milliseconds frequency = std::chrono::milliseconds(250);
+	const std::chrono::milliseconds frequency = std::chrono::milliseconds(250);
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "127.0.0.1";
 	const size_t buffer_size = 1024;
@@ -39,18 +39,18 @@ class TrafficClient {
 	sockaddr_in tcp_address;
 	int tcp_socket;
 	std::thread poll;
-    std::thread sender;
-    // Task Queue
-    tbb::concurrent_queue<std::any> stream_tasks;
+	std::thread sender;
+	// Task Queue
+	tbb::concurrent_queue<std::any> stream_tasks;
 	// Utility Methods
 	void create_tcp_socket();
 	void poll_connection();
 	void send_data();
-    void send_car_id();
+	void send_car_id();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
-    // Encode
-    std::string create_vehicle_pos(double x, double y);
-    std::string create_vehicle_rot(double yaw);
-    std::string create_vehicle_speed(double speed);
-    std::string create_encountered_obstacle(const std::string &type, double x, double y);
+	// Encode
+	std::string create_vehicle_pos(double x, double y);
+	std::string create_vehicle_rot(double yaw);
+	std::string create_vehicle_speed(double speed);
+	std::string create_encountered_obstacle(const std::string &type, double x, double y);
 };

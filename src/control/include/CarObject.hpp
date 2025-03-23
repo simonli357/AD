@@ -32,7 +32,7 @@ public:
      * 
      * Uses a constant-velocity prediction to account for motion.
      */
-    bool is_same_object(double new_x, double new_y) {
+    bool is_same_object(double x, double y) override {
         ros::Time current_time = ros::Time::now();
         double dt = (current_time - this->last_detection_time).toSec();
 
@@ -41,10 +41,8 @@ public:
         double predicted_y = this->y + this->speed * std::sin(this->yaw) * dt;
 
         // Compute Euclidean distance from predicted position to new detection.
-        double distance = std::hypot(new_x - predicted_x, new_y - predicted_y);
-
-        // Use a threshold based on the car's width (from OBJECT_SIZE) multiplied by 2.
-        double threshold = OBJECT_SIZE[static_cast<int>(this->type)][0] * 2.0;
+        double distance = std::hypot(x - predicted_x, y - predicted_y);
+        double threshold = VehicleConstants::LANE_OFFSET * 0.75;
         return (distance < threshold);
     }
 
@@ -60,7 +58,7 @@ public:
      * @param new_confidence The confidence of the new detection.
      * @param new_z The new z-coordinate (default is 0).
      */
-    void merge(double new_x, double new_y, double new_yaw, double new_confidence, double new_speed, double new_z = 0.0) {
+    void merge(double new_x, double new_y, double new_yaw, double new_confidence, double new_speed, double new_z = 0.0) override {
         ros::Time current_time = ros::Time::now();
         
         double dt_since_last = (current_time - this->last_detection_time).toSec();
