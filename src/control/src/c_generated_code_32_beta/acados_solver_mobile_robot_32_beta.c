@@ -564,10 +564,10 @@ void mobile_robot_32_beta_acados_create_5_set_nlp_in(mobile_robot_32_beta_solver
     double* lbx = lubx;
     double* ubx = lubx + NBX;
     
-    lbx[0] = -3;
-    ubx[0] = 25;
-    lbx[1] = -3;
-    ubx[1] = 19;
+    lbx[0] = -1000;
+    ubx[0] = 1000;
+    lbx[1] = -1000;
+    ubx[1] = 1000;
 
     for (int i = 1; i < N; i++)
     {
