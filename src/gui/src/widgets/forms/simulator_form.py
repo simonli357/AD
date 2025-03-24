@@ -161,6 +161,10 @@ class SimulatorFormWidget(QDialog):
         else:
             self.cache['args'] = args
         bash = 'exec bash -c'
+        if 'IN_NIX_SHELL' in os.environ:
+            bash = 'exec zsh -c'
+            src_ros = 'echo ""'
+            src_devel = 'source devel/setup.zsh'
         command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch sim_pkg {args}'
         self.cmd = f'{bash} "{command}"'
         with open(self.config, 'w') as file:

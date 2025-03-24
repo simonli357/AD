@@ -77,12 +77,25 @@ class RunOverlay(QWidget):
         self.read_from_cache()
         self.setup_ui()
 
+    def create_default_config(self, config):
+        default_config = {
+            'catkin_ws': '/path/to/catkin_ws',
+            'args': 'args'
+        }
+        os.makedirs(os.path.dirname(config), exist_ok=True)
+        with open(config, 'w') as file:
+            yaml.dump(default_config, file)
+
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         parent_dir = os.path.dirname(current_dir)
         runs_file = os.path.join(current_dir, 'runs.xml')
         controller_file = os.path.join(parent_dir, 'forms', 'appdata', 'controller.yaml')
         self.sim_file = os.path.join(parent_dir, 'forms', 'appdata', 'simulator.yaml')
+        if not os.path.isfile(self.sim_file):
+            self.create_default_config(self.sim_file)
+        if not os.path.isfile(controller_file):
+            self.create_default_config(controller_file)
         with open(self.sim_file, 'r') as file:
             self.sim_config = yaml.safe_load(file)
         with open(controller_file, 'r') as file:
