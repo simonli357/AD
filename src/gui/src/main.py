@@ -57,6 +57,8 @@ class MainWindow(QMainWindow):
         """)
 
         self.load_nerd_font()
+        # self.setWindowFlags(Qt.Window)
+        # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.map_widget = MapWidget(self)
         self.cam_widget = CameraWidget(self)
@@ -267,7 +269,6 @@ if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
-
     server = Server()
     server.initialize()
 
