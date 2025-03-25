@@ -305,7 +305,7 @@ class SSHFormWidget(QDialog):
         elif self.terminal_type == TerminalType.CAM:
             command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
-            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning path2.py {args}'
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
             command = 'roscore'
         self.cmd = f'{bash} "{command}"'
