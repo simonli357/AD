@@ -80,6 +80,7 @@ link_directories($ENV{ACADOS_SOURCE_DIR}/lib)
 
 file(GLOB ocp_solver32
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_solver_mobile_robot_32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_solver_mobile_robot_500.c
         )
 
 file(GLOB casadi_fun32
@@ -87,14 +88,18 @@ file(GLOB casadi_fun32
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_forw.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_adj.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_cost/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/mobile_robot_500_cost/*.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/mobile_robot_500_model/*.c
         )
 
 file(GLOB sim_solver32
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_sim_solver_mobile_robot_32.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_sim_solver_mobile_robot_500.c
         )
 
 file(GLOB ocp_solver32_beta
         ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/acados_solver_mobile_robot_32_beta.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_solver_mobile_robot_500.c
         )
 
 file(GLOB casadi_fun32_beta
