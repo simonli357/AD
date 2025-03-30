@@ -42,7 +42,7 @@
         "idxsphi_e": [],
         "lbu": [
             -0.5,
-            -0.3578
+            -0.4
         ],
         "lbx": [
             -1000.0,
@@ -74,8 +74,8 @@
         "lsphi_0": [],
         "lsphi_e": [],
         "ubu": [
-            0.5,
-            0.3578
+            6.0,
+            0.4
         ],
         "ubx": [
             1000.0,
@@ -348,7 +348,7 @@
         "ny_e": 3,
         "nz": 0
     },
-    "json_file": "./mobile_robot_32_acados_ocp.json",
+    "json_file": "./mobile_robot_500_acados_ocp.json",
     "model": {
         "con_h_expr": null,
         "con_h_expr_0": null,
@@ -392,7 +392,7 @@
             "nontrivial_f_LO": 1,
             "purely_linear": 0
         },
-        "name": "mobile_robot_32",
+        "name": "mobile_robot_500",
         "nu_original": null,
         "p": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeggaaaaaaaaaaaaaaacaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahpfadegpcaaaaaaaaaaaaaadaaaaaaaahpfbd",
         "t": [],
@@ -401,7 +401,7 @@
         "xdot": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcd",
         "z": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     },
-    "name": "mobile_robot_32",
+    "name": "mobile_robot_500",
     "parameter_values": [
         0.0,
         0.0

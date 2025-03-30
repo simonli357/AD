@@ -2,20 +2,27 @@
 #define OPTIMIZER_HPP
 
 #include <Eigen/Dense>
+#include <any>
 #include <chrono>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <optional>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
 #include <unistd.h>
 #include <limits.h>
 #include <cmath>
+#include <variant>
 #include "acados/utils/math.h"
 #include "acados_c/ocp_nlp_interface.h"
 #include "acados_sim_solver_mobile_robot_25.h"
 #include "acados_solver_mobile_robot_25.h"
 #include "acados_sim_solver_mobile_robot_32.h"
 #include "acados_solver_mobile_robot_32.h"
+#include "acados_sim_solver_mobile_robot_500.h"
+#include "acados_solver_mobile_robot_500.h"
 #include "acados_sim_solver_mobile_robot_25_beta.h"
 #include "acados_solver_mobile_robot_25_beta.h"
 #include "acados_sim_solver_mobile_robot_32_beta.h"
@@ -30,104 +37,37 @@ public:
         std::cout << "MPC Constructor" << std::endl;
         v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
         status = 0; // Assuming 0 is a default 'no error' state
+        initialize_acados_functions();
+        initialize_acados_beta_functions();
 
-        if(v_ref_int == 25) {
-            std::cout << "reference speed is 25 cm/s" << std::endl;
-            use25 = true;
-            if (use_beta) {
-                acados_ocp_capsule_25_beta = mobile_robot_25_beta_acados_create_capsule();
-                status = mobile_robot_25_beta_acados_create(acados_ocp_capsule_25_beta);
-                if (status) {
-                    printf("mobile_robot_25_beta_acados_create() returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                sim_capsule_25_beta = mobile_robot_25_beta_acados_sim_solver_create_capsule();
-                status = mobile_robot_25_beta_acados_sim_create(sim_capsule_25_beta);
-                mobile_robot_sim_config = mobile_robot_25_beta_acados_get_sim_config(sim_capsule_25_beta);
-                mobile_robot_sim_dims = mobile_robot_25_beta_acados_get_sim_dims(sim_capsule_25_beta);
-                mobile_robot_sim_in = mobile_robot_25_beta_acados_get_sim_in(sim_capsule_25_beta);
-                mobile_robot_sim_out = mobile_robot_25_beta_acados_get_sim_out(sim_capsule_25_beta);
-                if (status) {
-                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                nlp_config = mobile_robot_25_beta_acados_get_nlp_config(acados_ocp_capsule_25_beta);
-                nlp_dims = mobile_robot_25_beta_acados_get_nlp_dims(acados_ocp_capsule_25_beta);
-                nlp_in = mobile_robot_25_beta_acados_get_nlp_in(acados_ocp_capsule_25_beta);
-                nlp_out = mobile_robot_25_beta_acados_get_nlp_out(acados_ocp_capsule_25_beta);
-            } else {
-                acados_ocp_capsule_25 = mobile_robot_25_acados_create_capsule();
-                status = mobile_robot_25_acados_create(acados_ocp_capsule_25);
-                if (status) {
-                    printf("mobile_robot_25_acados_create() returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                sim_capsule_25 = mobile_robot_25_acados_sim_solver_create_capsule();
-                status = mobile_robot_25_acados_sim_create(sim_capsule_25);
-                mobile_robot_sim_config = mobile_robot_25_acados_get_sim_config(sim_capsule_25);
-                mobile_robot_sim_dims = mobile_robot_25_acados_get_sim_dims(sim_capsule_25);
-                mobile_robot_sim_in = mobile_robot_25_acados_get_sim_in(sim_capsule_25);
-                mobile_robot_sim_out = mobile_robot_25_acados_get_sim_out(sim_capsule_25);
-                if (status) {
-                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                nlp_config = mobile_robot_25_acados_get_nlp_config(acados_ocp_capsule_25);
-                nlp_dims = mobile_robot_25_acados_get_nlp_dims(acados_ocp_capsule_25);
-                nlp_in = mobile_robot_25_acados_get_nlp_in(acados_ocp_capsule_25);
-                nlp_out = mobile_robot_25_acados_get_nlp_out(acados_ocp_capsule_25);
-            }
-        } else if(v_ref_int == 32) {
-            std::cout << "reference speed is 32 cm/s" << std::endl;
-            use32 = true;
-            use25 = false;
-            if (use_beta) {
-                acados_ocp_capsule_32_beta = mobile_robot_32_beta_acados_create_capsule();
-                status = mobile_robot_32_beta_acados_create(acados_ocp_capsule_32_beta);
-                if (status) {
-                    printf("mobile_robot_32_beta_acados_create() returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                sim_capsule_32_beta = mobile_robot_32_beta_acados_sim_solver_create_capsule();
-                status = mobile_robot_32_beta_acados_sim_create(sim_capsule_32_beta);
-                mobile_robot_sim_config = mobile_robot_32_beta_acados_get_sim_config(sim_capsule_32_beta);
-                mobile_robot_sim_dims = mobile_robot_32_beta_acados_get_sim_dims(sim_capsule_32_beta);
-                mobile_robot_sim_in = mobile_robot_32_beta_acados_get_sim_in(sim_capsule_32_beta);
-                mobile_robot_sim_out = mobile_robot_32_beta_acados_get_sim_out(sim_capsule_32_beta);
-                if (status) {
-                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                nlp_config = mobile_robot_32_beta_acados_get_nlp_config(acados_ocp_capsule_32_beta);
-                nlp_dims = mobile_robot_32_beta_acados_get_nlp_dims(acados_ocp_capsule_32_beta);
-                nlp_in = mobile_robot_32_beta_acados_get_nlp_in(acados_ocp_capsule_32_beta);
-                nlp_out = mobile_robot_32_beta_acados_get_nlp_out(acados_ocp_capsule_32_beta);
-            } else {
-                acados_ocp_capsule_32 = mobile_robot_32_acados_create_capsule();
-                status = mobile_robot_32_acados_create(acados_ocp_capsule_32);
-                if (status) {
-                    printf("mobile_robot_32_acados_create() returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                sim_capsule_32 = mobile_robot_32_acados_sim_solver_create_capsule();
-                status = mobile_robot_32_acados_sim_create(sim_capsule_32);
-                mobile_robot_sim_config = mobile_robot_32_acados_get_sim_config(sim_capsule_32);
-                mobile_robot_sim_dims = mobile_robot_32_acados_get_sim_dims(sim_capsule_32);
-                mobile_robot_sim_in = mobile_robot_32_acados_get_sim_in(sim_capsule_32);
-                mobile_robot_sim_out = mobile_robot_32_acados_get_sim_out(sim_capsule_32);
-                if (status) {
-                    printf("acados_create() simulator returned status %d. Exiting.\n", status);
-                    exit(1);
-                }
-                nlp_config = mobile_robot_32_acados_get_nlp_config(acados_ocp_capsule_32);
-                nlp_dims = mobile_robot_32_acados_get_nlp_dims(acados_ocp_capsule_32);
-                nlp_in = mobile_robot_32_acados_get_nlp_in(acados_ocp_capsule_32);
-                nlp_out = mobile_robot_32_acados_get_nlp_out(acados_ocp_capsule_32);
-            }
-        } else {
-            std::cerr << "Invalid reference speed, please use 18, 25 or 32" << std::endl;
+        std::cout << "reference speed is " << v_ref_int << "cm/s" << std::endl;
+
+        acados_fn(CREATE_CAPSULE);
+        acados_fn(CREATE);
+
+        if (status) {
+            printf("mobile_robot_25_beta_acados_create() returned status %d. Exiting.\n", status);
             exit(1);
         }
+
+        acados_fn(CREATE_SIM_CAPSULE);
+        acados_fn(SIM_CREATE);
+
+        acados_fn(GET_SIM_CONFIG);
+        acados_fn(GET_SIM_DIMS);
+        acados_fn(GET_SIM_IN);
+        acados_fn(GET_SIM_OUT);
+
+
+        if (status) {
+            printf("acados_create() simulator returned status %d. Exiting.\n", status);
+            exit(1);
+        }
+
+        acados_fn(GET_NLP_CONFIG);
+        acados_fn(GET_NLP_DIMS);
+        acados_fn(GET_NLP_IN);
+        acados_fn(GET_NLP_OUT);
 
         // Setting problem dimensions
         N = nlp_dims->N;
@@ -178,10 +118,34 @@ public:
     mobile_robot_25_sim_solver_capsule *sim_capsule_25;
     mobile_robot_32_solver_capsule *acados_ocp_capsule_32;
     mobile_robot_32_sim_solver_capsule *sim_capsule_32;
+    mobile_robot_500_solver_capsule *acados_ocp_capsule_500;
+    mobile_robot_500_sim_solver_capsule *sim_capsule_500;
     mobile_robot_25_beta_solver_capsule *acados_ocp_capsule_25_beta;
     mobile_robot_25_beta_sim_solver_capsule *sim_capsule_25_beta;
     mobile_robot_32_beta_solver_capsule *acados_ocp_capsule_32_beta;
     mobile_robot_32_beta_sim_solver_capsule *sim_capsule_32_beta;
+
+    enum ACADOS_FN {
+        CREATE_CAPSULE,
+        CREATE_SIM_CAPSULE,
+        CREATE,
+        SIM_CREATE,
+        GET_SIM_CONFIG,
+        GET_SIM_DIMS,
+        GET_SIM_IN,
+        GET_SIM_OUT,
+        GET_NLP_CONFIG,
+        GET_NLP_DIMS,
+        GET_NLP_IN,
+        GET_NLP_OUT,
+        RESET,
+        UPDATE_PARAMS,
+        SOLVE,
+        SIM_SOLVE
+    };
+
+    std::map<int, std::map<ACADOS_FN, std::any>> acados_fns;
+    std::map<int, std::map<ACADOS_FN, std::any>> acados_beta_fns;
 
     sim_config *mobile_robot_sim_config;
     void *mobile_robot_sim_dims;
@@ -194,6 +158,301 @@ public:
 
     Eigen::Matrix2d rotation_matrix;
     Eigen::Vector2d rotated_xy;
+
+    void initialize_acados_functions() {
+        // 25 version
+        acados_fns[25][CREATE_CAPSULE] = std::function<void()>([this]() { 
+            acados_ocp_capsule_25 = mobile_robot_25_acados_create_capsule(); 
+        });
+        acados_fns[25][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { 
+            sim_capsule_25 = mobile_robot_25_acados_sim_solver_create_capsule(); 
+        });
+        acados_fns[25][CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_acados_create(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][SIM_CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_acados_sim_create(sim_capsule_25); 
+        });
+        acados_fns[25][GET_SIM_CONFIG] = std::function<void()>([this]() { 
+            mobile_robot_sim_config = mobile_robot_25_acados_get_sim_config(sim_capsule_25); 
+        });
+        acados_fns[25][GET_SIM_DIMS] = std::function<void()>([this]() { 
+            mobile_robot_sim_dims = mobile_robot_25_acados_get_sim_dims(sim_capsule_25); 
+        });
+        acados_fns[25][GET_SIM_IN] = std::function<void()>([this]() { 
+            mobile_robot_sim_in = mobile_robot_25_acados_get_sim_in(sim_capsule_25); 
+        });
+        acados_fns[25][GET_SIM_OUT] = std::function<void()>([this]() { 
+            mobile_robot_sim_out = mobile_robot_25_acados_get_sim_out(sim_capsule_25); 
+        });
+        acados_fns[25][GET_NLP_CONFIG] = std::function<void()>([this]() { 
+            nlp_config = mobile_robot_25_acados_get_nlp_config(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][GET_NLP_DIMS] = std::function<void()>([this]() { 
+            nlp_dims = mobile_robot_25_acados_get_nlp_dims(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][GET_NLP_IN] = std::function<void()>([this]() { 
+            nlp_in = mobile_robot_25_acados_get_nlp_in(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][GET_NLP_OUT] = std::function<void()>([this]() { 
+            nlp_out = mobile_robot_25_acados_get_nlp_out(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { 
+            mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2); 
+        });
+        acados_fns[25][RESET] = std::function<int()>([this]() { 
+            return mobile_robot_25_acados_reset(acados_ocp_capsule_25, 1); 
+        });
+        acados_fns[25][SOLVE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_acados_solve(acados_ocp_capsule_25); 
+        });
+        acados_fns[25][SIM_SOLVE] = std::function<int()>([this]() { 
+            return mobile_robot_25_acados_sim_solve(sim_capsule_25); 
+        });
+
+        // 32 version
+        acados_fns[32][CREATE_CAPSULE] = std::function<void()>([this]() { 
+            acados_ocp_capsule_32 = mobile_robot_32_acados_create_capsule(); 
+        });
+        acados_fns[32][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { 
+            sim_capsule_32 = mobile_robot_32_acados_sim_solver_create_capsule(); 
+        });
+        acados_fns[32][CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_acados_create(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][SIM_CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_acados_sim_create(sim_capsule_32); 
+        });
+        acados_fns[32][GET_SIM_CONFIG] = std::function<void()>([this]() { 
+            mobile_robot_sim_config = mobile_robot_32_acados_get_sim_config(sim_capsule_32); 
+        });
+        acados_fns[32][GET_SIM_DIMS] = std::function<void()>([this]() { 
+            mobile_robot_sim_dims = mobile_robot_32_acados_get_sim_dims(sim_capsule_32); 
+        });
+        acados_fns[32][GET_SIM_IN] = std::function<void()>([this]() { 
+            mobile_robot_sim_in = mobile_robot_32_acados_get_sim_in(sim_capsule_32); 
+        });
+        acados_fns[32][GET_SIM_OUT] = std::function<void()>([this]() { 
+            mobile_robot_sim_out = mobile_robot_32_acados_get_sim_out(sim_capsule_32); 
+        });
+        acados_fns[32][GET_NLP_CONFIG] = std::function<void()>([this]() { 
+            nlp_config = mobile_robot_32_acados_get_nlp_config(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][GET_NLP_DIMS] = std::function<void()>([this]() { 
+            nlp_dims = mobile_robot_32_acados_get_nlp_dims(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][GET_NLP_IN] = std::function<void()>([this]() { 
+            nlp_in = mobile_robot_32_acados_get_nlp_in(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][GET_NLP_OUT] = std::function<void()>([this]() { 
+            nlp_out = mobile_robot_32_acados_get_nlp_out(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { 
+            mobile_robot_32_acados_update_params(acados_ocp_capsule_32, j, u_current, 2); 
+        });
+        acados_fns[32][RESET] = std::function<int()>([this]() { 
+            return mobile_robot_32_acados_reset(acados_ocp_capsule_32, 1); 
+        });
+        acados_fns[32][SOLVE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_acados_solve(acados_ocp_capsule_32); 
+        });
+        acados_fns[32][SIM_SOLVE] = std::function<int()>([this]() { 
+            return mobile_robot_32_acados_sim_solve(sim_capsule_32); 
+        });
+
+        // 500 version
+        acados_fns[500][CREATE_CAPSULE] = std::function<void()>([this]() { 
+            acados_ocp_capsule_500 = mobile_robot_500_acados_create_capsule(); 
+        });
+        acados_fns[500][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { 
+            sim_capsule_500 = mobile_robot_500_acados_sim_solver_create_capsule(); 
+        });
+        acados_fns[500][CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_500_acados_create(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][SIM_CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_500_acados_sim_create(sim_capsule_500); 
+        });
+        acados_fns[500][GET_SIM_CONFIG] = std::function<void()>([this]() { 
+            mobile_robot_sim_config = mobile_robot_500_acados_get_sim_config(sim_capsule_500); 
+        });
+        acados_fns[500][GET_SIM_DIMS] = std::function<void()>([this]() { 
+            mobile_robot_sim_dims = mobile_robot_500_acados_get_sim_dims(sim_capsule_500); 
+        });
+        acados_fns[500][GET_SIM_IN] = std::function<void()>([this]() { 
+            mobile_robot_sim_in = mobile_robot_500_acados_get_sim_in(sim_capsule_500); 
+        });
+        acados_fns[500][GET_SIM_OUT] = std::function<void()>([this]() { 
+            mobile_robot_sim_out = mobile_robot_500_acados_get_sim_out(sim_capsule_500); 
+        });
+        acados_fns[500][GET_NLP_CONFIG] = std::function<void()>([this]() { 
+            nlp_config = mobile_robot_500_acados_get_nlp_config(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][GET_NLP_DIMS] = std::function<void()>([this]() { 
+            nlp_dims = mobile_robot_500_acados_get_nlp_dims(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][GET_NLP_IN] = std::function<void()>([this]() { 
+            nlp_in = mobile_robot_500_acados_get_nlp_in(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][GET_NLP_OUT] = std::function<void()>([this]() { 
+            nlp_out = mobile_robot_500_acados_get_nlp_out(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { 
+            mobile_robot_500_acados_update_params(acados_ocp_capsule_500, j, u_current, 2); 
+        });
+        acados_fns[500][RESET] = std::function<int()>([this]() { 
+            return mobile_robot_500_acados_reset(acados_ocp_capsule_500, 1); 
+        });
+        acados_fns[500][SOLVE] = std::function<void()>([this]() { 
+            status = mobile_robot_500_acados_solve(acados_ocp_capsule_500); 
+        });
+        acados_fns[500][SIM_SOLVE] = std::function<int()>([this]() { 
+            return mobile_robot_500_acados_sim_solve(sim_capsule_500); 
+        });
+    }
+
+    void initialize_acados_beta_functions() {
+        // 25_beta version
+        acados_beta_fns[25][CREATE_CAPSULE] = std::function<void()>([this]() { 
+            acados_ocp_capsule_25_beta = mobile_robot_25_beta_acados_create_capsule(); 
+        });
+        acados_beta_fns[25][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { 
+            sim_capsule_25_beta = mobile_robot_25_beta_acados_sim_solver_create_capsule(); 
+        });
+        acados_beta_fns[25][CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_beta_acados_create(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][SIM_CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_beta_acados_sim_create(sim_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_SIM_CONFIG] = std::function<void()>([this]() { 
+            mobile_robot_sim_config = mobile_robot_25_beta_acados_get_sim_config(sim_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_SIM_DIMS] = std::function<void()>([this]() { 
+            mobile_robot_sim_dims = mobile_robot_25_beta_acados_get_sim_dims(sim_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_SIM_IN] = std::function<void()>([this]() { 
+            mobile_robot_sim_in = mobile_robot_25_beta_acados_get_sim_in(sim_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_SIM_OUT] = std::function<void()>([this]() { 
+            mobile_robot_sim_out = mobile_robot_25_beta_acados_get_sim_out(sim_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_NLP_CONFIG] = std::function<void()>([this]() { 
+            nlp_config = mobile_robot_25_beta_acados_get_nlp_config(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_NLP_DIMS] = std::function<void()>([this]() { 
+            nlp_dims = mobile_robot_25_beta_acados_get_nlp_dims(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_NLP_IN] = std::function<void()>([this]() { 
+            nlp_in = mobile_robot_25_beta_acados_get_nlp_in(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][GET_NLP_OUT] = std::function<void()>([this]() { 
+            nlp_out = mobile_robot_25_beta_acados_get_nlp_out(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { 
+            mobile_robot_25_beta_acados_update_params(acados_ocp_capsule_25_beta, j, u_current, 2); 
+        });
+        acados_beta_fns[25][RESET] = std::function<int()>([this]() { 
+            return mobile_robot_25_beta_acados_reset(acados_ocp_capsule_25_beta, 1); 
+        });
+        acados_beta_fns[25][SOLVE] = std::function<void()>([this]() { 
+            status = mobile_robot_25_beta_acados_solve(acados_ocp_capsule_25_beta); 
+        });
+        acados_beta_fns[25][SIM_SOLVE] = std::function<int()>([this]() { 
+            return mobile_robot_25_beta_acados_sim_solve(sim_capsule_25_beta); 
+        });
+
+        // 32_beta version
+        acados_beta_fns[32][CREATE_CAPSULE] = std::function<void()>([this]() { 
+            acados_ocp_capsule_32_beta = mobile_robot_32_beta_acados_create_capsule(); 
+        });
+        acados_beta_fns[32][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { 
+            sim_capsule_32_beta = mobile_robot_32_beta_acados_sim_solver_create_capsule(); 
+        });
+        acados_beta_fns[32][CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_beta_acados_create(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][SIM_CREATE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_beta_acados_sim_create(sim_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_SIM_CONFIG] = std::function<void()>([this]() { 
+            mobile_robot_sim_config = mobile_robot_32_beta_acados_get_sim_config(sim_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_SIM_DIMS] = std::function<void()>([this]() { 
+            mobile_robot_sim_dims = mobile_robot_32_beta_acados_get_sim_dims(sim_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_SIM_IN] = std::function<void()>([this]() { 
+            mobile_robot_sim_in = mobile_robot_32_beta_acados_get_sim_in(sim_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_SIM_OUT] = std::function<void()>([this]() { 
+            mobile_robot_sim_out = mobile_robot_32_beta_acados_get_sim_out(sim_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_NLP_CONFIG] = std::function<void()>([this]() { 
+            nlp_config = mobile_robot_32_beta_acados_get_nlp_config(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_NLP_DIMS] = std::function<void()>([this]() { 
+            nlp_dims = mobile_robot_32_beta_acados_get_nlp_dims(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_NLP_IN] = std::function<void()>([this]() { 
+            nlp_in = mobile_robot_32_beta_acados_get_nlp_in(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][GET_NLP_OUT] = std::function<void()>([this]() { 
+            nlp_out = mobile_robot_32_beta_acados_get_nlp_out(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { 
+            mobile_robot_32_beta_acados_update_params(acados_ocp_capsule_32_beta, j, u_current, 2); 
+        });
+        acados_beta_fns[32][RESET] = std::function<int()>([this]() { 
+            return mobile_robot_32_beta_acados_reset(acados_ocp_capsule_32_beta, 1); 
+        });
+        acados_beta_fns[32][SOLVE] = std::function<void()>([this]() { 
+            status = mobile_robot_32_beta_acados_solve(acados_ocp_capsule_32_beta); 
+        });
+        acados_beta_fns[32][SIM_SOLVE] = std::function<int()>([this]() { 
+            return mobile_robot_32_beta_acados_sim_solve(sim_capsule_32_beta); 
+        });
+    }
+
+    int acados_fn(ACADOS_FN fn_type, std::optional<int> param = std::nullopt) {
+        auto& fn_map = [&]() -> auto& {
+            if (use_beta) {
+                if (acados_beta_fns.find(v_ref_int) != acados_beta_fns.end()) {
+                        return acados_beta_fns[v_ref_int];
+                } else {
+                    std::cout << "Invalid v_ref" << std::endl;
+                    exit(1);
+                }
+            } else {
+                if (acados_fns.find(v_ref_int) != acados_fns.end()) {
+                    return acados_fns[v_ref_int];
+                } else {
+                    std::cout << "Invalid v_ref" << std::endl;
+                    exit(1);
+                }
+            }
+        }();
+        if (fn_map.find(fn_type) != fn_map.end()) {
+            auto& fn = fn_map[fn_type];
+            try {
+                if (fn_type == UPDATE_PARAMS && param) {
+                    auto fn_cast = std::any_cast<std::function<void(int)>>(fn);
+                    fn_cast(param.value());
+                } else if (fn_type == SIM_SOLVE || fn_type == RESET) {
+                    auto fn_cast = std::any_cast<std::function<int()>>(fn);
+                    return fn_cast();
+                } else {
+                    auto fn_cast = std::any_cast<std::function<void()>>(fn);
+                    fn_cast();
+                }
+                return 0;
+            } catch (const std::bad_any_cast& e) {
+                std::cerr << "CRITICAL: Bad cast for " << fn_type << ": " << e.what() << std::endl;
+                exit(1);
+            }
+        }   
+        return 1;
+    }
+
     void transform_point(Eigen::Vector3d& pt, Eigen::Vector3d& pt_transformed,
                          const Eigen::Vector3d& frame1, 
                          const Eigen::Vector3d& frame2) {
@@ -223,21 +482,7 @@ public:
     }
     
     int reset_solver() {
-        int reset_status;
-        if (use_beta) {
-            if(use25) {
-                reset_status = mobile_robot_25_beta_acados_reset(acados_ocp_capsule_25_beta, 1);
-            } else if(use32) {
-                reset_status = mobile_robot_32_beta_acados_reset(acados_ocp_capsule_32_beta, 1);
-            }
-        } else {
-            if(use25) {
-                reset_status = mobile_robot_25_acados_reset(acados_ocp_capsule_25, 1);
-            } else if(use32) {
-                reset_status = mobile_robot_32_acados_reset(acados_ocp_capsule_32, 1);
-            }
-        }
-        return reset_status;
+        return acados_fn(RESET);
     }
     
     int solve(const Eigen::Ref<const Eigen::MatrixXd>& state_refs,
@@ -284,19 +529,7 @@ public:
             x_state[5] = 0.0; // delta_v_ref (always 0)
             x_state[6] = 0.0; // delta_steer_ref (always 0)
             ocp_nlp_cost_model_set(nlp_config, nlp_dims, nlp_in, j, "yref", x_state);
-            if (use_beta) {
-                if (use25) {
-                    mobile_robot_25_beta_acados_update_params(acados_ocp_capsule_25_beta, j, u_current, 2);
-                } else if (use32) {
-                    mobile_robot_32_beta_acados_update_params(acados_ocp_capsule_32_beta, j, u_current, 2);
-                }
-            } else {
-                if (use25) {
-                    mobile_robot_25_acados_update_params(acados_ocp_capsule_25, j, u_current, 2);
-                } else if (use32) {
-                    mobile_robot_32_acados_update_params(acados_ocp_capsule_32, j, u_current, 2);
-                }
-            }
+            acados_fn(UPDATE_PARAMS, j);
         }
 
         // Set the constraints for the current state
@@ -304,19 +537,7 @@ public:
         ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "ubx", i_current_state.data());
 
         // Solve the optimization problem
-        if (use_beta) {
-            if (use25) {
-                status = mobile_robot_25_beta_acados_solve(acados_ocp_capsule_25_beta);
-            } else if (use32) {
-                status = mobile_robot_32_beta_acados_solve(acados_ocp_capsule_32_beta);
-            }
-        } else {
-            if(use25) {
-                status = mobile_robot_25_acados_solve(acados_ocp_capsule_25);
-            } else if(use32) {
-                status = mobile_robot_32_acados_solve(acados_ocp_capsule_32);
-            }
-        }
+        acados_fn(SOLVE);
         if (status != 0) {
             std::cout << "ERROR!!! acados acados_ocp_solver returned status " << status << ". Exiting." << std::endl;
             return 1; 
@@ -334,19 +555,7 @@ public:
 
         // Run the simulation
         int status_s;
-        if (use_beta) {
-            if(use25) {
-                status_s  = mobile_robot_25_beta_acados_sim_solve(sim_capsule_25_beta);
-            } else if(use32) {
-                status_s  = mobile_robot_32_beta_acados_sim_solve(sim_capsule_32_beta);
-            }
-        } else {
-            if(use25) {
-                status_s  = mobile_robot_25_acados_sim_solve(sim_capsule_25);
-            } else if(use32) {
-                status_s  = mobile_robot_32_acados_sim_solve(sim_capsule_32);
-            }
-        }
+        status_s = acados_fn(SIM_SOLVE);
         if (status_s != ACADOS_SUCCESS) {
             throw std::runtime_error("acados integrator returned status " + std::to_string(status_s) + ". Exiting.");
         }
