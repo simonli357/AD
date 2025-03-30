@@ -71,77 +71,32 @@ include_directories($ENV{ACADOS_SOURCE_DIR}/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/blasfeo/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/hpipm/include)
 include_directories($ENV{ACADOS_SOURCE_DIR}/include/acados)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta)
+file(GLOB GENERATED_CODE_DIRS
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/c_generated_code*
+)
+include_directories(${GENERATED_CODE_DIRS})
 link_directories($ENV{ACADOS_SOURCE_DIR}/lib)
 
-file(GLOB ocp_solver32
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_solver_mobile_robot_32.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_solver_mobile_robot_500.c
-        )
-
-file(GLOB casadi_fun32
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_model/mobile_robot_32_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/mobile_robot_32_cost/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/mobile_robot_500_cost/*.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/mobile_robot_500_model/*.c
-        )
-
-file(GLOB sim_solver32
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32/acados_sim_solver_mobile_robot_32.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_sim_solver_mobile_robot_500.c
-        )
-
-file(GLOB ocp_solver32_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/acados_solver_mobile_robot_32_beta.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_500/acados_solver_mobile_robot_500.c
-        )
-
-file(GLOB casadi_fun32_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/mobile_robot_32_beta_model/mobile_robot_32_beta_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/mobile_robot_32_beta_model/mobile_robot_32_beta_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/mobile_robot_32_beta_model/mobile_robot_32_beta_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/mobile_robot_32_beta_cost/*.c
-        )
-
-file(GLOB sim_solver32_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_32_beta/acados_sim_solver_mobile_robot_32_beta.c
+file(GLOB_RECURSE ocp_solvers
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/acados_solver_mobile_robot_*.c
+)
+file(GLOB_RECURSE cascadi_fun
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/mobile_robot_*_expl_ode_fun.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/mobile_robot_*_expl_vde_forw.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/mobile_robot_*_expl_vde_adj.c
+)
+file(GLOB_RECURSE cost_fun
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/mobile_robot_*_cost/*.c
+)
+file(GLOB_RECURSE sim_solvers
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/acados/*/acados_sim_solver_mobile_robot_*.c
 )
 
-file(GLOB ocp_solver25
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/acados_solver_mobile_robot_25.c
-        )
+add_library(acados_shared_lib SHARED ${ocp_solvers} ${cascadi_fun} ${cost_fun} ${sim_solvers})
+target_link_libraries(acados_shared_lib acados hpipm blasfeo)
 
-file(GLOB casadi_fun25
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/mobile_robot_25_model/mobile_robot_25_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/mobile_robot_25_model/mobile_robot_25_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/mobile_robot_25_model/mobile_robot_25_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/mobile_robot_25_cost/*.c
-        )
-
-file(GLOB sim_solver25
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25/acados_sim_solver_mobile_robot_25.c
-        )
-
-file(GLOB ocp_solver25_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/acados_solver_mobile_robot_25_beta.c
-        )
-
-file(GLOB casadi_fun25_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/mobile_robot_25_beta_model/mobile_robot_25_beta_expl_ode_fun.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/mobile_robot_25_beta_model/mobile_robot_25_beta_expl_vde_forw.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/mobile_robot_25_beta_model/mobile_robot_25_beta_expl_vde_adj.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/mobile_robot_25_beta_cost/*.c
-        )
-
-file(GLOB sim_solver25_beta
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/c_generated_code_25_beta/acados_sim_solver_mobile_robot_25_beta.c
-        )
+file(GLOB_RECURSE ALGLIB_SOURCES_CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
+add_library(alglib_control SHARED ${ALGLIB_SOURCES_CONTROL})
 
 find_package(Curses REQUIRED)
 find_package(communication REQUIRED)
@@ -179,15 +134,6 @@ include_directories(
   ${CURSES_INCLUDE_DIR}
 )
 
-file(GLOB_RECURSE ALGLIB_SOURCES_CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-add_library(alglib_control SHARED ${ALGLIB_SOURCES_CONTROL})
-
-add_library(ocp_shared_lib SHARED ${ocp_solver32} ${casadi_fun32} ${ocp_solver32_beta} ${casadi_fun32_beta} ${ocp_solver25} ${casadi_fun25} ${ocp_solver25_beta} ${casadi_fun25_beta})
-target_link_libraries(ocp_shared_lib acados hpipm blasfeo)
-
-add_library(sim_shared_lib SHARED ${sim_solver32} ${casadi_fun32} ${sim_solver32_beta} ${casadi_fun32_beta} ${sim_solver25} ${casadi_fun25} ${sim_solver25_beta} ${casadi_fun25_beta})
-target_link_libraries(sim_shared_lib acados hpipm blasfeo)
-
 # HTN Lib
 # file(GLOB HTN ${CMAKE_CURRENT_SOURCE_DIR}/src/htn/*.cpp)
 # file(GLOB OBJECT_DETECTION ${CMAKE_CURRENT_SOURCE_DIR}/src/object-detection/*.cpp)
@@ -221,17 +167,16 @@ target_link_libraries(sim_shared_lib acados hpipm blasfeo)
 # )
 
 add_executable(controller 
-src/Controller.cpp
-src/Utility.cpp
+  src/Controller.cpp
+  src/Utility.cpp
 )
 target_link_libraries(controller
-ocp_shared_lib 
-sim_shared_lib
-${catkin_LIBRARIES}
-${CURSES_LIBRARIES}
-# htn
-communication
-object_detection_lib
+  acados_shared_lib 
+  ${catkin_LIBRARIES}
+  ${CURSES_LIBRARIES}
+  # htn
+  communication
+  object_detection_lib
 )
 
 # add_executable(controller2

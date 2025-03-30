@@ -16,6 +16,8 @@
 #include "acados_solver_mobile_robot_25.h"
 #include "acados_sim_solver_mobile_robot_32.h"
 #include "acados_solver_mobile_robot_32.h"
+#include "acados_sim_solver_mobile_robot_500.h"
+#include "acados_solver_mobile_robot_500.h"
 #include "acados_sim_solver_mobile_robot_25_beta.h"
 #include "acados_solver_mobile_robot_25_beta.h"
 #include "acados_sim_solver_mobile_robot_32_beta.h"
