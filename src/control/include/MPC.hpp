@@ -266,16 +266,28 @@ class MPC {
 		}();
 		if (fn_map.find(fn_type) != fn_map.end()) {
 			auto &fn = fn_map[fn_type];
-			if (fn_type == UPDATE_PARAMS && param) {
-				auto fn_cast = std::any_cast<std::function<void(int)>>(fn);
-				fn_cast(param.value());
-			} else if (fn_type == SIM_SOLVE || fn_type == RESET) {
-				auto fn_cast = std::any_cast<std::function<int()>>(fn);
-				return fn_cast();
-			} else {
+			switch (fn_type) {
+			case UPDATE_PARAMS: {
+				if (!param) {
+					break;
+				}
+				auto update_params_cast = std::any_cast<std::function<void(int)>>(fn);
+				update_params_cast(param.value());
+				return 0;
+			}
+			case SIM_SOLVE: {
+				auto sim_solve_cast = std::any_cast<std::function<int()>>(fn);
+				return sim_solve_cast();
+			}
+			case RESET: {
+				auto reset_cast = std::any_cast<std::function<int()>>(fn);
+				return reset_cast();
+			}
+			default: {
 				auto fn_cast = std::any_cast<std::function<void()>>(fn);
 				fn_cast();
 				return 0;
+			}
 			}
 		}
 		std::cout << "Invalid acados method" << std::endl;
