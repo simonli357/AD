@@ -3,8 +3,9 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
-from .renderer import draw_track, draw_waypoints
-from .vbos import ellipse_vbo
+from .renderer import draw_track, draw_waypoints, draw_car, draw_grid
+from .vbos import ellipse_vbo, grid_vbo
+from ..enums import BarcaMapData
 
 import os
 import numpy as np
@@ -19,6 +20,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.setMouseTracking(True)
         self.stop_drawing = False
         self.main_window = self.parent()
+        self.car_widget = self.main_window.car_widget
         self.pan_x = 0
         self.pan_y = 0
         self.max_zoom = 40
@@ -30,9 +32,12 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.setFormat(fmt)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        barca_model_path = os.path.join(current_dir, 'assets', 'model.obj')
-        if os.path.exists(barca_model_path):
-            self.track_model = self.load_obj(barca_model_path)
+        track_model_path = os.path.join(current_dir, 'assets', 'track.obj')
+        car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        if os.path.exists(track_model_path):
+            self.track_model = self.load_obj(track_model_path)
+        if os.path.exists(car_model_path):
+            self.car_model = self.load_obj(car_model_path)
 
     def render_widget(self) -> None:
         self.update()
@@ -64,6 +69,9 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
         # initialize waypoint vbo
         self.wp_vbo = ellipse_vbo(0.05, 0.05)
+        grid_model = grid_vbo()
+        self.grid_vbo = grid_model[0]
+        self.grid_vertex_count = grid_model[1]
 
     def paintGL(self):
         if self.stop_drawing:
@@ -97,12 +105,18 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # gl.glTranslatef(self.pan_x, self.pan_y, 0)
 
         # Global Transforms
-        gl.glTranslatef(-6.5, -1, 0)
         gl.glRotatef(25, 0.0, 0.0, 1.0)
+        gl.glTranslatef(-6.5, 2, 0)
 
-        # Draw barca track
         draw_track(self.track_model)
+        # Counter map offset
+        gl.glTranslatef(BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
+        draw_grid(self.grid_vbo, self.grid_vertex_count)
+        gl.glTranslatef(-2, 6, 0)
+
+        # Draw objects
         draw_waypoints(self.main_window.map_widget.state_refs_np, self.wp_vbo)
+        draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
 
         self.qt_restore_gl_state()
 

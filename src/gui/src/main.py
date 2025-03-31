@@ -64,10 +64,10 @@ class MainWindow(QMainWindow):
         # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.map_widget = MapWidget(self)
-        self.barca_widget = BarcaWidget(self)
         self.cam_widget = CameraWidget(self)
         self.meter_widget = MeterWidget(self)
         self.car_widget = CarWidget(self)
+        self.barca_widget = BarcaWidget(self)
         self.terminal_widget = TerminalWidget(self)
         self.buttons_widget = ButtonsWidget(self)
         self.opt_widget = OptionsWidget(self)
