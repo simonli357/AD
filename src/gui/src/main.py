@@ -5,6 +5,7 @@ import os
 import time
 import threading
 import signal
+import cv2
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -32,7 +33,6 @@ class CommunicationHandler(QObject):
     message_signal = pyqtSignal(str)
     params_signal = pyqtSignal(object, object)
     camera_frame_signal = pyqtSignal(object)
-    rgb_frame_signal = pyqtSignal(object)
     depth_frame_signal = pyqtSignal(object)
     lane_signal = pyqtSignal(object)
     road_obj_signal = pyqtSignal(object)
@@ -70,6 +70,10 @@ class MainWindow(QMainWindow):
         self.comm = CommunicationHandler()
         self.show_barca = False
 
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.recording_path = os.path.join(current_dir, 'frames')
+        os.makedirs(self.recording_path, exist_ok=True)
+
         self.setWindowTitle("AD IDE")
 
         self.setStyleSheet("""
@@ -94,7 +98,6 @@ class MainWindow(QMainWindow):
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
-        self.comm.rgb_frame_signal.connect(self.buttons_widget.save_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.lane_signal.connect(self.cam_widget.lane_callback)
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
@@ -286,7 +289,10 @@ class MainWindow(QMainWindow):
             if self.buttons_widget.recording:
                 rgb_image = self.server.udp_connection.parse_rgb_image()
                 if rgb_image is not None:
-                    self.comm.rgb_frame_signal.emit(rgb_image)
+                    now = time.time()
+                    if self.recording and abs(self.meter_widget.speed) > 0.02:
+                        filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                        cv2.imwrite(filename, rgb_image)
                 time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
             time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
 
