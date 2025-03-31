@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import os
 
-
+frame_count = 0
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -249,6 +249,15 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def save_frame(self, frame) -> None:
         now = time.time()
-        if self.recording and abs(self.main_window.meter_widget.speed) > 0.02:
-            filename = self.recording_path + f"/frame_{int(now)}.jpg"
+        global frame_count
+        frame_count += 1
+        offset = 450
+        # if self.recording and abs(self.main_window.meter_widget.speed) > 0.02:
+        if self.recording:
+            while True:
+                filename = os.path.join(self.recording_path, f"frame_{frame_count + offset}.jpg")
+                if not os.path.exists(filename):
+                    break
+            frame_count += 1
             cv2.imwrite(filename, frame)
+            print("save frame: ", f"/frame_{int(frame_count+offset)}.jpg")
