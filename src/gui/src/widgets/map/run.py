@@ -69,10 +69,8 @@ class ConfirmUpdate(QDialog):
 class RunOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.graphics_view = self.parent()
-        self.map_widget = self.graphics_view.map_widget
-        self.main_window = self.map_widget.main_window
+        self.setMinimumSize(300, 60)
+        self.main_window = self.parent()
         self.runs = []
         self.launchfile = None
         self.sim_config = None
@@ -91,10 +89,10 @@ class RunOverlay(QWidget):
 
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(current_dir)
-        runs_file = os.path.join(current_dir, 'runs.xml')
-        controller_file = os.path.join(parent_dir, 'forms', 'appdata', 'controller.yaml')
-        self.sim_file = os.path.join(parent_dir, 'forms', 'appdata', 'simulator.yaml')
+        main_dir = os.path.dirname(os.path.dirname(current_dir))
+        runs_file = os.path.join(main_dir, 'runs.xml')
+        controller_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'controller.yaml')
+        self.sim_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'simulator.yaml')
         if not os.path.isfile(self.sim_file):
             self.create_default_config(self.sim_file)
         if not os.path.isfile(controller_file):

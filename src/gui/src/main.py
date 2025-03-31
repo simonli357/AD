@@ -23,6 +23,7 @@ from widgets.car import CarWidget
 from widgets.radar import RadarWidget
 from widgets.jetson.sw_load import SoftwareMetricsWidget
 from widgets.enums import CameraParams
+from widgets.map.run import RunOverlay
 
 from std_srvs.srv import TriggerRequest
 
@@ -97,6 +98,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root_widget)
         root_layout = QHBoxLayout(root_widget)
         root_layout.setContentsMargins(10, 10, 10, 10)
+
+        self.run_overlay = RunOverlay(self)
+        self.run_overlay.move(80, 5)
 
         left_widgets = QWidget()
         self.left_layout = QVBoxLayout(left_widgets)

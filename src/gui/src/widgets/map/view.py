@@ -2,7 +2,6 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QGraphicsView, QSizePolicy, QLabel, QWidget, QPushButton, QApplication, QVBoxLayout
 from .utils import MapUtils
 from ..enums import MapData
-from .run import RunOverlay
 
 import numpy as np
 
@@ -166,8 +165,6 @@ class GraphicsView(QGraphicsView):
             self.width() - self.overlay_widget.width() - 5,
             5
         )
-        self.run_overlay = RunOverlay(self)
-        self.run_overlay.move(15, 0)
 
     def setup_cursor(self) -> None:
         crosshair_pixmap = QtGui.QPixmap(16, 16)
@@ -303,7 +300,6 @@ class GraphicsView(QGraphicsView):
             event.size().width() - self.overlay_widget.width() - 5,
             5
         )
-        self.run_overlay.move(15, 0)
         event.accept()
 
     def mousePressEvent(self, event):

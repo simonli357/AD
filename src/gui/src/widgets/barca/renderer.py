@@ -26,7 +26,7 @@ def draw_waypoint(x, y, wp_vbo):
     gl.glPushMatrix()
     gl.glColor3f(1, 1, 0)
     gl.glRotatef(90, 0.0, 0.0, 1.0)
-    gl.glTranslatef(-BarcaMapData.GAZEBO_MAP_CENTER_X.value, -BarcaMapData.GAZEBO_MAP_CENTER_Y.value, 0)
+    gl.glTranslatef(-BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
 
     wp_vbo.bind()
     gl.glTranslatef(x, y, 0.0)

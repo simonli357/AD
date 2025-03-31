@@ -662,7 +662,7 @@ class MapWidget(QtWidgets.QWidget):
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
                     self.update_map_display()
                     self.graphics_view.set_total_path_distance()
-                    self.graphics_view.run_overlay.set_run_name(run.path_name)
+                    self.main_window.run_overlay.set_run_name(run.path_name)
                     return
                 retries += 1
                 time.sleep(0.1)

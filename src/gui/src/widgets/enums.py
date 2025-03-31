@@ -20,8 +20,10 @@ class MapData(Enum):
 
 
 class BarcaMapData(Enum):
-    GAZEBO_MAP_CENTER_X = -4.0
-    GAZEBO_MAP_CENTER_Y = 2.0
+    MAP_CENTER_X = -4.0
+    MAP_CENTER_Y = 2.0
+    MAP_WIDTH = 70.0
+    MAP_HEIGHT = 25.0
 
 
 class CameraParams(Enum):

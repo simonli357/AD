@@ -16,7 +16,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.setMouseTracking(True)
         self.stop_drawing = False
         self.main_window = self.parent()
@@ -216,6 +215,10 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
+            # Prevent panning when at initial zoom
+            if self.zoom_level >= self.max_zoom:
+                return
+
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
             self.last_mouse_pos = event.pos()
@@ -224,15 +227,32 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             if widget_height == 0:
                 widget_height = 1
 
+            aspect = self.width() / widget_height
             scale = self.zoom_level / widget_height
-            self.pan_x -= dx * scale
-            self.pan_y += dy * scale
+
+            # Calculate proposed pan changes
+            new_pan_x = self.pan_x - dx * scale
+            new_pan_y = self.pan_y + dy * scale
+
+            # Calculate content boundaries based on initial zoom
+            half_span_x = (self.max_zoom - self.zoom_level) * aspect / 2
+            half_span_y = (self.max_zoom - self.zoom_level) / 2
+
+            # Clamp pan values to content boundaries
+            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
+            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
 
             self.update()
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
         if delta != 0:
-            self.zoom_level -= delta * 0.015
-            self.zoom_level = max(15, min(self.max_zoom, self.zoom_level))
-            self.update()
+            new_zoom = self.zoom_level - delta * 0.015
+            new_zoom = max(8, min(self.max_zoom, new_zoom))
+            if new_zoom != self.zoom_level:
+                self.zoom_level = new_zoom
+                # Reset pan when returning to initial zoom
+                if self.zoom_level == self.max_zoom:
+                    self.pan_x = 0
+                    self.pan_y = 0
+                self.update()
