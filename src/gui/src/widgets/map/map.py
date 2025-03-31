@@ -1,18 +1,20 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QLabel
+from PyQt5 import QtWidgets, QtCore
 from std_srvs.srv import TriggerResponse
-from .view import GraphicsView
-from ..enums import MapData
+
+from OpenGL import GL as gl
+from OpenGL.arrays import vbo
+from collections import namedtuple
 
 import pandas as pd
 import os
 import cv2
 import time
 import numpy as np
-import math
+
+Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
 
-class MapWidget(QtWidgets.QWidget):
+class MapWidget(QtWidgets.QOpenGLWidget):
     update_map_signal = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
@@ -103,33 +105,33 @@ class MapWidget(QtWidgets.QWidget):
         }
         self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
 
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMouseTracking(True)
+        self.stop_drawing = False
+        self.pan_x = 0
+        self.pan_y = 0
+        self.max_zoom = 40
+        self.zoom_level = self.max_zoom
+        self.last_mouse_pos = None
+        self.current_mouse_pos = None
+        self.show_mouse = True
+
+        fmt = self.format()
+        fmt.setAlphaBufferSize(8)  # Enable alpha channel
+        self.setFormat(fmt)
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        track_model_path = os.path.join(current_dir, 'assets', 'track.obj')
+        car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        if os.path.exists(track_model_path):
+            self.track_model = self.load_obj(track_model_path)
+        if os.path.exists(car_model_path):
+            self.car_model = self.load_obj(car_model_path)
+
         self.setup_ui()
 
-        # Map configuration
-        self.image_width_real = MapData.REAL_WORLD_WIDTH.value
-        self.image_height_real = MapData.REAL_WORLD_HEIGHT.value
-        self.image_width = MapData.PNG_WIDTH.value
-        self.image_height = MapData.PNG_HEIGHT.value
-        self.real_x_per_pixel = MapData.REAL_X_PER_PIXEL.value
-        self.real_y_per_pixel = MapData.REAL_Y_PER_PIXEL.value
-
-        # Initialize map image
-        self.load_map_image()
-
-    def setup_ui(self) -> None:
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setAlignment(QtCore.Qt.AlignLeft)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-
-        # Graphics View setup
-        self.graphics_view = GraphicsView(self)
-        self.layout.addWidget(self.graphics_view)
-        self.graphics_view.viewport().installEventFilter(self)
-        self.graphics_view.setMouseTracking(True)
-        self.graphics_view.viewport().setMouseTracking(True)
-
-        # Cursor Pos Label
-        self.cursor_coords_label = QLabel(self.graphics_view)
+    def setup_ui(self):
+        self.cursor_coords_label = QtWidgets.QLabel(self)
         self.cursor_coords_label.setStyleSheet("""
             border: none;
             background-color: rgba(0, 0, 0, 0.7);
@@ -139,452 +141,172 @@ class MapWidget(QtWidgets.QWidget):
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
 
-        # Scene setup
-        self.scene = QtWidgets.QGraphicsScene(self)
-        self.graphics_view.setScene(self.scene)
-        self.map_item = QtWidgets.QGraphicsPixmapItem()
-        self.scene.addItem(self.map_item)
-
-    def render_widget(self):
-        self.update_detected_objects()
-        self.update_mouse_pos()
-
-    def load_map_image(self) -> None:
-        self.image_width = max(100, self.width())
-        self.image_height = max(100, self.height())
-        self.real_x_per_pixel = self.image_width_real / self.image_width
-        self.real_y_per_pixel = self.image_height_real / self.image_height
-        map_image = cv2.imread(os.path.join(self.assets_dir, 'map1.png'))
-        self.map_image = cv2.resize(map_image, (self.image_width, self.image_height))
-        self.empty_map_image = self.map_image.copy()
-        self.scene.setSceneRect(0, 0, self.image_width, self.image_height)
-        self.update_map_display()
-
-    def resizeEvent(self, event):
-        self.load_map_image()
-        self.update_mouse_pos()
-        super().resizeEvent(event)
-
-    def update_map_display(self) -> None:
-        if hasattr(self, 'map_image') and hasattr(self, 'empty_map_image'):
-            display_image = self.empty_map_image.copy()
-            self.graphics_view.show_nodes()
-            self.illustrate_path(display_image)
-            self.draw_objects(display_image)
-            self.map_image = display_image
-
-    def update_detected_objects(self) -> None:
-        if hasattr(self, 'map_image'):
-            display_image = self.map_image
-            self.draw_detected_objects(display_image)
-            display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)
-            height, width, channel = display_image.shape
-            step = channel * width
-            q_img = QtGui.QImage(display_image.data, width, height, step, QtGui.QImage.Format_RGB888)
-            pixmap = QtGui.QPixmap.fromImage(q_img)
-            self.map_item.setPixmap(pixmap)
-
-    def illustrate_path(self, image):
-        if self.state_refs_np is None or self.attributes_np is None or not self.show_path:
-            return
-
-        ATTRIBUTES = {
-            "normal": (0, 255, 255),        # Yellow
-            "crosswalk": (0, 255, 0),         # Green
-            "intersection": (0, 0, 255),  # Red
-            "oneway": (0, 165, 255),          # Orange
-            "highwayLeft": (130, 0, 75),      # Indigo
-            "highwayRight": (193, 182, 255),         # Light pink
-            "roundabout": (255, 255, 255),    # White
-            "stopline": (255, 255, 0),    # Cyan
-            "dotted": (180, 130, 70),         # Steel blue
-            "dotted_crosswalk": (128, 0, 128),    # Purple
-        }
-
-        for i in range(0, self.state_refs_np.shape[1], 8):
-            radius = 2
-            color = (0, 255, 255)  # Default color for normal
-            attr = self.attributes_np[i]
-
-            # Assign colors based on attributes
-            if attr == 0 or attr == 100:
-                color = ATTRIBUTES["normal"]
-            elif attr == 1 or attr == 101:
-                color = ATTRIBUTES["crosswalk"]
-            elif attr == 2 or attr == 102:
-                color = ATTRIBUTES["intersection"]
-            elif attr == 3 or attr == 103:
-                color = ATTRIBUTES["oneway"]
-            elif attr == 4 or attr == 104:
-                color = ATTRIBUTES["highwayLeft"]
-            elif attr == 5 or attr == 105:
-                color = ATTRIBUTES["highwayRight"]
-            elif attr == 6 or attr == 106:
-                color = ATTRIBUTES["roundabout"]
-            elif attr == 7 or attr == 107:
-                color = ATTRIBUTES["stopline"]
-            elif attr == 8 or attr == 108:
-                color = ATTRIBUTES["dotted"]
-            elif attr == 9 or attr == 109:
-                color = ATTRIBUTES["dotted_crosswalk"]
-
-            # if attr == 7 or attr == 107:
-            #     color = ATTRIBUTES["stopline"]
-            # else:
-            #     color = (0, 0, 0)
-            cv2.circle(image,
-                       (int(self.state_refs_np[0, i] / self.image_width_real * self.image_width),
-                        int((self.image_height_real - self.state_refs_np[1, i]) / self.image_height_real * self.image_height)),
-                       radius=radius, color=color, thickness=-1)
-
-        # Add legend to the image
-        legend_x, legend_y = image.shape[1] // 2 - 150, image.shape[0] // 2 - 150  # Center of the image
-        legend_height = 20  # Height of each legend row
-        padding = 10
-
-        for i, (label, color) in enumerate(ATTRIBUTES.items()):
-            rect_y = legend_y + i * (legend_height + padding)
-            cv2.rectangle(image, (legend_x, rect_y),
-                          (legend_x + 20, rect_y + legend_height), color, -1)
-            cv2.putText(image, label, (legend_x + 30, rect_y + legend_height - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
-
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
 
-    def draw_objects(self, image):
-        if self.show_gt:
-            for index, row in self.data.iterrows():
-                entity_type, orientation = row['Type'], row['Orientation']
+    def render_widget(self) -> None:
+        self.update()
 
-                pixel_x = int(row['X'] / self.image_width_real * self.image_width)
-                pixel_y = int((self.image_height_real - row['Y']) / self.image_height_real * self.image_height)
+    def load_obj(self, model_path) -> Model:
+        vertices = []
+        faces = []
+        with open(model_path, 'r') as f:
+            for line in f:
+                if line.startswith('v '):
+                    vertices.append(list(map(float, line.strip().split()[1:4])))
+                elif line.startswith('f '):
+                    faces.append([int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]])
 
-                # orientation = 2 * np.pi - orientation
-                orientation = - orientation
+        # Convert to flat array of vertices
+        vertex_data = []
+        for face in faces:
+            for v_idx in face:
+                vertex_data.extend(vertices[v_idx])
 
-                if entity_type == 'Intersection':
-                    if self.show_signs:
-                        self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
-                elif entity_type == 'Lane':
-                    if self.show_lanes:
-                        self.draw_lane(image, pixel_x, pixel_y, orientation)
-                elif entity_type == 'Car':
-                    if self.show_cars:
-                        self.draw_car_obstacle(image, pixel_x, pixel_y, orientation, steer=0.2)
-                        self.cars_drawn = True
-                elif entity_type == 'Destination':
-                    if self.show_destinations:
-                        axes = (int(0.15 / self.image_width_real * self.image_width),
-                                int(0.15 / self.image_height_real * self.image_height))
-                        cv2.ellipse(image, (pixel_x, pixel_y), axes,
-                                    0, 0, 360, (235, 206, 135), -1)
-                elif entity_type == 'Light':
-                    if self.show_signs:
-                        sign_index = self.get_key_from_value(entity_type)
-                        self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
-                else:
-                    if self.show_signs:
-                        sign_index = self.get_key_from_value(entity_type)
-                        self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
+        vertex_array = np.array(vertex_data, dtype=np.float32)
+        model_vbo = vbo.VBO(vertex_array)
+        return Model(vertices=vertices, faces=faces, vbo=model_vbo,
+                     vertex_count=len(vertex_data) // 3)
 
-    def draw_detected_objects(self, image):
-        if True:
-            if self.waypoints is not None:
-                for i in range(0, len(self.waypoints) - 1, 8):
-                    center = (int(self.waypoints[i] / 20.696 * image.shape[1]), int((13.786 - self.waypoints[i + 1]) / 13.786 * image.shape[0]))
-                    cv2.circle(image, center, radius=1, color=(0, 255, 255), thickness=-1)
-            if self.detected_data is None or len(self.detected_data) == 0:
-                return
-            x = self.detected_data[0, self.road_msg_dict['x']]
-            y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
-            yaw = self.detected_data[0, self.road_msg_dict['orientation']]
-            z = self.detected_data[0, self.road_msg_dict['z']]
-            speed = self.detected_data[0, self.road_msg_dict['speed']]
-            self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
-            self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
-            self.main_window.meter_widget.set_speed(speed * 100)
-            for i in range(len(self.detected_data)):
-                obj_type = self.detected_data[i, self.road_msg_dict['type']]
-                x = self.detected_data[i, self.road_msg_dict['x']]
-                y = self.detected_data[i, self.road_msg_dict['y']]
-                orientation = self.detected_data[i, self.road_msg_dict['orientation']]
+    def initializeGL(self):
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
-                # Convert map coordinates to pixel coordinates
-                pixel_x = int(x * (image.shape[1] / 20.696))
-                pixel_y = int((13.786 - y) * (image.shape[0] / 13.786))
-                # orientation = 2 * np.pi - orientation
-                orientation = - orientation
-
-                if self.object_dict[obj_type] == 'Car':
-                    if i == 0:
-                        self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2, car_color=(0, 0, 255))
-                    else:
-                        self.draw_car(image, pixel_x, pixel_y, orientation, steer=0.2)
-                else:
-                    self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, obj_type)
-
-    def draw_car_obstacle(self, image, x, y, yaw, steer=23.0, car_color=None, wheel_color=None):
-        # Load car image with transparency
-        car_img = cv2.imread(self.car_icon_path, cv2.IMREAD_UNCHANGED)
-
-        if car_img is None:
+    def paintGL(self):
+        if self.stop_drawing:
             return
 
-        car_length_m = 0.64
+        self.update_mouse_pos()
 
-        pixels_per_meter_x = self.image_width / self.image_width_real
+        self.qt_save_gl_state()
 
-        orig_height, orig_width = car_img.shape[:2]
-        aspect_ratio = orig_width / orig_height
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        target_width = int(car_length_m * pixels_per_meter_x)
-        target_height = int(target_width / aspect_ratio)
+        # Set up projection matrix
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
 
-        resized_car = cv2.resize(car_img, (target_width, target_height))
+        # aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        # glu.gluPerspective(45, aspect, 0.1, 100.0)
 
-        rotation_matrix = cv2.getRotationMatrix2D(
-            (target_width / 2, target_height / 2),  # Center
-            math.degrees(-yaw) - 90,
-            1.0  # Scale
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        half_zoom = self.zoom_level * 0.5
+        left = self.pan_x - half_zoom * aspect
+        right = self.pan_x + half_zoom * aspect
+        bottom = self.pan_y - half_zoom
+        top = self.pan_y + half_zoom
+        gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
+
+        # Set up view matrix
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
+
+        # Camera
+        # glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
+        # gl.glTranslatef(self.pan_x, self.pan_y, 0)
+
+        # Global Transforms
+        # gl.glTranslatef(-5.55, 1.5, 0)
+        # gl.glScalef(0.99, 0.99, 0.99)
+
+        # draw_track(self.track_model)
+        # Counter map offset
+        # gl.glTranslatef(BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
+        # draw_grid(self.grid_vbo, self.grid_vertex_count)
+        # gl.glTranslatef(-2, 6, 0)
+
+        # Draw objects
+        # self.waypoints_renderer.draw()
+        # draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
+
+        self.qt_restore_gl_state()
+
+    def qt_save_gl_state(self):
+        gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
+        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
+        gl.glMatrixMode(gl.GL_TEXTURE)
+        gl.glPushMatrix()
+        gl.glLoadIdentity()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPushMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPushMatrix()
+
+        gl.glShadeModel(gl.GL_FLAT)
+        gl.glDisable(gl.GL_CULL_FACE)
+        gl.glDisable(gl.GL_LIGHTING)
+        gl.glDisable(gl.GL_STENCIL_TEST)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+    def qt_restore_gl_state(self):
+        gl.glMatrixMode(gl.GL_TEXTURE)
+        gl.glPopMatrix()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPopMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPopMatrix()
+        gl.glPopAttrib()
+        gl.glPopClientAttrib()
+
+    def render_text(self, text, color: (int, int, int, int), x, y) -> None:
+        painter = QPainter(self)
+        painter.setRenderHints(
+            QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
         )
 
-        rotated = cv2.warpAffine(resized_car, rotation_matrix, (target_width, target_height))
-
-        if rotated.shape[2] == 4:
-            mask = rotated[:, :, 3]
-            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-            mask = mask.astype(float) / 255.0
-            rotated = rotated[:, :, :3]
-            rotated = cv2.cvtColor(rotated, cv2.COLOR_BGR2RGB)
-        else:
-            mask = np.ones_like(rotated, dtype=float)
-            rotated = cv2.cvtColor(rotated, cv2.COLOR_BGR2RGB)
-
-        x_start = int(x - target_width / 2)
-        y_start = int(y - target_height / 2)
-        x_end = x_start + target_width
-        y_end = y_start + target_height
-
-        x1 = max(0, x_start)
-        y1 = max(0, y_start)
-        x2 = min(image.shape[1], x_end)
-        y2 = min(image.shape[0], y_end)
-
-        if x1 >= x2 or y1 >= y2:
-            return
-
-        car_region = rotated[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
-        mask_region = mask[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
-        img_region = image[y1:y2, x1:x2]
-
-        image[y1:y2, x1:x2] = (car_region * mask_region + img_region * (1 - mask_region)).astype(np.uint8)
-
-        LENGTH = 0.4 * pixels_per_meter_x
-        self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
-
-    def draw_car(self, image, x, y, yaw, steer=23.0, car_color=None, wheel_color=None):
-        # Load car image with transparency
-        car_img = cv2.imread(self.car_icon_path, cv2.IMREAD_UNCHANGED)
-
-        if car_img is None:
-            return
-
-        car_length_m = 0.64
-
-        pixels_per_meter_x = self.image_width / self.image_width_real
-
-        orig_height, orig_width = car_img.shape[:2]
-        aspect_ratio = orig_width / orig_height
-
-        target_width = int(car_length_m * pixels_per_meter_x)
-        target_height = int(target_width / aspect_ratio)
-
-        resized_car = cv2.resize(car_img, (target_width, target_height))
-
-        rotation_matrix = cv2.getRotationMatrix2D(
-            (target_width / 2, target_height / 2),  # Center
-            math.degrees(-yaw) - 90,
-            1.0  # Scale
+        # Get current OpenGL color
+        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
+        text_color = QColor(
+            int(gl_color[0] * color[0]),
+            int(gl_color[1] * color[1]),
+            int(gl_color[2] * color[2]),
+            int(gl_color[3] * color[3])
         )
 
-        rotated = cv2.warpAffine(resized_car, rotation_matrix, (target_width, target_height))
+        # Set up font
+        font = QFont("Arial")
+        font.setBold(True)
+        font.setStyleStrategy(QFont.PreferAntialias)
 
-        if rotated.shape[2] == 4:
-            mask = rotated[:, :, 3]
-            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-            mask = mask.astype(float) / 255.0
-            rotated = rotated[:, :, :3]
-        else:
-            mask = np.ones_like(rotated, dtype=float)
+        # Account for high-DPI scaling
+        scale_factor = self.devicePixelRatio()
+        painter.scale(1 / scale_factor, 1 / scale_factor)
+        font.setPixelSize(18 * scale_factor)
 
-        x_start = int(x - target_width / 2)
-        y_start = int(y - target_height / 2)
-        x_end = x_start + target_width
-        y_end = y_start + target_height
+        painter.setPen(text_color)
+        painter.setFont(font)
+        painter.drawText(int(x * scale_factor),
+                         int(y * scale_factor),
+                         text)
+        painter.end()
 
-        x1 = max(0, x_start)
-        y1 = max(0, y_start)
-        x2 = min(image.shape[1], x_end)
-        y2 = min(image.shape[0], y_end)
+    def resizeGL(self, w, h):
+        gl.glViewport(0, 0, w, h)
 
-        if x1 >= x2 or y1 >= y2:
-            return
-
-        car_region = rotated[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
-        mask_region = mask[y1 - y_start:y2 - y_start, x1 - x_start:x2 - x_start]
-        img_region = image[y1:y2, x1:x2]
-
-        image[y1:y2, x1:x2] = (car_region * mask_region + img_region * (1 - mask_region)).astype(np.uint8)
-
-        LENGTH = 0.4 * pixels_per_meter_x
-        self.draw_arrow(image, x, y, -yaw, LENGTH * 1.2)
-
-    def draw_intersection(self, image, x, y, orientation, size):
-        x, y = int(x), int(y)
-        length = max(1, size)
-        self.draw_arrow(image, x, y, -orientation, 20)
-        orientation += np.pi / 2
-        while orientation > 2 * np.pi:
-            orientation -= 2 * np.pi
-        while orientation < 0:
-            orientation += 2 * np.pi
-        if orientation == 0 or orientation == np.pi or orientation == 2 * np.pi:
-            cv2.line(image, (x - length // 2, y), (x + length // 2, y), (255, 0, 0), 2)
-        else:
-            cv2.line(image, (x, y - length // 2), (x, y + length // 2), (255, 0, 0), 2)
-
-    def draw_lane(self, image, x, y, orientation):
-        x, y = int(x), int(y)
-        while orientation > 2 * np.pi:
-            orientation -= 2 * np.pi
-        while orientation < 0:
-            orientation += 2 * np.pi
-        if orientation == 0 or orientation == 2 * np.pi:
-            cv2.line(image, (0, y), (image.shape[1], y), (0, 255, 0), 2)
-        elif orientation == np.pi:
-            cv2.line(image, (0, y), (image.shape[1], y), (0, 0, 255), 2)
-        elif orientation == np.pi / 2:
-            cv2.line(image, (x, 0), (x, image.shape[0]), (255, 0, 0), 2)
-        elif orientation == 3 * np.pi / 2:
-            cv2.line(image, (x, 0), (x, image.shape[0]), (0, 255, 255), 2)
-
-    def draw_arrow(self, image, x, y, orientation, size):
-        x, y = int(x), int(y)
-        arrow_length = max(1, size)  # Dynamic size from trackbar
-        x_end = int(x + arrow_length * np.cos(orientation))
-        y_end = int(y - arrow_length * np.sin(orientation))
-        cv2.arrowedLine(image, (x, y), (x_end, y_end), (0, 255, 0), 1, tipLength=0.3)
-
-    def draw_sign(self, image, x, y, orientation, size, sign_type):
-        self.draw_arrow(image, x, y, -orientation, 20)
-        img = self.sign_images[int(sign_type)]
-        if img is not None:
-            size = max(5, size)
-            img = cv2.resize(img, (size, size))  # Resize sign based on trackbar value
-
-            # Rotate the image according to orientation (optional)
-            # center = (img.shape[1] // 2, img.shape[0] // 2)
-            # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(orientation), 1.0)
-            # rotation_matrix = cv2.getRotationMatrix2D(center, np.degrees(0), 1.0)
-            # img = cv2.warpAffine(img, rotation_matrix, (img.shape[1], img.shape[0]))
-
-            x_start = max(0, x - size // 2)
-            y_start = max(0, y - size // 2)
-            x_end = min(image.shape[1], x_start + img.shape[1])
-            y_end = min(image.shape[0], y_start + img.shape[0])
-
-            sign_x_end = x_end - x_start
-            sign_y_end = y_end - y_start
-
-            image[y_start:y_end, x_start:x_end] = img[:sign_y_end, :sign_x_end]
-
-    def eventFilter(self, source, event) -> None:
-        if event.type() == QtCore.QEvent.Wheel:
-            zoom_in_factor = 1.25
-            zoom_out_factor = 1 / zoom_in_factor
-
-            if event.angleDelta().y() > 0:
-                factor = zoom_in_factor
-            else:
-                factor = zoom_out_factor
-
-            new_zoom = self.current_zoom * factor
-            if new_zoom < self.min_zoom:
-                factor = self.min_zoom / self.current_zoom
-                new_zoom = self.min_zoom
-            if new_zoom > self.max_zoom:
-                return True
-
-            self.graphics_view.scale(factor, factor)
-            self.current_zoom = new_zoom
-            self.update_map_display()
-            return True
-        elif event.type() == QtCore.QEvent.MouseMove:
-            self.mouse_pos = event.pos()
-            return False
-        return super().eventFilter(source, event)
-
-    def mousePressEvent(self, event) -> None:
-        if not self.show_nodes:
-            if event.button() == QtCore.Qt.RightButton:
-                self.clear_markers()
-            elif event.button() == QtCore.Qt.LeftButton:
-                self.handle_left_click(event)
-
-    def clear_markers(self):
-        for marker in self.markers:
-            if marker.scene() == self.scene:
-                self.scene.removeItem(marker)
-        self.markers.clear()
-        self.cursor_coords.clear()
-
-    def handle_left_click(self, event) -> None:
-        scene_pos = self.graphics_view.mapToScene(event.pos())
-        image_x = scene_pos.x()
-        image_y = scene_pos.y()
-
-        if 0 <= image_x <= self.image_width and 0 <= image_y <= self.image_height:
-            real_x = scene_pos.x() * self.real_x_per_pixel
-            real_y = MapData.REAL_WORLD_HEIGHT.value - scene_pos.y() * self.real_y_per_pixel
-
-            self.cursor_coords.append((real_x, real_y))
-            self.cursor_x = real_x
-            self.cursor_y = real_y
-            self.add_marker(image_x, image_y)
-
-    def add_marker(self, x, y) -> None:
-        # Create new markers
-        cursor_radius = 10
-        pen = QtGui.QPen(QtGui.QColor(0, 150, 255), 2)
-
-        circle = self.scene.addEllipse(
-            x - cursor_radius,
-            y - cursor_radius,
-            cursor_radius * 2,
-            cursor_radius * 2,
-            pen
-        )
-        self.markers.append(circle)
-
-        marker_size = 20
-        red_pen = QtGui.QPen(QtGui.QColor(255, 0, 0), 3)
-
-        x_line1 = self.scene.addLine(
-            x - marker_size / 2,
-            y - marker_size / 2,
-            x + marker_size / 2,
-            y + marker_size / 2,
-            red_pen
-        )
-        x_line2 = self.scene.addLine(
-            x - marker_size / 2,
-            y + marker_size / 2,
-            x + marker_size / 2,
-            y - marker_size / 2,
-            red_pen
-        )
-        self.markers.extend([x_line1, x_line2])
+    def cleanup_gl_resources(self):
+        self.stop_drawing = True
+        try:
+            self.makeCurrent()
+            if self.grid_vbo is not None:
+                self.grid_vbo.delete()
+                self.grid_vbo = None
+            if self.path_node_vbo is not None:
+                self.path_node_vbo.delete()
+                self.path_node_vbo = None
+            models = [
+                self.car_model, self.sign_model,
+                self.tf_light_model, self.pedestrian_model
+            ]
+            for model in models:
+                if model and model.vbo:
+                    model.vbo.delete()
+                    model.vbo = None
+            gl.glFlush()
+            self.doneCurrent()
+        except Exception:
+            pass
 
     def update_mouse_pos(self):
         if self.show_mouse:
@@ -592,15 +314,104 @@ class MapWidget(QtWidgets.QWidget):
         else:
             self.cursor_coords_label.hide()
             return
-        if hasattr(self, 'mouse_pos'):
-            scene_pos = self.graphics_view.mapToScene(self.mouse_pos)
-            x_scene = scene_pos.x()
-            y_scene = scene_pos.y()
-            if 0 <= x_scene < self.image_width and 0 <= y_scene < self.image_height:
-                real_x = scene_pos.x() * self.real_x_per_pixel
-                real_y = MapData.REAL_WORLD_HEIGHT.value - scene_pos.y() * self.real_y_per_pixel
-                self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
-                self.cursor_coords_label.move(int(self.mouse_pos.x() - self.cursor_coords_label.width() / 2), int(self.mouse_pos.y() - 60))
+
+        if self.current_mouse_pos is not None:
+            widget_width = self.width()
+            widget_height = self.height()
+            if widget_height == 0 or widget_width == 0:
+                return
+
+            # Get mouse position in widget coordinates
+            x_scene = self.current_mouse_pos.x()
+            y_scene = self.current_mouse_pos.y()
+
+            # Convert to normalized device coordinates [-1, 1]
+            x_ndc = 2 * (x_scene / widget_width) - 1
+            y_ndc = (1 - 2 * (y_scene / widget_height))
+
+            # Calculate orthographic projection bounds
+            aspect = widget_width / widget_height
+            half_zoom = self.zoom_level * 0.5
+            left = self.pan_x - half_zoom * aspect
+            right = self.pan_x + half_zoom * aspect
+            bottom = self.pan_y - half_zoom
+            top = self.pan_y + half_zoom
+
+            # Convert to world coordinates
+            x_world = left + (x_ndc + 1) * (right - left) / 2
+            y_world = bottom + (y_ndc + 1) * (top - bottom) / 2
+
+            self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
+            self.cursor_coords_label.move(
+                int(x_scene - self.cursor_coords_label.width() / 2),
+                int(y_scene - 60))
+
+    def __del__(self):
+        self.cleanup_gl_resources()
+
+    def deleteLater(self):
+        self.cleanup_gl_resources()
+        super().deleteLater()
+
+    ###############
+    # Events
+    ###############
+
+    def resizeEvent(self, event):
+        self.update_mouse_pos()
+
+    def mousePressEvent(self, event):
+        if event.buttons() == QtCore.Qt.LeftButton:
+            self.last_mouse_pos = event.pos()
+
+    def mouseMoveEvent(self, event):
+        self.current_mouse_pos = event.pos()
+        if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
+            # Prevent panning when at initial zoom
+            if self.zoom_level >= self.max_zoom:
+                return
+
+            dx = event.pos().x() - self.last_mouse_pos.x()
+            dy = event.pos().y() - self.last_mouse_pos.y()
+            self.last_mouse_pos = event.pos()
+
+            widget_height = self.height()
+            if widget_height == 0:
+                widget_height = 1
+
+            aspect = self.width() / widget_height
+            scale = self.zoom_level / widget_height
+
+            # Calculate proposed pan changes
+            new_pan_x = self.pan_x - dx * scale
+            new_pan_y = self.pan_y + dy * scale
+
+            # Calculate content boundaries based on initial zoom
+            half_span_x = (self.max_zoom - self.zoom_level) * aspect / 2
+            half_span_y = (self.max_zoom - self.zoom_level) / 2
+
+            # Clamp pan values to content boundaries
+            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
+            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
+
+            self.update()
+
+    def wheelEvent(self, event):
+        delta = event.angleDelta().y()
+        if delta != 0:
+            new_zoom = self.zoom_level - delta * 0.015
+            new_zoom = max(8, min(self.max_zoom, new_zoom))
+            if new_zoom != self.zoom_level:
+                self.zoom_level = new_zoom
+                # Reset pan when returning to initial zoom
+                if self.zoom_level == self.max_zoom:
+                    self.pan_x = 0
+                    self.pan_y = 0
+                self.update()
+
+    ##################
+    # Callbacks
+    ##################
 
     def update_params(self, req) -> None:
         try:
