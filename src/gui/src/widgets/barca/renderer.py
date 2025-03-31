@@ -48,7 +48,7 @@ def draw_track(track_model):
     gl.glEnable(gl.GL_BLEND)
     gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
     gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-    gl.glColor4f(0.3, 0.3, 0.3, 0.3)
+    gl.glColor4f(1.0, 1.0, 0.0, 0.5)
     gl.glLineWidth(0.01)
 
     track_model.vbo.bind()

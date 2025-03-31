@@ -17,8 +17,14 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.setMouseTracking(True)
         self.stop_drawing = False
         self.main_window = self.parent()
+        self.pan_x = 0
+        self.pan_y = 0
+        self.max_zoom = 48
+        self.zoom_level = self.max_zoom
+        self.last_mouse_pos = None
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -74,13 +80,17 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 0, 55, 0, 0, 0, 0, 1, 0)
+
+        # Camera
+        glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
+        gl.glTranslatef(self.pan_x, self.pan_y, 0)
 
         # Draw axes overlay
         draw_axes()
 
-        # Translate everything to the left
-        gl.glTranslatef(-7, 0, 0)
+        # Global Transforms
+        gl.glTranslatef(-6.5, -1, 0)
+        gl.glRotatef(25, 0.0, 0.0, 1.0)
 
         # Draw barca track
         draw_track(self.track_model)
@@ -185,3 +195,33 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     def deleteLater(self):
         self.cleanup_gl_resources()
         super().deleteLater()
+
+    ###############
+    # Events
+    ###############
+
+    def mousePressEvent(self, event):
+        if event.buttons() == QtCore.Qt.LeftButton:
+            self.last_mouse_pos = event.pos()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
+            # Calculate delta movement
+            dx = event.pos().x() - self.last_mouse_pos.x()
+            dy = event.pos().y() - self.last_mouse_pos.y()
+            self.last_mouse_pos = event.pos()
+
+            # Sensitivity adjusts pan speed (scaled by zoom level)
+            sensitivity = 0.025 * (self.zoom_level / (self.max_zoom * 0.5))
+            self.pan_x += dx * sensitivity  # Move scene opposite to mouse drag
+            self.pan_y -= dy * sensitivity  # Invert Y-axis for screen coordinates
+
+            self.update()
+
+    def wheelEvent(self, event):
+        # Zoom in/out with mouse wheel
+        delta = event.angleDelta().y()
+        if delta != 0:
+            self.zoom_level -= delta * 0.015
+            self.zoom_level = max(15, min(self.max_zoom, self.zoom_level))
+            self.update()
