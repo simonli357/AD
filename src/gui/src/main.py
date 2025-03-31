@@ -204,18 +204,14 @@ class MainWindow(QMainWindow):
     def hide_mouse_pos(self) -> None:
         if self.show_barca:
             self.barca_widget.show_mouse = False
-            self.barca_widget.cursor_coords_label.hide()
         else:
             self.map_widget.show_mouse = False
-            self.map_widget.cursor_coords_label.hide()
 
     def show_mouse_pos(self) -> None:
         if self.show_barca:
             self.barca_widget.show_mouse = True
-            self.barca_widget.cursor_coords_label.show()
         else:
             self.map_widget.show_mouse = True
-            self.map_widget.cursor_coords_label.show()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))

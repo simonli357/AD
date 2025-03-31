@@ -235,11 +235,46 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         else:
             self.cursor_coords_label.hide()
             return
+
         if self.current_mouse_pos is not None:
+            widget_width = self.width()
+            widget_height = self.height()
+            if widget_height == 0 or widget_width == 0:
+                return
+
+            # Get mouse position in widget coordinates
             x_scene = self.current_mouse_pos.x()
             y_scene = self.current_mouse_pos.y()
-            self.cursor_coords_label.setText(f"  ({x_scene:.2f}, {y_scene:.2f}) ")
-            self.cursor_coords_label.move(int(x_scene - self.cursor_coords_label.width() / 2), int(y_scene - 60))
+
+            # Convert to normalized device coordinates [-1, 1]
+            x_ndc = 2 * (x_scene / widget_width) - 1
+            y_ndc = (1 - 2 * (y_scene / widget_height))
+
+            # Calculate orthographic projection bounds
+            aspect = widget_width / widget_height
+            half_zoom = self.zoom_level * 0.5
+            left = self.pan_x - half_zoom * aspect
+            right = self.pan_x + half_zoom * aspect
+            bottom = self.pan_y - half_zoom
+            top = self.pan_y + half_zoom
+
+            # Convert to world coordinates
+            x_world = left + (x_ndc + 1) * (right - left) / 2
+            y_world = bottom + (y_ndc + 1) * (top - bottom) / 2
+
+            # Apply inverse of modelview transformations
+            # Reverse scaling (0.99) and translation (-5.55, 1.5)
+            adjusted_x = (x_world / 0.99) + 3.60
+            adjusted_y = (y_world / 0.99) + 4.55
+
+            # Apply additional map offsets
+            final_x = adjusted_x - BarcaMapData.MAP_CENTER_X.value + 2
+            final_y = adjusted_y + BarcaMapData.MAP_CENTER_Y.value - 6
+
+            self.cursor_coords_label.setText(f"  ({final_x:.2f}, {final_y:.2f}) ")
+            self.cursor_coords_label.move(
+                int(x_scene - self.cursor_coords_label.width() / 2),
+                int(y_scene - 60))
 
     def __del__(self):
         self.cleanup_gl_resources()
@@ -251,6 +286,9 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     ###############
     # Events
     ###############
+
+    def resizeEvent(self, event):
+        self.update_mouse_pos()
 
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton:

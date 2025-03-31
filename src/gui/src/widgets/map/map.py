@@ -162,6 +162,7 @@ class MapWidget(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         self.load_map_image()
+        self.update_mouse_pos()
         super().resizeEvent(event)
 
     def update_map_display(self) -> None:
