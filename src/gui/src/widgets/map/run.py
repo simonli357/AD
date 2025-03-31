@@ -177,7 +177,7 @@ class RunOverlay(QWidget):
                 font-weight: bold;
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
-                padding: 5px 20px 5px 10px;
+                padding: 5px 18px 5px 10px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.2);
@@ -193,7 +193,7 @@ class RunOverlay(QWidget):
                 font-weight: bold;
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
-                padding: 5px 20px 5px 10px;
+                padding: 5px 12px 5px 10px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.2);
