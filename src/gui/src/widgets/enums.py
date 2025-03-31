@@ -19,6 +19,11 @@ class MapData(Enum):
     REAL_Y_PER_PIXEL = REAL_WORLD_HEIGHT / PNG_HEIGHT
 
 
+class BarcaMapData(Enum):
+    GAZEBO_MAP_CENTER_X = -4.0
+    GAZEBO_MAP_CENTER_Y = 2.0
+
+
 class CameraParams(Enum):
     MIN_WIDTH = 640
     MIN_HEIGHT = 480

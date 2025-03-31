@@ -1,4 +1,5 @@
 from OpenGL import GL as gl
+from ..enums import BarcaMapData
 
 
 def draw_axes():
@@ -48,7 +49,7 @@ def draw_track(track_model):
     gl.glEnable(gl.GL_BLEND)
     gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
     gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-    gl.glColor4f(1.0, 1.0, 0.0, 0.5)
+    gl.glColor4f(0.0, 1.0, 0.0, 0.5)
     gl.glLineWidth(0.01)
 
     track_model.vbo.bind()
@@ -65,6 +66,8 @@ def draw_track(track_model):
 def draw_waypoint(x, y, wp_vbo):
     gl.glPushMatrix()
     gl.glColor3f(1, 1, 0)
+    gl.glRotatef(90, 0.0, 0.0, 1.0)
+    gl.glTranslatef(-BarcaMapData.GAZEBO_MAP_CENTER_X.value, -BarcaMapData.GAZEBO_MAP_CENTER_Y.value, 0)
 
     wp_vbo.bind()
     gl.glTranslatef(x, y, 0.0)
@@ -77,5 +80,7 @@ def draw_waypoint(x, y, wp_vbo):
     gl.glPopMatrix()
 
 
-def draw_waypoints(waypoints):
-    pass
+def draw_waypoints(state_refs_np, wp_vbo):
+    if state_refs_np is not None:
+        for i in range(0, state_refs_np.shape[1], 8):
+            draw_waypoint(state_refs_np[0, i], state_refs_np[1, i], wp_vbo)
