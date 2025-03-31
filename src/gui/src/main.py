@@ -193,7 +193,7 @@ class MainWindow(QMainWindow):
         self.cam_thread.start()
 
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(32)
+        self.timer.setInterval(CameraParams.FPS_30.value)
         self.timer.timeout.connect(self.render_callbacks)
         self.timer.start()
 

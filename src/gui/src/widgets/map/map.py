@@ -26,7 +26,7 @@ class MapWidget(QtWidgets.QWidget):
         self.cursor_coords = []
         self.cursor_x = 3.86
         self.cursor_y = 3.62
-        
+
         self.show_mouse = True
         self.show_signs = False
         self.show_lanes = False
