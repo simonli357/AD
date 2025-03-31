@@ -200,7 +200,7 @@ public:
         utils.debug("INITIALIZE(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
 
         path_manager.target_waypoint_index = path_manager.find_closest_waypoint(x_current, 0, path_manager.state_refs.rows()-1); // search from the beginning to the end
-        // path_manager.find_intersections(utils);
+        path_manager.find_intersections(utils);
         mpc.reset_solver();
         initialized = true;
         return 1;
