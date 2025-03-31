@@ -3,8 +3,9 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
-from .renderer import draw_track, draw_waypoints, draw_car, draw_grid
-from .vbos import ellipse_vbo, grid_vbo
+from .renderer import draw_track, draw_car, draw_grid
+from .vbos import grid_vbo
+from .waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
 
 import os
@@ -28,6 +29,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.last_mouse_pos = None
         self.current_mouse_pos = None
         self.show_mouse = True
+
+        self.waypoints_renderer = WaypointsRenderer()
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -82,8 +85,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
-        # initialize waypoint vbo
-        self.wp_vbo = ellipse_vbo(0.05, 0.05)
         grid_model = grid_vbo()
         self.grid_vbo = grid_model[0]
         self.grid_vertex_count = grid_model[1]
@@ -132,7 +133,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glTranslatef(-2, 6, 0)
 
         # Draw objects
-        draw_waypoints(self.main_window.map_widget.state_refs_np, self.wp_vbo)
+        self.waypoints_renderer.draw()
         draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
 
         self.qt_restore_gl_state()

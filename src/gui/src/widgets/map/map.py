@@ -654,6 +654,7 @@ class MapWidget(QtWidgets.QWidget):
                     self.update_map_display()
                     self.graphics_view.set_total_path_distance()
                     self.main_window.run_overlay.set_run_name(run.path_name)
+                    self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
                     return
                 retries += 1
                 time.sleep(0.1)

@@ -22,28 +22,6 @@ def draw_track(track_model):
     gl.glPopMatrix()
 
 
-def draw_waypoint(x, y, wp_vbo):
-    gl.glPushMatrix()
-    gl.glColor3f(1, 1, 0)
-    gl.glRotatef(90, 0.0, 0.0, 1.0)
-    gl.glTranslatef(x, y, 0)
-
-    wp_vbo.bind()
-    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-    gl.glVertexPointer(3, gl.GL_FLOAT, 0, wp_vbo)
-    gl.glDrawArrays(gl.GL_LINE_LOOP, 0, 100)
-    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-    wp_vbo.unbind()
-
-    gl.glPopMatrix()
-
-
-def draw_waypoints(state_refs_np, wp_vbo):
-    if state_refs_np is not None:
-        for i in range(0, state_refs_np.shape[1], 8):
-            draw_waypoint(state_refs_np[0, i], state_refs_np[1, i], wp_vbo)
-
-
 def draw_car(x, y, yaw, car_model):
     car_model_width = 19.96
     car_model_height = 15.86
