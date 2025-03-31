@@ -1,10 +1,9 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 from collections import namedtuple
-from .renderer import draw_track, draw_axes, draw_waypoints
+from .renderer import draw_track, draw_waypoints
 from .vbos import ellipse_vbo
 
 import os
@@ -23,7 +22,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.main_window = self.parent()
         self.pan_x = 0
         self.pan_y = 0
-        self.max_zoom = 48
+        self.max_zoom = 40
         self.zoom_level = self.max_zoom
         self.last_mouse_pos = None
 
@@ -78,19 +77,25 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
+
+        # aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        # glu.gluPerspective(45, aspect, 0.1, 100.0)
+
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        glu.gluPerspective(45, aspect, 0.1, 100.0)
+        half_zoom = self.zoom_level * 0.5
+        left = self.pan_x - half_zoom * aspect
+        right = self.pan_x + half_zoom * aspect
+        bottom = self.pan_y - half_zoom
+        top = self.pan_y + half_zoom
+        gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
 
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
         # Camera
-        glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
-        gl.glTranslatef(self.pan_x, self.pan_y, 0)
-
-        # Draw axes overlay
-        draw_axes()
+        # glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
+        # gl.glTranslatef(self.pan_x, self.pan_y, 0)
 
         # Global Transforms
         gl.glTranslatef(-6.5, -1, 0)
@@ -211,20 +216,21 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
-            # Calculate delta movement
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
             self.last_mouse_pos = event.pos()
 
-            # Sensitivity adjusts pan speed (scaled by zoom level)
-            sensitivity = 0.025 * (self.zoom_level / (self.max_zoom * 0.5))
-            self.pan_x += dx * sensitivity  # Move scene opposite to mouse drag
-            self.pan_y -= dy * sensitivity  # Invert Y-axis for screen coordinates
+            widget_height = self.height()
+            if widget_height == 0:
+                widget_height = 1
+
+            scale = self.zoom_level / widget_height
+            self.pan_x -= dx * scale
+            self.pan_y += dy * scale
 
             self.update()
 
     def wheelEvent(self, event):
-        # Zoom in/out with mouse wheel
         delta = event.angleDelta().y()
         if delta != 0:
             self.zoom_level -= delta * 0.015
