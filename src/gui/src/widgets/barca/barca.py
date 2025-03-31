@@ -93,8 +93,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         draw_axes()
 
         # Global Transforms
-        # gl.glTranslatef(-6.5, -1, 0)
-        # gl.glRotatef(25, 0.0, 0.0, 1.0)
+        gl.glTranslatef(-6.5, -1, 0)
+        gl.glRotatef(25, 0.0, 0.0, 1.0)
 
         # Draw barca track
         draw_track(self.track_model)
