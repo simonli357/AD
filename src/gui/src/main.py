@@ -8,7 +8,7 @@ import signal
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
 
@@ -16,6 +16,7 @@ from widgets.options import OptionsWidget
 from widgets.buttons import ButtonsWidget
 from widgets.meters import MeterWidget
 from widgets.map.map import MapWidget
+from widgets.barca.barca import BarcaWidget
 from widgets.camera import CameraWidget
 from widgets.terminal import TerminalWidget
 from widgets.car import CarWidget
@@ -49,8 +50,9 @@ class MainWindow(QMainWindow):
         self.alive = True
         self.server = server
         self.comm = CommunicationHandler()
+        self.show_barca = False
 
-        self.setWindowTitle("BFMC IDE")
+        self.setWindowTitle("AD IDE")
 
         self.setStyleSheet("""
             background-color: black;
@@ -61,6 +63,7 @@ class MainWindow(QMainWindow):
         # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.map_widget = MapWidget(self)
+        self.barca_widget = BarcaWidget(self)
         self.cam_widget = CameraWidget(self)
         self.meter_widget = MeterWidget(self)
         self.car_widget = CarWidget(self)
@@ -88,6 +91,7 @@ class MainWindow(QMainWindow):
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
         self.comm.render_widget_signal.connect(self.radar_widget.render_widget)
         self.comm.render_widget_signal.connect(self.sw_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.barca_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -102,7 +106,10 @@ class MainWindow(QMainWindow):
         self.top_layout = QHBoxLayout(top_widgets)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.top_layout.addWidget(self.opt_widget)
-        self.top_layout.addWidget(self.map_widget)
+        self.stacked_widget = QtWidgets.QStackedWidget()
+        self.stacked_widget.addWidget(self.map_widget)
+        self.stacked_widget.addWidget(self.barca_widget)
+        self.top_layout.addWidget(self.stacked_widget)
 
         self.left_layout.addWidget(top_widgets, 5)
         self.left_layout.addWidget(self.terminal_widget, 2)
@@ -149,7 +156,7 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
 
-        self.terminal_widget.add_message("BFMC IDE INITIALIZED")
+        self.terminal_widget.add_message("AD IDE INITIALIZED")
 
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
@@ -162,6 +169,13 @@ class MainWindow(QMainWindow):
         self.timer.setInterval(32)
         self.timer.timeout.connect(self.render_callbacks)
         self.timer.start()
+
+    def toggle_map(self) -> None:
+        self.show_barca = not self.show_barca
+        if self.show_barca:
+            self.stacked_widget.setCurrentIndex(1)
+        else:
+            self.stacked_widget.setCurrentIndex(0)
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
