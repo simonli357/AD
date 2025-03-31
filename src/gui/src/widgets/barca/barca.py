@@ -26,6 +26,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.max_zoom = 40
         self.zoom_level = self.max_zoom
         self.last_mouse_pos = None
+        self.current_mouse_pos = None
+        self.show_mouse = True
 
         fmt = self.format()
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
@@ -38,6 +40,19 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             self.track_model = self.load_obj(track_model_path)
         if os.path.exists(car_model_path):
             self.car_model = self.load_obj(car_model_path)
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.cursor_coords_label = QtWidgets.QLabel(self)
+        self.cursor_coords_label.setStyleSheet("""
+            border: none;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #00ff00;
+            font-size: 16px;
+        """)
+        self.cursor_coords_label.hide()
+        self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
 
     def render_widget(self) -> None:
         self.update()
@@ -77,6 +92,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         if self.stop_drawing:
             return
 
+        self.update_mouse_pos()
+
         self.qt_save_gl_state()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -105,8 +122,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # gl.glTranslatef(self.pan_x, self.pan_y, 0)
 
         # Global Transforms
-        gl.glRotatef(25, 0.0, 0.0, 1.0)
-        gl.glTranslatef(-6.5, 2, 0)
+        gl.glTranslatef(-5.55, 1.5, 0)
+        gl.glScalef(0.99, 0.99, 0.99)
 
         draw_track(self.track_model)
         # Counter map offset
@@ -212,6 +229,18 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         except Exception:
             pass
 
+    def update_mouse_pos(self):
+        if self.show_mouse:
+            self.cursor_coords_label.show()
+        else:
+            self.cursor_coords_label.hide()
+            return
+        if self.current_mouse_pos is not None:
+            x_scene = self.current_mouse_pos.x()
+            y_scene = self.current_mouse_pos.y()
+            self.cursor_coords_label.setText(f"  ({x_scene:.2f}, {y_scene:.2f}) ")
+            self.cursor_coords_label.move(int(x_scene - self.cursor_coords_label.width() / 2), int(y_scene - 60))
+
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -228,6 +257,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             self.last_mouse_pos = event.pos()
 
     def mouseMoveEvent(self, event):
+        self.current_mouse_pos = event.pos()
         if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
             # Prevent panning when at initial zoom
             if self.zoom_level >= self.max_zoom:

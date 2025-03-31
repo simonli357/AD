@@ -26,7 +26,8 @@ class MapWidget(QtWidgets.QWidget):
         self.cursor_coords = []
         self.cursor_x = 3.86
         self.cursor_y = 3.62
-
+        
+        self.show_mouse = True
         self.show_signs = False
         self.show_lanes = False
         self.show_cars = False
@@ -115,17 +116,6 @@ class MapWidget(QtWidgets.QWidget):
         # Initialize map image
         self.load_map_image()
 
-        # Timer for updates
-        self.realtime_timer = QtCore.QTimer(self)
-        self.realtime_timer.timeout.connect(self.update_detected_objects)
-        self.realtime_timer.start(150)
-
-        self.mouse_updates = 0
-        self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(150)
-        self.timer.timeout.connect(self.update_scene)
-        self.timer.start()
-
     def setup_ui(self) -> None:
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setAlignment(QtCore.Qt.AlignLeft)
@@ -155,6 +145,10 @@ class MapWidget(QtWidgets.QWidget):
         self.map_item = QtWidgets.QGraphicsPixmapItem()
         self.scene.addItem(self.map_item)
 
+    def render_widget(self):
+        self.update_detected_objects()
+        self.update_mouse_pos()
+
     def load_map_image(self) -> None:
         self.image_width = max(100, self.width())
         self.image_height = max(100, self.height())
@@ -180,7 +174,7 @@ class MapWidget(QtWidgets.QWidget):
 
     def update_detected_objects(self) -> None:
         if hasattr(self, 'map_image'):
-            display_image = self.map_image.copy()
+            display_image = self.map_image
             self.draw_detected_objects(display_image)
             display_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2RGB)
             height, width, channel = display_image.shape
@@ -506,7 +500,7 @@ class MapWidget(QtWidgets.QWidget):
 
     def eventFilter(self, source, event) -> None:
         if event.type() == QtCore.QEvent.Wheel:
-            zoom_in_factor = 1.15
+            zoom_in_factor = 1.25
             zoom_out_factor = 1 / zoom_in_factor
 
             if event.angleDelta().y() > 0:
@@ -527,10 +521,6 @@ class MapWidget(QtWidgets.QWidget):
             return True
         elif event.type() == QtCore.QEvent.MouseMove:
             self.mouse_pos = event.pos()
-            self.mouse_updates += 1
-            return False
-        elif event.type() == QtCore.QEvent.Leave:
-            self.cursor_coords_label.hide()
             return False
         return super().eventFilter(source, event)
 
@@ -595,10 +585,13 @@ class MapWidget(QtWidgets.QWidget):
         )
         self.markers.extend([x_line1, x_line2])
 
-    def update_scene(self):
-        if hasattr(self, 'mouse_pos') and hasattr(self, 'mouse_updates'):
-            if self.mouse_updates == 0:
-                return
+    def update_mouse_pos(self):
+        if self.show_mouse:
+            self.cursor_coords_label.show()
+        else:
+            self.cursor_coords_label.hide()
+            return
+        if hasattr(self, 'mouse_pos'):
             scene_pos = self.graphics_view.mapToScene(self.mouse_pos)
             x_scene = scene_pos.x()
             y_scene = scene_pos.y()
@@ -607,9 +600,6 @@ class MapWidget(QtWidgets.QWidget):
                 real_y = MapData.REAL_WORLD_HEIGHT.value - scene_pos.y() * self.real_y_per_pixel
                 self.cursor_coords_label.setText(f"  ({real_x:.2f}, {real_y:.2f}) ")
                 self.cursor_coords_label.move(int(self.mouse_pos.x() - self.cursor_coords_label.width() / 2), int(self.mouse_pos.y() - 60))
-                self.cursor_coords_label.show()
-            self.update_map_display()
-            self.mouse_updates -= 1
 
     def update_params(self, req) -> None:
         try:

@@ -20,7 +20,7 @@ def ellipse_vbo(rx=3.0, ry=2.0) -> vbo:
     return vbo.VBO(vertices)
 
 
-def grid_vbo(grid_size_x=35, grid_size_y=15):
+def grid_vbo(grid_size_x=32, grid_size_y=15):
     step = 1
     grid_vertices = []
     for x in range(-grid_size_x, grid_size_x + 4, step):

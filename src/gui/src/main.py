@@ -44,6 +44,23 @@ class CommunicationHandler(QObject):
     render_widget_signal = pyqtSignal()
 
 
+class MapContainer(QtWidgets.QStackedWidget):
+    mouse_left = pyqtSignal()
+    mouse_enter = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMouseTracking(True)
+
+    def enterEvent(self, event):
+        self.mouse_enter.emit()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.mouse_left.emit()
+        super().leaveEvent(event)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, server):
         super().__init__()
@@ -93,6 +110,7 @@ class MainWindow(QMainWindow):
         self.comm.render_widget_signal.connect(self.radar_widget.render_widget)
         self.comm.render_widget_signal.connect(self.sw_widget.render_widget)
         self.comm.render_widget_signal.connect(self.barca_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.map_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -110,7 +128,9 @@ class MainWindow(QMainWindow):
         self.top_layout = QHBoxLayout(top_widgets)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.top_layout.addWidget(self.opt_widget)
-        self.stacked_widget = QtWidgets.QStackedWidget()
+        self.stacked_widget = MapContainer()
+        self.stacked_widget.mouse_enter.connect(self.show_mouse_pos)
+        self.stacked_widget.mouse_left.connect(self.hide_mouse_pos)
         self.stacked_widget.addWidget(self.map_widget)
         self.stacked_widget.addWidget(self.barca_widget)
         self.top_layout.addWidget(self.stacked_widget)
@@ -180,6 +200,22 @@ class MainWindow(QMainWindow):
             self.stacked_widget.setCurrentIndex(1)
         else:
             self.stacked_widget.setCurrentIndex(0)
+
+    def hide_mouse_pos(self) -> None:
+        if self.show_barca:
+            self.barca_widget.show_mouse = False
+            self.barca_widget.cursor_coords_label.hide()
+        else:
+            self.map_widget.show_mouse = False
+            self.map_widget.cursor_coords_label.hide()
+
+    def show_mouse_pos(self) -> None:
+        if self.show_barca:
+            self.barca_widget.show_mouse = True
+            self.barca_widget.cursor_coords_label.show()
+        else:
+            self.map_widget.show_mouse = True
+            self.map_widget.cursor_coords_label.show()
 
     def load_nerd_font(self) -> None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
