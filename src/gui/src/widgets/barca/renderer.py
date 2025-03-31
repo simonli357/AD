@@ -60,3 +60,22 @@ def draw_track(track_model):
 
     gl.glDisable(gl.GL_BLEND)
     gl.glPopMatrix()
+
+
+def draw_waypoint(x, y, wp_vbo):
+    gl.glPushMatrix()
+    gl.glColor3f(1, 1, 0)
+
+    wp_vbo.bind()
+    gl.glTranslatef(x, y, 0.0)
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, wp_vbo)
+    gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3)
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+    wp_vbo.unbind()
+
+    gl.glPopMatrix()
+
+
+def draw_waypoints(waypoints):
+    pass

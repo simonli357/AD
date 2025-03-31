@@ -5,6 +5,7 @@ from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 from collections import namedtuple
 from .renderer import draw_track, draw_axes
+from .vbos import ellipse_vbo
 
 import os
 import numpy as np
@@ -62,6 +63,9 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+
+        # initialize waypoint vbo
+        self.wp_vbo = ellipse_vbo()
 
     def paintGL(self):
         if self.stop_drawing:
