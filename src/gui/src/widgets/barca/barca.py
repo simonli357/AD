@@ -63,7 +63,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         # initialize waypoint vbo
-        self.wp_vbo = ellipse_vbo()
+        self.wp_vbo = ellipse_vbo(0.05, 0.05)
 
     def paintGL(self):
         if self.stop_drawing:

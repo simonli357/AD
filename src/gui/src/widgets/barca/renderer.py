@@ -26,13 +26,12 @@ def draw_waypoint(x, y, wp_vbo):
     gl.glPushMatrix()
     gl.glColor3f(1, 1, 0)
     gl.glRotatef(90, 0.0, 0.0, 1.0)
-    gl.glTranslatef(-BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
+    gl.glTranslatef(-BarcaMapData.MAP_CENTER_X.value + x, -BarcaMapData.MAP_CENTER_Y.value + y, 0)
 
     wp_vbo.bind()
-    gl.glTranslatef(x, y, 0.0)
     gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
     gl.glVertexPointer(3, gl.GL_FLOAT, 0, wp_vbo)
-    gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3)
+    gl.glDrawArrays(gl.GL_LINE_LOOP, 0, 100)
     gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
     wp_vbo.unbind()
 
