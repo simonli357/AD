@@ -3,8 +3,10 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
-import numpy as np
 from collections import namedtuple
+
+import os
+import numpy as np
 
 Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
@@ -21,7 +23,10 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         fmt.setAlphaBufferSize(8)  # Enable alpha channel
         self.setFormat(fmt)
 
-        # current_dir = os.path.dirname(os.path.abspath(__file__))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        barca_model_path = os.path.join(current_dir, 'assets', 'model.obj')
+        if os.path.exists(barca_model_path):
+            self.track_model = self.load_obj(barca_model_path)
 
     def render_widget(self) -> None:
         self.update()
@@ -85,13 +90,16 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-        glu.gluLookAt(0, 0, 50, 0, 0, 0, 0, 1, 0)
-
-        # Draw grid
-        self.draw_grid()
+        glu.gluLookAt(0, 0, 55, 0, 0, 0, 0, 1, 0)
 
         # Draw axes overlay
         self.draw_axes()
+
+        # Translate everything to the left
+        gl.glTranslatef(-6, 0, 0)
+
+        # Draw barca track
+        self.draw_track()
 
         self.qt_restore_gl_state()
 
@@ -99,6 +107,25 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 45)
         # self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 70)
         # self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 95)
+
+    def draw_track(self):
+        gl.glPushMatrix()
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        gl.glColor4f(0.3, 0.3, 0.3, 0.3)
+        gl.glLineWidth(0.01)
+
+        self.track_model.vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.track_model.vbo)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.track_model.vertex_count)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        self.track_model.vbo.unbind()
+
+        gl.glDisable(gl.GL_BLEND)
+        gl.glPopMatrix()
 
     def qt_save_gl_state(self):
         gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
@@ -161,19 +188,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
                          text)
         painter.end()
 
-    def draw_grid(self):
-        gl.glPushMatrix()
-        gl.glColor3f(0.3, 0.3, 0.3)
-
-        self.grid_vbo.bind()
-        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 0, self.grid_vbo)
-        gl.glDrawArrays(gl.GL_LINES, 0, self.grid_vertex_count)
-        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        self.grid_vbo.unbind()
-
-        gl.glPopMatrix()
-
     def draw_axes(self):
         gl.glPushAttrib(gl.GL_ENABLE_BIT)
         gl.glPushMatrix()
@@ -187,7 +201,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        gl.glTranslatef(viewport[2] - 35, 25, 0)
+        gl.glTranslatef(viewport[2] - 75, 75, 0)
         gl.glScalef(20, 20, 20)
 
         gl.glDisable(gl.GL_DEPTH_TEST)
