@@ -2,20 +2,15 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
-from OpenGL.arrays import vbo
-from collections import namedtuple
-from PIL import Image
-from ..enums import MapData
 from .opengl.vbos import track_vbo
 from .opengl.renderer import draw_track
+from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
 
 import pandas as pd
 import os
 import cv2
 import time
 import numpy as np
-
-Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -124,9 +119,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
-        car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
-        if os.path.exists(car_model_path):
-            self.car_model = self.load_obj(car_model_path)
+        self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
 
         self.setup_ui()
 
@@ -147,67 +140,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def render_widget(self) -> None:
         self.update()
 
-    def load_texture(self, filename):
-        """Load PNG image as texture using Pillow"""
-        try:
-            image = Image.open(filename)
-            image = image.convert("RGBA")
-            width, height = image.size
-            # Flip image vertically (OpenGL expects origin at bottom-left)
-            image_data = image.transpose(Image.FLIP_TOP_BOTTOM).tobytes()
-            image.close()
-
-            # Generate OpenGL texture
-            texture_id = gl.glGenTextures(1)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, texture_id)
-
-            # Set texture parameters
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR)
-            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-
-            # Upload texture data
-            gl.glTexImage2D(
-                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, width, height, 0,
-                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image_data
-            )
-            gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
-
-            # Unbind texture
-            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-            return texture_id
-        except Exception as e:
-            print(f"Error loading texture {filename}: {e}")
-            return 0
-
-    def load_obj(self, model_path) -> Model:
-        vertices = []
-        faces = []
-        with open(model_path, 'r') as f:
-            for line in f:
-                if line.startswith('v '):
-                    vertices.append(list(map(float, line.strip().split()[1:4])))
-                elif line.startswith('f '):
-                    faces.append([int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]])
-
-        # Convert to flat array of vertices
-        vertex_data = []
-        for face in faces:
-            for v_idx in face:
-                vertex_data.extend(vertices[v_idx])
-
-        vertex_array = np.array(vertex_data, dtype=np.float32)
-        model_vbo = vbo.VBO(vertex_array)
-        return Model(vertices=vertices, faces=faces, vbo=model_vbo,
-                     vertex_count=len(vertex_data) // 3)
-
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
-        self.track_texture = self.load_texture(self.track_model_path)
+        self.track_texture = load_texture(self.track_model_path)
         self.track_vbo = track_vbo(self.width(), self.height())
+        self.car_model = load_obj(self.car_model_path)
 
     def paintGL(self):
         if self.stop_drawing:
@@ -218,7 +157,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.update_mouse_pos()
 
-        self.qt_save_gl_state()
+        qt_save_gl_state()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -242,38 +181,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Global Transforms
         draw_track(self.track_texture, self.track_vbo, 4)
 
-        self.qt_restore_gl_state()
+        qt_restore_gl_state()
 
-    def qt_save_gl_state(self):
-        gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
-        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
-        gl.glMatrixMode(gl.GL_TEXTURE)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPushMatrix()
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-
-        gl.glShadeModel(gl.GL_FLAT)
-        gl.glDisable(gl.GL_CULL_FACE)
-        gl.glDisable(gl.GL_LIGHTING)
-        gl.glDisable(gl.GL_STENCIL_TEST)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-    def qt_restore_gl_state(self):
-        gl.glMatrixMode(gl.GL_TEXTURE)
-        gl.glPopMatrix()
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPopMatrix()
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPopMatrix()
-        gl.glPopAttrib()
-        gl.glPopClientAttrib()
-
-    def render_text(self, text, color: (int, int, int, int), x, y) -> None:
+    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
         painter.setRenderHints(
             QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
@@ -296,7 +206,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(18 * scale_factor)
+        font.setPixelSize(size * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -304,9 +214,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                          int(y * scale_factor),
                          text)
         painter.end()
-
-    def resizeGL(self, w, h):
-        gl.glViewport(0, 0, w, h)
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
@@ -380,7 +287,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     # Events
     ###############
 
-    def resizeEvent(self, event):
+    def resizeGL(self, w, h):
+        gl.glViewport(0, 0, w, h)
         self.update_mouse_pos()
 
     def mousePressEvent(self, event):

@@ -4,12 +4,11 @@ from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from OpenGL.arrays import vbo
 from .enums import MapData
+from .utils.opengl import qt_restore_gl_state, qt_save_gl_state, load_obj
+
 import numpy as np
-from collections import namedtuple
 import os
 import math
-
-Model = namedtuple('Model', ['vertices', 'faces', 'vbo', 'vertex_count'])
 
 
 class CarWidget(QtWidgets.QOpenGLWidget):
@@ -39,18 +38,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.pedestrian_model = None
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
-        sign_model_path = os.path.join(current_dir, 'assets', 'sign.obj')
-        tf_light_model_path = os.path.join(current_dir, 'assets', 'tf_light.obj')
-        pedestrian_model_path = os.path.join(current_dir, 'assets', 'pedestrian.obj')
-        if os.path.exists(car_model_path):
-            self.car_model = self.load_obj(car_model_path)
-        if os.path.exists(sign_model_path):
-            self.sign_model = self.load_obj(sign_model_path)
-        if os.path.exists(tf_light_model_path):
-            self.tf_light_model = self.load_obj(tf_light_model_path)
-        if os.path.exists(pedestrian_model_path):
-            self.pedestrian_model = self.load_obj(pedestrian_model_path)
+        self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        self.sign_model_path = os.path.join(current_dir, 'assets', 'sign.obj')
+        self.tf_light_model_path = os.path.join(current_dir, 'assets', 'tf_light.obj')
+        self.pedestrian_model_path = os.path.join(current_dir, 'assets', 'pedestrian.obj')
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
@@ -70,27 +61,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def render_widget(self) -> None:
         self.update()
-
-    def load_obj(self, model_path) -> Model:
-        vertices = []
-        faces = []
-        with open(model_path, 'r') as f:
-            for line in f:
-                if line.startswith('v '):
-                    vertices.append(list(map(float, line.strip().split()[1:4])))
-                elif line.startswith('f '):
-                    faces.append([int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]])
-
-        # Convert to flat array of vertices
-        vertex_data = []
-        for face in faces:
-            for v_idx in face:
-                vertex_data.extend(vertices[v_idx])
-
-        vertex_array = np.array(vertex_data, dtype=np.float32)
-        model_vbo = vbo.VBO(vertex_array)
-        return Model(vertices=vertices, faces=faces, vbo=model_vbo,
-                     vertex_count=len(vertex_data) // 3)
 
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -121,11 +91,16 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         ]
         self.path_node_vbo = vbo.VBO(np.array(path_node_vertices, dtype=np.float32))
 
+        self.car_model = load_obj(self.car_model_path)
+        self.sign_model = load_obj(self.sign_model_path)
+        self.tf_light_model = load_obj(self.tf_light_model_path)
+        self.pedestrian_model = load_obj(self.pedestrian_model_path)
+
     def paintGL(self):
         if self.stop_drawing:
             return
 
-        self.qt_save_gl_state()
+        qt_save_gl_state()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -157,43 +132,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw axes overlay
         self.draw_axes()
 
-        self.qt_restore_gl_state()
+        qt_restore_gl_state()
 
-        self.render_text(f'Yaw: {self.yaw:.2f}°', (0, 255, 255, 255), 10, 20)
-        self.render_text(f'x: {self.x_pos:.2f}', (255, 0, 0, 255), 10, 45)
-        self.render_text(f'y: {self.y_pos:.2f}', (0, 255, 0, 255), 10, 70)
-        self.render_text(f'z: {self.z_pos:.2f}', (0, 0, 255, 255), 10, 95)
+        self.render_text(f'Yaw: {self.yaw:.2f}°', 18, (0, 255, 255, 255), 10, 20)
+        self.render_text(f'x: {self.x_pos:.2f}', 18, (255, 0, 0, 255), 10, 45)
+        self.render_text(f'y: {self.y_pos:.2f}', 18, (0, 255, 0, 255), 10, 70)
+        self.render_text(f'z: {self.z_pos:.2f}', 18, (0, 0, 255, 255), 10, 95)
 
-    def qt_save_gl_state(self):
-        gl.glPushClientAttrib(gl.GL_CLIENT_ALL_ATTRIB_BITS)
-        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
-        gl.glMatrixMode(gl.GL_TEXTURE)
-        gl.glPushMatrix()
-        gl.glLoadIdentity()
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPushMatrix()
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPushMatrix()
-
-        gl.glShadeModel(gl.GL_FLAT)
-        gl.glDisable(gl.GL_CULL_FACE)
-        gl.glDisable(gl.GL_LIGHTING)
-        gl.glDisable(gl.GL_STENCIL_TEST)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-    def qt_restore_gl_state(self):
-        gl.glMatrixMode(gl.GL_TEXTURE)
-        gl.glPopMatrix()
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glPopMatrix()
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glPopMatrix()
-        gl.glPopAttrib()
-        gl.glPopClientAttrib()
-
-    def render_text(self, text, color: (int, int, int, int), x, y) -> None:
+    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
         painter.setRenderHints(
             QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
@@ -216,7 +162,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Account for high-DPI scaling
         scale_factor = self.devicePixelRatio()
         painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(18 * scale_factor)
+        font.setPixelSize(size * scale_factor)
 
         painter.setPen(text_color)
         painter.setFont(font)
@@ -456,23 +402,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def cleanup_gl_resources(self):
         self.stop_drawing = True
         try:
-            self.makeCurrent()
-            if self.grid_vbo is not None:
-                self.grid_vbo.delete()
-                self.grid_vbo = None
-            if self.path_node_vbo is not None:
-                self.path_node_vbo.delete()
-                self.path_node_vbo = None
-            models = [
-                self.car_model, self.sign_model,
-                self.tf_light_model, self.pedestrian_model
-            ]
-            for model in models:
-                if model and model.vbo:
-                    model.vbo.delete()
-                    model.vbo = None
             gl.glFlush()
-            self.doneCurrent()
         except Exception:
             pass
 
