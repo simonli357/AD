@@ -34,6 +34,24 @@ def track_vbo(width, height):
     return vbo.VBO(track_vertices)
 
 
+def sign_vbo():
+    # Define track quad vertices and texture coordinates
+    # Format: [x, y, z, u, v]
+    track_vertices = np.array([
+        # Bottom-left
+        0.0, 0.0, 0.0, 0.0, 0.0,
+        # Bottom-right
+        200.0, 0.0, 0.0, 1.0, 0.0,
+        # Top-right
+        200.0, 200.0, 0.0, 1.0, 1.0,
+        # Top-left
+        0.0, 200.0, 0.0, 0.0, 1.0
+    ], dtype=np.float32)
+
+    # Create VBO for the track
+    return vbo.VBO(track_vertices)
+
+
 def circle_vbo(radius=1.0, segments=64, z=0.0):
     """Create a VBO for a circle with specified radius and resolution.
 

@@ -65,7 +65,12 @@ def load_texture(filename):
     """Load PNG image as texture using Pillow"""
     try:
         image = Image.open(filename)
-        image = image.convert("RGBA")
+        if image.mode == 'RGB':
+            gl_format = gl.GL_RGB
+        else:
+            image = image.convert("RGBA")
+            gl_format = gl.GL_RGBA
+
         width, height = image.size
         # Flip image vertically (OpenGL expects origin at bottom-left)
         image_data = image.transpose(Image.FLIP_TOP_BOTTOM).tobytes()
@@ -84,7 +89,7 @@ def load_texture(filename):
         # Upload texture data
         gl.glTexImage2D(
             gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, width, height, 0,
-            gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image_data
+            gl_format, gl.GL_UNSIGNED_BYTE, image_data
         )
         gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
 

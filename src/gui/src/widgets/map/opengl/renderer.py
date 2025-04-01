@@ -4,7 +4,7 @@ from ...enums import MapData
 import numpy as np
 
 
-def draw_track(texture, track_vbo, track_vertex_count):
+def draw_track(texture, track_vbo, track_vertex_count=4):
     gl.glPushMatrix()
 
     gl.glEnable(gl.GL_TEXTURE_2D)
@@ -131,5 +131,39 @@ def draw_lane(x, y, widget_x, widget_y, orientation):
     gl.glVertex2f(*start)
     gl.glVertex2f(*end)
     gl.glEnd()
+
+    gl.glPopMatrix()
+
+
+def draw_sign(x, y, texture, sign_vbo, track_vertex_count=4):
+    gl.glPushMatrix()
+
+    gl.glEnable(gl.GL_TEXTURE_2D)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
+    gl.glEnable(gl.GL_BLEND)
+    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+    gl.glTranslatef(x - 10, y, 0)
+    gl.glScalef(0.1, 0.1, 0.1)
+
+    sign_vbo.bind()
+
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glEnableClientState(gl.GL_TEXTURE_COORD_ARRAY)
+    # Stride = 20 bytes (5 floats * 4 bytes each)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 20, sign_vbo)
+    # TexCoord offset = 12 bytes (3 floats into the vertex data)
+    gl.glTexCoordPointer(2, gl.GL_FLOAT, 20, sign_vbo + 12)
+
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_BORDER)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_BORDER)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+
+    gl.glDrawArrays(gl.GL_QUADS, 0, track_vertex_count)
+
+    sign_vbo.unbind()
+
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glDisableClientState(gl.GL_TEXTURE_COORD_ARRAY)
+    gl.glDisable(gl.GL_TEXTURE_2D)
 
     gl.glPopMatrix()

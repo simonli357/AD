@@ -2,8 +2,8 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
-from .opengl.vbos import track_vbo, circle_vbo
-from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane
+from .opengl.vbos import track_vbo, circle_vbo, sign_vbo
+from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
 from ..enums import MapData
 
@@ -60,27 +60,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.assets_dir = os.path.join(current_dir, 'assets')
         self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
 
-        self.sign_images = []
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'oneway.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'highway_entrance.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'roundabout.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'parking.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'crosswalk.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'noentry.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'highway_exit.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'priority.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'roadblock.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'pedestrian.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'car.jpg')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_green.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_yellow.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'trafficlight_red.png')))
-        self.sign_images.append(cv2.imread(os.path.join(self.assets_dir, 'stopsign.jpg')))
-
-        self.car_icon_path = os.path.join(self.assets_dir, 'car_top.png')
-
         self.object_dict = {
             0: "Oneway",
             1: "Highway Entrance",
@@ -122,6 +101,25 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
         self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
 
+        self.sign_images = []
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'oneway.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_entrance.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'roundabout.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'parking.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'crosswalk.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'noentry.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_exit.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'priority.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'roadblock.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'pedestrian.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'car.jpg'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_green.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_yellow.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_red.png'))
+        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign2.jpg'))
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -149,6 +147,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.track_vbo = track_vbo(self.width(), self.height())
         self.car_model = load_obj(self.car_model_path)
         self.dest_vbo = circle_vbo(7, 25)
+
+        self.sign_vbos = []
+
+        for path in self.sign_images:
+            texture = load_texture(path)
+            vbo = sign_vbo()
+            self.sign_vbos.append((texture, vbo))
 
     def paintGL(self):
         if self.stop_drawing:
@@ -206,16 +211,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 elif entity_type == 'Destination':
                     if self.show_destinations:
                         draw_destination(self.dest_vbo, x, y)
-                elif entity_type == 'Light':
-                    if self.show_signs:
-                        # sign_index = self.get_key_from_value(entity_type)
-                        # self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
-                        pass
                 else:
                     if self.show_signs:
-                        # sign_index = self.get_key_from_value(entity_type)
-                        # self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
-                        pass
+                        sign_index = self.get_key_from_value(entity_type)
+                        texture, vbo = self.sign_vbos[sign_index]
+                        draw_sign(x, y, texture, vbo)
 
         qt_restore_gl_state()
 
