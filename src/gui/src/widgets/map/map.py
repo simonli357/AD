@@ -3,7 +3,7 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .opengl.vbos import track_vbo, circle_vbo
-from .opengl.renderer import draw_track, draw_destination, draw_car
+from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
 from ..enums import MapData
 
@@ -198,17 +198,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         pass
                 elif entity_type == 'Lane':
                     if self.show_lanes:
-                        # self.draw_lane(image, pixel_x, pixel_y, orientation)
+                        draw_lane(x, y, self.width(), self.height(), orientation)
                         pass
                 elif entity_type == 'Car':
                     if self.show_cars:
-                        # self.draw_car_obstacle(image, pixel_x, pixel_y, orientation, steer=0.2)
                         draw_car(x, y, orientation, self.car_model, (1.0, 1.0, 0.0, 1.0))
-                        pass
                 elif entity_type == 'Destination':
                     if self.show_destinations:
                         draw_destination(self.dest_vbo, x, y)
-                        pass
                 elif entity_type == 'Light':
                     if self.show_signs:
                         # sign_index = self.get_key_from_value(entity_type)

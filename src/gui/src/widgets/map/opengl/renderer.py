@@ -1,6 +1,8 @@
 from OpenGL import GL as gl
 from ...enums import MapData
 
+import numpy as np
+
 
 def draw_track(texture, track_vbo, track_vertex_count):
     gl.glPushMatrix()
@@ -86,4 +88,48 @@ def draw_car(x, y, yaw, car_model, color: (float, float, float, float)):
     car_model.vbo.unbind()
 
     gl.glDisable(gl.GL_BLEND)
+    gl.glPopMatrix()
+
+
+def draw_lane(x, y, widget_x, widget_y, orientation):
+    """Draw lane markings using OpenGL lines"""
+    # Normalize orientation within 0-2π
+    orientation %= 2 * np.pi
+
+    # Set line width
+    gl.glLineWidth(2.0)
+
+    # Determine lane direction and color
+    if abs(orientation) < 0.1 or abs(orientation - 2 * np.pi) < 0.1:
+        # Horizontal lane (east-west)
+        color = (0.0, 1.0, 0.0)  # Green
+        start = (0.0, y)
+        end = (widget_x, y)
+    elif abs(orientation - np.pi) < 0.1:
+        # Horizontal lane (west-east)
+        color = (1.0, 0.0, 0.0)  # Red
+        start = (0.0, y)
+        end = (widget_x, y)
+    elif abs(orientation - np.pi / 2) < 0.1:
+        # Vertical lane (north-south)
+        color = (0.0, 0.0, 1.0)  # Blue
+        start = (x, 0.0)
+        end = (x, widget_y)
+    elif abs(orientation - 3 * np.pi / 2) < 0.1:
+        # Vertical lane (south-north)
+        color = (1.0, 1.0, 0.0)  # Yellow
+        start = (x, 0.0)
+        end = (x, widget_y)
+    else:
+        return
+
+    gl.glPushMatrix()
+    gl.glColor3f(*color)
+
+    # Draw the line
+    gl.glBegin(gl.GL_LINES)
+    gl.glVertex2f(*start)
+    gl.glVertex2f(*end)
+    gl.glEnd()
+
     gl.glPopMatrix()
