@@ -24,9 +24,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.main_window = self.parent()
         self.server = self.main_window.server
-        self.current_zoom = 1.0
-        self.min_zoom = 1.0
-        self.max_zoom = 8.0
         self.markers = []
         self.cursor_coords = []
         self.cursor_x = 3.86
@@ -113,7 +110,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.pan_x = 0
         self.pan_y = 0
-        self.max_zoom = 40
+        self.max_zoom = 1.0
         self.zoom_level = self.max_zoom
         self.last_mouse_pos = None
         self.current_mouse_pos = None
@@ -224,18 +221,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        half_zoom = self.zoom_level * 0.5
-        left = self.pan_x - half_zoom * aspect
-        right = self.pan_x + half_zoom * aspect
-        bottom = self.pan_y - half_zoom
-        top = self.pan_y + half_zoom
-        gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
+        gl.glOrtho(-4883 * self.zoom_level, 4883 * self.zoom_level, -3251 * self.zoom_level, 3251.0 * self.zoom_level, -1, 1)
+        gl.glTranslatef(-4883, -3251, 0)
 
         # Global Transforms
-        gl.glTranslatef(left, bottom, 1)
-        gl.glScalef(0.0057, 0.0057, 0.0057)
-
         draw_track(self.texture, self.track_vbo, 4)
 
         self.qt_restore_gl_state()
@@ -418,8 +407,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
         if delta != 0:
-            new_zoom = self.zoom_level - delta * 0.015
-            new_zoom = max(8, min(self.max_zoom, new_zoom))
+            new_zoom = self.zoom_level - delta * 0.0005
+            new_zoom = max(0.01, min(self.max_zoom, new_zoom))
             if new_zoom != self.zoom_level:
                 self.zoom_level = new_zoom
                 # Reset pan when returning to initial zoom
