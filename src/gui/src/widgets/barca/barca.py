@@ -109,7 +109,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         right = self.pan_x + half_zoom * aspect
         bottom = self.pan_y - half_zoom
         top = self.pan_y + half_zoom
-        gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
+        gl.glOrtho(left, right, bottom, top, -1, 1)
 
         # Global Transforms
         gl.glTranslatef(-5.55, 1.5, 0)

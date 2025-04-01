@@ -17,18 +17,18 @@ def grid_vbo(grid_size_x=32, grid_size_y=15):
     return grid_vbo, grid_vertex_count
 
 
-def track_vbo():
+def track_vbo(width, height):
     # Define track quad vertices and texture coordinates
     # Format: [x, y, z, u, v]
     track_vertices = np.array([
         # Bottom-left
         0.0, 0.0, 0.0, 0.0, 0.0,
         # Bottom-right
-        MapData.REAL_WORLD_WIDTH.value, 0.0, 0.0, 1.0, 0.0,
+        width, 0.0, 0.0, 1.0, 0.0,
         # Top-right
-        MapData.REAL_WORLD_WIDTH.value, MapData.REAL_WORLD_HEIGHT.value, 0.0, 1.0, 1.0,
+        width, height, 0.0, 1.0, 1.0,
         # Top-left
-        0.0, MapData.REAL_WORLD_HEIGHT.value, 0.0, 0.0, 1.0
+        0.0, height, 0.0, 0.0, 1.0
     ], dtype=np.float32)
 
     # Create VBO for the track

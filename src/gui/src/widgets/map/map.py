@@ -207,11 +207,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         self.track_texture = self.load_texture(self.track_model_path)
-        self.track_vbo = track_vbo()
+        self.track_vbo = track_vbo(self.width(), self.height())
 
     def paintGL(self):
         if self.stop_drawing:
             return
+
+        curr_widget_width = self.width()
+        curr_widget_height = self.height()
 
         self.update_mouse_pos()
 
@@ -224,14 +227,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glLoadIdentity()
 
         gl.glOrtho(
-            -MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom,
-            MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom,
-            -MapData.REAL_WORLD_HEIGHT.value / 2,
-            MapData.REAL_WORLD_HEIGHT.value / 2,
-            -100,
-            100
+            0.0,
+            curr_widget_width,
+            0.0,
+            curr_widget_height,
+            -1,
+            1
         )
-        gl.glTranslatef(-MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom, -MapData.REAL_WORLD_HEIGHT.value / 2, 0)
+
         # Apply cursor zoom / translation
         gl.glTranslatef(self.pan_x, self.pan_y, 0)
         gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
@@ -390,7 +393,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if self.zoom_level >= self.max_zoom:
                 return
 
-            sensitivity = 0.01
+            sensitivity = 1.0
 
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
@@ -400,8 +403,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if widget_height == 0:
                 widget_height = 1
 
-            max_allowed_x = MapData.REAL_WORLD_WIDTH.value * (1 / self.zoom_level - 1)
-            max_allowed_y = MapData.REAL_WORLD_HEIGHT.value * (1 / self.zoom_level - 1)
+            max_allowed_x = self.width() * (1 / self.zoom_level - 1)
+            max_allowed_y = self.height() * (1 / self.zoom_level - 1)
 
             new_pan_x = self.pan_x + dx * sensitivity
             new_pan_y = self.pan_y - dy * sensitivity
