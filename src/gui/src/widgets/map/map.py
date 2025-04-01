@@ -1,13 +1,13 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
-
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
 from PIL import Image
+from .opengl.vbos import track_vbo
+from .opengl.renderer import draw_track
 
-import ctypes
 import pandas as pd
 import os
 import cv2
@@ -208,22 +208,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
         self.texture = self.load_texture(self.track_model_path)
-        # Define track quad vertices and texture coordinates
-        # Format: [x, y, z, u, v]
-        track_vertices = np.array([
-            # Bottom-left
-            0.0, 0.0, 0.0, 0.0, 0.0,
-            # Bottom-right
-            20.696, 0.0, 0.0, 1.0, 0.0,
-            # Top-right
-            20.696, 13.786, 0.0, 1.0, 1.0,
-            # Top-left
-            0.0, 13.786, 0.0, 0.0, 1.0
-        ], dtype=np.float32)
-
-        # Create VBO for the track
-        self.track_vbo = vbo.VBO(track_vertices)
-        self.track_vertex_count = 4  # 4 vertices in a quad
+        self.track_vbo = track_vbo()
 
     def paintGL(self):
         if self.stop_drawing:
@@ -239,44 +224,18 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        # aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        # glu.gluPerspective(45, aspect, 0.1, 100.0)
-
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
         half_zoom = self.zoom_level * 0.5
-        left = self.pan_x - half_zoom * aspect
+        left = self.pan_x * aspect
         right = self.pan_x + half_zoom * aspect
-        bottom = self.pan_y - half_zoom
+        bottom = self.pan_y
         top = self.pan_y + half_zoom
         gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
 
-        # Set up view matrix
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glLoadIdentity()
+        # Global Transforms
+        gl.glScalef(0.00285, 0.00285, 0.00285)
 
-        # Enable texture and blending
-        gl.glEnable(gl.GL_TEXTURE_2D)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-        # Draw track quad
-        self.track_vbo.bind()
-        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glEnableClientState(gl.GL_TEXTURE_COORD_ARRAY)
-
-        # Stride = 20 bytes (5 floats * 4 bytes each)
-        gl.glVertexPointer(3, gl.GL_FLOAT, 20, self.track_vbo)
-        # TexCoord offset = 12 bytes (3 floats into the vertex data)
-        gl.glTexCoordPointer(2, gl.GL_FLOAT, 20, self.track_vbo + 12)
-
-        gl.glDrawArrays(gl.GL_QUADS, 0, self.track_vertex_count)
-
-        # Cleanup
-        self.track_vbo.unbind()
-        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-        gl.glDisableClientState(gl.GL_TEXTURE_COORD_ARRAY)
-        gl.glDisable(gl.GL_TEXTURE_2D)
+        draw_track(self.texture, self.track_vbo, 4)
 
         self.qt_restore_gl_state()
 
@@ -450,8 +409,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             half_span_y = (self.max_zoom - self.zoom_level) / 2
 
             # Clamp pan values to content boundaries
-            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
-            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
+            self.pan_x = max(0, min(half_span_x, new_pan_x))
+            self.pan_y = max(0, min(half_span_y, new_pan_y))
 
             self.update()
 

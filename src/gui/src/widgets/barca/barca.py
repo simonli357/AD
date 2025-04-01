@@ -103,9 +103,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        # aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        # glu.gluPerspective(45, aspect, 0.1, 100.0)
-
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
         half_zoom = self.zoom_level * 0.5
         left = self.pan_x - half_zoom * aspect
@@ -113,14 +110,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         bottom = self.pan_y - half_zoom
         top = self.pan_y + half_zoom
         gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
-
-        # Set up view matrix
-        gl.glMatrixMode(gl.GL_MODELVIEW)
-        gl.glLoadIdentity()
-
-        # Camera
-        # glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
-        # gl.glTranslatef(self.pan_x, self.pan_y, 0)
 
         # Global Transforms
         gl.glTranslatef(-5.55, 1.5, 0)
