@@ -226,14 +226,15 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
         half_zoom = self.zoom_level * 0.5
-        left = self.pan_x * aspect
+        left = self.pan_x - half_zoom * aspect
         right = self.pan_x + half_zoom * aspect
-        bottom = self.pan_y
+        bottom = self.pan_y - half_zoom
         top = self.pan_y + half_zoom
         gl.glOrtho(left, right, bottom, top, -100, 100)  # Near and far planes
 
         # Global Transforms
-        gl.glScalef(0.00285, 0.00285, 0.00285)
+        gl.glTranslatef(left, bottom, 1)
+        gl.glScalef(0.0057, 0.0057, 0.0057)
 
         draw_track(self.texture, self.track_vbo, 4)
 
@@ -409,8 +410,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             half_span_y = (self.max_zoom - self.zoom_level) / 2
 
             # Clamp pan values to content boundaries
-            self.pan_x = max(0, min(half_span_x, new_pan_x))
-            self.pan_y = max(0, min(half_span_y, new_pan_y))
+            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
+            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
 
             self.update()
 
