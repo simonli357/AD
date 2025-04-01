@@ -1,5 +1,4 @@
 from OpenGL import GL as gl
-from ...enums import MapData
 
 import numpy as np
 
@@ -55,6 +54,42 @@ def draw_destination(dest_vbo, x, y):
     v_count = dest_vbo[1]
     gl.glPushMatrix()
     gl.glColor3f(0.0, 0.75, 0.75)
+    gl.glTranslatef(x, y, 0)
+
+    vbo.bind()
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, vbo)
+    gl.glDrawArrays(gl.GL_TRIANGLES, 0, v_count)
+    vbo.unbind()
+
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+
+    gl.glPopMatrix()
+
+
+def draw_waypoint(wp_vbo, x, y, color: (int, int, int)):
+    vbo = wp_vbo[0]
+    v_count = wp_vbo[1]
+    gl.glPushMatrix()
+    gl.glColor3f(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0)
+    gl.glTranslatef(x, y, 0)
+
+    vbo.bind()
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, vbo)
+    gl.glDrawArrays(gl.GL_TRIANGLES, 0, v_count)
+    vbo.unbind()
+
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+
+    gl.glPopMatrix()
+
+
+def draw_path_node(wp_vbo, x, y):
+    vbo = wp_vbo[0]
+    v_count = wp_vbo[1]
+    gl.glPushMatrix()
+    gl.glColor3f(1.0, 1.0, 0.0)
     gl.glTranslatef(x, y, 0)
 
     vbo.bind()

@@ -42,6 +42,8 @@ class CommunicationHandler(QObject):
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
     render_widget_signal = pyqtSignal()
+    render_barca_widget_signal = pyqtSignal()
+    render_map_widget_signal = pyqtSignal()
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -112,8 +114,9 @@ class MainWindow(QMainWindow):
         self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
         self.comm.render_widget_signal.connect(self.radar_widget.render_widget)
         self.comm.render_widget_signal.connect(self.sw_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.barca_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.map_widget.render_widget)
+
+        self.comm.render_barca_widget_signal.connect(self.barca_widget.render_widget)
+        self.comm.render_map_widget_signal.connect(self.map_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -192,11 +195,6 @@ class MainWindow(QMainWindow):
         self.tcp_thread.start()
         self.cam_thread.start()
 
-        self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(int(CameraParams.FPS_30.value))
-        self.timer.timeout.connect(self.render_callbacks)
-        self.timer.start()
-
     def toggle_map(self) -> None:
         self.show_barca = not self.show_barca
         if self.show_barca:
@@ -248,6 +246,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
+            self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 
     def udp_callbacks(self) -> None:
@@ -298,6 +297,10 @@ class MainWindow(QMainWindow):
 
     def render_callbacks(self) -> None:
         self.comm.render_widget_signal.emit()
+        if self.show_barca:
+            self.comm.render_barca_widget_signal.emit()
+        else:
+            self.comm.render_map_widget_signal.emit()
 
     def closeEvent(self, event):
         try:

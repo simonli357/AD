@@ -3,13 +3,12 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo
-from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign
+from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
 from ..enums import MapData
 
 import pandas as pd
 import os
-import cv2
 import time
 import numpy as np
 
@@ -37,8 +36,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.state_refs_np = None
         self.attributes_np = None
         self.sign_size = 20
-
-        self.cars_drawn = False
 
         self.road_msg_length = 7
         self.road_msg_dict = {
@@ -147,6 +144,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.track_vbo = track_vbo(self.width(), self.height())
         self.car_model = load_obj(self.car_model_path)
         self.dest_vbo = circle_vbo(7, 25)
+        self.wp_vbo = circle_vbo(2, 10)
+        self.path_node_vbo = circle_vbo(1, 3)
 
         self.sign_vbos = []
 
@@ -191,8 +190,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             for index, row in self.data.iterrows():
                 entity_type, orientation = row['Type'], row['Orientation']
 
-                x = int(row['X'] / MapData.REAL_WORLD_WIDTH.value * self.width())
-                y = int(row['Y'] / MapData.REAL_WORLD_HEIGHT.value * self.height())
+                x = row['X'] / MapData.REAL_WORLD_WIDTH.value * self.width()
+                y = row['Y'] / MapData.REAL_WORLD_HEIGHT.value * self.height()
 
                 # orientation = 2 * np.pi - orientation
                 orientation = - orientation
@@ -204,7 +203,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 elif entity_type == 'Lane':
                     if self.show_lanes:
                         draw_lane(x, y, self.width(), self.height(), orientation)
-                        pass
                 elif entity_type == 'Car':
                     if self.show_cars:
                         draw_car(x, y, orientation, self.car_model, (1.0, 1.0, 0.0, 1.0))
@@ -217,7 +215,101 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         texture, vbo = self.sign_vbos[sign_index]
                         draw_sign(x, y, texture, vbo)
 
+        self.illustrate_path()
+        self.draw_detected_objects()
+
         qt_restore_gl_state()
+
+    def draw_detected_objects(self):
+        if True:
+            if self.waypoints is not None:
+                for i in range(0, len(self.waypoints) - 1, 8):
+                    x = self.waypoints[i] / MapData.REAL_WORLD_WIDTH.value * self.width()
+                    y = self.waypoints[i + 1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
+                    draw_path_node(self.path_node_vbo, x, y)
+            if self.detected_data is None or len(self.detected_data) == 0:
+                return
+            x = self.detected_data[0, self.road_msg_dict['x']]
+            y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
+            yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+            z = self.detected_data[0, self.road_msg_dict['z']]
+            speed = self.detected_data[0, self.road_msg_dict['speed']]
+            self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
+            self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
+            self.main_window.meter_widget.set_speed(speed * 100)
+            for i in range(len(self.detected_data)):
+                obj_type = self.detected_data[i, self.road_msg_dict['type']]
+                x = self.detected_data[i, self.road_msg_dict['x']]
+                y = self.detected_data[i, self.road_msg_dict['y']]
+                orientation = self.detected_data[i, self.road_msg_dict['orientation']]
+
+                # Convert map coordinates to pixel coordinates
+                x = x / MapData.REAL_WORLD_WIDTH.value * self.width()
+                y = y / MapData.REAL_WORLD_HEIGHT.value * self.height()
+                # orientation = 2 * np.pi - orientation
+                orientation = - orientation
+
+                if self.object_dict[obj_type] == 'Car':
+                    if i == 0:
+                        draw_car(x, y, orientation, self.car_model, (1.0, 0.0, 0.0, 1.0))
+                    else:
+                        draw_car(x, y, orientation, self.car_model, (1.0, 0.0, 1.0, 1.0))
+                else:
+                    texture, vbo = self.sign_vbos[int(obj_type)]
+                    draw_sign(x, y, texture, vbo)
+
+    def illustrate_path(self):
+        if self.state_refs_np is None or self.attributes_np is None or not self.show_path:
+            return
+
+        ATTRIBUTES = {
+            "normal": (0, 255, 255),        # Yellow
+            "crosswalk": (0, 255, 0),         # Green
+            "intersection": (0, 0, 255),  # Red
+            "oneway": (0, 165, 255),          # Orange
+            "highwayLeft": (130, 0, 75),      # Indigo
+            "highwayRight": (193, 182, 255),         # Light pink
+            "roundabout": (255, 255, 255),    # White
+            "stopline": (255, 255, 0),    # Cyan
+            "dotted": (180, 130, 70),         # Steel blue
+            "dotted_crosswalk": (128, 0, 128),    # Purple
+        }
+
+        for i in range(0, self.state_refs_np.shape[1], 8):
+            color = (0, 255, 255)
+            attr = self.attributes_np[i]
+
+            # Assign colors based on attributes
+            if attr == 0 or attr == 100:
+                color = ATTRIBUTES["normal"]
+            elif attr == 1 or attr == 101:
+                color = ATTRIBUTES["crosswalk"]
+            elif attr == 2 or attr == 102:
+                color = ATTRIBUTES["intersection"]
+            elif attr == 3 or attr == 103:
+                color = ATTRIBUTES["oneway"]
+            elif attr == 4 or attr == 104:
+                color = ATTRIBUTES["highwayLeft"]
+            elif attr == 5 or attr == 105:
+                color = ATTRIBUTES["highwayRight"]
+            elif attr == 6 or attr == 106:
+                color = ATTRIBUTES["roundabout"]
+            elif attr == 7 or attr == 107:
+                color = ATTRIBUTES["stopline"]
+            elif attr == 8 or attr == 108:
+                color = ATTRIBUTES["dotted"]
+            elif attr == 9 or attr == 109:
+                color = ATTRIBUTES["dotted_crosswalk"]
+
+            # if attr == 7 or attr == 107:
+            #     color = ATTRIBUTES["stopline"]
+            # else:
+            #     color = (0, 0, 0)
+
+            x = self.state_refs_np[0, i] / MapData.REAL_WORLD_WIDTH.value * self.width()
+            y = self.state_refs_np[1, i] / MapData.REAL_WORLD_HEIGHT.value * self.height()
+
+            draw_waypoint(self.wp_vbo, x, y, color)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -414,8 +506,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
-                    self.update_map_display()
-                    self.graphics_view.set_total_path_distance()
                     self.main_window.run_overlay.set_run_name(run.path_name)
                     self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
                     return

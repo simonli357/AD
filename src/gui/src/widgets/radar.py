@@ -15,7 +15,8 @@ class RadarWidget(QtWidgets.QWidget):
         self.car_icon_path = os.path.join(current_dir, 'assets', 'car_top.png')
 
         self.obj_dict = self.main_window.map_widget.object_dict
-        self.sign_images = self.main_window.map_widget.sign_images
+        sign_paths = self.main_window.map_widget.sign_images
+        self.sign_images = [cv2.imread(img) for img in sign_paths]
 
         self.x_min, self.x_max = -1.25, 1.25
         self.y_min, self.y_max = -1.25, 1.25
@@ -156,7 +157,7 @@ class RadarWidget(QtWidgets.QWidget):
             if self.obj_dict[obj_type] == 'Pedestrian':
                 painter.setPen(QPen(QColor('#ff3399'), 5))
 
-            self.draw_sign(painter, widget_x, widget_y, 25, obj_type)
+            self.draw_sign(painter, widget_x, widget_y, 20, obj_type)
 
             painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
 

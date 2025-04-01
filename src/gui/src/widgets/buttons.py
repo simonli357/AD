@@ -193,10 +193,10 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.call_start_service(not self.started)
         if not self.started:
             print("Starting")
-            self.main_window.map_widget.graphics_view.dist_traveled = 0
-            self.main_window.map_widget.graphics_view.set_distance_traveled()
-            self.main_window.map_widget.graphics_view.visited.clear()
-            self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
+            # self.main_window.map_widget.graphics_view.dist_traveled = 0
+            # self.main_window.map_widget.graphics_view.set_distance_traveled()
+            # self.main_window.map_widget.graphics_view.visited.clear()
+            # self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
             self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
