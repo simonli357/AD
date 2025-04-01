@@ -1,4 +1,5 @@
 from OpenGL import GL as gl
+from ...enums import MapData
 
 
 def draw_track(texture, track_vbo, track_vertex_count):
@@ -44,4 +45,45 @@ def draw_grid(grid_vbo, grid_vertex_count):
     gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
     grid_vbo.unbind()
 
+    gl.glPopMatrix()
+
+
+def draw_destination(dest_vbo, x, y):
+    vbo = dest_vbo[0]
+    v_count = dest_vbo[1]
+    gl.glPushMatrix()
+    gl.glColor3f(0.0, 0.75, 0.75)
+    gl.glTranslatef(x, y, 0)
+
+    vbo.bind()
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, vbo)
+    gl.glDrawArrays(gl.GL_TRIANGLES, 0, v_count)
+    vbo.unbind()
+
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+
+    gl.glPopMatrix()
+
+
+def draw_car(x, y, yaw, car_model, color: (float, float, float, float)):
+    gl.glPushMatrix()
+    gl.glTranslatef(x, y, 0)
+    gl.glRotatef(-yaw, 0, 0, 1)
+    gl.glScalef(0.65, 0.65, 0.65)
+
+    gl.glEnable(gl.GL_BLEND)
+    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+    gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+    gl.glColor4f(*color)
+    gl.glLineWidth(0.01)
+
+    car_model.vbo.bind()
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, car_model.vbo)
+    gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.vertex_count)
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+    car_model.vbo.unbind()
+
+    gl.glDisable(gl.GL_BLEND)
     gl.glPopMatrix()

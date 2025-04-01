@@ -17,6 +17,9 @@ class MapData(Enum):
     REAL_WORLD_HEIGHT = 13.786
     REAL_X_PER_PIXEL = REAL_WORLD_WIDTH / PNG_WIDTH
     REAL_Y_PER_PIXEL = REAL_WORLD_HEIGHT / PNG_HEIGHT
+    CAR_WIDTH = 0.2
+    CAR_LENGTH = 0.4
+    CAR_HEIGHT = 0.15
 
 
 class BarcaMapData(Enum):

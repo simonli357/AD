@@ -2,9 +2,10 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
-from .opengl.vbos import track_vbo
-from .opengl.renderer import draw_track
+from .opengl.vbos import track_vbo, circle_vbo
+from .opengl.renderer import draw_track, draw_destination, draw_car
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
+from ..enums import MapData
 
 import pandas as pd
 import os
@@ -147,6 +148,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.track_texture = load_texture(self.track_model_path)
         self.track_vbo = track_vbo(self.width(), self.height())
         self.car_model = load_obj(self.car_model_path)
+        self.dest_vbo = circle_vbo(7, 25)
 
     def paintGL(self):
         if self.stop_drawing:
@@ -170,16 +172,53 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             curr_widget_width,
             0.0,
             curr_widget_height,
-            -1,
-            1
+            -100,
+            100
         )
 
         # Apply cursor zoom / translation
         gl.glTranslatef(self.pan_x, self.pan_y, 0)
         gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
 
-        # Global Transforms
+        # Draw objects
         draw_track(self.track_texture, self.track_vbo, 4)
+        if self.show_gt:
+            for index, row in self.data.iterrows():
+                entity_type, orientation = row['Type'], row['Orientation']
+
+                x = int(row['X'] / MapData.REAL_WORLD_WIDTH.value * self.width())
+                y = int(row['Y'] / MapData.REAL_WORLD_HEIGHT.value * self.height())
+
+                # orientation = 2 * np.pi - orientation
+                orientation = - orientation
+
+                if entity_type == 'Intersection':
+                    if self.show_signs:
+                        # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
+                        pass
+                elif entity_type == 'Lane':
+                    if self.show_lanes:
+                        # self.draw_lane(image, pixel_x, pixel_y, orientation)
+                        pass
+                elif entity_type == 'Car':
+                    if self.show_cars:
+                        # self.draw_car_obstacle(image, pixel_x, pixel_y, orientation, steer=0.2)
+                        draw_car(x, y, orientation, self.car_model, (1.0, 1.0, 0.0, 1.0))
+                        pass
+                elif entity_type == 'Destination':
+                    if self.show_destinations:
+                        draw_destination(self.dest_vbo, x, y)
+                        pass
+                elif entity_type == 'Light':
+                    if self.show_signs:
+                        # sign_index = self.get_key_from_value(entity_type)
+                        # self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
+                        pass
+                else:
+                    if self.show_signs:
+                        # sign_index = self.get_key_from_value(entity_type)
+                        # self.draw_sign(image, pixel_x, pixel_y, orientation, self.sign_size, sign_index)
+                        pass
 
         qt_restore_gl_state()
 
@@ -273,6 +312,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+        self.track_vbo.delete()
+        self.track_vbo = track_vbo(w, h)
         self.update_mouse_pos()
 
     def mousePressEvent(self, event):
