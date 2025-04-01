@@ -2,8 +2,8 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
-from .opengl.vbos import track_vbo, circle_vbo, sign_vbo
-from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node
+from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
+from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
 from ..enums import MapData
 
@@ -20,7 +20,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.main_window = self.parent()
         self.server = self.main_window.server
-        self.markers = []
         self.cursor_coords = []
         self.cursor_x = 3.86
         self.cursor_y = 3.62
@@ -146,6 +145,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.dest_vbo = circle_vbo(7, 25)
         self.wp_vbo = circle_vbo(2, 10)
         self.path_node_vbo = circle_vbo(1, 3)
+        self.marker_vbo, (self.circle_count, self.cross_count) = marker_vbo()
 
         self.sign_vbos = []
 
@@ -210,8 +210,15 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.illustrate_path()
         self.draw_detected_objects()
+        self.draw_markers()
 
         qt_restore_gl_state()
+
+    def draw_markers(self):
+        for coord in self.cursor_coords:
+            x = coord[0] / MapData.REAL_WORLD_WIDTH.value * self.width()
+            y = coord[1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
+            draw_marker(self.marker_vbo, self.circle_count, self.cross_count, x, y)
 
     def draw_detected_objects(self):
         if True:
@@ -380,6 +387,28 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 int(x_scene - self.cursor_coords_label.width() / 2),
                 int(y_scene - 60))
 
+    def get_real_world_coords(self, x_scene, y_scene):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return
+
+        # Convert to OpenGL projection space (y=0 at bottom)
+        y_gl_proj = widget_height - y_scene
+
+        # Apply inverse transformations for pan/zoom
+        x_original = (x_scene - self.pan_x) * self.zoom_level
+        y_original = (y_gl_proj - self.pan_y) * self.zoom_level
+
+        # Convert to real-world coordinates
+        try:
+            x_world = (x_original / widget_width) * MapData.REAL_WORLD_WIDTH.value
+            y_world = (y_original / widget_height) * MapData.REAL_WORLD_HEIGHT.value
+        except ZeroDivisionError:
+            return
+
+        return x_world, y_world
+
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -400,6 +429,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton:
             self.last_mouse_pos = event.pos()
+        if event.buttons() == QtCore.Qt.RightButton:
+            self.cursor_coords.clear()
+
+    def mouseDoubleClickEvent(self, event):
+        x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
+        self.cursor_coords.append((x_world, y_world))
+        self.cursor_x = x_world
+        self.cursor_y = y_world
 
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()
@@ -432,18 +469,28 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.update()
 
     def wheelEvent(self, event):
-        delta = event.angleDelta().y()
+        delta = -event.angleDelta().y()
         if delta != 0:
-            sensitivity = 0.0005
-            new_zoom = self.zoom_level - delta * sensitivity
-            new_zoom = max(0.1, min(self.max_zoom, new_zoom))
-            if new_zoom != self.zoom_level:
-                self.zoom_level = new_zoom
-                # Reset pan when returning to initial zoom
-                if self.zoom_level == self.max_zoom:
-                    self.pan_x = 0
-                    self.pan_y = 0
-                self.update()
+            widget_width = self.width()
+            widget_height = self.height()
+            if widget_width <= 0 or widget_height <= 0:
+                return
+
+            # Calculate zoom parameters
+            zoom_factor = 1.15 if delta > 0 else 0.85
+            new_zoom = max(0.3, min(self.max_zoom, self.zoom_level * zoom_factor))
+
+            if new_zoom == self.zoom_level:
+                return
+
+            self.zoom_level = new_zoom
+
+            # Force center at max zoom
+            if self.zoom_level == self.max_zoom:
+                self.pan_x = 0
+                self.pan_y = 0
+
+            self.update()
 
     ##################
     # Callbacks

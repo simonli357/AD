@@ -157,7 +157,7 @@ class RadarWidget(QtWidgets.QWidget):
             if self.obj_dict[obj_type] == 'Pedestrian':
                 painter.setPen(QPen(QColor('#ff3399'), 5))
 
-            self.draw_sign(painter, widget_x, widget_y, 20, obj_type)
+            self.draw_sign(painter, widget_x, widget_y, 25, obj_type)
 
             painter.drawEllipse(QtCore.QPointF(widget_x, widget_y), 2, 2)
 

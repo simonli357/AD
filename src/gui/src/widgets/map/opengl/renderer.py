@@ -203,3 +203,27 @@ def draw_sign(x, y, texture, sign_vbo, track_vertex_count=4):
     gl.glDisable(gl.GL_TEXTURE_2D)
 
     gl.glPopMatrix()
+
+
+def draw_marker(marker_vbo, circle_count, cross_count, x, y):
+    gl.glPushMatrix()
+    gl.glTranslatef(x, y, 0)
+
+    marker_vbo.bind()
+    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glVertexPointer(3, gl.GL_FLOAT, 0, marker_vbo)
+
+    # Draw circle
+    gl.glLineWidth(2.0)
+    gl.glColor3f(0.0, 1.0, 0.0)
+    gl.glDrawArrays(gl.GL_LINE_LOOP, 0, circle_count)
+
+    # Draw cross
+    gl.glLineWidth(1.5)
+    gl.glColor3f(0.0, 1.0, 0.0)
+    gl.glDrawArrays(gl.GL_LINES, circle_count, cross_count)
+
+    marker_vbo.unbind()
+
+    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+    gl.glPopMatrix()

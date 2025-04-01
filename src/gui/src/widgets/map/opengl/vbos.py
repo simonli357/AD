@@ -92,3 +92,44 @@ def circle_vbo(radius=1.0, segments=64, z=0.0):
     vertex_count = len(vertices) // 3
 
     return circle_buffer, vertex_count
+
+
+def marker_vbo(radius=4.0, segments=32, line_scale=0.8):
+    """Create a VBO for a crosshair marker with circle and cross.
+
+    Args:
+        radius (float): Outer radius of the marker
+        segments (int): Number of vertices for the circle
+        line_scale (float): Length of cross lines relative to radius (0.8 = 80%)
+
+    Returns:
+        tuple: (VBO object, (circle_vertex_count, cross_vertex_count))
+    """
+    vertices = []
+
+    # 1. Create circle vertices (GL_LINE_LOOP)
+    for i in range(segments):
+        theta = 2 * np.pi * i / segments
+        x = radius * np.cos(theta)
+        y = radius * np.sin(theta)
+        vertices.extend([x, y, 0.0])
+
+    # 2. Create crosshair vertices (GL_LINES)
+    # Horizontal line (80% of radius length)
+    h_length = radius * line_scale
+    vertices.extend([-h_length, 0.0, 0.0])  # Start
+    vertices.extend([h_length, 0.0, 0.0])   # End
+
+    # Vertical line (80% of radius length)
+    v_length = radius * line_scale
+    vertices.extend([0.0, -v_length, 0.0])  # Start
+    vertices.extend([0.0, v_length, 0.0])   # End
+
+    # Create numpy array and VBO
+    vertex_array = np.array(vertices, dtype=np.float32)
+    marker_buffer = vbo.VBO(vertex_array)
+
+    # Return vertex counts (circle, cross)
+    circle_vertex_count = segments
+    cross_vertex_count = 4  # 2 lines * 2 points each
+    return marker_buffer, (circle_vertex_count, cross_vertex_count)
