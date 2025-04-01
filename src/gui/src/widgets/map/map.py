@@ -171,14 +171,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        gl.glOrtho(
-            0.0,
-            curr_widget_width,
-            0.0,
-            curr_widget_height,
-            -100,
-            100
-        )
+        gl.glOrtho(0.0, curr_widget_width, 0.0, curr_widget_height, -20, 20)
 
         # Apply cursor zoom / translation
         gl.glTranslatef(self.pan_x, self.pan_y, 0)
@@ -367,22 +360,21 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x_scene = self.current_mouse_pos.x()
             y_scene = self.current_mouse_pos.y()
 
-            # Convert to normalized device coordinates [-1, 1]
-            x_ndc = 2 * (x_scene / widget_width) - 1
-            y_ndc = (1 - 2 * (y_scene / widget_height))
+            # Convert to OpenGL projection space (y=0 at bottom)
+            y_gl_proj = widget_height - y_scene
 
-            # Calculate orthographic projection bounds
-            aspect = widget_width / widget_height
-            half_zoom = self.zoom_level * 0.5
-            left = self.pan_x - half_zoom * aspect
-            right = self.pan_x + half_zoom * aspect
-            bottom = self.pan_y - half_zoom
-            top = self.pan_y + half_zoom
+            # Apply inverse transformations for pan/zoom
+            x_original = (x_scene - self.pan_x) * self.zoom_level
+            y_original = (y_gl_proj - self.pan_y) * self.zoom_level
 
-            # Convert to world coordinates
-            x_world = left + (x_ndc + 1) * (right - left) / 2
-            y_world = bottom + (y_ndc + 1) * (top - bottom) / 2
+            # Convert to real-world coordinates
+            try:
+                x_world = (x_original / widget_width) * MapData.REAL_WORLD_WIDTH.value
+                y_world = (y_original / widget_height) * MapData.REAL_WORLD_HEIGHT.value
+            except ZeroDivisionError:
+                return
 
+            # Update label text and position
             self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
             self.cursor_coords_label.move(
                 int(x_scene - self.cursor_coords_label.width() / 2),

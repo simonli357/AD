@@ -1,6 +1,7 @@
 from OpenGL import GL as gl
 
 import numpy as np
+import math
 
 
 def draw_track(texture, track_vbo, track_vertex_count=4):
@@ -106,8 +107,8 @@ def draw_path_node(wp_vbo, x, y):
 def draw_car(x, y, yaw, car_model, color: (float, float, float, float)):
     gl.glPushMatrix()
     gl.glTranslatef(x, y, 0)
-    gl.glRotatef(-yaw, 0, 0, 1)
-    gl.glScalef(0.65, 0.65, 0.65)
+    gl.glRotatef(math.degrees(-yaw), 0, 0, 1)
+    gl.glScalef(0.55, 0.55, 0.55)
 
     gl.glEnable(gl.GL_BLEND)
     gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
