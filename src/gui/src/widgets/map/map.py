@@ -1,10 +1,13 @@
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
+from PIL import Image
 
+import ctypes
 import pandas as pd
 import os
 import cv2
@@ -121,10 +124,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.setFormat(fmt)
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        track_model_path = os.path.join(current_dir, 'assets', 'track.obj')
+        self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
         car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
-        if os.path.exists(track_model_path):
-            self.track_model = self.load_obj(track_model_path)
         if os.path.exists(car_model_path):
             self.car_model = self.load_obj(car_model_path)
 
@@ -146,6 +147,40 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def render_widget(self) -> None:
         self.update()
+
+    def load_texture(self, filename):
+        """Load PNG image as texture using Pillow"""
+        try:
+            image = Image.open(filename)
+            image = image.convert("RGBA")
+            width, height = image.size
+            # Flip image vertically (OpenGL expects origin at bottom-left)
+            image_data = image.transpose(Image.FLIP_TOP_BOTTOM).tobytes()
+            image.close()
+
+            # Generate OpenGL texture
+            texture_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, texture_id)
+
+            # Set texture parameters
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_LINEAR)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+
+            # Upload texture data
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, width, height, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, image_data
+            )
+            gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
+
+            # Unbind texture
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            return texture_id
+        except Exception as e:
+            print(f"Error loading texture {filename}: {e}")
+            return 0
 
     def load_obj(self, model_path) -> Model:
         vertices = []
@@ -171,6 +206,24 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+
+        self.texture = self.load_texture(self.track_model_path)
+        # Define track quad vertices and texture coordinates
+        # Format: [x, y, z, u, v]
+        track_vertices = np.array([
+            # Bottom-left
+            0.0, 0.0, 0.0, 0.0, 0.0,
+            # Bottom-right
+            20.696, 0.0, 0.0, 1.0, 0.0,
+            # Top-right
+            20.696, 13.786, 0.0, 1.0, 1.0,
+            # Top-left
+            0.0, 13.786, 0.0, 0.0, 1.0
+        ], dtype=np.float32)
+
+        # Create VBO for the track
+        self.track_vbo = vbo.VBO(track_vertices)
+        self.track_vertex_count = 4  # 4 vertices in a quad
 
     def paintGL(self):
         if self.stop_drawing:
@@ -201,23 +254,29 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
 
-        # Camera
-        # glu.gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)  # Camera at (0,0,zoom_level)
-        # gl.glTranslatef(self.pan_x, self.pan_y, 0)
+        # Enable texture and blending
+        gl.glEnable(gl.GL_TEXTURE_2D)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self.texture)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-        # Global Transforms
-        # gl.glTranslatef(-5.55, 1.5, 0)
-        # gl.glScalef(0.99, 0.99, 0.99)
+        # Draw track quad
+        self.track_vbo.bind()
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glEnableClientState(gl.GL_TEXTURE_COORD_ARRAY)
 
-        # draw_track(self.track_model)
-        # Counter map offset
-        # gl.glTranslatef(BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
-        # draw_grid(self.grid_vbo, self.grid_vertex_count)
-        # gl.glTranslatef(-2, 6, 0)
+        # Stride = 20 bytes (5 floats * 4 bytes each)
+        gl.glVertexPointer(3, gl.GL_FLOAT, 20, self.track_vbo)
+        # TexCoord offset = 12 bytes (3 floats into the vertex data)
+        gl.glTexCoordPointer(2, gl.GL_FLOAT, 20, self.track_vbo + 12)
 
-        # Draw objects
-        # self.waypoints_renderer.draw()
-        # draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
+        gl.glDrawArrays(gl.GL_QUADS, 0, self.track_vertex_count)
+
+        # Cleanup
+        self.track_vbo.unbind()
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glDisableClientState(gl.GL_TEXTURE_COORD_ARRAY)
+        gl.glDisable(gl.GL_TEXTURE_2D)
 
         self.qt_restore_gl_state()
 
