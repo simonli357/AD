@@ -218,23 +218,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def cleanup_gl_resources(self):
         self.stop_drawing = True
         try:
-            self.makeCurrent()
-            if self.grid_vbo is not None:
-                self.grid_vbo.delete()
-                self.grid_vbo = None
-            if self.path_node_vbo is not None:
-                self.path_node_vbo.delete()
-                self.path_node_vbo = None
-            models = [
-                self.car_model, self.sign_model,
-                self.tf_light_model, self.pedestrian_model
-            ]
-            for model in models:
-                if model and model.vbo:
-                    model.vbo.delete()
-                    model.vbo = None
             gl.glFlush()
-            self.doneCurrent()
         except Exception:
             pass
 
