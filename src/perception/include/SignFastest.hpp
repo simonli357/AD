@@ -499,21 +499,25 @@ class SignFastest {
                 // Compute refined (final) depth excluding overlapping regions.
                 double finalDepth = computeMedianDepthExcludingOverlap(depthImage,
                                                                        db.x1, db.y1, db.x2, db.y2,
-                                                                       occlusionMask);
+                                                                       occlusionMask) / 1000.0;
                 // cv::Mat result = image.clone();
                 // result.setTo(cv::Scalar(0, 0, 255), occlusionMask == 255);
                 // cv::imshow("Masked Image", result);
                 // cv::waitKey(0);
                 if (finalDepth < 0)
                     continue;  // no valid depth remains after exclusion
-    
+                
+                double expected_dist = distance_makes_sense(finalDepth, db.class_id, db.x1, db.y1, db.x2, db.y2);
+                if (!expected_dist) {
+                    // ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f", expected_dist, distance);
+                    continue;
+                }
                 // Populate the sign message.
                 sign_msg.data.push_back(db.x1);
                 sign_msg.data.push_back(db.y1);
                 sign_msg.data.push_back(db.x2);
                 sign_msg.data.push_back(db.y2);
-                // Convert from mm to meters if needed.
-                sign_msg.data.push_back(finalDepth / 1000.0);
+                sign_msg.data.push_back(finalDepth);
                 sign_msg.data.push_back(db.confidence);
                 sign_msg.data.push_back(static_cast<float>(db.class_id));
                 bool is_car = db.class_id == OBJECT::CAR;
