@@ -1,4 +1,5 @@
 from OpenGL.arrays import vbo
+from ...enums import MapData
 
 import numpy as np
 
@@ -23,11 +24,11 @@ def track_vbo():
         # Bottom-left
         0.0, 0.0, 0.0, 0.0, 0.0,
         # Bottom-right
-        9766, 0.0, 0.0, 1.0, 0.0,
+        MapData.REAL_WORLD_WIDTH.value, 0.0, 0.0, 1.0, 0.0,
         # Top-right
-        9766, 6502, 0.0, 1.0, 1.0,
+        MapData.REAL_WORLD_WIDTH.value, MapData.REAL_WORLD_HEIGHT.value, 0.0, 1.0, 1.0,
         # Top-left
-        0.0, 6502, 0.0, 0.0, 1.0
+        0.0, MapData.REAL_WORLD_HEIGHT.value, 0.0, 0.0, 1.0
     ], dtype=np.float32)
 
     # Create VBO for the track

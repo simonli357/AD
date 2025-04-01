@@ -5,6 +5,7 @@ from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
 from PIL import Image
+from ..enums import MapData
 from .opengl.vbos import track_vbo
 from .opengl.renderer import draw_track
 
@@ -110,6 +111,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.pan_x = 0
         self.pan_y = 0
+        self.init_zoom = 1.2
         self.max_zoom = 1.0
         self.zoom_level = self.max_zoom
         self.last_mouse_pos = None
@@ -204,7 +206,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
 
-        self.texture = self.load_texture(self.track_model_path)
+        self.track_texture = self.load_texture(self.track_model_path)
         self.track_vbo = track_vbo()
 
     def paintGL(self):
@@ -221,11 +223,21 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
 
-        gl.glOrtho(-4883 * self.zoom_level, 4883 * self.zoom_level, -3251 * self.zoom_level, 3251.0 * self.zoom_level, -1, 1)
-        gl.glTranslatef(-4883, -3251, 0)
+        gl.glOrtho(
+            -MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom,
+            MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom,
+            -MapData.REAL_WORLD_HEIGHT.value / 2,
+            MapData.REAL_WORLD_HEIGHT.value / 2,
+            -100,
+            100
+        )
+        gl.glTranslatef(-MapData.REAL_WORLD_WIDTH.value / 2 * self.init_zoom, -MapData.REAL_WORLD_HEIGHT.value / 2, 0)
+        # Apply cursor zoom / translation
+        gl.glTranslatef(self.pan_x, self.pan_y, 0)
+        gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
 
         # Global Transforms
-        draw_track(self.texture, self.track_vbo, 4)
+        draw_track(self.track_texture, self.track_vbo, 4)
 
         self.qt_restore_gl_state()
 
@@ -375,9 +387,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()
         if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
-            # Prevent panning when at initial zoom
             if self.zoom_level >= self.max_zoom:
                 return
+
+            sensitivity = 0.01
 
             dx = event.pos().x() - self.last_mouse_pos.x()
             dy = event.pos().y() - self.last_mouse_pos.y()
@@ -387,28 +400,26 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if widget_height == 0:
                 widget_height = 1
 
-            aspect = self.width() / widget_height
-            scale = self.zoom_level / widget_height
+            max_allowed_x = MapData.REAL_WORLD_WIDTH.value * (1 / self.zoom_level - 1)
+            max_allowed_y = MapData.REAL_WORLD_HEIGHT.value * (1 / self.zoom_level - 1)
 
-            # Calculate proposed pan changes
-            new_pan_x = self.pan_x - dx * scale
-            new_pan_y = self.pan_y + dy * scale
+            new_pan_x = self.pan_x + dx * sensitivity
+            new_pan_y = self.pan_y - dy * sensitivity
 
-            # Calculate content boundaries based on initial zoom
-            half_span_x = (self.max_zoom - self.zoom_level) * aspect / 2
-            half_span_y = (self.max_zoom - self.zoom_level) / 2
+            new_pan_x = max(-max_allowed_x, min(0, new_pan_x))
+            new_pan_y = max(-max_allowed_y, min(0, new_pan_y))
 
-            # Clamp pan values to content boundaries
-            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
-            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
+            self.pan_x = new_pan_x
+            self.pan_y = new_pan_y
 
             self.update()
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y()
         if delta != 0:
-            new_zoom = self.zoom_level - delta * 0.0005
-            new_zoom = max(0.01, min(self.max_zoom, new_zoom))
+            sensitivity = 0.0005
+            new_zoom = self.zoom_level - delta * sensitivity
+            new_zoom = max(0.1, min(self.max_zoom, new_zoom))
             if new_zoom != self.zoom_level:
                 self.zoom_level = new_zoom
                 # Reset pan when returning to initial zoom
