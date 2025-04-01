@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
+from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
 from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
 from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
@@ -128,6 +129,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         """)
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.run_statistics = HidableOverlay(self)
+        self.run_statistics.setFixedSize(
+            int(256),
+            int(144)
+        )
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
@@ -177,8 +183,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glTranslatef(self.pan_x, self.pan_y, 0)
         gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
 
-        # Draw objects
+        # Draw track
         draw_track(self.track_texture, self.track_vbo, 4)
+
+        # Draw objects
+        self.illustrate_path()
         if self.show_gt:
             for index, row in self.data.iterrows():
                 entity_type, orientation = row['Type'], row['Orientation']
@@ -208,11 +217,62 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         texture, vbo = self.sign_vbos[sign_index]
                         draw_sign(x, y, texture, vbo)
 
-        self.illustrate_path()
         self.draw_detected_objects()
         self.draw_markers()
 
         qt_restore_gl_state()
+
+        if self.zoom_level == 1.0:
+            self.draw_legend(self.width() / 2.7, self.height() / 3)
+
+    def draw_legend(self, x, y):
+        offset = 30
+        y_offset = 0
+        self.render_text("◈", 32, (0, 255, 255, 255), x, y)
+        self.render_text("normal", 18, (255, 255, 255, 255), x + 40, y)
+        y_offset += offset
+
+        self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
+        self.render_text("crosswalk", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
+        self.render_text("crosswalk", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (0, 0, 255, 255), x, y + y_offset)
+        self.render_text("intersection", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (0, 165, 255, 255), x, y + y_offset)
+        self.render_text("oneway", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (130, 0, 75, 255), x, y + y_offset)
+        self.render_text("highwayLeft", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (193, 182, 255, 255), x, y + y_offset)
+        self.render_text("highwayRight", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (255, 255, 255, 255), x, y + y_offset)
+        self.render_text("roundabout", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset += offset
+
+        y_offset = 60
+        x_offset = 180
+        self.render_text("◈", 32, (255, 255, 0, 255), x + x_offset, y + y_offset)
+        self.render_text("stopline", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (180, 130, 70, 255), x + x_offset, y + y_offset)
+        self.render_text("dotted", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        y_offset += offset
+
+        self.render_text("◈", 32, (128, 0, 128, 255), x + x_offset, y + y_offset)
+        self.render_text("dotted_crosswalk", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        y_offset += offset
 
     def draw_markers(self):
         for coord in self.cursor_coords:
@@ -309,7 +369,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x = self.state_refs_np[0, i] / MapData.REAL_WORLD_WIDTH.value * self.width()
             y = self.state_refs_np[1, i] / MapData.REAL_WORLD_HEIGHT.value * self.height()
 
-            draw_waypoint(self.wp_vbo, x, y, color)
+            gl_color = (color[2], color[1], color[0])
+
+            draw_waypoint(self.wp_vbo, x, y, gl_color)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -320,9 +382,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Get current OpenGL color
         gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
         text_color = QColor(
-            int(gl_color[0] * color[0]),
-            int(gl_color[1] * color[1]),
             int(gl_color[2] * color[2]),
+            int(gl_color[1] * color[1]),
+            int(gl_color[0] * color[0]),
             int(gl_color[3] * color[3])
         )
 
@@ -425,6 +487,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.track_vbo.delete()
         self.track_vbo = track_vbo(w, h)
         self.update_mouse_pos()
+        self.run_statistics.move(
+            w - self.run_statistics.width() - 5,
+            5
+        )
 
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton:

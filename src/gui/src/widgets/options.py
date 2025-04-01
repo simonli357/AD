@@ -28,7 +28,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_cars_btn = QtWidgets.QPushButton("󰭮")
         self.toggle_destinations_btn = QtWidgets.QPushButton("󰍐")
         self.toggle_path_btn = QtWidgets.QPushButton("󰴠")
-        self.toggle_nodes_btn = QtWidgets.QPushButton("")
         self.toggle_gt_btn = QtWidgets.QPushButton("󰄧")
         self.toggle_depth_btn = QtWidgets.QPushButton("󰤽")
         self.fetch_run_btn = QtWidgets.QPushButton("󱑤")
@@ -41,7 +40,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.buttons.append(self.toggle_cars_btn)
         self.buttons.append(self.toggle_destinations_btn)
         self.buttons.append(self.toggle_path_btn)
-        self.buttons.append(self.toggle_nodes_btn)
         self.buttons.append(self.toggle_gt_btn)
         self.buttons.append(self.toggle_depth_btn)
         self.buttons.append(self.fetch_run_btn)
@@ -54,7 +52,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_cars_btn.setToolTip("Toggle Cars")
         self.toggle_destinations_btn.setToolTip("Toggle Destinations")
         self.toggle_path_btn.setToolTip("Toggle Path")
-        self.toggle_nodes_btn.setToolTip("Toggle Nodes")
         self.toggle_gt_btn.setToolTip("Toggle Ground Truth")
         self.toggle_depth_btn.setToolTip("Toggle Depth")
         self.fetch_run_btn.setToolTip("Fetch Simulator Run")
@@ -97,7 +94,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.update_button_style(self.toggle_cars_btn, self.map_widget.show_cars)
         self.update_button_style(self.toggle_destinations_btn, self.map_widget.show_destinations)
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
-        self.update_button_style(self.toggle_nodes_btn, self.map_widget.show_nodes)
         self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
 
@@ -128,7 +124,6 @@ class OptionsWidget(QtWidgets.QWidget):
         self.toggle_cars_btn.clicked.connect(self.handle_cars_btn_click)
         self.toggle_destinations_btn.clicked.connect(self.handle_destinations_btn_click)
         self.toggle_path_btn.clicked.connect(self.handle_path_btn_click)
-        self.toggle_nodes_btn.clicked.connect(self.handle_nodes_btn_click)
         self.toggle_gt_btn.clicked.connect(self.handle_gt_btn_click)
         self.toggle_depth_btn.clicked.connect(self.handle_depth_btn_click)
         self.set_states_btn.clicked.connect(self.handle_states_btn_click)
@@ -167,10 +162,6 @@ class OptionsWidget(QtWidgets.QWidget):
     def handle_path_btn_click(self) -> None:
         self.map_widget.show_path = not self.map_widget.show_path
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
-
-    def handle_nodes_btn_click(self) -> None:
-        self.map_widget.show_nodes = not self.map_widget.show_nodes
-        self.update_button_style(self.toggle_nodes_btn, self.map_widget.show_nodes)
 
     def handle_gt_btn_click(self) -> None:
         self.map_widget.show_gt = not self.map_widget.show_gt
