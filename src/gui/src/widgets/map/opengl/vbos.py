@@ -94,7 +94,7 @@ def circle_vbo(radius=1.0, segments=64, z=0.0):
     return circle_buffer, vertex_count
 
 
-def marker_vbo(radius=4.0, segments=32, line_scale=0.8):
+def marker_vbo(radius=8.0, segments=32, line_scale=0.8):
     """Create a VBO for a crosshair marker with circle and cross.
 
     Args:

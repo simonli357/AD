@@ -282,7 +282,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def draw_detected_objects(self):
         if True:
-            if self.waypoints is not None:
+            if self.waypoints is not None and not self.main_window.show_barca:
                 for i in range(0, len(self.waypoints) - 1, 8):
                     x = self.waypoints[i] / MapData.REAL_WORLD_WIDTH.value * self.width()
                     y = self.waypoints[i + 1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
@@ -612,7 +612,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name(run.path_name)
-                    self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
+                    self.run_statistics.set_total_path_distance()
+                    if self.main_window.show_barca:
+                        self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
                     return
                 retries += 1
                 time.sleep(0.1)
