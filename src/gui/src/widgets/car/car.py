@@ -5,7 +5,7 @@ from OpenGL import GLU as glu
 from ..enums import MapData
 from .opengl.vbos import track_vbo, circle_vbo
 from .opengl.renderer import draw_track, draw_car
-from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
+from ..utils.opengl import load_obj, load_texture
 
 import os
 import numpy as np
@@ -51,9 +51,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.update()
 
     def initializeGL(self):
-        gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-
         gl.glEnable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
@@ -68,9 +66,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         if self.stop_drawing:
             return
 
-        qt_save_gl_state()
-
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -104,7 +101,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Draw car
         draw_car(x, y, self.yaw, self.car_model, (1.0, 0.0, 0.0, 1.0))
 
-        qt_restore_gl_state()
+        gl.glPopAttrib()
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)

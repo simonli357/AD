@@ -5,7 +5,7 @@ from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
 from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
-from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj, load_texture
+from ..utils.opengl import load_obj, load_texture
 from ..enums import MapData
 
 import pandas as pd
@@ -138,9 +138,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update()
 
     def initializeGL(self):
-        gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-
         gl.glEnable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
@@ -170,9 +168,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.update_mouse_pos()
 
-        qt_save_gl_state()
-
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -220,8 +217,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.draw_detected_objects()
         self.draw_markers()
-
-        qt_restore_gl_state()
+        
+        gl.glPopAttrib()
 
         if self.zoom_level == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)

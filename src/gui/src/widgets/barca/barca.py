@@ -5,7 +5,7 @@ from .renderer import draw_track, draw_car, draw_grid
 from .vbos import grid_vbo
 from .waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
-from ..utils.opengl import qt_save_gl_state, qt_restore_gl_state, load_obj
+from ..utils.opengl import load_obj
 
 import os
 
@@ -49,9 +49,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.update()
 
     def initializeGL(self):
-        gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-
         gl.glEnable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
@@ -69,9 +67,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
         self.update_mouse_pos()
 
-        qt_save_gl_state()
-
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -99,7 +96,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.waypoints_renderer.draw()
         draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
 
-        qt_restore_gl_state()
+        gl.glPopAttrib()
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
