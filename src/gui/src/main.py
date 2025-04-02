@@ -18,9 +18,9 @@ from widgets.buttons import ButtonsWidget
 from widgets.meters import MeterWidget
 from widgets.map.map import MapWidget
 from widgets.barca.barca import BarcaWidget
+from widgets.car.car import CarWidget
 from widgets.camera import CameraWidget
 from widgets.terminal import TerminalWidget
-from widgets.car import CarWidget
 from widgets.radar import RadarWidget
 from widgets.jetson.sw_load import SoftwareMetricsWidget
 from widgets.enums import CameraParams
