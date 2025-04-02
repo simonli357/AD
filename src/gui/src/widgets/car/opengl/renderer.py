@@ -1,7 +1,6 @@
 from OpenGL import GL as gl
 
 import numpy as np
-import math
 
 
 def draw_track(texture, track_vbo, track_vertex_count=4):

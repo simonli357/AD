@@ -21,14 +21,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.main_window = self.parent()
 
-        fmt = self.format()
-        fmt.setAlphaBufferSize(8)  # Enable alpha channel
-        self.setFormat(fmt)
-
         self.steer = 0
         self.yaw = 0
-        self.x_pos = 1.67
-        self.y_pos = 6.556
+        self.x_pos = 0
+        self.y_pos = 0
         self.z_pos = 0
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -57,6 +53,11 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         self.track_texture = load_texture(self.track_model_path)
         self.track_vbo = track_vbo(self.width(), self.height())

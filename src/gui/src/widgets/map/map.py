@@ -90,10 +90,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.current_mouse_pos = None
         self.show_mouse = True
 
-        fmt = self.format()
-        fmt.setAlphaBufferSize(8)  # Enable alpha channel
-        self.setFormat(fmt)
-
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
         self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
@@ -144,6 +140,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         self.track_texture = load_texture(self.track_model_path)
         self.track_vbo = track_vbo(self.width(), self.height())
@@ -532,8 +533,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.pan_x = new_pan_x
             self.pan_y = new_pan_y
 
-            self.update()
-
     def wheelEvent(self, event):
         delta = -event.angleDelta().y()
         if delta != 0:
@@ -555,8 +554,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if self.zoom_level == self.max_zoom:
                 self.pan_x = 0
                 self.pan_y = 0
-
-            self.update()
 
     ##################
     # Callbacks
