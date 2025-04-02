@@ -1,11 +1,12 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-from .renderer import draw_track, draw_car, draw_grid
+from .renderer import draw_track, draw_grid
 from .vbos import grid_vbo
 from .waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
 from ..opengl.loaders import load_obj
+from ..opengl.renderer import GlobalRenderer
 
 import os
 
@@ -55,9 +56,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-        grid_model = grid_vbo()
-        self.grid_vbo = grid_model[0]
-        self.grid_vertex_count = grid_model[1]
+        self.renderer = GlobalRenderer()
+        self.grid_model = grid_vbo()
         self.track_model = load_obj(self.track_model_path)
         self.car_model = load_obj(self.car_model_path)
 
@@ -86,15 +86,15 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glTranslatef(-5.55, 1.5, 0)
         gl.glScalef(0.99, 0.99, 0.99)
 
-        draw_track(self.track_model)
+        draw_track(self.renderer.barca_track)
         # Counter map offset
         gl.glTranslatef(BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
-        draw_grid(self.grid_vbo, self.grid_vertex_count)
+        draw_grid(self.grid_model)
         gl.glTranslatef(-2, 6, 0)
 
         # Draw objects
         self.waypoints_renderer.draw()
-        draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw, self.car_model)
+        self.renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, -self.car_widget.yaw + 90, 0.01, (1.0, 0.0, 0.0, 1.0))
 
         gl.glPopAttrib()
 

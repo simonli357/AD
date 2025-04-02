@@ -55,8 +55,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        self.track_vbo = track_vbo(self.width(), self.height())
         self.renderer = GlobalRenderer()
+        self.track_vbo = track_vbo(self.width(), self.height())
 
     def paintGL(self):
         if self.stop_drawing:

@@ -4,14 +4,16 @@ from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
-from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
-from ..opengl.loaders import load_obj, load_texture
+from .opengl.renderer import draw_destination, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
+from ..opengl.loaders import load_texture
+from ..opengl.renderer import GlobalRenderer
 from ..enums import MapData
 
 import pandas as pd
 import os
 import time
 import numpy as np
+import math
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -144,9 +146,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
-        self.track_texture = load_texture(self.track_model_path)
+        self.renderer = GlobalRenderer()
         self.track_vbo = track_vbo(self.width(), self.height())
-        self.car_model = load_obj(self.car_model_path)
         self.dest_vbo = circle_vbo(7, 25)
         self.wp_vbo = circle_vbo(2, 10)
         self.path_node_vbo = circle_vbo(1, 3)
@@ -182,7 +183,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
 
         # Draw track
-        draw_track(self.track_texture, self.track_vbo, 4)
+        self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
 
         # Draw objects
         self.illustrate_path()
@@ -205,7 +206,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         draw_lane(x, y, self.width(), self.height(), orientation)
                 elif entity_type == 'Car':
                     if self.show_cars:
-                        draw_car(x, y, orientation, self.car_model, (1.0, 1.0, 0.0, 1.0))
+                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (0.0, 0.0, 1.0, 1.0))
                 elif entity_type == 'Destination':
                     if self.show_destinations:
                         draw_destination(self.dest_vbo, x, y)
@@ -217,7 +218,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.draw_detected_objects()
         self.draw_markers()
-        
+
         gl.glPopAttrib()
 
         if self.zoom_level == 1.0:
@@ -309,9 +310,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
                 if self.object_dict[obj_type] == 'Car':
                     if i == 0:
-                        draw_car(x, y, orientation, self.car_model, (1.0, 0.0, 0.0, 1.0))
+                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 0.0, 1.0))
                     else:
-                        draw_car(x, y, orientation, self.car_model, (1.0, 0.0, 1.0, 1.0))
+                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0))
                 else:
                     texture, vbo = self.sign_vbos[int(obj_type)]
                     draw_sign(x, y, texture, vbo)

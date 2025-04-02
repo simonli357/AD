@@ -1,5 +1,4 @@
 from OpenGL import GL as gl
-from ..enums import BarcaMapData
 
 
 def draw_track(track_model):
@@ -22,39 +21,9 @@ def draw_track(track_model):
     gl.glPopMatrix()
 
 
-def draw_car(x, y, yaw, car_model):
-    car_model_width = 19.96
-    car_model_height = 15.86
-    car_model_length = 45.85
-
-    scale_x = BarcaMapData.CAR_LENGTH.value / car_model_length
-    scale_y = BarcaMapData.CAR_WIDTH.value / car_model_width
-    scale_z = BarcaMapData.CAR_HEIGHT.value / car_model_height
-
-    gl.glPushMatrix()
-    gl.glTranslatef(x, y, 0)
-    gl.glRotatef(90, 0, 0, 1)
-    gl.glRotatef(-yaw, 0, 0, 1)
-    gl.glScalef(scale_x, scale_y, scale_z)
-
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-    gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-    gl.glColor4f(0.0, 1.0, 1.0, 0.5)
-    gl.glLineWidth(0.01)
-
-    car_model.vbo.bind()
-    gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
-    gl.glVertexPointer(3, gl.GL_FLOAT, 0, car_model.vbo)
-    gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.vertex_count)
-    gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
-    car_model.vbo.unbind()
-
-    gl.glDisable(gl.GL_BLEND)
-    gl.glPopMatrix()
-
-
-def draw_grid(grid_vbo, grid_vertex_count):
+def draw_grid(grid_model):
+    grid_vbo = grid_model[0]
+    grid_vertex_count = grid_model[1]
     gl.glPushMatrix()
     gl.glColor3f(0.3, 0.3, 0.3)
 
