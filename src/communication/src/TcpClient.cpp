@@ -425,9 +425,9 @@ void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
 	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
-void TcpClient::send_image_rgb(const cv::Mat &img) {
+void TcpClient::send_image_rgb(const cv::Mat &img, int quality) {
 	std::vector<uchar> image;
-	cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, 30});
+	cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, quality});
 	uint32_t length = image.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
