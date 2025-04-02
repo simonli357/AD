@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-from .renderer import draw_track, draw_grid
-from .vbos import grid_vbo
-from .waypoints import WaypointsRenderer
+from .opengl.renderer import draw_track, draw_grid
+from .opengl.vbos import grid_vbo
+from .opengl.waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
 from ..opengl.loaders import load_obj
 from ..opengl.renderer import GlobalRenderer
@@ -58,8 +58,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
         self.renderer = GlobalRenderer()
         self.grid_model = grid_vbo()
-        self.track_model = load_obj(self.track_model_path)
-        self.car_model = load_obj(self.car_model_path)
 
     def paintGL(self):
         if self.stop_drawing:
