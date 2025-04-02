@@ -3,9 +3,8 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 from OpenGL import GLU as glu
 from ..enums import MapData
-from .opengl.vbos import track_vbo, circle_vbo
-from .opengl.renderer import draw_track, draw_car
-from ..utils.opengl import load_obj, load_texture
+from .opengl.vbos import track_vbo
+from ..opengl.renderer import GlobalRenderer
 
 import os
 import numpy as np
@@ -23,8 +22,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.steer = 0
         self.yaw = 0
-        self.x_pos = 0
-        self.y_pos = 0
+        self.x_pos = 12.0
+        self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -56,11 +55,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-        self.track_texture = load_texture(self.track_model_path)
         self.track_vbo = track_vbo(self.width(), self.height())
-        self.car_model = load_obj(self.car_model_path)
-        self.path_node_vbo = circle_vbo(1, 3)
+        self.renderer = GlobalRenderer()
 
     def paintGL(self):
         if self.stop_drawing:
@@ -73,7 +69,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        glu.gluPerspective(45, aspect, 0.1, 100.0)
+        glu.gluPerspective(45, aspect, -20, 20.0)
 
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -96,10 +92,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         )
 
         # Draw track
-        draw_track(self.track_texture, self.track_vbo, 4)
+        self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
 
         # Draw car
-        draw_car(x, y, self.yaw, self.car_model, (1.0, 0.0, 0.0, 1.0))
+        self.renderer.draw_car(x, y, self.yaw, 0.2, (1.0, 0.0, 0.0, 1.0))
 
         gl.glPopAttrib()
 

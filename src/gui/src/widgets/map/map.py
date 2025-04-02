@@ -5,7 +5,7 @@ from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
 from .opengl.renderer import draw_track, draw_destination, draw_car, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
-from ..utils.opengl import load_obj, load_texture
+from ..opengl.loaders import load_obj, load_texture
 from ..enums import MapData
 
 import pandas as pd
