@@ -4,7 +4,7 @@ from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
-from .opengl.renderer import draw_destination, draw_lane, draw_sign, draw_waypoint, draw_path_node, draw_marker
+from .opengl.renderer import draw_destination, draw_lane, draw_waypoint, draw_path_node, draw_marker
 from ..opengl.loaders import load_texture
 from ..opengl.renderer import GlobalRenderer
 from ..enums import MapData
@@ -214,7 +214,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     if self.show_signs:
                         sign_index = self.get_key_from_value(entity_type)
                         texture, vbo = self.sign_vbos[sign_index]
-                        draw_sign(x, y, texture, vbo)
+                        self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
 
         self.draw_detected_objects()
         self.draw_markers()
@@ -315,7 +315,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0))
                 else:
                     texture, vbo = self.sign_vbos[int(obj_type)]
-                    draw_sign(x, y, texture, vbo)
+                    self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
 
     def illustrate_path(self):
         if self.state_refs_np is None or self.attributes_np is None or not self.show_path:

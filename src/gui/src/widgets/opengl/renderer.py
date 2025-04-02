@@ -39,7 +39,7 @@ class GlobalRenderer:
     # Draw functions
     #####################
 
-    def draw_2D_texture(self, texture, vbo):
+    def draw_2D_texture(self, texture, vbo, x=0, y=0, scale=1.0):
         if texture is None or vbo is None:
             return
         gl.glPushMatrix()
@@ -60,6 +60,8 @@ class GlobalRenderer:
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_BORDER)
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
 
+        gl.glTranslatef(x, y, 0)
+        gl.glScalef(scale, scale, scale)
         gl.glDrawArrays(gl.GL_QUADS, 0, 4)
 
         vbo.unbind()
