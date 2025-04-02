@@ -248,9 +248,9 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.update_recording_button_style(self.record_btn, self.recording)
 
     def save_frame(self, frame) -> None:
+        os.makedirs(self.recording_path, exist_ok=True)
         now = time.time()
         global frame_count
-        frame_count += 1
         offset = 450
         # if self.recording and abs(self.main_window.meter_widget.speed) > 0.02:
         if self.recording:
