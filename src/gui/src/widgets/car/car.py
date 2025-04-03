@@ -3,11 +3,8 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 import glm
 from ..enums import MapData
-from .opengl.vbos import track_vbo
-from ..opengl.renderer import GlobalRenderer
 from ..opengl.shader import ShaderRenderer
 
-import os
 import numpy as np
 
 
@@ -29,10 +26,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.cam_dist = 16.0
         self.cam_height = self.cam_dist * 2 / 3
-
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
-        self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
 
     def set_steer(self, steer: float) -> None:
         self.steer = steer
@@ -66,9 +59,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.renderer = GlobalRenderer()
         self.shader_renderer = ShaderRenderer()
-        self.track_vbo = track_vbo(self.width(), self.height())
 
     def paintGL(self):
         if self.stop_drawing:
@@ -171,5 +162,3 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
-        self.track_vbo.delete()
-        self.track_vbo = track_vbo(w, h)

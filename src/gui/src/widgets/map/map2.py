@@ -3,9 +3,11 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
+from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
+from .opengl.renderer import draw_destination, draw_lane, draw_path_node, draw_marker
 from .opengl.waypoints import WaypointsRenderer
+from ..opengl.loaders import load_texture
 from ..opengl.renderer import GlobalRenderer
-from ..opengl.renderer import ShaderRenderer
 from ..enums import MapData
 
 import pandas as pd
@@ -154,15 +156,75 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.renderer = GlobalRenderer()
-        self.shader_renderer = ShaderRenderer()
+        self.track_vbo = track_vbo(self.width(), self.height())
+        self.dest_vbo = circle_vbo(7, 25)
+        self.marker_vbo, (self.circle_count, self.cross_count) = marker_vbo()
+
+        self.sign_vbos = []
+
+        for path in self.sign_images:
+            texture = load_texture(path)
+            vbo = sign_vbo()
+            self.sign_vbos.append((texture, vbo))
 
     def paintGL(self):
         if self.stop_drawing:
             return
 
+        curr_widget_width = self.width()
+        curr_widget_height = self.height()
+
         self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        # Set up projection matrix
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+
+        gl.glOrtho(0.0, curr_widget_width, 0.0, curr_widget_height, -20, 20)
+
+        # Apply cursor zoom / translation
+        gl.glTranslatef(self.pan_x, self.pan_y, 0)
+        gl.glScalef(1 / self.zoom_level, 1 / self.zoom_level, 1 / self.zoom_level)
+
+        # Draw track
+        self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
+
+        # Draw objects
+        if self.show_path:
+            self.waypoints_renderer.draw()
+        if self.show_gt:
+            for index, row in self.data.iterrows():
+                entity_type, orientation = row['Type'], row['Orientation']
+
+                x = row['X'] / MapData.REAL_WORLD_WIDTH.value * self.width()
+                y = row['Y'] / MapData.REAL_WORLD_HEIGHT.value * self.height()
+
+                # orientation = 2 * np.pi - orientation
+                orientation = - orientation
+
+                if entity_type == 'Intersection':
+                    if self.show_signs:
+                        # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
+                        pass
+                elif entity_type == 'Lane':
+                    if self.show_lanes:
+                        draw_lane(x, y, self.width(), self.height(), orientation)
+                elif entity_type == 'Car':
+                    if self.show_cars:
+                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (0.0, 0.0, 1.0, 1.0))
+                elif entity_type == 'Destination':
+                    if self.show_destinations:
+                        draw_destination(self.dest_vbo, x, y)
+                else:
+                    if self.show_signs:
+                        sign_index = self.get_key_from_value(entity_type)
+                        texture, vbo = self.sign_vbos[sign_index]
+                        self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
+
+        self.draw_detected_objects()
+        self.draw_markers()
 
         if self.zoom_level == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
@@ -214,10 +276,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def draw_markers(self):
         for coord in self.cursor_coords:
-            # x = coord[0] / MapData.REAL_WORLD_WIDTH.value * self.width()
-            # y = coord[1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
-            # draw_marker(self.marker_vbo, self.circle_count, self.cross_count, x, y)
-            pass
+            x = coord[0] / MapData.REAL_WORLD_WIDTH.value * self.width()
+            y = coord[1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
+            draw_marker(self.marker_vbo, self.circle_count, self.cross_count, x, y)
 
     def draw_detected_objects(self):
         if True:
@@ -229,8 +290,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             z = self.detected_data[0, self.road_msg_dict['z']]
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             if self.waypoints is not None and not self.main_window.show_barca:
-                # draw_path_node(self.waypoints, self.width(), self.height())
-                pass
+                draw_path_node(self.waypoints, self.width(), self.height())
             self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
             self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
             self.main_window.meter_widget.set_speed(speed * 100)
@@ -369,6 +429,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+        self.track_vbo.delete()
+        self.track_vbo = track_vbo(w, h)
+        self.update_mouse_pos()
         self.run_statistics.move(
             w - self.run_statistics.width() - 5,
             5
