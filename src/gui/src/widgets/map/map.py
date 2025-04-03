@@ -5,7 +5,7 @@ from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.waypoints import WaypointsRenderer
 from ..opengl.renderer import GlobalRenderer
-from ..opengl.renderer import ShaderRenderer
+from ..opengl.shader import ShaderRenderer
 from ..enums import MapData
 
 import pandas as pd
@@ -13,6 +13,7 @@ import os
 import time
 import numpy as np
 import math
+import glm
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -82,14 +83,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMouseTracking(True)
         self.stop_drawing = False
-        self.pan_x = 0
-        self.pan_y = 0
-        self.init_zoom = 1.2
-        self.max_zoom = 1.0
-        self.zoom_level = self.max_zoom
-        self.last_mouse_pos = None
         self.current_mouse_pos = None
+        self.last_mouse_pos = None
         self.show_mouse = True
+
+        self.view_center = glm.vec2(0, 0)
+        self.view_zoom = 1.0
+        self.drag_start = None
+        self.base_view_center = glm.vec2(self.view_center)
 
         self.waypoints_renderer = WaypointsRenderer()
 
@@ -159,12 +160,40 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def paintGL(self):
         if self.stop_drawing:
             return
+        if self.view_zoom == 1:
+            self.view_center = glm.vec2(0, 0)
 
         self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        if self.zoom_level == 1.0:
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            0.1, 100.0
+        )
+
+        view_mat = glm.lookAt(
+            glm.vec3(self.view_center.x, self.view_center.y, 1.0),
+            glm.vec3(self.view_center.x, self.view_center.y, 0.0),
+            glm.vec3(0.0, 1.0, 0.0)
+        )
+
+        self.shader_renderer.draw_texture(
+            mat=self.shader_renderer.bfmc_track_model,
+            x=-self.width() / 2,
+            y=-self.height() / 2,
+            z=-1.1,
+            scale=(self.width(), self.height()),
+            view_matrix=view_mat,
+            proj_matrix=proj_mat
+        )
+
+        if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
 
     def draw_legend(self, x, y):
@@ -311,20 +340,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x_scene = self.current_mouse_pos.x()
             y_scene = self.current_mouse_pos.y()
 
-            # Convert to OpenGL projection space (y=0 at bottom)
-            y_gl_proj = widget_height - y_scene
-
-            # Apply inverse transformations for pan/zoom
-            x_original = (x_scene - self.pan_x) * self.zoom_level
-            y_original = (y_gl_proj - self.pan_y) * self.zoom_level
-
-            # Convert to real-world coordinates
-            try:
-                x_world = (x_original / widget_width) * MapData.REAL_WORLD_WIDTH.value
-                y_world = (y_original / widget_height) * MapData.REAL_WORLD_HEIGHT.value
-            except ZeroDivisionError:
-                return
-
+            x_world, y_world = self.get_real_world_coords(x_scene, y_scene)
             # Update label text and position
             self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
             self.cursor_coords_label.move(
@@ -335,23 +351,29 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         widget_width = self.width()
         widget_height = self.height()
         if widget_height == 0 or widget_width == 0:
-            return
+            return (0.0, 0.0)
 
-        # Convert to OpenGL projection space (y=0 at bottom)
-        y_gl_proj = widget_height - y_scene
+        # Convert screen coordinates to NDC (Normalized Device Coordinates)
+        ndc_x = (2.0 * x_scene / widget_width) - 1.0
+        ndc_y = 1.0 - (2.0 * y_scene / widget_height)
 
-        # Apply inverse transformations for pan/zoom
-        x_original = (x_scene - self.pan_x) * self.zoom_level
-        y_original = (y_gl_proj - self.pan_y) * self.zoom_level
+        # Compute half width and height in view space after zoom
+        hw = (widget_width / self.view_zoom) / 2.0
+        hh = (widget_height / self.view_zoom) / 2.0
 
-        # Convert to real-world coordinates
-        try:
-            x_world = (x_original / widget_width) * MapData.REAL_WORLD_WIDTH.value
-            y_world = (y_original / widget_height) * MapData.REAL_WORLD_HEIGHT.value
-        except ZeroDivisionError:
-            return
+        # Apply inverse projection to get view space coordinates
+        x_view = ndc_x * hw
+        y_view = ndc_y * hh
 
-        return x_world, y_world
+        # Apply inverse view matrix to get OpenGL world coordinates
+        world_x = x_view + self.view_center.x
+        world_y = y_view + self.view_center.y
+
+        # Convert OpenGL coordinates to real-world system
+        real_world_x = (world_x + (widget_width / 2)) * (MapData.REAL_WORLD_WIDTH.value / widget_width)
+        real_world_y = (world_y + (widget_height / 2)) * (MapData.REAL_WORLD_HEIGHT.value / widget_height)
+
+        return (real_world_x, real_world_y)
 
     def update_waypoints(self):
         self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
@@ -375,67 +397,58 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         )
         self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
-    def mousePressEvent(self, event):
-        if event.buttons() == QtCore.Qt.LeftButton:
-            self.last_mouse_pos = event.pos()
-        if event.buttons() == QtCore.Qt.RightButton:
-            self.cursor_coords.clear()
-
     def mouseDoubleClickEvent(self, event):
         x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
         self.cursor_coords.append((x_world, y_world))
         self.cursor_x = x_world
         self.cursor_y = y_world
 
-    def mouseMoveEvent(self, event):
-        self.current_mouse_pos = event.pos()
-        if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
-            if self.zoom_level >= self.max_zoom:
-                return
-
-            sensitivity = 1.0
-
-            dx = event.pos().x() - self.last_mouse_pos.x()
-            dy = event.pos().y() - self.last_mouse_pos.y()
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_start = event.pos()
+            self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
 
-            widget_height = self.height()
-            if widget_height == 0:
-                widget_height = 1
+    def mouseMoveEvent(self, event):
+        self.current_mouse_pos = event.pos()
+        if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
+            # Calculate delta movement
+            delta = event.pos() - self.last_mouse_pos
+            self.last_mouse_pos = event.pos()
 
-            max_allowed_x = self.width() * (1 / self.zoom_level - 1)
-            max_allowed_y = self.height() * (1 / self.zoom_level - 1)
+            # Convert pixel delta to world coordinates
+            zoom_factor = 1.0 / self.view_zoom
+            half_width = self.width() * zoom_factor / 2
+            half_height = self.height() * zoom_factor / 2
 
-            new_pan_x = self.pan_x + dx * sensitivity
-            new_pan_y = self.pan_y - dy * sensitivity
+            # Calculate world units per pixel
+            world_per_pixel_x = (2 * half_width) / self.width()
+            world_per_pixel_y = (2 * half_height) / self.height()
 
-            new_pan_x = max(-max_allowed_x, min(0, new_pan_x))
-            new_pan_y = max(-max_allowed_y, min(0, new_pan_y))
-
-            self.pan_x = new_pan_x
-            self.pan_y = new_pan_y
+            # Update view center
+            self.view_center.x -= delta.x() * world_per_pixel_x
+            self.view_center.y += delta.y() * world_per_pixel_y
 
     def wheelEvent(self, event):
-        delta = -event.angleDelta().y()
-        if delta != 0:
-            widget_width = self.width()
-            widget_height = self.height()
-            if widget_width <= 0 or widget_height <= 0:
-                return
+        # Get mouse position in normalized device coordinates
+        mouse_pos = event.pos()
+        mouse_x = 2.0 * mouse_pos.x() / self.width() - 1.0
+        mouse_y = 1.0 - 2.0 * mouse_pos.y() / self.height()
 
-            # Calculate zoom parameters
-            zoom_factor = 1.15 if delta > 0 else 0.85
-            new_zoom = max(0.3, min(self.max_zoom, self.zoom_level * zoom_factor))
+        # Store pre-zoom values
+        old_zoom = self.view_zoom
+        zoom_factor = 1.15 if event.angleDelta().y() > 0 else 0.85
+        self.view_zoom *= zoom_factor
 
-            if new_zoom == self.zoom_level:
-                return
+        # Keep zoom within bounds
+        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
 
-            self.zoom_level = new_zoom
-
-            # Force center at max zoom
-            if self.zoom_level == self.max_zoom:
-                self.pan_x = 0
-                self.pan_y = 0
+        # Calculate new center to maintain mouse position
+        zoom_ratio = old_zoom / self.view_zoom
+        self.view_center += glm.vec2(
+            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+        )
 
     ##################
     # Callbacks
