@@ -5,6 +5,7 @@ from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
 from .opengl.renderer import draw_destination, draw_lane, draw_waypoint, draw_path_node, draw_marker
+from .opengl.waypoints import WaypointsRenderer
 from ..opengl.loaders import load_texture
 from ..opengl.renderer import GlobalRenderer
 from ..enums import MapData
@@ -91,6 +92,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.last_mouse_pos = None
         self.current_mouse_pos = None
         self.show_mouse = True
+
+        self.waypoints_renderer = WaypointsRenderer()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
@@ -186,7 +189,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
 
         # Draw objects
-        self.illustrate_path()
+        self.waypoints_renderer.draw()
         if self.show_gt:
             for index, row in self.data.iterrows():
                 entity_type, orientation = row['Type'], row['Orientation']
@@ -229,10 +232,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         y_offset = 0
         self.render_text("◈", 32, (0, 255, 255, 255), x, y)
         self.render_text("normal", 18, (255, 255, 255, 255), x + 40, y)
-        y_offset += offset
-
-        self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
-        self.render_text("crosswalk", 18, (255, 255, 255, 255), x + 40, y + y_offset)
         y_offset += offset
 
         self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
@@ -490,6 +489,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             w - self.run_statistics.width() - 5,
             5
         )
+        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
     def mousePressEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton:
@@ -610,6 +610,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.run_statistics.set_total_path_distance()
                     if self.main_window.show_barca:
                         self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
+                    else:
+                        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
                     return
                 retries += 1
                 time.sleep(0.1)

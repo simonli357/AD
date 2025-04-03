@@ -5,7 +5,6 @@ from .opengl.renderer import draw_track, draw_grid
 from .opengl.vbos import grid_vbo
 from .opengl.waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
-from ..opengl.loaders import load_obj
 from ..opengl.renderer import GlobalRenderer
 
 import os
