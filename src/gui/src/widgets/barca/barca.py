@@ -51,9 +51,15 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_CULL_FACE)
+        gl.glCullFace(gl.GL_BACK)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.renderer = GlobalRenderer()
         self.grid_model = grid_vbo()
@@ -65,7 +71,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -92,8 +97,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # Draw objects
         self.waypoints_renderer.draw()
         self.renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, -self.car_widget.yaw + 90, 0.01, (1.0, 0.0, 0.0, 1.0))
-
-        gl.glPopAttrib()
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)

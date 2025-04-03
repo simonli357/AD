@@ -27,7 +27,7 @@ class WaypointsRenderer:
 
     def _create_base_shape(self):
         angle_step = 2 * np.pi / 10
-        wp_size = 0.3
+        wp_size = 0.5
         return np.array([
             [np.cos(angle), np.sin(angle), 0]
             for angle in np.arange(0, 2 * np.pi, angle_step)
@@ -84,6 +84,7 @@ class WaypointsRenderer:
             return
 
         gl.glPushMatrix()
+        gl.glPushAttrib(gl.GL_CURRENT_BIT)
         try:
             self.vbo.bind()
 
@@ -106,4 +107,6 @@ class WaypointsRenderer:
             gl.glDisableClientState(gl.GL_COLOR_ARRAY)
             gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
             self.vbo.unbind()
+            gl.glLineWidth(1.0)
+            gl.glPopAttrib()
             gl.glPopMatrix()

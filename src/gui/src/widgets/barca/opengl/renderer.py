@@ -3,12 +3,9 @@ from OpenGL import GL as gl
 
 def draw_track(track_model):
     gl.glPushMatrix()
+    gl.glPushAttrib(gl.GL_CURRENT_BIT)
 
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-    gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
     gl.glColor4f(0.0, 1.0, 0.0, 0.5)
-    gl.glLineWidth(0.01)
 
     track_model.vbo.bind()
     gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
@@ -17,7 +14,7 @@ def draw_track(track_model):
     gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
     track_model.vbo.unbind()
 
-    gl.glDisable(gl.GL_BLEND)
+    gl.glPopAttrib()
     gl.glPopMatrix()
 
 
@@ -25,6 +22,8 @@ def draw_grid(grid_model):
     grid_vbo = grid_model[0]
     grid_vertex_count = grid_model[1]
     gl.glPushMatrix()
+    gl.glPushAttrib(gl.GL_CURRENT_BIT)
+
     gl.glColor3f(0.3, 0.3, 0.3)
 
     grid_vbo.bind()
@@ -34,4 +33,5 @@ def draw_grid(grid_model):
     gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
     grid_vbo.unbind()
 
+    gl.glPopAttrib()
     gl.glPopMatrix()

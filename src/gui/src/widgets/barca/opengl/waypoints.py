@@ -50,6 +50,8 @@ class WaypointsRenderer:
             return
 
         gl.glPushMatrix()
+        gl.glPushAttrib(gl.GL_CURRENT_BIT)
+
         gl.glRotatef(90, 0, 0, 1)
 
         gl.glColor3f(1, 1, 0)
@@ -66,4 +68,7 @@ class WaypointsRenderer:
 
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
         self.vbo.unbind()
+
+        gl.glLineWidth(1.0)
+        gl.glPopAttrib()
         gl.glPopMatrix()

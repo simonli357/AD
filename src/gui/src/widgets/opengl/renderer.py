@@ -74,6 +74,7 @@ class GlobalRenderer:
 
     def draw_car(self, x, y, yaw, scale, color: (float, float, float, float)):
         gl.glPushMatrix()
+        gl.glPushAttrib(gl.GL_CURRENT_BIT)
         gl.glTranslatef(x, y, 0)
         gl.glRotatef(yaw, 0, 0, 1)
         gl.glScalef(scale, scale, scale)
@@ -84,4 +85,5 @@ class GlobalRenderer:
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
         gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
         self.car_model.vbo.unbind()
+        gl.glPopAttrib()
         gl.glPopMatrix()

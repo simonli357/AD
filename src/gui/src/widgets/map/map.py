@@ -4,7 +4,7 @@ from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
 from .opengl.vbos import track_vbo, circle_vbo, sign_vbo, marker_vbo
-from .opengl.renderer import draw_destination, draw_lane, draw_waypoint, draw_path_node, draw_marker
+from .opengl.renderer import draw_destination, draw_lane, draw_path_node, draw_marker
 from .opengl.waypoints import WaypointsRenderer
 from ..opengl.loaders import load_texture
 from ..opengl.renderer import GlobalRenderer
@@ -145,15 +145,19 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_CULL_FACE)
+        gl.glCullFace(gl.GL_BACK)
         gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.renderer = GlobalRenderer()
         self.track_vbo = track_vbo(self.width(), self.height())
         self.dest_vbo = circle_vbo(7, 25)
-        self.wp_vbo = circle_vbo(2, 10)
-        self.path_node_vbo = circle_vbo(1, 3)
         self.marker_vbo, (self.circle_count, self.cross_count) = marker_vbo()
 
         self.sign_vbos = []
@@ -173,7 +177,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glPushAttrib(gl.GL_ALL_ATTRIB_BITS)
 
         # Set up projection matrix
         gl.glMatrixMode(gl.GL_PROJECTION)
@@ -189,7 +192,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
 
         # Draw objects
-        self.waypoints_renderer.draw()
+        if self.show_path:
+            self.waypoints_renderer.draw()
         if self.show_gt:
             for index, row in self.data.iterrows():
                 entity_type, orientation = row['Type'], row['Orientation']
@@ -221,8 +225,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.draw_detected_objects()
         self.draw_markers()
-
-        gl.glPopAttrib()
 
         if self.zoom_level == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
@@ -280,11 +282,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def draw_detected_objects(self):
         if True:
-            if self.waypoints is not None and not self.main_window.show_barca:
-                for i in range(0, len(self.waypoints) - 1, 8):
-                    x = self.waypoints[i] / MapData.REAL_WORLD_WIDTH.value * self.width()
-                    y = self.waypoints[i + 1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
-                    draw_path_node(self.path_node_vbo, x, y)
             if self.detected_data is None or len(self.detected_data) == 0:
                 return
             x = self.detected_data[0, self.road_msg_dict['x']]
@@ -292,6 +289,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             yaw = self.detected_data[0, self.road_msg_dict['orientation']]
             z = self.detected_data[0, self.road_msg_dict['z']]
             speed = self.detected_data[0, self.road_msg_dict['speed']]
+            if self.waypoints is not None and not self.main_window.show_barca:
+                draw_path_node(self.waypoints, self.width(), self.height())
             self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
             self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
             self.main_window.meter_widget.set_speed(speed * 100)
@@ -314,62 +313,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0))
                 else:
                     texture, vbo = self.sign_vbos[int(obj_type)]
-                    self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
-
-    def illustrate_path(self):
-        if self.state_refs_np is None or self.attributes_np is None or not self.show_path:
-            return
-
-        ATTRIBUTES = {
-            "normal": (0, 255, 255),        # Yellow
-            "crosswalk": (0, 255, 0),         # Green
-            "intersection": (0, 0, 255),  # Red
-            "oneway": (0, 165, 255),          # Orange
-            "highwayLeft": (130, 0, 75),      # Indigo
-            "highwayRight": (193, 182, 255),         # Light pink
-            "roundabout": (255, 255, 255),    # White
-            "stopline": (255, 255, 0),    # Cyan
-            "dotted": (180, 130, 70),         # Steel blue
-            "dotted_crosswalk": (128, 0, 128),    # Purple
-        }
-
-        for i in range(0, self.state_refs_np.shape[1], 8):
-            color = (0, 255, 255)
-            attr = self.attributes_np[i]
-
-            # Assign colors based on attributes
-            if attr == 0 or attr == 100:
-                color = ATTRIBUTES["normal"]
-            elif attr == 1 or attr == 101:
-                color = ATTRIBUTES["crosswalk"]
-            elif attr == 2 or attr == 102:
-                color = ATTRIBUTES["intersection"]
-            elif attr == 3 or attr == 103:
-                color = ATTRIBUTES["oneway"]
-            elif attr == 4 or attr == 104:
-                color = ATTRIBUTES["highwayLeft"]
-            elif attr == 5 or attr == 105:
-                color = ATTRIBUTES["highwayRight"]
-            elif attr == 6 or attr == 106:
-                color = ATTRIBUTES["roundabout"]
-            elif attr == 7 or attr == 107:
-                color = ATTRIBUTES["stopline"]
-            elif attr == 8 or attr == 108:
-                color = ATTRIBUTES["dotted"]
-            elif attr == 9 or attr == 109:
-                color = ATTRIBUTES["dotted_crosswalk"]
-
-            # if attr == 7 or attr == 107:
-            #     color = ATTRIBUTES["stopline"]
-            # else:
-            #     color = (0, 0, 0)
-
-            x = self.state_refs_np[0, i] / MapData.REAL_WORLD_WIDTH.value * self.width()
-            y = self.state_refs_np[1, i] / MapData.REAL_WORLD_HEIGHT.value * self.height()
-
-            gl_color = (color[2], color[1], color[0])
-
-            draw_waypoint(self.wp_vbo, x, y, gl_color)
+                    self.renderer.draw_2D_texture(texture, vbo, x, y, 0.1)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -468,6 +412,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
         return x_world, y_world
+
+    def update_waypoints(self):
+        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
     def __del__(self):
         self.cleanup_gl_resources()
