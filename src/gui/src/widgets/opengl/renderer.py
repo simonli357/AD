@@ -21,7 +21,6 @@ class GlobalRenderer:
         return cls._instance
 
     def __init__(self):
-        # Singleton pattern. We only need to load vbos/textures once
         if hasattr(self, '_initialized'):
             return
         self._initialized = True

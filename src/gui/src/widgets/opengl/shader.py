@@ -1,0 +1,119 @@
+from OpenGL import GL as gl
+from OpenGL.GL.shaders import compileProgram, compileShader
+from .loaders import load_mesh, load_material
+
+import os
+import glm
+
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+asset_dir = os.path.join(current_dir, 'assets')
+shader_dir = os.path.join(current_dir, 'shaders')
+
+
+def create_shader_module(filepath: str, module_type: int) -> int:
+    source_code = ""
+    with open(filepath, "r") as file:
+        source_code = file.readlines()
+    return compileShader(source_code, module_type)
+
+
+def create_shader_program(vertex_filepath: str, fragment_filepath: str) -> int:
+    vertex_module = create_shader_module(vertex_filepath, gl.GL_VERTEX_SHADER)
+    fragment_module = create_shader_module(fragment_filepath, gl.GL_FRAGMENT_SHADER)
+    shader = compileProgram(vertex_module, fragment_module)
+    gl.glDeleteShader(vertex_module)
+    gl.glDeleteShader(fragment_module)
+    return shader
+
+
+def shader_path(dirname: str, filename: str):
+    return os.path.join(shader_dir, dirname, filename)
+
+
+def asset_path(filename: str):
+    return os.path.join(asset_dir, filename)
+
+
+class ShaderRenderer:
+    def __init__(self):
+        self.load_models()
+        self.load_shaders()
+
+    def load_models(self):
+        self.car_model = load_mesh(asset_path('car.obj'))
+        self.bfmc_track_model = load_material(asset_path('track.png'))
+
+    def load_shaders(self):
+        self.load_car_shader()
+        self.load_texture_shader()
+
+    ##################
+    # Shaders
+    ##################
+
+    def load_car_shader(self):
+        self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
+
+    def load_texture_shader(self):
+        self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+
+    ##################
+    # Draw Functions
+    ##################
+
+    def draw_car(self, x, y, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
+        gl.glUseProgram(self.car_shader)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.0))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        model_loc = gl.glGetUniformLocation(self.car_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.car_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.car_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.car_shader, "carColor")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.car_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
+        gl.glBindVertexArray(0)
+
+    def draw_texture(self, mat, x, y, z, scale, view_matrix, proj_matrix):
+        if mat is None:
+            return
+
+        gl.glUseProgram(self.texture_shader)
+
+        # Set matrices
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture_shader, "model"),
+            1, gl.GL_FALSE, glm.value_ptr(model)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture_shader, "view"),
+            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture_shader, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
+        )
+
+        # Bind texture
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, mat.texture_id)
+        gl.glUniform1i(gl.glGetUniformLocation(self.texture_shader, "texture1"), 0)
+
+        # Draw
+        gl.glBindVertexArray(mat.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glBindVertexArray(0)

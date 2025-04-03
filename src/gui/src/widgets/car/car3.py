@@ -1,11 +1,10 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-import glm
+from OpenGL import GLU as glu
 from ..enums import MapData
 from .opengl.vbos import track_vbo
 from ..opengl.renderer import GlobalRenderer
-from ..opengl.shader import ShaderRenderer
 
 import os
 import numpy as np
@@ -26,9 +25,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = 11.8
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
-
-        self.cam_dist = 16.0
-        self.cam_height = self.cam_dist * 2 / 3
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
@@ -67,7 +63,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.renderer = GlobalRenderer()
-        self.shader_renderer = ShaderRenderer()
         self.track_vbo = track_vbo(self.width(), self.height())
 
     def paintGL(self):
@@ -76,48 +71,40 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
+        # Set up projection matrix
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        proj_mat = glm.perspective(
-            glm.radians(45.0),
-            aspect,
-            0.1,
-            100.0
-        )
+        glu.gluPerspective(45, aspect, 0.1, 100)
+
+        # Set up view matrix
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glLoadIdentity()
 
         x = self.x_pos / MapData.REAL_WORLD_WIDTH.value * self.width()
         y = (MapData.REAL_WORLD_HEIGHT.value - self.y_pos) / MapData.REAL_WORLD_HEIGHT.value * self.height()
 
-        cam_x = x - self.cam_dist * np.cos(np.radians(self.yaw))
-        cam_y = y - self.cam_dist * np.sin(np.radians(self.yaw))
+        # Camera
+        camera_distance = 16.0
+        camera_height = camera_distance / 3 * 2
+        cam_x = x - camera_distance * np.cos(np.radians(self.yaw))
+        cam_y = y - camera_distance * np.sin(np.radians(self.yaw))
+        cam_z = camera_height
 
-        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
-        target_pos = glm.vec3(x, y, 0)
-
-        view_mat = glm.lookAt(
-            cam_pos,
-            target_pos,
-            glm.vec3(0, 0, 1)
+        glu.gluLookAt(
+            cam_x, cam_y, cam_z,
+            x, y, 0,
+            0, 0, 1
         )
 
-        self.shader_renderer.draw_car(
-            x=x,
-            y=y,
-            yaw=self.yaw,
-            scale=0.20,
-            color=(1.0, 0.0, 0.0, 1.0),
-            view_matrix=view_mat,
-            proj_matrix=proj_mat
-        )
+        # Draw track
+        gl.glPushMatrix()
+        gl.glTranslatef(0, 0, -1.1)
+        self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
+        gl.glPopMatrix()
 
-        self.shader_renderer.draw_texture(
-            mat=self.shader_renderer.bfmc_track_model,
-            x=0.0,
-            y=0.0,
-            z=-1.1,
-            scale=(self.width(), self.height()),
-            view_matrix=view_mat,
-            proj_matrix=proj_mat
-        )
+        # Draw car
+        self.renderer.draw_car(x, y, self.yaw, 0.2, (1.0, 0.0, 0.0, 1.0))
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
