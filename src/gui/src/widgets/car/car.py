@@ -22,7 +22,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.steer = 0
         self.yaw = 0
-        self.x_pos = 12.0
+        self.x_pos = 11.8
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
 
@@ -69,7 +69,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glLoadIdentity()
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        glu.gluPerspective(45, aspect, -20, 20.0)
+        glu.gluPerspective(45, aspect, 0.1, 100)
 
         # Set up view matrix
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -79,20 +79,23 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         y = (MapData.REAL_WORLD_HEIGHT.value - self.y_pos) / MapData.REAL_WORLD_HEIGHT.value * self.height()
 
         # Camera
-        camera_distance = 24.0
-        camera_height = 16.0
+        camera_distance = 16.0
+        camera_height = camera_distance / 3 * 2
         cam_x = x - camera_distance * np.cos(np.radians(self.yaw))
         cam_y = y - camera_distance * np.sin(np.radians(self.yaw))
         cam_z = camera_height
 
         glu.gluLookAt(
             cam_x, cam_y, cam_z,
-            x, y, 0.5,
+            x, y, 0,
             0, 0, 1
         )
 
         # Draw track
+        gl.glPushMatrix()
+        gl.glTranslatef(0, 0, -1.1)
         self.renderer.draw_2D_texture(self.renderer.bfmc_track_texture, self.track_vbo)
+        gl.glPopMatrix()
 
         # Draw car
         self.renderer.draw_car(x, y, self.yaw, 0.2, (1.0, 0.0, 0.0, 1.0))
