@@ -42,21 +42,21 @@ class WaypointsRenderer:
             shader_path('diamond', 'diamond.frag')
         )
 
-    # def get_gl_coords(self, real_x, real_y, widget_width, widget_height):
-    #     if widget_height == 0 or widget_width == 0:
-    #         return (0.0, 0.0)
+    def get_gl_coords(self, real_x, real_y, widget_width, widget_height):
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
 
-    #     # Convert real-world to OpenGL world coordinates
-    #     world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
-    #     world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+        # Convert real-world to OpenGL world coordinates
+        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
 
-    #     return world_x, world_y
+        return world_x, world_y
 
-    def get_gl_coords(self, real_x, real_y):
-        # Map to [-1, 1] range
-        gl_x = (2 * real_x / MapData.REAL_WORLD_WIDTH.value) - 1
-        gl_y = (2 * real_y / MapData.REAL_WORLD_HEIGHT.value) - 1
-        return gl_x, gl_y
+    # def get_gl_coords(self, real_x, real_y):
+    #     # Map to [-1, 1] range
+    #     gl_x = (2 * real_x / MapData.REAL_WORLD_WIDTH.value) - 1
+    #     gl_y = (2 * real_y / MapData.REAL_WORLD_HEIGHT.value) - 1
+    #     return gl_x, gl_y
 
     def setup_vao(self, instance_array):
         self.vao = gl.glGenVertexArrays(1)
@@ -104,7 +104,7 @@ class WaypointsRenderer:
         scale = 10.0  # Fixed scale factor
 
         for i in range(self.num_instances):
-            x, y = self.get_gl_coords(state_refs_np[0, i], state_refs_np[1, i])
+            x, y = self.get_gl_coords(state_refs_np[0, i], state_refs_np[1, i], widget_width, widget_height)
 
             attr = int(attributes_np[i]) % 10
             color = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
