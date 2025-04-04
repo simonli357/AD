@@ -3,9 +3,8 @@ from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
-from .opengl.waypoints import WaypointsRenderer
-from ..opengl.renderer import GlobalRenderer
 from ..opengl.shader import ShaderRenderer
+from ..opengl.waypoints import WaypointsRenderer
 from ..opengl.loaders import load_2D_texture
 from ..enums import MapData
 
@@ -13,8 +12,8 @@ import pandas as pd
 import os
 import time
 import numpy as np
-import math
 import glm
+import math
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -93,8 +92,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.drag_start = None
         self.base_view_center = glm.vec2(self.view_center)
 
-        self.waypoints_renderer = WaypointsRenderer()
-
         current_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.sign_images = []
@@ -153,7 +150,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.renderer = GlobalRenderer()
+        self.waypoints_renderer = WaypointsRenderer()
         self.shader_renderer = ShaderRenderer()
 
         self.sign_models = []
@@ -197,11 +194,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
+        self.waypoints_renderer.draw()
+
         if self.show_path:
             self.waypoints_renderer.draw()
 
         self.draw_gt()
         self.draw_markers()
+        self.draw_detected_objects()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
@@ -346,24 +346,23 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.main_window.meter_widget.set_speed(speed * 100)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
-                x = self.detected_data[i, self.road_msg_dict['x']]
-                y = self.detected_data[i, self.road_msg_dict['y']]
+                x_real = self.detected_data[i, self.road_msg_dict['x']]
+                y_real = self.detected_data[i, self.road_msg_dict['y']]
                 orientation = self.detected_data[i, self.road_msg_dict['orientation']]
 
                 # Convert map coordinates to pixel coordinates
-                x = x / MapData.REAL_WORLD_WIDTH.value * self.width()
-                y = y / MapData.REAL_WORLD_HEIGHT.value * self.height()
+                x, y = self.get_gl_coords(x_real, y_real)
                 # orientation = 2 * np.pi - orientation
                 orientation = - orientation
 
                 if self.object_dict[obj_type] == 'Car':
                     if i == 0:
-                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 0.0, 1.0))
+                        self.shader_renderer.draw_car(x, y, math.radians(-orientation), 0.55, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                     else:
-                        self.renderer.draw_car(x, y, math.degrees(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0))
+                        self.shader_renderer.draw_car(x, y, math.radians(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
                 else:
-                    texture, vbo = self.sign_vbos[int(obj_type)]
-                    self.renderer.draw_2D_texture(texture, vbo, x, y, 0.1)
+                    texture, vbo = self.sign_models[int(obj_type)]
+                    self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -469,7 +468,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         return world_x, world_y
 
     def update_waypoints(self):
-        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
+        if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
+            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height(), self.proj_mat, self.view_mat)
 
     def __del__(self):
         self.cleanup_gl_resources()
@@ -488,7 +488,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             w - self.run_statistics.width() - 5,
             5
         )
-        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
+        self.update_waypoints()
 
     def mouseDoubleClickEvent(self, event):
         x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
@@ -603,7 +603,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     if self.main_window.show_barca:
                         self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
                     else:
-                        self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
+                        self.update_waypoints()
                     return
                 retries += 1
                 time.sleep(0.1)
