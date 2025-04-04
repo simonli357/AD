@@ -201,6 +201,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.waypoints_renderer.draw()
 
         self.draw_gt()
+        self.draw_markers()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
@@ -325,10 +326,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def draw_markers(self):
         for coord in self.cursor_coords:
-            # x = coord[0] / MapData.REAL_WORLD_WIDTH.value * self.width()
-            # y = coord[1] / MapData.REAL_WORLD_HEIGHT.value * self.height()
-            # draw_marker(self.marker_vbo, self.circle_count, self.cross_count, x, y)
-            pass
+            x, y = self.get_gl_coords(coord[0], coord[1])
+            self.shader_renderer.draw_marker(x, y, (0, 1, 0, 1), 8.0, 4.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
 
     def draw_detected_objects(self):
         if True:
@@ -502,6 +501,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.drag_start = event.pos()
             self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
+        if event.button() == QtCore.Qt.RightButton:
+            self.cursor_coords.clear()
 
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()

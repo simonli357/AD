@@ -6,6 +6,7 @@ import numpy as np
 import math
 
 Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count'])
+Model2 = namedtuple('Model2', ['vao1', 'vao2', 'vbo1', 'vbo2', 'v_count1', 'v_count2'])
 
 
 def line_model() -> Model:
@@ -52,3 +53,42 @@ def circle_model() -> Model:
     circle_vbo.unbind()
 
     return Model(vao, circle_vbo, None, len(vertices))
+
+
+def crosshair_model() -> Model:
+    vertices = []
+    for i in range(64):
+        angle = 6.28318530718 * float(i) / 63.0
+        vertices.append([math.cos(angle), math.sin(angle)])
+
+    circle_vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(circle_vao)
+
+    # Create and configure VBO
+    circle_vbo = vbo.VBO(np.array(vertices, dtype=np.float32))
+    circle_vbo.bind()
+
+    # Set vertex attribute pointer
+    gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, circle_vbo)
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    circle_vbo.unbind()
+
+    cross_vertices = [
+        [-1, 0, 0], [1, 0, 0],
+        [0, -1, 0], [0, 1, 0]
+    ]
+    cross_vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(cross_vao)
+
+    cross_vbo = vbo.VBO(np.array(cross_vertices, dtype=np.float32))
+    cross_vbo.bind()
+
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, cross_vbo)
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    cross_vbo.unbind()
+
+    return Model2(circle_vao, cross_vao, circle_vbo, cross_vbo, len(vertices), len(cross_vertices))
