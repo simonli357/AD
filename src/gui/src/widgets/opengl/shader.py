@@ -1,8 +1,7 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
-from OpenGL.arrays import vbo
 from .loaders import load_mesh, load_material
-from .models import line_model
+from .models import line_model, circle_model
 
 import os
 import glm
@@ -47,11 +46,13 @@ class ShaderRenderer:
         self.car_model = load_mesh(asset_path('car.obj'))
         self.bfmc_track_model = load_material(asset_path('track.png'))
         self.line_model = line_model()
+        self.circle_model = circle_model()
 
     def load_shaders(self):
         self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
+        self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
 
     ##################
     # Draw Functions
@@ -151,3 +152,24 @@ class ShaderRenderer:
         gl.glDrawArrays(gl.GL_LINES, 0, 2)
         gl.glBindVertexArray(0)
         self.line_model.vbo.unbind()
+
+    def draw_circle(self, center, radius, color, view_matrix, proj_matrix):
+        gl.glUseProgram(self.circle_shader)
+
+        # Set uniforms
+        gl.glUniform2f(gl.glGetUniformLocation(self.circle_shader, "center"), center[0], center[1])
+        gl.glUniform1f(gl.glGetUniformLocation(self.circle_shader, "radius"), radius)
+        gl.glUniform4fv(gl.glGetUniformLocation(self.circle_shader, "color"), 1, color)
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.circle_shader, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.circle_shader, "view"),
+            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
+        )
+
+        # Draw
+        gl.glBindVertexArray(self.circle_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
+        gl.glBindVertexArray(0)

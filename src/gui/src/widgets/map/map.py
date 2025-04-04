@@ -216,18 +216,22 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if entity_type == 'Intersection':
                 if self.show_signs:
                     # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
-                    pass
+                    continue
             elif entity_type == 'Lane':
                 if self.show_lanes:
                     self.draw_lane(x, y, orientation)
-                    pass
             elif entity_type == 'Car':
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, 0.55, (0.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
                 if self.show_destinations:
-                    # draw_destination(self.dest_vbo, x, y)
-                    pass
+                    self.shader_renderer.draw_circle(
+                        center=(x, y),
+                        radius=8.0,
+                        color=(0.0, 0.7, 0.7, 0.7),
+                        view_matrix=self.view_mat,
+                        proj_matrix=self.proj_mat
+                    )
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
@@ -268,8 +272,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             start = (x, y_max)
             end = (x, -y_max)
             self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
-            return
-        else:
             return
 
     def draw_legend(self, x, y):
