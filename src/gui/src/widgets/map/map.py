@@ -171,13 +171,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         half_width = self.width() * zoom_factor / 2
         half_height = self.height() * zoom_factor / 2
 
-        proj_mat = glm.ortho(
+        self.proj_mat = glm.ortho(
             -half_width, half_width,
             -half_height, half_height,
             0.1, 100.0
         )
 
-        view_mat = glm.lookAt(
+        self.view_mat = glm.lookAt(
             glm.vec3(self.view_center.x, self.view_center.y, 1.0),
             glm.vec3(self.view_center.x, self.view_center.y, 0.0),
             glm.vec3(0.0, 1.0, 0.0)
@@ -189,12 +189,88 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             y=-self.height() / 2,
             z=-1.1,
             scale=(self.width(), self.height()),
-            view_matrix=view_mat,
-            proj_matrix=proj_mat
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
         )
+
+        if self.show_path:
+            self.waypoints_renderer.draw()
+
+        self.draw_gt()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
+
+    def draw_gt(self):
+        if not self.show_gt:
+            return
+
+        for index, row in self.data.iterrows():
+            entity_type, orientation = row['Type'], row['Orientation']
+
+            x, y = self.get_gl_coords(row['X'], row['Y'])
+
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
+
+            if entity_type == 'Intersection':
+                if self.show_signs:
+                    # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
+                    pass
+            elif entity_type == 'Lane':
+                if self.show_lanes:
+                    self.draw_lane(x, y, orientation)
+                    pass
+            elif entity_type == 'Car':
+                if self.show_cars:
+                    self.shader_renderer.draw_car(x, y, -orientation, 0.55, (0.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
+            elif entity_type == 'Destination':
+                if self.show_destinations:
+                    # draw_destination(self.dest_vbo, x, y)
+                    pass
+            else:
+                if self.show_signs:
+                    sign_index = self.get_key_from_value(entity_type)
+                    texture, vbo = self.sign_vbos[sign_index]
+                    self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
+
+    def draw_lane(self, x, y, orientation):
+        """Draw lane markings using OpenGL lines"""
+        # Normalize orientation within 0-2π
+        orientation %= 2 * np.pi
+        x_max, y_max = self.get_gl_coords(MapData.REAL_WORLD_WIDTH.value, MapData.REAL_WORLD_HEIGHT.value)
+
+        # Determine lane direction and color
+        if abs(orientation) < 0.1 or abs(orientation - 2 * np.pi) < 0.1:
+            # Horizontal lane (east-west)
+            color = (0.0, 1.0, 0.0, 1.0)  # Green
+            start = (x_max, y)
+            end = (-x_max, y)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - np.pi) < 0.1:
+            # Horizontal lane (west-east)
+            color = (1.0, 0.0, 0.0, 1.0)  # Red
+            start = (-x_max, y)
+            end = (x_max, y)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - np.pi / 2) < 0.1:
+            # Vertical lane (north-south)
+            color = (0.0, 0.0, 1.0, 1.0)  # Blue
+            start = (x, y_max)
+            end = (x, -y_max)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - 3 * np.pi / 2) < 0.1:
+            # Vertical lane (south-north)
+            color = (1.0, 1.0, 0.0, 1.0)  # Yellow
+            start = (x, y_max)
+            end = (x, -y_max)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        else:
+            return
 
     def draw_legend(self, x, y):
         offset = 30
@@ -373,7 +449,19 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         real_world_x = (world_x + (widget_width / 2)) * (MapData.REAL_WORLD_WIDTH.value / widget_width)
         real_world_y = (world_y + (widget_height / 2)) * (MapData.REAL_WORLD_HEIGHT.value / widget_height)
 
-        return (real_world_x, real_world_y)
+        return real_world_x, real_world_y
+
+    def get_gl_coords(self, real_x, real_y):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert real-world to OpenGL world coordinates
+        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+
+        return world_x, world_y
 
     def update_waypoints(self):
         self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())

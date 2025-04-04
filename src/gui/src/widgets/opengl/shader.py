@@ -1,9 +1,12 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
+from OpenGL.arrays import vbo
 from .loaders import load_mesh, load_material
+from .models import line_model
 
 import os
 import glm
+import numpy as np
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,20 +46,12 @@ class ShaderRenderer:
     def load_models(self):
         self.car_model = load_mesh(asset_path('car.obj'))
         self.bfmc_track_model = load_material(asset_path('track.png'))
+        self.line_model = line_model()
 
     def load_shaders(self):
-        self.load_car_shader()
-        self.load_texture_shader()
-
-    ##################
-    # Shaders
-    ##################
-
-    def load_car_shader(self):
         self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
-
-    def load_texture_shader(self):
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+        self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
 
     ##################
     # Draw Functions
@@ -117,3 +112,42 @@ class ShaderRenderer:
         gl.glBindVertexArray(mat.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+
+    def draw_line(self, start, end, color, view_matrix, proj_matrix):
+        gl.glUseProgram(self.line_shader)
+
+        # Create proper vertex data with x,y coordinates
+        vertices = np.array([
+            [start[0], start[1]],
+            [end[0], end[1]]
+        ], dtype=np.float32).flatten()
+
+        # Update VBO data
+        self.line_model.vbo.bind()
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER,
+            vertices.nbytes,
+            vertices,
+            gl.GL_DYNAMIC_DRAW
+        )
+
+        # Set matrices
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.line_shader, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.line_shader, "view"),
+            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
+        )
+        # Set color
+        gl.glUniform4fv(
+            gl.glGetUniformLocation(self.line_shader, "color"),
+            1, color
+        )
+
+        # Draw
+        gl.glBindVertexArray(self.line_model.vao)
+        gl.glDrawArrays(gl.GL_LINES, 0, 2)
+        gl.glBindVertexArray(0)
+        self.line_model.vbo.unbind()

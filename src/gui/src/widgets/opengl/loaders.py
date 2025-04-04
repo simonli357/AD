@@ -139,14 +139,14 @@ def load_material(filename):
         gl.glVertexAttribPointer(
             0, 3, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,  # Stride (5 floats * 4 bytes each)
-            vertex_vbo     # Offset (start of buffer)
+            vertex_vbo
         )
 
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(
             1, 2, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,
-            vertex_vbo  # Offset 12 bytes (3 floats * 4 bytes)
+            vertex_vbo
         )
 
         # Bind element buffer
