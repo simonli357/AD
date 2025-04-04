@@ -139,16 +139,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glEnable(gl.GL_CULL_FACE)
-        gl.glCullFace(gl.GL_BACK)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
-        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
-        gl.glDisable(gl.GL_POLYGON_SMOOTH)
-        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
-        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
+        # gl.glEnable(gl.GL_CULL_FACE)
+        # gl.glCullFace(gl.GL_BACK)
+        # gl.glEnable(gl.GL_DEPTH_TEST)
+        # gl.glDepthFunc(gl.GL_LEQUAL)
+        # gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        # gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        # gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        # gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        # gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.waypoints_renderer = WaypointsRenderer()
         self.shader_renderer = ShaderRenderer()
@@ -175,7 +175,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.proj_mat = glm.ortho(
             -half_width, half_width,
             -half_height, half_height,
-            0.1, 100.0
+            -100.0, 100.0
         )
 
         self.view_mat = glm.lookAt(
@@ -194,17 +194,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.waypoints_renderer.draw()
-
         if self.show_path:
-            self.waypoints_renderer.draw()
+            self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 
         self.draw_gt()
         self.draw_markers()
         self.draw_detected_objects()
 
         if self.view_zoom == 1.0:
-            self.draw_legend(self.width() / 2.7, self.height() / 3)
+            # self.draw_legend(self.width() / 2.7, self.height() / 3)
+            pass
 
     def draw_gt(self):
         if not self.show_gt:
@@ -469,7 +468,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def update_waypoints(self):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
-            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height(), self.proj_mat, self.view_mat)
+            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
     def __del__(self):
         self.cleanup_gl_resources()

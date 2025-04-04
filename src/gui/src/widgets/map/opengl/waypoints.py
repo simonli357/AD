@@ -41,7 +41,6 @@ class WaypointsRenderer:
         self._offsets = []
         self._counts = []
 
-        # Process every 8th waypoint like original
         waypoint_indices = range(0, state_refs_np.shape[1], 1)
         self.num_waypoints = len(waypoint_indices)
 

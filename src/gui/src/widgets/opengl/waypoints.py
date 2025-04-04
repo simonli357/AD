@@ -1,25 +1,31 @@
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
+from .shader import create_shader_program, shader_path
 from ..enums import MapData
-from .shader import create_shader_program
-from .shader import shader_path
-
-import glm
 import numpy as np
+import glm
 
 
 class WaypointsRenderer:
     def __init__(self):
-        self.vbo = None
-        self.vertex_count = 0
-        self.num_waypoints = 0
-        self.base_shape = self._create_base_shape()
-        self._offsets = []
-        self._counts = []
-        self.shader_program = create_shader_program(shader_path('diamond', 'diamond.vert'), shader_path('diamond', 'diamond.frag'))
-        self.projection_uniform = gl.glGetUniformLocation(self.shader_program, b"projection")
-        self.ATTRIBUTES = {
-            0: (1.0, 1.0, 0.0),    # Yellow
+        self.vao = None
+        self.base_vbo = None
+        self.instance_vbo = None
+        self.num_instances = 0
+
+        # Diamond geometry (2 triangles)
+        self.base_vertices = np.array([
+            # Positions (3D for proper matrix transformations)
+            [0.0, 0.5, 0.1],  # Top
+            [0.5, 0.0, 0.1],  # Right
+            [-0.5, 0.0, 0.1],  # Left
+            [-0.5, 0.0, 0.1],  # Left
+            [0.5, 0.0, 0.1],  # Right
+            [0.0, -0.5, 0.1],  # Bottom
+        ], dtype=np.float32).flatten()
+
+        self.ATTRIBUTES = {  # (Same color definitions as before)
+            0: (1.0, 1.0, 0.0),   # Yellow
             1: (0.0, 1.0, 0.0),    # Green
             2: (0.0, 0.0, 1.0),    # Blue
             3: (1.0, 0.5, 0.0),    # Orange
@@ -28,116 +34,113 @@ class WaypointsRenderer:
             6: (1.0, 1.0, 1.0),    # White
             7: (0.0, 1.0, 1.0),    # Cyan
             8: (0.4, 0.5, 0.7),    # Steel blue
-            9: (0.5, 0.0, 0.5),     # Purple
+            9: (0.5, 0.0, 0.5),    # Purple
         }
 
-    def _create_base_shape(self):
-        """Create a diamond shape using 2 triangles (6 vertices)"""
-        wp_size = 0.5
-        return np.array([
-            [0.0, wp_size, 0],    # Top
-            [wp_size, 0.0, 0],    # Right
-            [-wp_size, 0.0, 0],    # Left
-            [-wp_size, 0.0, 0],    # Left
-            [wp_size, 0.0, 0],     # Right
-            [0.0, -wp_size, 0],    # Bottom
-        ], dtype=np.float32)
+        self.shader_program = create_shader_program(
+            shader_path('diamond', 'diamond.vert'),
+            shader_path('diamond', 'diamond.frag')
+        )
 
-    def get_gl_coords(self, real_x, real_y, widget_width, widget_height):
-        if widget_height == 0 or widget_width == 0:
-            return (0.0, 0.0)
+    # def get_gl_coords(self, real_x, real_y, widget_width, widget_height):
+    #     if widget_height == 0 or widget_width == 0:
+    #         return (0.0, 0.0)
 
-        # Convert real-world to OpenGL world coordinates
-        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
-        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+    #     # Convert real-world to OpenGL world coordinates
+    #     world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+    #     world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
 
-        return world_x, world_y
+    #     return world_x, world_y
 
-    def update_waypoints(self, state_refs_np, attributes_np, widget_width, widget_height, projection_matrix, view_matrix):
-        if state_refs_np is None or state_refs_np.shape[1] == 0:
+    def get_gl_coords(self, real_x, real_y):
+        # Map to [-1, 1] range
+        gl_x = (2 * real_x / MapData.REAL_WORLD_WIDTH.value) - 1
+        gl_y = (2 * real_y / MapData.REAL_WORLD_HEIGHT.value) - 1
+        return gl_x, gl_y
+
+    def setup_vao(self, instance_array):
+        self.vao = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.vao)
+
+        # Base vertex data (diamond shape)
+        self.base_vbo = vbo.VBO(self.base_vertices)
+        self.base_vbo.bind()
+
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 3 * 4, gl.ctypes.c_void_p(0))
+
+        self.base_vbo.unbind()
+
+        # Instance VBO (color + model matrix)
+        if self.instance_vbo is not None:
+            self.instance_vbo.delete()
+
+        self.instance_vbo = vbo.VBO(instance_array)
+        self.instance_vbo.bind()
+
+        # Color attribute (vec3)
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(1, 3, gl.GL_FLOAT, gl.GL_FALSE, 19 * 4, gl.ctypes.c_void_p(0))
+        gl.glVertexAttribDivisor(1, 1)
+
+        # Model matrix attributes (4 vec4s)
+        for i in range(4):
+            gl.glEnableVertexAttribArray(2 + i)
+            offset = 12 + i * 16  # 3 floats (color) * 4 + i * 16
+            gl.glVertexAttribPointer(2 + i, 4, gl.GL_FLOAT, gl.GL_FALSE, 19 * 4, gl.ctypes.c_void_p(offset))
+            gl.glVertexAttribDivisor(2 + i, 1)
+
+        self.instance_vbo.unbind()
+
+        gl.glBindVertexArray(0)
+
+    def update_waypoints(self, state_refs_np, attributes_np, widget_width, widget_height):
+        if state_refs_np is None or state_refs_np.size == 0:
+            self.num_instances = 0
             return
-        self.projection_matrix = projection_matrix
-        self.view_matrix = view_matrix
-        verts = []
-        self._offsets = []
-        self._counts = []
 
-        waypoints = state_refs_np[:, ::1]  # Process all waypoints
-        self.num_waypoints = waypoints.shape[1]
+        self.num_instances = state_refs_np.shape[1]
+        instance_data = []
+        scale = 10.0  # Fixed scale factor
 
-        for idx in range(self.num_waypoints):
-            x, y = self.get_gl_coords(waypoints[0, idx], waypoints[1, idx], widget_width, widget_height)
+        for i in range(self.num_instances):
+            x, y = self.get_gl_coords(state_refs_np[0, i], state_refs_np[1, i])
 
-            attr = attributes_np[idx] % 10
+            attr = int(attributes_np[i]) % 10
             color = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
 
-            # Create translated diamond
-            translated = self.base_shape.copy()
-            translated[:, 0] += x
-            translated[:, 1] += y
+            # Create model matrix
+            model = glm.translate(glm.mat4(1.0), glm.vec3(x, y, 0.0))
+            model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+            model_data = glm.value_ptr(model)
 
-            # Add color to each vertex
-            colored_verts = np.hstack((
-                translated,
-                np.tile(color, (len(translated), 1))
-            ))
+            # Add color and matrix data
+            instance_data.extend(color)
+            instance_data.extend(model_data[:16])
 
-            verts.append(colored_verts)
-            self._offsets.append(idx * 6)  # 6 vertices per diamond
-            self._counts.append(6)
+        instance_array = np.array(instance_data, dtype=np.float32)
+        print("First instance data:", instance_array[:19])
+        self.setup_vao(instance_array.flatten())
 
-        if verts:
-            vertex_data = np.concatenate(verts, dtype=np.float32)
-            if self.vbo is None:
-                self.vbo = vbo.VBO(vertex_data)
-            else:
-                self.vbo.set_array(vertex_data)
-            self.vertex_count = vertex_data.shape[0]
-        else:
-            self.vertex_count = 0
-
-    def draw(self):
-        if self.vbo is None or self.vertex_count == 0:
-            return
-        if not hasattr(self, 'projection_matrix') or not hasattr(self, 'view_matrix'):
+    def draw(self, projection, view):
+        if self.num_instances == 0:
             return
 
         gl.glUseProgram(self.shader_program)
-        self.vbo.bind()
+        gl.glBindVertexArray(self.vao)
 
-        try:
-            stride = 6 * 4  # 3 pos + 3 color * 4 bytes
+        # Set matrices
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.shader_program, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(projection)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.shader_program, "view"),
+            1, gl.GL_FALSE, glm.value_ptr(view)
+        )
 
-            gl.glUniformMatrix4fv(
-                gl.glGetUniformLocation(self.shader_program, "projection"),
-                1, gl.GL_FALSE, glm.value_ptr(self.projection_matrix)
-            )
+        # Draw all instances
+        gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, 6, self.num_instances)
 
-            gl.glUniformMatrix4fv(
-                gl.glGetUniformLocation(self.shader_program, "view"),
-                1, gl.GL_FALSE, glm.value_ptr(self.view_matrix)
-            )
-
-            # Position attribute (location 0)
-            gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(
-                0, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, self.vbo
-            )
-
-            # Color attribute (location 1)
-            gl.glEnableVertexAttribArray(1)
-            gl.glVertexAttribPointer(
-                1, 3, gl.GL_FLOAT, gl.GL_FALSE, stride, self.vbo + 12
-            )
-
-            gl.glMultiDrawArrays(
-                gl.GL_TRIANGLES,
-                (gl.GLint * len(self._offsets))(*self._offsets),
-                (gl.GLsizei * len(self._counts))(*self._counts),
-                self.num_waypoints
-            )
-        finally:
-            self.vbo.unbind()
-            gl.glDisableVertexAttribArray(0)
-            gl.glDisableVertexAttribArray(1)
-            gl.glUseProgram(0)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
