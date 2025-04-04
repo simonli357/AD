@@ -48,8 +48,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glEnable(gl.GL_CULL_FACE)
-        gl.glCullFace(gl.GL_BACK)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
         gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed

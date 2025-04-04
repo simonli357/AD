@@ -83,7 +83,7 @@ class WaypointsRenderer:
 
         self.num_instances = state_refs_np.shape[1]
         instance_data = []
-        scale = 1.5  # Fixed scale factor
+        scale = 2.0  # Fixed scale factor
 
         for i in range(self.num_instances):
             x, y = self.get_gl_coords(state_refs_np[0, i], state_refs_np[1, i], widget_width, widget_height)
