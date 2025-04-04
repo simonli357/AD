@@ -1,6 +1,6 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
-from .loaders import load_mesh, load_material
+from .loaders import load_mesh, load_map
 from .models import line_model, circle_model
 
 import os
@@ -44,7 +44,7 @@ class ShaderRenderer:
 
     def load_models(self):
         self.car_model = load_mesh(asset_path('car.obj'))
-        self.bfmc_track_model = load_material(asset_path('track.png'))
+        self.bfmc_track_model = load_map(asset_path('track.png'))
         self.line_model = line_model()
         self.circle_model = circle_model()
 

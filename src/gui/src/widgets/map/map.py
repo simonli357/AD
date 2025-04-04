@@ -6,6 +6,7 @@ from .view import HidableOverlay
 from .opengl.waypoints import WaypointsRenderer
 from ..opengl.renderer import GlobalRenderer
 from ..opengl.shader import ShaderRenderer
+from ..opengl.loaders import load_2D_texture
 from ..enums import MapData
 
 import pandas as pd
@@ -95,8 +96,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.waypoints_renderer = WaypointsRenderer()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.track_model_path = os.path.join(current_dir, 'assets', 'track.png')
-        self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
 
         self.sign_images = []
         self.sign_images.append(os.path.join(current_dir, 'assets', 'oneway.jpg'))
@@ -156,6 +155,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.renderer = GlobalRenderer()
         self.shader_renderer = ShaderRenderer()
+
+        self.sign_models = []
+        for path in self.sign_images:
+            texture = load_2D_texture(path)
+            self.sign_models.append(texture)
 
     def paintGL(self):
         if self.stop_drawing:
@@ -235,8 +239,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
-                    texture, vbo = self.sign_vbos[sign_index]
-                    self.renderer.draw_2D_texture(texture, vbo, x - 10, y - 10, 0.1)
+                    mat = self.sign_models[sign_index]
+                    self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
 
     def draw_lane(self, x, y, orientation):
         """Draw lane markings using OpenGL lines"""

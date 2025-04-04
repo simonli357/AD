@@ -103,7 +103,7 @@ def load_mesh(filename):
     )
 
 
-def load_material(filename):
+def load_map(filename):
     """Load texture material with proper VBO/VAO management"""
     try:
         # Load texture first
@@ -147,6 +147,80 @@ def load_material(filename):
             1, 2, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,
             vertex_vbo
+        )
+
+        # Bind element buffer
+        index_vbo.bind()
+
+        # Cleanup state
+        gl.glBindVertexArray(0)
+        vertex_vbo.unbind()
+        index_vbo.unbind()
+
+        return Material(
+            texture_id=texture_id,
+            vao=vao,
+            vbo=vertex_vbo,
+            ebo=index_vbo,
+            vertex_count=6
+        )
+
+    except Exception as e:
+        print(f"Material load failed: {e}")
+        # Cleanup resources if created
+        if 'vertex_vbo' in locals():
+            vertex_vbo.delete()
+        if 'index_vbo' in locals():
+            index_vbo.delete()
+        if 'vao' in locals():
+            gl.glDeleteVertexArrays(1, [vao])
+        return None
+
+
+def load_2D_texture(filename):
+    """Load texture material with proper VBO/VAO management"""
+    try:
+        # Load texture first
+        texture_id = load_texture(filename)
+
+        # Vertex data: positions + texture coordinates
+        vertices = np.array([
+            # Positions   # Texture Coords
+            -0.5, -0.5, 0.0, 0.0, 0.0,  # Bottom-left
+            0.5, -0.5, 0.0, 1.0, 0.0,   # Bottom-right
+            0.5, 0.5, 0.0, 1.0, 1.0,    # Top-right
+            -0.5, 0.5, 0.0, 0.0, 1.0    # Top-left
+        ], dtype=np.float32)
+
+        # Index data for triangles
+        indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+
+        # Create VBO objects
+        vertex_vbo = vbo.VBO(vertices)
+        index_vbo = vbo.VBO(
+            indices,
+            target=gl.GL_ELEMENT_ARRAY_BUFFER,
+            usage=gl.GL_STATIC_DRAW
+        )
+
+        # Create and configure VAO
+        vao = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(vao)
+
+        # Configure vertex attributes
+        vertex_vbo.bind()
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(
+            0, 3, gl.GL_FLOAT, gl.GL_FALSE,
+            5 * 4,  # Stride (5 floats * 4 bytes each)
+            vertex_vbo
+        )
+
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(
+            1, 2, gl.GL_FLOAT, gl.GL_FALSE,
+            5 * 4,
+            vertex_vbo + 12
         )
 
         # Bind element buffer
