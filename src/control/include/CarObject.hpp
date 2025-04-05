@@ -33,13 +33,9 @@ public:
      * Uses a constant-velocity prediction to account for motion.
      */
     bool is_same_object(double x, double y) override {
-        ros::Time current_time = ros::Time::now();
-        double dt = (current_time - this->last_detection_time).toSec();
-
-        // Predict current position based on the last known speed and yaw.
-        double predicted_x = this->x + this->speed * std::cos(this->yaw) * dt;
-        double predicted_y = this->y + this->speed * std::sin(this->yaw) * dt;
-
+        double predicted_x = this->x;
+        double predicted_y = this->y;
+        // std::cout << "predicted: (" << predicted_x << ", " << predicted_y << "), new: (" << x << ", " << y << ")" << std::endl;
         // Compute Euclidean distance from predicted position to new detection.
         double distance = std::hypot(x - predicted_x, y - predicted_y);
         double threshold = VehicleConstants::LANE_OFFSET * 0.75;

@@ -238,7 +238,8 @@ class MainWindow(QMainWindow):
                 if rgb_image is not None:
                     self.comm.rgb_frame_signal.emit(rgb_image)
                 time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-            time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
+            else:
+                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
 
     def render_callbacks(self) -> None:
         self.comm.render_widget_signal.emit()
