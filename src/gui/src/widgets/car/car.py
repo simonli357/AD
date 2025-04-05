@@ -91,7 +91,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.shader_renderer.draw_car(
             x=x,
             y=y,
-            yaw=self.yaw,
+            yaw=np.radians(self.yaw),
             scale=0.20,
             color=(1.0, 0.0, 0.0, 1.0),
             view_matrix=view_mat,

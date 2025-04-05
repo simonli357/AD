@@ -192,14 +192,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.shader_renderer.draw_triangle(0, 0, 0, 0, (10, 10), (1, 1, 0, 1), self.view_mat, self.proj_mat)
-
         if self.show_path:
             self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 
         self.draw_gt()
         self.draw_markers()
         self.draw_detected_objects()
+        self.draw_path_nodes()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
@@ -226,7 +225,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, 0.55, (0.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, 0.55, (0.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
                 if self.show_destinations:
                     self.shader_renderer.draw_circle(
@@ -332,17 +331,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if True:
             if self.detected_data is None or len(self.detected_data) == 0:
                 return
-            x = self.detected_data[0, self.road_msg_dict['x']]
-            y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
-            yaw = self.detected_data[0, self.road_msg_dict['orientation']]
-            z = self.detected_data[0, self.road_msg_dict['z']]
-            speed = self.detected_data[0, self.road_msg_dict['speed']]
-            if self.waypoints is not None and not self.main_window.show_barca:
-                # TODO
-                pass
-            self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
-            self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
-            self.main_window.meter_widget.set_speed(speed * 100)
+            car_x = self.detected_data[0, self.road_msg_dict['x']]
+            car_y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
+            car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+            car_z = self.detected_data[0, self.road_msg_dict['z']]
+            car_speed = self.detected_data[0, self.road_msg_dict['speed']]
+            self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
+            self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
+            self.main_window.meter_widget.set_speed(car_speed * 100)
             for i in range(len(self.detected_data)):
                 obj_type = self.detected_data[i, self.road_msg_dict['type']]
                 x_real = self.detected_data[i, self.road_msg_dict['x']]
@@ -350,18 +346,38 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 orientation = self.detected_data[i, self.road_msg_dict['orientation']]
 
                 # Convert map coordinates to pixel coordinates
-                x, y = self.get_gl_coords(x_real, y_real)
+                car_x, car_y = self.get_gl_coords(x_real, y_real)
                 # orientation = 2 * np.pi - orientation
                 orientation = - orientation
 
                 if self.object_dict[obj_type] == 'Car':
                     if i == 0:
-                        self.shader_renderer.draw_car(x, y, math.radians(-orientation), 0.55, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                     else:
-                        self.shader_renderer.draw_car(x, y, math.radians(-orientation), 0.55, (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
+                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
                 else:
-                    texture, vbo = self.sign_models[int(obj_type)]
-                    self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
+                    texture = self.sign_models[int(obj_type)]
+                    self.shader_renderer.draw_texture(texture, car_x, car_y, 0, (20, 20), self.view_mat, self.proj_mat)
+
+    def draw_path_nodes(self):
+        if self.waypoints is None or len(self.waypoints) < 2:
+            return
+        x1, y1 = self.get_gl_coords(self.waypoints[0], self.waypoints[1])
+        offset_angle = np.radians(90)
+        angle = 0
+        for i in range(0, len(self.waypoints) - 1, 4):
+            if i + 3 > len(self.waypoints):
+                self.shader_renderer.draw_triangle(x1, y1, 0, offset_angle + angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+            else:
+                x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
+                dx = x2 - x1
+                dy = y2 - y1
+                if dx == 0:
+                    angle = 0
+                else:
+                    angle = np.arctan(dy / dx)
+                self.shader_renderer.draw_triangle(x1, y1, 0, offset_angle + angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                x1, y1 = x2, y2
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
