@@ -178,18 +178,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
         return (real_world_x - 35) * 100, (real_world_y - 12.50) * 100
 
-    def get_gl_coords(self, real_x, real_y):
-        widget_width = self.width()
-        widget_height = self.height()
-        if widget_height == 0 or widget_width == 0:
-            return (0.0, 0.0)
-
-        # Convert real-world to OpenGL world coordinates
-        world_x = (real_x * widget_width / BarcaMapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
-        world_y = (real_y * widget_height / BarcaMapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
-
-        return world_x, world_y
-
     def update_waypoints(self):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
             self.waypoints_renderer.update_waypoints(self.main_window.map_widget.state_refs_np, self.main_window.map_widget.attributes_np, self.width(), self.height())

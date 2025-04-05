@@ -336,7 +336,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             z = self.detected_data[0, self.road_msg_dict['z']]
             speed = self.detected_data[0, self.road_msg_dict['speed']]
             if self.waypoints is not None and not self.main_window.show_barca:
-                # draw_path_node(self.waypoints, self.width(), self.height())
+                # TODO
                 pass
             self.main_window.car_widget.set_car_data(yaw / np.pi * 180, x, y, z)
             self.main_window.meter_widget.set_yaw(yaw / np.pi * 180)
