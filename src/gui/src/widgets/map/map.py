@@ -13,7 +13,6 @@ import os
 import time
 import numpy as np
 import glm
-import math
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -363,11 +362,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.waypoints is None or len(self.waypoints) < 2:
             return
         x1, y1 = self.get_gl_coords(self.waypoints[0], self.waypoints[1])
-        offset_angle = np.radians(90)
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 0, offset_angle + angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
@@ -376,8 +374,25 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     angle = 0
                 else:
                     angle = np.arctan(dy / dx)
-                self.shader_renderer.draw_triangle(x1, y1, 0, offset_angle + angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                angle = self.draw_path_node(x1, y1, x2, y2, angle)
                 x1, y1 = x2, y2
+
+    def draw_path_node(self, x1, y1, x2, y2, angle):
+        delta = 0
+        if x2 < 0 and y2 > 0:
+            # Q1
+            delta = np.radians(-90) + angle
+        elif x2 > 0 and y2 > 0:
+            # Q2
+            delta = np.radians(90) - angle
+        elif x2 > 0 and y2 < 0:
+            # Q3
+            delta = np.radians(90) + angle
+        elif x2 < 0 and y2 < 0:
+            # Q4
+            delta = np.radians(-90) - angle
+        self.shader_renderer.draw_triangle(x1, y1, 0, delta, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        return delta
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
