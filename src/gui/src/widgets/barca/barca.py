@@ -21,9 +21,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.current_mouse_pos = None
         self.show_mouse = True
 
-        self.map_scale = 17
-        self.view_center = glm.vec2(0, 0)
-        self.view_zoom = 1.0
+        self.view_center = glm.vec2(4.0, -4.0)
+        self.view_zoom = 17.0
         self.drag_start = None
         self.base_view_center = glm.vec2(self.view_center)
 
@@ -60,8 +59,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
     def paintGL(self):
         if self.stop_drawing:
             return
-        if self.view_zoom == 1:
-            self.view_center = glm.vec2(0, 0)
+        if self.view_zoom == 17.0:
+            self.view_center = glm.vec2(4, -4)
 
         self.update_mouse_pos()
 
@@ -85,8 +84,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
         # Draw objects
         self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
-        self.shader_renderer.draw_barca_track(-100, 0, 0, 0.0, self.map_scale, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
-        self.shader_renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, np.radians(-self.car_widget.yaw + 90), 0.12, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_barca_track(-2, -4, 0, 0, (1.0, 1.0), (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw + np.radians(-90), 0.01, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -250,7 +249,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.view_zoom *= zoom_factor
 
         # Keep zoom within bounds
-        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
+        self.view_zoom = max(17.0, min(80.0, self.view_zoom))
 
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom

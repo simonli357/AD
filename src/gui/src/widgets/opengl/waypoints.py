@@ -96,11 +96,12 @@ class WaypointsRenderer:
             model = glm.mat4(1.0)
             if self.track == 'bfmc':
                 model = glm.translate(model, glm.vec3(x, y, 0.0))
+                model = glm.scale(model, glm.vec3(scale, scale, 1.0))
             if self.track == 'barca':
-                # x, y = state_refs_np[0, i], state_refs_np[1, i]
-                model = glm.rotate(model, glm.radians(0), glm.vec3(0.0, 0.0, 1.0))
-                model = glm.translate(glm.mat4(1.0), glm.vec3(x + 100, y, 0.0))
-            model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+                x, y = state_refs_np[0, i], state_refs_np[1, i]
+                model = glm.rotate(model, glm.radians(90.0), glm.vec3(0, 0, 1))
+                model = glm.translate(model, glm.vec3(x, y, 0.0))
+                model = glm.scale(model, glm.vec3(0.05, 0.05, 1.0))
             model_data = glm.value_ptr(model)
 
             # Add color and matrix data

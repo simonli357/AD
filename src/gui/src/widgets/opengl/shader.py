@@ -93,7 +93,7 @@ class ShaderRenderer:
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
-        model = glm.scale(model, glm.vec3(scale, scale, scale))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
 
         model_loc = gl.glGetUniformLocation(self.barca_shader, "model")
         view_loc = gl.glGetUniformLocation(self.barca_shader, "view")
