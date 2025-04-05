@@ -214,7 +214,6 @@ class SignFastest {
 
         static constexpr int OBJECT_COUNT = 13;
         // private:
-        // yoloFastestv2 yolo_fastestv2_api;
         std::unique_ptr<yoloFastestv2> yolo_fastestv2_api;
         LightClassifier light_classifier;
     
@@ -369,6 +368,11 @@ class SignFastest {
             }
             return 0;
         }
+        struct DetectedBox {
+            int class_id;
+            float confidence;
+            int x1, y1, x2, y2;
+        };
         void publish_sign(const cv::Mat& image, const cv::Mat& depthImage) {
             if (hasDepthImage && depthImage.empty()) {
                 ROS_ERROR("Depth image is empty");
@@ -398,25 +402,30 @@ class SignFastest {
                 if (print) ROS_INFO("Emergency obstacle detected");
                 return;
             }
-
-            int hsy = 0;
             
             static std::vector<int> detected_indices(OBJECT_COUNT, 0);
             std::fill(detected_indices.begin(), detected_indices.end(), 0);
-
+            
+            int hsy = 0; // count of detections that yield a valid refined depth
+            std::vector<DetectedBox> detectedBoxes;
             if (ncnn) {
                 yolo_fastestv2_api->detection(image, boxes);
                 for (const auto &box : boxes) {
                     int class_id = box.cate;
                     detected_indices[class_id] = 1;
                     sign_counter[class_id]++;
-                    if (sign_counter[class_id] < counter_thresholds[class_id]) continue;
-                    float confidence = box.score;
-                    int x1 = box.x1;
-                    int y1 = box.y1;
-                    int x2 = box.x2;
-                    int y2 = box.y2;
-                    if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
+                    if (sign_counter[class_id] < counter_thresholds[class_id])
+                        continue;
+                    if (box.score < confidence_thresholds[class_id])
+                        continue;
+                    DetectedBox db;
+                    db.class_id = class_id;
+                    db.confidence = box.score;
+                    db.x1 = box.x1;
+                    db.y1 = box.y1;
+                    db.x2 = box.x2;
+                    db.y2 = box.y2;
+                    detectedBoxes.push_back(db);
                 }
             } else {
                 detected_objects = yolov8->detectObjects(image);
@@ -439,11 +448,8 @@ class SignFastest {
                         int y1_valid = std::max(y1, 0);
                         int x2_valid = std::min(x2, image.cols);
                         int y2_valid = std::min(y2, image.rows);
-
                         int width = x2_valid - x1_valid;
                         int height = y2_valid - y1_valid;
-
-                        // Check if the ROI is valid
                         if (width <= 0 || height <= 0) {
                             ROS_WARN("Invalid ROI for light detection, skipping classification");
                         } else {
@@ -457,8 +463,70 @@ class SignFastest {
                             }
                         }
                     }
-                    if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
+                    if (box.probability < confidence_thresholds[class_id])
+                        continue;
+                    DetectedBox db;
+                    db.class_id = class_id;
+                    db.confidence = box.probability;
+                    db.x1 = box.rect.x;
+                    db.y1 = box.rect.y;
+                    db.x2 = box.rect.x + box.rect.width;
+                    db.y2 = box.rect.y + box.rect.height;
+                    detectedBoxes.push_back(db);
+                    // if (populate_sign_msg(sign_msg, image, depthImage, class_id, confidence, x1, y1, x2, y2)) hsy++;
                 }
+            }
+
+            std::vector<std::pair<double, int>> depthIndices;
+            for (size_t i = 0; i < detectedBoxes.size(); i++) {
+                double roughDepth = computeMedianDepth(depthImage, detectedBoxes[i].x1,
+                                                         detectedBoxes[i].y1, detectedBoxes[i].x2,
+                                                         detectedBoxes[i].y2);
+                if (roughDepth < 0)
+                    roughDepth = std::numeric_limits<double>::max();
+                depthIndices.push_back(std::make_pair(roughDepth, static_cast<int>(i)));
+            }
+            // Sort detections by rough depth (closest first)
+            std::sort(depthIndices.begin(), depthIndices.end(),
+                        [](const std::pair<double, int>& a, const std::pair<double, int>& b) {
+                        return a.first < b.first;
+                    });
+            cv::Mat occlusionMask = cv::Mat::zeros(depthImage.size(), CV_8U);
+
+            for (const auto &p : depthIndices) {
+                int idx = p.second;
+                DetectedBox &db = detectedBoxes[idx];
+                // Compute refined (final) depth excluding overlapping regions.
+                double finalDepth = computeMedianDepthExcludingOverlap(depthImage,
+                                                                       db.x1, db.y1, db.x2, db.y2,
+                                                                       occlusionMask) / 1000.0;
+                // cv::Mat result = image.clone();
+                // result.setTo(cv::Scalar(0, 0, 255), occlusionMask == 255);
+                // cv::imshow("Masked Image", result);
+                // cv::waitKey(0);
+                if (finalDepth < 0)
+                    continue;  // no valid depth remains after exclusion
+                
+                double expected_dist = distance_makes_sense(finalDepth, db.class_id, db.x1, db.y1, db.x2, db.y2);
+                if (!expected_dist) {
+                    // ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f", expected_dist, distance);
+                    continue;
+                }
+                // Populate the sign message.
+                sign_msg.data.push_back(db.x1);
+                sign_msg.data.push_back(db.y1);
+                sign_msg.data.push_back(db.x2);
+                sign_msg.data.push_back(db.y2);
+                sign_msg.data.push_back(finalDepth);
+                sign_msg.data.push_back(db.confidence);
+                sign_msg.data.push_back(static_cast<float>(db.class_id));
+                bool is_car = db.class_id == OBJECT::CAR;
+                estimate_object_pose2d(object_pose_body_frame, db.x1, db.y1, db.x2, db.y2,
+                                       finalDepth, real, is_car);
+                sign_msg.data.push_back(object_pose_body_frame[0]);
+                sign_msg.data.push_back(object_pose_body_frame[1]);
+                sign_msg.data.push_back(object_pose_body_frame[2]);
+                hsy++;
             }
 
             for (int i = 0; i < OBJECT_COUNT; i++) {
@@ -479,12 +547,12 @@ class SignFastest {
                 pub.publish(sign_msg);
                 if (tcp_client != nullptr) tcp_client->send_sign(sign_msg);
             }
+
             if(printDuration) {
                 stop = high_resolution_clock::now();
                 duration = duration_cast<microseconds>(stop - start);
                 ROS_INFO("sign durations: %ld", duration.count());
             }
-            // for display
             if (show) {
                 if (ncnn) {
                     // Normalize depth img
@@ -594,15 +662,6 @@ class SignFastest {
             // Convert the cropped depth matrix to a single row vector of type double
             croppedDepth.reshape(1, 1).copyTo(depths);
             depths.erase(std::remove_if(depths.begin(), depths.end(), [](double depth) { return depth <= 100; }), depths.end());
-            
-            // for (int i = 0; i < croppedDepth.rows; ++i) {
-            //     for (int j = 0; j < croppedDepth.cols; ++j) {
-            //         double depth = croppedDepth.at<float>(i, j);
-            //         if (depth > 100) {  // Only consider valid depth readings
-            //             depths.push_back(depth);
-            //         }
-            //     }
-            // }
 
             if (depths.empty()) {
                 return -1; 
@@ -612,17 +671,61 @@ class SignFastest {
             size_t index = depths.size() * 0.5;
             std::nth_element(depths.begin(), depths.begin() + index, depths.end());
 
-            // auto stop = high_resolution_clock::now();
-            // auto duration = duration_cast<microseconds>(stop - start);
-            // static double avg_duration = 0;
-            // static int count = 0;
-            // count++;
-            // avg_duration = (avg_duration * (count - 1) + duration.count()) / count;
-            // printf("computeMedianDepth duration: %ld, avg: %.2f\n", duration.count(), avg_duration);
-
             if (index % 2) { // if odd
                 return depths[index / 2];
             }
             return 0.5 * (depths[(index - 1) / 2] + depths[index / 2]);
         }
+
+		double computeMedianDepthExcludingOverlap(const cv::Mat &depthImage, int bbox_x1, int bbox_y1, 
+                                                int bbox_x2, int bbox_y2, cv::Mat &occlusionMask) {
+			// Clamp bounding box coordinates to the depth image dimensions.
+			int x1 = std::max(0, bbox_x1);
+			int y1 = std::max(0, bbox_y1);
+			int x2 = std::min(depthImage.cols, bbox_x2);
+			int y2 = std::min(depthImage.rows, bbox_y2);
+			cv::Rect roiRect(x1, y1, x2 - x1, y2 - y1);
+			if (roiRect.width <= 0 || roiRect.height <= 0)
+				return -1;
+			// Extract ROI from depth image and occlusion mask.
+			cv::Mat depthROI = depthImage(roiRect);
+			cv::Mat maskROI = occlusionMask(roiRect);
+
+			// Collect valid depth values (exclude pixels already used and below a threshold).
+			std::vector<double> validDepths;
+			for (int r = 0; r < depthROI.rows; r++) {
+				for (int c = 0; c < depthROI.cols; c++) {
+					// If this pixel is not yet used
+					if (maskROI.at<uchar>(r, c) == 0) {
+						double depthValue = 0;
+						// Handle common depth image types
+						if (depthROI.type() == CV_16U) {
+							depthValue = static_cast<double>(depthROI.at<unsigned short>(r, c));
+						} else if (depthROI.type() == CV_32F) {
+							depthValue = static_cast<double>(depthROI.at<float>(r, c));
+						} else { // assume CV_64F
+							depthValue = depthROI.at<double>(r, c);
+						}
+						if (depthValue > 100) { // ignore values below threshold (e.g., noise)
+							validDepths.push_back(depthValue);
+						}
+					}
+				}
+			}
+			if (validDepths.empty()) {
+				return -1;
+			}
+			// Compute median
+			std::sort(validDepths.begin(), validDepths.end());
+			double median = 0;
+			size_t n = validDepths.size();
+			if (n % 2 == 1) {
+				median = validDepths[n / 2];
+			} else {
+				median = 0.5 * (validDepths[n / 2 - 1] + validDepths[n / 2]);
+			}
+			// Mark the entire ROI in the occlusion mask as used.
+			maskROI.setTo(255);
+			return median;
+		}
 };

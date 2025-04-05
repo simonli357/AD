@@ -6,7 +6,7 @@ from collections import deque
 import time
 import numpy as np
 
-
+frame_count = 0
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

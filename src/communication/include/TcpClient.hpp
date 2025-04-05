@@ -53,7 +53,7 @@ class TcpClient {
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(const cv::Mat &img);
+	void send_image_rgb(const cv::Mat &img, int quality = 30);
 	void send_current_rgb_image();
 	void send_image_depth(const cv::Mat &img);
 	void send_current_depth_image();
