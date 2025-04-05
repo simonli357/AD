@@ -1,13 +1,12 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-from .opengl.renderer import draw_track, draw_grid
-from .opengl.vbos import grid_vbo
-from .opengl.waypoints import WaypointsRenderer
 from ..enums import BarcaMapData
-from ..opengl.renderer import GlobalRenderer
+from ..opengl.shader import ShaderRenderer
+from ..opengl.waypoints import WaypointsRenderer
 
-import os
+import glm
+import numpy as np
 
 
 class BarcaWidget(QtWidgets.QOpenGLWidget):
@@ -18,19 +17,15 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.main_window = self.parent()
         self.car_widget = self.main_window.car_widget
-        self.pan_x = 0
-        self.pan_y = 0
-        self.max_zoom = 40
-        self.zoom_level = self.max_zoom
         self.last_mouse_pos = None
         self.current_mouse_pos = None
         self.show_mouse = True
 
-        self.waypoints_renderer = WaypointsRenderer()
-
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.track_model_path = os.path.join(current_dir, 'assets', 'track.obj')
-        self.car_model_path = os.path.join(current_dir, 'assets', 'car.obj')
+        self.map_scale = 17
+        self.view_center = glm.vec2(0, 0)
+        self.view_zoom = 1.0
+        self.drag_start = None
+        self.base_view_center = glm.vec2(self.view_center)
 
         self.setup_ui()
 
@@ -50,8 +45,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glEnable(gl.GL_CULL_FACE)
-        gl.glCullFace(gl.GL_BACK)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
         gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
@@ -61,42 +54,39 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.renderer = GlobalRenderer()
-        self.grid_model = grid_vbo()
+        self.waypoints_renderer = WaypointsRenderer()
+        self.shader_renderer = ShaderRenderer()
 
     def paintGL(self):
         if self.stop_drawing:
             return
+        if self.view_zoom == 1:
+            self.view_center = glm.vec2(0, 0)
 
         self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        # Set up projection matrix
-        gl.glMatrixMode(gl.GL_PROJECTION)
-        gl.glLoadIdentity()
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = zoom_factor * self.width() / 2
+        half_height = zoom_factor * self.height() / 2
 
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        half_zoom = self.zoom_level * 0.5
-        left = self.pan_x - half_zoom * aspect
-        right = self.pan_x + half_zoom * aspect
-        bottom = self.pan_y - half_zoom
-        top = self.pan_y + half_zoom
-        gl.glOrtho(left, right, bottom, top, -100, 100)
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            0.1, 100.0
+        )
 
-        # Global Transforms
-        gl.glTranslatef(-5.55, 1.5, 0)
-        gl.glScalef(0.99, 0.99, 0.99)
-
-        draw_track(self.renderer.barca_track)
-        # Counter map offset
-        gl.glTranslatef(BarcaMapData.MAP_CENTER_X.value, -BarcaMapData.MAP_CENTER_Y.value, 0)
-        draw_grid(self.grid_model)
-        gl.glTranslatef(-2, 6, 0)
+        self.view_mat = glm.lookAt(
+            glm.vec3(self.view_center.x, self.view_center.y, 1.0),
+            glm.vec3(self.view_center.x, self.view_center.y, 0.0),
+            glm.vec3(0.0, 1.0, 0.0)
+        )
 
         # Draw objects
-        self.waypoints_renderer.draw()
-        self.renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, -self.car_widget.yaw + 90, 0.01, (1.0, 0.0, 0.0, 1.0))
+        self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
+        self.shader_renderer.draw_barca_track(-100, 0, 0, 0.0, self.map_scale, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, np.radians(-self.car_widget.yaw + 90), 0.12, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
@@ -154,35 +144,56 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             x_scene = self.current_mouse_pos.x()
             y_scene = self.current_mouse_pos.y()
 
-            # Convert to normalized device coordinates [-1, 1]
-            x_ndc = 2 * (x_scene / widget_width) - 1
-            y_ndc = (1 - 2 * (y_scene / widget_height))
-
-            # Calculate orthographic projection bounds
-            aspect = widget_width / widget_height
-            half_zoom = self.zoom_level * 0.5
-            left = self.pan_x - half_zoom * aspect
-            right = self.pan_x + half_zoom * aspect
-            bottom = self.pan_y - half_zoom
-            top = self.pan_y + half_zoom
-
-            # Convert to world coordinates
-            x_world = left + (x_ndc + 1) * (right - left) / 2
-            y_world = bottom + (y_ndc + 1) * (top - bottom) / 2
-
-            # Apply inverse of modelview transformations
-            # Reverse scaling (0.99) and translation (-5.55, 1.5)
-            adjusted_x = (x_world / 0.99) + 3.60
-            adjusted_y = (y_world / 0.99) + 4.55
-
-            # Apply additional map offsets
-            final_x = adjusted_x - BarcaMapData.MAP_CENTER_X.value + 2
-            final_y = adjusted_y + BarcaMapData.MAP_CENTER_Y.value - 6
-
-            self.cursor_coords_label.setText(f"  ({final_x:.2f}, {final_y:.2f}) ")
+            x_world, y_world = self.get_real_world_coords(x_scene, y_scene)
+            # Update label text and position
+            self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
             self.cursor_coords_label.move(
                 int(x_scene - self.cursor_coords_label.width() / 2),
                 int(y_scene - 60))
+
+    def get_real_world_coords(self, x_scene, y_scene):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert screen coordinates to NDC (Normalized Device Coordinates)
+        ndc_x = (2.0 * x_scene / widget_width) - 1.0
+        ndc_y = 1.0 - (2.0 * y_scene / widget_height)
+
+        # Compute half width and height in view space after zoom
+        hw = (widget_width / self.view_zoom) / 2.0
+        hh = (widget_height / self.view_zoom) / 2.0
+
+        # Apply inverse projection to get view space coordinates
+        x_view = ndc_x * hw
+        y_view = ndc_y * hh
+
+        # Apply inverse view matrix to get OpenGL world coordinates
+        world_x = x_view + self.view_center.x
+        world_y = y_view + self.view_center.y
+
+        # Convert OpenGL coordinates to real-world system
+        real_world_x = (world_x + (widget_width / 2)) * (BarcaMapData.REAL_WORLD_WIDTH.value / widget_width)
+        real_world_y = (world_y + (widget_height / 2)) * (BarcaMapData.REAL_WORLD_HEIGHT.value / widget_height)
+
+        return real_world_x, real_world_y
+
+    def get_gl_coords(self, real_x, real_y):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert real-world to OpenGL world coordinates
+        world_x = (real_x * widget_width / BarcaMapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+        world_y = (real_y * widget_height / BarcaMapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+
+        return world_x, world_y
+
+    def update_waypoints(self):
+        if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
+            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
     def __del__(self):
         self.cleanup_gl_resources()
@@ -197,50 +208,53 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
-        self.update_mouse_pos()
+        self.update_waypoints()
 
     def mousePressEvent(self, event):
-        if event.buttons() == QtCore.Qt.LeftButton:
+        if event.button() == QtCore.Qt.LeftButton:
+            self.drag_start = event.pos()
+            self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
+        if event.button() == QtCore.Qt.RightButton:
+            self.cursor_coords.clear()
 
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()
-        if event.buttons() == QtCore.Qt.LeftButton and self.last_mouse_pos is not None:
-            # Prevent panning when at initial zoom
-            if self.zoom_level >= self.max_zoom:
-                return
-
-            dx = event.pos().x() - self.last_mouse_pos.x()
-            dy = event.pos().y() - self.last_mouse_pos.y()
+        if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
+            # Calculate delta movement
+            delta = event.pos() - self.last_mouse_pos
             self.last_mouse_pos = event.pos()
 
-            widget_height = self.height()
-            if widget_height == 0:
-                widget_height = 1
+            # Convert pixel delta to world coordinates
+            zoom_factor = 1.0 / self.view_zoom
+            half_width = self.width() * zoom_factor / 2
+            half_height = self.height() * zoom_factor / 2
 
-            aspect = self.width() / widget_height
-            scale = self.zoom_level / widget_height
+            # Calculate world units per pixel
+            world_per_pixel_x = (2 * half_width) / self.width()
+            world_per_pixel_y = (2 * half_height) / self.height()
 
-            # Calculate proposed pan changes
-            new_pan_x = self.pan_x - dx * scale
-            new_pan_y = self.pan_y + dy * scale
-
-            # Calculate content boundaries based on initial zoom
-            half_span_x = (self.max_zoom - self.zoom_level) * aspect / 2
-            half_span_y = (self.max_zoom - self.zoom_level) / 2
-
-            # Clamp pan values to content boundaries
-            self.pan_x = max(-half_span_x, min(half_span_x, new_pan_x))
-            self.pan_y = max(-half_span_y, min(half_span_y, new_pan_y))
+            # Update view center
+            self.view_center.x -= delta.x() * world_per_pixel_x
+            self.view_center.y += delta.y() * world_per_pixel_y
 
     def wheelEvent(self, event):
-        delta = event.angleDelta().y()
-        if delta != 0:
-            new_zoom = self.zoom_level - delta * 0.015
-            new_zoom = max(8, min(self.max_zoom, new_zoom))
-            if new_zoom != self.zoom_level:
-                self.zoom_level = new_zoom
-                # Reset pan when returning to initial zoom
-                if self.zoom_level == self.max_zoom:
-                    self.pan_x = 0
-                    self.pan_y = 0
+        # Get mouse position in normalized device coordinates
+        mouse_pos = event.pos()
+        mouse_x = 2.0 * mouse_pos.x() / self.width() - 1.0
+        mouse_y = 1.0 - 2.0 * mouse_pos.y() / self.height()
+
+        # Store pre-zoom values
+        old_zoom = self.view_zoom
+        zoom_factor = 1.15 if event.angleDelta().y() > 0 else 0.85
+        self.view_zoom *= zoom_factor
+
+        # Keep zoom within bounds
+        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
+
+        # Calculate new center to maintain mouse position
+        zoom_ratio = old_zoom / self.view_zoom
+        self.view_center += glm.vec2(
+            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+        )

@@ -23,10 +23,8 @@ class MapData(Enum):
 
 
 class BarcaMapData(Enum):
-    MAP_CENTER_X = 4.0
-    MAP_CENTER_Y = 2.0
-    MAP_WIDTH = 70.0
-    MAP_HEIGHT = 25.0
+    REAL_WORLD_WIDTH = 70.0
+    REAL_WORLD_HEIGHT = 25.0
     CAR_WIDTH = 0.2
     CAR_LENGTH = 0.4
     CAR_HEIGHT = 0.15
