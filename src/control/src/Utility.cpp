@@ -473,13 +473,6 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         auto type = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
         double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
-        // double x_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x_rel];
-        // double y_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
-        // double yaw_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
-        // auto world_states = object_to_world(x_rel, y_rel, yaw_rel, x, y, yaw);
-        // if(type != OBJECT::CAR) {
-        //     world_states[2] = nearest_direction(yaw);
-        // }
 
         double xmin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
         double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
