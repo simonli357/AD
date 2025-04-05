@@ -6,7 +6,7 @@
 #include <mutex>
 #include <chrono>
 #include "std_srvs/SetBoolRequest.h"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include "PathManager.hpp"
 #include "MPC.hpp"
 #include <signal.h>

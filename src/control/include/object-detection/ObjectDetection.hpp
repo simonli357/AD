@@ -3,7 +3,7 @@
 #include "PathManager.hpp"
 #include "ValueTypes.hpp"
 #include "htn/World.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include <unordered_map>
 
 class ObjectDetection {

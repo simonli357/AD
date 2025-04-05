@@ -13,68 +13,6 @@ namespace VehicleConstants {
     static constexpr double L_F_SIM = 0.155;
     static constexpr double L_R_REAL = 0.105;
     static constexpr double L_F_REAL = 0.155;
-    const std::array<std::string, 13> state_names = {
-        "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
-        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", 
-        "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD", "TESTING"
-    };
-    enum STATE {
-        INIT,
-        MOVING,
-        APPROACHING_INTERSECTION,
-        WAITING_FOR_STOPSIGN,
-        WAITING_FOR_LIGHT,
-        PARKING,
-        PARKED,
-        EXITING_PARKING,
-        DONE,
-        LANE_FOLLOWING,
-        INTERSECTION_MANEUVERING,
-        KEYBOARD_CONTROL,
-        TESTING
-    };
-    enum LightColor {
-        RED,
-        GREEN,
-        YELLOW,
-        UNDETERMINED
-    };
-    enum OBJECT {
-        ONEWAY,
-        HIGHWAYENTRANCE,
-        STOPSIGN,
-        ROUNDABOUT,
-        PARK,
-        CROSSWALK,
-        NOENTRY,
-        HIGHWAYEXIT,
-        PRIORITY,
-        LIGHTS,
-        BLOCK,
-        PEDESTRIAN,
-        CAR,
-        GREENLIGHT,
-        YELLOWLIGHT,
-        REDLIGHT,
-        NONE
-    };
-    static const std::vector<OBJECT> KNOWN_STATIC_OBJECTS = { 
-        HIGHWAYENTRANCE, STOPSIGN, 
-        ROUNDABOUT, PARK, CROSSWALK, 
-        HIGHWAYEXIT, PRIORITY, LIGHTS
-    };
-    const std::array<std::string, 16> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light" };
-    enum MANEUVER_DIRECTION {
-        LEFT,
-        STRAIGHT,
-        RIGHT
-    };
-    enum DETECTED_CAR_STATE {
-        SAME_LANE,
-        ADJACENT_LANE,
-        OPPOSITE_LANE,
-        NOT_SURE
-    };
 
     static constexpr double CAM_TO_CAR_FRONT = 0.21;
     static constexpr double CAR_LENGTH = 0.464;
@@ -123,7 +61,72 @@ namespace VehicleConstants {
 
     static constexpr double ofs6 = INNER_LANE_OFFSET/2 - pole_size/2;
     static constexpr double hsw = pole_size/2;
-    static constexpr double haha = 369. - INNER_LANE_OFFSET;
+
+    const std::array<std::string, 13> state_names = {
+        "INIT", "MOVING", "APPROACHING_INTERSECTION", "WAITING_FOR_STOPSIGN",
+        "WAITING_FOR_LIGHT", "PARKING", "PARKED", "EXITING_PARKING", "DONE", 
+        "LANE_FOLLOWING", "INTERSECTION_MANEUVERING", "KEYBOARD", "TESTING"
+    };
+
+    enum STATE {
+        INIT,
+        MOVING,
+        APPROACHING_INTERSECTION,
+        WAITING_FOR_STOPSIGN,
+        WAITING_FOR_LIGHT,
+        PARKING,
+        PARKED,
+        EXITING_PARKING,
+        DONE,
+        LANE_FOLLOWING,
+        INTERSECTION_MANEUVERING,
+        KEYBOARD_CONTROL,
+        TESTING
+    };
+    enum LightColor {
+        RED,
+        GREEN,
+        YELLOW,
+        UNDETERMINED
+    };
+    enum OBJECT {
+        ONEWAY,
+        HIGHWAYENTRANCE,
+        STOPSIGN,
+        ROUNDABOUT,
+        PARK,
+        CROSSWALK,
+        NOENTRY,
+        HIGHWAYEXIT,
+        PRIORITY,
+        LIGHTS,
+        BLOCK,
+        PEDESTRIAN,
+        CAR,
+        GREENLIGHT,
+        YELLOWLIGHT,
+        REDLIGHT,
+        NONE
+    };
+
+    static const std::vector<OBJECT> KNOWN_STATIC_OBJECTS = { 
+        HIGHWAYENTRANCE, STOPSIGN, 
+        ROUNDABOUT, PARK, CROSSWALK, 
+        HIGHWAYEXIT, PRIORITY, LIGHTS
+    };
+    const std::array<std::string, 16> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light" };
+    enum MANEUVER_DIRECTION {
+        LEFT,
+        STRAIGHT,
+        RIGHT
+    };
+    enum DETECTED_CAR_STATE {
+        SAME_LANE,
+        ADJACENT_LANE,
+        OPPOSITE_LANE,
+        NOT_SURE
+    };
+
     // add half of inner lane width to the x values
     // static constexpr std::array<double, 13> Y_ALIGNED_LANE_CENTERS = {0.22237, 0.591617, 2.383851, 2.754291, 4.63, 4.9981, 6.49, 6.864, 15.17, 16.963, 15.54, 15.7404, 16.112};
     static const std::vector<double> NORTH_FACING_LANE_CENTERS = {0.579612+ofs6, 2.744851+ofs6, 4.9887+ofs6, 6.51+ofs6, 6.8507+ofs6, 16.954+ofs6, 15.532+ofs6, 16.1035+ofs6};

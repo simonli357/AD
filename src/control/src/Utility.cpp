@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -27,8 +27,7 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
-    trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real),
-    it(nh)
+    io(), serial(nullptr), real(real), it(nh)
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
