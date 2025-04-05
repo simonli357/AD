@@ -176,7 +176,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         real_world_x = (world_x + (widget_width / 2)) * (BarcaMapData.REAL_WORLD_WIDTH.value / widget_width)
         real_world_y = (world_y + (widget_height / 2)) * (BarcaMapData.REAL_WORLD_HEIGHT.value / widget_height)
 
-        return real_world_x, real_world_y
+        return (real_world_x - 35) * 100, (real_world_y - 12.50) * 100
 
     def get_gl_coords(self, real_x, real_y):
         widget_width = self.width()
