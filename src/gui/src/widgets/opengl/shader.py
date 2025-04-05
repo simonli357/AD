@@ -1,7 +1,7 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
 from .loaders import load_mesh, load_map
-from .models import line_model, circle_model, crosshair_model
+from .models import line_model, circle_model, crosshair_model, triangle_model
 
 import os
 import glm
@@ -52,6 +52,7 @@ class ShaderRenderer:
         self.line_model = line_model()
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
+        self.triangle_model = triangle_model()
 
     def load_shaders(self):
         self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
@@ -60,6 +61,7 @@ class ShaderRenderer:
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
+        self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
 
     ##################
     # Draw Functions
@@ -181,6 +183,28 @@ class ShaderRenderer:
         gl.glDrawArrays(gl.GL_LINES, 0, 2)
         gl.glBindVertexArray(0)
         self.line_model.vbo.unbind()
+
+    def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix):
+        gl.glUseProgram(self.triangle_shader)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+
+        model_loc = gl.glGetUniformLocation(self.triangle_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.triangle_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.triangle_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.triangle_shader, "color")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.triangle_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.triangle_model.vertex_count)
+        gl.glBindVertexArray(0)
 
     def draw_circle(self, center, radius, color, view_matrix, proj_matrix):
         gl.glUseProgram(self.circle_shader)

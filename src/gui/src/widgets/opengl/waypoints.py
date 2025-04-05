@@ -30,13 +30,13 @@ class WaypointsRenderer:
         # Base vertex attributes (position)
         self.base_vbo.bind()
         gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, None)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
         # Instance vertex attributes (color + matrix)
         self.instance_vbo.bind()
         # Color attribute
         gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, gl.GL_FALSE, 20 * 4, None)
+        gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, gl.GL_FALSE, 20 * 4, gl.ctypes.c_void_p(0))
         gl.glVertexAttribDivisor(1, 1)
 
         # Matrix columns

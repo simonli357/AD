@@ -192,6 +192,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
+        self.shader_renderer.draw_triangle(0, 0, 0, 0, (10, 10), (1, 1, 0, 1), self.view_mat, self.proj_mat)
+
         if self.show_path:
             self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 

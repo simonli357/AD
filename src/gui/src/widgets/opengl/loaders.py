@@ -10,27 +10,6 @@ Material = namedtuple('Material', ['texture_id', 'vao', 'vbo', 'ebo', 'vertex_co
 Mesh = namedtuple('Mesh', ['vao', 'vbo', 'vertex_count'])
 
 
-def load_obj(model_path) -> Model:
-    vertices = []
-    faces = []
-    with open(model_path, 'r') as f:
-        for line in f:
-            if line.startswith('v '):
-                vertices.append(list(map(float, line.strip().split()[1:4])))
-            elif line.startswith('f '):
-                faces.append([int(v.split('/')[0]) - 1 for v in line.strip().split()[1:]])
-
-    # Convert to flat array of vertices
-    vertex_data = []
-    for face in faces:
-        for v_idx in face:
-            vertex_data.extend(vertices[v_idx])
-
-    vertex_array = np.array(vertex_data, dtype=np.float32)
-    model_vbo = vbo.VBO(vertex_array)
-    return Model(vertices=vertices, faces=faces, vbo=model_vbo, vertex_count=len(vertex_data) // 3)
-
-
 def load_texture(filename):
     """Load PNG image as texture using Pillow"""
     try:
@@ -89,18 +68,17 @@ def load_mesh(filename):
 
     vertex_array = np.array(vertex_data, dtype=np.float32)
     mesh_vbo = vbo.VBO(vertex_array)
+
     vao = gl.glGenVertexArrays(1)
     gl.glBindVertexArray(vao)
+
     mesh_vbo.bind()
     gl.glEnableVertexAttribArray(0)
-    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, mesh_vbo)
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
     gl.glBindVertexArray(0)
     mesh_vbo.unbind()
-    return Mesh(
-        vao=vao,
-        vbo=mesh_vbo,
-        vertex_count=len(vertex_data) // 3
-    )
+
+    return Mesh(vao=vao, vbo=mesh_vbo, vertex_count=len(vertex_data) // 3)
 
 
 def load_map(filename):
@@ -139,14 +117,14 @@ def load_map(filename):
         gl.glVertexAttribPointer(
             0, 3, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,  # Stride (5 floats * 4 bytes each)
-            vertex_vbo
+            gl.ctypes.c_void_p(0)
         )
 
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(
             1, 2, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,
-            vertex_vbo
+            gl.ctypes.c_void_p(12)
         )
 
         # Bind element buffer
@@ -213,14 +191,14 @@ def load_2D_texture(filename):
         gl.glVertexAttribPointer(
             0, 3, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,  # Stride (5 floats * 4 bytes each)
-            vertex_vbo
+            gl.ctypes.c_void_p(0)
         )
 
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(
             1, 2, gl.GL_FLOAT, gl.GL_FALSE,
             5 * 4,
-            vertex_vbo + 12
+            gl.ctypes.c_void_p(12)
         )
 
         # Bind element buffer
