@@ -7,7 +7,8 @@ import glm
 
 
 class WaypointsRenderer:
-    def __init__(self):
+    def __init__(self, track):
+        self.track = track
         self.num_instances = 0
         self.vao = gl.glGenVertexArrays(1)
         # Diamond geometry (2 triangles)
@@ -23,7 +24,7 @@ class WaypointsRenderer:
         self.base_vbo = vbo.VBO(self.base_vertices)
         self.instance_vbo = vbo.VBO(np.array([], dtype=np.float32), usage=gl.GL_DYNAMIC_DRAW)
 
-        # Permanent VAO setup
+        # VAO setup
         gl.glBindVertexArray(self.vao)
 
         # Base vertex attributes (position)
@@ -48,8 +49,8 @@ class WaypointsRenderer:
         self.base_vbo.unbind()
         self.instance_vbo.unbind()
 
-        self.ATTRIBUTES = {  # (Same color definitions as before)
-            0: (1.0, 1.0, 0.0),   # Yellow
+        self.ATTRIBUTES = {
+            0: (1.0, 1.0, 0.0),    # Yellow
             1: (0.0, 1.0, 0.0),    # Green
             2: (0.0, 0.0, 1.0),    # Blue
             3: (1.0, 0.5, 0.0),    # Orange
@@ -83,7 +84,7 @@ class WaypointsRenderer:
 
         self.num_instances = state_refs_np.shape[1]
         instance_data = []
-        scale = 2.0  # Fixed scale factor
+        scale = 2.0  # Scale
 
         for i in range(self.num_instances):
             x, y = self.get_gl_coords(state_refs_np[0, i], state_refs_np[1, i], widget_width, widget_height)
@@ -92,7 +93,13 @@ class WaypointsRenderer:
             color = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
 
             # Create model matrix
-            model = glm.translate(glm.mat4(1.0), glm.vec3(x, y, 0.0))
+            model = glm.mat4(1.0)
+            if self.track == 'bfmc':
+                model = glm.translate(model, glm.vec3(x, y, 0.0))
+            if self.track == 'barca':
+                # x, y = state_refs_np[0, i], state_refs_np[1, i]
+                model = glm.rotate(model, glm.radians(0), glm.vec3(0.0, 0.0, 1.0))
+                model = glm.translate(glm.mat4(1.0), glm.vec3(x + 100, y, 0.0))
             model = glm.scale(model, glm.vec3(scale, scale, 1.0))
             model_data = glm.value_ptr(model)
 

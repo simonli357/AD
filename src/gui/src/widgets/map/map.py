@@ -148,7 +148,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.waypoints_renderer = WaypointsRenderer()
+        self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.shader_renderer = ShaderRenderer()
 
         self.sign_models = []
@@ -597,10 +597,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name(run.path_name)
                     self.run_statistics.set_total_path_distance()
-                    if self.main_window.show_barca:
-                        self.main_window.barca_widget.waypoints_renderer.update_waypoints(self.state_refs_np)
-                    else:
-                        self.update_waypoints()
+                    self.main_window.barca_widget.update_waypoints()
+                    self.update_waypoints()
                     return
                 retries += 1
                 time.sleep(0.1)

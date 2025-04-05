@@ -54,7 +54,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.waypoints_renderer = WaypointsRenderer()
+        self.waypoints_renderer = WaypointsRenderer(track='barca')
         self.shader_renderer = ShaderRenderer()
 
     def paintGL(self):
@@ -193,7 +193,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
 
     def update_waypoints(self):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
-            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
+            self.waypoints_renderer.update_waypoints(self.main_window.map_widget.state_refs_np, self.main_window.map_widget.attributes_np, self.width(), self.height())
 
     def __del__(self):
         self.cleanup_gl_resources()

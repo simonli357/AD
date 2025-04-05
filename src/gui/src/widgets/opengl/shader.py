@@ -20,10 +20,13 @@ def create_shader_module(filepath: str, module_type: int) -> int:
     return compileShader(source_code, module_type)
 
 
-def create_shader_program(vertex_filepath: str, fragment_filepath: str) -> int:
+def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
     vertex_module = create_shader_module(vertex_filepath, gl.GL_VERTEX_SHADER)
     fragment_module = create_shader_module(fragment_filepath, gl.GL_FRAGMENT_SHADER)
-    shader = compileProgram(vertex_module, fragment_module)
+    modules = (vertex_module, fragment_module)
+    if geometry_filepath is not None:
+        modules + (geometry_filepath,)
+    shader = compileProgram(*modules)
     gl.glDeleteShader(vertex_module)
     gl.glDeleteShader(fragment_module)
     return shader
