@@ -3,6 +3,7 @@ from OpenGL.GL.shaders import compileProgram, compileShader
 from .loaders import load_mesh, load_map
 from .models import line_model, circle_model, crosshair_model, triangle_model
 from .obj import load_obj
+from ..enums import NamedColor
 
 import os
 import glob
@@ -42,14 +43,14 @@ def asset_path(filename: str):
     return os.path.join(asset_dir, filename)
 
 
-def object_path(dirname: str):
+def object_path(dirname: str, mtl_name: str):
     folder = os.path.join(asset_dir, dirname)
-    # Find .obj files
+    # Find .obj file
     obj_candidates = glob.glob(os.path.join(folder, "*.obj"))
     obj = obj_candidates[0] if obj_candidates else None
 
-    # Find .mtl files
-    mtl_candidates = glob.glob(os.path.join(folder, "*.mtl"))
+    # Find .mtl file
+    mtl_candidates = glob.glob(os.path.join(folder, f"{mtl_name}.mtl"))
     mtl = mtl_candidates[0] if mtl_candidates else None
 
     if obj is None or mtl is None:
@@ -72,7 +73,9 @@ class ShaderRenderer:
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
 
-        self.car_model = load_obj(*object_path('car'))
+        self.white_car_model = load_obj(*object_path('car', 'white'))
+        self.red_car_model = load_obj(*object_path('car', 'red'))
+        self.blue_car_model = load_obj(*object_path('car', 'blue'))
 
         # self.prio_sign_model = load_obj(*object_path('priority_sign'))
 
@@ -88,8 +91,17 @@ class ShaderRenderer:
     # Draw Functions
     ##################
 
-    def draw_car(self, x, y, yaw, scale, view_matrix, proj_matrix):
-        shader_program = self.car_model.shader_program
+    def draw_car(self, x, y, yaw, color: NamedColor, scale, view_matrix, proj_matrix):
+        car_model = None
+        if color == NamedColor.WHITE:
+            car_model = self.white_car_model
+        elif color == NamedColor.RED:
+            car_model = self.red_car_model
+        elif color == NamedColor.BLUE:
+            car_model = self.blue_car_model
+        else:
+            return
+        shader_program = car_model.shader_program
         gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
@@ -105,14 +117,14 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        if self.car_model.texture is not None:
+        if car_model.texture is not None:
             gl.glActiveTexture(gl.GL_TEXTURE0)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, self.car_model.texture)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
             texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
             gl.glUniform1i(texture_location, 0)
 
-        gl.glBindVertexArray(self.car_model.mesh.vao)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.mesh.vertex_count)
+        gl.glBindVertexArray(car_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
 
     def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):

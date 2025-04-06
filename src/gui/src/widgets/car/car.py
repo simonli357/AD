@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
 import glm
-from ..enums import MapData
+from ..enums import MapData, NamedColor
 from ..opengl.shader import ShaderRenderer
 
 import numpy as np
@@ -20,7 +20,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.steer = 0
         self.yaw = 0
-        self.x_pos = 11.7
+        self.x_pos = 11.75
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
 
@@ -93,6 +93,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             y=y,
             yaw=np.radians(self.yaw),
             scale=0.20,
+            color=NamedColor.WHITE,
             view_matrix=view_mat,
             proj_matrix=proj_mat
         )
