@@ -57,7 +57,7 @@ def object_path(dirname: str, mtl_name: str):
         print("Error loading model")
         exit(1)
 
-    return mtl, obj
+    return dirname, mtl, obj
 
 
 class ShaderRenderer:
@@ -77,7 +77,7 @@ class ShaderRenderer:
         self.red_car_model = load_obj(*object_path('car', 'red'))
         self.blue_car_model = load_obj(*object_path('car', 'blue'))
 
-        # self.prio_sign_model = load_obj(*object_path('priority_sign'))
+        self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))

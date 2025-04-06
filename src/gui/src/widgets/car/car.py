@@ -108,6 +108,11 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=proj_mat
         )
 
+        self.draw_detected_objects()
+
+    def draw_detected_objects(self):
+        pass
+
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
         painter.setRenderHints(

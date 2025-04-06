@@ -12,6 +12,7 @@ Model = namedtuple('Model', ['mesh', 'texture', 'shader_program'])
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 shader_dir = os.path.join(current_dir, 'shaders')
+asset_dir = os.path.join(current_dir, 'assets')
 
 
 def create_shader_module(filepath: str, module_type: int) -> int:
@@ -235,7 +236,7 @@ def create_mesh(position_array, texcoord_array, color_array):
     return MeshData(vao_id, vbo_positions, vbo_texcoords, vbo_colors, vertex_count)
 
 
-def load_obj(mtl_path, obj_path):
+def load_obj(dirname, mtl_path, obj_path):
     """
     High-level function:
     1) Parse MTL for materials (colors + optional texture)
@@ -260,6 +261,9 @@ def load_obj(mtl_path, obj_path):
         if mat_info["map_Kd"] is not None:
             texture_path = mat_info["map_Kd"]
             break
+
+    if texture_path:
+        texture_path = os.path.join(asset_dir, dirname, texture_path)
 
     texture_id = load_texture(texture_path) if texture_path else None
 
