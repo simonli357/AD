@@ -85,7 +85,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         # Draw objects
         self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
         self.shader_renderer.draw_barca_track(-2, -4, 0, 0, (1.0, 1.0), (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
-        self.shader_renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw + np.radians(-90), 0.01, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_car(self.car_widget.x_pos, self.car_widget.y_pos, self.car_widget.yaw + np.radians(-90), 0.01, self.view_mat, self.proj_mat)
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
 
     def draw_path_nodes(self, waypoints):

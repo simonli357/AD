@@ -20,7 +20,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.steer = 0
         self.yaw = 0
-        self.x_pos = 11.8
+        self.x_pos = 11.7
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
 
@@ -93,7 +93,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             y=y,
             yaw=np.radians(self.yaw),
             scale=0.20,
-            color=(1.0, 0.0, 0.0, 1.0),
             view_matrix=view_mat,
             proj_matrix=proj_mat
         )
@@ -102,7 +101,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             mat=self.shader_renderer.bfmc_track_model,
             x=0.0,
             y=0.0,
-            z=-1.1,
+            z=0,
             scale=(self.width(), self.height()),
             view_matrix=view_mat,
             proj_matrix=proj_mat

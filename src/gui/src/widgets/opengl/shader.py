@@ -88,7 +88,7 @@ class ShaderRenderer:
     # Draw Functions
     ##################
 
-    def draw_car(self, x, y, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
+    def draw_car(self, x, y, yaw, scale, view_matrix, proj_matrix):
         shader_program = self.car_model.shader_program
         gl.glUseProgram(shader_program)
 

@@ -1,13 +1,40 @@
 import OpenGL.GL as gl
 from OpenGL.arrays import vbo
+from OpenGL.GL.shaders import compileProgram, compileShader
 from collections import namedtuple
 from PIL import Image
-from .shader import create_shader_program, shader_path
 
 import numpy as np
+import os
 
 MeshData = namedtuple('MeshData', ['vao', 'vbo_positions', 'vbo_texcoords', 'vbo_colors', 'vertex_count'])
 Model = namedtuple('Model', ['mesh', 'texture', 'shader_program'])
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+shader_dir = os.path.join(current_dir, 'shaders')
+
+
+def create_shader_module(filepath: str, module_type: int) -> int:
+    source_code = ""
+    with open(filepath, "r") as file:
+        source_code = file.readlines()
+    return compileShader(source_code, module_type)
+
+
+def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
+    vertex_module = create_shader_module(vertex_filepath, gl.GL_VERTEX_SHADER)
+    fragment_module = create_shader_module(fragment_filepath, gl.GL_FRAGMENT_SHADER)
+    modules = (vertex_module, fragment_module)
+    if geometry_filepath is not None:
+        modules + (geometry_filepath,)
+    shader = compileProgram(*modules)
+    gl.glDeleteShader(vertex_module)
+    gl.glDeleteShader(fragment_module)
+    return shader
+
+
+def shader_path(dirname: str, filename: str):
+    return os.path.join(shader_dir, dirname, filename)
 
 
 def parse_mtl(mtl_filename):

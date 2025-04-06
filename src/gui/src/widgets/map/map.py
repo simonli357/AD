@@ -172,7 +172,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.proj_mat = glm.ortho(
             -half_width, half_width,
             -half_height, half_height,
-            0.1, 100.0
+            -100.0, 100.0
         )
 
         self.view_mat = glm.lookAt(
@@ -185,7 +185,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             mat=self.shader_renderer.bfmc_track_model,
             x=-self.width() / 2,
             y=-self.height() / 2,
-            z=-1.1,
+            z=0,
             scale=(self.width(), self.height()),
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
@@ -224,7 +224,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, orientation, 0.55, (0.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, 0.55, self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
                 if self.show_destinations:
                     self.shader_renderer.draw_circle(
@@ -351,9 +351,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
                 if self.object_dict[obj_type] == 'Car':
                     if i == 0:
-                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, (1.0, 0.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, self.view_mat, self.proj_mat)
                     else:
-                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat)
+                        self.shader_renderer.draw_car(car_x, car_y, -orientation, 0.55, self.view_mat, self.proj_mat)
                 else:
                     texture = self.sign_models[int(obj_type)]
                     self.shader_renderer.draw_texture(texture, car_x, car_y, 0, (20, 20), self.view_mat, self.proj_mat)
