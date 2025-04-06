@@ -97,7 +97,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             if i + 3 > len(waypoints):
                 self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
-                x2, y2 = self.get_gl_coords(waypoints[i + 2], waypoints[i + 3])
+                x2, y2 = waypoints[i + 2], waypoints[i + 3]
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
