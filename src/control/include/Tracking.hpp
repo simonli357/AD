@@ -41,6 +41,12 @@ static const std::array<TrackingParams, 17> OBJECT_TRACKING_PARAMS = {{
 }};
 
 inline int OBJECT_COUNT = 0;
+inline bool is_known_static_object(OBJECT obj) {
+    return std::find(KNOWN_STATIC_OBJECTS.begin(), KNOWN_STATIC_OBJECTS.end(), obj) != KNOWN_STATIC_OBJECTS.end();
+}
+inline bool is_known_static_object(int obj) {
+    return is_known_static_object(static_cast<OBJECT>(obj));
+}
 
 class RoadObject {
 public:
@@ -53,7 +59,7 @@ public:
     double confidence;
     double cumulative_confidence = 0;
     int detection_count = 0;
-    double speed;
+    double speed = 0;
 
     double lifetime;
     ros::Time last_detection_time;
@@ -61,8 +67,8 @@ public:
     std::deque<std::array<double, 3>> position_history;  // x, y, confidence
     static constexpr size_t HISTORY_SIZE = 5;
 
-    RoadObject(OBJECT type, double x, double y, double confidence)
-        : id(OBJECT_COUNT++), type(type), x(x), y(y), yaw(0), confidence(confidence), speed(0) {
+    RoadObject(OBJECT type, double x, double y, double yaw, double confidence)
+        : id(OBJECT_COUNT++), type(type), x(x), y(y), yaw(yaw), confidence(confidence), speed(0) {
         name = OBJECT_NAMES[type];
         detection_count = 1;
         cumulative_confidence = confidence;
@@ -82,14 +88,12 @@ public:
         return distance <= OBJECT_TRACKING_PARAMS[static_cast<int>(type)].association_radius;
     }
 
-    virtual void update_yaw(double new_yaw) {
-        yaw = new_yaw;
-    }
-    virtual void merge(double new_x, double new_y, double new_conf) {
+    virtual void merge(double new_x, double new_y, double new_yaw, double new_conf) {
         double alpha = new_conf / (confidence + new_conf);
         x = (1 - alpha) * x + alpha * new_x;
         y = (1 - alpha) * y + alpha * new_y;
-    
+        yaw = (1 - alpha) * yaw + alpha * new_yaw;
+        
         confidence = (1 - alpha) * confidence + alpha * new_conf;
         cumulative_confidence += new_conf;
         detection_count++;
@@ -107,28 +111,33 @@ public:
     virtual void update(double x, double y) {
         this->x = x;
         this->y = y;
+        cumulative_confidence += 1.0;
+        detection_count++;
         last_detection_time = ros::Time::now();
+        lifetime = std::min(lifetime + 0.2, OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime);
+        position_history.push_back({x, y, 1.0});
+    }
+    virtual void update_yaw(double new_yaw) {
+        yaw = new_yaw;
     }
 };
 
-class SignObject : public RoadObject {
+class KnownStaticObject : public RoadObject {
 public:
-    SignObject(OBJECT type, double x, double y, double confidence)
-        : RoadObject(type, x, y, confidence) {
-        speed = 0;
-    }
-
-    SignObject(OBJECT type, double x, double y, double confidence, double yaw)
-        : SignObject(type, x, y, confidence) {
-        this->yaw = yaw;
+    std::vector<double> gt_pose;
+    KnownStaticObject(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose)
+        : RoadObject(type, x, y, yaw, confidence), gt_pose(gt_pose) {
+        if (!is_known_static_object(type)) {
+            throw std::invalid_argument("KnownStaticObject Constructor(): KnownStaticObject must be a known static object");
+        }
     }
 
     bool is_same_object(double new_x, double new_y) const override {
         return RoadObject::is_same_object(new_x, new_y);
     }
 
-    void merge(double new_x, double new_y, double new_conf) override {
-        RoadObject::merge(new_x, new_y, new_conf);
+    void merge(double new_x, double new_y, double new_yaw, double new_conf) override {
+        RoadObject::merge(new_x, new_y, new_yaw, new_conf);
     }
 };
     
@@ -137,12 +146,12 @@ public:
     double first_x, first_y;
     ros::Time first_detection_time;
 
-    DynamicObject(OBJECT type, double x, double y, double confidence)
-        : RoadObject(type, x, y, confidence),
+    DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
+        : RoadObject(type, x, y, yaw, confidence),
             first_x(x), first_y(y), first_detection_time(ros::Time::now()) {
             
         if (type != OBJECT::CAR && type != OBJECT::PEDESTRIAN) {
-            throw std::invalid_argument("DynamicObject must be either CAR or PEDESTRIAN");
+            throw std::invalid_argument("DynamicObject Constructor(): DynamicObject must be either CAR or PEDESTRIAN");
         }
         speed = 0;
     }
@@ -155,7 +164,7 @@ public:
         return distance <= OBJECT_TRACKING_PARAMS[static_cast<int>(type)].association_radius;
     }
 
-    void merge(double new_x, double new_y, double new_conf) override {
+    void merge(double new_x, double new_y, double yaw, double new_conf) override {
         ros::Time current_time = ros::Time::now();
         double dt1 = (current_time - last_detection_time).toSec();
         double dt2 = (current_time - first_detection_time).toSec();
@@ -215,10 +224,9 @@ class EgoCarObject final: public DynamicObject {
 public:
     double steer = 0;
     EgoCarObject(double x, double y, double yaw)
-    : DynamicObject(OBJECT::CAR, x, y, 1.0) {
+    : DynamicObject(OBJECT::CAR, x, y, yaw, 1.0) {
         this->z = 0;
         this->speed = 0;
-        this->yaw = yaw;
         this->steer = 0;
     }
     
@@ -238,29 +246,63 @@ public:
     }
 };
 
-inline std::vector<std::shared_ptr<SignObject>> road_signs;
+inline constexpr std::array<int, 8> KNOWN_STATIC_SIGNS = {
+    static_cast<int>(OBJECT::HIGHWAYENTRANCE),
+    static_cast<int>(OBJECT::STOPSIGN),
+    static_cast<int>(OBJECT::ROUNDABOUT),
+    static_cast<int>(OBJECT::PARK),
+    static_cast<int>(OBJECT::CROSSWALK),
+    static_cast<int>(OBJECT::HIGHWAYEXIT),
+    static_cast<int>(OBJECT::PRIORITY),
+    static_cast<int>(OBJECT::LIGHTS)
+};
+
 inline std::shared_ptr<EgoCarObject> ego_car;
-inline std::vector<std::shared_ptr<EgoCarObject>> road_cars;
+inline std::vector<std::shared_ptr<RoadObject>> road_objects;
+inline std::vector<std::shared_ptr<KnownStaticObject>> road_known_static_objects;
+inline std::vector<std::shared_ptr<DynamicObject>> road_cars;
 inline std::vector<std::shared_ptr<DynamicObject>> road_pedestrians;
-inline std::shared_ptr<DynamicObject> create_ego_car(double x, double y, double yaw, double z, double confidence, double speed) {
-    ego_car = std::make_shared<EgoCarObject>(x, y, yaw);
-    return ego_car;
-}
-inline std::shared_ptr<RoadObject> create_object(OBJECT type, double x, double y, double yaw, double confidence) {
+
+inline std::vector<std::shared_ptr<RoadObject>>* get_road_objects(OBJECT type) {
+    if (is_known_static_object(type)) {
+        return reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>*>(&road_known_static_objects);
+    }
     switch (type) {
         case OBJECT::CAR:
-            auto car = std::make_shared<DynamicObject>(type, x, y, confidence);
-            road_cars.push_back(car);
-            return car;
+            return reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>*>(&road_cars);
         case OBJECT::PEDESTRIAN:
-            auto pedestrian = std::make_shared<DynamicObject>(type, x, y, confidence);
-            road_pedestrians.push_back(pedestrian);
-            return pedestrian;
+            return reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>*>(&road_pedestrians);
         default:
-            auto sign = std::make_shared<SignObject>(type, x, y, confidence, yaw);
-            road_signs.push_back(sign);
-            return sign;
+            return &road_objects;
     }
+}
+inline void create_ego_car(double x, double y, double yaw, double z, double confidence, double speed) {
+    ego_car = std::make_shared<EgoCarObject>(x, y, yaw);
+    return;
+}
+inline void create_object(OBJECT type, double x, double y, double yaw, double confidence) {
+    switch (type) {
+        case OBJECT::CAR: {
+            auto car = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
+            road_cars.push_back(car);
+            return;
+        }
+        case OBJECT::PEDESTRIAN: {
+            auto pedestrian = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
+            road_pedestrians.push_back(pedestrian);
+            return;
+        }
+        default: {
+            auto object = std::make_shared<RoadObject>(type, x, y, yaw, confidence);
+            road_objects.push_back(object);
+            return;
+        }
+    }
+}
+inline void create_known_static_object(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose) {
+    auto object = std::make_shared<KnownStaticObject>(type, x, y, yaw, confidence, gt_pose);
+    road_known_static_objects.push_back(object);
+    return;
 }
 
 inline static std_msgs::Float32MultiArray ros_msg;
@@ -282,16 +324,43 @@ inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) 
     }
 }
 
+inline std_msgs::Float32MultiArray& create_all_msgs() {
+    reset_msg();
+    create_msg(road_objects);
+    create_msg(
+        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_known_static_objects)
+    );
+    create_msg(
+        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_cars)
+    );
+    create_msg(
+        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_pedestrians)
+    );
+    return ros_msg;
+}
+
 inline const std_msgs::Float32MultiArray& get_msg() {
     return ros_msg;
 }
 
-inline void cleanup_stale_objects(std::vector<std::shared_ptr<RoadObject>>& road_objects) {
+inline void cleanup_stale_objects() {
     ros::Time now = ros::Time::now();
     road_objects.erase(std::remove_if(road_objects.begin(), road_objects.end(),
         [now](const std::shared_ptr<RoadObject>& obj) {
             return (now - obj->last_detection_time).toSec() > obj->lifetime;
         }), road_objects.end());
+    road_known_static_objects.erase(std::remove_if(road_known_static_objects.begin(), road_known_static_objects.end(),
+        [now](const std::shared_ptr<KnownStaticObject>& obj) {
+            return (now - obj->last_detection_time).toSec() > obj->lifetime;
+        }), road_known_static_objects.end());
+    road_cars.erase(std::remove_if(road_cars.begin(), road_cars.end(),
+        [now](const std::shared_ptr<DynamicObject>& obj) {
+            return (now - obj->last_detection_time).toSec() > obj->lifetime;
+        }), road_cars.end());
+    road_pedestrians.erase(std::remove_if(road_pedestrians.begin(), road_pedestrians.end(),
+        [now](const std::shared_ptr<DynamicObject>& obj) {
+            return (now - obj->last_detection_time).toSec() > obj->lifetime;
+        }), road_pedestrians.end());
 }
 
 }

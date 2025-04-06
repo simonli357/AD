@@ -563,13 +563,6 @@ public:
             ROS_INFO("%s", message.c_str());
         }
     }
-
-    bool is_known_static_object(OBJECT obj) {
-        return std::find(KNOWN_STATIC_OBJECTS.begin(), KNOWN_STATIC_OBJECTS.end(), obj) != KNOWN_STATIC_OBJECTS.end();
-    }
-    bool is_known_static_object(int obj) {
-        return is_known_static_object(static_cast<OBJECT>(obj));
-    }
     
     const std::vector<std::vector<double>>& get_relevant_signs(int type, std::string& o_string) {
         OBJECT obj = static_cast<OBJECT>(type);

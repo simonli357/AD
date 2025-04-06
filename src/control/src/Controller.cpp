@@ -20,6 +20,7 @@
 #include <ncurses.h>
 #include <std_msgs/Byte.h>
 #include "utils/helper.h"
+#include "Tracking.hpp"
 
 using namespace VehicleConstants;
 
@@ -1053,18 +1054,7 @@ public:
         int closest_idx = path_manager.closest_waypoint_index;
         double safety_dist = 0.3; // meters
         if (closest_idx < path_manager.overtake_end_index + safety_dist * path_manager.density) return;
-        std::vector<std::shared_ptr<CarObject>> cars;
-        bool ego_car_detected = false;
-        for (auto& obj : utils.road_objects) {
-            auto car = std::dynamic_pointer_cast<CarObject>(obj);
-            if (car != nullptr) {
-                if (!ego_car_detected) {
-                    ego_car_detected = true;
-                    continue;
-                }
-                cars.push_back(car);
-            }
-        }
+        auto& cars = Tracking::road_cars;
         if (cars.size() == 0) return;
         double min_adj_lane_dist = 1000.;
         double min_adj_lane_lat_dist = 1000.;
@@ -1224,8 +1214,8 @@ public:
     
     void check_car_single() {
         double dist;
-        auto& cars = utils.detected_cars;
-        utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
+        auto& cars = Tracking::road_cars;
+        // utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
             utils.update_states(x_current);
@@ -1240,8 +1230,6 @@ public:
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
-                // auto car_pose = utils.detected_cars[car_index];
-                // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
                 // compute distance from car_pose to waypoint, find closest waypoint and distance
@@ -1609,18 +1597,13 @@ void StateMachine::run() {
                     pedestrian_detected();
                     exit_detected();
                     check_emergency_stop();
-                    // check utils.recent_car_indices
-                    // std::cout << "recent car indices size: " << utils.recent_car_indices.size() << std::endl;
-                    std::list<int> cars = utils.recent_car_indices;
-                    // std::cout << "number of cars detected: " << cars.size() << std::endl;
-                    // iterate through all cars and check if any are in the parking spot
+                    auto& cars = Tracking::road_cars;
                     bool changed = false;
                     bool car_in_spot = false;
                     while(1) {
-                        for (int i : cars) {
-                            utils.debug("PARKING(): checking car: (" + helper::d2str(utils.detected_cars[i][0]) + ", " + helper::d2str(utils.detected_cars[i][1]) + "), error: " + helper::d2str((utils.detected_cars[i] - PARKING_SPOTS[target_spot]).norm()), 5);
-                            Eigen::Vector2d world_pose = utils.detected_cars[i];
-                            Eigen::Vector2d spot = PARKING_SPOTS[target_spot];
+                        for (auto car: cars) {
+                            Eigen::Vector2d world_pose = Eigen::Vector2d(car->x, car->y);
+                            const Eigen::Vector2d& spot = PARKING_SPOTS[target_spot];
                             double error_sq = (world_pose - spot).squaredNorm();
                             double error_threshold_sq = 0.04;
                             if (error_sq < error_threshold_sq) {

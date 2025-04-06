@@ -109,7 +109,7 @@ namespace VehicleConstants {
         NONE
     };
 
-    static const std::vector<OBJECT> KNOWN_STATIC_OBJECTS = { 
+    static constexpr std::array<OBJECT, 8> KNOWN_STATIC_OBJECTS = { 
         HIGHWAYENTRANCE, STOPSIGN, 
         ROUNDABOUT, PARK, CROSSWALK, 
         HIGHWAYEXIT, PRIORITY, LIGHTS
