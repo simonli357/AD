@@ -65,17 +65,18 @@ class ShaderRenderer:
         self.load_shaders()
 
     def load_models(self):
-        self.car_model = load_mesh(asset_path('car.obj'))
         self.bfmc_track_model = load_map(asset_path('track.png'))
         self.barca_track_model = load_mesh(asset_path('track.obj'))
         self.line_model = line_model()
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
-        self.prio_sign_model = load_obj(*object_path('priority_sign'))
+
+        self.car_model = load_obj(*object_path('car'))
+
+        # self.prio_sign_model = load_obj(*object_path('priority_sign'))
 
     def load_shaders(self):
-        self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
@@ -88,25 +89,30 @@ class ShaderRenderer:
     ##################
 
     def draw_car(self, x, y, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
-        gl.glUseProgram(self.car_shader)
+        shader_program = self.car_model.shader_program
+        gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
 
-        model_loc = gl.glGetUniformLocation(self.car_shader, "model")
-        view_loc = gl.glGetUniformLocation(self.car_shader, "view")
-        proj_loc = gl.glGetUniformLocation(self.car_shader, "projection")
-        color_loc = gl.glGetUniformLocation(self.car_shader, "carColor")
+        model_loc = gl.glGetUniformLocation(shader_program, "model")
+        view_loc = gl.glGetUniformLocation(shader_program, "view")
+        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
 
         gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
         gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
 
-        gl.glBindVertexArray(self.car_model.vao)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.vertex_count)
+        if self.car_model.texture is not None:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, self.car_model.texture)
+            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
+            gl.glUniform1i(texture_location, 0)
+
+        gl.glBindVertexArray(self.car_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.car_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
 
     def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
