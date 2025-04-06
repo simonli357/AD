@@ -2,8 +2,10 @@ from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
 from .loaders import load_mesh, load_map
 from .models import line_model, circle_model, crosshair_model, triangle_model
+from .obj import load_obj
 
 import os
+import glob
 import glm
 import numpy as np
 
@@ -40,6 +42,23 @@ def asset_path(filename: str):
     return os.path.join(asset_dir, filename)
 
 
+def object_path(dirname: str):
+    folder = os.path.join(asset_dir, dirname)
+    # Find .obj files
+    obj_candidates = glob.glob(os.path.join(folder, "*.obj"))
+    obj = obj_candidates[0] if obj_candidates else None
+
+    # Find .mtl files
+    mtl_candidates = glob.glob(os.path.join(folder, "*.mtl"))
+    mtl = mtl_candidates[0] if mtl_candidates else None
+
+    if obj is None or mtl is None:
+        print("Error loading model")
+        exit(1)
+
+    return mtl, obj
+
+
 class ShaderRenderer:
     def __init__(self):
         self.load_models()
@@ -53,6 +72,7 @@ class ShaderRenderer:
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
+        self.prio_sign_model = load_obj(*object_path('priority_sign'))
 
     def load_shaders(self):
         self.car_shader = create_shader_program(shader_path('car', 'car.vert'), shader_path('car', 'car.frag'))
