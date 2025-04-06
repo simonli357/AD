@@ -473,22 +473,22 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         auto type = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
         double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
-        double x_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x_rel];
-        double y_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y_rel];
-        double yaw_rel = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::yaw_rel];
-        auto world_states = object_to_world(x_rel, y_rel, yaw_rel, x, y, yaw);
+
+        double xmin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
+        double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
+        double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
+        double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
+        double x, y, yaw;
+        get_states(x, y, yaw);
+        Eigen::Vector2d world_states = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
         bool is_known_static = is_known_static_object(type);
-        
-        if(type != OBJECT::CAR) {
-            world_states[2] = nearest_direction(yaw);
-        }
         for(int i = 1; i<road_objects.size(); ++i) {
             auto obj = road_objects[i];
             if(static_cast<int>(obj->type) == type) {
                 if (obj->is_same_object(world_states[0], world_states[1])) {
                     found_same = true;
                     if (!is_known_static) { // known static objects only need to be added once since we know their gt pose
-                        obj->merge(world_states[0], world_states[1], world_states[2], confidence);
+                        obj->merge(world_states[0], world_states[1], 0.0, confidence);
                     }
                     break;
                 }
@@ -511,9 +511,9 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                 }
             } else {
                 if (type == OBJECT::CAR) {
-                    road_objects.push_back(std::make_shared<CarObject>(world_states[0], world_states[1], world_states[2], confidence, 0.0));
+                    road_objects.push_back(std::make_shared<CarObject>(world_states[0], world_states[1], 0.0, confidence, 0.0));
                 } else {
-                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], world_states[2], confidence));
+                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], 0.0, confidence));
                 }
                 debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
             }

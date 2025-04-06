@@ -293,7 +293,8 @@ class MainWindow(QMainWindow):
                         filename = self.recording_path + f"/frame_{int(now)}.jpg"
                         cv2.imwrite(filename, rgb_image)
                 time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-            time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
+            else:
+                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
 
     def render_callbacks(self) -> None:
         self.comm.render_widget_signal.emit()

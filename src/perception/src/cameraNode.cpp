@@ -30,6 +30,7 @@ class CameraNode {
 		nh.param(nodeName + "/rate", mainLoopRate, 50);
 		nh.param(nodeName + "/pubImage", pubImage, false);
 		nh.param(nodeName + "/thread", useRosTimer, false);
+		nh.param("quality", quality, 30);
 
 		if (!realsense) {
 			if (Sign.hasDepthImage) {
@@ -177,6 +178,7 @@ class CameraNode {
 	bool doLane, doSign, realsense, pubImage, useRosTimer;
 	std::thread lane_thread, sign_thread;
 	int mainLoopRate;
+	int quality = 30;
 
 	// lock
 	std::mutex mutex;
@@ -233,7 +235,7 @@ class CameraNode {
       colorImage = cv_ptr->image.clone();
 		}
 		if (Sign.tcp_client != nullptr) {
-        	Sign.tcp_client->send_image_rgb(colorImage);
+        	Sign.tcp_client->send_image_rgb(colorImage, quality);
 		}
 		// mutex.unlock();
 	}

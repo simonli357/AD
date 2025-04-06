@@ -370,29 +370,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
-                if dx == 0:
-                    angle = 0
-                else:
-                    angle = np.arctan(dy / dx)
-                angle = self.draw_path_node(x1, y1, x2, y2, angle)
+                angle = np.arctan2(dy / (dx + 1e-5))
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                 x1, y1 = x2, y2
-
-    def draw_path_node(self, x1, y1, x2, y2, angle):
-        delta = 0
-        if x2 < 0 and y2 > 0:
-            # Q1
-            delta = np.radians(-90) + angle
-        elif x2 > 0 and y2 > 0:
-            # Q2
-            delta = np.radians(90) - angle
-        elif x2 > 0 and y2 < 0:
-            # Q3
-            delta = np.radians(90) + angle
-        elif x2 < 0 and y2 < 0:
-            # Q4
-            delta = np.radians(-90) - angle
-        self.shader_renderer.draw_triangle(x1, y1, 0, delta, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
-        return delta
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)

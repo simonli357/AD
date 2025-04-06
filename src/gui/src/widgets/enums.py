@@ -35,6 +35,4 @@ class CameraParams(Enum):
     MIN_HEIGHT = 480
     FPS_60 = 0.017  # 60 FPS
     FPS_30 = 0.034  # 30 FPS
-    FPS_10 = 0.100  # 10 FPS
-    FPS_5 = 0.200   # 5 FPS
-    RECORDING_REFRESH_RATE = 2.0  # Capture 1 frame every 2 seconds if recording
+    RECORDING_REFRESH_RATE = 0.25  # 1/rate
