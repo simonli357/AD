@@ -79,6 +79,12 @@ class ShaderRenderer:
 
         self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
         self.oneway_sign_model = load_obj(*object_path('oneway_sign', 'oneway'))
+        self.stop_sign_model = load_obj(*object_path('stop_sign', 'stopsign'))
+        self.highway_entrance_sign_model = load_obj(*object_path('highway_entrance_sign', 'highwayentrance'))
+        self.highway_exit_sign_model = load_obj(*object_path('highway_exit_sign', 'highwayexit'))
+        self.roundabout_sign_model = load_obj(*object_path('roundabout_sign', 'roundabout'))
+        self.parking_sign_model = load_obj(*object_path('parking_sign', 'parking'))
+        self.crosswalk_sign_model = load_obj(*object_path('crosswalk_sign', 'crosswalk'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -132,19 +138,19 @@ class ShaderRenderer:
         road_obj_model = None
         if obj_type == 'Oneway':
             road_obj_model = self.oneway_sign_model
-        elif obj_type == 'Highway Entrance':
-            pass
         elif obj_type == 'Stopsign':
-            pass
-        elif obj_type == 'Roundabout':
-            pass
-        elif obj_type == 'Parking':
-            pass
-        elif obj_type == 'Crosswalk':
-            pass
-        elif obj_type == 'No Entry':
-            pass
+            road_obj_model = self.stop_sign_model
+        elif obj_type == 'Highway Entrance':
+            road_obj_model = self.highway_entrance_sign_model
         elif obj_type == 'Highway Exit':
+            road_obj_model = self.highway_exit_sign_model
+        elif obj_type == 'Roundabout':
+            road_obj_model = self.roundabout_sign_model
+        elif obj_type == 'Parking':
+            road_obj_model = self.parking_sign_model
+        elif obj_type == 'Crosswalk':
+            road_obj_model = self.crosswalk_sign_model
+        elif obj_type == 'No Entry':
             pass
         elif obj_type == 'Priority':
             road_obj_model = self.prio_sign_model

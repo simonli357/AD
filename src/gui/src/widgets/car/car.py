@@ -108,7 +108,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.shader_renderer.draw_road_object('Oneway', x, y, np.radians(180), 20.0, self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_road_object('Crosswalk', x, y, np.radians(180), 20.0, self.view_mat, self.proj_mat)
 
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
@@ -164,6 +164,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                          int(y * scale_factor),
                          text)
         painter.end()
+
+    def get_gl_coords(self, real_x, real_y):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert real-world to OpenGL world coordinates
+        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+
+        return world_x, world_y
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
