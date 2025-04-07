@@ -71,8 +71,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             100.0
         )
 
-        x = self.x_pos / MapData.REAL_WORLD_WIDTH.value * self.width()
-        y = (MapData.REAL_WORLD_HEIGHT.value - self.y_pos) / MapData.REAL_WORLD_HEIGHT.value * self.height()
+        x, y = self.get_gl_coords(self.x_pos, self.y_pos)
 
         cam_x = x - self.cam_dist * np.cos(np.radians(self.yaw))
         cam_y = y - self.cam_dist * np.sin(np.radians(self.yaw))
@@ -162,15 +161,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         painter.end()
 
     def get_gl_coords(self, real_x, real_y):
-        widget_width = self.width()
-        widget_height = self.height()
-        if widget_height == 0 or widget_width == 0:
-            return (0.0, 0.0)
-
         # Convert real-world to OpenGL world coordinates
-        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
-        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
-
+        world_x = real_x / MapData.REAL_WORLD_WIDTH.value * self.width()
+        world_y = (MapData.REAL_WORLD_HEIGHT.value - real_y) / MapData.REAL_WORLD_HEIGHT.value * self.height()
         return world_x, world_y
 
     def cleanup_gl_resources(self):
