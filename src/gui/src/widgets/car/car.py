@@ -88,15 +88,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             glm.vec3(0, 0, 1)
         )
 
-        # self.shader_renderer.draw_car(
-        #     x=x,
-        #     y=y,
-        #     yaw=np.radians(self.yaw),
-        #     scale=0.20,
-        #     color=NamedColor.WHITE,
-        #     view_matrix=self.view_mat,
-        #     proj_matrix=self.proj_mat
-        # )
+        self.shader_renderer.draw_car(
+            x=x,
+            y=y,
+            yaw=np.radians(self.yaw),
+            scale=0.20,
+            color=NamedColor.WHITE,
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
+        )
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
@@ -107,8 +107,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
-
-        self.shader_renderer.draw_road_object('Pedestrian', x, y, np.radians(180), 20.0, self.view_mat, self.proj_mat)
 
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
@@ -131,7 +129,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             elif object_dict[obj_type] == 'Car':
                 self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
             else:
-                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, -orientation, 20.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, -orientation, 16.0, self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
