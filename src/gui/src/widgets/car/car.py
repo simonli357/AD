@@ -119,8 +119,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             rel_x = obj[10 * i + 8]
             rel_y = obj[10 * i + 7]
 
-            real_x = rel_x - self.x_pos
-            real_y = rel_y - self.y_pos
+            real_x = rel_x + self.x_pos
+            real_y = rel_y + self.y_pos
 
             x, y = self.get_gl_coords(real_x, real_y)
 
