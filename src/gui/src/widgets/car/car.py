@@ -108,7 +108,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.shader_renderer.draw_road_object('Green Light', x, y, np.radians(180), 20.0, self.view_mat, self.proj_mat)
+        self.shader_renderer.draw_road_object('Pedestrian', x, y, np.radians(180), 20.0, self.view_mat, self.proj_mat)
 
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 

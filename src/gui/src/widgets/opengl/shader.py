@@ -90,6 +90,7 @@ class ShaderRenderer:
         self.red_light_model = load_obj(*object_path('traffic_light', 'red'))
         self.yellow_light_model = load_obj(*object_path('traffic_light', 'yellow'))
         self.green_light_model = load_obj(*object_path('traffic_light', 'green'))
+        self.pedestrian_model = load_obj(*object_path('pedestrian', 'pedestrian'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -168,7 +169,7 @@ class ShaderRenderer:
         elif obj_type == 'Red Light':
             road_obj_model = self.red_light_model
         elif obj_type == 'Pedestrian':
-            pass
+            road_obj_model = self.pedestrian_model
         else:
             return
         shader_program = road_obj_model.shader_program
