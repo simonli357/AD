@@ -93,6 +93,7 @@ class ShaderRenderer:
         self.pedestrian_model = load_obj(*object_path('pedestrian', 'pedestrian'))
 
         self.void_model = load_obj(*object_path('void_symbol', 'void'))
+        self.destination_model = load_obj(*object_path('destination', 'destination'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -149,6 +150,37 @@ class ShaderRenderer:
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.5))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        # model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        model_loc = gl.glGetUniformLocation(shader_program, "model")
+        view_loc = gl.glGetUniformLocation(shader_program, "view")
+        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if obj_model.texture is not None:
+            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
+            gl.glUniform1i(has_texture_loc, 1)  # Set to true
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
+            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
+            gl.glUniform1i(texture_location, 0)
+
+        gl.glBindVertexArray(obj_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
+        gl.glBindVertexArray(0)
+
+    def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
+        obj_model = self.destination_model
+        shader_program = obj_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 1.0))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         # model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))

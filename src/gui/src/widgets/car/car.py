@@ -140,15 +140,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             orientation = - orientation
 
             if entity_type == 'Car':
-                self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.20, self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
-                self.shader_renderer.draw_circle(
-                    center=(x, y),
-                    radius=8.0,
-                    color=(0.0, 0.7, 0.7, 0.7),
-                    view_matrix=self.view_mat,
-                    proj_matrix=self.proj_mat
-                )
+                self.shader_renderer.draw_destination(x, y, orientation, 1.0, self.view_mat, self.proj_mat)
             else:
                 self.shader_renderer.draw_road_object(entity_type, x, y, orientation, 16.0, self.view_mat, self.proj_mat)
 
