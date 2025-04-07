@@ -78,6 +78,7 @@ class ShaderRenderer:
         self.blue_car_model = load_obj(*object_path('car', 'blue'))
 
         self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
+        self.oneway_sign_model = load_obj(*object_path('oneway_sign', 'oneway'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -127,10 +128,10 @@ class ShaderRenderer:
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
 
-    def draw_road_object(self, obj_type, x, y, z, yaw, scale, view_matrix, proj_matrix):
+    def draw_road_object(self, obj_type, x, y, yaw, scale, view_matrix, proj_matrix):
         road_obj_model = None
         if obj_type == 'Oneway':
-            pass
+            road_obj_model = self.oneway_sign_model
         elif obj_type == 'Highway Entrance':
             pass
         elif obj_type == 'Stopsign':
@@ -161,7 +162,7 @@ class ShaderRenderer:
         gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
