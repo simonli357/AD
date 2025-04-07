@@ -327,36 +327,35 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_marker(x, y, (0, 1, 0, 1), 8.0, 4.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
 
     def draw_detected_objects(self):
-        if True:
-            if self.detected_data is None or len(self.detected_data) == 0:
-                return
-            car_x = self.detected_data[0, self.road_msg_dict['x']]
-            car_y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
-            car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
-            car_z = self.detected_data[0, self.road_msg_dict['z']]
-            car_speed = self.detected_data[0, self.road_msg_dict['speed']]
-            self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
-            self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
-            self.main_window.meter_widget.set_speed(car_speed * 100)
-            for i in range(len(self.detected_data)):
-                obj_type = self.detected_data[i, self.road_msg_dict['type']]
-                x_real = self.detected_data[i, self.road_msg_dict['x']]
-                y_real = self.detected_data[i, self.road_msg_dict['y']]
-                orientation = self.detected_data[i, self.road_msg_dict['orientation']]
+        if self.detected_data is None or len(self.detected_data) == 0:
+            return
+        car_x = self.detected_data[0, self.road_msg_dict['x']]
+        car_y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
+        car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+        car_z = self.detected_data[0, self.road_msg_dict['z']]
+        car_speed = self.detected_data[0, self.road_msg_dict['speed']]
+        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
+        self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
+        self.main_window.meter_widget.set_speed(car_speed * 100)
+        for i in range(len(self.detected_data)):
+            obj_type = self.detected_data[i, self.road_msg_dict['type']]
+            x_real = self.detected_data[i, self.road_msg_dict['x']]
+            y_real = self.detected_data[i, self.road_msg_dict['y']]
+            orientation = self.detected_data[i, self.road_msg_dict['orientation']]
 
-                # Convert map coordinates to pixel coordinates
-                car_x, car_y = self.get_gl_coords(x_real, y_real)
-                # orientation = 2 * np.pi - orientation
-                orientation = - orientation
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, y_real)
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
 
-                if self.object_dict[obj_type] == 'Car':
-                    if i == 0:
-                        self.shader_renderer.draw_car(car_x, car_y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
-                    else:
-                        self.shader_renderer.draw_car(car_x, car_y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+            if self.object_dict[obj_type] == 'Car':
+                if i == 0:
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
                 else:
-                    texture = self.sign_models[int(obj_type)]
-                    self.shader_renderer.draw_texture(texture, car_x, car_y, 0, (20, 20), self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+            else:
+                texture = self.sign_models[int(obj_type)]
+                self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self):
         if self.waypoints is None or len(self.waypoints) < 2:

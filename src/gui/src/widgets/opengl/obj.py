@@ -2,7 +2,7 @@ import OpenGL.GL as gl
 from OpenGL.arrays import vbo
 from OpenGL.GL.shaders import compileProgram, compileShader
 from collections import namedtuple
-from PIL import Image
+from .loaders import load_texture
 
 import numpy as np
 import os
@@ -81,14 +81,13 @@ def parse_mtl(mtl_filename):
 
 def load_obj_with_materials(obj_filename, materials):
     """
-    Load an .obj, parse v, vt, faces, and track which material each face uses.
-    `materials` is the dict from parse_mtl().
+    Load a .obj, parse v, vt, faces, and track which material each face uses.
+    'materials' is the dict from parse_mtl().
     Returns arrays for position, texcoord, color, etc.
     """
-    vertices = []      # list of [x, y, z]
-    texcoords = []     # list of [u, v]
-
-    # We'll collect faces as a list of: (pos_indices, uv_indices, material_name)
+    vertices = []  # list of [x, y, z]
+    texcoords = []  # list of [u, v]
+    # We'll collect faces as a list of (pos_indices[], uv_indices[], material_name)
     faces = []
 
     current_material = None
@@ -96,54 +95,68 @@ def load_obj_with_materials(obj_filename, materials):
     with open(obj_filename, 'r') as f:
         for line in f:
             line = line.strip()
+            if not line or line.startswith('#'):
+                # Skip empty lines or comments
+                continue
+
             if line.startswith('v '):
+                # Safely parse "v x y z" lines
+                parts = line.split()
+                # If there's NOT exactly 4 parts, skip or handle it
+                if len(parts) < 4:
+                    # e.g. line might just be "v" with no coords
+                    print(f"Skipping incomplete vertex line: {line}")
+                    continue
                 # e.g. "v 1.0 2.0 3.0"
-                _, x, y, z = line.split()
+                x, y, z = parts[1], parts[2], parts[3]
                 vertices.append([float(x), float(y), float(z)])
 
             elif line.startswith('vt '):
-                # e.g. "vt 0.5 1.0"
+                # e.g. "vt u v [w]" => ignore w if present
                 parts = line.split()
-                # sometimes there's "vt u v w", ignore w
-                _, u, v = parts[:3]
+                if len(parts) < 3:
+                    print(f"Skipping incomplete texcoord line: {line}")
+                    continue
+                u, v = parts[1], parts[2]
                 texcoords.append([float(u), float(v)])
 
             elif line.startswith('usemtl '):
-                # e.g. "usemtl Body"
+                # e.g. "usemtl MyMaterial"
                 _, mat_name = line.split(None, 1)
                 if mat_name in materials:
                     current_material = mat_name
                 else:
-                    # fallback if not found
                     current_material = None
 
             elif line.startswith('f '):
-                # e.g. "f v1/vt1 v2/vt2 v3/vt3"
+                # e.g. "f v1/vt1/vn1 v2/vt2/vn2 v3/vt3/vn3"
                 face_elems = line.split()[1:]
                 pos_indices = []
                 uv_indices = []
                 for fe in face_elems:
+                    # 'fe' might look like "v_idx/vt_idx/vn_idx" or "v_idx//vn_idx" or "v_idx/vt_idx"
                     sub = fe.split('/')
-                    # position index
+                    # Position index (sub[0]) is required
                     v_idx = int(sub[0]) - 1
                     pos_indices.append(v_idx)
-                    # texcoord index
+
+                    # Texcoord index (sub[1]) if present & not empty
+                    t_idx = -1
                     if len(sub) > 1 and sub[1] != '':
                         t_idx = int(sub[1]) - 1
-                    else:
-                        t_idx = -1
                     uv_indices.append(t_idx)
+
+                    # Normal index (sub[2]) is ignored here, but you could parse if you need it
 
                 faces.append((pos_indices, uv_indices, current_material))
 
-    # Now flatten into position_data, texcoord_data, color_data
+    # Flatten face data into final arrays
     position_data = []
     texcoord_data = []
     color_data = []
 
     for (pos_indices, uv_indices, mat_name) in faces:
-        # If we have a valid material name, get its color.
-        # Otherwise fallback to (1,1,1).
+        # If we have a valid material name, get its color from MTL
         if mat_name and mat_name in materials:
             r, g, b = materials[mat_name]["Kd"]
         else:
@@ -162,46 +175,12 @@ def load_obj_with_materials(obj_filename, materials):
             # Add color for each vertex
             color_data.extend([r, g, b])
 
-    # Convert to numpy
+    # Convert to numpy arrays
     position_array = np.array(position_data, dtype=np.float32)
     texcoord_array = np.array(texcoord_data, dtype=np.float32)
     color_array = np.array(color_data, dtype=np.float32)
 
     return position_array, texcoord_array, color_array
-
-
-def load_texture(image_path):
-    """
-    Loads an image file (using Pillow) into an OpenGL texture.
-    Returns the texture ID.
-    """
-    img = Image.open(image_path).convert('RGBA')
-    width, height = img.size
-    img_data = img.tobytes("raw", "RGBA", 0, -1)
-
-    tex_id = gl.glGenTextures(1)
-    gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
-
-    # Set texture params
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
-    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-
-    gl.glTexImage2D(
-        gl.GL_TEXTURE_2D,
-        0,
-        gl.GL_RGBA,
-        width,
-        height,
-        0,
-        gl.GL_RGBA,
-        gl.GL_UNSIGNED_BYTE,
-        img_data
-    )
-
-    gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-    return tex_id
 
 
 def create_mesh(position_array, texcoord_array, color_array):

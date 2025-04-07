@@ -66,7 +66,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        proj_mat = glm.perspective(
+        self.proj_mat = glm.perspective(
             glm.radians(45.0),
             aspect,
             0.1,
@@ -82,21 +82,21 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
         target_pos = glm.vec3(x, y, 0)
 
-        view_mat = glm.lookAt(
+        self.view_mat = glm.lookAt(
             cam_pos,
             target_pos,
             glm.vec3(0, 0, 1)
         )
 
-        self.shader_renderer.draw_car(
-            x=x,
-            y=y,
-            yaw=np.radians(self.yaw),
-            scale=0.20,
-            color=NamedColor.WHITE,
-            view_matrix=view_mat,
-            proj_matrix=proj_mat
-        )
+        # self.shader_renderer.draw_car(
+        #     x=x,
+        #     y=y,
+        #     yaw=np.radians(self.yaw),
+        #     scale=0.20,
+        #     color=NamedColor.WHITE,
+        #     view_matrix=self.view_mat,
+        #     proj_matrix=self.proj_mat
+        # )
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
@@ -104,14 +104,34 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             y=0.0,
             z=0,
             scale=(self.width(), self.height()),
-            view_matrix=view_mat,
-            proj_matrix=proj_mat
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
         )
 
-        self.draw_detected_objects()
+        self.shader_renderer.draw_road_object('Priority', x, y, 5, np.radians(180), 15.0, self.view_mat, self.proj_mat)
 
-    def draw_detected_objects(self):
-        pass
+        self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
+
+    def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
+        if detected_data is None or len(detected_data) == 0:
+            return
+        for i in range(len(detected_data)):
+            obj_type = detected_data[i, road_msg_dict['type']]
+            x_real = detected_data[i, road_msg_dict['x']]
+            y_real = detected_data[i, road_msg_dict['y']]
+            orientation = detected_data[i, road_msg_dict['orientation']]
+
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, y_real)
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
+
+            if object_dict[obj_type] == 'Car' and i == 0:
+                self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+            elif object_dict[obj_type] == 'Car':
+                self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+            else:
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, -orientation, 1.0, self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)

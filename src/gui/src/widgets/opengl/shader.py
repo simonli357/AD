@@ -127,6 +127,65 @@ class ShaderRenderer:
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
 
+    def draw_road_object(self, obj_type, x, y, z, yaw, scale, view_matrix, proj_matrix):
+        road_obj_model = None
+        if obj_type == 'Oneway':
+            pass
+        elif obj_type == 'Highway Entrance':
+            pass
+        elif obj_type == 'Stopsign':
+            pass
+        elif obj_type == 'Roundabout':
+            pass
+        elif obj_type == 'Parking':
+            pass
+        elif obj_type == 'Crosswalk':
+            pass
+        elif obj_type == 'No Entry':
+            pass
+        elif obj_type == 'Highway Exit':
+            pass
+        elif obj_type == 'Priority':
+            road_obj_model = self.prio_sign_model
+        elif obj_type == 'Light':
+            pass
+        elif obj_type == 'Block':
+            pass
+        elif obj_type == 'Pedestrian':
+            pass
+        elif obj_type == 'Green Light' or obj_type == 'Yellow Light' or obj_type == 'Red Light':
+            pass
+        else:
+            return
+        shader_program = road_obj_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        model_loc = gl.glGetUniformLocation(shader_program, "model")
+        view_loc = gl.glGetUniformLocation(shader_program, "view")
+        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if road_obj_model.texture is not None:
+            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
+            gl.glUniform1i(has_texture_loc, 1)  # Set to true
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, road_obj_model.texture)
+            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
+            gl.glUniform1i(texture_location, 0)
+
+        gl.glBindVertexArray(road_obj_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, road_obj_model.mesh.vertex_count)
+        gl.glBindVertexArray(0)
+
     def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
         gl.glUseProgram(self.barca_shader)
 

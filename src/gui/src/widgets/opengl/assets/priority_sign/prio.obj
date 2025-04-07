@@ -1,6 +1,6 @@
 # Blender 4.3.2
 # www.blender.org
-mtllib untitled.mtl
+mtllib prio.mtl
 o beam
 v -0.004433 -0.170479 0.004433
 v -0.004433 -0.000387 -0.004433
