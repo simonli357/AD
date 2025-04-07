@@ -9,8 +9,6 @@ import numpy as np
 
 
 class CarWidget(QtWidgets.QOpenGLWidget):
-    update_map_signal = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
