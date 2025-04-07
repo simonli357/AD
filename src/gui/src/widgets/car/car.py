@@ -121,11 +121,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             # orientation = 2 * np.pi - orientation
             orientation = - orientation
 
-            print(x, y, orientation)
-
-            car_x, car_y = self.get_gl_coords(self.x_pos, self.y_pos)
-            print(car_x, car_y)
-
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
