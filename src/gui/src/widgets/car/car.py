@@ -121,6 +121,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             # orientation = 2 * np.pi - orientation
             orientation = - orientation
 
+            print(x, y, orientation)
+
             if object_dict[obj_type] == 'Car' and i == 0:
                 self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
             elif object_dict[obj_type] == 'Car':
