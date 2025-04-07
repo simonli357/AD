@@ -26,8 +26,7 @@
 #include <cmath>
 #include <boost/asio.hpp>
 #include "utils/constants.h"
-#include "RoadObject.hpp"
-#include "CarObject.hpp"
+#include "Tracking.hpp"
 #include <algorithm>
 
 #include "LaneDetector.hpp"
@@ -54,27 +53,14 @@ public:
     void callTriggerService();
 // private:
     
-    std::vector<std::shared_ptr<RoadObject>> road_objects;
     //tunables
     double gps_offset_x, gps_offset_y;
     double sign_lon_offset, sign_lon_offset_slope, sign_lat_offset, sign_latency;
 
-    typedef double (Utility::*TrajectoryFunction)(double x);
-    TrajectoryFunction trajectoryFunction;
-    int intersectionDecision;
     ros::NodeHandle& nh;
     ros::ServiceClient triggerServiceClient;
     
     std::string robot_name;
-    // std::vector<std::array<double, 2>> detected_cars;
-    std::vector<Eigen::Vector2d> detected_cars;
-    std::vector<int> detected_cars_counter;
-    std::list<int> recent_car_indices;
-    void print_detected_cars() {
-        for (size_t i = 0; i < detected_cars.size(); i++) {
-            std::cout << "Car " << i << ": " << detected_cars[i][0] << ", " << detected_cars[i][1] << std::endl;
-        }
-    }
 
     bool emergency = false;
     int num_obj = 0;
@@ -576,13 +562,6 @@ public:
             if (tcp_client != nullptr) tcp_client->send_message(debug_msg);
             ROS_INFO("%s", message.c_str());
         }
-    }
-
-    bool is_known_static_object(OBJECT obj) {
-        return std::find(KNOWN_STATIC_OBJECTS.begin(), KNOWN_STATIC_OBJECTS.end(), obj) != KNOWN_STATIC_OBJECTS.end();
-    }
-    bool is_known_static_object(int obj) {
-        return is_known_static_object(static_cast<OBJECT>(obj));
     }
     
     const std::vector<std::vector<double>>& get_relevant_signs(int type, std::string& o_string) {

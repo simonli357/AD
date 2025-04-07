@@ -1,7 +1,7 @@
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -27,8 +27,7 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
-    trajectoryFunction(nullptr), intersectionDecision(-1), io(), serial(nullptr), real(real),
-    it(nh)
+    io(), serial(nullptr), real(real), it(nh)
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -69,7 +68,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     // tunables
-    // For odometry
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
     double odom_publish_frequency = 50; 
@@ -96,7 +94,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 
     if (true) {
         try {
-            // Attempt to open /dev/ttyACM0
             serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
             serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
             debug("Utility constructor: Serial port opened successfully.", 1);
@@ -106,10 +103,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         }
     }
     q_transform.setRPY(REALSENSE_TF[3], REALSENSE_TF[4], REALSENSE_TF[5]); // 3 values are roll, pitch, yaw of the imu
-    // q_transform.setRPY(0, 0.0, 0);
-    detected_cars = std::vector<Eigen::Vector2d>();
-    detected_cars_counter = std::vector<int>();
-    recent_car_indices = std::list<int>();
     nh.getParam("/x_offset", x_offset);
     nh.getParam("/y_offset", y_offset);
     bool model;
@@ -157,23 +150,19 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (x0 > 0 && y0 > 0) {
         set_pose_using_service(x0, y0, yaw0);
     }
+    Tracking::create_ego_car(x0, y0, yaw0, 0, 1.0, 0);
     initializationFlag = false;
     gps_x = x0;
     gps_y = y0;
     steer_command = 0.0;
     velocity_command = 0.0;
-    // car_idx = std::nullopt;
 
     initializationTimer = std::nullopt;
     timerpid = std::nullopt;
 
     std::fill(std::begin(odom_msg.pose.covariance), std::end(odom_msg.pose.covariance), 0.0);
     std::fill(std::begin(odom_msg.twist.covariance), std::end(odom_msg.twist.covariance), 0.0);
-    // covariance_value = 0.01 * 4;
-    // for (int hsy=0; hsy<36; hsy+=7) {
-    //     odom_msg.pose.covariance[hsy] = covariance_value;
-    //     odom_msg.twist.covariance[hsy] = covariance_value;
-    // }
+
     double dt = 1.0 / odom_publish_frequency;
     double variance_v = sigma_v * sigma_v;
     double sigma_delta_rad = sigma_delta * M_PI / 180;
@@ -185,27 +174,11 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     odom_msg.pose.covariance[35] = variance_yaw_rate * dt * dt;
     odom_msg.twist.covariance[0] = variance_v;
     odom_msg.twist.covariance[7] = variance_yaw_rate;
-    // for (int i = 0; i < 36; i++) {
-    //     std::cout << odom_msg.pose.covariance[i] << " ";
-    //     if (i % 6 == 5) {
-    //         std::cout << std::endl;
-    //     }
-    // }
-    // for (int i = 0; i < 36; i++) {
-    //     std::cout << odom_msg.twist.covariance[i] << " ";
-    //     if (i % 6 == 5) {
-    //         std::cout << std::endl;
-    //     }
-    // }
 
     odom_pub = nh.advertise<nav_msgs::Odometry>("odom", 3);
     odom_msg.header.frame_id = "odom";
     odom_msg.child_frame_id = "chassis";
-    // odom1_pub = nh.advertise<nav_msgs::Odometry>("odom1", 3);
 
-    // if (robot_name[0] != '/') {
-    //     robot_name = "/" + robot_name;
-    // }
     cmd_vel_pub = nh.advertise<std_msgs::String>("/" + robot_name + "/command", 8);
     waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/waypoints", 3);
     detected_cars_pub = nh.advertise<std_msgs::Float32MultiArray>("/detected_cars", 3);
@@ -269,9 +242,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         }
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
-        car_pose_msg.data.push_back(0.0); // self
-        car_pose_msg.data.push_back(0.0);
-        road_objects.push_back(std::make_shared<CarObject>(x0, y0, yaw, 1.0, velocity_command));
     }
 
     timerodom = ros::Time::now();
@@ -466,7 +436,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    road_objects[0]->update(x, y, yaw, velocity_command, height); // ego car
+    Tracking::ego_car->update(x, y, yaw, velocity_command, height, steer_command);
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -481,17 +451,19 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         double x, y, yaw;
         get_states(x, y, yaw);
         Eigen::Vector2d world_states = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
-        bool is_known_static = is_known_static_object(type);
-        for(int i = 1; i<road_objects.size(); ++i) {
-            auto obj = road_objects[i];
-            if(static_cast<int>(obj->type) == type) {
-                if (obj->is_same_object(world_states[0], world_states[1])) {
-                    found_same = true;
-                    if (!is_known_static) { // known static objects only need to be added once since we know their gt pose
-                        obj->merge(world_states[0], world_states[1], 0.0, confidence);
-                    }
-                    break;
-                }
+        bool is_known_static = Tracking::is_known_static_object(type);
+        auto* road_objects = Tracking::get_road_objects(static_cast<OBJECT>(type));
+        if (!road_objects) {
+            debug("Sign Callback(): Skipping object due to null road_objects for type: " + std::to_string(type), 1);
+            return;
+        }
+        //check for existing object
+        for (int i = 0; i < road_objects->size(); ++i) {
+            auto& obj = (*road_objects)[i];
+            if (obj->is_same_object(world_states[0], world_states[1])) {
+                found_same = true;
+                obj->merge(world_states[0], world_states[1], yaw, confidence);
+                break;
             }
         }
         if (!found_same) {
@@ -501,26 +473,31 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                 int min_index = 0;
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
+
                 if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = compare_yaw(sign_yaw, yaw);
-                    if(yaw_error < 35 * M_PI / 180) {
-                        road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), relevant_signs[min_index][0], relevant_signs[min_index][1], relevant_signs[min_index][2], 1.0));
-                        debug("new " + sign_name + " (known static object) detected at (" + std::to_string(relevant_signs[min_index][0]) + ", " + std::to_string(relevant_signs[min_index][1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+
+                    if (yaw_error < 35 * M_PI / 180) {
+                        Tracking::create_known_static_object(static_cast<OBJECT>(type),
+                            world_states[0], world_states[1], yaw, confidence, relevant_signs[min_index]);
+
+                        debug("Sign Callback(): new " + sign_name + " (known static object) detected at (" +
+                            std::to_string(relevant_signs[min_index][0]) + ", " +
+                            std::to_string(relevant_signs[min_index][1]) + "), known static objects size: " +
+                            std::to_string(Tracking::road_known_static_objects.size()), 2);
                     }
                 }
             } else {
-                if (type == OBJECT::CAR) {
-                    road_objects.push_back(std::make_shared<CarObject>(world_states[0], world_states[1], 0.0, confidence, 0.0));
-                } else {
-                    road_objects.push_back(std::make_shared<RoadObject>(static_cast<int>(type), world_states[0], world_states[1], 0.0, confidence));
-                }
-                debug("new " + OBJECT_NAMES[static_cast<int>(type)] + " detected at (" + std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) + "), road_objects size: " + std::to_string(road_objects.size()), 2);
+                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], yaw, confidence);
+                debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
+                    std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                    "), road_objects size: " + std::to_string(road_objects->size()), 2);
             }
         }
     }
-    RoadObject::cleanup_stale_objects(road_objects);
-    auto road_object_msg = RoadObject::create_msg(road_objects);
+    Tracking::cleanup_stale_objects();
+    auto road_object_msg = Tracking::create_all_msgs();
     static bool publish_objects = true;
     if(publish_objects) {
         road_object_pub.publish(road_object_msg);
@@ -532,77 +509,6 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
             traffic_client->send_car_data(road_object_msg);
         }
     }
-    static bool populate_car_pose = true;
-    if (!populate_car_pose) {
-        return;
-    }
-    int car_id = 12;
-    double threshold = 0.5;
-    for(int i = 0; i < num_obj; i++) {
-        if(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id] == car_id) {
-            double dist = object_distance(i);
-            if(dist > 3.0 || dist < 0.6) continue;
-            double xmin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
-            double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
-            double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
-            double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
-            double x, y, yaw;
-            get_states(x, y, yaw);
-            Eigen::Vector2d world_pose = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
-            // std::cout << "world_pose: (" << world_pose[0] << ", " << world_pose[1] << "), self pose: (" << x << ", " << y << ")" << std::endl;
-            // check error norm between x, y of detected car and the ones in the detected_cars vector
-            // if error norm greater than threshold, add to detected_cars vector
-            // else, update the x, y of the detected car in the detected_cars vector by averaging 
-            if (detected_cars.size() == 0) {
-                detected_cars.push_back(world_pose);
-                detected_cars_counter.push_back(1);
-                car_pose_msg.data.push_back(world_pose[0]);
-                car_pose_msg.data.push_back(world_pose[1]);
-                // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << ")" << std::endl;
-                continue;
-            }
-            for(int j = 0; j < detected_cars.size(); j++) {
-                double error_norm_sq = (detected_cars[j] - world_pose).squaredNorm();
-                double score = msg.data[i * NUM_VALUES_PER_OBJECT + confidence];
-                if(error_norm_sq < threshold * threshold) {
-                    // if (detected_cars_counter[j] < 15) {
-                    if (true) {
-                        // detected_cars[j] = (detected_cars[j] * detected_cars_counter[j] + world_pose) / (detected_cars_counter[j] + 1);
-                        detected_cars[j] = (detected_cars[j] * 0.1 + world_pose * 0.9);
-                        car_pose_msg.data[(j+1) * 2] = detected_cars[j][0];
-                        car_pose_msg.data[(j+1) * 2 + 1] = detected_cars[j][1];
-                        // std::cout << "updated car detected at (" << detected_cars[j][0] << ", " << detected_cars[j][1] << ")" << std::endl;
-                        detected_cars_counter[j]++;
-                    }
-                    recent_car_indices.remove(j); // remove j if it exists
-                    recent_car_indices.push_front(j); // add j to the front
-                    break;
-                } else if(j == detected_cars.size() - 1) {
-                    detected_cars.push_back(world_pose);
-                    car_pose_msg.data.push_back(world_pose[0]);
-                    car_pose_msg.data.push_back(world_pose[1]);
-                    detected_cars_counter.push_back(1);
-                    recent_car_indices.push_front(detected_cars.size() - 1); // Add new car as most recent
-                    // std::cout << "new car detected at (" << world_pose[0] << ", " << world_pose[1] << "), num cars: " << detected_cars.size() << std::endl;
-                    break;
-                }
-            }
-            while (recent_car_indices.size() > 5) {
-                recent_car_indices.pop_back(); // keep only 4 most recent cars
-            }
-            static bool publish_cars = true;
-            if(publish_cars) {
-                std_msgs::Float32MultiArray car_msg;
-                car_msg.data = car_pose_msg.data;
-                car_pose_pub.publish(car_msg);
-            }
-        }
-    }
-    // print car_pose_msg
-    // for (int i = 0; i < car_pose_msg.data.size(); i += 2) {
-    //     std::cout << "car " << i / 2 << ": (" << car_pose_msg.data[i] << ", " << car_pose_msg.data[i + 1] << ")" << std::endl;
-    // }
-    car_pose_pub.publish(car_pose_msg);
 }
 
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {

@@ -24,7 +24,7 @@
 #include "utils/go_to.h"
 #include "utils/go_to_multiple.h"
 #include <std_srvs/Trigger.h>
-#include "utility.hpp"
+#include "Utility.hpp"
 #include "utils/helper.h"
 
 class PathManager {

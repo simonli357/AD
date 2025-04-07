@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include "utility.hpp"
+#include "Utility.hpp"
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "utility_node");
