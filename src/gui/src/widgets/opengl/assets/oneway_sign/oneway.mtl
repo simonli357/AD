@@ -9,7 +9,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 1
-map_Kd /home/admin/Containers/ros/Simulator/src/models_pkg/oneway_sign/materials/textures/oneway_sign.png
+map_Kd oneway_sign.png
 
 newmtl Material.002
 Ns 0.000000
