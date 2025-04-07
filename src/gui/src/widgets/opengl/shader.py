@@ -85,6 +85,11 @@ class ShaderRenderer:
         self.roundabout_sign_model = load_obj(*object_path('roundabout_sign', 'roundabout'))
         self.parking_sign_model = load_obj(*object_path('parking_sign', 'parking'))
         self.crosswalk_sign_model = load_obj(*object_path('crosswalk_sign', 'crosswalk'))
+        self.noentry_sign_model = load_obj(*object_path('noentry_sign', 'noentry'))
+        self.traffic_light_model = load_obj(*object_path('traffic_light', 'lights'))
+        self.red_light_model = load_obj(*object_path('traffic_light', 'red'))
+        self.yellow_light_model = load_obj(*object_path('traffic_light', 'yellow'))
+        self.green_light_model = load_obj(*object_path('traffic_light', 'green'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -151,16 +156,18 @@ class ShaderRenderer:
         elif obj_type == 'Crosswalk':
             road_obj_model = self.crosswalk_sign_model
         elif obj_type == 'No Entry':
-            pass
+            road_obj_model = self.noentry_sign_model
         elif obj_type == 'Priority':
             road_obj_model = self.prio_sign_model
         elif obj_type == 'Light':
-            pass
-        elif obj_type == 'Block':
-            pass
+            road_obj_model = self.traffic_light_model
+        elif obj_type == 'Green Light':
+            road_obj_model = self.green_light_model
+        elif obj_type == 'Yellow Light':
+            road_obj_model = self.yellow_light_model
+        elif obj_type == 'Red Light':
+            road_obj_model = self.red_light_model
         elif obj_type == 'Pedestrian':
-            pass
-        elif obj_type == 'Green Light' or obj_type == 'Yellow Light' or obj_type == 'Red Light':
             pass
         else:
             return
