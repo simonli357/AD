@@ -55,4 +55,4 @@ class InfoWidget(QWidget):
         if pos is None:
             self.pos_label.setText("󰵉  x: --:-- y: --:--")
         else:
-            self.pos_label.setText(f"󰵉  x: {pos[0]:.2f} y: {pos[1]:.2f}")
+            self.pos_label.setText(f"󰵉  x: {-pos[0]:.2f} y: {pos[1]:.2f}")

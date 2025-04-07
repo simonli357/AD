@@ -105,26 +105,33 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.draw_detected_objects()
+        self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
-    def draw_detected_objects(self):
-        obj = self.main_window.cam_widget.detected_objects
-        if obj is None:
+    def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
+        if detected_data is None or len(detected_data) == 0:
             return
-        for i in range(0, self.main_window.cam_widget.numObj):
-            if not self.rotation_reset:
-                self.rotation = 0
-                self.rotation_reset = True
-            obj_type = self.obj_dict[obj[10 * i + 6]]
-            rel_x = obj[10 * i + 8]
-            rel_y = obj[10 * i + 7]
+        for i in range(len(detected_data)):
+            obj_type = detected_data[i, road_msg_dict['type']]
+            x_real = detected_data[i, road_msg_dict['x']]
+            y_real = detected_data[i, road_msg_dict['y']]
+            orientation = detected_data[i, road_msg_dict['orientation']]
 
-            real_x = rel_x + self.x_pos
-            real_y = rel_y + self.y_pos
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
 
-            x, y = self.get_gl_coords(real_x, real_y)
+            print(x, y, orientation)
 
-            self.shader_renderer.draw_road_object(obj_type, x, y, np.radians(180) + self.rotation, 16.0, self.view_mat, self.proj_mat)
+            car_x, car_y = self.get_gl_coords(self.x_pos, self.y_pos)
+            print(car_x, car_y)
+
+            if object_dict[obj_type] == 'Car' and i == 0:
+                continue
+            elif object_dict[obj_type] == 'Car':
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+            else:
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 16.0, self.view_mat, self.proj_mat)
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
