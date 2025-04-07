@@ -326,6 +326,15 @@ inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) 
 
 inline std_msgs::Float32MultiArray& create_all_msgs() {
     reset_msg();
+    if (ego_car) {
+        ros_msg.data.push_back(static_cast<float>(ego_car->type));
+        ros_msg.data.push_back(static_cast<float>(ego_car->x));
+        ros_msg.data.push_back(static_cast<float>(ego_car->y));
+        ros_msg.data.push_back(static_cast<float>(ego_car->yaw));
+        ros_msg.data.push_back(static_cast<float>(ego_car->speed));
+        ros_msg.data.push_back(static_cast<float>(ego_car->confidence));
+        ros_msg.data.push_back(static_cast<float>(ego_car->z));
+    }
     create_msg(road_objects);
     create_msg(
         reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_known_static_objects)

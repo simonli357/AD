@@ -420,7 +420,6 @@ void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     process_sign_data(*msg);   
 }
 void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
-    std::cout << "Utility::process_sign_data" << std::endl;
     if (msg.data.size()) {
         num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
         {
@@ -437,11 +436,8 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     }
     double x, y, yaw;
     get_states(x, y, yaw);
-    std::cout << "Utility::process_sign_data: num_obj: " << num_obj << std::endl;
     Tracking::ego_car->update(x, y, yaw, velocity_command, height, steer_command);
-    std::cout << "Utility::process_sign_data: ego car updated" << std::endl;
     for(int i = 0; i < num_obj; i++) {
-        std::cout << "Utility::process_sign_data: object " << i << std::endl;
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
         auto type = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
@@ -455,10 +451,8 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         double x, y, yaw;
         get_states(x, y, yaw);
         Eigen::Vector2d world_states = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
-        std::cout << i << ") Utility::process_sign_data: world states: " << world_states[0] << ", " << world_states[1] << std::endl;
         bool is_known_static = Tracking::is_known_static_object(type);
         auto* road_objects = Tracking::get_road_objects(static_cast<OBJECT>(type));
-        std::cout << i << ") Utility::process_sign_data: road objects size: " << road_objects->size() << std::endl;
         if (!road_objects) {
             debug("Sign Callback(): Skipping object due to null road_objects for type: " + std::to_string(type), 1);
             return;
@@ -472,10 +466,8 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                 break;
             }
         }
-        std::cout << i << ") Utility::process_sign_data: found same: " << found_same << std::endl;
         if (!found_same) {
             if (is_known_static) {
-                std::cout << i << ") Utility::process_sign_data: is known static" << std::endl;
                 std::string sign_name;
                 const auto& relevant_signs = get_relevant_signs(type, sign_name);
                 int min_index = 0;
@@ -497,7 +489,6 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                     }
                 }
             } else {
-                std::cout << i << ") Utility::process_sign_data: is not known static" << std::endl;
                 Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], yaw, confidence);
                 debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
                     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
@@ -505,10 +496,8 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
             }
         }
     }
-    std::cout << "Utility::process_sign_data: detected objects updated" << std::endl;
     Tracking::cleanup_stale_objects();
     auto road_object_msg = Tracking::create_all_msgs();
-    std::cout << "Utility::process_sign_data: road object message created" << std::endl;
     static bool publish_objects = true;
     if(publish_objects) {
         road_object_pub.publish(road_object_msg);
