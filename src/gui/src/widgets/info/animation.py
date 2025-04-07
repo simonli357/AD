@@ -82,7 +82,7 @@ class AnimationWidget(QtWidgets.QOpenGLWidget):
             x = obj[10 * i + 8]
             y = obj[10 * i + 7]
             distance = obj[10 * i + 4]
-            self.shader_renderer.draw_road_object(obj_type, 0, 0, np.radians(180) + self.rotation, 16.0, self.view_mat, self.proj_mat)
+            self.shader_renderer.draw_road_object(obj_type, 0, 0, np.radians(180) + self.rotation, 16.0, self.view_mat, self.proj_mat, True)
             self.main_window.info_widget.update_obj_type(obj_type)
             self.main_window.info_widget.update_obj_dist(distance)
             self.main_window.info_widget.update_obj_pos((x, y))
