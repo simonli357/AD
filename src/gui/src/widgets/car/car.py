@@ -105,7 +105,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.draw_gt()
+        self.draw_gt(x, y)
 
     def draw_gt(self, car_x, car_y):
         for index, row in self.main_window.map_widget.data.iterrows():
@@ -116,7 +116,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             dy = y - car_y
             dist = np.hypot(dx, dy)
             if dist > 5:
-                return
+                continue
 
             # orientation = 2 * np.pi - orientation
             orientation = - orientation
