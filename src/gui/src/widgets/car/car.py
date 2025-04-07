@@ -115,7 +115,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             dx = x - car_x
             dy = y - car_y
             dist = np.hypot(dx, dy)
-            if dist > 5:
+            if dist > 40:
                 continue
 
             # orientation = 2 * np.pi - orientation
