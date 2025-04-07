@@ -17,34 +17,26 @@ class InfoWidget(QWidget):
             border: none;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 18px;
         """)
         self.dist_label = QLabel("  --:-- cm")
         self.dist_label.setStyleSheet("""
             border: none;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 18px;
         """)
         self.pos_label = QLabel("󰵉  x: --:-- y: --:--")
         self.pos_label.setStyleSheet("""
             border: none;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
-        """)
-        self.car_pos_label = QLabel("󰞬  x: --:-- y: --:--")
-        self.car_pos_label.setStyleSheet("""
-            border: none;
-            background-color: transparent;
-            color: yellow;
-            font-size: 20px;
+            font-size: 18px;
         """)
 
         self.layout.addWidget(self.object_type_label)
         self.layout.addWidget(self.dist_label)
         self.layout.addWidget(self.pos_label)
-        self.layout.addWidget(self.car_pos_label)
         self.setLayout(self.layout)
 
     def update_obj_type(self, obj_type=None):
@@ -64,9 +56,3 @@ class InfoWidget(QWidget):
             self.pos_label.setText("󰵉  x: --:-- y: --:--")
         else:
             self.pos_label.setText(f"󰵉  x: {pos[0]:.2f} y: {pos[1]:.2f}")
-
-    def update_car_pos(self, pos=None):
-        if pos is None:
-            self.car_pos_label.setText("󰞬  x: --:-- y: --:--")
-        else:
-            self.car_pos_label.setText(f"󰞬  x: {pos[0]:.2f} y: {pos[1]:.2f}")

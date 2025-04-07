@@ -15,6 +15,7 @@ class AnimationWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.main_window = self.parent()
         self.obj_dict = self.main_window.map_widget.object_dict
+        self.rotation_reset = False
 
         self.cam_dist = 6.0
         self.cam_height = self.cam_dist * 2 / 3
@@ -74,6 +75,9 @@ class AnimationWidget(QtWidgets.QOpenGLWidget):
             return
         obj_detected = False
         for i in range(0, self.main_window.cam_widget.numObj):
+            if not self.rotation_reset:
+                self.rotation = 0
+                self.rotation_reset = True
             obj_type = self.obj_dict[obj[10 * i + 6]]
             x = obj[10 * i + 8]
             y = obj[10 * i + 7]
@@ -84,6 +88,7 @@ class AnimationWidget(QtWidgets.QOpenGLWidget):
             self.main_window.info_widget.update_obj_pos((x, y))
             obj_detected = True
         if not obj_detected:
+            self.rotation_reset = False
             self.shader_renderer.draw_void_symbol(0, 0, np.radians(180) + self.rotation, 1.5, self.view_mat, self.proj_mat)
             self.main_window.info_widget.update_obj_type()
             self.main_window.info_widget.update_obj_dist()

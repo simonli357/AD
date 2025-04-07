@@ -173,9 +173,18 @@ class ShaderRenderer:
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
 
-    def draw_road_object(self, obj_type, x, y, yaw, scale, view_matrix, proj_matrix):
+    def draw_road_object(self, obj_type, x, y, yaw, scale, view_matrix, proj_matrix, is_animation=False):
         road_obj_model = None
-        if obj_type == 'Oneway':
+        is_car = False
+        z = 0
+        if obj_type == 'Car':
+            if not is_animation:
+                return
+            scale = scale / 200.0
+            z = 1.0
+            is_car = True
+            road_obj_model = self.red_car_model
+        elif obj_type == 'Oneway':
             road_obj_model = self.oneway_sign_model
         elif obj_type == 'Stopsign':
             road_obj_model = self.stop_sign_model
@@ -202,6 +211,8 @@ class ShaderRenderer:
         elif obj_type == 'Red Light':
             road_obj_model = self.red_light_model
         elif obj_type == 'Pedestrian':
+            if is_animation:
+                z = 0.5
             road_obj_model = self.pedestrian_model
         else:
             return
@@ -209,9 +220,10 @@ class ShaderRenderer:
         gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.0))
+        model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
-        model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+        if not is_car:
+            model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
 
         model_loc = gl.glGetUniformLocation(shader_program, "model")
