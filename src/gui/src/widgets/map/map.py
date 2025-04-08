@@ -129,7 +129,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.run_statistics = HidableOverlay(self)
         self.run_statistics.setFixedSize(
             int(256),
-            int(144)
+            int(180)
         )
 
     def get_key_from_value(self, value):
