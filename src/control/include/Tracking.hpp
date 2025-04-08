@@ -372,5 +372,5 @@ inline void cleanup_stale_objects() {
         }), road_pedestrians.end());
 }
 
-}
+} // end of namespace Tracking
         

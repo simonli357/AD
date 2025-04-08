@@ -434,9 +434,9 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     } else {
         emergency = false;
     }
-    double x, y, yaw;
-    get_states(x, y, yaw);
-    Tracking::ego_car->update(x, y, yaw, velocity_command, height, steer_command);
+    double ego_x, ego_y, ego_yaw;
+    get_states(ego_x, ego_y, ego_yaw);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -448,9 +448,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
         double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
         double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
-        double x, y, yaw;
-        get_states(x, y, yaw);
-        Eigen::Vector2d world_states = estimate_object_pose2d(x, y, yaw, xmin, ymin, xmax, ymax, dist, true);
+        Eigen::Vector2d world_states = estimate_object_pose2d(ego_x, ego_y, ego_yaw, xmin, ymin, xmax, ymax, dist, true);
         bool is_known_static = Tracking::is_known_static_object(type);
         auto* road_objects = Tracking::get_road_objects(static_cast<OBJECT>(type));
         if (!road_objects) {
@@ -462,7 +460,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
             auto& obj = (*road_objects)[i];
             if (obj->is_same_object(world_states[0], world_states[1])) {
                 found_same = true;
-                obj->merge(world_states[0], world_states[1], yaw, confidence);
+                obj->merge(world_states[0], world_states[1], ego_yaw, confidence);
                 break;
             }
         }
@@ -476,7 +474,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
 
                 if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
                     double sign_yaw = relevant_signs[min_index][2];
-                    double yaw_error = compare_yaw(sign_yaw, yaw);
+                    double yaw_error = compare_yaw(sign_yaw, ego_yaw);
 
                     if (yaw_error < 35 * M_PI / 180) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
@@ -489,7 +487,7 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
                     }
                 }
             } else {
-                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], yaw, confidence);
+                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], ego_yaw, confidence);
                 debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
                     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
                     "), road_objects size: " + std::to_string(road_objects->size()), 2);
