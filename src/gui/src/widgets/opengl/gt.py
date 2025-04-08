@@ -87,6 +87,7 @@ class GTRenderer:
                 model_matrix = glm.scale(model_matrix, glm.vec3(0.2, 0.2, 0.2))
             if self.category == 'Sign':
                 model_matrix = glm.scale(model_matrix, glm.vec3(16.0, 16.0, 16.0))
+                model_matrix = glm.rotate(model_matrix, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
             if self.entity_type == 'Destination':
                 model_matrix = glm.scale(model_matrix, glm.vec3(2.0, 2.0, 2.0))
 
