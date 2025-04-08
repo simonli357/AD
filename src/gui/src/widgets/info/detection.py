@@ -82,26 +82,25 @@ class DetectionWidget(QtWidgets.QOpenGLWidget):
             objs.append(self.obj_dict[obj[10 * i + 6]])
             obj_detected = True
         if not obj_detected:
-            # self.shader_renderer.draw_void_symbol(0, 0, np.radians(180) + self.rotation, 0.1, self.view_mat, self.proj_mat)
-            self.shader_renderer.draw_road_object('Car', 0, 0, np.radians(180) + self.rotation, 2, self.view_mat, self.proj_mat, True)
+            self.shader_renderer.draw_void_symbol(0, 0, np.radians(180) + self.rotation, 0.1, self.view_mat, self.proj_mat)
             self.rotation_reset = False
             return
 
-        if len(objs == 1):
+        if len(objs) == 1:
             self.shader_renderer.draw_road_object(objs[0], 0, 0, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
-        elif len(objs == 2):
+        elif len(objs) == 2:
             self.shader_renderer.draw_road_object(objs[0], 0, 1 / 4, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[1], 0, - 1 / 4, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
-        elif len(objs == 3):
+        elif len(objs) == 3:
             self.shader_renderer.draw_road_object(objs[0], 1 / 2.33, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[1], 0, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[2], - 1 / 2.33, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
-        elif len(objs == 4):
+        elif len(objs) == 4:
             self.shader_renderer.draw_road_object(objs[0], 1 / 2, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[1], 1 / 6, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[2], - 1 / 6, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[3], - 1 / 2, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
-        elif len(objs == 5):
+        elif len(objs) == 5:
             self.shader_renderer.draw_road_object(objs[0], 1 / 2, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[1], 1 / 4, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
             self.shader_renderer.draw_road_object(objs[2], 0, np.radians(180) + self.rotation, 2.0, self.view_mat, self.proj_mat, True)
