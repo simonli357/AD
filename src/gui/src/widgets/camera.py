@@ -45,8 +45,6 @@ class CameraWidget(QtWidgets.QWidget):
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label = QtWidgets.QLabel(container_widget)
-        self.camera_label.setMinimumWidth(CameraParams.MIN_WIDTH.value)
-        self.camera_label.setMinimumWidth(CameraParams.MIN_HEIGHT.value)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label.setStyleSheet("""
             background-color: transparent;
