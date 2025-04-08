@@ -128,10 +128,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
         self.run_statistics = HidableOverlay(self)
-        self.run_statistics.setFixedSize(
-            int(330),
-            int(180)
-        )
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)

@@ -125,7 +125,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.20, self.view_mat, self.proj_mat)
             else:
                 self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 16.0, self.view_mat, self.proj_mat)
 
