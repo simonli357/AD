@@ -35,11 +35,7 @@ class CameraParams(Enum):
     MIN_HEIGHT = 480
     FPS_60 = 0.017  # 60 FPS
     FPS_30 = 0.034  # 30 FPS
-<<<<<<< HEAD
     RECORDING_REFRESH_RATE = 0.5  # 1/rate
-=======
-    RECORDING_REFRESH_RATE = 0.25  # 1/rate
-
 
 class NamedColor(Enum):
     RED = (1.0, 0.0, 0.0, 1.0)
@@ -48,4 +44,3 @@ class NamedColor(Enum):
     YELLOW = (1.0, 1.0, 0.0, 1.0)
     CYAN = (0.0, 1.0, 1.0, 1.0)
     WHITE = (1.0, 1.0, 1.0, 1.0)
->>>>>>> origin/migrate-opengl

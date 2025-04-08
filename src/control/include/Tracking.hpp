@@ -314,6 +314,7 @@ inline void reset_msg() {
 
 inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) {
     for (const auto& obj : objects) {
+        ros_msg.data.push_back(static_cast<float>(obj->id));
         ros_msg.data.push_back(static_cast<float>(obj->type));
         ros_msg.data.push_back(static_cast<float>(obj->x));
         ros_msg.data.push_back(static_cast<float>(obj->y));
@@ -327,6 +328,7 @@ inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) 
 inline std_msgs::Float32MultiArray& create_all_msgs() {
     reset_msg();
     if (ego_car) {
+        ros_msg.data.push_back(static_cast<float>(ego_car->id));
         ros_msg.data.push_back(static_cast<float>(ego_car->type));
         ros_msg.data.push_back(static_cast<float>(ego_car->x));
         ros_msg.data.push_back(static_cast<float>(ego_car->y));
