@@ -179,8 +179,8 @@ class MainWindow(QMainWindow):
         self.stat_layout.addWidget(right_wrapper)
         self.right_layout.addWidget(stat_widgets, 1)
 
-        root_layout.addWidget(left_widgets, 2)
-        root_layout.addWidget(right_widgets, 1)
+        root_layout.addWidget(left_widgets, 6)
+        root_layout.addWidget(right_widgets, 4)
 
         self.terminal_widget.add_message("AD IDE INITIALIZED")
 
