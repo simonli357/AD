@@ -382,10 +382,11 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
         self.line_model.vbo.unbind()
 
-    def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix):
+    def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix, rot_barca=0):
         gl.glUseProgram(self.triangle_shader)
 
         model = glm.mat4(1.0)
+        model = glm.rotate(model, glm.radians(rot_barca), glm.vec3(0, 0, 1))
         model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))

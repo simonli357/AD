@@ -81,7 +81,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = 10.0;
+        double rateVal = 1 / T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);

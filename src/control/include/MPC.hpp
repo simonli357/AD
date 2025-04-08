@@ -4,15 +4,27 @@
 #include "acados/utils/math.h"
 #include "acados_c/ocp_nlp_interface.h"
 #include "acados_sim_solver_mobile_robot_25.h"
-#include "acados_sim_solver_mobile_robot_25_beta.h"
 #include "acados_sim_solver_mobile_robot_32.h"
-#include "acados_sim_solver_mobile_robot_32_beta.h"
+#include "acados_sim_solver_mobile_robot_120.h"
+#include "acados_sim_solver_mobile_robot_200.h"
+#include "acados_sim_solver_mobile_robot_300.h"
+#include "acados_sim_solver_mobile_robot_400.h"
 #include "acados_sim_solver_mobile_robot_500.h"
+#include "acados_sim_solver_mobile_robot_25_beta.h"
+#include "acados_sim_solver_mobile_robot_32_beta.h"
+#include "acados_sim_solver_mobile_robot_300_beta.h"
+#include "acados_sim_solver_mobile_robot_400_beta.h"
 #include "acados_solver_mobile_robot_25.h"
-#include "acados_solver_mobile_robot_25_beta.h"
 #include "acados_solver_mobile_robot_32.h"
-#include "acados_solver_mobile_robot_32_beta.h"
+#include "acados_solver_mobile_robot_120.h"
+#include "acados_solver_mobile_robot_200.h"
+#include "acados_solver_mobile_robot_300.h"
+#include "acados_solver_mobile_robot_400.h"
 #include "acados_solver_mobile_robot_500.h"
+#include "acados_solver_mobile_robot_25_beta.h"
+#include "acados_solver_mobile_robot_32_beta.h"
+#include "acados_solver_mobile_robot_300_beta.h"
+#include "acados_solver_mobile_robot_400_beta.h"
 #include <Eigen/Dense>
 #include <any>
 #include <cmath>
@@ -103,6 +115,14 @@ class MPC {
 	mobile_robot_25_sim_solver_capsule *sim_capsule_25;
 	mobile_robot_32_solver_capsule *acados_ocp_capsule_32;
 	mobile_robot_32_sim_solver_capsule *sim_capsule_32;
+	mobile_robot_120_solver_capsule *acados_ocp_capsule_120;
+	mobile_robot_120_sim_solver_capsule *sim_capsule_120;
+	mobile_robot_200_solver_capsule *acados_ocp_capsule_200;
+	mobile_robot_200_sim_solver_capsule *sim_capsule_200;
+	mobile_robot_300_solver_capsule *acados_ocp_capsule_300;
+	mobile_robot_300_sim_solver_capsule *sim_capsule_300;
+	mobile_robot_400_solver_capsule *acados_ocp_capsule_400;
+	mobile_robot_400_sim_solver_capsule *sim_capsule_400;
 	mobile_robot_500_solver_capsule *acados_ocp_capsule_500;
 	mobile_robot_500_sim_solver_capsule *sim_capsule_500;
 
@@ -110,6 +130,10 @@ class MPC {
 	mobile_robot_25_beta_sim_solver_capsule *sim_capsule_25_beta;
 	mobile_robot_32_beta_solver_capsule *acados_ocp_capsule_32_beta;
 	mobile_robot_32_beta_sim_solver_capsule *sim_capsule_32_beta;
+	mobile_robot_300_beta_solver_capsule *acados_ocp_capsule_300_beta;
+	mobile_robot_300_beta_sim_solver_capsule *sim_capsule_300_beta;
+	mobile_robot_400_beta_solver_capsule *acados_ocp_capsule_400_beta;
+	mobile_robot_400_beta_sim_solver_capsule *sim_capsule_400_beta;
 
 	enum ACADOS_FN {
 		CREATE_CAPSULE,
@@ -186,6 +210,82 @@ class MPC {
 		acados_fns[32][FREE] = std::function<void()>([this]() { mobile_robot_32_acados_free(acados_ocp_capsule_32); });
 		acados_fns[32][FREE_SIM] = std::function<void()>([this]() { mobile_robot_32_acados_sim_free(sim_capsule_32); });
 
+		acados_fns[120][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_120 = mobile_robot_120_acados_create_capsule(); });
+		acados_fns[120][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_120 = mobile_robot_120_acados_sim_solver_create_capsule(); });
+		acados_fns[120][CREATE] = std::function<void()>([this]() { status = mobile_robot_120_acados_create(acados_ocp_capsule_120); });
+		acados_fns[120][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_120_acados_sim_create(sim_capsule_120); });
+		acados_fns[120][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_120_acados_get_sim_config(sim_capsule_120); });
+		acados_fns[120][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_120_acados_get_sim_dims(sim_capsule_120); });
+		acados_fns[120][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_120_acados_get_sim_in(sim_capsule_120); });
+		acados_fns[120][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_120_acados_get_sim_out(sim_capsule_120); });
+		acados_fns[120][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_120_acados_get_nlp_config(acados_ocp_capsule_120); });
+		acados_fns[120][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_120_acados_get_nlp_dims(acados_ocp_capsule_120); });
+		acados_fns[120][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_120_acados_get_nlp_in(acados_ocp_capsule_120); });
+		acados_fns[120][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_120_acados_get_nlp_out(acados_ocp_capsule_120); });
+		acados_fns[120][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_120_acados_update_params(acados_ocp_capsule_120, j, u_current, 2); });
+		acados_fns[120][RESET] = std::function<int()>([this]() { return mobile_robot_120_acados_reset(acados_ocp_capsule_120, 1); });
+		acados_fns[120][SOLVE] = std::function<void()>([this]() { status = mobile_robot_120_acados_solve(acados_ocp_capsule_120); });
+		acados_fns[120][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_120_acados_sim_solve(sim_capsule_120); });
+		acados_fns[120][FREE] = std::function<void()>([this]() { mobile_robot_120_acados_free(acados_ocp_capsule_120); });
+		acados_fns[120][FREE_SIM] = std::function<void()>([this]() { mobile_robot_120_acados_sim_free(sim_capsule_120); });
+
+		acados_fns[200][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_200 = mobile_robot_200_acados_create_capsule(); });
+		acados_fns[200][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_200 = mobile_robot_200_acados_sim_solver_create_capsule(); });
+		acados_fns[200][CREATE] = std::function<void()>([this]() { status = mobile_robot_200_acados_create(acados_ocp_capsule_200); });
+		acados_fns[200][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_200_acados_sim_create(sim_capsule_200); });
+		acados_fns[200][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_200_acados_get_sim_config(sim_capsule_200); });
+		acados_fns[200][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_200_acados_get_sim_dims(sim_capsule_200); });
+		acados_fns[200][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_200_acados_get_sim_in(sim_capsule_200); });
+		acados_fns[200][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_200_acados_get_sim_out(sim_capsule_200); });
+		acados_fns[200][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_200_acados_get_nlp_config(acados_ocp_capsule_200); });
+		acados_fns[200][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_200_acados_get_nlp_dims(acados_ocp_capsule_200); });
+		acados_fns[200][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_200_acados_get_nlp_in(acados_ocp_capsule_200); });
+		acados_fns[200][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_200_acados_get_nlp_out(acados_ocp_capsule_200); });
+		acados_fns[200][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_200_acados_update_params(acados_ocp_capsule_200, j, u_current, 2); });
+		acados_fns[200][RESET] = std::function<int()>([this]() { return mobile_robot_200_acados_reset(acados_ocp_capsule_200, 1); });
+		acados_fns[200][SOLVE] = std::function<void()>([this]() { status = mobile_robot_200_acados_solve(acados_ocp_capsule_200); });
+		acados_fns[200][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_200_acados_sim_solve(sim_capsule_200); });
+		acados_fns[200][FREE] = std::function<void()>([this]() { mobile_robot_200_acados_free(acados_ocp_capsule_200); });
+		acados_fns[200][FREE_SIM] = std::function<void()>([this]() { mobile_robot_200_acados_sim_free(sim_capsule_200); });
+
+		acados_fns[300][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_300 = mobile_robot_300_acados_create_capsule(); });
+		acados_fns[300][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_300 = mobile_robot_300_acados_sim_solver_create_capsule(); });
+		acados_fns[300][CREATE] = std::function<void()>([this]() { status = mobile_robot_300_acados_create(acados_ocp_capsule_300); });
+		acados_fns[300][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_300_acados_sim_create(sim_capsule_300); });
+		acados_fns[300][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_300_acados_get_sim_config(sim_capsule_300); });
+		acados_fns[300][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_300_acados_get_sim_dims(sim_capsule_300); });
+		acados_fns[300][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_300_acados_get_sim_in(sim_capsule_300); });
+		acados_fns[300][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_300_acados_get_sim_out(sim_capsule_300); });
+		acados_fns[300][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_300_acados_get_nlp_config(acados_ocp_capsule_300); });
+		acados_fns[300][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_300_acados_get_nlp_dims(acados_ocp_capsule_300); });
+		acados_fns[300][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_300_acados_get_nlp_in(acados_ocp_capsule_300); });
+		acados_fns[300][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_300_acados_get_nlp_out(acados_ocp_capsule_300); });
+		acados_fns[300][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_300_acados_update_params(acados_ocp_capsule_300, j, u_current, 2); });
+		acados_fns[300][RESET] = std::function<int()>([this]() { return mobile_robot_300_acados_reset(acados_ocp_capsule_300, 1); });
+		acados_fns[300][SOLVE] = std::function<void()>([this]() { status = mobile_robot_300_acados_solve(acados_ocp_capsule_300); });
+		acados_fns[300][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_300_acados_sim_solve(sim_capsule_300); });
+		acados_fns[300][FREE] = std::function<void()>([this]() { mobile_robot_300_acados_free(acados_ocp_capsule_300); });
+		acados_fns[300][FREE_SIM] = std::function<void()>([this]() { mobile_robot_300_acados_sim_free(sim_capsule_300); });
+
+        acados_fns[400][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_400 = mobile_robot_400_acados_create_capsule(); });
+		acados_fns[400][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_400 = mobile_robot_400_acados_sim_solver_create_capsule(); });
+		acados_fns[400][CREATE] = std::function<void()>([this]() { status = mobile_robot_400_acados_create(acados_ocp_capsule_400); });
+		acados_fns[400][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_400_acados_sim_create(sim_capsule_400); });
+		acados_fns[400][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_400_acados_get_sim_config(sim_capsule_400); });
+		acados_fns[400][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_400_acados_get_sim_dims(sim_capsule_400); });
+		acados_fns[400][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_400_acados_get_sim_in(sim_capsule_400); });
+		acados_fns[400][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_400_acados_get_sim_out(sim_capsule_400); });
+		acados_fns[400][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_400_acados_get_nlp_config(acados_ocp_capsule_400); });
+		acados_fns[400][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_400_acados_get_nlp_dims(acados_ocp_capsule_400); });
+		acados_fns[400][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_400_acados_get_nlp_in(acados_ocp_capsule_400); });
+		acados_fns[400][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_400_acados_get_nlp_out(acados_ocp_capsule_400); });
+		acados_fns[400][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_400_acados_update_params(acados_ocp_capsule_400, j, u_current, 2); });
+		acados_fns[400][RESET] = std::function<int()>([this]() { return mobile_robot_400_acados_reset(acados_ocp_capsule_400, 1); });
+		acados_fns[400][SOLVE] = std::function<void()>([this]() { status = mobile_robot_400_acados_solve(acados_ocp_capsule_400); });
+		acados_fns[400][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_400_acados_sim_solve(sim_capsule_400); });
+		acados_fns[400][FREE] = std::function<void()>([this]() { mobile_robot_400_acados_free(acados_ocp_capsule_400); });
+		acados_fns[400][FREE_SIM] = std::function<void()>([this]() { mobile_robot_400_acados_sim_free(sim_capsule_400); });
+
 		acados_fns[500][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_500 = mobile_robot_500_acados_create_capsule(); });
 		acados_fns[500][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_500 = mobile_robot_500_acados_sim_solver_create_capsule(); });
 		acados_fns[500][CREATE] = std::function<void()>([this]() { status = mobile_robot_500_acados_create(acados_ocp_capsule_500); });
@@ -244,6 +344,44 @@ class MPC {
 		acados_beta_fns[32][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_32_beta_acados_sim_solve(sim_capsule_32_beta); });
 		acados_beta_fns[32][FREE] = std::function<void()>([this]() { mobile_robot_32_beta_acados_free(acados_ocp_capsule_32_beta); });
 		acados_beta_fns[32][FREE_SIM] = std::function<void()>([this]() { mobile_robot_32_beta_acados_sim_free(sim_capsule_32_beta); });
+
+		acados_beta_fns[300][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_300_beta = mobile_robot_300_beta_acados_create_capsule(); });
+		acados_beta_fns[300][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_300_beta = mobile_robot_300_beta_acados_sim_solver_create_capsule(); });
+		acados_beta_fns[300][CREATE] = std::function<void()>([this]() { status = mobile_robot_300_beta_acados_create(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_300_beta_acados_sim_create(sim_capsule_300_beta); });
+		acados_beta_fns[300][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_300_beta_acados_get_sim_config(sim_capsule_300_beta); });
+		acados_beta_fns[300][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_300_beta_acados_get_sim_dims(sim_capsule_300_beta); });
+		acados_beta_fns[300][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_300_beta_acados_get_sim_in(sim_capsule_300_beta); });
+		acados_beta_fns[300][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_300_beta_acados_get_sim_out(sim_capsule_300_beta); });
+		acados_beta_fns[300][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_300_beta_acados_get_nlp_config(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_300_beta_acados_get_nlp_dims(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_300_beta_acados_get_nlp_in(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_300_beta_acados_get_nlp_out(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_300_beta_acados_update_params(acados_ocp_capsule_300_beta, j, u_current, 2); });
+		acados_beta_fns[300][RESET] = std::function<int()>([this]() { return mobile_robot_300_beta_acados_reset(acados_ocp_capsule_300_beta, 1); });
+		acados_beta_fns[300][SOLVE] = std::function<void()>([this]() { status = mobile_robot_300_beta_acados_solve(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_300_beta_acados_sim_solve(sim_capsule_300_beta); });
+		acados_beta_fns[300][FREE] = std::function<void()>([this]() { mobile_robot_300_beta_acados_free(acados_ocp_capsule_300_beta); });
+		acados_beta_fns[300][FREE_SIM] = std::function<void()>([this]() { mobile_robot_300_beta_acados_sim_free(sim_capsule_300_beta); });
+
+		acados_beta_fns[400][CREATE_CAPSULE] = std::function<void()>([this]() { acados_ocp_capsule_400_beta = mobile_robot_400_beta_acados_create_capsule(); });
+		acados_beta_fns[400][CREATE_SIM_CAPSULE] = std::function<void()>([this]() { sim_capsule_400_beta = mobile_robot_400_beta_acados_sim_solver_create_capsule(); });
+		acados_beta_fns[400][CREATE] = std::function<void()>([this]() { status = mobile_robot_400_beta_acados_create(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][SIM_CREATE] = std::function<void()>([this]() { status = mobile_robot_400_beta_acados_sim_create(sim_capsule_400_beta); });
+		acados_beta_fns[400][GET_SIM_CONFIG] = std::function<void()>([this]() { mobile_robot_sim_config = mobile_robot_400_beta_acados_get_sim_config(sim_capsule_400_beta); });
+		acados_beta_fns[400][GET_SIM_DIMS] = std::function<void()>([this]() { mobile_robot_sim_dims = mobile_robot_400_beta_acados_get_sim_dims(sim_capsule_400_beta); });
+		acados_beta_fns[400][GET_SIM_IN] = std::function<void()>([this]() { mobile_robot_sim_in = mobile_robot_400_beta_acados_get_sim_in(sim_capsule_400_beta); });
+		acados_beta_fns[400][GET_SIM_OUT] = std::function<void()>([this]() { mobile_robot_sim_out = mobile_robot_400_beta_acados_get_sim_out(sim_capsule_400_beta); });
+		acados_beta_fns[400][GET_NLP_CONFIG] = std::function<void()>([this]() { nlp_config = mobile_robot_400_beta_acados_get_nlp_config(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][GET_NLP_DIMS] = std::function<void()>([this]() { nlp_dims = mobile_robot_400_beta_acados_get_nlp_dims(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][GET_NLP_IN] = std::function<void()>([this]() { nlp_in = mobile_robot_400_beta_acados_get_nlp_in(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][GET_NLP_OUT] = std::function<void()>([this]() { nlp_out = mobile_robot_400_beta_acados_get_nlp_out(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][UPDATE_PARAMS] = std::function<void(int)>([this](int j) { mobile_robot_400_beta_acados_update_params(acados_ocp_capsule_400_beta, j, u_current, 2); });
+		acados_beta_fns[400][RESET] = std::function<int()>([this]() { return mobile_robot_400_beta_acados_reset(acados_ocp_capsule_400_beta, 1); });
+		acados_beta_fns[400][SOLVE] = std::function<void()>([this]() { status = mobile_robot_400_beta_acados_solve(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][SIM_SOLVE] = std::function<int()>([this]() { return mobile_robot_400_beta_acados_sim_solve(sim_capsule_400_beta); });
+		acados_beta_fns[400][FREE] = std::function<void()>([this]() { mobile_robot_400_beta_acados_free(acados_ocp_capsule_400_beta); });
+		acados_beta_fns[400][FREE_SIM] = std::function<void()>([this]() { mobile_robot_400_beta_acados_sim_free(sim_capsule_400_beta); });
 	}
 
 	int acados_fn(ACADOS_FN fn_type, std::optional<int> param = std::nullopt) {
