@@ -63,7 +63,7 @@ class HidableOverlay(QWidget):
             font-size: 20px;
         """)
         self.car_rotation_label = QLabel('󰵗 Rotation: --:--')
-        self.car_pose_label.setStyleSheet("""
+        self.car_rotation_label.setStyleSheet("""
             border: none;
             padding: 5px;
             background-color: transparent;
@@ -75,6 +75,7 @@ class HidableOverlay(QWidget):
         self.layout.addWidget(self.dist_traveled_label)
         self.layout.addWidget(self.dest_reached_label)
         self.layout.addWidget(self.car_pose_label)
+        self.layout.addWidget(self.car_rotation_label)
         self.setLayout(self.layout)
 
     def calculate_total_path_distance(self):
