@@ -235,16 +235,25 @@ class ShaderRenderer:
         elif obj_type == 'Priority':
             road_obj_model = self.prio_sign_model
         elif obj_type == 'Light':
+            scale = scale / 1.5
+            z = 0.05
             road_obj_model = self.traffic_light_model
         elif obj_type == 'Green Light':
+            scale = scale / 1.5
+            z = 0.05
             road_obj_model = self.green_light_model
         elif obj_type == 'Yellow Light':
+            scale = scale / 1.5
+            z = 0.05
             road_obj_model = self.yellow_light_model
         elif obj_type == 'Red Light':
+            scale = scale / 1.5
+            z = 0.05
             road_obj_model = self.red_light_model
         elif obj_type == 'Pedestrian':
             if is_animation:
-                z = 0.5
+                z = 0.1
+                scale = scale / 1.5
             road_obj_model = self.pedestrian_model
         else:
             return
@@ -256,7 +265,7 @@ class ShaderRenderer:
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         if not is_car:
             model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.scale(model, glm.vec3(scale, scale, scale))
+        model = glm.scale(model, glm.vec3(float(scale), float(scale), float(scale)))
 
         model_loc = gl.glGetUniformLocation(shader_program, "model")
         view_loc = gl.glGetUniformLocation(shader_program, "view")

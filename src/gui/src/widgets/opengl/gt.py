@@ -85,12 +85,12 @@ class GTRenderer:
 
             if self.entity_type == 'Car':
                 model_matrix = glm.scale(model_matrix, glm.vec3(0.2, 0.2, 0.2))
-            if self.category == 'Sign':
+            elif self.entity_type == 'Destination':
+                model_matrix = glm.scale(model_matrix, glm.vec3(2.0, 2.0, 2.0))
+            else:
                 model_matrix = glm.scale(model_matrix, glm.vec3(16.0, 16.0, 16.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
-            if self.entity_type == 'Destination':
-                model_matrix = glm.scale(model_matrix, glm.vec3(2.0, 2.0, 2.0))
 
             # Convert the matrix to a numpy array.
             # Because glm (PyGLM) produces column-major matrices (which OpenGL expects),
