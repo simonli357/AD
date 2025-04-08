@@ -109,10 +109,10 @@ class HidableOverlay(QWidget):
         self.dest_reached_label.setText(f'󰪥  Reached: {dest_visited:.0f}')
 
     def set_car_pose(self, x, y, z):
-        self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{y:.2f} z:{z:.2f}")
+        self.car_pose_label.setText(f"󰵉  x:{x:.1f} y:{y:.1f} z:{z:.1f}")
 
     def set_car_rotation(self, yaw, steer):
-        self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
+        self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.1f} steer:{steer:.1f}")
 
     def update_global_rect(self):
         if self.parent():
