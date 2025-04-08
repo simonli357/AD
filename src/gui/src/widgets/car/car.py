@@ -54,23 +54,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.shader_renderer = ShaderRenderer()
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
-        self.cars_renderer = GTRenderer(self.shader_renderer.red_car_model, 'Car')
-        self.one_ways_renderer = GTRenderer(self.shader_renderer.oneway_sign_model, 'Oneway', 'Sign')
-        self.stop_signs_renderer = GTRenderer(self.shader_renderer.stop_sign_model, 'Stopsign', 'Sign')
-        self.signs_renderer = GTRenderer(self.shader_renderer.stop_sign_model, 'Sign', 'Sign')
-        self.highway_entrances_renderer = GTRenderer(self.shader_renderer.highway_entrance_sign_model, 'Highway Entrance', 'Sign')
-        self.highway_exits_renderer = GTRenderer(self.shader_renderer.highway_exit_sign_model, 'Highway Exit', 'Sign')
-        self.roundabouts_renderer = GTRenderer(self.shader_renderer.roundabout_sign_model, 'Roundabout', 'Sign')
-        self.parking_signs_renderer = GTRenderer(self.shader_renderer.parking_sign_model, 'Parking', 'Sign')
-        self.crosswalk_signs_renderer = GTRenderer(self.shader_renderer.crosswalk_sign_model, 'Crosswalk', 'Sign')
-        self.noentry_signs_renderer = GTRenderer(self.shader_renderer.noentry_sign_model, 'No Entry', 'Sign')
-        self.prio_signs_renderer = GTRenderer(self.shader_renderer.prio_sign_model, 'Priority', 'Sign')
-        self.traffic_lights_renderer = GTRenderer(self.shader_renderer.traffic_light_model, 'Light')
-        self.green_ligths_renderer = GTRenderer(self.shader_renderer.green_light_model, 'Green Light')
-        self.yellow_ligths_renderer = GTRenderer(self.shader_renderer.yellow_light_model, 'Yellow Light')
-        self.red_ligths_renderer = GTRenderer(self.shader_renderer.red_light_model, 'Red Light')
-        self.pedestrians_renderer = GTRenderer(self.shader_renderer.pedestrian_model, 'Pedestrian')
-        self.update_gt()
+        self.update_destinations()
 
     def paintGL(self):
         if self.stop_drawing:
@@ -120,27 +104,30 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        self.draw_gt()
-        self.draw_path_nodes(self.main_window.map_widget.waypoints)
-
-    def draw_gt(self):
         self.destinations_renderer.draw(self.proj_mat, self.view_mat)
-        self.cars_renderer.draw(self.proj_mat, self.view_mat)
-        self.one_ways_renderer.draw(self.proj_mat, self.view_mat)
-        self.stop_signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.highway_entrances_renderer.draw(self.proj_mat, self.view_mat)
-        self.highway_exits_renderer.draw(self.proj_mat, self.view_mat)
-        self.roundabouts_renderer.draw(self.proj_mat, self.view_mat)
-        self.parking_signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.crosswalk_signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.noentry_signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.prio_signs_renderer.draw(self.proj_mat, self.view_mat)
-        self.traffic_lights_renderer.draw(self.proj_mat, self.view_mat)
-        self.green_ligths_renderer.draw(self.proj_mat, self.view_mat)
-        self.yellow_ligths_renderer.draw(self.proj_mat, self.view_mat)
-        self.red_ligths_renderer.draw(self.proj_mat, self.view_mat)
-        self.pedestrians_renderer.draw(self.proj_mat, self.view_mat)
+        self.draw_path_nodes(self.main_window.map_widget.waypoints)
+        self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
+
+    def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
+        if detected_data is None or len(detected_data) == 0:
+            return
+        for i in range(len(detected_data)):
+            obj_type = detected_data[i, road_msg_dict['type']]
+            x_real = detected_data[i, road_msg_dict['x']]
+            y_real = detected_data[i, road_msg_dict['y']]
+            orientation = detected_data[i, road_msg_dict['orientation']]
+
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
+
+            if object_dict[obj_type] == 'Car' and i == 0:
+                continue
+            elif object_dict[obj_type] == 'Car':
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.20, self.view_mat, self.proj_mat)
+            else:
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 16.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
@@ -196,24 +183,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         world_y = (MapData.REAL_WORLD_HEIGHT.value - real_y) / MapData.REAL_WORLD_HEIGHT.value * self.height()
         return world_x, world_y
 
-    def update_gt(self):
+    def update_destinations(self):
         self.destinations_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.cars_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.one_ways_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.stop_signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.highway_entrances_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.highway_exits_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.roundabouts_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.parking_signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.crosswalk_signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.noentry_signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.prio_signs_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.traffic_lights_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.green_ligths_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.yellow_ligths_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.red_ligths_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
-        self.pedestrians_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
@@ -235,4 +206,4 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
-        self.update_gt()
+        self.update_destinations()

@@ -38,7 +38,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.attributes_np = None
         self.sign_size = 20
 
-        self.road_msg_length = 7
+        self.road_msg_length = 8
         self.road_msg_dict = {
             'type': 0,
             'x': 1,
@@ -46,7 +46,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             'orientation': 3,
             'speed': 4,
             'confidence': 5,
-            'z': 6
+            'z': 6,
+            'id': 7
         }
 
         self.detected_data = None
@@ -127,10 +128,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.cursor_coords_label.hide()
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
         self.run_statistics = HidableOverlay(self)
-        self.run_statistics.setFixedSize(
-            int(330),
-            int(180)
-        )
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)

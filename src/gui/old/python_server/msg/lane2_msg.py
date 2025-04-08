@@ -1,0 +1,26 @@
+from python_server import decoder
+import struct
+from std_msgs.msg import Header
+
+
+class Lane2Msg:
+    def __init__(self):
+        self.bytes_length = 4
+        self.num_elements = 5
+        self.header = None
+        self.center = None
+        self.stopline = None
+        self.stopline_dist = None
+        self.crosswalk = None
+        self.dotted = None
+
+    def decode(self, bytes):
+        splits = decoder.split(bytes)
+        lane_msg = Lane2Msg()
+        lane_msg.header = Header().deserialize(splits[0])
+        lane_msg.center = struct.unpack('f', splits[1])[0]
+        lane_msg.stopline = splits[2] == b'\x01'
+        lane_msg.stopline_dist = struct.unpack('f', splits[3])[0]
+        lane_msg.crosswalk = splits[4] == b'\x01'
+        lane_msg.dotted = splits[5] == b'\x01'
+        return lane_msg
