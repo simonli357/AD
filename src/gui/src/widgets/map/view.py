@@ -112,7 +112,7 @@ class HidableOverlay(QWidget):
         self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{y:.2f} z:{z:.2f}")
 
     def set_car_rotation(self, yaw, steer):
-        self.car_pose_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
+        self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
 
     def update_global_rect(self):
         if self.parent():
