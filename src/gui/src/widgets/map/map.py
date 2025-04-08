@@ -128,7 +128,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
         self.run_statistics = HidableOverlay(self)
         self.run_statistics.setFixedSize(
-            int(350),
+            int(330),
             int(180)
         )
 
