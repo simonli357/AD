@@ -11,6 +11,7 @@ class HidableOverlay(QWidget):
         self.setMouseTracking(True)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMinimumSize(330, 180)
         self.setStyleSheet("""
             background-color: rgba(40, 40, 40, 0.7);
             border: none;
