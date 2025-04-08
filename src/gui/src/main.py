@@ -141,8 +141,8 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.barca_widget)
         self.top_layout.addWidget(self.stacked_widget)
 
-        self.left_layout.addWidget(top_widgets, 5)
-        self.left_layout.addWidget(self.terminal_widget, 2)
+        self.left_layout.addWidget(top_widgets)
+        self.left_layout.addWidget(self.terminal_widget)
 
         right_widgets = QWidget()
         stat_widgets = QWidget()
