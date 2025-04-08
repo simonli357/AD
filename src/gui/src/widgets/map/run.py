@@ -69,7 +69,8 @@ class ConfirmUpdate(QDialog):
 class RunOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setMinimumSize(300, 60)
+        self.main_window = self.parent()
         self.runs = []
         self.launchfile = None
         self.sim_config = None
@@ -88,10 +89,10 @@ class RunOverlay(QWidget):
 
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(current_dir)
-        runs_file = os.path.join(current_dir, 'runs.xml')
-        controller_file = os.path.join(parent_dir, 'forms', 'appdata', 'controller.yaml')
-        self.sim_file = os.path.join(parent_dir, 'forms', 'appdata', 'simulator.yaml')
+        main_dir = os.path.dirname(os.path.dirname(current_dir))
+        runs_file = os.path.join(main_dir, 'runs.xml')
+        controller_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'controller.yaml')
+        self.sim_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'simulator.yaml')
         if not os.path.isfile(self.sim_file):
             self.create_default_config(self.sim_file)
         if not os.path.isfile(controller_file):
@@ -131,11 +132,11 @@ class RunOverlay(QWidget):
                 elif name == 'path':
                     arg.set('default', path)
             with open(self.launchfile, 'wb') as f:
-                self._serialize_xml(root, f)
+                self.serialize_xml(root, f)
         except Exception as e:
             print(f"Failed to update launch file: {e}")
 
-    def _serialize_xml(self, elem, file, indent=0):
+    def serialize_xml(self, elem, file, indent=0):
         if elem.tag is ET.Comment:
             file.write(b'  ' * indent + b'<!--' + elem.text.encode() + b'-->\n')
             return
@@ -148,7 +149,7 @@ class RunOverlay(QWidget):
                 file.write(elem.text.encode())
             file.write(b'\n')
             for child in elem:
-                self._serialize_xml(child, file, indent + 1)
+                self.serialize_xml(child, file, indent + 1)
             file.write(b'  ' * indent + b'</' + elem.tag.encode() + b'>\n')
         else:
             file.write(b'/>\n')
@@ -174,16 +175,33 @@ class RunOverlay(QWidget):
                 font-weight: bold;
                 background-color: rgba(255, 255, 255, 0.08);
                 border-radius: 8px;
-                padding: 5px 20px 5px 10px;
+                padding: 5px 18px 5px 10px;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.2);
             }
         """)
         self.change_run_btn.clicked.connect(self.show_menu)
+        self.swap_map_btn = QPushButton("  󰓡")
+        self.swap_map_btn.setStyleSheet("""
+            QPushButton {
+                color: white;
+                border: none;
+                font-size: 24px;
+                font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 5px 12px 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+        """)
+        self.swap_map_btn.clicked.connect(self.swap_map)
 
         self.run_wrapper.addWidget(self.run_label)
         self.run_wrapper.addWidget(self.change_run_btn)
+        self.run_wrapper.addWidget(self.swap_map_btn)
 
         self.menu = QMenu(self)
         self.menu.setStyleSheet("""
@@ -218,6 +236,9 @@ class RunOverlay(QWidget):
     def show_menu(self) -> None:
         original_point = self.change_run_btn.mapToGlobal(self.change_run_btn.rect().topRight())
         self.menu.exec_(original_point)
+
+    def swap_map(self) -> None:
+        self.main_window.toggle_map()
 
     def on_action_triggered(self, run):
         x0 = run.get('x0')

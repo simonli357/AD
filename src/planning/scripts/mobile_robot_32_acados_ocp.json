@@ -1,7 +1,7 @@
 {
-    "acados_include_path": "/home/slsecret/acados/include",
-    "acados_lib_path": "/home/slsecret/acados/lib",
-    "code_export_directory": "/home/slsecret/AD/src/planning/scripts/c_generated_code",
+    "acados_include_path": "/home/trtuser/acados/include",
+    "acados_lib_path": "/home/trtuser/acados/lib",
+    "code_export_directory": "/home/trtuser/ros/AD/src/planning/scripts/c_generated_code",
     "constraints": {
         "C": [],
         "C_e": [],
@@ -305,7 +305,7 @@
         "zu_e": []
     },
     "cython_include_dirs": [
-        "/home/slsecret/.local/lib/python3.8/site-packages/numpy/core/include",
+        "/usr/local/lib/python3.8/dist-packages/numpy/core/include",
         "/usr/include/python3.8"
     ],
     "dims": {

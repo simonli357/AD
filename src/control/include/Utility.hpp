@@ -113,7 +113,6 @@ public:
     ros::Publisher message_pub;
     ros::Publisher pose_pub;
     ros::Publisher waypoints_pub;
-    ros::Publisher detected_cars_pub;
     ros::Publisher state_offset_pub;
 
     // messages

@@ -5,17 +5,12 @@ from collections import deque
 
 import time
 import numpy as np
-import cv2
-import os
 
 frame_count = 0
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        self.recording_path = os.path.join(current_dir, 'frames')
-        os.makedirs(self.recording_path, exist_ok=True)
         self.server = self.main_window.server
         self.started = False
         self.recording = False
@@ -181,12 +176,12 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
-                    self.main_window.map_widget.update_map_display()
-                    self.main_window.map_widget.graphics_view.dist_traveled = 0
-                    self.main_window.map_widget.graphics_view.set_distance_traveled()
-                    self.main_window.map_widget.graphics_view.visited.clear()
-                    self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
-                    self.main_window.map_widget.graphics_view.set_total_path_distance()
+                    self.main_window.map_widget.update_waypoints()
+                    self.main_window.map_widget.run_statistics.dist_traveled = 0
+                    self.main_window.map_widget.run_statistics.set_distance_traveled()
+                    self.main_window.map_widget.run_statistics.visited.clear()
+                    self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
+                    self.main_window.map_widget.run_statistics.set_total_path_distance()
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -198,10 +193,10 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.call_start_service(not self.started)
         if not self.started:
             print("Starting")
-            self.main_window.map_widget.graphics_view.dist_traveled = 0
-            self.main_window.map_widget.graphics_view.set_distance_traveled()
-            self.main_window.map_widget.graphics_view.visited.clear()
-            self.main_window.map_widget.graphics_view.set_dest_visited_num(0)
+            self.main_window.map_widget.run_statistics.dist_traveled = 0
+            self.main_window.map_widget.run_statistics.set_distance_traveled()
+            self.main_window.map_widget.run_statistics.visited.clear()
+            self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
             self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
@@ -231,12 +226,12 @@ class ButtonsWidget(QtWidgets.QWidget):
             else:
                 print("Not a valid destination")
         else:
-            cursor_coords = self.main_window.map_widget.graphics_view.get_path()
+            cursor_coords = self.main_window.map_widget.run_statistics.get_path()
             self.call_goto_service(cursor_coords)
-            self.main_window.map_widget.graphics_view.set_total_path_distance()
+            self.main_window.map_widget.run_statistics.set_total_path_distance()
 
     def handle_clear_path_click(self) -> None:
-        self.main_window.map_widget.graphics_view.clear_path()
+        self.main_window.map_widget.run_statistics.clear_path()
 
     def handle_record_click(self) -> None:
         if self.recording:
@@ -246,18 +241,3 @@ class ButtonsWidget(QtWidgets.QWidget):
             print("Starting recording")
             self.recording = True
         self.update_recording_button_style(self.record_btn, self.recording)
-
-    def save_frame(self, frame) -> None:
-        os.makedirs(self.recording_path, exist_ok=True)
-        now = time.time()
-        global frame_count
-        offset = 450
-        # if self.recording and abs(self.main_window.meter_widget.speed) > 0.02:
-        if self.recording:
-            while True:
-                filename = os.path.join(self.recording_path, f"frame_{frame_count + offset}.jpg")
-                if not os.path.exists(filename):
-                    break
-            frame_count += 1
-            cv2.imwrite(filename, frame)
-            print("save frame: ", f"/frame_{int(frame_count+offset)}.jpg")

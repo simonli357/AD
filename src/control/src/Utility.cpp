@@ -181,7 +181,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
 
     cmd_vel_pub = nh.advertise<std_msgs::String>("/" + robot_name + "/command", 8);
     waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/waypoints", 3);
-    detected_cars_pub = nh.advertise<std_msgs::Float32MultiArray>("/detected_cars", 3);
     state_offset_pub = nh.advertise<std_msgs::Float32MultiArray>("/state_offset", 3);
     
     if (pubOdom) {
