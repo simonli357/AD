@@ -125,6 +125,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         )
 
         self.draw_gt()
+        self.draw_path_nodes(self.main_window.map_widget.waypoints)
 
     def draw_gt(self):
         self.destinations_renderer.draw(self.proj_mat, self.view_mat)
@@ -144,6 +145,22 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.yellow_ligths_renderer.draw(self.proj_mat, self.view_mat)
         self.red_ligths_renderer.draw(self.proj_mat, self.view_mat)
         self.pedestrians_renderer.draw(self.proj_mat, self.view_mat)
+
+    def draw_path_nodes(self, waypoints):
+        if waypoints is None or len(waypoints) < 2:
+            return
+        x1, y1 = self.get_gl_coords(waypoints[0], waypoints[1])
+        angle = 0
+        for i in range(0, len(waypoints) - 1, 4):
+            if i + 3 > len(waypoints):
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+            else:
+                x2, y2 = self.get_gl_coords(waypoints[i + 2], waypoints[i + 3])
+                dx = x2 - x1
+                dy = y2 - y1
+                angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                x1, y1 = x2, y2
 
     def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
         painter = QPainter(self)
