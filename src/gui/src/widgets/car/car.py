@@ -106,6 +106,28 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.destinations_renderer.draw(self.proj_mat, self.view_mat)
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
+        self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
+
+    def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
+        if detected_data is None or len(detected_data) == 0:
+            return
+        for i in range(len(detected_data)):
+            obj_type = detected_data[i, road_msg_dict['type']]
+            x_real = detected_data[i, road_msg_dict['x']]
+            y_real = detected_data[i, road_msg_dict['y']]
+            orientation = detected_data[i, road_msg_dict['orientation']]
+
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
+
+            if object_dict[obj_type] == 'Car' and i == 0:
+                continue
+            elif object_dict[obj_type] == 'Car':
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+            else:
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 16.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
