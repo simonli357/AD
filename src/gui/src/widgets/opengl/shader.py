@@ -149,7 +149,7 @@ class ShaderRenderer:
         gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.5))
+        model = glm.translate(model, glm.vec3(x, y, 0.1))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         # model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
@@ -212,8 +212,8 @@ class ShaderRenderer:
         if obj_type == 'Car':
             if not is_animation:
                 return
-            scale = scale / 200.0
-            z = 1.0
+            scale = scale / 300.0
+            z = 0.1
             is_car = True
             road_obj_model = self.red_car_model
         elif obj_type == 'Oneway':

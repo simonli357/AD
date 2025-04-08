@@ -224,7 +224,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
                 if self.show_destinations:
                     self.shader_renderer.draw_circle(
@@ -352,7 +352,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 if i == 0:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
                 else:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
