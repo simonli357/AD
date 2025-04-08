@@ -1,3 +1,4 @@
+#include <chrono>
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
@@ -16,6 +17,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
+#include <thread>
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -29,8 +31,20 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     io(), serial(nullptr), real(real), it(nh)
 {
-    std::cout << "Utility constructor" << std::endl;  
-    message_pub = nh.advertise<std_msgs::String>("/message", 10);
+    initialize_tcp_client();
+    fetch_run_params();
+    initialize();
+}
+
+Utility::~Utility() {
+    stop_car(); 
+    cameraThreadRunning = false;
+    if (cameraThread.joinable()) {
+            cameraThread.join();
+    }
+}
+
+void Utility::initialize_tcp_client() {
     bool use_tcp = false;
     bool use_traffic_server = false;
     if(!nh.getParam("/use_tcp", use_tcp)) {
@@ -66,6 +80,20 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         tcp_client = nullptr;
         debug("Utility constructor: TCP client not created.", 1);
     }
+}
+
+void Utility::fetch_run_params() {
+    std::cout << "Waiting for run parameters" << std::endl;
+
+    while(true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    std::cout << "Run parameters received" << std::endl;
+}
+
+void Utility::initialize() {
+    std::cout << "Utility constructor" << std::endl;  
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
     // tunables
     double sigma_v = 0.1;
@@ -131,7 +159,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     d = 0.0005;
     last = 0;
     
-    triggerServiceClient = nh_.serviceClient<std_srvs::Trigger>("trigger_service");
+    triggerServiceClient = nh.serviceClient<std_srvs::Trigger>("trigger_service");
     static_broadcaster = tf2_ros::StaticTransformBroadcaster();
     broadcaster = tf2_ros::TransformBroadcaster();
     publish_static_transforms();
@@ -245,14 +273,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     timerodom = ros::Time::now();
-}
-
-Utility::~Utility() {
-    stop_car(); 
-    cameraThreadRunning = false;
-    if (cameraThread.joinable()) {
-            cameraThread.join();
-    }
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {

@@ -145,6 +145,11 @@ public:
     ros::Subscriber ekf_sub;
     ros::Subscriber tf_sub;
 
+    // Initialization
+    void initialize();
+    void initialize_tcp_client();
+    void fetch_run_params();
+
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);
     ros::Timer imu_pub_timer;
