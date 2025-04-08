@@ -49,6 +49,8 @@ class CameraWidget(QtWidgets.QWidget):
         self.camera_label.setStyleSheet("""
             background-color: transparent;
         """)
+        self.camera_label.setMaximumWidth(600)
+        self.camera_label.setMaximumHeight(450)
         container_layout.addWidget(self.camera_label)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
