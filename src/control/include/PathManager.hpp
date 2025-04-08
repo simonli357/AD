@@ -327,7 +327,7 @@ public:
             target = target_waypoint_index + 1;
             count++;
         }
-        std::cout << (*state_refs_ptr).row(target) << "closest: " << closest_waypoint_index << ", target: " << target << ", limit: " << limit << ", lookahead: " << lookahead << ", count: " << count << std::endl;
+        /* std::cout << (*state_refs_ptr).row(target) << "closest: " << closest_waypoint_index << ", target: " << target << ", limit: " << limit << ", lookahead: " << lookahead << ", count: " << count << std::endl; */
 
         output_target =  std::min(target, static_cast<int>((*state_refs_ptr).rows()) - 1);
         last_waypoint_index = output_target;
