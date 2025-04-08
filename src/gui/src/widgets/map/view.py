@@ -30,7 +30,7 @@ class HidableOverlay(QWidget):
 
     def setup_ui(self):
         self.layout = QtWidgets.QVBoxLayout()
-        self.total_dist_label = QLabel('󰣰 Distance: --:--')
+        self.total_dist_label = QLabel('󰣰  Distance: --:--')
         self.total_dist_label.setStyleSheet("""
             border: none;
             padding: 5px;
@@ -46,7 +46,7 @@ class HidableOverlay(QWidget):
             color: yellow;
             font-size: 20px;
         """)
-        self.dest_reached_label = QLabel('󰪥 Reached: --:--')
+        self.dest_reached_label = QLabel('󰪥  Reached: --:--')
         self.dest_reached_label.setStyleSheet("""
             border: none;
             padding: 5px;
@@ -54,7 +54,7 @@ class HidableOverlay(QWidget):
             color: yellow;
             font-size: 20px;
         """)
-        self.car_pose_label = QLabel('󰵉 Pose: --:--')
+        self.car_pose_label = QLabel('󰵉  Pose: --:--')
         self.car_pose_label.setStyleSheet("""
             border: none;
             padding: 5px;
@@ -62,7 +62,7 @@ class HidableOverlay(QWidget):
             color: yellow;
             font-size: 20px;
         """)
-        self.car_rotation_label = QLabel('󰵗 Rotation: --:--')
+        self.car_rotation_label = QLabel('󰵗  Rotation: --:--')
         self.car_rotation_label.setStyleSheet("""
             border: none;
             padding: 5px;
@@ -100,19 +100,19 @@ class HidableOverlay(QWidget):
 
     def set_total_path_distance(self):
         dist = self.calculate_total_path_distance()
-        self.total_dist_label.setText(f'󰣰 Distance: {dist:.2f}')
+        self.total_dist_label.setText(f'󰣰  Distance: {dist:.2f}')
 
     def set_distance_traveled(self) -> None:
         self.dist_traveled_label.setText(f'  Traveled: {self.dist_traveled:.2f}')
 
     def set_dest_visited_num(self, dest_visited: int) -> None:
-        self.dest_reached_label.setText(f'󰪥 Reached: {dest_visited:.0f}')
+        self.dest_reached_label.setText(f'󰪥  Reached: {dest_visited:.0f}')
 
     def set_car_pose(self, x, y, z):
-        self.car_pose_label.setText(f"󰵉 x:{x:.2f} y:{y:.2f} z:{z:.2f}")
+        self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{y:.2f} z:{z:.2f}")
 
     def set_car_rotation(self, yaw, steer):
-        self.car_pose_label.setText(f"󰵉 yaw:{yaw:.2f} steer:{steer:.2f}")
+        self.car_pose_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
 
     def update_global_rect(self):
         if self.parent():
