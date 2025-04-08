@@ -149,7 +149,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
             return
-        x1, y1 = self.get_gl_coords(waypoints[0], waypoints[1])
+        x1, y1 = self.get_gl_coords(waypoints[0], MapData.REAL_WORLD_HEIGHT.value - waypoints[1])
         angle = 0
         for i in range(0, len(waypoints) - 1, 4):
             if i + 3 > len(waypoints):
