@@ -91,6 +91,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.drag_start = None
         self.base_view_center = glm.vec2(self.view_center)
 
+        self.car_yaw = 0
+
         current_dir = os.path.dirname(os.path.abspath(__file__))
 
         self.sign_images = []
@@ -135,6 +137,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def render_widget(self) -> None:
         self.update()
+
+    def set_steer(self, steer):
+        self.run_statistics.set_car_rotation(self.car_yaw, steer)
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -337,6 +342,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
         self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
         self.main_window.meter_widget.set_speed(car_speed * 100)
+        self.run_statistics.set_car_pose(car_x, car_y, car_z)
+        self.car_yaw = car_yaw
         for i in range(len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]

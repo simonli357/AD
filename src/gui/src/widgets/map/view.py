@@ -54,10 +54,27 @@ class HidableOverlay(QWidget):
             color: yellow;
             font-size: 20px;
         """)
+        self.car_pose_label = QLabel('󰵉 Pose: --:--')
+        self.car_pose_label.setStyleSheet("""
+            border: none;
+            padding: 5px;
+            background-color: transparent;
+            color: yellow;
+            font-size: 20px;
+        """)
+        self.car_rotation_label = QLabel('󰵗 Rotation: --:--')
+        self.car_pose_label.setStyleSheet("""
+            border: none;
+            padding: 5px;
+            background-color: transparent;
+            color: yellow;
+            font-size: 20px;
+        """)
 
         self.layout.addWidget(self.total_dist_label)
         self.layout.addWidget(self.dist_traveled_label)
         self.layout.addWidget(self.dest_reached_label)
+        self.layout.addWidget(self.car_pose_label)
         self.setLayout(self.layout)
 
     def calculate_total_path_distance(self):
@@ -89,6 +106,12 @@ class HidableOverlay(QWidget):
 
     def set_dest_visited_num(self, dest_visited: int) -> None:
         self.dest_reached_label.setText(f'󰪥 Reached: {dest_visited:.0f}')
+
+    def set_car_pose(self, x, y, z):
+        self.car_pose_label.setText(f"󰵉 x:{x:.2f} y:{y:.2f} z:{z:.2f}")
+
+    def set_car_rotation(self, yaw, steer):
+        self.car_pose_label.setText(f"󰵉 yaw:{yaw:.2f} steer:{steer:.2f}")
 
     def update_global_rect(self):
         if self.parent():

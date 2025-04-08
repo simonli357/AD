@@ -17,7 +17,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.stop_drawing = False
         self.main_window = self.parent()
 
-        self.steer = 0
         self.yaw = 0
         self.x_pos = 11.75
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
@@ -25,9 +24,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.cam_dist = 16.0
         self.cam_height = self.cam_dist * 2 / 3
-
-    def set_steer(self, steer: float) -> None:
-        self.steer = steer
 
     def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
         if self.main_window.buttons_widget.started:
