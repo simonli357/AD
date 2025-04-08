@@ -265,7 +265,7 @@ class ShaderRenderer:
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         if not is_car:
             model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.scale(model, glm.vec3(float(scale), float(scale), float(scale)))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
 
         model_loc = gl.glGetUniformLocation(shader_program, "model")
         view_loc = gl.glGetUniformLocation(shader_program, "view")
