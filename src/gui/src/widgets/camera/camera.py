@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QImage
-from .enums import CameraParams
+from ..enums import CameraParams
 
 import cv2
 import numpy as np
@@ -49,8 +49,8 @@ class CameraWidget(QtWidgets.QWidget):
         self.camera_label.setStyleSheet("""
             background-color: transparent;
         """)
-        self.camera_label.setMaximumWidth(620)
-        self.camera_label.setMaximumHeight(465)
+        self.camera_label.setMinimumWidth(CameraParams.MIN_WIDTH.value)
+        self.camera_label.setMinimumHeight(CameraParams.MIN_HEIGHT.value)
         container_layout.addWidget(self.camera_label)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)

@@ -6,7 +6,7 @@ import os
 import numpy as np
 
 
-class OptionsWidget(QtWidgets.QWidget):
+class SidebarWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()

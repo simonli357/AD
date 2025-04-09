@@ -2,12 +2,12 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QProcess
 from PyQt5.QtWidgets import QWidget
 from collections import deque
-from .enums import TerminalType
-from .forms.simulator_form import SimulatorFormWidget
-from .forms.compile_form import CompileFormWidget
-from .forms.ssh_form import SSHFormWidget
-from .indicators.progress_window import ProgressWindow
-from .indicators.loading_window import LoadingWindow
+from ..enums import TerminalType
+from ..forms.simulator_form import SimulatorFormWidget
+from ..forms.compile_form import CompileFormWidget
+from ..forms.ssh_form import SSHFormWidget
+from ..indicators.progress_window import ProgressWindow
+from ..indicators.loading_window import LoadingWindow
 
 import re
 import os
