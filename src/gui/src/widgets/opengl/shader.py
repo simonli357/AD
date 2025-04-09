@@ -94,6 +94,7 @@ class ShaderRenderer:
 
         self.void_model = load_obj(*object_path('void_symbol', 'void'))
         self.destination_model = load_obj(*object_path('destination', 'destination'))
+        self.green_destination_model = load_obj(*object_path('destination', 'green'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -175,7 +176,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
 
     def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
-        obj_model = self.destination_model
+        obj_model = self.green_destination_model
         shader_program = obj_model.shader_program
         gl.glUseProgram(shader_program)
 

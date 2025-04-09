@@ -1,6 +1,5 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QLabel, QWidget, QApplication
-from .utils import MapUtils
 
 import numpy as np
 
@@ -21,8 +20,7 @@ class HidableOverlay(QWidget):
         self.global_rect = QtCore.QRect()
         self.event_filter_installed = False
 
-        map_utils = MapUtils()
-        self.destinations = map_utils.get_destination_nodes()
+        self.destinations = self.map_widget.data[self.data['Type'] == 'Destination']
         self.path = []
         self.visited = set()
         self.dist_traveled = 0
@@ -94,10 +92,13 @@ class HidableOverlay(QWidget):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def update_visited_destinations(self, car_x: float, car_y: float):
-        for id, x, y in self.destinations:
+        for idx, row in self.destinations:
+            x = row['X']
+            y = row['Y']
             if self.is_near(car_x, car_y, x, y, 0.05, 0.05):
-                self.visited.add(id)
+                self.visited.add((x, y))
                 self.set_dest_visited_num(len(self.visited))
+                self.map_widget.update_visited_destination(x, y)
                 break
 
     def set_total_path_distance(self):
