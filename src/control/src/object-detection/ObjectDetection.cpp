@@ -52,7 +52,7 @@ void ObjectDetection::detect_traffic_lights() {
 		dist = utils.object_distance(sign_index);
 		if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
 			world.detected_dist = dist;
-			light_pose = utils.object_world_pose(sign_index);
+			light_pose = utils.estimate_object_pose2d(x, y, x_current[2], world.bbox, dist);
 			// double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
 			// if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
 			//     utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);

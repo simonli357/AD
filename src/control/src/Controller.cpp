@@ -439,7 +439,7 @@ public:
                 double yaw = x_current[2];
                 double yaw_error = Utility::compare_yaw(next_intersection_point[2], yaw);
                 if (yaw_error > 30 * M_PI / 180) {
-                    utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_point[2]) + ", error: " + helper::d2str(yaw_error), 2);
+                    // utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_point[2]) + ", error: " + helper::d2str(yaw_error), 2);
                     return false;
                 }
                 last_intersection_point = {x_current[0], x_current[1]};
@@ -488,7 +488,8 @@ public:
         return false;
     }
     bool sign_in_path(int sign_idx, double search_dist) {
-        auto estimated_sign_pose = utils.object_world_pose(sign_idx);
+        auto estimated_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], 
+            utils.object_box(sign_idx), utils.object_distance(sign_idx));
         double x = estimated_sign_pose[0];
         double y = estimated_sign_pose[1];
         int closest_idx = path_manager.closest_waypoint_index;
@@ -543,12 +544,7 @@ public:
             dist = utils.object_distance(sign_index);
             if (!relocalized && stopsign_flag == OBJECT::NONE && dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
                 detected_dist = dist;
-                light_pose = utils.object_world_pose(sign_index);
-                // double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
-                // if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                //     utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);
-                //     return;
-                // }
+                light_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), dist);
                 if (sign_in_path(sign_index, dist + 0.2)) {
                     utils.debug("check_light(): traffic light detected at a distance of: " + helper::d2str(dist), 2);
                     stopsign_flag = OBJECT::LIGHTS;
@@ -797,7 +793,7 @@ public:
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = Utility::compare_yaw(sign_direction, yaw);
             if(yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
-                utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
+                // utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
                 return 0;
             }
             double x,y;
@@ -1229,7 +1225,7 @@ public:
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
+                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, true);
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
                 // compute distance from car_pose to waypoint, find closest waypoint and distance

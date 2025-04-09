@@ -79,7 +79,7 @@ class DetectionWidget(QtWidgets.QOpenGLWidget):
             if not self.rotation_reset:
                 self.rotation = 0
                 self.rotation_reset = True
-            objs.append(self.obj_dict[obj[10 * i + 6]])
+            objs.append(self.obj_dict[obj[7 * i + 6]])
             obj_detected = True
         if not obj_detected:
             self.shader_renderer.draw_void_symbol(0, 0, np.radians(180) + self.rotation, 0.1, self.view_mat, self.proj_mat)

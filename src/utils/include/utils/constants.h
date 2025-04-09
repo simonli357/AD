@@ -389,8 +389,8 @@ namespace VehicleConstants {
     };
 
     //utils
-    static constexpr int NUM_VALUES_PER_OBJECT = 10;
-    enum SignValues { x1, y1, x2, y2, distance, confidence, id, x_rel, y_rel, yaw_rel};
+    static constexpr int NUM_VALUES_PER_OBJECT = 7;
+    enum SignValues { x1, y1, x2, y2, distance, confidence, id};
     enum LOCALIZATION_SOURCE {
         ODOM,
         EKF

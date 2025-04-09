@@ -53,7 +53,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.detected_data = None
         self.waypoints = None
         self.numObj = 0
-        self.detected_objects = np.zeros(10)
+        self.detected_objects = np.zeros(7)
 
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.assets_dir = os.path.join(current_dir, 'assets')

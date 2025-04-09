@@ -159,8 +159,8 @@ public:
     void waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     Eigen::MatrixXd lane_waypoints;
     void process_lane_data(const utils::Lane2& msg);
-    void sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
-    void process_sign_data(const std_msgs::Float32MultiArray& msg);
+    void sign_callback(const utils::Sign::ConstPtr& msg);
+    void process_sign_data(const utils::Sign& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
@@ -174,10 +174,9 @@ public:
     int object_index(int obj_id);
     std::vector<int> object_indices(int obj_id);
     double object_distance(int index);
-    // std::array<double, 3> object_world_pose(int index);
-    Eigen::Vector2d object_world_pose(int index);
     std::array<double, 4> object_box(int index);
     void object_box(int index, std::array<double, 4>& oBox);
+    ros::Time object_detection_time;
     void set_initial_pose(double x, double y, double yaw);
     void reset_odom();
     int update_states_rk4(double velocity, double steer, double dt=-1);
@@ -291,9 +290,10 @@ public:
 
     Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw,
                                        double x1, double y1, double x2, double y2,
-                                       double object_distance,
+                                       double object_distance, 
                                        bool is_car = false)
     {
+        // std::cout << "estimate_object_pose2d(): x: " << x << ", y: " << y << ", yaw: " << yaw << ", object_distance: " << object_distance << ", is_car: " << is_car << std::endl;
         static double parallel_w2h_ratio = 1.30;
         static double perpendicular_w2h_ratio = 2.70;
 
@@ -372,7 +372,8 @@ public:
         static Eigen::Vector2d vehicle_pos;
         vehicle_pos << x, y;
 
-        P_v[0] -= sign_latency * velocity_command;
+        double latency = (ros::Time::now() - object_detection_time).toSec();
+        P_v[0] -= latency * velocity_command;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
@@ -382,7 +383,9 @@ public:
 
         return vehicle_pos + R_vw * P_v_2d;
     }
-    Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, const std::array<double, 4>& bounding_box, double object_distance, bool is_car = false) {
+    Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, 
+            const std::array<double, 4>& bounding_box, double object_distance, 
+            bool is_car = false) {
         double x1 = bounding_box[0];
         double y1 = bounding_box[1];
         double x2 = bounding_box[2];

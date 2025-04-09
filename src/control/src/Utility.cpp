@@ -6,6 +6,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <utils/Sign.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Header.h>
 #include <sensor_msgs/Imu.h>
@@ -27,7 +28,7 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
-    io(), serial(nullptr), real(real), it(nh)
+    io(), serial(nullptr), real(real), it(nh), object_detection_time(ros::Time::now())
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -236,7 +237,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         } else {
             sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
             std::cout << "waiting for sign message" << std::endl;
-            ros::topic::waitForMessage<std_msgs::Float32MultiArray>("/sign");
+            ros::topic::waitForMessage<utils::Sign>("/sign");
             std::cout << "received message from sign" << std::endl;
         }
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
@@ -415,10 +416,10 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     //     ROS_WARN("end_pos == std::string::npos");
     // }
 }
-void Utility::sign_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
+void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
 }
-void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
+void Utility::process_sign_data(const utils::Sign& msg) {
     if (msg.data.size()) {
         num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
         {
@@ -433,13 +434,15 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
     } else {
         emergency = false;
     }
+    object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    // Eigen::Vector2d world_states;
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
-        auto type = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id];
+        auto type = static_cast<OBJECT>(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id]);
         double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
 
@@ -447,20 +450,31 @@ void Utility::process_sign_data(const std_msgs::Float32MultiArray& msg) {
         double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
         double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
         double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
-        Eigen::Vector2d world_states = estimate_object_pose2d(ego_x, ego_y, ego_yaw, xmin, ymin, xmax, ymax, dist, true);
+        double latency = (ros::Time::now() - object_detection_time).toSec();
+        bool is_car = type == OBJECT::CAR;
+        Eigen::Vector2d world_states = estimate_object_pose2d(ego_x, ego_y, ego_yaw, xmin, ymin, xmax, ymax, dist, is_car);
+        // std::cout << "sign_callback(): detected object: " << OBJECT_NAMES[type] << ", confidence: " << confidence << ", latency: " << latency << ", type: " << type << ", iscar: " << is_car << ", worldstates: (" << world_states[0] << ", " << world_states[1] << ")" << std::endl;
         bool is_known_static = Tracking::is_known_static_object(type);
-        auto* road_objects = Tracking::get_road_objects(static_cast<OBJECT>(type));
+        auto* road_objects = Tracking::get_road_objects(type);
         if (!road_objects) {
             debug("Sign Callback(): Skipping object due to null road_objects for type: " + std::to_string(type), 1);
             return;
         }
-        //check for existing object
+        int min_index = -1;
+        double min_error = 1000.0;
         for (int i = 0; i < road_objects->size(); ++i) {
             auto& obj = (*road_objects)[i];
-            if (obj->is_same_object(world_states[0], world_states[1])) {
+            double error = std::hypot(obj->x - world_states[0], obj->y - world_states[1]);
+            if (error < min_error) {
+                min_index = i;
+                min_error = error;
+            }
+        }
+        if (min_index >= 0) {
+            auto closest_obj = (*road_objects)[min_index];
+            if (closest_obj->is_same_object(world_states[0], world_states[1])) {
                 found_same = true;
-                obj->merge(world_states[0], world_states[1], ego_yaw, confidence);
-                break;
+                closest_obj->merge(world_states[0], world_states[1], ego_yaw, confidence);
             }
         }
         if (!found_same) {
@@ -762,24 +776,7 @@ double Utility::object_distance(int index) {
     }
     return -1;
 }
-// std::array<double, 3> Utility::object_world_pose(int index) {
-Eigen::Vector2d Utility::object_world_pose(int index) {
-    // std::lock_guard<std::mutex> lock(general_mutex);
-    double object_x, object_y, object_yaw;
-    if (num_obj == 1) {
-        object_x = detected_objects[x_rel];
-        object_y = detected_objects[y_rel];
-        object_yaw = detected_objects[yaw_rel];
-    } else if (index >= 0 && index < num_obj) {
-        object_x = detected_objects[index * NUM_VALUES_PER_OBJECT + x_rel];
-        object_y = detected_objects[index * NUM_VALUES_PER_OBJECT + y_rel];
-        object_yaw = detected_objects[index * NUM_VALUES_PER_OBJECT + yaw_rel];
-    }
-    double x, y, yaw;
-    get_states(x, y, yaw);
-    auto world_pose_array = object_to_world(object_x, object_y, object_yaw, x, y, yaw);
-    return Eigen::Vector2d(world_pose_array[0], world_pose_array[1]);
-}
+
 std::array<double, 4> Utility::object_box(int index) {
     // std::lock_guard<std::mutex> lock(general_mutex);
     std::array<double, 4> box;

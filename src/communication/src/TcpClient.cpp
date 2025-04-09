@@ -413,16 +413,22 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	add_dgram_task(std::move(fn));
 }
 
-void TcpClient::send_sign(const std_msgs::Float32MultiArray &array) {
+void TcpClient::send_sign(const std::vector<float> &data) {
+	std_msgs::Float32MultiArray array;
+	array.data = data;
+
 	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
 	ros::serialization::serialize(stream, array);
+
 	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
-	std::memcpy(bytes.data(), &length, message_size);
-	bytes[4] = udp_data_types[3];
+	std::memcpy(bytes.data(), &length, message_size);  // message_size = sizeof(uint32_t)
+	bytes[4] = udp_data_types[3];  // Data type marker
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
-	sendto(udp_socket, bytes.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+
+	sendto(udp_socket, bytes.data(), header_size + length, 0,
+				 (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img, int quality) {
