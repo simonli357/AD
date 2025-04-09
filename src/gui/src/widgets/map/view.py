@@ -92,7 +92,7 @@ class HidableOverlay(QWidget):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def update_visited_destinations(self, car_x: float, car_y: float):
-        for idx, row in self.destinations:
+        for idx, row in self.destinations.iterrows():
             x = row['X']
             y = row['Y']
             if self.is_near(car_x, car_y, x, y, 0.05, 0.05):
