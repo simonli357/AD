@@ -117,13 +117,7 @@ class ProgressBar():
 
     def render_text(self, painter: QPainter, text, size, color: (int, int, int, int), x, y) -> None:
         # Get current OpenGL color
-        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
-        text_color = QColor(
-            int(gl_color[2] * color[2]),
-            int(gl_color[1] * color[1]),
-            int(gl_color[0] * color[0]),
-            int(gl_color[3] * color[3])
-        )
+        text_color = QColor(color[0], color[1], color[2], color[3])
 
         # Set up font
         font = QFont()

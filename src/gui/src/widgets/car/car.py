@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QOpenGLPaintDevice
 from PyQt5.Qt import QPainter
 from OpenGL import GL as gl
 from .hud import HudRenderer
@@ -121,7 +122,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
-        painter = QPainter(self)
+        device = QOpenGLPaintDevice(self.width(), self.height())
+        painter = QPainter(device)
         painter.setRenderHints(QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform)
         self.hud_renderer.draw_hud(painter)
         painter.end()

@@ -2,6 +2,7 @@ import math
 import numpy as np
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
+from PyQt5.Qt import QPainter, QFont, QColor
 import glm
 
 
@@ -80,9 +81,9 @@ class Speedometer():
         gl.glUseProgram(0)
 
         # Now draw the ticks.
-        self.draw_ticks(cx, cy, innerRadius, screen_height, proj_mat)
+        self.draw_ticks(qpainter, cx, cy, innerRadius, screen_height, min_speed, max_speed, proj_mat)
 
-    def draw_ticks(self, cx, cy, outerRadius, screen_height, proj_mat):
+    def draw_ticks(self, qpainter, cx, cy, outerRadius, screen_height, min_speed, max_speed, proj_mat):
         """
         Draw tick marks along the gauge’s outer edge.
         A large tick is drawn every 20° and 3 small ticks are drawn between large ticks (every 5°).
@@ -100,6 +101,9 @@ class Speedometer():
         # Separate lists for large and small tick vertices.
         large_tick_vertices = []  # for large ticks
         small_tick_vertices = []  # for small ticks
+
+        label_data = []
+        label_offset = 0.01 * screen_height
 
         # Loop over each tick position (custom angle 'r' from 0 to maxSweep)
         # Custom angle 0 corresponds to standard angle 90°
@@ -127,6 +131,10 @@ class Speedometer():
                 x_out = cx + (outerRadius + tick_length) * math.cos(rad)
                 y_out = cy - (outerRadius + tick_length) * math.sin(rad)
                 large_tick_vertices.extend([x_in, y_in, x_out, y_out])
+
+                value = min_speed + (max_speed - min_speed) * (r / maxSweep)
+                label = str(int(round(value)))
+                label_data.append((label, x_in - label_offset, y_in - label_offset))
             else:
                 # Compute the inner tick point (at the gauge outer radius).
                 x_in = cx + outerRadius * math.cos(rad)
@@ -179,3 +187,21 @@ class Speedometer():
             tick_vbo.delete()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
+
+        # for label, x_label, y_label in label_data:
+        #     # Here we specify a text size (e.g., 10 points) and white color.
+        #     self.render_text(qpainter, label, 10, (255, 255, 255, 255), x_label, y_label)
+        # self.render_text(qpainter, 'TEST', 10, (255, 255, 255, 255), 0, 0)
+
+    def render_text(self, painter: QPainter, text, size, color: (int, int, int, int), x, y) -> None:
+        # Get current OpenGL color
+        text_color = QColor(color[0], color[1], color[2], color[3])
+
+        # Set up font
+        font = QFont()
+        font.setBold(True)
+        font.setStyleStrategy(QFont.PreferAntialias)
+
+        painter.setPen(text_color)
+        painter.setFont(font)
+        painter.drawText(int(x), int(y), text)
