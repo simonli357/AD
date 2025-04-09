@@ -114,7 +114,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         # Grow visited destination until out of sight
         if self.updated_dest_size < 5.0:
             self.updated_dest_size += 0.05
-            self.updated_dest_rot += 0.05
+            self.updated_dest_rot += 0.2
         if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
