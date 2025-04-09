@@ -117,8 +117,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 2.1
-        self.current_destx = x_visited
-        self.current_desty = y_visited
+        self.current_destx, self.current_desty = self.get_gl_coords(x_visited, y_visited)
 
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
