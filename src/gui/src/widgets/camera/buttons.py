@@ -7,6 +7,8 @@ import time
 import numpy as np
 
 frame_count = 0
+
+
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -26,8 +28,7 @@ class ButtonsWidget(QtWidgets.QWidget):
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
         self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 5, 0, 0)
-        self.layout.setSpacing(10)
+        self.layout.setContentsMargins(0, 5, 0, 5)
         self.layout.setAlignment(QtCore.Qt.AlignLeft)
         self.buttons = deque()
 

@@ -87,7 +87,7 @@ class MainWindow(QMainWindow):
         self.car_widget = CarWidget(self)
         self.barca_widget = BarcaWidget(self)
         self.terminal_widget = TerminalWidget(self)
-        self.buttons_widget = ButtonsWidget(self)
+        self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
@@ -133,16 +133,11 @@ class MainWindow(QMainWindow):
         self.left_layout.addWidget(self.terminal_widget, 2)
 
         right_widgets = QWidget()
-
-        cam_wrapper = QWidget()
-        self.cam_wrapper_layout = QVBoxLayout(cam_wrapper)
-        self.cam_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.cam_wrapper_layout.addWidget(self.cam_widget)
-        self.cam_wrapper_layout.addWidget(self.buttons_widget)
-
         self.right_layout = QVBoxLayout(right_widgets)
         self.right_layout.setContentsMargins(0, 0, 0, 0)
-        self.right_layout.addWidget(cam_wrapper)
+
+        self.right_layout.addWidget(self.cam_widget)
+        self.right_layout.addWidget(self.cam_buttons_widget)
         self.right_layout.addWidget(self.car_widget)
 
         root_layout.addWidget(left_widgets, 2)
@@ -246,7 +241,7 @@ class MainWindow(QMainWindow):
 
     def cam_record_callback(self) -> None:
         while self.alive:
-            if self.buttons_widget.recording:
+            if self.cam_buttons_widget.recording:
                 rgb_image = self.server.udp_connection.parse_rgb_image()
                 if rgb_image is not None:
                     now = time.time()

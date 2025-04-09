@@ -22,8 +22,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
 
-        self.cam_dist = 16.0
-        self.cam_height = self.cam_dist * 2 / 3
+        self.cam_dist = 32.0
+        self.cam_height = self.cam_dist / 1.25
 
         self.updated_dest_size = 5.0
         self.updated_dest_rot = 0
@@ -91,7 +91,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x=x,
             y=y,
             yaw=np.radians(self.yaw),
-            scale=0.20,
+            scale=0.32,
             color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
