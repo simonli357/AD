@@ -213,6 +213,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if not self.show_gt:
             return
 
+        if self.show_destinations:
+            self.destinations_renderer.draw((0.0, 0.7, 0.7, 0.7), self.proj_mat, self.view_mat)
+
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
 
@@ -231,9 +234,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             elif entity_type == 'Car':
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
-            elif entity_type == 'Destination':
-                if self.show_destinations:
-                    self.destinations_renderer.draw((0.0, 0.7, 0.7, 0.7), self.proj_mat, self.view_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
