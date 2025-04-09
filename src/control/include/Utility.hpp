@@ -26,7 +26,7 @@
 #include <cmath>
 #include <boost/asio.hpp>
 #include "utils/constants.h"
-#include "Tracking.hpp"
+#include "Tracking.h"
 #include <algorithm>
 
 #include "LaneDetector.hpp"
@@ -596,78 +596,6 @@ public:
         return EMPTY;
     }
 
-    const std::vector<std::vector<double>>& get_relevant_signs_old(int type, std::string& o_string) {
-        int nearestDirectionIndex = nearest_direction_index(this->yaw);
-        OBJECT obj = static_cast<OBJECT>(type);
-        if (obj == OBJECT::ROUNDABOUT) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_ROUNDABOUT :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_ROUNDABOUT :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_ROUNDABOUT :
-                                                                    SOUTH_FACING_ROUNDABOUT;
-            o_string = (nearestDirectionIndex == 0) ? "ROUNDABOUT EAST" :
-                                        (nearestDirectionIndex == 1) ? "ROUNDABOUT NORTH" :
-                                        (nearestDirectionIndex == 2) ? "ROUNDABOUT WEST" :
-                                                                    "ROUNDABOUT SOUTH";
-            return objects;
-        } else if (obj == OBJECT::STOPSIGN || obj == OBJECT::PRIORITY) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_SIGNS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_SIGNS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_SIGNS :
-                                                                    SOUTH_FACING_SIGNS;
-            o_string = (obj == OBJECT::STOPSIGN) ? "STOPSIGN" :
-                        (obj == OBJECT::PRIORITY) ? "PRIORITY" :
-                        "UNKNOWN";
-            std::string direction_string = (nearestDirectionIndex == 0) ? " EAST" :
-                                        (nearestDirectionIndex == 1) ? " NORTH" :
-                                        (nearestDirectionIndex == 2) ? " WEST" :
-                                                                    " SOUTH";
-            o_string += direction_string;
-            return objects;
-        } else if (obj == OBJECT::CROSSWALK) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_CROSSWALKS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_CROSSWALKS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_CROSSWALKS :
-                                                                    SOUTH_FACING_CROSSWALKS;
-            o_string = (nearestDirectionIndex == 0) ? "CROSSWALK EAST" :
-                                        (nearestDirectionIndex == 1) ? "CROSSWALK NORTH" :
-                                        (nearestDirectionIndex == 2) ? "CROSSWALK WEST" :
-                                                                    "CROSSWALK SOUTH";
-            return objects;
-        } else if (obj == OBJECT::LIGHTS) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_LIGHTS :
-                                        (nearestDirectionIndex == 1) ? NORTH_FACING_LIGHTS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_LIGHTS :
-                                                                    SOUTH_FACING_LIGHTS;
-            o_string = (nearestDirectionIndex == 0) ? "LIGHTS EAST" :
-                                        (nearestDirectionIndex == 1) ? "LIGHTS NORTH" :
-                                        (nearestDirectionIndex == 2) ? "LIGHTS WEST" :
-                                                                    "LIGHTS SOUTH";
-            return objects;
-        } else if (obj == OBJECT::HIGHWAYENTRANCE) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_HIGHWAYENTRANCES :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_HIGHWAYENTRANCES :
-                                                                    EMPTY;
-            o_string = (nearestDirectionIndex == 0) ? "HIGHWAYENTRANCES EAST" :
-                                        (nearestDirectionIndex == 2) ? "HIGHWAYENTRANCES WEST" :
-                                                                    "HIGHWAYENTRANCES UNKNOWN";
-            return objects;
-        } else if (obj == OBJECT::HIGHWAYEXIT) {
-            const auto& objects = (nearestDirectionIndex == 0) ? EAST_FACING_HIGHWAYEXITS :
-                                        (nearestDirectionIndex == 2) ? WEST_FACING_HIGHWAYEXITS :
-                                                                    EMPTY;
-            o_string = (nearestDirectionIndex == 0) ? "HIGHWAYEXITS EAST" :
-                                        (nearestDirectionIndex == 2) ? "HIGHWAYEXITS WEST" :
-                                                                    "HIGHWAYEXITS UNKNOWN";
-            return objects;
-        } else if (obj == OBJECT::PARK) {
-            const auto& objects = (nearestDirectionIndex == 0) ? PARKING_SIGN_POSES1 :
-                                                                    EMPTY;
-            o_string = "PARKING SIGNS";
-            return objects;
-        }
-        o_string = "UNKNOWN";
-        return EMPTY;
-    }
     bool get_min_object_index(const Eigen::Vector2d& estimated_sign_pose,
                                 const std::vector<std::vector<double>>& EMPIRICAL_POSES, 
                                 int& o_index, double& o_min_error_sq, double threshold) 

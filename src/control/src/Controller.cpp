@@ -20,7 +20,8 @@
 #include <ncurses.h>
 #include <std_msgs/Byte.h>
 #include "utils/helper.h"
-#include "Tracking.hpp"
+#include "Tracking.h"
+#include "GroundTruth.h"
 
 using namespace VehicleConstants;
 
@@ -425,29 +426,43 @@ public:
     bool intersection_reached() {
         if (true) {
             int idx = path_manager.intersection_index;
-            if (idx == path_manager.intersection_points.size()) {
+            if (idx >= path_manager.intersection_indices.size()) {
                 return false;
             }
-            if (idx > path_manager.intersection_points.size() || idx < 0) {
-                utils.debug("INTERSECTION_REACHED(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(path_manager.intersection_points.size()), 2);
+            if (idx > path_manager.intersection_indices.size() || idx < 0) {
+                utils.debug("INTERSECTION_REACHED(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(path_manager.intersection_indices.size()), 2);
                 stop_for(10*T);
                 exit(1);
             }
-            auto& next_intersection_point = path_manager.intersection_points[idx];
-            double distance_to_next_intersection_sq = (x_current.head(2) - next_intersection_point.head(2)).squaredNorm();
-            if (distance_to_next_intersection_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
+            int intersection_id = path_manager.intersection_indices[idx];
+            const auto& next_intersection_pose = GroundTruth::intersections_all[intersection_id].pose;
+            double distance_to_next_sq = (x_current.head(2) - next_intersection_pose.head(2)).squaredNorm();
+            if (distance_to_next_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
                 double yaw = x_current[2];
-                double yaw_error = Utility::compare_yaw(next_intersection_point[2], yaw);
+                double yaw_error = Utility::compare_yaw(next_intersection_pose[2], yaw);
                 if (yaw_error > 30 * M_PI / 180) {
-                    // utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_point[2]) + ", error: " + helper::d2str(yaw_error), 2);
+                    // utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_pose[2]) + ", error: " + helper::d2str(yaw_error), 2);
                     return false;
                 }
                 last_intersection_point = {x_current[0], x_current[1]};
                 path_manager.intersection_index++;
-                if (path_manager.intersection_index < path_manager.intersection_points.size()) {
-                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) + "), intersection: (" + helper::d2str(next_intersection_point[0]) + ", " + helper::d2str(next_intersection_point[1]) + "), distance: " + helper::d2str(std::sqrt(distance_to_next_intersection_sq)) + ", index: " + std::to_string(path_manager.intersection_index) + ", next intersection: (" + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][0]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][1]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][2]) + ")", 2);
+                if (path_manager.intersection_index < path_manager.intersection_indices.size()) {
+                    int next_idx = path_manager.intersection_indices[path_manager.intersection_index];
+                    const auto& next_pose = GroundTruth::intersections_all[next_idx].pose;
+        
+                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" +
+                                helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
+                                "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
+                                "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +
+                                ", index: " + std::to_string(path_manager.intersection_index) +
+                                ", next intersection: (" + helper::d2str(next_pose[0]) + ", " + helper::d2str(next_pose[1]) + ", " + helper::d2str(next_pose[2]) + ")", 2);
                 } else {
-                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) + "), intersection: (" + helper::d2str(next_intersection_point[0]) + ", " + helper::d2str(next_intersection_point[1]) + "), distance: " + helper::d2str(std::sqrt(distance_to_next_intersection_sq)) + ", index: " + std::to_string(path_manager.intersection_index) + ", no more intersections", 2);
+                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" +
+                                helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
+                                "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
+                                "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +
+                                ", index: " + std::to_string(path_manager.intersection_index) +
+                                ", no more intersections", 2);
                 }
                 return true;
             } else {
@@ -1888,6 +1903,7 @@ int main(int argc, char **argv) {
         std::cout << "Successfully loaded parameters" << std::endl;
     }
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
+    GroundTruth::initialize_ground_truth();
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
     bool use_tcp = false;
     nh.getParam("/use_tcp", use_tcp);

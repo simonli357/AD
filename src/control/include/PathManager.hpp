@@ -26,6 +26,7 @@
 #include <std_srvs/Trigger.h>
 #include "Utility.hpp"
 #include "utils/helper.h"
+#include "GroundTruth.h"
 
 class PathManager {
 public:
@@ -82,112 +83,109 @@ public:
     Eigen::MatrixXd state_refs, input_refs, normals, left_turn_states, right_turn_states, straight_states;
     Eigen::MatrixXd *state_refs_ptr;
     Eigen::VectorXd state_attributes;
-    std::vector<Eigen::Vector3d> intersection_points;
+    std::vector<int> intersection_indices;
     int intersection_index = 0;
 
     bool find_intersections(Utility& utils) {
+        using namespace GroundTruth;
         utils.debug("FIND_INTERSECTIONS(): started", 1);
+    
         auto start = std::chrono::high_resolution_clock::now();
-        intersection_points.clear();
+        intersection_indices.clear();
         intersection_index = 0;
+    
         if (state_refs.rows() == 0) {
             utils.debug("FIND_INTERSECTIONS(): FAILURE: state_refs is empty", 1);
             return false;
         }
+    
         int current_idx = 0;
-        int start_idx = current_idx;
-        int limit = std::max(current_idx + static_cast<int>(25.0 * density), static_cast<int>(state_refs.rows() - 1));
         double threshold = INTERSECTION_DISTANCE_THRESHOLD;
-        bool outer_done = false;
-        while(current_idx < state_refs.rows() && !outer_done) {
+    
+        while (current_idx < state_refs.rows()) {
             double x = state_refs(current_idx, 0);
             double y = state_refs(current_idx, 1);
             double yaw = state_refs(current_idx, 2);
-            int nearest_direction_idx = Utility::nearest_direction_index(yaw);
-            double nearest_direction = Utility::nearest_direction(yaw);
-            double yaw_error = Utility::compare_yaw(yaw, nearest_direction);
+    
+            int nearest_dir_idx = Utility::nearest_direction_index(yaw);
+            double dir_yaw = Utility::nearest_direction(yaw);
+            double yaw_error = Utility::compare_yaw(yaw, dir_yaw);
+    
             if (yaw_error * 180 / M_PI > 15) {
-                current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.33 / 2);
+                current_idx += static_cast<int>(density * threshold * 0.33 / 2);
                 continue;
             }
-            std::string direction = (nearest_direction_idx == 0) ? "east" :
-                            (nearest_direction_idx == 1) ? "north" :
-                            (nearest_direction_idx == 2) ? "west" :
-                                                        "south";
-            auto& INTERSECTIONS = (nearest_direction_idx == 0) ? EAST_FACING_INTERSECTIONS :
-                                    (nearest_direction_idx == 1) ? NORTH_FACING_INTERSECTIONS :
-                                    (nearest_direction_idx == 2) ? WEST_FACING_INTERSECTIONS :
-                                                                SOUTH_FACING_INTERSECTIONS;
+    
+            // Check all intersections for the nearest
             double min_error_sq = std::numeric_limits<double>::max();
-            int min_index = 0;
-            for (size_t i = 0; i < INTERSECTIONS.size(); ++i) {
-                double error_sq = std::pow(x - INTERSECTIONS[i][0], 2) + std::pow(y - INTERSECTIONS[i][1], 2);
-                if (error_sq < min_error_sq) {
-                    min_error_sq = error_sq;
-                    min_index = static_cast<int>(i);
-                }
-            }
-            if (min_error_sq < threshold * threshold) {
-                Eigen::Vector3d intersection(INTERSECTIONS[min_index][0], INTERSECTIONS[min_index][1], INTERSECTIONS[min_index][2]);
-                bool same_as_last = true;
-                if (intersection_points.size() == 0) {
-                    same_as_last = false;
-                } else {
-                    // check if it's the same as last element in intersection_points
-                    double dist_to_last_sq = (intersection.head(2) - intersection_points.back().head(2)).squaredNorm();
-                    same_as_last = dist_to_last_sq <= INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD * 0.75 * 0.75;
-                }
-                if (!same_as_last) {
-                    // Ensure the intersection is in the forward direction
-                    // 2D vector from the current state to the intersection.
-                    Eigen::Vector2d currentPoint(x, y);
-                    Eigen::Vector2d intersectionPoint(intersection[0], intersection[1]);
-                    Eigen::Vector2d vecToIntersection = intersectionPoint - currentPoint;
-
-                    // Determine the path direction vector: if possible, use the next state.
-                    Eigen::Vector2d pathDirection;
-                    if (current_idx + 1 < state_refs.rows()) {
-                        pathDirection = Eigen::Vector2d(state_refs(current_idx + 1, 0) - x,
-                                                        state_refs(current_idx + 1, 1) - y);
-                    } else if (current_idx - 1 >= 0) {
-                        // Fall back: use the vector from the previous state to the current one.
-                        pathDirection = Eigen::Vector2d(x - state_refs(current_idx - 1, 0),
-                                                        y - state_refs(current_idx - 1, 1));
-                    } else {
-                        // Cannot determine a path direction. Skip adding this intersection.
-                        current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.33);
-                        continue;
-                    }
-
-                    // Check if the intersection is forward: Dot product > 0 means the intersection is in the forward half-plane.
-                    if (vecToIntersection.dot(pathDirection) <= 0) {
-                        // Intersection is behind the current point; skip adding.
-                        current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.33);
-                        continue;
-                    }
-                    // std::cout << "currentPoint: " << currentPoint.transpose() << ", intersectionPoint: " << intersectionPoint.transpose() << ", nextPoint: " << Eigen::Vector2d(state_refs(current_idx + 1, 0), state_refs(current_idx + 1, 1)).transpose() << std::endl;
-                    // std::cout << "vecToIntersection: " << vecToIntersection.transpose() << ", pathDirection: " << pathDirection.transpose() << ", dot: " << vecToIntersection.dot(pathDirection) << std::endl;
-                    intersection_points.push_back(intersection);
-                    current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.9);
+            int closest_idx = -1;
+            for (size_t i = 0; i < intersections_all.size(); ++i) {
+                double yaw_error2 = Utility::compare_yaw(dir_yaw, intersections_all[i].pose[2]);
+                if (yaw_error2 * 180 / M_PI > 1) {
                     continue;
                 }
-            } else {
-                // utils.debug("FIND_CLOSEST_INTERSECTION(): FAILURE: state: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), closest intersection: (" + helper::d2str(INTERSECTIONS[min_index][0]) + ", " + helper::d2str(INTERSECTIONS[min_index][1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(threshold) + ", direction: " + direction + ", yaw: " + helper::d2str(yaw), 1);
+                double dx = x - intersections_all[i].pose[0];
+                double dy = y - intersections_all[i].pose[1];
+                double dist_sq = dx * dx + dy * dy;
+    
+                if (dist_sq < min_error_sq) {
+                    min_error_sq = dist_sq;
+                    closest_idx = static_cast<int>(i);
+                }
             }
-            current_idx += static_cast<int>(density * INTERSECTION_DISTANCE_THRESHOLD * 0.33);
+    
+            if (closest_idx >= 0 && min_error_sq < threshold * threshold) {
+                // Avoid adding same intersection back-to-back
+                bool same_as_last = false;
+                if (!intersection_indices.empty()) {
+                    int last_idx = intersection_indices.back();
+                    const auto& last_pose = intersections_all[last_idx].pose.head<2>();
+                    const auto& this_pose = intersections_all[closest_idx].pose.head<2>();
+                    double dist_to_last_sq = (last_pose - this_pose).squaredNorm();
+                    same_as_last = dist_to_last_sq < threshold * threshold * 0.75 * 0.75;
+                }
+    
+                if (!same_as_last) {
+                    Eigen::Vector2d current(x, y);
+                    Eigen::Vector2d intersection_pos(intersections_all[closest_idx].pose[0], intersections_all[closest_idx].pose[1]);
+                    Eigen::Vector2d vec_to_intersection = intersection_pos - current;
+    
+                    Eigen::Vector2d path_dir;
+                    if (current_idx + 1 < state_refs.rows()) {
+                        path_dir = {state_refs(current_idx + 1, 0) - x, state_refs(current_idx + 1, 1) - y};
+                    } else if (current_idx - 1 >= 0) {
+                        path_dir = {x - state_refs(current_idx - 1, 0), y - state_refs(current_idx - 1, 1)};
+                    } else {
+                        current_idx += static_cast<int>(density * threshold * 0.33);
+                        continue;
+                    }
+    
+                    if (vec_to_intersection.dot(path_dir) > 0) {
+                        intersection_indices.push_back(closest_idx);
+                        current_idx += static_cast<int>(density * threshold * 0.9);
+                        continue;
+                    }
+                }
+            }
+    
+            current_idx += static_cast<int>(density * threshold * 0.33);
         }
-        if (intersection_points.size() > 0) {
+    
+        if (!intersection_indices.empty()) {
             auto stop = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-            utils.debug("FIND_INTERSECTIONS(): SUCCESS: found " + std::to_string(intersection_points.size()) + " intersections. time: " + std::to_string(duration.count()) + " microseconds", 1);
-            for (int i = 0; i < intersection_points.size(); i++) {
-                utils.debug(std::to_string(i) + ") [" + helper::d2str(intersection_points[i][0]) + ", " + helper::d2str(intersection_points[i][1]) + "], yaw: " + helper::d2str(intersection_points[i][2]), 1);
+            utils.debug("FIND_INTERSECTIONS(): SUCCESS: found " + std::to_string(intersection_indices.size()) +
+                        " intersections. time: " + std::to_string(duration.count()) + "us", 1);
+    
+            for (int i = 0; i < intersection_indices.size(); ++i) {
+                const auto& inter = intersections_all[intersection_indices[i]].pose;
+                utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]), 1);
             }
             return true;
-        } else {
-            utils.debug("FIND_INTERSECTIONS(): FAILURE: no intersections found", 1);
-            return false;
         }
+    
+        utils.debug("FIND_INTERSECTIONS(): FAILURE: no intersections found", 1);
+        return false;
     }
 
     enum ATTRIBUTE {
