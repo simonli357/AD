@@ -5,6 +5,7 @@ from OpenGL import GL as gl
 from .view import HidableOverlay
 from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
+from ..opengl.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
 from ..enums import MapData, NamedColor
 
@@ -150,7 +151,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
+        self.destinations_renderer = DestinationsRenderer()
         self.shader_renderer = ShaderRenderer()
+
+        self.update_destinations()
 
         self.sign_models = []
         for path in self.sign_images:
@@ -229,13 +233,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
             elif entity_type == 'Destination':
                 if self.show_destinations:
-                    self.shader_renderer.draw_circle(
-                        center=(x, y),
-                        radius=8.0,
-                        color=(0.0, 0.7, 0.7, 0.7),
-                        view_matrix=self.view_mat,
-                        proj_matrix=self.proj_mat
-                    )
+                    self.destinations_renderer.draw((0.0, 0.7, 0.7, 0.7), self.proj_mat, self.view_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
@@ -484,6 +482,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
             self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
+    def update_destinations(self):
+        self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
+
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -502,6 +503,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             5
         )
         self.update_waypoints()
+        self.update_destinations()
 
     def mouseDoubleClickEvent(self, event):
         x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
