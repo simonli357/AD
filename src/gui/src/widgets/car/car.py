@@ -49,7 +49,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glEnable(gl.GL_BLEND)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used

@@ -5,6 +5,7 @@ from .basic import line_model, circle_model, crosshair_model, triangle_model
 from .obj import load_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
+from .custom.speedometer import Speedometer
 
 import os
 import glob
@@ -107,9 +108,11 @@ class ShaderRenderer:
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
 
         self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
+        self.speedometer_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
 
     def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.progress_bar_shader)
+        self.speedometer_model = Speedometer(self.speedometer_shader)
 
     ##################
     # Draw Functions
