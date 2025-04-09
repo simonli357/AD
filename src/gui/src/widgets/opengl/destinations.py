@@ -10,10 +10,11 @@ class DestinationsRenderer:
     def __init__(self):
         self.num_instances = 0
         self.vao = gl.glGenVertexArrays(1)
+
         # Circle geometry
-        vertices = []
-        for i in range(64):
-            angle = 6.28318530718 * float(i) / 63.0
+        vertices = [[0.0, 0.0]]  # center vertex
+        for i in range(65):
+            angle = 6.28318530718 * float(i) / 64.0
             vertices.append([np.cos(angle), np.sin(angle)])
 
         self.base_vertices = np.array(vertices, dtype=np.float32)
@@ -28,7 +29,7 @@ class DestinationsRenderer:
         # Base vertex attributes (position)
         self.base_vbo.bind()
         gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
         # Instance vertex attributes
         self.instance_vbo.bind()
@@ -58,7 +59,7 @@ class DestinationsRenderer:
 
         return world_x, world_y
 
-    def update_waypoints(self, data, widget_width, widget_height):
+    def update_data(self, data, widget_width, widget_height):
         if data is None:
             self.num_instances = 0
             return
@@ -66,7 +67,7 @@ class DestinationsRenderer:
         for index, row in data:
             # Compute OpenGL coordinates
             # (Note: In your original code you call get_gl_coords with Y inverted.)
-            x, y = self.get_gl_coords(row['X'], MapData.REAL_WORLD_HEIGHT.value - row['Y'], widget_width, widget_height)
+            x, y = self.get_gl_coords(row['X'], row['Y'], widget_width, widget_height)
             m_type, orientation = row['Type'], row['Orientation']
 
             if m_type != 'Destination':
@@ -74,9 +75,9 @@ class DestinationsRenderer:
 
             # Build a model transformation matrix:
             model_matrix = glm.mat4(1.0)
-            model_matrix = glm.translate(model_matrix, glm.vec3(x, y, 0.0))
+            model_matrix = glm.translate(model_matrix, glm.vec3(x, y, 0.1))
             model_matrix = glm.rotate(model_matrix, orientation, glm.vec3(0.0, 0.0, 1.0))
-            model_matrix = glm.scale(model_matrix, glm.vec3(5.0, 5.0, 5.0))
+            model_matrix = glm.scale(model_matrix, glm.vec3(8.0, 8.0, 8.0))
 
             # Convert the matrix to a numpy array.
             # Because glm (PyGLM) produces column-major matrices (which OpenGL expects),
@@ -88,9 +89,9 @@ class DestinationsRenderer:
             instance_matrices = np.array(instance_matrices, dtype=np.float32)
             self.num_instances = len(instance_matrices)
             # Upload the instance matrices to the instance VBO
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+            self.instance_vbo.bind()
             gl.glBufferData(gl.GL_ARRAY_BUFFER, instance_matrices.nbytes, instance_matrices, gl.GL_DYNAMIC_DRAW)
-            gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+            self.instance_vbo.unbind()
         else:
             self.num_instances = 0
 
@@ -113,7 +114,7 @@ class DestinationsRenderer:
         gl.glUniform4fv(gl.glGetUniformLocation(self.shader_program, "color"), 1, color)
 
         # Draw all instances
-        gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, self.num_vertices, self.num_instances)
+        gl.glDrawArraysInstanced(gl.GL_TRIANGLE_FAN, 0, self.num_vertices, self.num_instances)
 
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
