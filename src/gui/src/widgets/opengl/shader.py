@@ -1,9 +1,10 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
 from .loaders import load_mesh, load_map
-from .models import line_model, circle_model, crosshair_model, triangle_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model
 from .obj import load_obj
 from ..enums import NamedColor
+from .custom.progress_bar import ProgressBar
 
 import os
 import glob
@@ -64,6 +65,7 @@ class ShaderRenderer:
     def __init__(self):
         self.load_models()
         self.load_shaders()
+        self.load_custom_models()
 
     def load_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
@@ -103,6 +105,11 @@ class ShaderRenderer:
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
+
+        self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
+
+    def load_custom_models(self):
+        self.progress_bar_model = ProgressBar(self.progress_bar_shader)
 
     ##################
     # Draw Functions

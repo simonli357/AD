@@ -1,12 +1,13 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-import glm
+from .hud import HudRenderer
 from ..enums import MapData, NamedColor
 from ..opengl.shader import ShaderRenderer
 from ..opengl.gt import GTRenderer
 
 import numpy as np
+import glm
 
 
 class CarWidget(QtWidgets.QOpenGLWidget):
@@ -56,6 +57,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.shader_renderer = ShaderRenderer()
+        self.hud_renderer = HudRenderer(self.shader_renderer)
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
         self.update_destinations()
 
@@ -117,6 +119,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.updated_dest_rot += 0.2
         if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
+
+        # HUD
+        self.hud_renderer.draw_hud()
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 2.5
