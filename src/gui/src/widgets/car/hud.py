@@ -29,9 +29,9 @@ class HudRenderer:
 
         self.shader_renderer.speedometer_model.draw(
             qpainter,
-            screen_width=screen_width,
-            screen_height=screen_height,
-            x_norm=0.18,
-            y_norm=0.75,
-            proj_mat=self.proj_mat
+            screen_width,
+            screen_height,
+            0.18,
+            0.75,
+            self.proj_mat
         )
