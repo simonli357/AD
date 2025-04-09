@@ -1,22 +1,21 @@
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
+from PyQt5.Qt import QPainter, QFont, QColor
 
 import numpy as np
 import glm
 
 
 class ProgressBar():
-    """Custom progress bar that draws as a parallelogram instead of a rectangle."""
+    """Custom progress bar"""
 
     def __init__(self, shader_program):
         super(ProgressBar, self).__init__()
         self.shader_program = shader_program
-        # Backdrop (frame) color (white at 50% opacity)
         self.backdrop_color = (1.0, 1.0, 1.0, 0.5)
-        # Shear factor for full bar (as a fraction of the total width)
         self.shear_fraction = 0.025  # Adjust this value for more or less slant
 
-    def draw_I(self, x, y, width, height, fill_color, percentage, proj_mat):
+    def draw(self, qpainter, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm, fill_color, percentage, proj_mat):
         """
         Draws a progress bar where (x,y) is the top-right corner.
         The bar is drawn as a parallelogram with a shear applied to the bottom edge.
@@ -33,6 +32,12 @@ class ProgressBar():
         :param percentage: Progress fraction between 0.0 and 1.0.
         :param proj_mat: Projection matrix (e.g. glm.ortho).
         """
+        # Denormalize coords
+        x = x_norm * screen_width
+        y = y_norm * screen_height
+        width = width_norm * screen_width
+        height = height_norm * screen_height
+
         # Calculate the shear offset for the full bar.
         s = self.shear_fraction * width
 
@@ -101,3 +106,30 @@ class ProgressBar():
 
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
+
+        # --- Render percentage text on the left of the progress bar ---
+        percentage_value = int(percentage * 100)
+        text_to_render = f" {percentage_value}%"
+        margin = len(text_to_render) * 0.0105 * screen_width
+        text_x = (x - width) - margin
+        text_y = y + (height * 0.25)
+        self.render_text(qpainter, text_to_render, 20, (0, 255, 0, 255), text_x, text_y)
+
+    def render_text(self, painter: QPainter, text, size, color: (int, int, int, int), x, y) -> None:
+        # Get current OpenGL color
+        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
+        text_color = QColor(
+            int(gl_color[2] * color[2]),
+            int(gl_color[1] * color[1]),
+            int(gl_color[0] * color[0]),
+            int(gl_color[3] * color[3])
+        )
+
+        # Set up font
+        font = QFont()
+        font.setBold(True)
+        font.setStyleStrategy(QFont.PreferAntialias)
+
+        painter.setPen(text_color)
+        painter.setFont(font)
+        painter.drawText(int(x), int(y), text)

@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.Qt import QPainter, QFont, QColor
+from PyQt5.Qt import QPainter
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from ..enums import MapData, NamedColor
@@ -121,7 +121,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
-        self.hud_renderer.draw_hud()
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform)
+        self.hud_renderer.draw_hud(painter)
+        painter.end()
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 2.5
@@ -164,38 +167,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
                 self.shader_renderer.draw_triangle(x1, y1, 0.1, angle, (1, 1), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                 x1, y1 = x2, y2
-
-    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
-        painter = QPainter(self)
-        painter.setRenderHints(
-            QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
-        )
-
-        # Get current OpenGL color
-        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
-        text_color = QColor(
-            int(gl_color[2] * color[2]),
-            int(gl_color[1] * color[1]),
-            int(gl_color[0] * color[0]),
-            int(gl_color[3] * color[3])
-        )
-
-        # Set up font
-        font = QFont("Arial")
-        font.setBold(True)
-        font.setStyleStrategy(QFont.PreferAntialias)
-
-        # Account for high-DPI scaling
-        scale_factor = self.devicePixelRatio()
-        painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(size * scale_factor)
-
-        painter.setPen(text_color)
-        painter.setFont(font)
-        painter.drawText(int(x * scale_factor),
-                         int(y * scale_factor),
-                         text)
-        painter.end()
 
     def get_gl_coords(self, real_x, real_y):
         # Convert real-world to OpenGL world coordinates
