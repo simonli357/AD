@@ -20,7 +20,7 @@ class HidableOverlay(QWidget):
         self.global_rect = QtCore.QRect()
         self.event_filter_installed = False
 
-        self.destinations = self.map_widget.data[self.data['Type'] == 'Destination']
+        self.destinations = self.map_widget.data[self.map_widget.data['Type'] == 'Destination']
         self.path = []
         self.visited = set()
         self.dist_traveled = 0
