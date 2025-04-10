@@ -331,18 +331,18 @@ class ShaderRenderer:
         model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
 
         gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "model"),
+            gl.glGetUniformLocation(self.texture2D_shader, "model"),
             1, gl.GL_FALSE, glm.value_ptr(model)
         )
         gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "projection"),
+            gl.glGetUniformLocation(self.texture2D_shader, "projection"),
             1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
         )
 
         # Bind texture
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
-        gl.glUniform1i(gl.glGetUniformLocation(self.texture_shader, "texture1"), 0)
+        gl.glUniform1i(gl.glGetUniformLocation(self.texture2D_shader, "texture1"), 0)
 
         # Draw
         gl.glBindVertexArray(icon.vao)
