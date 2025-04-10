@@ -39,6 +39,10 @@ namespace Tunable {
     inline double max_light_dist = 0.9;
     inline double max_sign_dist = 1.5;
     inline double min_sign_dist = 0.5;
+    inline double highway_cooldown = 3.0;
+    inline double sign_cooldown = 3.0;
+    inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5};
+    inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
 
     inline bool loadFromParams(ros::NodeHandle& nh, bool real) {
       bool success = true;
@@ -75,6 +79,10 @@ namespace Tunable {
       success &= nh.getParam(mode + "/max_light_dist", max_light_dist);
       success &= nh.getParam(mode + "/max_sign_dist", max_sign_dist);
       success &= nh.getParam(mode + "/min_sign_dist", min_sign_dist);
+      success &= nh.getParam(mode + "/highway_cooldown", highway_cooldown);
+      success &= nh.getParam(mode + "/sign_cooldown", sign_cooldown);
+      success &= nh.getParam(mode + "/cumulative_confidence_thresholds", cumulative_confidence_thresholds);
+      success &= nh.getParam(mode + "/recency_thresholds", recency_thresholds);
       return success;
   }
 }

@@ -530,7 +530,6 @@ public:
         }
     }
     void check_sign_for_relocalization() {
-        // TODO: move magic numbers to tunable
         if (!sign_relocalize) return;
         // check cooldown
         if (sign_cooldown_timer > ros::Time::now()) return;
@@ -546,7 +545,7 @@ public:
             // check type
             if (obj->type != sign_flag) continue;
             // check last detection time
-            if (obj->last_detection_time < ros::Time::now() - ros::Duration(0.5)) continue;
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(sign_flag)])) continue;
             // check confidence
             if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) continue;
             double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
@@ -555,7 +554,7 @@ public:
             // check error against target sign gt
             double error_sq = (target_sign_pose.head(2) - obj->gt_pose.head(2)).squaredNorm();
             if (error_sq > 0.01) continue;
-            sign_cooldown_timer = ros::Time::now() + ros::Duration(3.0);
+            sign_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::sign_cooldown);
             if (sign_based_relocalization2(obj)) obj->reset();
             return;
         }
@@ -582,7 +581,7 @@ public:
             // check type
             if (obj->type != OBJECT::HIGHWAYEXIT && obj->type != OBJECT::HIGHWAYENTRANCE) continue;
             // check last detection time
-            if (obj->last_detection_time < ros::Time::now() - ros::Duration(0.5)) {
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(obj->type)])) {
                 continue;
             }
             // check confidence
@@ -594,7 +593,7 @@ public:
             if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
                 continue;
             }
-            highway_cooldown_timer = ros::Time::now() + ros::Duration(3.0);
+            highway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
             if (sign_based_relocalization2(obj)) obj->reset();
             return;
         }

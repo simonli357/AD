@@ -9,6 +9,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Float32MultiArray.h>
 #include "utils/constants.h"
+#include "Tunable.h"
 
 using namespace VehicleConstants;
 
@@ -145,7 +146,8 @@ public:
     Eigen::Vector3d gt_pose;
     double cumulative_confidence_thresh = 2.5;
     KnownStaticObject(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose)
-        : RoadObject(type, x, y, yaw, confidence), gt_pose(gt_pose[0], gt_pose[1], gt_pose[2]) {
+        : RoadObject(type, x, y, yaw, confidence), gt_pose(gt_pose[0], gt_pose[1], gt_pose[2]), 
+            cumulative_confidence_thresh(Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
         if (!is_known_static_object(type)) {
             throw std::invalid_argument("KnownStaticObject Constructor(): KnownStaticObject must be a known static object");
         }
@@ -171,7 +173,7 @@ public:
         RoadObject::yaw = gt_pose[2];
         RoadObject::confidence = 0.0;
         RoadObject::detection_count = 0;
-        cumulative_confidence_thresh += 2.5;
+        cumulative_confidence_thresh += Tunable::cumulative_confidence_thresholds[static_cast<int>(type)];
     }
 };
 
