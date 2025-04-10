@@ -262,23 +262,6 @@ public:
         std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
         return maneuver_hardcode(targets, steerings, speeds, thresholds, rate_val);
     }
-    int change_lane_hardcode(bool right, double yaw_offset = 0, double rate_val = 20) {
-        Eigen::VectorXd targets(1);
-        double yaw_target = change_lane_yaw * M_PI;
-        Eigen::VectorXd steering(1);
-        steering << -23.;
-        if (right) {
-            steering *= -1;
-            yaw_target *= -1;
-        }
-        yaw_target += yaw_offset;
-        targets << yaw_target;
-        Eigen::VectorXd speeds(1);
-        speeds << change_lane_speed;
-        Eigen::VectorXd thresholds(1);
-        thresholds << change_lane_thresh;
-        return maneuver_hardcode(targets, steering, speeds, thresholds, rate_val);
-    }
     int maneuver_hardcode(const Eigen::VectorXd &targets, const Eigen::VectorXd &steerings, const Eigen::VectorXd &speeds, const Eigen::VectorXd &thresholds, double rate_val = 20) {
         /* 
         targets: target yaws or distances
