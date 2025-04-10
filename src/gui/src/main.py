@@ -100,6 +100,7 @@ class MainWindow(QMainWindow):
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.map_widget.set_steer)
+        self.comm.steer_signal.connect(self.car_widget.set_steer)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
 

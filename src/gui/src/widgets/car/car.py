@@ -21,6 +21,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = 11.75
         self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
         self.z_pos = 0
+        self.speed = 0
+        self.steer = 0
 
         self.cam_dist = 32.0
         self.cam_height = self.cam_dist / 1.25
@@ -28,7 +30,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.updated_dest_size = 5.0
         self.updated_dest_rot = 0
 
-    def set_car_data(self, yaw: float, x: float, y: float, z: float) -> None:
+    def set_steer(self, steer: float):
+        self.steer = steer
+
+    def set_car_data(self, yaw: float, speed: float, x: float, y: float, z: float) -> None:
         if self.main_window.buttons_widget.started:
             dx = x - self.x_pos
             dy = y - self.y_pos
@@ -37,6 +42,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.main_window.map_widget.run_statistics.set_distance_traveled()
             self.main_window.map_widget.run_statistics.update_visited_destinations(x, y)
         self.yaw = yaw
+        self.speed = speed
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
@@ -56,8 +62,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
+        self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
+
         self.shader_renderer = ShaderRenderer()
-        self.hud_renderer = HudRenderer(self.shader_renderer)
+        self.hud_renderer = HudRenderer(self)
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
         self.update_destinations()
 
@@ -121,7 +129,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
-        self.hud_renderer.draw_hud()
+        self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 2.5
@@ -194,4 +202,5 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+        self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         self.update_destinations()

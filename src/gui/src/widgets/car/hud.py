@@ -1,19 +1,12 @@
-from OpenGL import GL as gl
 from ..enums import NamedColor
-
-import glm
 
 
 class HudRenderer:
-    def __init__(self, shader_renderer):
-        self.shader_renderer = shader_renderer
+    def __init__(self, car_widget):
+        self.car_widget = car_widget
+        self.shader_renderer = car_widget.shader_renderer
 
-    def draw_hud(self):
-        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
-        screen_width = viewport[2]
-        screen_height = viewport[3]
-        self.proj_mat = glm.ortho(0.0, float(screen_width), float(screen_height), 0.0, -1.0, 1.0)
-
+    def draw_hud(self, proj_mat, screen_width, screen_height):
         self.shader_renderer.progress_bar_model.draw(
             screen_width=screen_width,
             screen_height=screen_height,
@@ -23,7 +16,7 @@ class HudRenderer:
             height_norm=0.01,
             fill_color=NamedColor.GREEN.value,
             percentage=1.0,
-            proj_mat=self.proj_mat
+            proj_mat=proj_mat
         )
 
         self.shader_renderer.speedometer_model.draw(
@@ -31,5 +24,7 @@ class HudRenderer:
             screen_height,
             0.19,
             0.7,
-            self.proj_mat
+            proj_mat,
+            self.car_widget.speed,
+            self.car_widget.steer
         )

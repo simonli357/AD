@@ -343,7 +343,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
-        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
+        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_speed, car_x, car_y, car_z)
         self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
         self.main_window.meter_widget.set_speed(car_speed * 100)
         self.run_statistics.set_car_pose(car_x, car_y, car_z)
