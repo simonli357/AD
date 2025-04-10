@@ -11,7 +11,8 @@ class ProgressBar():
     parts, making it easier to maintain and cache if needed.
     """
 
-    def __init__(self, shader_program):
+    def __init__(self, text_renderer, shader_program):
+        self.text_renderer = text_renderer
         self.shader_program = shader_program
         self.backdrop_color = (1.0, 1.0, 1.0, 0.5)
         # This shear_fraction determines how much the bottom edge is slanted.
@@ -59,8 +60,7 @@ class ProgressBar():
 
         return x, y, width, height, s, backdrop_vertices
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm,
-             fill_color, percentage, proj_mat):
+    def draw(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm, fill_color, percentage, proj_mat):
         """
         Draws the progress bar. (x,y) is the top-right corner in normalized space.
         The bar is rendered as a sheared parallelogram with a filled portion determined
@@ -116,3 +116,5 @@ class ProgressBar():
 
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
+
+        self.text_renderer.render_text('TEST', 0.5 * screen_width, 0.5 * screen_height, 1.0, (0.0, 1.0, 0.0), proj_mat)

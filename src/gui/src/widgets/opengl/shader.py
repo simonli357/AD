@@ -6,6 +6,7 @@ from .obj import load_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
 from .custom.speedometer import Speedometer
+from .font import TextRenderer
 
 import os
 import glob
@@ -64,6 +65,7 @@ def object_path(dirname: str, mtl_name: str):
 
 class ShaderRenderer:
     def __init__(self):
+        self.text_renderer = TextRenderer(16)
         self.load_models()
         self.load_shaders()
         self.load_custom_models()
@@ -112,8 +114,8 @@ class ShaderRenderer:
         self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
 
     def load_custom_models(self):
-        self.progress_bar_model = ProgressBar(self.progress_bar_shader)
-        self.speedometer_model = Speedometer(self.speedometer_gauge_shader, self.speedometer_tick_shader)
+        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader)
+        self.speedometer_model = Speedometer(self.text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader)
 
     ##################
     # Draw Functions

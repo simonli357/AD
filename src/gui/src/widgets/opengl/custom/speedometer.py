@@ -12,9 +12,9 @@ class Speedometer():
     when the widget dimensions or gauge position change.
     """
 
-    def __init__(self, shader_program, tick_shader_program):
+    def __init__(self, text_renderer, gauge_shader_program, tick_shader_program):
         # Shader programs for drawing the gauge arc and tick marks.
-        self.shader_program = shader_program
+        self.gauge_shader_program = gauge_shader_program
         self.tick_shader_program = tick_shader_program
 
         # Ratios and constants
@@ -140,21 +140,21 @@ class Speedometer():
         outerRadius = self.outerRadius_ratio * screen_height
 
         # Draw the gauge arc quad.
-        gl.glUseProgram(self.shader_program)
-        loc_proj = gl.glGetUniformLocation(self.shader_program, "uProjection")
+        gl.glUseProgram(self.gauge_shader_program)
+        loc_proj = gl.glGetUniformLocation(self.gauge_shader_program, "uProjection")
         gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
 
-        loc_center = gl.glGetUniformLocation(self.shader_program, "uCenter")
+        loc_center = gl.glGetUniformLocation(self.gauge_shader_program, "uCenter")
         gl.glUniform2f(loc_center, cx, cy)
-        loc_inner = gl.glGetUniformLocation(self.shader_program, "uInnerRadius")
+        loc_inner = gl.glGetUniformLocation(self.gauge_shader_program, "uInnerRadius")
         gl.glUniform1f(loc_inner, innerRadius)
-        loc_outer = gl.glGetUniformLocation(self.shader_program, "uOuterRadius")
+        loc_outer = gl.glGetUniformLocation(self.gauge_shader_program, "uOuterRadius")
         gl.glUniform1f(loc_outer, outerRadius)
-        loc_progress = gl.glGetUniformLocation(self.shader_program, "uProgress")
+        loc_progress = gl.glGetUniformLocation(self.gauge_shader_program, "uProgress")
         gl.glUniform1f(loc_progress, progress)
-        loc_fill = gl.glGetUniformLocation(self.shader_program, "uFillColor")
+        loc_fill = gl.glGetUniformLocation(self.gauge_shader_program, "uFillColor")
         gl.glUniform4f(loc_fill, *fill_color)
-        loc_bg = gl.glGetUniformLocation(self.shader_program, "uBgColor")
+        loc_bg = gl.glGetUniformLocation(self.gauge_shader_program, "uBgColor")
         gl.glUniform4f(loc_bg, 0.0, 0.0, 0.0, 0.0)
 
         quad_vbo = vbo.VBO(self.quad_vertices)
