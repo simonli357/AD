@@ -506,7 +506,7 @@ class ShaderRenderer:
 
         # Draw green arrow (pointing along y)
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.translate(model, glm.vec3(x, y, 2.0))
         model = glm.rotate(model, np.radians(yaw), glm.vec3(0, 0, 1))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
         gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
@@ -521,7 +521,7 @@ class ShaderRenderer:
         # Draw red arrow (pointing along x) using the same global position and yaw, with extra -90° rotation
         model = glm.mat4(1.0)
         # Global transformation: translate and apply global yaw
-        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.translate(model, glm.vec3(x, y, 2.0))
         model = glm.rotate(model, np.radians(yaw), glm.vec3(0, 0, 1))
         # Local adjustment: rotate extra -90° so arrow points to x direction
         model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
