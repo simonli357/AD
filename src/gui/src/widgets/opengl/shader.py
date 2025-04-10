@@ -1,6 +1,6 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
-from .loaders import load_mesh, load_map
+from .loaders import load_mesh, load_map, load_2D_texture
 from .basic import line_model, circle_model, crosshair_model, triangle_model
 from .obj import load_obj
 from ..enums import NamedColor
@@ -67,9 +67,13 @@ class ShaderRenderer:
     def __init__(self):
         self.text_renderer = TextRenderer(16)
         self.large_text_renderer = TextRenderer(48)
+        self.load_textures()
         self.load_models()
         self.load_shaders()
         self.load_custom_models()
+
+    def load_textures(self):
+        self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
 
     def load_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
@@ -105,6 +109,7 @@ class ShaderRenderer:
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+        self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
@@ -117,7 +122,7 @@ class ShaderRenderer:
         self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
     def load_custom_models(self):
-        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader)
+        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.cpu_texture, self.texture2D_shader)
         self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
 
     ##################
