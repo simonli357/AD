@@ -27,7 +27,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.cam_dist = 32.0
         self.cam_height = self.cam_dist / 1.25
 
-        self.updated_dest_size = 5.0
+        self.updated_dest_size = 10.0
         self.updated_dest_rot = 0
 
     def set_steer(self, steer: float):
@@ -129,9 +129,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
         # Grow visited destination until out of sight
-        if self.updated_dest_size < 5.0:
-            self.updated_dest_size += 0.05
-            self.updated_dest_rot += 0.2
+        if self.updated_dest_size < 10.0:
+            self.updated_dest_size += 0.1
+            self.updated_dest_rot += 0.4
         if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 

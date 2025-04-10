@@ -84,11 +84,11 @@ class GTRenderer:
             model_matrix = glm.rotate(model_matrix, orientation, glm.vec3(0.0, 0.0, 1.0))
 
             if self.entity_type == 'Car':
-                model_matrix = glm.scale(model_matrix, glm.vec3(0.2, 0.2, 0.2))
+                model_matrix = glm.scale(model_matrix, glm.vec3(0.32, 0.32, 0.32))
             elif self.entity_type == 'Destination':
-                model_matrix = glm.scale(model_matrix, glm.vec3(2.0, 2.0, 2.0))
+                model_matrix = glm.scale(model_matrix, glm.vec3(4.0, 4.0, 4.0))
             else:
-                model_matrix = glm.scale(model_matrix, glm.vec3(16.0, 16.0, 16.0))
+                model_matrix = glm.scale(model_matrix, glm.vec3(24.0, 24.0, 24.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
 
