@@ -140,14 +140,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glDisable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
-        gl.glDisable(gl.GL_POLYGON_SMOOTH)
-        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
-        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
+        # gl.glDisable(gl.GL_DEPTH_TEST)
+        # gl.glEnable(gl.GL_BLEND)
+        # gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        # gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        # gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        # gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        # gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.destinations_renderer = DestinationsRenderer()
