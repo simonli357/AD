@@ -12,31 +12,35 @@ class Speedometer():
     when the widget dimensions or gauge position change.
     """
 
-    def __init__(self, text_renderer, gauge_shader_program, tick_shader_program):
+    def __init__(self, text_renderer, gauge_shader_program, tick_shader_program, circle_shader_program):
         self.text_renderer = text_renderer
         # Shader programs for drawing the gauge arc and tick marks.
         self.gauge_shader_program = gauge_shader_program
         self.tick_shader_program = tick_shader_program
+        self.circle_shader_program = circle_shader_program
 
         # Ratios and constants
         self.innerRadius_ratio = 0.23
         self.outerRadius_ratio = 0.24
         self.large_tick_length_ratio = 0.02
         self.small_tick_length_ratio = 0.01
-        self.maxSweep = 280.0      # total sweep, in degrees
-        self.tick_step = 10.0      # degrees between ticks
-        self.large_tick_interval = 40.0  # every 40° is a large tick
+        self.maxSweep = 288.0
+        self.tick_step = 8.0
+        self.large_tick_interval = 32.0
+        self.maxSweepSteer = 240.0
+        self.steer_tick_interval = 40.0
 
         # Cached geometry values (will be recomputed if dimensions change)
         self.cached_screen_width = None
         self.cached_screen_height = None
         self.cached_center = None        # (cx, cy)
         self.quad_vertices = None        # gauge arc quad vertices as a numpy array
+        self.circle_vertices = None
         self.large_tick_vertices = None  # large tick vertices (flattened float array)
         self.small_tick_vertices = None  # small tick vertices
         self.label_data = None           # list of (label, x, y) for large ticks
 
-    def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed):
+    def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer):
         """Compute and cache the geometry for the gauge and tick marks."""
         # Compute gauge center based on normalized values.
         cx = x_norm * screen_width
@@ -61,6 +65,15 @@ class Speedometer():
             left + quad_width, bottom,    # bottom-right
             left + quad_width, bottom + quad_height  # top-right
         ], dtype=np.float32)
+
+        # Precompute circle geometry
+        self.inner_radius = innerRadius * 0.6
+        self.num_segments = 128
+        theta = np.linspace(0, 2 * np.pi, self.num_segments, endpoint=False)
+        x = self.inner_radius * np.cos(theta)
+        y = self.inner_radius * np.sin(theta)
+        vertices = np.stack((x, y), axis=-1).astype(np.float32)
+        self.circle_vertices = vertices + np.array([cx, cy], dtype=np.float32)
 
         # Precompute tick geometry.
         large_ticks = []
@@ -108,6 +121,22 @@ class Speedometer():
                 small_ticks.extend([x_in, y_in, x_out, y_out])
             r += self.tick_step
 
+        r = 0.0
+        while r <= self.maxSweepSteer + 0.001:
+            # For clockwise drawing, map custom angle r to standard angle:
+            # custom angle 0 -> standard -90°, increasing r rotates clockwise.
+            standard_angle = -150.0 - r
+            rad = math.radians(standard_angle)
+
+            x_in = cx + innerRadius * 0.45 * math.cos(rad)
+            y_in = cy - innerRadius * 0.45 * math.sin(rad)
+            # Map the fractional position along the sweep to a speed value.
+            value = min_steer + (max_steer - min_steer) * (r / self.maxSweepSteer)
+            label = str(int(round(value)))
+            # Position the label slightly inward from the tick's inner endpoint.
+            labels.append((label, x_in, y_in))
+            r += self.steer_tick_interval
+
         self.large_tick_vertices = np.array(large_ticks, dtype=np.float32)
         self.small_tick_vertices = np.array(small_ticks, dtype=np.float32)
         self.label_data = labels
@@ -116,19 +145,20 @@ class Speedometer():
         self.cached_screen_width = screen_width
         self.cached_screen_height = screen_height
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_speed=0, min_speed=0, max_speed=50, fill_color=(0.0, 0.5, 0.8, 0.75)):
+    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
+             current_speed=10, min_speed=0, max_speed=45, current_steer=10, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
         """
         Draw the gauge arc and tick marks using precomputed geometry.
         Assumes that update_geometry() has been called if screen dimensions or gauge
         normalized position have changed.
         """
+        # If dimensions or gauge position have changed, update the geometry.
+        if (self.cached_screen_width != screen_width or self.cached_screen_height != screen_height or self.cached_center is None):
+            self.update_geometry(screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer)
+
         if self.label_data is not None:
             for label, x, y in self.label_data:
                 self.text_renderer.render_text(label, x, y, 1.0, (1.0, 1.0, 1.0), proj_mat)
-
-        # If dimensions or gauge position have changed, update the geometry.
-        if (self.cached_screen_width != screen_width or self.cached_screen_height != screen_height or self.cached_center is None):
-            self.update_geometry(screen_width, screen_height, x_norm, y_norm, min_speed, max_speed)
 
         cx, cy = self.cached_center
         # Compute normalized progress.
@@ -169,6 +199,11 @@ class Speedometer():
 
         # Draw the ticks.
         self.draw_ticks(proj_mat)
+
+        # Draw inner circle.
+        self.draw_circle(proj_mat)
+
+        # Draw steer needle
 
     def draw_ticks(self, proj_mat):
         """Draw ticks using the precomputed tick buffers and text labels."""
@@ -211,3 +246,27 @@ class Speedometer():
             tick_vbo.delete()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
+
+    def draw_circle(self, proj_mat):
+        gl.glUseProgram(self.circle_shader_program)
+        loc_proj = gl.glGetUniformLocation(self.circle_shader_program, 'uProjection')
+        loc_center = gl.glGetUniformLocation(self.circle_shader_program, 'uCenter')
+        loc_color = gl.glGetUniformLocation(self.circle_shader_program, 'color')
+        loc_radius = gl.glGetUniformLocation(self.circle_shader_program, 'radius')
+        loc_lineWidth = gl.glGetUniformLocation(self.circle_shader_program, 'lineWidth')
+        gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        cx, cy = self.cached_center
+        gl.glUniform2f(loc_center, cx, cy)
+        gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
+        gl.glUniform1f(loc_radius, self.inner_radius)
+        gl.glUniform1f(loc_lineWidth, 0.01)
+
+        circle_vbo = vbo.VBO(self.circle_vertices)
+        circle_vbo.bind()
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+        gl.glDrawArrays(gl.GL_LINE_LOOP, 0, self.num_segments)
+        circle_vbo.unbind()
+        circle_vbo.delete()
+        gl.glDisableVertexAttribArray(0)
+        gl.glUseProgram(0)

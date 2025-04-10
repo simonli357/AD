@@ -112,10 +112,11 @@ class ShaderRenderer:
         self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
         self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
         self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
+        self.speedometer_circle_shader = create_shader_program(shader_path('speedometer', 'circle.vert'), shader_path('speedometer', 'circle.frag'))
 
     def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader)
-        self.speedometer_model = Speedometer(self.text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader)
+        self.speedometer_model = Speedometer(self.text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader)
 
     ##################
     # Draw Functions

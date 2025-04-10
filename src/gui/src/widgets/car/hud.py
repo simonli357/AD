@@ -29,7 +29,7 @@ class HudRenderer:
         self.shader_renderer.speedometer_model.draw(
             screen_width,
             screen_height,
-            0.18,
+            0.19,
             0.7,
             self.proj_mat
         )

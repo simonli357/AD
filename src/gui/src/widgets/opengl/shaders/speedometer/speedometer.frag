@@ -9,7 +9,7 @@ uniform float uProgress; // Normalized progress [0,1] (0: no fill, 1: full 280°
 uniform vec4 uFillColor; // Color for filled portion
 uniform vec4 uBgColor; // Background color (unfilled gauge)
 
-const float maxSweep = 280.0; // Total sweep in degrees when uProgress is 1.
+const float maxSweep = 288.0; // Total sweep in degrees when uProgress is 1.
 const float smoothing = 1.0; // Smoothing (in degrees) for the fill edge.
 const float startAngle = 0.0; // In our custom system, fill starts at 180° (i.e. bottom).
 
