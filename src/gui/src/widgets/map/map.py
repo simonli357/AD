@@ -234,6 +234,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             elif entity_type == 'Car':
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
@@ -359,8 +360,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, np.radians(car_yaw), NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, np.radians(car_yaw), 25.0, self.view_mat, self.proj_mat)
                 else:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
