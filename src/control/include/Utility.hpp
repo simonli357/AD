@@ -27,6 +27,7 @@
 #include <boost/asio.hpp>
 #include "utils/constants.h"
 #include "Tracking.h"
+#include "Tunable.h"
 #include <algorithm>
 
 #include "LaneDetector.hpp"
@@ -44,6 +45,7 @@
 #include <std_msgs/Float32MultiArray.h>
 
 using namespace VehicleConstants;
+using namespace Tunable;
 
 class Utility {
 public:
@@ -52,11 +54,6 @@ public:
     ~Utility();
     void callTriggerService();
 // private:
-    
-    //tunables
-    double gps_offset_x, gps_offset_y;
-    double sign_lon_offset, sign_lon_offset_slope, sign_lat_offset, sign_latency;
-
     ros::NodeHandle& nh;
     ros::ServiceClient triggerServiceClient;
     
@@ -579,7 +576,7 @@ public:
         } else if (obj == OBJECT::CROSSWALK) {
             o_string = "ALL CROSSWALKS";
             return ALL_CROSSWALKS;
-        } else if (obj == OBJECT::LIGHTS) {
+        } else if (obj == OBJECT::LIGHTS || obj == OBJECT::GREENLIGHT || obj == OBJECT::REDLIGHT || obj == OBJECT::YELLOWLIGHT) { 
             o_string = "ALL LIGHTS";
             return ALL_LIGHTS;
         } else if (obj == OBJECT::HIGHWAYENTRANCE) {

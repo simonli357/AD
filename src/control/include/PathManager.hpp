@@ -179,7 +179,11 @@ public:
     
             for (int i = 0; i < intersection_indices.size(); ++i) {
                 const auto& inter = intersections_all[intersection_indices[i]].pose;
-                utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]), 1);
+                std::string associated_sign_type = "nullptr";
+                if (intersections_all[intersection_indices[i]].associated_sign != nullptr) {
+                    associated_sign_type = OBJECT_NAMES[intersections_all[intersection_indices[i]].associated_sign->type];
+                }
+                utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]) + ", associated sign: " + associated_sign_type, 1);
             }
             return true;
         }

@@ -34,6 +34,9 @@ real:
   NORMAL_SPEED: 0.175
   FAST_SPEED: 0.4
   use_beta: false
+  max_light_dist: 0.9
+  max_sign_dist: 1.5
+  min_sign_dist: 0.5
 
 sim:
   sign_lon_offset: 0.0
@@ -68,3 +71,6 @@ sim:
   has_light: false
   change_lane_offset_scaler: 1.25
   use_beta: true
+  max_light_dist: 0.9
+  max_sign_dist: 1.5
+  min_sign_dist: 0.5

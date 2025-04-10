@@ -54,8 +54,9 @@ public:
     OBJECT type;
     std::string name;
 
-    double x, y, z = 0;
+    double x, y = 0;
     double yaw = 0.0;
+    double z = 0.0;
     double confidence;
     double cumulative_confidence = 0;
     int detection_count = 0;
@@ -87,8 +88,14 @@ public:
         double distance = std::hypot(dx, dy);
         return distance <= OBJECT_TRACKING_PARAMS[static_cast<int>(type)].association_radius;
     }
+    virtual bool is_same_type(OBJECT new_type) const {
+        return type == new_type;
+    }
 
-    virtual void merge(double new_x, double new_y, double new_yaw, double new_conf) {
+    virtual void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) {
+        if (new_type != type) {
+            throw std::invalid_argument("Cannot merge different types of objects");
+        }
         double alpha = new_conf / (confidence + new_conf);
         x = (1 - alpha) * x + alpha * new_x;
         y = (1 - alpha) * y + alpha * new_y;
@@ -120,28 +127,192 @@ public:
     virtual void update_yaw(double new_yaw) {
         yaw = new_yaw;
     }
+    virtual void populate_msg(std_msgs::Float32MultiArray& msg) const {
+        msg.data.push_back(static_cast<float>(type));
+        msg.data.push_back(static_cast<float>(x));
+        msg.data.push_back(static_cast<float>(y));
+        msg.data.push_back(static_cast<float>(yaw));
+        msg.data.push_back(static_cast<float>(speed));
+        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(z));
+        msg.data.push_back(static_cast<float>(id));
+    }
 };
 
 class KnownStaticObject : public RoadObject {
 public:
     // std::vector<double> gt_pose;
     Eigen::Vector3d gt_pose;
+    double cumulative_confidence_thresh = 2.5;
     KnownStaticObject(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose)
         : RoadObject(type, x, y, yaw, confidence), gt_pose(gt_pose[0], gt_pose[1], gt_pose[2]) {
         if (!is_known_static_object(type)) {
             throw std::invalid_argument("KnownStaticObject Constructor(): KnownStaticObject must be a known static object");
         }
+        RoadObject::update_yaw(gt_pose[2]);
     }
+
+    KnownStaticObject(OBJECT type, const std::vector<double>& gt_pose)
+        : KnownStaticObject(type, gt_pose[0], gt_pose[1], gt_pose[2], 0.0, gt_pose) {}
+
 
     bool is_same_object(double new_x, double new_y) const override {
         return RoadObject::is_same_object(new_x, new_y);
     }
 
-    void merge(double new_x, double new_y, double new_yaw, double new_conf) override {
-        RoadObject::merge(new_x, new_y, new_yaw, new_conf);
+    void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) override {
+        RoadObject::merge(new_x, new_y, new_yaw, new_conf, new_type);
+        RoadObject::update_yaw(gt_pose[2]); // keep the ground truth yaw
+    }
+
+    void reset() {
+        RoadObject::x = gt_pose[0];
+        RoadObject::y = gt_pose[1];
+        RoadObject::yaw = gt_pose[2];
+        RoadObject::confidence = 0.0;
+        RoadObject::detection_count = 0;
+        cumulative_confidence_thresh += 2.5;
     }
 };
-    
+
+class LightObject : public KnownStaticObject {
+public:
+    LightColor current_color = LightColor::UNDETERMINED;
+
+    std::deque<std::pair<LightColor, double>> color_history;
+    static constexpr size_t HISTORY_SIZE = 10; // need tune based on detection frequency
+
+    // Timestamp when the current state was entered (for forced transitions).
+    ros::Time state_start_time;
+
+    // When detections have not been updated for this many seconds, clear history.
+    static constexpr double RESET_HISTORY_THRESHOLD = 15.0;
+
+    LightObject(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose)
+        : KnownStaticObject(OBJECT::LIGHTS, x, y, yaw, confidence, gt_pose)
+    {
+        state_start_time = ros::Time::now();
+        last_detection_time = state_start_time;
+        LightColor initial_color = type == OBJECT::GREENLIGHT ? LightColor::GREEN :
+                                   type == OBJECT::YELLOWLIGHT ? LightColor::YELLOW :
+                                   type == OBJECT::REDLIGHT ? LightColor::RED : 
+                                   type == OBJECT::LIGHTS ? LightColor::UNDETERMINED :
+                                   LightColor::UNDETERMINED;
+        current_color = initial_color;
+        color_history.push_back({initial_color, confidence});
+    }
+
+    bool is_same_type(OBJECT new_type) const override {
+        return new_type == OBJECT::LIGHTS ||
+               new_type == OBJECT::GREENLIGHT ||
+               new_type == OBJECT::YELLOWLIGHT ||
+               new_type == OBJECT::REDLIGHT;
+    }
+
+    LightColor aggregateDetection() const {
+        double weight_green = 0.0, weight_yellow = 0.0, weight_red = 0.0, weight_undetermined = 0.0;
+        for (const auto& entry : color_history) {
+            switch (entry.first) {
+                case LightColor::GREEN:         weight_green += entry.second; break;
+                case LightColor::YELLOW:        weight_yellow += entry.second; break;
+                case LightColor::RED:           weight_red += entry.second; break;
+                case LightColor::UNDETERMINED:  weight_undetermined += entry.second; break;
+            }
+        }
+        if (weight_green >= weight_yellow && weight_green >= weight_red && weight_green >= weight_undetermined)
+            return LightColor::GREEN;
+        else if (weight_yellow >= weight_green && weight_yellow >= weight_red && weight_yellow >= weight_undetermined)
+            return LightColor::YELLOW;
+        else if (weight_red >= weight_green && weight_red >= weight_yellow && weight_red >= weight_undetermined)
+            return LightColor::RED;
+        else
+            return LightColor::UNDETERMINED;
+    }
+
+    void update_light_detection(LightColor detected, double detection_confidence) {
+        ros::Time now = ros::Time::now();
+        
+        // If enough time passed since the last update, clear the history.
+        if ((now - last_detection_time).toSec() > RESET_HISTORY_THRESHOLD) {
+            color_history.clear();
+            current_color = LightColor::UNDETERMINED;
+            state_start_time = now;
+        }
+        last_detection_time = now;
+        
+        color_history.push_back({detected, detection_confidence});
+        if (color_history.size() > HISTORY_SIZE) {
+            color_history.pop_front();
+        }
+        
+        // Aggregate the detections.
+        LightColor aggregated_detection = aggregateDetection();
+        double time_in_state = (now - state_start_time).toSec();
+        
+        // Time-based forced transition: e.g., if red for over n seconds, force a transition to green.
+        if (current_color == LightColor::RED && time_in_state > 5.0) {
+            current_color = LightColor::GREEN;
+            state_start_time = now;
+            return;
+        }
+        
+        // Enforce proper transition order.
+        LightColor allowed_next;
+        switch (current_color) {
+            case LightColor::GREEN:
+                allowed_next = LightColor::YELLOW;
+                break;
+            case LightColor::YELLOW:
+                allowed_next = LightColor::RED;
+                break;
+            case LightColor::RED:
+                allowed_next = LightColor::GREEN;
+                break;
+            case LightColor::UNDETERMINED:
+                // For undetermined, adopt the aggregated detection immediately.
+                allowed_next = aggregated_detection;
+                break;
+        }
+        
+        // Change state only if the aggregated detection indicates the allowed next state.
+        if (aggregated_detection != current_color && aggregated_detection == allowed_next) {
+            current_color = allowed_next;
+            state_start_time = now;
+        }
+        // Otherwise, keep the current state.
+    }
+
+    void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) override {
+        KnownStaticObject::merge(new_x, new_y, new_yaw, new_conf, this->type);
+        LightColor detected_color = new_type == OBJECT::GREENLIGHT ? LightColor::GREEN :
+                                    new_type == OBJECT::YELLOWLIGHT ? LightColor::YELLOW :
+                                    new_type == OBJECT::REDLIGHT ? LightColor::RED : 
+                                    new_type == OBJECT::LIGHTS ? LightColor::UNDETERMINED : 
+                                    current_color;
+        update_light_detection(detected_color, new_conf);
+    }
+
+    void populate_msg(std_msgs::Float32MultiArray& msg) const override {
+        // msg.data.push_back(static_cast<float>(type));
+        auto type = OBJECT::LIGHTS;
+        if (current_color == LightColor::GREEN) {
+            type = OBJECT::GREENLIGHT;
+        } else if (current_color == LightColor::YELLOW) {
+            type = OBJECT::YELLOWLIGHT;
+        } else if (current_color == LightColor::RED) {
+            type = OBJECT::REDLIGHT;
+        }
+        msg.data.push_back(static_cast<float>(type));
+        msg.data.push_back(static_cast<float>(x));
+        msg.data.push_back(static_cast<float>(y));
+        msg.data.push_back(static_cast<float>(yaw));
+        msg.data.push_back(static_cast<float>(speed));
+        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(z));
+        msg.data.push_back(static_cast<float>(id));
+    }
+};
+
 class DynamicObject : public RoadObject {
 public:
     double first_x, first_y;
@@ -165,7 +336,10 @@ public:
         return distance <= OBJECT_TRACKING_PARAMS[static_cast<int>(type)].association_radius;
     }
 
-    void merge(double new_x, double new_y, double yaw, double new_conf) override {
+    void merge(double new_x, double new_y, double yaw, double new_conf, OBJECT new_type) override {
+        if (new_type != type) {
+            throw std::invalid_argument("DynamicObject Merge: Cannot merge different types of objects");
+        }
         ros::Time current_time = ros::Time::now();
         double dt1 = (current_time - last_detection_time).toSec();
         double dt2 = (current_time - first_detection_time).toSec();
@@ -263,6 +437,24 @@ inline std::vector<std::shared_ptr<RoadObject>> road_objects;
 inline std::vector<std::shared_ptr<KnownStaticObject>> road_known_static_objects;
 inline std::vector<std::shared_ptr<DynamicObject>> road_cars;
 inline std::vector<std::shared_ptr<DynamicObject>> road_pedestrians;
+inline std::mutex container_mutex;
+
+inline std::vector<std::shared_ptr<RoadObject>> get_road_objects() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    return road_objects; // return a copy of the vector
+}
+inline std::vector<std::shared_ptr<DynamicObject>> get_road_cars() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    return road_cars; // return a copy of the vector
+}
+inline std::vector<std::shared_ptr<DynamicObject>> get_road_pedestrians() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    return road_pedestrians; // return a copy of the vector
+}
+inline std::vector<std::shared_ptr<KnownStaticObject>> get_road_known_static_objects() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    return road_known_static_objects; // return a copy of the vector
+}
 
 inline std::vector<std::shared_ptr<RoadObject>>* get_road_objects(OBJECT type) {
     if (is_known_static_object(type)) {
@@ -277,11 +469,35 @@ inline std::vector<std::shared_ptr<RoadObject>>* get_road_objects(OBJECT type) {
             return &road_objects;
     }
 }
-inline void create_ego_car(double x, double y, double yaw, double z, double confidence, double speed) {
+template<typename T>
+inline std::shared_ptr<T> get_most_recent_object(const std::vector<std::shared_ptr<T>>& objects) {
+    if (objects.empty()) {
+        return nullptr;
+    }
+    auto most_recent_it = std::max_element(
+        objects.begin(),
+        objects.end(),
+        [](const std::shared_ptr<T>& a, const std::shared_ptr<T>& b) {
+            return a->last_detection_time < b->last_detection_time;
+        }
+    );
+    return (most_recent_it != objects.end()) ? *most_recent_it : nullptr;
+}
+inline void create_ego_car(double x, double y, double yaw) {
     ego_car = std::make_shared<EgoCarObject>(x, y, yaw);
     return;
 }
+inline void initialize_tracking() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    road_objects.clear();
+    road_known_static_objects.clear();
+    road_cars.clear();
+    road_pedestrians.clear();
+    OBJECT_COUNT = 0;
+    create_ego_car(0, 0, 0);
+}
 inline void create_object(OBJECT type, double x, double y, double yaw, double confidence) {
+    std::lock_guard<std::mutex> lock(container_mutex);
     switch (type) {
         case OBJECT::CAR: {
             auto car = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
@@ -300,10 +516,26 @@ inline void create_object(OBJECT type, double x, double y, double yaw, double co
         }
     }
 }
-inline void create_known_static_object(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double>& gt_pose) {
-    auto object = std::make_shared<KnownStaticObject>(type, x, y, yaw, confidence, gt_pose);
-    road_known_static_objects.push_back(object);
-    return;
+inline void create_known_static_object(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double> &gt_pose) {
+	std::lock_guard<std::mutex> lock(container_mutex);
+    // check every object in road_known_static_objects, if gt is same as existing object, merge, else create new
+    // for (const auto& obj : road_known_static_objects) {
+    //     if(!obj->is_same_type(type)) continue;
+    //     Eigen::Vector2d new_gt_pose(gt_pose[0], gt_pose[1]);
+    //     double gt_distance = (obj->gt_pose.head<2>() - new_gt_pose).norm();
+    //     if (gt_distance < 0.05) {
+    //         obj->merge(x, y, yaw, confidence, type);
+    //         return;
+    //     }
+    // }
+    if (type == OBJECT::LIGHTS || type == OBJECT::GREENLIGHT || type == OBJECT::YELLOWLIGHT || type == OBJECT::REDLIGHT) {
+		std::cout << "create_known_static_object(): LIGHT!!!!!!!!!!! type: " << OBJECT_NAMES[type] << ", x: " << x << ", y: " << y << ", yaw: " << yaw << ", confidence: " << confidence << std::endl;
+		auto light_obj = std::make_shared<LightObject>(type, x, y, yaw, confidence, gt_pose);
+		road_known_static_objects.push_back(std::static_pointer_cast<KnownStaticObject>(light_obj));
+	} else {
+		auto obj = std::make_shared<KnownStaticObject>(type, x, y, yaw, confidence, gt_pose);
+		road_known_static_objects.push_back(obj);
+	}
 }
 
 inline static std_msgs::Float32MultiArray ros_msg;
@@ -311,6 +543,7 @@ inline static std_msgs::Float32MultiArray ros_msg;
 inline void reset_msg() {
     ros_msg.data.clear();
     ros_msg.layout.data_offset = 0;
+    ros_msg.layout.dim.clear();
 }
 
 inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) {
@@ -329,25 +562,20 @@ inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) 
 inline std_msgs::Float32MultiArray& create_all_msgs() {
     reset_msg();
     if (ego_car) {
-        ros_msg.data.push_back(static_cast<float>(ego_car->type));
-        ros_msg.data.push_back(static_cast<float>(ego_car->x));
-        ros_msg.data.push_back(static_cast<float>(ego_car->y));
-        ros_msg.data.push_back(static_cast<float>(ego_car->yaw));
-        ros_msg.data.push_back(static_cast<float>(ego_car->speed));
-        ros_msg.data.push_back(static_cast<float>(ego_car->confidence));
-        ros_msg.data.push_back(static_cast<float>(ego_car->z));
-        ros_msg.data.push_back(static_cast<float>(ego_car->id));
+        ego_car->populate_msg(ros_msg);
     }
-    create_msg(road_objects);
-    create_msg(
-        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_known_static_objects)
-    );
-    create_msg(
-        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_cars)
-    );
-    create_msg(
-        reinterpret_cast<std::vector<std::shared_ptr<RoadObject>>&>(road_pedestrians)
-    );
+    for (const auto& obj : road_objects) {
+        obj->populate_msg(ros_msg);
+    }
+    for (const auto& obj : road_known_static_objects) {
+        obj->populate_msg(ros_msg);
+    }
+    for (const auto& obj : road_cars) {
+        obj->populate_msg(ros_msg);
+    }
+    for (const auto& obj : road_pedestrians) {
+        obj->populate_msg(ros_msg);
+    }
     return ros_msg;
 }
 
@@ -356,15 +584,21 @@ inline const std_msgs::Float32MultiArray& get_msg() {
 }
 
 inline void cleanup_stale_objects() {
+    std::lock_guard<std::mutex> lock(container_mutex);
     ros::Time now = ros::Time::now();
     road_objects.erase(std::remove_if(road_objects.begin(), road_objects.end(),
         [now](const std::shared_ptr<RoadObject>& obj) {
             return (now - obj->last_detection_time).toSec() > obj->lifetime;
         }), road_objects.end());
-    road_known_static_objects.erase(std::remove_if(road_known_static_objects.begin(), road_known_static_objects.end(),
-        [now](const std::shared_ptr<KnownStaticObject>& obj) {
-            return (now - obj->last_detection_time).toSec() > obj->lifetime;
-        }), road_known_static_objects.end());
+    road_known_static_objects.erase(
+        std::remove_if(
+            road_known_static_objects.begin(),
+            road_known_static_objects.end(),
+            [now](const std::shared_ptr<KnownStaticObject>& obj) {
+                return ((now - obj->last_detection_time).toSec() > obj->lifetime 
+                        || ((now - obj->last_detection_time).toSec() > 3.0 && obj->cumulative_confidence < 1.5));
+            }),
+        road_known_static_objects.end());
     road_cars.erase(std::remove_if(road_cars.begin(), road_cars.end(),
         [now](const std::shared_ptr<DynamicObject>& obj) {
             return (now - obj->last_detection_time).toSec() > obj->lifetime;

@@ -71,10 +71,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
-    double odom_publish_frequency = 50; 
     std::string mode = real ? "/real" : "/sim";
     bool success = true;
-    success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
     success = success && nh.getParam("/debug_level", debugLevel);
     success = success && nh.getParam("/gps", hasGps);
     success = success && nh.getParam("/use_beta", use_beta);
@@ -83,10 +81,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     success = success && nh.getParam("/speed_offset", speed_offset);
     success = success && nh.getParam("/steer_offset_minimum", steer_offset_minimum);
     success = success && nh.getParam("/steer_offset_maximum", steer_offset_maximum);
-    success = success && nh.getParam(mode + "/sign_lon_offset", sign_lon_offset);
-    success = success && nh.getParam(mode + "/sign_lon_offset_slope", sign_lon_offset_slope);
-    success = success && nh.getParam(mode + "/sign_lat_offset", sign_lat_offset);
-    success = success && nh.getParam(mode + "/sign_latency", sign_latency);
+    double odom_publish_frequency = 50; 
+    success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
 
     if (!success) {
         std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
@@ -151,7 +147,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     if (x0 > 0 && y0 > 0) {
         set_pose_using_service(x0, y0, yaw0);
     }
-    Tracking::create_ego_car(x0, y0, yaw0, 0, 1.0, 0);
+    // Tracking::create_ego_car(x0, y0, yaw0);
     initializationFlag = false;
     gps_x = x0;
     gps_y = y0;
@@ -438,7 +434,6 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
-    // Eigen::Vector2d world_states;
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;
@@ -472,9 +467,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
         }
         if (min_index >= 0) {
             auto closest_obj = (*road_objects)[min_index];
-            if (closest_obj->is_same_object(world_states[0], world_states[1])) {
+            if (closest_obj->is_same_object(world_states[0], world_states[1]) && closest_obj->is_same_type(type)) {
                 found_same = true;
-                closest_obj->merge(world_states[0], world_states[1], ego_yaw, confidence);
+                closest_obj->merge(world_states[0], world_states[1], ego_yaw, confidence, type);
             }
         }
         if (!found_same) {
@@ -576,6 +571,8 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);
     // ros::Time now = ros::Time::now();
+    double gps_offset_x = 0.0;
+    double gps_offset_y = 0.0;
     double offset_x = gps_offset_x * std::cos(yaw) - gps_offset_y * std::sin(yaw);
     double offset_y = gps_offset_x * std::sin(yaw) + gps_offset_y * std::cos(yaw);
     ekf_x = msg->pose.pose.position.x + offset_x;
@@ -588,30 +585,9 @@ void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
         car_pose_msg.data[0] = ekf_x;
         car_pose_msg.data[1] = ekf_y;
     }
-    // if (useEkf) {
-    //     if (!initializationFlag) {
-    //         if (x0 < 0 || y0 < 0) {
-    //             std::cout << "using ekf but haven't received data yet. ekf_x: " << ekf_x << ", ekf_y: " << ekf_y << std::endl;
-    //             x0 = ekf_x;
-    //             y0 = ekf_y;
-    //         } else {
-    //             ROS_INFO("Initializing... ekf_x: %.3f, ekf_y: %.3f", ekf_x, ekf_y);
-    //         }
-    //         if (imuInitialized) initializationFlag = true;
-    //     }
-    // }
-    // ROS_INFO("ekf callback rate: %f", 1 / (now - general_timer).toSec());
-    // general_timer = now;
 }
 void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
-    // static ros::Time last_time;
-    // ros::Time now = ros::Time::now();
-    // double dt = (now - last_time).toSec();
-    // last_time = now;
-    // ROS_INFO("model callback rate: %.3f", 1 / dt);
-
     // std::lock_guard<std::mutex> lock(general_mutex);
-    // auto start = std::chrono::high_resolution_clock::now();
     if (!car_idx.has_value()) {
         auto it = std::find(msg->name.begin(), msg->name.end(), robot_name);
         if (it != msg->name.end()) {
@@ -885,7 +861,6 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
         steer_command = steering_angle;
         velocity_command = velocity;
     }
-    // std::cout << "before: " << steering_angle << ", " << velocity << std::endl;
     // apply offset correction
     if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
         steering_angle += steer_offset * std::abs(steering_angle) / steering_angle;

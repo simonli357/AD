@@ -25,7 +25,6 @@ namespace VehicleConstants {
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
     static constexpr double MAX_SIGN_DIST = 1.2;
-    static constexpr double MAX_LIGHT_DIST = 0.9;
     static constexpr double MAX_SIGN_DIST2 = 1.5;
     // static constexpr double MAX_SIGN_DIST = 0.753;
     // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
@@ -45,9 +44,6 @@ namespace VehicleConstants {
     static constexpr double MAX_CAR_DIST = 1.0;
     static constexpr double SIGN_COOLDOWN = 1.0;
     static constexpr double TOLERANCE_SQUARED = 0.15 * 0.15;
-    // static constexpr double STOP_DURATION = 1.50;
-    // static constexpr double NORMAL_SPEED = 0.175;
-    // static constexpr double FAST_SPEED = 0.4;
     static constexpr double SOFT_MAX_STEERING = 0.3578 * 180 / M_PI;
     static constexpr double HARD_MAX_STEERING = 0.3578 * 180 / M_PI;
     static constexpr double INTERSECTION_DISTANCE_THRESHOLD = 0.72345; // minimum distance between two intersections
@@ -109,12 +105,13 @@ namespace VehicleConstants {
         NONE
     };
 
-    static constexpr std::array<OBJECT, 8> KNOWN_STATIC_OBJECTS = { 
+    static constexpr std::array<OBJECT, 11> KNOWN_STATIC_OBJECTS = { 
         HIGHWAYENTRANCE, STOPSIGN, 
         ROUNDABOUT, PARK, CROSSWALK, 
-        HIGHWAYEXIT, PRIORITY, LIGHTS
+        HIGHWAYEXIT, PRIORITY, LIGHTS, 
+        GREENLIGHT, YELLOWLIGHT, REDLIGHT
     };
-    const std::array<std::string, 16> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light" };
+    const std::array<std::string, 17> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None" };
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,
