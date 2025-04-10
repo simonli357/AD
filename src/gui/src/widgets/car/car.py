@@ -139,7 +139,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
 
     def update_visited_destination(self, x_visited, y_visited):
-        self.updated_dest_size = 2.5
+        self.updated_dest_size = 4.5
         self.updated_dest_rot = 0
         self.current_destx, self.current_desty = self.get_gl_coords(x_visited, y_visited)
 
@@ -162,7 +162,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             elif object_dict[obj_type] == 'Car':
                 self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.32, self.view_mat, self.proj_mat)
             else:
-                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 24.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 32.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:

@@ -88,7 +88,7 @@ class GTRenderer:
             elif self.entity_type == 'Destination':
                 model_matrix = glm.scale(model_matrix, glm.vec3(4.0, 4.0, 4.0))
             else:
-                model_matrix = glm.scale(model_matrix, glm.vec3(24.0, 24.0, 24.0))
+                model_matrix = glm.scale(model_matrix, glm.vec3(32.0, 32.0, 32.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
                 model_matrix = glm.rotate(model_matrix, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
 
