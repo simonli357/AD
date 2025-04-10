@@ -66,6 +66,7 @@ def object_path(dirname: str, mtl_name: str):
 class ShaderRenderer:
     def __init__(self):
         self.text_renderer = TextRenderer(16)
+        self.large_text_renderer = TextRenderer(48)
         self.load_models()
         self.load_shaders()
         self.load_custom_models()
@@ -113,10 +114,11 @@ class ShaderRenderer:
         self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
         self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
         self.speedometer_circle_shader = create_shader_program(shader_path('speedometer', 'circle.vert'), shader_path('speedometer', 'circle.frag'))
+        self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
     def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader)
-        self.speedometer_model = Speedometer(self.text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader)
+        self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
 
     ##################
     # Draw Functions

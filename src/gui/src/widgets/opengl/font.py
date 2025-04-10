@@ -29,6 +29,7 @@ def create_shader_program(vertex_filepath: str, fragment_filepath: str) -> int:
 class TextRenderer:
     def __init__(self, pixel_size):
         self.characters = {}
+        self.pixel_size = pixel_size
         font_path = shader_path('text', 'Arial.ttf')
         self._init_freetype(font_path, pixel_size)
         self._init_render_data()
@@ -41,7 +42,7 @@ class TextRenderer:
         face = freetype.Face(font_path)
         face.set_pixel_sizes(0, pixel_size)
         gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-        for c in range(128):
+        for c in range(256):
             char = chr(c)
             try:
                 face.load_char(char, freetype.FT_LOAD_RENDER)
@@ -142,6 +143,18 @@ class TextRenderer:
             xpos = x + ch['bearing'][0] * scale
             # Adjust y: since y is the baseline (from bottom), we place the quad so that the bottom is at y.
             ypos = y - (ch['size'][1] - ch['bearing'][1]) * scale
+
+            if c == '°' and self.pixel_size == 16:
+                # Increase ypos by a fraction of the glyph height (tweak this factor as needed).
+                ypos -= 1.7 * ch['size'][1] * scale
+            if c == '.' and self.pixel_size == 16:
+                # Increase ypos by a fraction of the glyph height (tweak this factor as needed).
+                ypos += 5 * ch['size'][1] * scale
+            if c == '.' and self.pixel_size == 48:
+                # Increase ypos by a fraction of the glyph height (tweak this factor as needed).
+                ypos += 4.2 * ch['size'][1] * scale
+            if c == '-' and self.pixel_size == 16:
+                ypos += 0.8 * ch['size'][1] * scale
 
             w = ch['size'][0] * scale
             h = ch['size'][1] * scale
