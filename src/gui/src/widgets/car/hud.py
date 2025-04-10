@@ -35,7 +35,7 @@ class HudRenderer:
             width_norm=bar_width,
             height_norm=bar_height,
             fill_color=NamedColor.GREEN.value,
-            percentage=self.ram_usage,
+            percentage=self.heap_usage,
             proj_mat=proj_mat,
             icon=self.car_widget.shader_renderer.heap_texture
         )
@@ -50,7 +50,7 @@ class HudRenderer:
             width_norm=bar_width,
             height_norm=bar_height,
             fill_color=NamedColor.ORANGE.value,
-            percentage=self.ram_usage,
+            percentage=self.stack_usage,
             proj_mat=proj_mat,
             icon=self.car_widget.shader_renderer.stack_texture
         )

@@ -41,7 +41,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.stack_usage = load_msg.stack_usage
 
     def set_car_data(self, yaw: float, speed: float, x: float, y: float, z: float) -> None:
-        if self.main_window.buttons_widget.started:
+        if self.main_window.cam_buttons_widget.started:
             dx = x - self.x_pos
             dy = y - self.y_pos
             displacement = np.sqrt(dx**2 + dy**2)
