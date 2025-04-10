@@ -55,7 +55,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.numObj = 0
         self.detected_objects = np.zeros(10)
 
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
         self.assets_dir = os.path.join(current_dir, 'assets')
         self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
 
@@ -94,26 +94,24 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.car_yaw = 0
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-
         self.sign_images = []
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'oneway.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_entrance.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'roundabout.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'parking.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'crosswalk.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'noentry.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_exit.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'priority.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'roadblock.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'pedestrian.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'car.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_green.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_yellow.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_red.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign2.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_entrance.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roundabout.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'parking.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'crosswalk.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'noentry.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_exit.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'priority.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roadblock.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'pedestrian.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'car.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_green.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_yellow.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
 
         self.setup_ui()
 
