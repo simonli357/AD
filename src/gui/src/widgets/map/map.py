@@ -1,5 +1,4 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
@@ -143,7 +142,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
@@ -214,7 +214,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
         if self.show_destinations:
-            self.destinations_renderer.draw((0.0, 0.7, 0.7, 0.7), self.proj_mat, self.view_mat)
+            self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
@@ -278,48 +278,56 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
     def draw_legend(self, x, y):
-        offset = 30
+        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
+        screen_width = viewport[2]
+        screen_height = viewport[3]
+        proj_mat = glm.ortho(0.0, float(screen_width), float(screen_height), 0.0, -1.0, 1.0)
+        view_mat = glm.mat4(1.0)
+        x, y = 0.37 * screen_width, 0.35 * screen_height
+        height = 5
+
+        offset = 35
         y_offset = 0
-        self.render_text("◈", 32, (0, 255, 255, 255), x, y)
-        self.render_text("normal", 18, (255, 255, 255, 255), x + 40, y)
+        self.shader_renderer.draw_triangle(x, y, 0, np.radians(180), (24.0, 24.0), NamedColor.YELLOW.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("NORMAL", x + 62, y - height, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
-        self.render_text("crosswalk", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.GREEN.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("CROSSWALK", x + 80, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 0, 255, 255), x, y + y_offset)
-        self.render_text("intersection", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.RED.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("INTERSECTION", x + 88, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 165, 255, 255), x, y + y_offset)
-        self.render_text("oneway", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.ORANGE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("ONEWAY", x + 64, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (130, 0, 75, 255), x, y + y_offset)
-        self.render_text("highwayLeft", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.INDIGO.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY LEFT", x + 90, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (193, 182, 255, 255), x, y + y_offset)
-        self.render_text("highwayRight", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.LIGHT_PINK.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY RIGHT", x + 94, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (255, 255, 255, 255), x, y + y_offset)
-        self.render_text("roundabout", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset = 0
+        x_offset = 200
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.WHITE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("ROUNDABOUT", x + x_offset + 84, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        y_offset = 60
-        x_offset = 180
-        self.render_text("◈", 32, (255, 255, 0, 255), x + x_offset, y + y_offset)
-        self.render_text("stopline", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.CYAN.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("STOPLINE", x + x_offset + 66, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (180, 130, 70, 255), x + x_offset, y + y_offset)
-        self.render_text("dotted", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.STEEL_BLUE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED", x + x_offset + 60, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (128, 0, 128, 255), x + x_offset, y + y_offset)
-        self.render_text("dotted_crosswalk", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.PURPLE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED CROSSWALK", x + x_offset + 116, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
     def draw_markers(self):
@@ -375,30 +383,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
                 self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                 x1, y1 = x2, y2
-
-    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
-        painter = QPainter(self)
-        painter.setRenderHints(
-            QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
-        )
-
-        # Get current OpenGL color
-        text_color = QColor(color[2], color[1], color[0], color[3])
-
-        # Set up font
-        font = QFont("Arial")
-        font.setBold(True)
-        font.setStyleStrategy(QFont.PreferAntialias)
-
-        # Account for high-DPI scaling
-        scale_factor = self.devicePixelRatio()
-        painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(size * scale_factor)
-
-        painter.setPen(text_color)
-        painter.setFont(font)
-        painter.drawText(int(x * scale_factor), int(y * scale_factor), text)
-        painter.end()
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True

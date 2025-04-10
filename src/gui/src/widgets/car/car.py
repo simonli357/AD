@@ -1,5 +1,4 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.Qt import QPainter
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from ..enums import MapData, NamedColor
