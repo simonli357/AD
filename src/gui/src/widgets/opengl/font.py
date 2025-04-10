@@ -88,38 +88,65 @@ class TextRenderer:
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
+    def compute_text_size(self, text, scale):
+        """Compute the width and height of the given text (in pixels) when rendered at the given scale."""
+        total_width = 0
+        max_height = 0
+        for c in text:
+            ch = self.characters.get(c)
+            if ch is None:
+                continue
+            # Advance is in 1/64 pixels; convert to pixels and multiply by scale.
+            total_width += (ch['advance'] >> 6) * scale
+            # Use the glyph's height (in pixels) multiplied by scale.
+            h = ch['size'][1] * scale
+            if h > max_height:
+                max_height = h
+        return total_width, max_height
+
     def render_text(self, text, x, y, scale, color, projection):
         """
-        Render a string of text onto the screen.
+        Render a string of text onto the screen, centered at (x,y).
 
         :param text: The string to render.
-        :param x: x position in pixels.
-        :param y: y position in pixels (measured from the bottom).
+        :param x: x position in pixels where the text will be centered.
+        :param y: y position in pixels (measured from the bottom) where the text will be centered.
         :param scale: Scale factor.
         :param color: A tuple (r, g, b) with values in [0.0, 1.0].
         :param projection: A glm.mat4 projection matrix.
         """
+        # First compute the size of the rendered text.
+        text_width, text_height = self.compute_text_size(text, scale)
+        # Adjust x and y to get the starting (baseline) position so the full text is centered.
+        x = x - text_width / 2.0
+        y = y - text_height / 2.0
+
         gl.glUseProgram(self.text_shader)
         loc_proj = gl.glGetUniformLocation(self.text_shader, "projection")
         gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
         loc_textColor = gl.glGetUniformLocation(self.text_shader, "textColor")
         gl.glUniform3f(loc_textColor, color[0], color[1], color[2])
+        # Ensure that texture unit 0 is used.
+        loc_sampler = gl.glGetUniformLocation(self.text_shader, "text")
+        gl.glUniform1i(loc_sampler, 0)
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindVertexArray(self.VAO)
 
+        # Render each character.
         for c in text:
             ch = self.characters.get(c)
             if ch is None:
                 continue
 
+            # Compute the glyph's quad positions.
             xpos = x + ch['bearing'][0] * scale
-            # y is the baseline; adjust to get bottom-left.
+            # Adjust y: since y is the baseline (from bottom), we place the quad so that the bottom is at y.
             ypos = y - (ch['size'][1] - ch['bearing'][1]) * scale
 
             w = ch['size'][0] * scale
             h = ch['size'][1] * scale
 
-            # Build vertices with the **bottom-left origin first** (flip the quad vertically):
+            # Build vertices for the glyph quad with bottom-left origin.
             vertices = np.array([
                 xpos, ypos, 0.0, 0.0,  # Bottom-left
                 xpos, ypos + h, 0.0, 1.0,  # Top-left
@@ -135,6 +162,8 @@ class TextRenderer:
             gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, vertices.nbytes, vertices)
             gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
             gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
+
+            # Advance x for the next character.
             x += (ch['advance'] >> 6) * scale
 
         gl.glBindVertexArray(0)

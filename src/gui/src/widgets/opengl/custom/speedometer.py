@@ -13,6 +13,7 @@ class Speedometer():
     """
 
     def __init__(self, text_renderer, gauge_shader_program, tick_shader_program):
+        self.text_renderer = text_renderer
         # Shader programs for drawing the gauge arc and tick marks.
         self.gauge_shader_program = gauge_shader_program
         self.tick_shader_program = tick_shader_program
@@ -122,9 +123,9 @@ class Speedometer():
         Assumes that update_geometry() has been called if screen dimensions or gauge
         normalized position have changed.
         """
-        # if self.label_data is not None:
-        #     for label, x, y in self.label_data:
-        #         self.render_text(qpainter, label, 10, (255, 255, 255, 255), x, y)
+        if self.label_data is not None:
+            for label, x, y in self.label_data:
+                self.text_renderer.render_text(label, x, y, 1.0, (1.0, 1.0, 1.0), proj_mat)
 
         # If dimensions or gauge position have changed, update the geometry.
         if (self.cached_screen_width != screen_width or self.cached_screen_height != screen_height or self.cached_center is None):

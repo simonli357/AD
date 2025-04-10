@@ -117,4 +117,4 @@ class ProgressBar():
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
 
-        self.text_renderer.render_text('TEST', 0.5 * screen_width, 0.5 * screen_height, 1.0, (0.0, 1.0, 0.0), proj_mat)
+        self.text_renderer.render_text(f"{percentage * 100:.0f}%", x - width - (2 * 0.015) * screen_width, y - height * 0.5, 1.0, (0.0, 1.0, 0.0), proj_mat)
