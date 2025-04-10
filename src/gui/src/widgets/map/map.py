@@ -204,8 +204,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.draw_detected_objects()
         self.draw_path_nodes()
 
-        self.shader_renderer.draw_axis2D(0, 0, 0, 25.0, self.view_mat, self.proj_mat)
-
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
             pass
@@ -363,11 +361,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self):
         if self.waypoints is None or len(self.waypoints) < 2:
