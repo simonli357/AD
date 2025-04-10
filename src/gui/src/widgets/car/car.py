@@ -160,9 +160,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.20, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.32, self.view_mat, self.proj_mat)
             else:
-                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 16.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 24.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
