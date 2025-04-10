@@ -9,9 +9,11 @@ namespace GroundTruth {
 
 using namespace VehicleConstants;
 
+struct Intersection;
 struct Sign {
     Eigen::Vector3d pose;        // x, y, yaw
     OBJECT type;                 // Can be NONE initially and later updated
+    Intersection* intersection = nullptr;  // back-reference
 
     Sign(const Eigen::Vector3d& pose_, OBJECT type_)
         : pose(pose_), type(type_) {}
@@ -22,14 +24,14 @@ struct Sign {
 
 struct Intersection {
     Eigen::Vector3d pose;                         // x, y, yaw
-    std::optional<Sign> associated_sign;          // may be set later
+    std::shared_ptr<Sign> associated_sign = nullptr;
     std::string direction;                        // "north", "south", etc. (optional, useful for debugging/lookup)
 
     Intersection(const Eigen::Vector3d& pose_,
-            const std::optional<Sign>& sign = std::nullopt,
+            std::shared_ptr<Sign> sign = nullptr,
             const std::string& dir = "")
-        : pose(pose_), associated_sign(sign), direction(dir) {
-        if (sign.has_value()) {
+        : pose(pose_), direction(dir) {
+        if (sign) {
             double dist = (pose.head<2>() - sign->pose.head<2>()).norm();
             if (dist >= 1.0) {
                 std::cerr << "[Intersection] Sign pose (" 
@@ -38,33 +40,29 @@ struct Intersection {
                         << pose[0] << ", " << pose[1] << ") — must be < 1.0m\n";
                 assert(false);
             }
+            sign->intersection = this;
+            associated_sign = std::move(sign);
         }
     }
 
     Intersection(const std::vector<double>& v,
-        const std::optional<Sign>& sign = std::nullopt,
+        std::shared_ptr<Sign> sign = nullptr,
         const std::string& dir = "")
     : Intersection(Eigen::Vector3d{v[0], v[1], v[2]}, sign, dir) {}
 };
 
 // All intersections with optional associated signs
 inline std::vector<Intersection> intersections_all;
-inline std::vector<Intersection> intersections_south;
-inline std::vector<Intersection> intersections_north;
-inline std::vector<Intersection> intersections_west;
-inline std::vector<Intersection> intersections_east;
-
+// Intersection signs (ie. stop signs, traffic lights, prios, crosswalks, roundabouts)
+inline std::vector<std::shared_ptr<Sign>> intersection_signs;
 // Standalone signs (ie. parking, highway entries/exits)
-inline std::vector<Sign> standalone_signs;
+inline std::vector<std::shared_ptr<Sign>> standalone_signs;
 
 // === Utility Functions ===
 inline void clear_ground_truth() {
-    intersections_south.clear();
-    intersections_north.clear();
-    intersections_west.clear();
-    intersections_east.clear();
     intersections_all.clear();
     standalone_signs.clear();
+    intersection_signs.clear();
 }
 
 inline void initialize_ground_truth() {
@@ -77,84 +75,86 @@ inline void initialize_ground_truth() {
     const auto& W = WEST_FACING_INTERSECTIONS;
     const auto& E = EAST_FACING_INTERSECTIONS;
 
+    std::cout << "[GroundTruth] Initializing ground truth...\n";
+    // ==== Helper Lambda ====
+    auto make_intersection = [](const std::vector<double>& inter_pose,
+                                          const std::vector<double>& sign_pose,
+                                          OBJECT type,
+                                          std::vector<Intersection>& container,
+                                          const std::string& dir) {
+        
+        assert(inter_pose.size() >= 3 && "Intersection pose must have at least 3 elements");
+        assert(sign_pose.size() >= 3 && "Sign pose must have at least 3 elements");
+        auto sign_ptr = std::make_shared<Sign>(sign_pose, type);
+        intersection_signs.push_back(sign_ptr);
+        container.emplace_back(inter_pose, sign_ptr, dir);
+    };
+
     // ==== SOUTH ====
-    intersections_south.emplace_back(S[0], Sign{ALL_SIGNS[0], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[1], Sign{ALL_SIGNS[1], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[2], Sign{ALL_SIGNS[2], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[3], Sign{ALL_SIGNS[3], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[4], Sign{ALL_SIGNS[4], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[5], Sign{ALL_SIGNS[5], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[6], Sign{ALL_SIGNS[6], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[7], Sign{ALL_SIGNS[7], OBJECT::NONE}, "south");
-    intersections_south.emplace_back(S[8], Sign{ALL_LIGHTS[0], OBJECT::LIGHTS}, "south");
-    intersections_south.emplace_back(S[9], Sign{ALL_ROUNDABOUTS[0], OBJECT::ROUNDABOUT}, "south");
-    intersections_south.emplace_back(S[10], Sign{ALL_CROSSWALKS[0], OBJECT::CROSSWALK}, "south");
-    intersections_south.emplace_back(S[11], Sign{ALL_CROSSWALKS[1], OBJECT::CROSSWALK}, "south");
+    make_intersection(S[0], ALL_SIGNS[0], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[1], ALL_SIGNS[1], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[2], ALL_SIGNS[2], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[3], ALL_SIGNS[3], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[4], ALL_SIGNS[4], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[5], ALL_SIGNS[5], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[6], ALL_SIGNS[6], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[7], ALL_SIGNS[7], OBJECT::NONE, intersections_all, "south");
+    make_intersection(S[8], ALL_LIGHTS[0], OBJECT::LIGHTS, intersections_all, "south");
+    make_intersection(S[9], ALL_ROUNDABOUTS[0], OBJECT::ROUNDABOUT, intersections_all, "south");
+    make_intersection(S[10], ALL_CROSSWALKS[0], OBJECT::CROSSWALK, intersections_all, "south");
+    make_intersection(S[11], ALL_CROSSWALKS[1], OBJECT::CROSSWALK, intersections_all, "south");
 
     // ==== NORTH ====
-    intersections_north.emplace_back(N[0], Sign{ALL_SIGNS[8], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[1], Sign{ALL_SIGNS[9], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[2], Sign{ALL_SIGNS[10], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[3], Sign{ALL_SIGNS[11], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[4], Sign{ALL_SIGNS[12], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[5], Sign{ALL_SIGNS[13], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[6], Sign{ALL_SIGNS[14], OBJECT::NONE}, "north");
-    intersections_north.emplace_back(N[7], Sign{ALL_LIGHTS[1], OBJECT::LIGHTS}, "north");
-    intersections_north.emplace_back(N[8], Sign{ALL_ROUNDABOUTS[1], OBJECT::ROUNDABOUT}, "north");
-    intersections_north.emplace_back(N[9], Sign{ALL_CROSSWALKS[2], OBJECT::CROSSWALK}, "north");
-    intersections_north.emplace_back(N[10], Sign{ALL_CROSSWALKS[3], OBJECT::CROSSWALK}, "north");
+    make_intersection(N[0], ALL_SIGNS[8], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[1], ALL_SIGNS[9], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[2], ALL_SIGNS[10], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[3], ALL_SIGNS[11], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[4], ALL_SIGNS[12], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[5], ALL_SIGNS[13], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[6], ALL_SIGNS[14], OBJECT::NONE, intersections_all, "north");
+    make_intersection(N[7], ALL_LIGHTS[1], OBJECT::LIGHTS, intersections_all, "north");
+    make_intersection(N[8], ALL_ROUNDABOUTS[1], OBJECT::ROUNDABOUT, intersections_all, "north");
+    make_intersection(N[9], ALL_CROSSWALKS[2], OBJECT::CROSSWALK, intersections_all, "north");
+    make_intersection(N[10], ALL_CROSSWALKS[3], OBJECT::CROSSWALK, intersections_all, "north");
 
     // ==== WEST ====
-    intersections_west.emplace_back(W[0], Sign{ALL_SIGNS[15], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[1], Sign{ALL_SIGNS[16], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[2], Sign{ALL_SIGNS[17], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[3], Sign{ALL_SIGNS[18], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[4], Sign{ALL_SIGNS[19], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[5], Sign{ALL_SIGNS[20], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[6], Sign{ALL_SIGNS[21], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[7], Sign{ALL_SIGNS[22], OBJECT::NONE}, "west");
-    intersections_west.emplace_back(W[8], Sign{ALL_LIGHTS[2], OBJECT::LIGHTS}, "west");
-    intersections_west.emplace_back(W[9], Sign{ALL_ROUNDABOUTS[2], OBJECT::ROUNDABOUT}, "west");
-    intersections_west.emplace_back(W[10], Sign{ALL_CROSSWALKS[4], OBJECT::CROSSWALK}, "west");
-    intersections_west.emplace_back(W[11], Sign{ALL_CROSSWALKS[5], OBJECT::CROSSWALK}, "west");
+    make_intersection(W[0], ALL_SIGNS[15], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[1], ALL_SIGNS[16], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[2], ALL_SIGNS[17], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[3], ALL_SIGNS[18], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[4], ALL_SIGNS[19], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[5], ALL_SIGNS[20], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[6], ALL_SIGNS[21], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[7], ALL_SIGNS[22], OBJECT::NONE, intersections_all, "west");
+    make_intersection(W[8], ALL_LIGHTS[2], OBJECT::LIGHTS, intersections_all, "west");
+    make_intersection(W[9], ALL_ROUNDABOUTS[2], OBJECT::ROUNDABOUT, intersections_all, "west");
+    make_intersection(W[10], ALL_CROSSWALKS[4], OBJECT::CROSSWALK, intersections_all, "west");
+    make_intersection(W[11], ALL_CROSSWALKS[5], OBJECT::CROSSWALK, intersections_all, "west");
 
     // ==== EAST ====
-    intersections_east.emplace_back(E[0], Sign{ALL_SIGNS[23], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[1], Sign{ALL_SIGNS[24], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[2], Sign{ALL_SIGNS[25], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[3], Sign{ALL_SIGNS[26], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[4], Sign{ALL_SIGNS[27], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[5], Sign{ALL_SIGNS[28], OBJECT::NONE}, "east");
-    intersections_east.emplace_back(E[6], Sign{ALL_LIGHTS[3], OBJECT::LIGHTS}, "east");
-    intersections_east.emplace_back(E[7], Sign{ALL_ROUNDABOUTS[3], OBJECT::ROUNDABOUT}, "east");
-    intersections_east.emplace_back(E[8], Sign{ALL_CROSSWALKS[6], OBJECT::CROSSWALK}, "east");
-    intersections_east.emplace_back(E[9], Sign{ALL_CROSSWALKS[7], OBJECT::CROSSWALK}, "east");
-
-    for (const auto& inter : intersections_south) {
-        intersections_all.push_back(inter);
-    }
-    for (const auto& inter : intersections_north) {
-        intersections_all.push_back(inter);
-    }
-    for (const auto& inter : intersections_west) {
-        intersections_all.push_back(inter);
-    }
-    for (const auto& inter : intersections_east) {
-        intersections_all.push_back(inter);
-    }
+    make_intersection(E[0], ALL_SIGNS[23], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[1], ALL_SIGNS[24], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[2], ALL_SIGNS[25], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[3], ALL_SIGNS[26], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[4], ALL_SIGNS[27], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[5], ALL_SIGNS[28], OBJECT::NONE, intersections_all, "east");
+    make_intersection(E[6], ALL_LIGHTS[3], OBJECT::LIGHTS, intersections_all, "east");
+    make_intersection(E[7], ALL_ROUNDABOUTS[3], OBJECT::ROUNDABOUT, intersections_all, "east");
+    make_intersection(E[8], ALL_CROSSWALKS[6], OBJECT::CROSSWALK, intersections_all, "east");
+    make_intersection(E[9], ALL_CROSSWALKS[7], OBJECT::CROSSWALK, intersections_all, "east");
 
     // ==== Standalone signs ====
     for (const auto& p : ALL_HIGHWAYENTRANCES) {
-        standalone_signs.emplace_back(Sign{p, OBJECT::HIGHWAYENTRANCE});
+        standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::HIGHWAYENTRANCE));
     }
     for (const auto& p : ALL_HIGHWAYEXITS) {
-        standalone_signs.emplace_back(Sign{p, OBJECT::HIGHWAYEXIT});
+        standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::HIGHWAYEXIT));
     }
     for (const auto& p : PARKING_SIGN_POSES1) {
-        standalone_signs.emplace_back(Sign{p, OBJECT::PARK});
+        standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::PARK));
     }
     for (const auto& p : PARKING_SIGN_POSES2) {
-        standalone_signs.emplace_back(Sign{p, OBJECT::PARK});
+        standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::PARK));
     }
 }
 
