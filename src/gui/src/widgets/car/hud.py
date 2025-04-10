@@ -72,9 +72,9 @@ class HudRenderer:
         y_norm_init += 0.06
 
         x_norm_init = 0.98
-        y_norm_init = 0.02
+        y_norm_init = 0.64
         # CPU Stats
-        for use in self.cores_usage:
+        for use in self.cores_usage[:6]:
             self.shader_renderer.progress_bar_model.draw(
                 screen_width=screen_width,
                 screen_height=screen_height,
