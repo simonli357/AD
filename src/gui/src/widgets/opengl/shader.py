@@ -502,7 +502,7 @@ class ShaderRenderer:
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.1))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
-        model = glm.rotate(model, np.radians(yaw), glm.vec3(0, 0, 1))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
 
         model_loc = gl.glGetUniformLocation(self.arrow_shader, "model")
         view_loc = gl.glGetUniformLocation(self.arrow_shader, "view")
@@ -522,7 +522,7 @@ class ShaderRenderer:
         model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
         model = glm.translate(model, glm.vec3(x, y, 0.1))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
-        model = glm.rotate(model, np.radians(yaw), glm.vec3(0, 0, 1))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
         gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
         gl.glUniform4f(color_loc, *NamedColor.RED.value)
 

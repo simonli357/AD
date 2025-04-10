@@ -49,7 +49,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.main_window.map_widget.run_statistics.set_distance_traveled()
             self.main_window.map_widget.run_statistics.update_visited_destinations(x, y)
         self.yaw = yaw
-        self.speed = speed
+        self.speed = speed * 100
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
