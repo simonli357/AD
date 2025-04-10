@@ -1,5 +1,4 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtGui import QOpenGLPaintDevice
 from PyQt5.Qt import QPainter
 from OpenGL import GL as gl
 from .hud import HudRenderer
@@ -51,6 +50,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
         gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
@@ -122,11 +122,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
-        device = QOpenGLPaintDevice(self.width(), self.height())
-        painter = QPainter(device)
-        painter.setRenderHints(QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform)
-        self.hud_renderer.draw_hud(painter)
-        painter.end()
+        self.hud_renderer.draw_hud()
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 2.5

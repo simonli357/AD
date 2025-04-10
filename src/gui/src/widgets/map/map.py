@@ -237,8 +237,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
-                    mat = self.sign_models[sign_index]
-                    self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
+                    if sign_index is not None:
+                        mat = self.sign_models[sign_index]
+                        self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
 
     def draw_lane(self, x, y, orientation):
         """Draw lane markings using OpenGL lines"""

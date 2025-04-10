@@ -2,44 +2,56 @@ import math
 import numpy as np
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
-from PyQt5.Qt import QPainter, QFont, QColor
 import glm
 
 
 class Speedometer():
-    """Custom circular speedometer bar with ticks."""
+    """Custom circular speedometer bar with ticks.
+
+    This version precomputes geometry (the gauge quad and tick vertices)
+    when the widget dimensions or gauge position change.
+    """
 
     def __init__(self, shader_program, tick_shader_program):
-        # shader_program: for drawing the gauge arc
-        # tick_shader_program: for drawing tick marks
+        # Shader programs for drawing the gauge arc and tick marks.
         self.shader_program = shader_program
         self.tick_shader_program = tick_shader_program
 
-    def draw(self, qpainter, screen_width, screen_height, x_norm, y_norm, proj_mat,
-             min_speed=0, max_speed=50, fill_color=(0.0, 0.5, 0.8, 0.5), current_speed=50):
-        """
-        Draw the gauge arc and then overlay the tick marks.
-        """
-        # Denormalize center coordinates.
+        # Ratios and constants
+        self.innerRadius_ratio = 0.23
+        self.outerRadius_ratio = 0.24
+        self.large_tick_length_ratio = 0.02
+        self.small_tick_length_ratio = 0.01
+        self.maxSweep = 280.0      # total sweep, in degrees
+        self.tick_step = 10.0      # degrees between ticks
+        self.large_tick_interval = 40.0  # every 40° is a large tick
+
+        # Cached geometry values (will be recomputed if dimensions change)
+        self.cached_screen_width = None
+        self.cached_screen_height = None
+        self.cached_center = None        # (cx, cy)
+        self.quad_vertices = None        # gauge arc quad vertices as a numpy array
+        self.large_tick_vertices = None  # large tick vertices (flattened float array)
+        self.small_tick_vertices = None  # small tick vertices
+        self.label_data = None           # list of (label, x, y) for large ticks
+
+    def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed):
+        """Compute and cache the geometry for the gauge and tick marks."""
+        # Compute gauge center based on normalized values.
         cx = x_norm * screen_width
         cy = y_norm * screen_height
+        self.cached_center = (cx, cy)
 
-        # Compute normalized progress (clamped to 0-1).
-        progress = (current_speed - min_speed) / (max_speed - min_speed)
-        progress = max(0.0, min(1.0, progress))
+        # Compute radii in pixels.
+        innerRadius = self.innerRadius_ratio * screen_height
+        outerRadius = self.outerRadius_ratio * screen_height
 
-        # Define gauge radii (in pixels).
-        innerRadius = 0.19 * screen_height  # adjust as desired
-        outerRadius = 0.2 * screen_height     # adjust as desired
-
-        # Create a quad that covers the full circle that encloses the outer radius.
+        # Precompute gauge quad vertices (covers full circle enclosing outerRadius).
         left = cx - outerRadius
         bottom = cy - outerRadius
         quad_width = outerRadius * 2
         quad_height = outerRadius * 2
-
-        # Define quad vertices (in pixel coordinates).
-        quad_vertices = np.array([
+        self.quad_vertices = np.array([
             left, bottom + quad_height,   # top-left
             left, bottom,                 # bottom-left
             left + quad_width, bottom,    # bottom-right
@@ -49,12 +61,89 @@ class Speedometer():
             left + quad_width, bottom + quad_height  # top-right
         ], dtype=np.float32)
 
-        # Use the gauge shader to draw the circular arc.
+        # Precompute tick geometry.
+        large_ticks = []
+        small_ticks = []
+        labels = []
+
+        # Loop over each tick (custom angle r from 0 to maxSweep).
+        # In our gauge coordinate system, custom angle 0 corresponds to standard -90°.
+        r = 0.0
+        while r <= self.maxSweep + 0.001:
+            # Determine tick type (large if r is a multiple of large_tick_interval).
+            if abs(r % self.large_tick_interval) < 1e-5:
+                tick_length = self.large_tick_length_ratio * screen_height
+                tick_type = 'large'
+            else:
+                tick_length = self.small_tick_length_ratio * screen_height
+                tick_type = 'small'
+
+            # For clockwise drawing, map custom angle r to standard angle:
+            # custom angle 0 -> standard -90°, increasing r rotates clockwise.
+            standard_angle = -90.0 - r
+            rad = math.radians(standard_angle)
+
+            if tick_type == 'large':
+                # For large ticks, center the tick on the gauge edge: split half-in, half-out.
+                x_in = cx + (innerRadius - tick_length / 2) * math.cos(rad)
+                y_in = cy - (innerRadius - tick_length / 2) * math.sin(rad)
+                x_out = cx + (innerRadius + tick_length) * math.cos(rad)
+                y_out = cy - (innerRadius + tick_length) * math.sin(rad)
+                large_ticks.extend([x_in, y_in, x_out, y_out])
+
+                x_in = cx + innerRadius * 0.80 * math.cos(rad)
+                y_in = cy - innerRadius * 0.80 * math.sin(rad)
+                # Map the fractional position along the sweep to a speed value.
+                value = min_speed + (max_speed - min_speed) * (r / self.maxSweep)
+                label = str(int(round(value)))
+                # Position the label slightly inward from the tick's inner endpoint.
+                labels.append((label, x_in, y_in))
+            else:
+                # For small ticks, the tick starts at innerRadius and extends outward.
+                x_in = cx + innerRadius * math.cos(rad)
+                y_in = cy - innerRadius * math.sin(rad)
+                x_out = cx + (innerRadius + tick_length) * math.cos(rad)
+                y_out = cy - (innerRadius + tick_length) * math.sin(rad)
+                small_ticks.extend([x_in, y_in, x_out, y_out])
+            r += self.tick_step
+
+        self.large_tick_vertices = np.array(large_ticks, dtype=np.float32)
+        self.small_tick_vertices = np.array(small_ticks, dtype=np.float32)
+        self.label_data = labels
+
+        # Cache the screen dimensions.
+        self.cached_screen_width = screen_width
+        self.cached_screen_height = screen_height
+
+    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
+             min_speed=0, max_speed=50, fill_color=(0.0, 0.5, 0.8, 0.75), current_speed=50):
+        """
+        Draw the gauge arc and tick marks using precomputed geometry.
+        Assumes that update_geometry() has been called if screen dimensions or gauge
+        normalized position have changed.
+        """
+        # if self.label_data is not None:
+        #     for label, x, y in self.label_data:
+        #         self.render_text(qpainter, label, 10, (255, 255, 255, 255), x, y)
+
+        # If dimensions or gauge position have changed, update the geometry.
+        if (self.cached_screen_width != screen_width or self.cached_screen_height != screen_height or self.cached_center is None):
+            self.update_geometry(screen_width, screen_height, x_norm, y_norm, min_speed, max_speed)
+
+        cx, cy = self.cached_center
+        # Compute normalized progress.
+        progress = (current_speed - min_speed) / (max_speed - min_speed)
+        progress = max(0.0, min(1.0, progress))
+
+        # Use precomputed radii.
+        innerRadius = self.innerRadius_ratio * screen_height
+        outerRadius = self.outerRadius_ratio * screen_height
+
+        # Draw the gauge arc quad.
         gl.glUseProgram(self.shader_program)
         loc_proj = gl.glGetUniformLocation(self.shader_program, "uProjection")
         gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
 
-        # Set uniforms for the gauge.
         loc_center = gl.glGetUniformLocation(self.shader_program, "uCenter")
         gl.glUniform2f(loc_center, cx, cy)
         loc_inner = gl.glGetUniformLocation(self.shader_program, "uInnerRadius")
@@ -65,12 +154,10 @@ class Speedometer():
         gl.glUniform1f(loc_progress, progress)
         loc_fill = gl.glGetUniformLocation(self.shader_program, "uFillColor")
         gl.glUniform4f(loc_fill, *fill_color)
-        # Set a transparent background color for unfilled areas.
         loc_bg = gl.glGetUniformLocation(self.shader_program, "uBgColor")
         gl.glUniform4f(loc_bg, 0.0, 0.0, 0.0, 0.0)
 
-        # Bind and draw the quad.
-        quad_vbo = vbo.VBO(quad_vertices)
+        quad_vbo = vbo.VBO(self.quad_vertices)
         quad_vbo.bind()
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, quad_vbo)
@@ -80,128 +167,47 @@ class Speedometer():
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
 
-        # Now draw the ticks.
-        self.draw_ticks(qpainter, cx, cy, innerRadius, screen_height, min_speed, max_speed, proj_mat)
+        # Draw the ticks.
+        self.draw_ticks(proj_mat)
 
-    def draw_ticks(self, qpainter, cx, cy, outerRadius, screen_height, min_speed, max_speed, proj_mat):
-        """
-        Draw tick marks along the gauge’s outer edge.
-        A large tick is drawn every 20° and 3 small ticks are drawn between large ticks (every 5°).
-        We use our custom angle system: the gauge fill starts at custom angle 0 (which maps to 90° standard).
-        Now, ticks will be drawn clockwise from 90°.
-        """
-        # Set the total sweep of the gauge.
-        maxSweep = 280.0  # in degrees (as used by the gauge shader)
-        tick_step = 10.0   # degrees between ticks
-
-        # Define tick lengths (in pixels).
-        large_tick_length = 0.02 * screen_height  # e.g. 2% of screen height
-        small_tick_length = 0.01 * screen_height    # e.g. 1% of screen height
-
-        # Separate lists for large and small tick vertices.
-        large_tick_vertices = []  # for large ticks
-        small_tick_vertices = []  # for small ticks
-
-        label_data = []
-        label_offset = 0.01 * screen_height
-
-        # Loop over each tick position (custom angle 'r' from 0 to maxSweep)
-        # Custom angle 0 corresponds to standard angle 90°
-        r = 0.0
-        while r <= maxSweep + 0.001:  # include endpoint with tolerance
-            # Determine if this is a large tick or a small tick.
-            if abs(r % 40.0) < 1e-5:
-                tick_length = large_tick_length
-                tick_type = 'large'
-            else:
-                tick_length = small_tick_length
-                tick_type = 'small'
-
-            # Convert custom angle to standard angle (clockwise drawing)
-            # Instead of 90 + r, use 90 - r.
-            standard_angle = -90.0 - r
-            rad = math.radians(standard_angle)
-
-            # Append the two vertices for this tick line segment.
-            if tick_type == 'large':
-                # Compute the inner tick point (at the gauge outer radius).
-                x_in = cx + (outerRadius - tick_length / 2) * math.cos(rad)
-                y_in = cy - (outerRadius - tick_length / 2) * math.sin(rad)
-                # Compute the outer tick point (extending outward).
-                x_out = cx + (outerRadius + tick_length) * math.cos(rad)
-                y_out = cy - (outerRadius + tick_length) * math.sin(rad)
-                large_tick_vertices.extend([x_in, y_in, x_out, y_out])
-
-                value = min_speed + (max_speed - min_speed) * (r / maxSweep)
-                label = str(int(round(value)))
-                label_data.append((label, x_in - label_offset, y_in - label_offset))
-            else:
-                # Compute the inner tick point (at the gauge outer radius).
-                x_in = cx + outerRadius * math.cos(rad)
-                y_in = cy - outerRadius * math.sin(rad)
-                # Compute the outer tick point (extending outward).
-                x_out = cx + (outerRadius + tick_length) * math.cos(rad)
-                y_out = cy - (outerRadius + tick_length) * math.sin(rad)
-                small_tick_vertices.extend([x_in, y_in, x_out, y_out])
-
-            r += tick_step
-
-        # Draw large ticks (fat)
-        if large_tick_vertices:
-            large_tick_vertices_np = np.array(large_tick_vertices, dtype=np.float32)
+    def draw_ticks(self, proj_mat):
+        """Draw ticks using the precomputed tick buffers and (optionally) text labels."""
+        # Draw large ticks.
+        if self.large_tick_vertices is not None and len(self.large_tick_vertices) > 0:
             gl.glUseProgram(self.tick_shader_program)
             loc_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
             gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
             loc_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
             gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
-            gl.glLineWidth(3.0)  # Thicker line for large ticks
+            gl.glLineWidth(3.0)
 
-            tick_vbo = vbo.VBO(large_tick_vertices_np)
+            tick_vbo = vbo.VBO(self.large_tick_vertices)
             tick_vbo.bind()
             gl.glEnableVertexAttribArray(0)
             gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, tick_vbo)
-            num_vertices = len(large_tick_vertices_np) // 2
+            num_vertices = len(self.large_tick_vertices) // 2
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             tick_vbo.unbind()
             tick_vbo.delete()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
 
-        # Draw small ticks (thin)
-        if small_tick_vertices:
-            small_tick_vertices_np = np.array(small_tick_vertices, dtype=np.float32)
+        # Draw small ticks.
+        if self.small_tick_vertices is not None and len(self.small_tick_vertices) > 0:
             gl.glUseProgram(self.tick_shader_program)
             loc_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
             gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
             loc_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
             gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
-            gl.glLineWidth(1.0)  # Thinner line for small ticks
+            gl.glLineWidth(1.0)
 
-            tick_vbo = vbo.VBO(small_tick_vertices_np)
+            tick_vbo = vbo.VBO(self.small_tick_vertices)
             tick_vbo.bind()
             gl.glEnableVertexAttribArray(0)
             gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, tick_vbo)
-            num_vertices = len(small_tick_vertices_np) // 2
+            num_vertices = len(self.small_tick_vertices) // 2
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             tick_vbo.unbind()
             tick_vbo.delete()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
-
-        # for label, x_label, y_label in label_data:
-        #     # Here we specify a text size (e.g., 10 points) and white color.
-        #     self.render_text(qpainter, label, 10, (255, 255, 255, 255), x_label, y_label)
-        # self.render_text(qpainter, 'TEST', 10, (255, 255, 255, 255), 0, 0)
-
-    def render_text(self, painter: QPainter, text, size, color: (int, int, int, int), x, y) -> None:
-        # Get current OpenGL color
-        text_color = QColor(color[0], color[1], color[2], color[3])
-
-        # Set up font
-        font = QFont()
-        font.setBold(True)
-        font.setStyleStrategy(QFont.PreferAntialias)
-
-        painter.setPen(text_color)
-        painter.setFont(font)
-        painter.drawText(int(x), int(y), text)

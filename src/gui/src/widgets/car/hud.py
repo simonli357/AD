@@ -8,14 +8,13 @@ class HudRenderer:
     def __init__(self, shader_renderer):
         self.shader_renderer = shader_renderer
 
-    def draw_hud(self, qpainter):
+    def draw_hud(self):
         viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
         screen_width = viewport[2]
         screen_height = viewport[3]
         self.proj_mat = glm.ortho(0.0, float(screen_width), float(screen_height), 0.0, -1.0, 1.0)
 
         self.shader_renderer.progress_bar_model.draw(
-            qpainter,
             screen_width=screen_width,
             screen_height=screen_height,
             x_norm=0.98,
@@ -28,10 +27,9 @@ class HudRenderer:
         )
 
         self.shader_renderer.speedometer_model.draw(
-            qpainter,
             screen_width,
             screen_height,
             0.18,
-            0.75,
+            0.7,
             self.proj_mat
         )
