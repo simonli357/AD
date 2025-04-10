@@ -26,9 +26,9 @@ class Speedometer():
         self.outerRadius_ratio = 0.24
         self.large_tick_length_ratio = 0.02
         self.small_tick_length_ratio = 0.01
-        self.maxSweep = 288.0
-        self.tick_step = 8.0
-        self.large_tick_interval = 32.0
+        self.maxSweep = 280.0
+        self.tick_step = 10.0
+        self.large_tick_interval = 40.0
         self.maxSweepSteer = 240.0
         self.steer_tick_interval = 40.0
 
@@ -171,7 +171,7 @@ class Speedometer():
         self.cached_screen_height = screen_height
 
     def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
-             current_speed=0, current_steer=0, min_speed=0, max_speed=45, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
+             current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
         """
         Draw the gauge arc and tick marks using precomputed geometry.
         Assumes that update_geometry() has been called if screen dimensions or gauge
