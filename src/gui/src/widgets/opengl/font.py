@@ -1,29 +1,9 @@
+from OpenGL import GL as gl
+from .utils import shader_path, create_shader_program
+
 import freetype
 import numpy as np
-from OpenGL import GL as gl
-from OpenGL.GL.shaders import compileProgram, compileShader
 import glm
-import os
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-shader_dir = os.path.join(current_dir, 'shaders')
-
-
-def shader_path(dirname: str, filename: str):
-    return os.path.join(shader_dir, dirname, filename)
-
-
-def create_shader_program(vertex_filepath: str, fragment_filepath: str) -> int:
-    with open(vertex_filepath, "r") as f:
-        vertex_source = f.read()
-    with open(fragment_filepath, "r") as f:
-        fragment_source = f.read()
-    vertex_shader = compileShader(vertex_source, gl.GL_VERTEX_SHADER)
-    fragment_shader = compileShader(fragment_source, gl.GL_FRAGMENT_SHADER)
-    program = compileProgram(vertex_shader, fragment_shader)
-    gl.glDeleteShader(vertex_shader)
-    gl.glDeleteShader(fragment_shader)
-    return program
 
 
 class TextRenderer:
