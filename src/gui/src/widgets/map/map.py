@@ -360,8 +360,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
-                    self.shader_renderer.draw_car(x, y, np.radians(car_yaw), NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, np.radians(car_yaw), 25.0, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
@@ -377,7 +377,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 1.5, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
