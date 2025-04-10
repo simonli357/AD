@@ -74,6 +74,10 @@ class ShaderRenderer:
 
     def load_textures(self):
         self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
+        self.ram_texture = load_2D_texture(asset_path('ram.png'))
+        self.stack_texture = load_2D_texture(asset_path('stack.png'))
+        self.heap_texture = load_2D_texture(asset_path('heap.png'))
+        self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
 
     def load_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
@@ -122,7 +126,7 @@ class ShaderRenderer:
         self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
     def load_custom_models(self):
-        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.cpu_texture, self.texture2D_shader)
+        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
         self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
 
     ##################
@@ -362,6 +366,34 @@ class ShaderRenderer:
 
         # Draw
         gl.glBindVertexArray(mat.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glBindVertexArray(0)
+
+    def draw_texture2D(self, x, y, icon, scale, proj_matrix):
+        gl.glUseProgram(self.texture2D_shader)
+
+        # Set matrices
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
+
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture_shader, "model"),
+            1, gl.GL_FALSE, glm.value_ptr(model)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture_shader, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
+        )
+
+        # Bind texture
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
+        gl.glUniform1i(gl.glGetUniformLocation(self.texture_shader, "texture1"), 0)
+
+        # Draw
+        gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
 

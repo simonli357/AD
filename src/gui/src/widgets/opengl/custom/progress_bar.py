@@ -11,10 +11,9 @@ class ProgressBar():
     parts, making it easier to maintain and cache if needed.
     """
 
-    def __init__(self, text_renderer, shader_program, cpu_texture, texture_shader):
+    def __init__(self, text_renderer, shader_program, texture_shader):
         self.text_renderer = text_renderer
         self.shader_program = shader_program
-        self.cpu_texture = cpu_texture
         self.texture_shader = texture_shader
         self.backdrop_color = (1.0, 1.0, 1.0, 0.5)
         # This shear_fraction determines how much the bottom edge is slanted.
@@ -62,13 +61,14 @@ class ProgressBar():
 
         return x, y, width, height, s, backdrop_vertices
 
-    def draw_texture(self, x, y, scale, proj_matrix):
+    def draw_texture(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture_shader)
 
         # Set matrices
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
 
         gl.glUniformMatrix4fv(
             gl.glGetUniformLocation(self.texture_shader, "model"),
@@ -81,15 +81,15 @@ class ProgressBar():
 
         # Bind texture
         gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self.cpu_texture.texture_id)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
         gl.glUniform1i(gl.glGetUniformLocation(self.texture_shader, "texture1"), 0)
 
         # Draw
-        gl.glBindVertexArray(self.cpu_texture.vao)
+        gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm, fill_color, percentage, proj_mat):
+    def draw(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm, fill_color, percentage, proj_mat, icon):
         """
         Draws the progress bar. (x,y) is the top-right corner in normalized space.
         The bar is rendered as a sheared parallelogram with a filled portion determined
@@ -152,5 +152,5 @@ class ProgressBar():
         x_img = x_text - 35
         y_img = y_text
 
-        self.draw_texture(x_img, y_img, 25.0, proj_mat)
-        self.text_renderer.render_text(f"{percentage * 100:.0f}%", x_text, y_text, 1.0, (0.0, 1.0, 0.0), proj_mat)
+        self.draw_texture(x_img, y_img, icon, 25.0, proj_mat)
+        self.text_renderer.render_text(f"{percentage * 100:.0f}%", x_text, y_text, 1.0, (1.0, 1.0, 1.0), proj_mat)

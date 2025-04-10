@@ -40,6 +40,7 @@ class CommunicationHandler(QObject):
     render_widget_signal = pyqtSignal()
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
+    sw_load_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -79,8 +80,6 @@ class MainWindow(QMainWindow):
         """)
 
         self.load_nerd_font()
-        # self.setWindowFlags(Qt.Window)
-        # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.map_widget = MapWidget(self)
         self.cam_widget = CameraWidget(self)
@@ -101,6 +100,7 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.map_widget.set_steer)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
+        self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
 

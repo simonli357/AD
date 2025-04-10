@@ -134,7 +134,7 @@ class Speedometer():
                 small_ticks.extend([x_in, y_in, x_out, y_out])
             r += self.tick_step
 
-        standard_angle = -50
+        standard_angle = -45
         rad = math.radians(standard_angle)
         x_in = cx + innerRadius * 0.9 * math.cos(rad)
         y_in = cy - innerRadius * 0.9 * math.sin(rad)

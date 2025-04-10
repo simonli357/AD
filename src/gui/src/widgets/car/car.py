@@ -33,6 +33,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def set_steer(self, steer: float):
         self.steer = steer
 
+    def update_sw_load(self, load_msg):
+        self.hud_renderer.cores_usage = load_msg.cores_usage
+        self.hud_renderer.temperature = load_msg.temperature
+        self.hud_renderer.ram_usage = load_msg.ram_usage
+        self.hud_renderer.heap_usage = load_msg.heap_usage
+        self.hud_renderer.stack_usage = load_msg.stack_usage
+
     def set_car_data(self, yaw: float, speed: float, x: float, y: float, z: float) -> None:
         if self.main_window.buttons_widget.started:
             dx = x - self.x_pos
