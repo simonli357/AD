@@ -116,8 +116,7 @@ class Speedometer():
         self.cached_screen_width = screen_width
         self.cached_screen_height = screen_height
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
-             min_speed=0, max_speed=50, fill_color=(0.0, 0.5, 0.8, 0.75), current_speed=50):
+    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_speed=0, min_speed=0, max_speed=50, fill_color=(0.0, 0.5, 0.8, 0.75)):
         """
         Draw the gauge arc and tick marks using precomputed geometry.
         Assumes that update_geometry() has been called if screen dimensions or gauge
@@ -172,7 +171,7 @@ class Speedometer():
         self.draw_ticks(proj_mat)
 
     def draw_ticks(self, proj_mat):
-        """Draw ticks using the precomputed tick buffers and (optionally) text labels."""
+        """Draw ticks using the precomputed tick buffers and text labels."""
         # Draw large ticks.
         if self.large_tick_vertices is not None and len(self.large_tick_vertices) > 0:
             gl.glUseProgram(self.tick_shader_program)
