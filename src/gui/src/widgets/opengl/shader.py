@@ -1,7 +1,7 @@
 from OpenGL import GL as gl
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
-from .basic import line_model, circle_model, crosshair_model, triangle_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model
 from .obj import load_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
@@ -35,6 +35,7 @@ class ShaderRenderer:
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
+        self.arrow_model = arrow_model()
 
         self.white_car_model = load_obj(*object_path('car', 'white'))
         self.red_car_model = load_obj(*object_path('car', 'red'))
@@ -68,6 +69,7 @@ class ShaderRenderer:
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
+        self.arrow_shader = create_shader_program(shader_path('axis', 'axis.vert'), shader_path('axis', 'axis.frag'))
 
         self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
         self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
@@ -464,4 +466,64 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.crosshair_model.vao2)
         gl.glDrawArrays(gl.GL_LINES, 0, 4)
 
+        gl.glBindVertexArray(0)
+
+    def draw_axis3D(self, x, y, yaw, scale, proj_matrix, view_matrix):
+        obj_model = self.axis_model
+        shader_program = self.axis_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        model_loc = gl.glGetUniformLocation(shader_program, "model")
+        view_loc = gl.glGetUniformLocation(shader_program, "view")
+        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if obj_model.texture is not None:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
+            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
+            gl.glUniform1i(texture_location, 0)
+
+        gl.glBindVertexArray(obj_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
+        gl.glBindVertexArray(0)
+
+    def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
+        gl.glUseProgram(self.arrow_shader)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        model_loc = gl.glGetUniformLocation(self.arrow_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.arrow_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.arrow_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.arrow_shader, "color")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, *NamedColor.GREEN.value)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
+        gl.glBindVertexArray(0)
+
+        model = glm.mat4(1.0)
+        model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
+        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4f(color_loc, *NamedColor.RED.value)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
         gl.glBindVertexArray(0)

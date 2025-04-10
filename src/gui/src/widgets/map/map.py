@@ -140,8 +140,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
@@ -204,6 +203,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.draw_markers()
         self.draw_detected_objects()
         self.draw_path_nodes()
+
+        self.shader_renderer.draw_axis2D(0, 0, 0, 25.0, self.view_mat, self.proj_mat)
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)

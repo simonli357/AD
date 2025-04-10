@@ -77,6 +77,37 @@ def circle_model() -> Model:
     return Model(vao, circle_vbo, None, len(vertices))
 
 
+def arrow_model() -> Model:
+    vertices = np.array([
+        # Rect Triangle 1
+        -0.04, 0.0, 0.0,
+        -0.04, 0.8, 0.0,
+        0.04, 0.8, 0.0,
+        # Rect Triangle 2
+        0.04, 0.0, 0.0,
+        0.04, 0.8, 0.0,
+        -0.04, 0.0, 0.0,
+        # Arrow Triangle
+        -0.1, 0.8, 0.0,
+        0.1, 0.8, 0.0,
+        0, 1.0, 0.0
+    ], dtype=np.float32)
+
+    arrow_vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(arrow_vao)
+
+    arrow_vbo = vbo.VBO(vertices)
+    arrow_vbo.bind()
+
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    arrow_vbo.unbind()
+
+    return Model(arrow_vao, arrow_vbo, None, 9)
+
+
 def crosshair_model() -> Model:
     vertices = []
     for i in range(64):
