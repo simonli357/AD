@@ -50,20 +50,22 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
                 print("Error in sign detection")
                 print(e)
                 return
-            if self.cam_widget.detected_objects[7 * i + 5] < self.cam_widget.confidence_thresholds[id]:
+            if self.cam_widget.detected_objects[7 * i + 5] < self.confidence_thresholds[id]:
                 continue
 
             color_index = id % len(self.COLOR_LIST)
-            color = tuple(int(c * 255) for c in self.COLOR_LIST[color_index])  # Scale color to [0, 255]
+            color = self.COLOR_LIST[color_index]
 
             confidence = self.cam_widget.detected_objects[7 * i + 5] * 100
             distance = self.cam_widget.detected_objects[7 * i + 4]
-            text = f"{self.cam_widget.class_names[id]} {confidence:.1f}% {distance:.2f}m"
+            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
 
             x1 = int(self.cam_widget.detected_objects[7 * i])
             y1 = int(self.cam_widget.detected_objects[7 * i + 1])
             x2 = int(self.cam_widget.detected_objects[7 * i + 2])
             y2 = int(self.cam_widget.detected_objects[7 * i + 3])
+
+            self.box_renderer.draw(x1, y1, x2, y2, text, 1.0, color, self.proj_mat)
 
     def draw_lane_indicator(self):
         if self.center is None:
