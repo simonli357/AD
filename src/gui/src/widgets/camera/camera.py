@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QImage
 from ..enums import CameraParams
+from .hud import CameraOverlay
 
 import cv2
 import numpy as np
@@ -13,6 +14,7 @@ class CameraWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.has_frame = False
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(7)
@@ -43,6 +45,11 @@ class CameraWidget(QtWidgets.QWidget):
         """)
         self.camera_label.setMinimumWidth(CameraParams.MIN_WIDTH.value)
         self.camera_label.setMinimumHeight(CameraParams.MIN_HEIGHT.value)
+
+        self.hud = CameraOverlay(self.camera_label, self)
+        self.hud.setMinimumWidth(CameraParams.MIN_WIDTH.value)
+        self.hud.setMinimumHeight(CameraParams.MIN_HEIGHT.value)
+
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.camera_label, alignment=QtCore.Qt.AlignCenter)
@@ -50,6 +57,10 @@ class CameraWidget(QtWidgets.QWidget):
 
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
+        self.has_frame = True
+
+    def update_hud(self):
+        self.hud.update_overlay()
 
     def process_camera_frame(self, cv_image):
         """Process RGB camera frame"""

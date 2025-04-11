@@ -103,6 +103,7 @@ class MainWindow(QMainWindow):
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
+        self.comm.render_widget_signal.connect(self.cam_widget.update_hud)
 
         self.comm.render_barca_widget_signal.connect(self.barca_widget.render_widget)
         self.comm.render_map_widget_signal.connect(self.map_widget.render_widget)
