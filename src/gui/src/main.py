@@ -12,7 +12,6 @@ from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
-
 from widgets.sidebar.sidebar import SidebarWidget
 from widgets.camera.camera import CameraWidget
 from widgets.camera.buttons import ButtonsWidget
@@ -22,8 +21,8 @@ from widgets.barca.barca import BarcaWidget
 from widgets.car.car import CarWidget
 from widgets.terminal.terminal import TerminalWidget
 from widgets.enums import CameraParams
-
 from std_srvs.srv import TriggerRequest
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class CommunicationHandler(QObject):
@@ -41,6 +40,7 @@ class CommunicationHandler(QObject):
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
+    gps_signal = pyqtSignal(PoseWithCovarianceStamped)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         self.terminal_widget = TerminalWidget(self)
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
+        self.run_overlay = RunOverlay(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -101,6 +102,7 @@ class MainWindow(QMainWindow):
         self.comm.steer_signal.connect(self.map_widget.set_steer)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+        self.comm.gps_signal.connect(self.run_overlay.match_run)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
 
@@ -112,7 +114,6 @@ class MainWindow(QMainWindow):
         root_layout = QHBoxLayout(root_widget)
         root_layout.setContentsMargins(10, 10, 10, 10)
 
-        self.run_overlay = RunOverlay(self)
         self.run_overlay.move(80, 5)
 
         left_widgets = QWidget()
@@ -203,6 +204,9 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
+                if self.server.utility_node_client.gps_msg.pose:
+                    msg = self.server.utility_node_client.gps_msg.pose.popleft()
+                    self.comm.gps_signal.emit(msg)
             self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 
