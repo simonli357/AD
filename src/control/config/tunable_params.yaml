@@ -3,7 +3,7 @@ real:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-
+  use_kf: true
   # sign_lon_offset: -0.01
   sign_lon_offset: -0.0
   # sign_lon_offset_slope: 0.05
@@ -16,7 +16,7 @@ real:
   min_sign_dist: 0.5
   highway_cooldown: 3.0
   sign_cooldown: 3.0
-  cumulative_confidence_thresh: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
+  cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   stop_duration: 2.25
 
@@ -42,7 +42,7 @@ sim:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-
+  use_kf: false
   sign_lon_offset: 0.0
   sign_lon_offset_slope: 0.0
   sign_lat_offset: 0.0

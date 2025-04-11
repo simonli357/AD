@@ -10,6 +10,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include "utils/constants.h"
 #include "Tunable.h"
+#include "KalmanFilter.h"
 
 using namespace VehicleConstants;
 
@@ -319,11 +320,15 @@ class DynamicObject : public RoadObject {
 public:
     double first_x, first_y;
     ros::Time first_detection_time;
+    ros::Time last_prediction_time;
+    std::unique_ptr<KalmanFilter> kf;
+    bool use_kf = true;
 
     DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
         : RoadObject(type, x, y, yaw, confidence),
-            first_x(x), first_y(y), first_detection_time(ros::Time::now()) {
-            
+            first_x(x), first_y(y), first_detection_time(ros::Time::now()), use_kf(Tunable::use_kf),
+          kf(std::make_unique<KalmanFilter>(x, y, yaw, 0.0)), last_prediction_time(ros::Time::now())  
+    {
         if (type != OBJECT::CAR && type != OBJECT::PEDESTRIAN) {
             throw std::invalid_argument("DynamicObject Constructor(): DynamicObject must be either CAR or PEDESTRIAN");
         }
@@ -340,59 +345,77 @@ public:
 
     void merge(double new_x, double new_y, double yaw, double new_conf, OBJECT new_type) override {
         if (new_type != type) {
-            throw std::invalid_argument("DynamicObject Merge: Cannot merge different types of objects");
+            throw std::invalid_argument("Cannot merge different types of objects");
         }
-        ros::Time current_time = ros::Time::now();
-        double dt1 = (current_time - last_detection_time).toSec();
-        double dt2 = (current_time - first_detection_time).toSec();
-    
-        // Estimate speed
-        double inst_speed = (dt1 > 0) ? std::hypot(new_x - x, new_y - y) / dt1 : speed;
-        double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
-    
+        if (use_kf && kf) {
+            kf->update(new_x, new_y);
+            x = kf->x();
+            y = kf->y();
+            yaw = kf->yaw();
+            speed = kf->speed();
+        } else {
+            ros::Time current_time = ros::Time::now();
+            double dt1 = (current_time - last_detection_time).toSec();
+            double dt2 = (current_time - first_detection_time).toSec();
+        
+            // Estimate speed
+            double inst_speed = (dt1 > 0) ? std::hypot(new_x - x, new_y - y) / dt1 : speed;
+            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
+        
+            double alpha = new_conf / (confidence + new_conf);
+            double est_speed = (alpha * inst_speed + (1 - alpha) * avg_speed);
+            speed = (1 - alpha) * speed + alpha * est_speed;
+        
+            // Yaw estimation from displacement
+            double dx_inst = new_x - x;
+            double dy_inst = new_y - y;
+            double dx_avg = new_x - first_x;
+            double dy_avg = new_y - first_y;
+        
+            bool valid_inst = std::hypot(dx_inst, dy_inst) > 1e-4;
+            bool valid_avg = std::hypot(dx_avg, dy_avg) > 1e-4;
+        
+            if (valid_inst && valid_avg) {
+                double yaw_inst = std::atan2(dy_inst, dx_inst);
+                double yaw_avg = std::atan2(dy_avg, dx_avg);
+        
+                double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
+                double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
+                yaw = std::atan2(sin_blend, cos_blend);
+            } else if (valid_inst) {
+                yaw = std::atan2(dy_inst, dx_inst);
+            } else if (valid_avg) {
+                yaw = std::atan2(dy_avg, dx_avg);
+            }
+        
+            // Position update (EMA)
+            x = (1 - alpha) * x + alpha * new_x;
+            y = (1 - alpha) * y + alpha * new_y;
+        }
         double alpha = new_conf / (confidence + new_conf);
-        double est_speed = (alpha * inst_speed + (1 - alpha) * avg_speed);
-        speed = (1 - alpha) * speed + alpha * est_speed;
-    
-        // Yaw estimation from displacement
-        double dx_inst = new_x - x;
-        double dy_inst = new_y - y;
-        double dx_avg = new_x - first_x;
-        double dy_avg = new_y - first_y;
-    
-        bool valid_inst = std::hypot(dx_inst, dy_inst) > 1e-4;
-        bool valid_avg = std::hypot(dx_avg, dy_avg) > 1e-4;
-    
-        if (valid_inst && valid_avg) {
-            double yaw_inst = std::atan2(dy_inst, dx_inst);
-            double yaw_avg = std::atan2(dy_avg, dx_avg);
-    
-            double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
-            double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
-            yaw = std::atan2(sin_blend, cos_blend);
-        } else if (valid_inst) {
-            yaw = std::atan2(dy_inst, dx_inst);
-        } else if (valid_avg) {
-            yaw = std::atan2(dy_avg, dx_avg);
-        }
-    
-        // Position update (EMA)
-        x = (1 - alpha) * x + alpha * new_x;
-        y = (1 - alpha) * y + alpha * new_y;
-    
-        // Confidence
         confidence = (1 - alpha) * confidence + alpha * new_conf;
         cumulative_confidence += new_conf;
+        cumulative_confidence += new_conf;
         detection_count++;
-        last_detection_time = current_time;
     
-        // Adaptive lifetime
+        last_detection_time = ros::Time::now();
+    
         lifetime = std::min(lifetime + (0.2 * new_conf), OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime);
     
-        // History
         position_history.push_back({x, y, confidence});
         if (position_history.size() > HISTORY_SIZE) {
             position_history.pop_front();
+        }
+    
+    }
+    void predict() {
+        if (use_kf && kf) {
+            double dt = (ros::Time::now() - last_prediction_time).toSec();
+            kf->predict(dt);
+            x = kf->x();
+            y = kf->y();
+            yaw = kf->yaw();
+            speed = kf->speed();
         }
     }
 };
@@ -440,6 +463,16 @@ inline std::vector<std::shared_ptr<KnownStaticObject>> road_known_static_objects
 inline std::vector<std::shared_ptr<DynamicObject>> road_cars;
 inline std::vector<std::shared_ptr<DynamicObject>> road_pedestrians;
 inline std::mutex container_mutex;
+
+inline void predict_dynamic_objects() {
+    std::lock_guard<std::mutex> lock(container_mutex);
+    for (auto& obj : road_cars) {
+        obj->predict();
+    }
+    for (auto& obj : road_pedestrians) {
+        obj->predict();
+    }
+}
 
 inline std::vector<std::shared_ptr<RoadObject>> get_road_objects() {
     std::lock_guard<std::mutex> lock(container_mutex);
