@@ -95,6 +95,9 @@ void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
     while(true) {
         boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
         msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
+        if (!msg_ptr) {
+            continue;
+        }
         tcp_client->send_gps_msg(*msg_ptr);
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Small delay to allow server to process request
         if (!tcp_client->get_gps_msgs().empty()) {

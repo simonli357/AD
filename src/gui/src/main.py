@@ -88,7 +88,6 @@ class MainWindow(QMainWindow):
         self.terminal_widget = TerminalWidget(self)
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
-        self.run_overlay = RunOverlay(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -102,7 +101,6 @@ class MainWindow(QMainWindow):
         self.comm.steer_signal.connect(self.map_widget.set_steer)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
-        self.comm.gps_signal.connect(self.run_overlay.match_run)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
 
@@ -114,7 +112,9 @@ class MainWindow(QMainWindow):
         root_layout = QHBoxLayout(root_widget)
         root_layout.setContentsMargins(10, 10, 10, 10)
 
+        self.run_overlay = RunOverlay(self)
         self.run_overlay.move(80, 5)
+        self.comm.gps_signal.connect(self.run_overlay.match_run)
 
         left_widgets = QWidget()
         self.left_layout = QVBoxLayout(left_widgets)
