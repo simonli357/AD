@@ -42,7 +42,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     y_init = y0;
     yaw_init = yaw0;
     fetch_run_params(x_init, y_init, yaw_init);
-    initialize(x_init, yaw_init, yaw_init);
+    initialize(x_init, y_init, yaw_init);
 }
 
 Utility::~Utility() {
