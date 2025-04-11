@@ -16,7 +16,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.setMouseTracking(True)
         self.stop_drawing = False
         self.main_window = self.parent()
-        self.car_widget = self.main_window.car_widget
         self.last_mouse_pos = None
         self.current_mouse_pos = None
         self.show_mouse = True
@@ -86,9 +85,9 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
         self.shader_renderer.draw_barca_track(-2, -4, 0, 0, (1.0, 1.0), (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
         self.shader_renderer.draw_car(
-            self.car_widget.x_pos,
-            self.car_widget.y_pos,
-            self.car_widget.yaw + np.radians(-90),
+            self.main_window.car_widget.x_pos,
+            self.main_window.car_widget.y_pos,
+            self.main_window.car_widget.yaw + np.radians(-90),
             NamedColor.WHITE,
             0.01,
             self.view_mat,
@@ -103,46 +102,14 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         angle = 0
         for i in range(0, len(waypoints) - 1, 4):
             if i + 3 > len(waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (0.5, 0.5), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (0.2, 0.2), (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat, 90)
             else:
                 x2, y2 = waypoints[i + 2], waypoints[i + 3]
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
-                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (0.5, 0.5), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (0.2, 0.2), (1.0, 0.0, 1.0, 1.0), self.view_mat, self.proj_mat, 90)
                 x1, y1 = x2, y2
-
-    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
-        painter = QPainter(self)
-        painter.setRenderHints(
-            QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
-        )
-
-        # Get current OpenGL color
-        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
-        text_color = QColor(
-            int(gl_color[0] * color[0]),
-            int(gl_color[1] * color[1]),
-            int(gl_color[2] * color[2]),
-            int(gl_color[3] * color[3])
-        )
-
-        # Set up font
-        font = QFont("Arial")
-        font.setBold(True)
-        font.setStyleStrategy(QFont.PreferAntialias)
-
-        # Account for high-DPI scaling
-        scale_factor = self.devicePixelRatio()
-        painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(size * scale_factor)
-
-        painter.setPen(text_color)
-        painter.setFont(font)
-        painter.drawText(int(x * scale_factor),
-                         int(y * scale_factor),
-                         text)
-        painter.end()
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True

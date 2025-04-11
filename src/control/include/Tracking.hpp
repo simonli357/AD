@@ -321,6 +321,7 @@ inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) 
         ros_msg.data.push_back(static_cast<float>(obj->speed));
         ros_msg.data.push_back(static_cast<float>(obj->confidence));
         ros_msg.data.push_back(static_cast<float>(obj->z));
+        ros_msg.data.push_back(static_cast<float>(obj->id));
     }
 }
 
@@ -334,6 +335,7 @@ inline std_msgs::Float32MultiArray& create_all_msgs() {
         ros_msg.data.push_back(static_cast<float>(ego_car->speed));
         ros_msg.data.push_back(static_cast<float>(ego_car->confidence));
         ros_msg.data.push_back(static_cast<float>(ego_car->z));
+        ros_msg.data.push_back(static_cast<float>(ego_car->id));
     }
     create_msg(road_objects);
     create_msg(
@@ -372,5 +374,5 @@ inline void cleanup_stale_objects() {
         }), road_pedestrians.end());
 }
 
-}
+} // end of namespace Tracking
         

@@ -9,22 +9,19 @@ import cv2
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
 
-from widgets.options import OptionsWidget
-from widgets.buttons import ButtonsWidget
-from widgets.meters import MeterWidget
+from widgets.sidebar.sidebar import SidebarWidget
+from widgets.camera.camera import CameraWidget
+from widgets.camera.buttons import ButtonsWidget
 from widgets.map.map import MapWidget
+from widgets.map.run import RunOverlay
 from widgets.barca.barca import BarcaWidget
 from widgets.car.car import CarWidget
-from widgets.camera import CameraWidget
-from widgets.terminal import TerminalWidget
-from widgets.jetson.sw_load import SoftwareMetricsWidget
+from widgets.terminal.terminal import TerminalWidget
 from widgets.enums import CameraParams
-from widgets.map.run import RunOverlay
-from widgets.info.detection import DetectionWidget
 
 from std_srvs.srv import TriggerRequest
 
@@ -40,10 +37,10 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
-    sw_load_signal = pyqtSignal(object)
     render_widget_signal = pyqtSignal()
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
+    sw_load_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -83,19 +80,14 @@ class MainWindow(QMainWindow):
         """)
 
         self.load_nerd_font()
-        # self.setWindowFlags(Qt.Window)
-        # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
 
         self.map_widget = MapWidget(self)
         self.cam_widget = CameraWidget(self)
-        self.meter_widget = MeterWidget(self)
         self.car_widget = CarWidget(self)
         self.barca_widget = BarcaWidget(self)
         self.terminal_widget = TerminalWidget(self)
-        self.buttons_widget = ButtonsWidget(self)
-        self.opt_widget = OptionsWidget(self)
-        self.detection_widget = DetectionWidget(self)
-        self.sw_widget = SoftwareMetricsWidget(self)
+        self.cam_buttons_widget = ButtonsWidget(self)
+        self.sidebar_widget = SidebarWidget(self)
 
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
@@ -107,13 +99,10 @@ class MainWindow(QMainWindow):
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.map_widget.set_steer)
-        self.comm.steer_signal.connect(self.meter_widget.set_steer)
-        self.comm.sw_load_signal.connect(self.sw_widget.set_load)
+        self.comm.steer_signal.connect(self.car_widget.set_steer)
+        self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.meter_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.detection_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.sw_widget.render_widget)
 
         self.comm.render_barca_widget_signal.connect(self.barca_widget.render_widget)
         self.comm.render_map_widget_signal.connect(self.map_widget.render_widget)
@@ -133,7 +122,7 @@ class MainWindow(QMainWindow):
         top_widgets = QWidget()
         self.top_layout = QHBoxLayout(top_widgets)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
-        self.top_layout.addWidget(self.opt_widget)
+        self.top_layout.addWidget(self.sidebar_widget)
         self.stacked_widget = MapContainer()
         self.stacked_widget.mouse_enter.connect(self.show_mouse_pos)
         self.stacked_widget.mouse_left.connect(self.hide_mouse_pos)
@@ -145,39 +134,12 @@ class MainWindow(QMainWindow):
         self.left_layout.addWidget(self.terminal_widget, 2)
 
         right_widgets = QWidget()
-        stat_widgets = QWidget()
-        cam_wrapper = QWidget()
-        self.cam_wrapper_layout = QVBoxLayout(cam_wrapper)
-        self.cam_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.cam_wrapper_layout.addWidget(self.cam_widget)
-        self.cam_wrapper_layout.addWidget(self.buttons_widget)
         self.right_layout = QVBoxLayout(right_widgets)
         self.right_layout.setContentsMargins(0, 0, 0, 0)
-        self.right_layout.addWidget(cam_wrapper, 2)
 
-        self.stat_layout = QVBoxLayout(stat_widgets)
-        self.stat_layout.setContentsMargins(0, 0, 0, 0)
-        self.stat_layout.setAlignment(QtCore.Qt.AlignCenter)
-        left_wrapper = QWidget()
-        right_wrapper = QWidget()
-        self.left_wrapper_layout = QHBoxLayout(left_wrapper)
-        self.left_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.left_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
-        meter_wrapper = QWidget()
-        meter_layout = QHBoxLayout(meter_wrapper)
-        meter_layout.setAlignment(QtCore.Qt.AlignVCenter)
-        meter_layout.setContentsMargins(0, 0, 0, 0)
-        meter_layout.addWidget(self.meter_widget)
-        self.left_wrapper_layout.addWidget(meter_wrapper)
-        self.left_wrapper_layout.addWidget(self.detection_widget)
-        self.right_wrapper_layout = QHBoxLayout(right_wrapper)
-        self.right_wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        self.right_wrapper_layout.setAlignment(QtCore.Qt.AlignTop)
-        self.right_wrapper_layout.addWidget(self.sw_widget)
-        self.right_wrapper_layout.addWidget(self.car_widget)
-        self.stat_layout.addWidget(left_wrapper)
-        self.stat_layout.addWidget(right_wrapper)
-        self.right_layout.addWidget(stat_widgets, 1)
+        self.right_layout.addWidget(self.cam_widget)
+        self.right_layout.addWidget(self.cam_buttons_widget)
+        self.right_layout.addWidget(self.car_widget)
 
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
@@ -280,7 +242,7 @@ class MainWindow(QMainWindow):
 
     def cam_record_callback(self) -> None:
         while self.alive:
-            if self.buttons_widget.recording:
+            if self.cam_buttons_widget.recording:
                 rgb_image = self.server.udp_connection.parse_rgb_image()
                 if rgb_image is not None:
                     now = time.time()
