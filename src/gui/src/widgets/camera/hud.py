@@ -40,8 +40,6 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         if not self.cam_widget.has_frame:
             self.shader_renderer.text_renderer.render_text("NO VIDEO", 320, 240, 1.0, (0.0, 1.0, 0.0), self.proj_mat)
 
-        self.box_renderer.draw(100, 100, 200, 200, "TEST", 1.0, (0, 1, 0), self.proj_mat)
-
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
             try:
