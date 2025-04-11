@@ -36,26 +36,17 @@ class CameraWidget(QtWidgets.QWidget):
         self.update_camera_signal.connect(self.update_camera_display)
 
     def setup_ui(self):
-        container_widget = QtWidgets.QWidget(self)
-        container_widget.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-        """)
-        container_layout = QtWidgets.QVBoxLayout(container_widget)
-        container_layout.setContentsMargins(0, 0, 0, 0)
-        container_layout.setAlignment(QtCore.Qt.AlignCenter)
-        self.camera_label = QtWidgets.QLabel(container_widget)
+        self.camera_label = QtWidgets.QLabel(self)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label.setStyleSheet("""
-            background-color: transparent;
+            background-color: rgba(255, 255, 255, 0.08);
         """)
         self.camera_label.setMinimumWidth(CameraParams.MIN_WIDTH.value)
         self.camera_label.setMinimumHeight(CameraParams.MIN_HEIGHT.value)
-        container_layout.addWidget(self.camera_label)
-        self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setAlignment(QtCore.Qt.AlignCenter)
-        self.layout.addWidget(container_widget)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.camera_label, alignment=QtCore.Qt.AlignCenter)
+        self.setLayout(layout)
 
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
