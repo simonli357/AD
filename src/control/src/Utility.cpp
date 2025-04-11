@@ -32,8 +32,12 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     io(), serial(nullptr), real(real), it(nh)
 {
     initialize_tcp_client();
-    fetch_run_params();
-    initialize();
+    float x_init, y_init, yaw_init;
+    x_init = x0;
+    y_init = y0;
+    yaw_init = yaw0;
+    fetch_run_params(x_init, y_init, yaw_init);
+    initialize(x_init, yaw_init, yaw_init);
 }
 
 Utility::~Utility() {
@@ -82,7 +86,7 @@ void Utility::initialize_tcp_client() {
     }
 }
 
-void Utility::fetch_run_params() {
+void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
     std::cout << "Waiting for run parameters" << std::endl;
 
     while(true) {
@@ -91,7 +95,7 @@ void Utility::fetch_run_params() {
     std::cout << "Run parameters received" << std::endl;
 }
 
-void Utility::initialize() {
+void Utility::initialize(float x0, float y0, float yaw0) {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
