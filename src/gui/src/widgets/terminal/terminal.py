@@ -332,7 +332,7 @@ class TerminalWidget(QtWidgets.QWidget):
                     val = int(match.group(1))
                     if self.compile_progress is not None:
                         self.compile_progress.set_progress(val)
-                    if val == 100:
+                    if '#### Running command: "make -j16 -l16"' in line:
                         self.compile_progress.end()
                 else:
                     self.compile_progress.increment(2)
