@@ -58,9 +58,11 @@ class CameraWidget(QtWidgets.QWidget):
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
         self.has_frame = True
+        self.hud.update_overlay()
 
     def update_hud(self):
-        self.hud.update_overlay()
+        if not self.has_frame:
+            self.hud.update_overlay()
 
     def process_camera_frame(self, cv_image):
         """Process RGB camera frame"""
@@ -68,8 +70,8 @@ class CameraWidget(QtWidgets.QWidget):
             if self.show_depth:
                 return
 
-            cv_image = self.add_sign_detection_to_image(cv_image)
-            cv_image = self.add_lane_detection_to_image(cv_image)
+            # cv_image = self.add_sign_detection_to_image(cv_image)
+            # cv_image = self.add_lane_detection_to_image(cv_image)
             cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
 
             # Convert to QImage
@@ -92,8 +94,8 @@ class CameraWidget(QtWidgets.QWidget):
             # Apply normalization with a focus on closer objects
             depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
             depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
-            depth_colored = self.add_sign_detection_to_image(depth_colored)
-            depth_colored = self.add_lane_detection_to_image(depth_colored)
+            # depth_colored = self.add_sign_detection_to_image(depth_colored)
+            # depth_colored = self.add_lane_detection_to_image(depth_colored)
 
             # Convert to QImage
             h, w, ch = depth_colored.shape
@@ -103,76 +105,6 @@ class CameraWidget(QtWidgets.QWidget):
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
             print(f"Depth processing error: {e}")
-
-    def add_sign_detection_to_image(self, image):
-        for i in range(self.numObj):
-            try:
-                id = int(self.detected_objects[7 * i + 6])
-            except Exception as e:
-                print("Error in sign detection")
-                print(e)
-                return
-            if self.detected_objects[7 * i + 5] < self.confidence_thresholds[id]:
-                continue
-
-            color_index = id % len(self.COLOR_LIST)
-            color = tuple(int(c * 255) for c in self.COLOR_LIST[color_index])  # Scale color to [0, 255]
-
-            mean_color = np.mean(color)
-            text_color = (0, 0, 0) if mean_color > 127 else (255, 255, 255)
-
-            confidence = self.detected_objects[7 * i + 5] * 100
-            distance = self.detected_objects[7 * i + 4]
-            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
-
-            label_size, baseLine = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-
-            x1 = int(self.detected_objects[7 * i])
-            y1 = int(self.detected_objects[7 * i + 1])
-            x2 = int(self.detected_objects[7 * i + 2])
-            y2 = int(self.detected_objects[7 * i + 3])
-
-            cv2.rectangle(image, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
-
-            y = y1 - label_size[1] - baseLine
-            if y < 0:
-                y = 0
-            x = x1
-            if x + label_size[0] > image.shape[1]:
-                x = image.shape[1] - label_size[0]
-
-            txt_bk_color = tuple(int(c * 0.7) for c in color)
-            cv2.rectangle(image, (x, y), (x + label_size[0], y + label_size[1] + baseLine), txt_bk_color, -1)
-
-            cv2.putText(image, text, (x, y + label_size[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
-
-        return image
-
-    def add_lane_detection_to_image(self, image):
-        if self.center is None:
-            return image
-        # Draw the center line
-        if image is None:
-            return image
-        cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
-        cv2.putText(image, f"center: {self.center:.2f}",
-                    (int(image.shape[1] * 0.05), int(image.shape[0] * 0.1)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        # Add text if stopline or crosswalk is detected
-        if self.stopline:
-            cv2.putText(image, "Stopline detected!",
-                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.3)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-
-        if self.crosswalk:
-            cv2.putText(image, "Crosswalk detected!",
-                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.4)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        if self.stopline_dist:
-            cv2.putText(image, f"Stopline distance: {self.stopline_dist:.2f}",
-                        (int(image.shape[1] * 0.05), int(image.shape[0] * 0.2)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        return image
 
     def toggle_depth_display(self, show_depth):
         self.show_depth = show_depth

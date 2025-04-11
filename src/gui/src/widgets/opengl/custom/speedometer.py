@@ -6,11 +6,7 @@ import glm
 
 
 class Speedometer():
-    """Custom circular speedometer bar with ticks.
-
-    This version precomputes geometry (the gauge quad and tick vertices)
-    when the widget dimensions or gauge position change.
-    """
+    """Custom circular speedometer bar with ticks."""
 
     def __init__(self, text_renderer, large_text_renderer, gauge_shader_program, tick_shader_program, circle_shader_program, compass_shader_program):
         self.text_renderer = text_renderer

@@ -5,11 +5,7 @@ import glm
 
 
 class ProgressBar():
-    """Custom progress bar drawing a parallelogram with a shear effect.
-
-    This refactored version separates the static geometry calculations from the dynamic
-    parts, making it easier to maintain and cache if needed.
-    """
+    """Custom progress bar drawing a parallelogram with a shear effect."""
 
     def __init__(self, text_renderer, shader_program, texture_shader):
         self.text_renderer = text_renderer

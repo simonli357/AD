@@ -5,6 +5,7 @@ from .basic import line_model, circle_model, crosshair_model, triangle_model, ar
 from .obj import load_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
+from .custom.detection_box import DetectionBox
 from .custom.speedometer import Speedometer
 from .font import TextRenderer
 
@@ -72,14 +73,18 @@ class ShaderRenderer:
         self.arrow_shader = create_shader_program(shader_path('axis', 'axis.vert'), shader_path('axis', 'axis.frag'))
 
         self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
+
         self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
         self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
         self.speedometer_circle_shader = create_shader_program(shader_path('speedometer', 'circle.vert'), shader_path('speedometer', 'circle.frag'))
         self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
+        self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
+
     def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
         self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
+        self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
 
     ##################
     # Draw Functions
