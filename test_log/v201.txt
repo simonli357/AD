@@ -1,0 +1,380 @@
+ROS_MASTER_URI=http://localhost:11311
+
+process[mpc_controller_slsecret_Alienware_x15_R2_1258391_8986253878037694866-1]: started with pid [1258472]
+node name: /mpc_controller_slsecret_Alienware_x15_R2_1258391_8986253878037694866
+Successfully loaded parameters
+ekf: 0, sign: 1, T: 0.1, N: 40, vref: 0.32, real: 0
+[GroundTruth] Initializing ground truth...
+Utility constructor
+[ INFO] [1744320844.716470267]: Utility constructor: Attempting to create TCP client...
+Connecting to GUI 
+
+[ INFO] [1744320844.718959638]: Utility constructor: TCP client created successfully.
+[ INFO] [1744320844.721786876]: Utility constructor: ERROR: Failed to open serial port: open: No such file or directory
+[ INFO] [1744320844.723474112]: ERROR: set pose service call failed
+[ INFO] [1744320844.725570550]: imu topic: /car1/imu
+[ INFO] [1744320844.725593764]: waiting for Imu message
+received message from Imu
+waiting for sign message
+Connection request established with GUI 
+
+utility_node_client successfully connected to GUI.
+
+received message from sign
+Path Manager Constructor
+v ref: 0.32, int:32
+MPC Constructor
+reference speed is 32cm/s
+rate: 10
+[ INFO] [1744320863.149836517, 4621.784000000]: start_bool server ready, mpc time step T = 0.100
+[ INFO] [1744320863.149875212, 4621.784000000]: state machine initialized
+imu initialized, intial yaw is -90 degrees
+[ INFO] [1744320863.150285767, 4621.784000000]: initialized in imu callback
+Async spinner started with 4 threads
+State Machine running...
+[ INFO] [1744320863.251112019, 4621.886000000]: waypoints service found
+[ INFO] [1744320863.510812705, 4622.145000000]: initialize(): Received waypoints of size 5603
+ROS node set params notification ack = success.
+[ INFO] [1744320863.771892903, 4622.406000000]: Python node notified successfully.
+[ INFO] [1744320879.885546924, 4638.483000000]: start(): x=0.340, y=1.586, yaw=-1.571
+[ INFO] [1744320879.886204905, 4638.484000000]: waypoints service found
+[ INFO] [1744320880.131998335, 4638.730000000]: initialize(): Received waypoints of size 5603
+ROS node set params notification ack = success.
+[ INFO] [1744320882.991673554, 4641.585000000]: Python node notified successfully.
+[ INFO] [1744320882.991750640, 4641.586000000]: INITIALIZE(): start: 0.340, 1.586
+[ INFO] [1744320882.991775784, 4641.586000000]: INITIALIZE(): destination: 1.550, 4.046
+[ INFO] [1744320882.996594177, 4641.591000000]: FIND_INTERSECTIONS(): started
+[ INFO] [1744320882.998089831, 4641.592000000]: FIND_INTERSECTIONS(): SUCCESS: found 42 intersections. time: 1460us
+[ INFO] [1744320882.998110263, 4641.592000000]: 0) [1.976, 0.356], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.998119757, 4641.592000000]: 1) [4.220, 0.356], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.998263557, 4641.592000000]: 2) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk
+[ INFO] [1744320882.998321341, 4641.592000000]: 3) [14.764, 0.924], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.998356291, 4641.592000000]: 4) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk
+[ INFO] [1744320882.998386485, 4641.592000000]: 5) [16.223, 4.015], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.998415204, 4641.592000000]: 6) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk
+[ INFO] [1744320882.998440064, 4641.592000000]: 7) [7.543, 4.015], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.998463841, 4641.592000000]: 8) [5.684, 4.014], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.998485617, 4641.592000000]: 9) [3.429, 4.013], yaw: 3.142, associated sign: Lights
+[ INFO] [1744320882.998508603, 4641.592000000]: 10) [2.519, 1.274], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.998532860, 4641.592000000]: 11) [4.220, 0.356], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.998561540, 4641.592000000]: 12) [6.630, 3.468], yaw: 1.571, associated sign: None
+[ INFO] [1744320882.998583247, 4641.592000000]: 13) [5.682, 6.901], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.998604118, 4641.592000000]: 14) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk
+[ INFO] [1744320882.998626366, 4641.592000000]: 15) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk
+[ INFO] [1744320882.998649077, 4641.592000000]: 16) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout
+[ INFO] [1744320882.998669967, 4641.592000000]: 17) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout
+[ INFO] [1744320882.998693925, 4641.592000000]: 18) [15.312, 4.554], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.998725230, 4641.593000000]: 19) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk
+[ INFO] [1744320882.998749701, 4641.593000000]: 20) [15.313, 1.472], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.998773337, 4641.593000000]: 21) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk
+[ INFO] [1744320882.998796009, 4641.593000000]: 22) [16.223, 4.015], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.998817877, 4641.593000000]: 23) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout
+[ INFO] [1744320882.998839608, 4641.593000000]: 24) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout
+[ INFO] [1744320882.998862058, 4641.593000000]: 25) [0.359, 10.558], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.998883951, 4641.593000000]: 26) [0.359, 7.445], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.998908430, 4641.593000000]: 27) [1.976, 6.534], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.998984774, 4641.593000000]: 28) [2.522, 4.558], yaw: -1.571, associated sign: Lights
+[ INFO] [1744320882.999016587, 4641.593000000]: 29) [4.220, 3.645], yaw: 0.000, associated sign: None
+[ INFO] [1744320882.999053600, 4641.593000000]: 30) [4.767, 1.274], yaw: -1.571, associated sign: None
+[ INFO] [1744320882.999100279, 4641.593000000]: 31) [3.431, 0.729], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.999129364, 4641.593000000]: 32) [0.727, 3.097], yaw: 1.571, associated sign: None
+[ INFO] [1744320882.999160486, 4641.593000000]: 33) [1.976, 3.646], yaw: 0.000, associated sign: Lights
+[ INFO] [1744320882.999183830, 4641.593000000]: 34) [2.892, 5.986], yaw: 1.571, associated sign: None
+[ INFO] [1744320882.999206949, 4641.593000000]: 35) [1.270, 6.902], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.999230759, 4641.593000000]: 36) [0.727, 9.098], yaw: 1.571, associated sign: None
+[ INFO] [1744320882.999255362, 4641.593000000]: 37) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk
+[ INFO] [1744320882.999279239, 4641.593000000]: 38) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk
+[ INFO] [1744320882.999303544, 4641.593000000]: 39) [3.429, 6.902], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.999328000, 4641.593000000]: 40) [2.522, 4.558], yaw: -1.571, associated sign: Lights
+[ INFO] [1744320882.999351064, 4641.593000000]: 41) [1.270, 4.011], yaw: 3.142, associated sign: None
+[ INFO] [1744320882.999802628, 4641.594000000]: Changing from INIT to MOVING
+[ INFO] [1744320886.972538746, 4645.556000000]: Sign Callback(): new STOPSIGN (known static object) detected at (1.899750, 0.101391), known static objects size: 1
+[ INFO] [1744320887.101169552, 4645.685000000]: CHECK_INTERSECTION(): sign found for intersection at (1.976, 0.356), sign: Stop Sign, cumulative confidence: 3.590, error: 0.000
+[ INFO] [1744320887.101226492, 4645.685000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 32.403, thresh: 15.000, sign: Stop Sign, ID: 1
+[ INFO] [1744320889.109277328, 4647.684000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (1.634, 0.379, -0.077), intersection: (1.976, 0.356), distance: 0.343, index: 1, next intersection: (4.220, 0.356, 0.000)
+[ INFO] [1744320889.109307548, 4647.684000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744320893.859975919, 4652.421000000]: Sign Callback(): new PRIORITY (known static object) detected at (4.143644, 0.101336), known static objects size: 2
+[ INFO] [1744320894.023389344, 4652.584000000]: CHECK_INTERSECTION(): sign found for intersection at (4.220, 0.356), sign: Priority, cumulative confidence: 4.266, error: 0.000
+[ INFO] [1744320894.023451945, 4652.584000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (4.059, 0.038), actual: (4.144, 0.101), error: (0.084, 0.063), error norm: 0.105, threshold: 0.537, old states: (2.714, 0.404), new states: (2.798, 0.467), yaw: 0.585, sign: Priority, ID: 2
+[ INFO] [1744320897.328540206, 4655.883000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.866, 0.389, -0.051), intersection: (4.220, 0.356), distance: 0.356, index: 2, next intersection: (8.200, 0.920, 0.000)
+[ INFO] [1744320897.328592119, 4655.883000000]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1744320899.208074232, 4657.754000000]: Sign Callback(): new Oneway detected at (5.382500, 0.123146), road_objects size: 1
+[ INFO] [1744320905.083837568, 4663.622000000]: Sign Callback(): new PARKING SIGNS (known static object) detected at (8.936750, 0.687367), known static objects size: 3
+[ INFO] [1744320906.487446688, 4665.023000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (8.142500, 0.703300), known static objects size: 4
+[ INFO] [1744320906.750772060, 4665.284000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 20.423, thresh: 15.000, sign: Crosswalk, ID: 5
+[ INFO] [1744320909.755472524, 4668.284000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (7.839, 0.933, 0.012), intersection: (8.200, 0.920), distance: 0.361, index: 3, next intersection: (14.764, 0.924, 0.000)
+[ INFO] [1744320909.755506978, 4668.284000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744320909.995758494, 4668.522000000]: Sign Callback(): new Car detected at (9.383001, 1.369030), road_objects size: 1
+[ INFO] [1744320910.355902571, 4668.883000000]: SIGN_RELOC(PARKING): SUCCESS: estimated sign pose: (8.902, 1.161), actual: (8.937, 1.161), error: (0.035, -0.000), error norm: 0.035, threshold: 0.537, old states: (8.036, 0.932), new states: (8.071, 0.932), yaw: -0.072
+[ INFO] [1744320913.362646880, 4671.883000000]: Changing from MOVING to PARKING
+[ INFO] [1744320914.164044640, 4672.683000000]: park sign detected at a distance of: 0.989, parking offset is: 2.174
+[ INFO] [1744320914.164089474, 4672.683000000]: orientation: 6.283
+[ INFO] [1744320914.164121997, 4672.683000000]: PARKING(): target spot: 0.000
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.1, 0.56
+parking spot 3: 10.1, 1.3
+parking spot 4: 10.8, 0.56
+parking spot 5: 10.8, 1.3
+parking spot 6: 11.6, 0.56
+parking spot 7: 11.6, 1.3
+parking spot 8: 12.3, 0.56
+parking spot 9: 12.3, 1.3
+[ INFO] [1744320916.638872159, 4675.154000000]: Sign Callback(): new Oneway detected at (9.376691, 0.466231), road_objects size: 2
+[ INFO] [1744320920.679855122, 4679.189000000]: Sign Callback(): new Car detected at (11.051655, 1.372992), road_objects size: 1
+[ INFO] [1744320923.617829280, 4682.123000000]: x offset reached: (10.24, 0.93), ready for parking maneuver...
+[ INFO] [1744320925.221216309, 4683.724000000]: parking_maneuver_hardcode(): initial y error: 0.010, initial yaw error: 0.000, base yaw target: 0.261pi
+[ INFO] [1744320925.221264972, 4683.724000000]: parking_maneuver_hardcode(): park right: true, exit: 0.000
+targets: 0.819     0     0, steerings:  20.5 -20.5  20.5, speeds: -0.2 -0.2  0.2, thresholds:    0.1    0.1 0.0333
+[ INFO] [1744320925.221328693, 4683.724000000]: maneuver_hardcode(): initial yaw: 0.000, target yaws: 0.819, 0.000
+[ INFO] [1744320925.221348956, 4683.724000000]: maneuver_hardcode(): nearest direction: 0.000
+[ INFO] [1744320925.656109887, 4684.158000000]: Sign Callback(): new Car detected at (11.012858, 1.409247), road_objects size: 2
+[ INFO] [1744320930.684623817, 4689.174000000]: maneuver completed
+[ INFO] [1744320930.684663383, 4689.174000000]: Changing from PARKING to PARKED
+[ INFO] [1744320932.187982665, 4690.674000000]: Changing from PARKED to EXITING_PARKING
+[ INFO] [1744320932.188066240, 4690.675000000]: parking_maneuver_hardcode(): initial y error: 0.000, initial yaw error: 0.000, base yaw target: 0.260pi
+[ INFO] [1744320932.188097300, 4690.675000000]: parking_maneuver_hardcode(): park right: true, exit: 1.000
+targets: 0.776 0.776     0, steerings:  20.5 -20.5  20.5, speeds: -0.2  0.2  0.2, thresholds: 0.676   0.1   0.1
+[ INFO] [1744320932.188133561, 4690.675000000]: maneuver_hardcode(): initial yaw: 0.000, target yaws: 0.776, 0.776
+[ INFO] [1744320932.188141689, 4690.675000000]: maneuver_hardcode(): nearest direction: 0.000
+[ INFO] [1744320934.545574372, 4693.023000000]: Sign Callback(): new Car detected at (11.009072, 1.357574), road_objects size: 1
+[ INFO] [1744320937.101603152, 4695.575000000]: maneuver completed
+exiting_park(): target waypoint index: 348, at (10.1, 0.938)
+exiting_park(): closest waypoint index: 348, at (10.1, 0.938)
+exiting_park(): current state: x: 10.1, y: 0.908, yaw: 0.089
+[ INFO] [1744320937.101789365, 4695.575000000]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1744320940.089113277, 4698.555000000]: Sign Callback(): new Car detected at (12.616694, 0.594617), road_objects size: 2
+[ INFO] [1744320944.761607757, 4703.222000000]: Sign Callback(): new STOPSIGN (known static object) detected at (14.687600, 0.668850), known static objects size: 5
+[ INFO] [1744320944.917309816, 4703.377000000]: CHECK_INTERSECTION(): sign found for intersection at (14.764, 0.924), sign: Stop Sign, cumulative confidence: 4.330, error: 0.000
+[ INFO] [1744320946.319534964, 4704.777000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (14.602, 0.674), actual: (14.688, 0.669), error: (0.086, -0.005), error norm: 0.086, threshold: 0.537, old states: (13.226, 0.948), new states: (13.312, 0.943), yaw: -0.552, sign: Stop Sign, ID: 8
+[ INFO] [1744320949.324840338, 4707.777000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (14.710, 0.667), actual: (14.688, 0.669), error: (-0.022, 0.001), error norm: 0.022, threshold: 0.537, old states: (14.236, 0.948), new states: (14.214, 0.950), yaw: 0.713, sign: Stop Sign, ID: 8
+[ INFO] [1744320949.824903848, 4708.277000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (14.393, 0.952, 0.014), intersection: (14.764, 0.924), distance: 0.372, index: 4, next intersection: (17.110, 2.367, 1.571)
+[ INFO] [1744320949.824931327, 4708.277000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744320959.821075213, 4718.256000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (17.332400, 2.288000), known static objects size: 6
+[ INFO] [1744320959.947164866, 4718.377000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 30.657, thresh: 15.000, sign: Crosswalk, ID: 8
+[ INFO] [1744320961.646156558, 4720.077000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (17.084, 2.010, 1.489), intersection: (17.110, 2.367), distance: 0.358, index: 5, next intersection: (16.223, 4.015, 3.142)
+[ INFO] [1744320961.646186443, 4720.077000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744320969.963795862, 4728.377000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (16.539, 3.929, 2.637), intersection: (16.223, 4.015), distance: 0.328, index: 6, next intersection: (9.500, 4.000, 3.142)
+[ INFO] [1744320969.963825781, 4728.377000000]: intersection reached: WARNING: CASE NO SIGN, proceeding...
+[ INFO] [1744320972.514991882, 4730.922000000]: Sign Callback(): new Oneway detected at (14.816229, 4.281082), road_objects size: 3
+[ INFO] [1744320974.219295659, 4732.622000000]: Sign Callback(): new Oneway detected at (14.363359, 4.494338), road_objects size: 4
+[ INFO] [1744320978.699720551, 4737.090000000]: Sign Callback(): new Car detected at (12.099040, 4.030820), road_objects size: 1
+[ INFO] [1744320980.388930483, 4738.777000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.388990347, 4738.777000000]: CHECK_CAR(): min_same_lane_dist: 0.975, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.358, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.358, car_speed: 0.000
+[ INFO] [1744320980.389003636, 4738.777000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.975
+[ INFO] [1744320980.490618280, 4738.878000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.490671682, 4738.878000000]: CHECK_CAR(): min_same_lane_dist: 0.942, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.354, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.354, car_speed: 0.000
+[ INFO] [1744320980.490695602, 4738.878000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.942
+[ INFO] [1744320980.589922816, 4738.977000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.589973490, 4738.977000000]: CHECK_CAR(): min_same_lane_dist: 0.907, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.350, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.350, car_speed: 0.000
+[ INFO] [1744320980.589985900, 4738.977000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.907
+[ INFO] [1744320980.689598618, 4739.077000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.689653374, 4739.077000000]: CHECK_CAR(): min_same_lane_dist: 0.867, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.347, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.347, car_speed: 0.000
+[ INFO] [1744320980.689667642, 4739.077000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.867
+[ INFO] [1744320980.789936831, 4739.177000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.789986440, 4739.177000000]: CHECK_CAR(): min_same_lane_dist: 0.832, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.009, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.344, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.344, car_speed: 0.000
+[ INFO] [1744320980.790005830, 4739.177000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.832
+[ INFO] [1744320980.889954732, 4739.277000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.890005763, 4739.277000000]: CHECK_CAR(): min_same_lane_dist: 0.799, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.341, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.341, car_speed: 0.000
+[ INFO] [1744320980.890024286, 4739.277000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.799
+[ INFO] [1744320980.990886240, 4739.378000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320980.990941400, 4739.378000000]: CHECK_CAR(): min_same_lane_dist: 0.799, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.339, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.339, car_speed: 0.000
+[ INFO] [1744320980.990963051, 4739.378000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.799
+[ INFO] [1744320981.090961232, 4739.478000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320981.091012794, 4739.478000000]: CHECK_CAR(): min_same_lane_dist: 0.765, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.337, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.337, car_speed: 0.000
+[ INFO] [1744320981.091044857, 4739.478000000]: CHECK_CAR(): SAME_LANE: car on oneway pretty far and within safety margin, keep tailing: 0.765
+[ INFO] [1744320981.190472602, 4739.577000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320981.190523901, 4739.577000000]: CHECK_CAR(): min_same_lane_dist: 0.731, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.335, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.335, car_speed: 0.000
+[ INFO] [1744320981.190567194, 4739.577000000]: CHECK_CAR(): SAME_LANE: cant overtake, dist = 0.731, stopping...
+[ INFO] [1744320983.405990129, 4741.777000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320983.406022986, 4741.777000000]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.366, total distance = 1.064
+[ INFO] [1744320983.406043877, 4741.777000000]: CHECK_CAR(): min_same_lane_dist: 0.731, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: -0.366, static_distance: 1.064, total_distance: 1.064, ego_speed: -0.366, car_speed: 0.000
+[ INFO] [1744320983.406101158, 4741.777000000]: CHECK_CAR(): SAME_LANE: cant overtake, dist = 0.731, stopping...
+[ INFO] [1744320985.509276215, 4743.877000000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1744320985.509313842, 4743.877000000]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.404, total distance = 1.064
+[ INFO] [1744320985.509335316, 4743.877000000]: CHECK_CAR(): min_same_lane_dist: 0.731, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: -0.404, static_distance: 1.064, total_distance: 1.064, ego_speed: -0.404, car_speed: 0.000
+[ INFO] [1744320985.509384583, 4743.877000000]: CHECK_CAR(): SAME_LANE: cant overtake, dist = 0.731, stopping...
+[ INFO] [1744320992.867202395, 4751.219000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (9.546000, 4.236400), known static objects size: 7
+[ INFO] [1744320993.022950308, 4751.377000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (9.652, 4.238), actual: (9.546, 4.236), error: (-0.106, -0.002), error norm: 0.106, threshold: 0.537, old states: (10.988, 4.030), new states: (10.882, 4.028), yaw: 179.900, sign: Crosswalk, ID: 11
+[ INFO] [1744320996.327296877, 4754.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (9.858, 4.035, 3.138), intersection: (9.500, 4.000), distance: 0.360, index: 7, next intersection: (7.543, 4.015, 3.142)
+[ INFO] [1744320996.327341742, 4754.677000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744320997.541992697, 4755.889000000]: Sign Callback(): new STOPSIGN (known static object) detected at (7.619552, 4.269900), known static objects size: 8
+[ INFO] [1744320997.829324897, 4756.177000000]: CHECK_INTERSECTION(): sign found for intersection at (7.543, 4.015), sign: Stop Sign, cumulative confidence: 2.294, error: 0.000
+[ INFO] [1744320999.232727138, 4757.577000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (7.655, 4.269), actual: (7.620, 4.270), error: (-0.035, 0.000), error norm: 0.035, threshold: 0.537, old states: (9.098, 4.036), new states: (9.063, 4.037), yaw: 179.953, sign: Stop Sign, ID: 12
+[ INFO] [1744321002.237209547, 4760.577000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (7.596, 4.272), actual: (7.620, 4.270), error: (0.023, -0.002), error norm: 0.023, threshold: 0.537, old states: (8.257, 4.036), new states: (8.280, 4.034), yaw: -179.947, sign: Stop Sign, ID: 12
+[ INFO] [1744321003.338884455, 4761.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (7.908, 4.035, 3.139), intersection: (7.543, 4.015), distance: 0.366, index: 8, next intersection: (5.684, 4.014, 3.142)
+[ INFO] [1744321003.338927204, 4761.677000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321006.088924784, 4764.421000000]: Sign Callback(): new STOPSIGN (known static object) detected at (5.761000, 4.268600), known static objects size: 9
+[ INFO] [1744321006.345950967, 4764.677000000]: CHECK_INTERSECTION(): sign found for intersection at (5.684, 4.014), sign: Stop Sign, cumulative confidence: 2.286, error: 0.000
+[ INFO] [1744321007.046747433, 4765.377000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (5.782, 4.267), actual: (5.761, 4.269), error: (-0.021, 0.002), error norm: 0.021, threshold: 0.537, old states: (7.238, 4.038), new states: (7.217, 4.039), yaw: 179.755, sign: Stop Sign, ID: 13
+[ INFO] [1744321010.057298881, 4768.377000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (5.740, 4.271), actual: (5.761, 4.269), error: (0.021, -0.003), error norm: 0.022, threshold: 0.537, old states: (6.210, 4.044), new states: (6.231, 4.042), yaw: 179.696, sign: Stop Sign, ID: 13
+[ INFO] [1744321010.659427718, 4768.978000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (6.025, 4.043, 3.135), intersection: (5.684, 4.014), distance: 0.342, index: 9, next intersection: (3.429, 4.013, 3.142)
+[ INFO] [1744321010.659479932, 4768.978000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+create_known_static_object(): LIGHT!!!!!!!!!!! type: Red Light, x: 3.48, y: 4.27, yaw: 3.14, confidence: 0.824
+[ INFO] [1744321015.786011868, 4774.090000000]: Sign Callback(): new ALL LIGHTS (known static object) detected at (3.505300, 4.268137), known static objects size: 10
+[ INFO] [1744321015.975717360, 4774.277000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (3.472, 4.267), actual: (3.505, 4.268), error: (0.033, 0.001), error norm: 0.033, threshold: 0.537, old states: (4.805, 4.047), new states: (4.839, 4.048), yaw: 179.943, sign: Lights, ID: 14
+[ INFO] [1744321017.383893291, 4775.677000000]: check_light(): red light detected at a distance of: 0.875, waiting for green...
+[ INFO] [1744321020.589647860, 4778.877000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (3.519, 4.271), actual: (3.505, 4.268), error: (-0.014, -0.002), error norm: 0.014, threshold: 0.537, old states: (4.352, 4.049), new states: (4.338, 4.046), yaw: 179.955, sign: Lights, ID: 14
+[ INFO] [1744321022.292962206, 4780.577000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.772, 4.038, 3.173), intersection: (3.429, 4.013), distance: 0.344, index: 10, next intersection: (2.519, 1.274, -1.571)
+[ INFO] [1744321022.292997536, 4780.577000000]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1744321023.673361230, 4781.955000000]: Sign Callback(): new STOPSIGN (known static object) detected at (1.347000, 4.266250), known static objects size: 11
+[ INFO] [1744321028.317781843, 4786.590000000]: Sign Callback(): new STOPSIGN (known static object) detected at (2.264500, 1.351000), known static objects size: 12
+[ INFO] [1744321028.606265320, 4786.877000000]: CHECK_INTERSECTION(): sign found for intersection at (2.519, 1.274), sign: Stop Sign, cumulative confidence: 3.186, error: 0.000
+[ INFO] [1744321028.606343407, 4786.877000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (2.261, 1.416), actual: (2.264, 1.351), error: (0.004, -0.065), error norm: 0.066, threshold: 0.537, old states: (2.499, 2.709), new states: (2.503, 2.644), yaw: -91.946, sign: Stop Sign, ID: 16
+[ INFO] [1744321031.711708845, 4789.976000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (2.516, 1.643, 4.746), intersection: (2.519, 1.274), distance: 0.369, index: 11, next intersection: (4.220, 0.356, 0.000)
+[ INFO] [1744321031.711747659, 4789.976000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321036.419973229, 4794.676000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 52.298, thresh: 15.000, sign: Priority, ID: 2
+[ INFO] [1744321039.728904993, 4797.977000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.863, 0.369, 6.247), intersection: (4.220, 0.356), distance: 0.358, index: 12, next intersection: (6.630, 3.468, 1.571)
+[ INFO] [1744321039.728936766, 4797.977000000]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1744321050.269212198, 4808.488000000]: Sign Callback(): new STOPSIGN (known static object) detected at (6.886100, 3.391610), known static objects size: 13
+[ INFO] [1744321050.357912350, 4808.577000000]: CHECK_INTERSECTION(): sign found for intersection at (6.630, 3.468), sign: Stop Sign, cumulative confidence: 2.436, error: 0.000
+[ INFO] [1744321051.760108321, 4809.977000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (6.871, 3.274), actual: (6.886, 3.392), error: (0.016, 0.118), error norm: 0.119, threshold: 0.537, old states: (6.640, 1.945), new states: (6.655, 2.063), yaw: 90.984, sign: Stop Sign, ID: 17
+[ INFO] [1744321055.066511491, 4813.277000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (6.617, 3.109, 7.908), intersection: (6.630, 3.468), distance: 0.360, index: 13, next intersection: (5.682, 6.901, 3.142)
+[ INFO] [1744321055.066559401, 4813.277000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321068.905195874, 4827.089000000]: Sign Callback(): new PRIORITY (known static object) detected at (5.759000, 7.155500), known static objects size: 14
+[ INFO] [1744321068.992429360, 4827.176000000]: CHECK_INTERSECTION(): sign found for intersection at (5.682, 6.901), sign: Priority, cumulative confidence: 2.555, error: 0.000
+[ INFO] [1744321068.992477855, 4827.176000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 33.120, thresh: 15.000, sign: Priority, ID: 18
+[ INFO] [1744321070.496702265, 4828.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (6.042, 6.915, 9.286), intersection: (5.682, 6.901), distance: 0.360, index: 14, next intersection: (5.150, 7.380, 1.571)
+[ INFO] [1744321070.496748504, 4828.677000000]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1744321073.601539350, 4831.777000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (5.198, 7.400, 8.367), intersection: (5.150, 7.380), distance: 0.052, index: 15, next intersection: (1.740, 10.000, 3.142)
+[ INFO] [1744321073.601570176, 4831.777000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321074.748434752, 4832.922000000]: Sign Callback(): new Car detected at (4.871480, 9.216481), road_objects size: 1
+[ INFO] [1744321076.607384051, 4834.777000000]: CHECK_CAR(): min_same_lane_dist: 0.994, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: -0.088, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.336, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.336, car_speed: 0.000
+[ INFO] [1744321077.707487285, 4835.876000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 1657.000, end idx: 1690.000, min_dist: -0.088, min_dist_adj: 1000.000changing lane to the left in 0.484 meters. start pose: (5.003,8.750), end: (4.441, 9.635), cur: (5.069, 8.282)
+[ INFO] [1744321080.292445942, 4838.456000000]: Sign Callback(): new Car detected at (3.404841, 9.859684), road_objects size: 2
+[ INFO] [1744321085.867592274, 4844.021000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (1.785000, 10.239400), known static objects size: 15
+[ INFO] [1744321086.023615288, 4844.177000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (1.832, 10.246), actual: (1.785, 10.239), error: (-0.047, -0.007), error norm: 0.048, threshold: 0.537, old states: (3.174, 10.186), new states: (3.127, 10.179), yaw: 170.161, sign: Crosswalk, ID: 19
+[ INFO] [1744321089.431867576, 4847.577000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (2.100, 10.093, 9.572), intersection: (1.740, 10.000), distance: 0.372, index: 16, next intersection: (15.009, 10.406, 0.000)
+[ INFO] [1744321089.431900154, 4847.577000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321109.428895192, 4867.523000000]: Sign Callback(): new ALL_HIGHWAYENTRANCES (known static object) detected at (6.347700, 11.560000), known static objects size: 16
+[ INFO] [1744321109.582350119, 4867.676000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (6.212, 11.585), actual: (6.348, 11.560), error: (0.135, -0.025), error norm: 0.138, threshold: 0.537, old states: (4.883, 11.811), new states: (5.019, 11.786), yaw: 0.261, sign: Highway Entrance, ID: 20
+[ INFO] [1744321119.511432068, 4877.589000000]: Sign Callback(): new Car detected at (10.118072, 11.640743), road_objects size: 1
+[ INFO] [1744321121.787629947, 4879.855000000]: Sign Callback(): new Car detected at (10.973424, 10.712033), road_objects size: 2
+[ INFO] [1744321123.012776785, 4881.077000000]: CHECK_CAR(): min_same_lane_dist: 0.965, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.026, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.435, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.435, car_speed: 0.000
+[ INFO] [1744321124.114316582, 4882.177000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2146.000, end idx: 2171.000, min_dist: 0.026, min_dist_adj: 1000.000changing lane to the right in 0.455 meters. start pose: (10.484,10.952), end: (11.460, 10.523), cur: (10.116, 11.130)
+[ INFO] [1744321133.476708919, 4891.523000000]: Sign Callback(): new Oneway detected at (14.883717, 10.153357), road_objects size: 5
+[ INFO] [1744321134.445210331, 4892.489000000]: Sign Callback(): new ALL ROUNDABOUTS (known static object) detected at (14.924090, 10.155166), known static objects size: 17
+[ INFO] [1744321135.179109469, 4893.222000000]: Sign Callback(): new Oneway detected at (15.310649, 9.937053), road_objects size: 6
+[ INFO] [1744321135.234436612, 4893.277000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (14.644, 10.375, 6.264), intersection: (15.009, 10.406), distance: 0.366, index: 17, next intersection: (15.928, 11.658, -1.571)
+[ INFO] [1744321135.234478569, 4893.277000000]: intersection reached: CASE Roundabout, proceeding...
+[ INFO] [1744321146.802255272, 4904.822000000]: Sign Callback(): new Car detected at (19.711163, 10.494659), road_objects size: 1
+[ INFO] [1744321148.360597962, 4906.378000000]: CHECK_CAR(): min_same_lane_dist: 0.985, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.008, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.305, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.305, car_speed: 0.000
+[ INFO] [1744321149.460611597, 4907.476000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2407.000, end idx: 2440.000, min_dist: 0.008, min_dist_adj: 1000.000changing lane to the left in 0.475 meters. start pose: (19.212,10.414), end: (20.135, 10.826), cur: (18.760, 10.420)
+[ INFO] [1744321174.924001127, 4932.890000000]: Sign Callback(): new ALL ROUNDABOUTS (known static object) detected at (15.629166, 11.744351), known static objects size: 17
+[ INFO] [1744321175.611846802, 4933.576000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (15.886, 12.019, 10.894), intersection: (15.928, 11.658), distance: 0.363, index: 18, next intersection: (15.312, 4.554, -1.571)
+[ INFO] [1744321175.611879438, 4933.576000000]: intersection reached: CASE Roundabout, proceeding...
+[ INFO] [1744321175.625355507, 4933.590000000]: Sign Callback(): new Oneway detected at (15.295640, 11.251802), road_objects size: 7
+[ INFO] [1744321189.686883657, 4947.623000000]: Sign Callback(): new Car detected at (15.648062, 5.999474), road_objects size: 1
+[ INFO] [1744321193.728335219, 4951.655000000]: Sign Callback(): new STOPSIGN (known static object) detected at (15.057500, 4.631000), known static objects size: 17
+[ INFO] [1744321193.849691751, 4951.776000000]: CHECK_INTERSECTION(): sign found for intersection at (15.312, 4.554), sign: Stop Sign, cumulative confidence: 2.523, error: 0.000
+[ INFO] [1744321194.352414853, 4952.277000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (15.066, 4.753), actual: (15.058, 4.631), error: (-0.008, -0.122), error norm: 0.122, threshold: 0.537, old states: (15.304, 6.106), new states: (15.296, 5.985), yaw: -92.205, sign: Stop Sign, ID: 25
+[ INFO] [1744321197.757349009, 4955.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (15.288, 4.919, 10.992), intersection: (15.312, 4.554), distance: 0.365, index: 19, next intersection: (15.300, 3.000, -1.571)
+[ INFO] [1744321197.757390572, 4955.677000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321200.875523728, 4958.789000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (15.086600, 3.035000), known static objects size: 18
+[ INFO] [1744321200.963501542, 4958.877000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (15.083, 3.049), actual: (15.087, 3.035), error: (0.003, -0.014), error norm: 0.015, threshold: 0.537, old states: (15.289, 4.400), new states: (15.292, 4.386), yaw: -89.865, sign: Crosswalk, ID: 25
+[ INFO] [1744321204.168727344, 4962.077000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (15.292, 3.371, 10.999), intersection: (15.300, 3.000), distance: 0.371, index: 20, next intersection: (15.313, 1.472, -1.571)
+[ INFO] [1744321204.168760338, 4962.077000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321205.750253804, 4963.656000000]: Sign Callback(): new STOPSIGN (known static object) detected at (15.057976, 1.548200), known static objects size: 19
+[ INFO] [1744321206.172509784, 4964.077000000]: CHECK_INTERSECTION(): sign found for intersection at (15.313, 1.472), sign: Stop Sign, cumulative confidence: 4.139, error: 0.000
+[ INFO] [1744321206.172570351, 4964.077000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (15.060, 1.579), actual: (15.058, 1.548), error: (-0.002, -0.031), error norm: 0.031, threshold: 0.537, old states: (15.295, 2.923), new states: (15.293, 2.892), yaw: -89.634, sign: Stop Sign, ID: 26
+[ INFO] [1744321209.276973191, 4967.177000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (15.057, 1.537), actual: (15.058, 1.548), error: (0.001, 0.011), error norm: 0.012, threshold: 0.537, old states: (15.291, 2.255), new states: (15.292, 2.267), yaw: -90.478, sign: Stop Sign, ID: 26
+[ INFO] [1744321210.881934789, 4968.777000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (15.289, 1.840, 10.994), intersection: (15.313, 1.472), distance: 0.370, index: 21, next intersection: (17.110, 2.367, 1.571)
+[ INFO] [1744321210.881973441, 4968.777000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321218.899829953, 4976.777000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 58.202, thresh: 15.000, sign: Crosswalk, ID: 8
+[ INFO] [1744321221.607535831, 4979.477000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (17.086, 2.018, 14.065), intersection: (17.110, 2.367), distance: 0.350, index: 22, next intersection: (16.223, 4.015, 3.142)
+[ INFO] [1744321221.607569835, 4979.477000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321229.737856564, 4987.589000000]: Sign Callback(): new PRIORITY (known static object) detected at (16.299500, 4.270300), known static objects size: 20
+[ INFO] [1744321229.825133548, 4987.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (16.528, 3.942, 15.192), intersection: (16.223, 4.015), distance: 0.314, index: 23, next intersection: (16.252, 9.531, 1.571)
+[ INFO] [1744321229.825170278, 4987.677000000]: intersection reached: WARNING: CASE NO SIGN, proceeding...
+[ INFO] [1744321232.808893817, 4990.655000000]: Sign Callback(): new Car detected at (15.674227, 6.017359), road_objects size: 1
+[ INFO] [1744321234.234907078, 4992.077000000]: CHECK_CAR(): min_same_lane_dist: 0.999, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: -0.016, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.327, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.327, car_speed: 0.000
+[ INFO] [1744321235.335182808, 4993.176000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 3288.000, end idx: 3321.000, min_dist: -0.016, min_dist_adj: 1000.000changing lane to the left in 0.489 meters. start pose: (15.659,5.484), end: (15.669, 6.541), cur: (15.665, 4.989)
+[ INFO] [1744321248.258641876, 5006.078000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (16.247, 9.165, 14.137), intersection: (16.252, 9.531), distance: 0.366, index: 24, next intersection: (17.131, 10.781, 3.142)
+[ INFO] [1744321248.258690925, 5006.078000000]: intersection reached: CASE Roundabout, proceeding...
+[ INFO] [1744321273.284974081, 5031.055000000]: Sign Callback(): new Car detected at (19.719096, 10.386378), road_objects size: 1
+[ INFO] [1744321281.668364970, 5039.422000000]: Sign Callback(): new ALL ROUNDABOUTS (known static object) detected at (17.217610, 11.035834), known static objects size: 20
+[ INFO] [1744321282.425736004, 5040.177000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (17.494, 10.775, 9.383), intersection: (17.131, 10.781), distance: 0.362, index: 25, next intersection: (0.359, 10.558, -1.571)
+[ INFO] [1744321282.425778928, 5040.177000000]: intersection reached: CASE Roundabout, proceeding...
+[ INFO] [1744321287.814190708, 5045.556000000]: Sign Callback(): new ALL_HIGHWAYENTRANCES (known static object) detected at (14.350000, 11.030000), known static objects size: 20
+[ INFO] [1744321287.934735528, 5045.677000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (14.433, 10.913), actual: (14.350, 11.030), error: (-0.083, 0.117), error norm: 0.144, threshold: 0.537, old states: (15.763, 11.084), new states: (15.680, 11.201), yaw: -167.098, sign: Highway Entrance, ID: 27
+[ INFO] [1744321297.531158532, 5055.257000000]: Sign Callback(): new Car detected at (10.836667, 10.697862), road_objects size: 1
+[ INFO] [1744321299.499456676, 5057.222000000]: Sign Callback(): new Car detected at (10.038435, 11.666180), road_objects size: 2
+[ INFO] [1744321300.757603857, 5058.477000000]: CHECK_CAR(): min_same_lane_dist: 0.975, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.046, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.433, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.433, car_speed: 0.000
+[ INFO] [1744321301.859004470, 5059.577000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 3983.000, end idx: 4008.000, min_dist: 0.046, min_dist_adj: 1000.000changing lane to the right in 0.465 meters. start pose: (10.541,11.436), end: (9.601, 11.936), cur: (10.904, 11.256)
+[ INFO] [1744321331.184989176, 5088.854000000]: Sign Callback(): new STOPSIGN (known static object) detected at (0.104340, 10.635000), known static objects size: 21
+[ INFO] [1744321331.308441782, 5088.977000000]: CHECK_INTERSECTION(): sign found for intersection at (0.359, 10.558), sign: Stop Sign, cumulative confidence: 3.531, error: 0.000
+[ INFO] [1744321331.308505228, 5088.977000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 32.571, thresh: 15.000, sign: Stop Sign, ID: 28
+[ INFO] [1744321333.212230306, 5090.876000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (0.351, 10.920, 10.878), intersection: (0.359, 10.558), distance: 0.362, index: 26, next intersection: (0.359, 7.445, -1.571)
+[ INFO] [1744321333.212269249, 5090.876000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321339.408122497, 5097.054000000]: Sign Callback(): new STOPSIGN (known static object) detected at (0.104340, 7.521675), known static objects size: 22
+[ INFO] [1744321339.831513765, 5097.477000000]: CHECK_INTERSECTION(): sign found for intersection at (0.359, 7.445), sign: Stop Sign, cumulative confidence: 2.409, error: 0.000
+[ INFO] [1744321340.532727197, 5098.177000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (0.119, 7.622), actual: (0.104, 7.522), error: (-0.015, -0.101), error norm: 0.102, threshold: 0.537, old states: (0.349, 8.986), new states: (0.335, 8.886), yaw: -90.895, sign: Stop Sign, ID: 29
+[ INFO] [1744321343.939841191, 5101.577000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (0.349, 7.800, 11.043), intersection: (0.359, 7.445), distance: 0.355, index: 27, next intersection: (1.976, 6.534, 0.000)
+[ INFO] [1744321343.939873582, 5101.577000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321349.332140438, 5106.955000000]: Sign Callback(): new STOPSIGN (known static object) detected at (1.899000, 6.279100), known static objects size: 23
+[ INFO] [1744321349.454326343, 5107.077000000]: CHECK_INTERSECTION(): sign found for intersection at (1.976, 6.534), sign: Stop Sign, cumulative confidence: 3.492, error: 0.000
+[ INFO] [1744321349.454386087, 5107.077000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 31.615, thresh: 15.000, sign: Stop Sign, ID: 30
+[ INFO] [1744321351.668794826, 5109.276000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (1.619, 6.542, 12.494), intersection: (1.976, 6.534), distance: 0.356, index: 28, next intersection: (2.522, 4.558, -1.571)
+[ INFO] [1744321351.668829325, 5109.276000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321354.924093846, 5112.522000000]: Sign Callback(): new STOPSIGN (known static object) detected at (4.143760, 6.278500), known static objects size: 24
+create_known_static_object(): LIGHT!!!!!!!!!!! type: Green Light, x: 2.26, y: 4.55, yaw: -1.19, confidence: 0.801
+[ INFO] [1744321356.527339563, 5114.123000000]: Sign Callback(): new ALL LIGHTS (known static object) detected at (2.267500, 4.635000), known static objects size: 25
+[ INFO] [1744321356.681967966, 5114.277000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 18.391, thresh: 15.000, sign: Lights, ID: 32
+[ INFO] [1744321359.590304184, 5117.177000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (2.534, 4.924, 11.008), intersection: (2.522, 4.558), distance: 0.365, index: 29, next intersection: (4.220, 3.645, 0.000)
+[ INFO] [1744321359.590348052, 5117.177000000]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1744321363.408936415, 5120.989000000]: Sign Callback(): new PRIORITY (known static object) detected at (4.143760, 3.389660), known static objects size: 26
+[ INFO] [1744321363.496548092, 5121.077000000]: CHECK_INTERSECTION(): sign found for intersection at (4.220, 3.645), sign: Priority, cumulative confidence: 2.330, error: 0.000
+[ INFO] [1744321363.596707412, 5121.177000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 29.975, thresh: 15.000, sign: Priority, ID: 33
+[ INFO] [1744321366.001028922, 5123.577000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.859, 3.663, 12.514), intersection: (4.220, 3.645), distance: 0.362, index: 30, next intersection: (4.767, 1.274, -1.571)
+[ INFO] [1744321366.001062924, 5123.577000000]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1744321370.186619335, 5127.754000000]: Sign Callback(): new PRIORITY (known static object) detected at (4.511800, 1.351000), known static objects size: 27
+[ INFO] [1744321370.409459295, 5127.976000000]: CHECK_INTERSECTION(): sign found for intersection at (4.767, 1.274), sign: Priority, cumulative confidence: 2.209, error: 0.000
+[ INFO] [1744321370.510078351, 5128.076000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (4.521, 1.365), actual: (4.512, 1.351), error: (-0.009, -0.014), error norm: 0.017, threshold: 0.537, old states: (4.768, 2.685), new states: (4.759, 2.671), yaw: -84.683, sign: Priority, ID: 34
+[ INFO] [1744321373.716235527, 5131.277000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (4.753, 1.631, 10.952), intersection: (4.767, 1.274), distance: 0.357, index: 31, next intersection: (3.431, 0.729, 3.142)
+[ INFO] [1744321373.716284060, 5131.277000000]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1744321377.043325705, 5134.591000000]: Sign Callback(): new STOPSIGN (known static object) detected at (3.507240, 0.984030), known static objects size: 28
+[ INFO] [1744321377.731172505, 5135.278000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.758, 0.742, 9.535), intersection: (3.431, 0.729), distance: 0.328, index: 32, next intersection: (0.727, 3.097, 1.571)
+[ INFO] [1744321377.731204663, 5135.278000000]: intersection reached: WARNING: CASE NO SIGN, proceeding...
+[ INFO] [1744321387.402228190, 5144.922000000]: Sign Callback(): new STOPSIGN (known static object) detected at (0.982112, 3.020450), known static objects size: 28
+[ INFO] [1744321387.557557545, 5145.077000000]: CHECK_INTERSECTION(): sign found for intersection at (0.727, 3.097), sign: Stop Sign, cumulative confidence: 3.962, error: 0.000
+[ INFO] [1744321387.757074188, 5145.276000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (1.038, 2.898), actual: (0.982, 3.020), error: (-0.056, 0.122), error norm: 0.134, threshold: 0.537, old states: (0.754, 1.547), new states: (0.698, 1.670), yaw: 103.718, sign: Stop Sign, ID: 35
+[ INFO] [1744321391.167901015, 5148.677000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (0.712, 2.748, 7.825), intersection: (0.727, 3.097), distance: 0.350, index: 33, next intersection: (1.976, 3.646, 0.000)
+[ INFO] [1744321391.167943367, 5148.677000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321397.278588266, 5154.776000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (1.626, 3.698, 6.411), intersection: (1.976, 3.646), distance: 0.354, index: 34, next intersection: (2.892, 5.986, 1.571)
+[ INFO] [1744321397.278620103, 5154.776000000]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1744321401.130878977, 5158.622000000]: Sign Callback(): new STOPSIGN (known static object) detected at (3.147351, 5.909300), known static objects size: 29
+[ INFO] [1744321401.286018819, 5158.777000000]: CHECK_INTERSECTION(): sign found for intersection at (2.892, 5.986), sign: Stop Sign, cumulative confidence: 4.325, error: 0.000
+[ INFO] [1744321401.887178212, 5159.378000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 16.313, thresh: 15.000, sign: Stop Sign, ID: 36
+[ INFO] [1744321404.891273815, 5162.377000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (3.125, 5.926), actual: (3.147, 5.909), error: (0.022, -0.017), error norm: 0.028, threshold: 0.537, old states: (2.887, 5.428), new states: (2.910, 5.412), yaw: 91.010, sign: Stop Sign, ID: 36
+[ INFO] [1744321405.592832007, 5163.077000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (2.898, 5.636, 7.910), intersection: (2.892, 5.986), distance: 0.350, index: 35, next intersection: (1.270, 6.902, 3.142)
+[ INFO] [1744321405.592897469, 5163.077000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321411.216862187, 5168.689000000]: Sign Callback(): new STOPSIGN (known static object) detected at (1.347000, 7.157254), known static objects size: 30
+[ INFO] [1744321411.305306631, 5168.777000000]: CHECK_INTERSECTION(): sign found for intersection at (1.270, 6.902), sign: Stop Sign, cumulative confidence: 2.603, error: 0.000
+[ INFO] [1744321411.305366950, 5168.777000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 32.235, thresh: 15.000, sign: Stop Sign, ID: 37
+[ INFO] [1744321413.509258390, 5170.977000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (1.626, 6.924, 9.343), intersection: (1.270, 6.902), distance: 0.356, index: 36, next intersection: (0.727, 9.098, 1.571)
+[ INFO] [1744321413.509289737, 5170.977000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321418.629728280, 5176.090000000]: Sign Callback(): new STOPSIGN (known static object) detected at (0.982112, 9.021700), known static objects size: 31
+[ INFO] [1744321418.716583043, 5176.176000000]: CHECK_INTERSECTION(): sign found for intersection at (0.727, 9.098), sign: Stop Sign, cumulative confidence: 2.562, error: 0.000
+[ INFO] [1744321418.716631748, 5176.176000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 17.597, thresh: 15.000, sign: Stop Sign, ID: 38
+[ INFO] [1744321421.731133719, 5179.177000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (0.953, 9.018), actual: (0.982, 9.022), error: (0.029, 0.003), error norm: 0.029, threshold: 0.537, old states: (0.716, 8.564), new states: (0.745, 8.568), yaw: 89.842, sign: Stop Sign, ID: 38
+[ INFO] [1744321422.331577818, 5179.776000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (0.743, 8.748, 7.863), intersection: (0.727, 9.098), distance: 0.351, index: 37, next intersection: (1.220, 9.620, 0.000)
+[ INFO] [1744321422.331613172, 5179.776000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744321427.039440932, 5184.477000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (1.253, 9.597, 6.751), intersection: (1.220, 9.620), distance: 0.040, index: 38, next intersection: (4.750, 7.920, -1.571)
+[ INFO] [1744321427.039470798, 5184.477000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321429.691594719, 5187.124000000]: Sign Callback(): new Car detected at (3.483431, 9.829863), road_objects size: 1
+[ INFO] [1744321431.747404028, 5189.177000000]: CHECK_CAR(): min_same_lane_dist: 0.979, min_adj_lane_dist: 1000.000, min_same_lane_lat_dist: 0.063, min_adj_lane_lat_dist: 1000.000, relative_speed: 0.330, static_distance: 1.064, total_distance: 1.064, ego_speed: 0.330, car_speed: 0.000
+[ INFO] [1744321432.848776941, 5190.276000000]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 5263.000, end idx: 5296.000, min_dist: 0.063, min_dist_adj: 1000.000changing lane to the left in 0.469 meters. start pose: (2.965,9.873), end: (3.966, 9.557), cur: (2.531, 9.794)
+[ INFO] [1744321435.466077991, 5192.889000000]: Sign Callback(): new Car detected at (4.948873, 9.207610), road_objects size: 2
+[ INFO] [1744321437.870223804, 5195.289000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (4.546100, 7.962500), known static objects size: 32
+[ INFO] [1744321438.058682966, 5195.478000000]: SIGN_RELOC2(): FAILURE: yaw error too large: 33.751, thresh: 15.000, sign: Crosswalk, ID: 41
+[ INFO] [1744321441.564592686, 5198.977000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (4.727, 8.291, 4.884), intersection: (4.750, 7.920), distance: 0.371, index: 39, next intersection: (3.429, 6.902, 3.142)
+[ INFO] [1744321441.564640512, 5198.977000000]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1744321444.915456439, 5202.323000000]: Sign Callback(): new Car detected at (3.937670, 6.419873), road_objects size: 1
+[ INFO] [1744321448.376235471, 5205.777000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (3.781, 6.900, 3.257), intersection: (3.429, 6.902), distance: 0.352, index: 40, next intersection: (2.522, 4.558, -1.571)
+[ INFO] [1744321448.376279415, 5205.777000000]: intersection reached: WARNING: CASE NO SIGN, proceeding...
+[ INFO] [1744321453.283538655, 5210.676000000]: SIGN_RELOC2(): SUCCESS: estimated sign pose: (2.275, 4.667), actual: (2.267, 4.635), error: (-0.008, -0.032), error norm: 0.033, threshold: 0.537, old states: (2.537, 6.046), new states: (2.529, 6.014), yaw: -102.645, sign: Lights, ID: 32
+[ INFO] [1744321456.690057368, 5214.077000000]: CHECK_INTERSECTION(): SUCCESS: x_cur: (2.507, 4.925, 4.701), intersection: (2.522, 4.558), distance: 0.367, index: 41, next intersection: (1.270, 4.011, 3.142)
+[ INFO] [1744321456.690112316, 5214.078000000]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1744321456.789763539, 5214.177000000]: CHECK_INTERSECTION(): sign found for intersection at (1.270, 4.011), sign: Stop Sign, cumulative confidence: 10.484, error: 0.000
+[ INFO] [1744321460.698750658, 5218.077000000]: Changing from MOVING to DONE
+[ INFO] [1744321465.194669281, 5222.559000000]: Changing from DONE to INIT

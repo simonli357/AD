@@ -389,7 +389,7 @@ public:
                     double error_sq = (target_sign_pose - static_object_gt_pose).squaredNorm();
                     if (error_sq < 0.01) {
                         if (known_static_object->cumulative_confidence < 2.0) {
-                            // utils.debug("CHECK_INTERSECTION(): WARNING: sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), but cumulative confidence too low: " + helper::d2str(known_static_object->cumulative_confidence) + ", sign: " + OBJECT_NAMES[sign_flag] + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
+                            utils.debug("CHECK_INTERSECTION(): WARNING: sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), but cumulative confidence too low: " + helper::d2str(known_static_object->cumulative_confidence) + ", sign: " + OBJECT_NAMES[sign_flag] + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
                             continue;
                         }
                         sign_flag = known_static_object->type;
