@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.recording_path = os.path.join(current_dir, 'frames')
         os.makedirs(self.recording_path, exist_ok=True)
 
-        self.setWindowTitle("AD IDE")
+        self.setWindowTitle("BFMC DASHBOARD")
 
         self.setStyleSheet("""
             background-color: black;

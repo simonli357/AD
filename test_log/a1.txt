@@ -1,274 +1,279 @@
-slsecret@slsecret-Alienware-x15-R2:~/AD$ roslaunch control controller.launch camera:=false debug_level:=1
-... logging to /home/slsecret/.ros/log/40d434f2-0298-11f0-8924-013fd6ccddf5/roslaunch-slsecret-Alienware-x15-R2-1828948.log
-Checking log directory for disk usage. This may take a while.
-Press Ctrl-C to interrupt
-Done checking log file disk usage. Usage is <1GB.
-
-started roslaunch server http://localhost:39491/
-
-SUMMARY
-========
-
-PARAMETERS
- * /N: 40
- * /N_park: 49
- * /T: 0.1
- * /T_park: 0.05
- * /async: True
- * /camera: False
- * /class_names: ['oneway', 'highw...
- * /confidence_thresholds: [0.7, 0.6, 0.7, 0...
- * /constraints/delta_max: 0.3578
- * /constraints/delta_min: -0.3578
- * /constraints/v_max: 0.5
- * /constraints/v_min: -0.5
- * /constraints/v_ref: 0.32
- * /constraints/x_max: 25.0
- * /constraints/x_min: -3.0
- * /constraints/y_max: 19.0
- * /constraints/y_min: -3.0
- * /constraints_park/delta_max: 0.4
- * /constraints_park/delta_min: -0.4
- * /constraints_park/v_max: 0.5
- * /constraints_park/v_min: -0.5
- * /constraints_park/v_ref: -0.5
- * /constraints_park/x_max: 4
- * /constraints_park/x_min: -4
- * /constraints_park/y_max: 4
- * /constraints_park/y_min: -4
- * /costs/delta_steer_cost: 0.5
- * /costs/delta_v_cost: 0.25
- * /costs/steer_cost: 0.0
- * /costs/v_cost: 1
- * /costs/x_cost: 2
- * /costs/y_cost: 2
- * /costs/yaw_cost: 0.5
- * /costs_park/delta_steer_cost: 0.0
- * /costs_park/delta_v_cost: 0.0
- * /costs_park/steer_cost: 0.05
- * /costs_park/v_cost: 0.5
- * /costs_park/x_cost: 1
- * /costs_park/y_cost: 7
- * /costs_park/yaw_cost: 1
- * /counter_thresholds: [2, 3, 3, 3, 3, 3...
- * /dashboard: True
- * /debug_level: 1
- * /emergency: False
- * /exit_thresh: 0.1
- * /gps: False
- * /hw: 1.33
- * /ip: 127.0.0.1
- * /is_real: False
- * /kb: False
- * /l_f: 0.155
- * /l_r: 0.105
- * /madgwick/frequency: 100
- * /madgwick/gain: 0.1
- * /madgwick/publish_tf: False
- * /madgwick/use_magnetic_field_msg: False
- * /madgwick/world_frame: enu
- * /max_distance_thresholds: [1.0, 1.5, 2.0, 2...
- * /min_ground_distance: 429
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/camera_rate: 50
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/ekf: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/hasDepthImage: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/lane: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/lane_rate: 100
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/name: car1
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/ncnn: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/newlane: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/printDuration: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/printFlag: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/pub: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/pubImage: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/rate: 300
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/real: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/realsense: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/robot_name: car1
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/showFlag: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/sign: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/sign_rate: 30
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/subModel: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/thread: True
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/use_emergency: False
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/vref: 0.32
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/x0: 1.67
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/y0: 6.556
- * /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066/yaw0: 0
- * /name: mobile_robot_32
- * /ncnn_model: sissi753-opt
- * /parallel_park: offset_x = 0.63 o...
- * /park_thresh: 0.1
- * /pathName: run147
- * /pub_wpts: True
- * /real/FAST_SPEED: 0.4
- * /real/NORMAL_SPEED: 0.175
- * /real/change_lane_offset_scaler: 1.3
- * /real/change_lane_speed: 0.2
- * /real/change_lane_thresh: 0.05
- * /real/change_lane_yaw: 0.29
- * /real/constant_distance_to_intersection_at_detection: 0.3725
- * /real/cw_speed_ratio: 0.85
- * /real/has_light: False
- * /real/hw_speed_ratio: 1.25
- * /real/intersection_localization_orientation_threshold: 15.0
- * /real/intersection_localization_threshold: 0.753
- * /real/intersection_relocalize: False
- * /real/lane_localization_orientation_threshold: 7.53
- * /real/lane_localization_threshold: 0.9
- * /real/lane_relocalize: True
- * /real/odom_rate: 50
- * /real/parking_base_speed: -0.2
- * /real/parking_base_thresh: 0.1
- * /real/parking_base_yaw_target: 0.23
- * /real/pedestrian_count_thresh: 8
- * /real/pixel_center_offset: 0
- * /real/sign_lat_offset: 0.0
- * /real/sign_latency: 0.035
- * /real/sign_localization_orientation_threshold: 50.0
- * /real/sign_localization_threshold: 0.357
- * /real/sign_lon_offset: -0.0
- * /real/sign_lon_offset_slope: 0.0
- * /real/sign_relocalize: True
- * /real/stop_duration: 3.0
- * /real/use_beta: False
- * /real/use_stopline: True
- * /realsense_imu: False
- * /rosdistro: noetic
- * /rosversion: 1.17.0
- * /sim/FAST_SPEED: 0.4
- * /sim/NORMAL_SPEED: 0.23
- * /sim/change_lane_offset_scaler: 1.3
- * /sim/change_lane_speed: 0.2
- * /sim/change_lane_thresh: 0.05
- * /sim/change_lane_yaw: 0.25
- * /sim/constant_distance_to_intersection_at_detection: 0.3725
- * /sim/cw_speed_ratio: 0.7143
- * /sim/has_light: False
- * /sim/hw_speed_ratio: 1.33
- * /sim/intersection_localization_orientation_threshold: 15.0
- * /sim/intersection_localization_threshold: 1.5
- * /sim/intersection_relocalize: False
- * /sim/lane_localization_orientation_threshold: 7.53
- * /sim/lane_localization_threshold: 0.1
- * /sim/lane_relocalize: False
- * /sim/odom_rate: 50
- * /sim/parking_base_speed: -0.2
- * /sim/parking_base_thresh: 0.1
- * /sim/parking_base_yaw_target: 0.26
- * /sim/pedestrian_count_thresh: 8
- * /sim/pixel_center_offset: 0
- * /sim/sign_lat_offset: 0.0
- * /sim/sign_latency: 0.013
- * /sim/sign_localization_orientation_threshold: 50.0
- * /sim/sign_localization_threshold: 0.357
- * /sim/sign_lon_offset: 0.0
- * /sim/sign_lon_offset_slope: 0.0
- * /sim/sign_relocalize: True
- * /sim/stop_duration: 1.5
- * /sim/use_beta: True
- * /sim/use_stopline: True
- * /speed_offset: 0
- * /steer_offset: 0
- * /steer_offset_maximum: 9
- * /steer_offset_minimum: 2
- * /test: 0
- * /traffic_server_ip: 127.0.0.1
- * /use_beta: True
- * /use_tcp: True
- * /use_traffic_server: False
- * /v8_model: citycocov2lgtclab_20
- * /vrefInt: 32
- * /wheelbase: 0.26
- * /x0: 1.67
- * /y0: 6.556
- * /yaw0: 0
-
-NODES
-  /
-    mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066 (control/controller)
-
-ROS_MASTER_URI=http://localhost:11311
-
-process[mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066-1]: started with pid [1829003]
-node name: /mpc_controller_slsecret_Alienware_x15_R2_1828948_1362856008377185066
-Successfully loaded parameters
-ekf: 0, sign: 1, T: 0.1, N: 40, vref: 0.32, real: 0
-Utility constructor
-[ INFO] [1742159902.912128572]: Utility constructor: Attempting to create TCP client...
-Connecting to GUI 
-
-[ INFO] [1742159902.913906262]: Utility constructor: TCP client created successfully.
-[ INFO] [1742159902.916161262]: Utility constructor: ERROR: Failed to open serial port: open: No such file or directory
-[ INFO] [1742159902.918214073]: ERROR: set pose service call failed
-[ INFO] [1742159902.920842163]: waiting for Imu message
-received message from Imu
-waiting for sign message
-received message from sign
-Path Manager Constructor
-v ref: 0.32, int:32
-MPC Constructor
-reference speed is 32 cm/s
-rate: 10
-imu initialized, intial yaw is 0.21 degrees
-Async spinner started with 4 threads
-State Machine running...
-Connection request established with GUI 
-
-utility_node_client successfully connected to GUI.
-
-[ INFO] [1742159904.038423836, 13135.244000000]: waypoints service found
-[ INFO] [1742159904.403433446, 13135.609000000]: initialize(): Received waypoints of size 5628
-ROS node set params notification ack = success.
-[ INFO] [1742159904.570170385, 13135.774000000]: Python node notified successfully.
-[ INFO] [1742159910.876754675, 13142.071000000]: waypoints service found
-[ INFO] [1742159911.181650193, 13142.376000000]: initialize(): Received waypoints of size 5628
-ROS node set params notification ack = success.
-[ INFO] [1742159914.055094372, 13145.239000000]: Python node notified successfully.
-[ INFO] [1742159914.060719192, 13145.245000000]: FIND_INTERSECTIONS(): started
-[ INFO] [1742159914.061805464, 13145.246000000]: FIND_INTERSECTIONS(): SUCCESS: found 40.000 intersections
-[ INFO] [1742159914.061819602, 13145.246000000]: FIND_INTERSECTIONS(): intersection 0.000: (1.976, 6.534), yaw: 0.000
-[ INFO] [1742159914.061828813, 13145.246000000]: FIND_INTERSECTIONS(): intersection 1.000: (2.522, 4.558), yaw: -1.571
-[ INFO] [1742159914.061870974, 13145.246000000]: FIND_INTERSECTIONS(): intersection 2.000: (2.519, 1.274), yaw: -1.571
-[ INFO] [1742159914.061881962, 13145.246000000]: FIND_INTERSECTIONS(): intersection 3.000: (4.220, 0.356), yaw: 0.000
-[ INFO] [1742159914.061895645, 13145.246000000]: FIND_INTERSECTIONS(): intersection 4.000: (8.200, 0.920), yaw: 0.000
-[ INFO] [1742159914.061905107, 13145.246000000]: FIND_INTERSECTIONS(): intersection 5.000: (14.764, 0.924), yaw: 0.000
-[ INFO] [1742159914.061926259, 13145.246000000]: FIND_INTERSECTIONS(): intersection 6.000: (17.110, 2.367), yaw: 1.571
-[ INFO] [1742159914.061936590, 13145.246000000]: FIND_INTERSECTIONS(): intersection 7.000: (16.223, 4.015), yaw: 3.142
-[ INFO] [1742159914.061952245, 13145.246000000]: FIND_INTERSECTIONS(): intersection 8.000: (9.500, 4.000), yaw: 3.142
-[ INFO] [1742159914.061965118, 13145.246000000]: FIND_INTERSECTIONS(): intersection 9.000: (7.543, 4.015), yaw: 3.142
-[ INFO] [1742159914.061975147, 13145.246000000]: FIND_INTERSECTIONS(): intersection 10.000: (3.429, 4.013), yaw: 3.142
-[ INFO] [1742159914.061984539, 13145.246000000]: FIND_INTERSECTIONS(): intersection 11.000: (1.270, 4.011), yaw: 3.142
-[ INFO] [1742159914.061994053, 13145.246000000]: FIND_INTERSECTIONS(): intersection 12.000: (1.976, 0.356), yaw: 0.000
-[ INFO] [1742159914.062006048, 13145.246000000]: FIND_INTERSECTIONS(): intersection 13.000: (4.220, 0.356), yaw: 0.000
-[ INFO] [1742159914.062018527, 13145.246000000]: FIND_INTERSECTIONS(): intersection 14.000: (6.630, 3.468), yaw: 1.571
-[ INFO] [1742159914.062030487, 13145.246000000]: FIND_INTERSECTIONS(): intersection 15.000: (5.682, 6.901), yaw: 3.142
-[ INFO] [1742159914.062043454, 13145.246000000]: FIND_INTERSECTIONS(): intersection 16.000: (5.150, 7.380), yaw: 1.571
-[ INFO] [1742159914.062090202, 13145.247000000]: FIND_INTERSECTIONS(): intersection 17.000: (1.740, 10.000), yaw: 3.142
-[ INFO] [1742159914.062139843, 13145.247000000]: FIND_INTERSECTIONS(): intersection 18.000: (15.009, 10.406), yaw: 0.000
-[ INFO] [1742159914.062167631, 13145.247000000]: FIND_INTERSECTIONS(): intersection 19.000: (15.928, 11.658), yaw: -1.571
-[ INFO] [1742159914.062191893, 13145.247000000]: FIND_INTERSECTIONS(): intersection 20.000: (15.312, 4.554), yaw: -1.571
-[ INFO] [1742159914.062215806, 13145.247000000]: FIND_INTERSECTIONS(): intersection 21.000: (15.300, 3.000), yaw: -1.571
-[ INFO] [1742159914.062254323, 13145.247000000]: FIND_INTERSECTIONS(): intersection 22.000: (15.313, 1.472), yaw: -1.571
-[ INFO] [1742159914.062287107, 13145.247000000]: FIND_INTERSECTIONS(): intersection 23.000: (17.110, 2.367), yaw: 1.571
-[ INFO] [1742159914.062313254, 13145.247000000]: FIND_INTERSECTIONS(): intersection 24.000: (16.223, 4.015), yaw: 3.142
-[ INFO] [1742159914.062337190, 13145.247000000]: FIND_INTERSECTIONS(): intersection 25.000: (16.252, 9.531), yaw: 1.571
-[ INFO] [1742159914.062360634, 13145.247000000]: FIND_INTERSECTIONS(): intersection 26.000: (17.131, 10.781), yaw: 3.142
-[ INFO] [1742159914.062383704, 13145.247000000]: FIND_INTERSECTIONS(): intersection 27.000: (0.359, 10.558), yaw: -1.571
-[ INFO] [1742159914.062406256, 13145.247000000]: FIND_INTERSECTIONS(): intersection 28.000: (0.359, 7.445), yaw: -1.571
-[ INFO] [1742159914.062427820, 13145.247000000]: FIND_INTERSECTIONS(): intersection 29.000: (1.976, 6.534), yaw: 0.000
-[ INFO] [1742159914.062449154, 13145.247000000]: FIND_INTERSECTIONS(): intersection 30.000: (2.522, 4.558), yaw: -1.571
-[ INFO] [1742159914.062470554, 13145.247000000]: FIND_INTERSECTIONS(): intersection 31.000: (4.220, 3.645), yaw: 0.000
-[ INFO] [1742159914.062492575, 13145.247000000]: FIND_INTERSECTIONS(): intersection 32.000: (4.767, 1.274), yaw: -1.571
-[ INFO] [1742159914.062514293, 13145.247000000]: FIND_INTERSECTIONS(): intersection 33.000: (3.431, 0.729), yaw: 3.142
-[ INFO] [1742159914.062536273, 13145.247000000]: FIND_INTERSECTIONS(): intersection 34.000: (0.727, 3.097), yaw: 1.571
-[ INFO] [1742159914.062557609, 13145.247000000]: FIND_INTERSECTIONS(): intersection 35.000: (1.976, 3.646), yaw: 0.000
-[ INFO] [1742159914.062578950, 13145.247000000]: FIND_INTERSECTIONS(): intersection 36.000: (2.892, 5.986), yaw: 1.571
-[ INFO] [1742159914.062600139, 13145.247000000]: FIND_INTERSECTIONS(): intersection 37.000: (1.270, 6.902), yaw: 3.142
-[ INFO] [1742159914.062621541, 13145.247000000]: FIND_INTERSECTIONS(): intersection 38.000: (0.727, 9.098), yaw: 1.571
-[ INFO] [1742159914.062642980, 13145.247000000]: FIND_INTERSECTIONS(): intersection 39.000: (1.220, 9.620), yaw: 0.000
-[ INFO] [1742159914.159317454, 13145.344000000]: FIND_NEXT_INTERSECTION(): starting search from (2.505, 6.151), currentpose: (1.670, 6.556), density: 31.250, threshold: 1.096, index: 34.000
-[ INFO] [1742159914.159389614, 13145.344000000]: FIND_NEXT_INTERSECTION(): found waypoint of attribute stopline at (2.515, 4.715), currentpose: (1.670, 6.556), started search at (2.505, 6.151), threshold: 1.096, count: 45.000
-[ INFO] [1742159914.159429908, 13145.344000000]: FIND_CLOSEST_INTERSECTION(): SUCCESS: state: (2.515, 4.715), closest intersection: (2.522, 4.558), error norm: 0.156, threshold: 0.362, direction: south, yaw: -1.589
-[ WARN] [1742159914.159458938, 13145.344000000]: intersection reached: CASE NO SIGN, proceeding...
-
+ted at a distance of: 0.717
+[ INFO] [1744172476.840999616, 4622.437000000]: SIGN_RELOC(STOPSIGN): SUCCESS: estimated sign pose: (2.261, 1.351), actual: (2.264, 1.351), error: (0.003, -0.000), error norm: 0.003, threshold: 0.537, old states: (2.520, 1.956), new states: (2.523, 1.956), yaw: -90.017
+error too big: 0.648
+error too big: 0.628
+[ INFO] [1744172478.043351100, 4623.637000000]: INTERSECTION_REACHED(): SUCCESS: x_cur: (2.523, 1.614, -1.558), intersection: (2.519, 1.274), distance: 0.340, index: 1, next intersection: (4.220, 0.356, 0.000)
+[ INFO] [1744172478.043381432, 4623.637000000]: intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[ INFO] [1744172483.344671072, 4628.928000000]: Sign Callback(): new PRIORITY (known static object) detected at (4.143644, 0.101336), known static objects size: 2
+[ INFO] [1744172483.553263626, 4629.137000000]: check_stop_sign(): priority detected at a distance of: 1.176
+[ INFO] [1744172483.553324974, 4629.137000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.512, threshold: 25.000
+[ INFO] [1744172483.654773045, 4629.238000000]: SIGN_RELOC(PRIORITY): FAILURE: yaw error too large: 0.473, threshold: 25.000
+[ INFO] [1744172483.753398491, 4629.337000000]: SIGN_RELOC(PRIORITY): SUCCESS: estimated sign pose: (4.139, 0.056), actual: (4.144, 0.101), error: (0.005, 0.046), error norm: 0.046, threshold: 0.537, old states: (3.151, 0.441), new states: (3.156, 0.486), yaw: -24.912
+[ INFO] [1744172485.857376669, 4631.437000000]: INTERSECTION_REACHED(): SUCCESS: x_cur: (3.860, 0.384, -0.072), intersection: (4.220, 0.356), distance: 0.361, index: 2, next intersection: (8.200, 0.920, 0.000)
+[ INFO] [1744172485.857421036, 4631.437000000]: intersection reached: CASE PRIORITY, proceeding...
+[ INFO] [1744172487.616849588, 4633.193000000]: Sign Callback(): new Oneway detected at (5.328015, 0.102505), road_objects size: 1
+[ INFO] [1744172493.695839801, 4639.262000000]: Sign Callback(): new PARKING SIGNS (known static object) detected at (8.936750, 0.687367), known static objects size: 3
+error too big: 0.425
+[ INFO] [1744172494.063608109, 4639.630000000]: Sign Callback(): new ALL CROSSWALKS (known static object) detected at (8.142500, 0.703300), known static objects size: 4
+error too big: 0.418
+error too big: 0.42
+error too big: 0.425
+error too big: 0.414
+error too big: 0.419
+error too big: 0.416
+error too big: 0.411
+error too big: 0.414
+error too big: 0.408
+error too big: 0.409
+error too big: 0.406
+error too big: 0.411
+error too big: 0.415
+error too big: 0.406
+error too big: 0.408
+error too big: 0.417
+error too big: 0.412
+error too big: 0.418
+error too big: 0.414
+error too big: 0.424
+error too big: 0.42
+error too big: 0.417
+error too big: 0.406
+error too big: 0.423
+error too big: 0.421
+error too big: 0.419
+error too big: 0.427
+error too big: 0.421
+error too big: 0.427
+[ INFO] [1744172495.472813687, 4641.037000000]: check_stop_sign(): crosswalk detected at a distance of: 1.195
+[ INFO] [1744172495.472854694, 4641.037000000]: SIGN_RELOC(ALL CROSSWALKS): SUCCESS: estimated sign pose: (8.069, 0.647), actual: (8.143, 0.703), error: (0.074, 0.057), error norm: 0.093, threshold: 0.537, old states: (6.861, 0.841), new states: (6.934, 0.897), yaw: 19.269
+error too big: 0.472
+error too big: 0.471
+error too big: 0.47
+error too big: 0.477
+error too big: 0.475
+error too big: 0.465
+error too big: 0.474
+error too big: 0.471
+error too big: 0.479
+error too big: 0.478
+error too big: 0.475
+error too big: 0.486
+error too big: 0.482
+error too big: 0.48
+error too big: 0.486
+error too big: 0.485
+error too big: 0.484
+error too big: 0.491
+error too big: 0.488
+error too big: 0.495
+error too big: 0.487
+error too big: 0.492
+error too big: 0.489
+error too big: 0.494
+error too big: 0.492
+error too big: 0.489
+error too big: 0.495
+error too big: 0.496
+error too big: 0.491
+error too big: 0.496
+error too big: 0.494
+error too big: 0.495
+error too big: 0.497
+error too big: 0.498
+error too big: 0.498
+error too big: 0.5
+error too big: 0.498
+error too big: 0.494
+error too big: 0.5
+error too big: 0.501
+error too big: 0.502
+error too big: 0.502
+error too big: 0.501
+error too big: 0.501
+error too big: 0.502
+error too big: 0.501
+error too big: 0.502
+error too big: 0.504
+error too big: 0.503
+error too big: 0.505
+error too big: 0.504
+error too big: 0.503
+error too big: 0.505
+error too big: 0.505
+error too big: 0.504
+error too big: 0.503
+error too big: 0.506
+error too big: 0.506
+error too big: 0.507
+error too big: 0.505
+error too big: 0.505
+error too big: 0.506
+error too big: 0.507
+error too big: 0.504
+error too big: 0.507
+error too big: 0.509
+error too big: 0.507
+error too big: 0.507
+error too big: 0.508
+error too big: 0.507
+error too big: 0.509
+error too big: 0.506
+error too big: 0.508
+error too big: 0.508
+error too big: 0.505
+error too big: 0.508
+error too big: 0.509
+error too big: 0.506
+error too big: 0.508
+error too big: 0.508
+error too big: 0.51
+error too big: 0.509
+error too big: 0.508
+[ INFO] [1744172498.276846453, 4643.836000000]: INTERSECTION_REACHED(): SUCCESS: x_cur: (7.837, 0.945, -0.019), intersection: (8.200, 0.920), distance: 0.364, index: 3, next intersection: (14.764, 0.924, 0.000)
+[ INFO] [1744172498.276875383, 4643.836000000]: intersection reached: CASE CROSSWALK, proceeding...
+error too big: 0.507
+error too big: 0.508
+error too big: 0.508
+error too big: 0.51
+error too big: 0.507
+error too big: 0.509
+error too big: 0.51
+[ INFO] [1744172498.500595829, 4644.060000000]: Sign Callback(): new Car detected at (9.436837, 1.420998), road_objects size: 1
+error too big: 0.507
+error too big: 0.426
+error too big: 0.507
+error too big: 0.509
+error too big: 0.51
+error too big: 0.509
+error too big: 0.509
+error too big: 0.51
+error too big: 0.508
+error too big: 0.509
+error too big: 0.51
+error too big: 0.51
+error too big: 0.509
+error too big: 0.511
+error too big: 0.51
+[ INFO] [1744172498.980321003, 4644.537000000]: SIGN_RELOC(PARKING): SUCCESS: estimated sign pose: (8.917, 1.197), actual: (8.937, 1.161), error: (0.020, -0.036), error norm: 0.041, threshold: 0.537, old states: (8.028, 0.940), new states: (8.048, 0.904), yaw: -1.466
+[ INFO] [1744172498.980555071, 4644.538000000]: Changing from MOVING to PARKING
+error too big: 0.474
+error too big: 0.472
+error too big: 0.473
+error too big: 0.474
+error too big: 0.472
+error too big: 0.472
+error too big: 0.474
+error too big: 0.474
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.473
+error too big: 0.472
+error too big: 0.473
+error too big: 0.472
+error too big: 0.474
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+[ INFO] [1744172499.779319585, 4645.336000000]: park sign detected at a distance of: 0.998, parking offset is: 2.183
+[ INFO] [1744172499.779358767, 4645.336000000]: orientation: 6.283
+[ INFO] [1744172499.779387233, 4645.336000000]: PARKING(): target spot: 0.000
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.1, 0.56
+parking spot 3: 10.1, 1.3
+parking spot 4: 10.8, 0.56
+parking spot 5: 10.8, 1.3
+parking spot 6: 11.6, 0.56
+parking spot 7: 11.6, 1.3
+parking spot 8: 12.3, 0.56
+parking spot 9: 12.3, 1.3
+error too big: 0.473
+error too big: 0.473
+error too big: 0.473
+error too big: 0.474
+error too big: 0.472
+error too big: 0.473
+error too big: 0.473
+error too big: 0.472
+error too big: 0.474
+error too big: 0.472
+error too big: 0.473
+error too big: 0.473
+error too big: 0.474
+error too big: 0.474
+error too big: 0.474
+error too big: 0.474
+error too big: 0.472
+error too big: 0.475
+error too big: 0.472
+error too big: 0.472
+error too big: 0.474
+error too big: 0.472
+error too big: 0.473
+error too big: 0.473
+error too big: 0.473
+error too big: 0.472
+error too big: 0.473
+error too big: 0.472
+error too big: 0.473
+error too big: 0.473
+error too big: 0.472
+error too big: 0.472
+error too big: 0.474
+error too big: 0.473
+error too big: 0.472
+error too big: 0.473
+error too big: 0.472
+error too big: 0.472
+error too big: 0.474
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.474
+error too big: 0.472
+error too big: 0.472
+error too big: 0.473
+error too big: 0.471
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+error too big: 0.472
+[ INFO] [1744172502.575895659, 4648.128000000]: Sign Callback(): new Oneway detected at (9.248738, 0.541888), road_objects size: 2
+[ INFO] [1744172506.514990244, 4652.061000000]: Sign Callback(): new Car detected at (11.049936, 1.369093), road_objects size: 2
+[ INFO] [1744172509.272975533, 4654.816000000]: x offset reached: (10.23, 0.90), ready for parking maneuver...
+[ INFO] [1744172510.876570620, 4656.416000000]: parking_maneuver_hardcode(): initial y error: -0.023, initial yaw error: 0.001, base yaw target: 0.258pi
+[ INFO] [1744172510.876610286, 4656.416000000]: parking_maneuver_hardcode(): park right: true, exit: 0.000
+targets: 0.812     0     0, steerings:  20.5 -20.5  20.5, speeds: -0.2 -0.2  0.2, thresholds:    0.1    0.1 0.0333
+[ INFO] [1744172510.876664837, 4656.416000000]: maneuver_hardcode(): initial yaw: 0.000, target yaws: 0.812, 0.000
+[ INFO] [1744172510.876685832, 4656.416000000]: maneuver_hardcode(): nearest direction: 0.000
+[ INFO] [1744172511.055441991, 4656.594000000]: Sign Callback(): new Car detected at (11.082728, 1.375783), road_objects size: 2
+[ INFO] [1744172515.961075268, 4661.493000000]: Sign Callback(): new Car detected at (10.362305, 0.573671), road_objects size: 2
+[ INFO] [1744172516.284197582, 4661.816000000]: maneuver completed
+[ INFO] [1744172516.284228347, 4661.816000000]: Changing from PARKING to PARKED
+[ INFO] [1744172517.786958184, 4663.316000000]: Changing from PARKED to EXITING_PARKING
+[ INFO] [1744172517.787015668, 4663.316000000]: parking_maneuver_hardcode(): initial y error: 0.000, initial yaw error: 0.000, base yaw target: 0.260pi
+[ INFO] [1744172517.787053176, 4663.316000000]: parking_maneuver_hardcode(): park right: true, exit: 1.000
+targets: 0.776 0.776     0, steerings:  20.5 -20.5  20.5, speeds: -0.2  0.2  0.2, thresholds: 0.676   0.1   0.1
+[ INFO] [1744172517.787111846, 4663.316000000]: maneuver_hardcode(): initial yaw: 0.000, target yaws: 0.776, 0.776
+[ INFO] [1744172517.787138447, 4663.316000000]: maneuver_hardcode(): nearest direction: 0.000
+[ INFO] [1744172517.965471368, 4663.493000000]: Sign Callback(): new Car detected at (10.353055, 0.585507), road_objects size: 3
+[ INFO] [1744172518.433835048, 4663.960000000]: Sign Callback(): new Car detected at (10.386753, 0.588408), road_objects size: 4
+[ INFO] [1744172520.269519857, 4665.794000000]: Sign Callback(): new Car detected at (11.012490, 1.359933), road_objects size: 4
+[ INFO] [1744172522.596332936, 4668.116000000]: maneuver completed
+exiting_park(): target waypoint index: 292, at (10.1, 0.937)
+exiting_park(): closest waypoint index: 292, at (10.1, 0.937)
+exiting_park(): current state: x: 10.1, y: 0.873, yaw: 0.0974
+[ INFO] [1744172522.596493707, 4668.116000000]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1744172525.646749933, 4671.162000000]: Sign Callback(): new Car detected at (12.630837, 0.592497), road_objects size: 2
+^C[mpc_controller_slsecret_Alienware_x15_R2_497367_2864299318090446901-1] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
