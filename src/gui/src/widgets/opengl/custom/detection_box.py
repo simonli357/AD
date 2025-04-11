@@ -51,7 +51,7 @@ class DetectionBox():
         # Assuming (x1, y1) is the bottom-left of the detection box where the label touches it:
         bg_x1 = x1
         bg_y1 = y1
-        bg_x2 = max(x1 + text_width + padding, x2)
+        bg_x2 = max(x1 + text_width + padding * 2, x2)
         bg_y2 = y1 - text_height - padding * 2
 
         bg_vertices = np.array([
