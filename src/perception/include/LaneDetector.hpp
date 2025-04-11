@@ -464,7 +464,8 @@ class LaneDetector {
 				outputImage,
 				outputImage,
 				255,
-				cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+				// cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+				cv::ADAPTIVE_THRESH_MEAN_C,
 				cv::THRESH_BINARY,
 				adaptive_threshold_block_size,
 				adaptive_threshold_c
@@ -482,16 +483,16 @@ class LaneDetector {
 		// mask(cv::Range(roiStartRow, outputImage.rows), cv::Range::all()) = 255;
 		// cv::bitwise_and(outputImage, mask, outputImage);
 
-		int h = outputImage.rows;
-		int w = outputImage.cols;
+		// int h = outputImage.rows;
+		// int w = outputImage.cols;
 
-		// Create a mask to remove the car hood
-		int x_start = static_cast<int>(w * 0.27);
-		int x_end   = static_cast<int>(w * 0.73);
-		int y_start = static_cast<int>(h * 0.92);
-		int y_end   = static_cast<int>(h * 1);
-		cv::Rect carMaskROI(x_start, y_start, x_end - x_start, y_end - y_start);
-		outputImage(carMaskROI) = 0;
+		// // Create a mask to remove the car hood
+		// int x_start = static_cast<int>(w * 0.27);
+		// int x_end   = static_cast<int>(w * 0.73);
+		// int y_start = static_cast<int>(h * 0.92);
+		// int y_end   = static_cast<int>(h * 1);
+		// cv::Rect carMaskROI(x_start, y_start, x_end - x_start, y_end - y_start);
+		// outputImage(carMaskROI) = 0;
 
 		// cv::imshow("outputImage", outputImage);
 		// cv::waitKey(1);

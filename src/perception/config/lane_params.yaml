@@ -10,4 +10,4 @@ pixel_to_meter_y_intercept: 0.3778245
 stopline_distance_threshold: 0.5 # distance to front of car
 
 adaptive_threshold_block_size: 199
-adaptive_threshold_c: -20
+adaptive_threshold_c: -25
