@@ -13,6 +13,15 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.cam_widget = cam_widget
 
+        self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
+        self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
+
+        self.COLOR_LIST = [
+            (1, 1, 1), (0.098, 0.325, 0.850), (0.125, 0.694, 0.929), (0.556, 0.184, 0.494), (0.188, 0.674, 0.466),
+            (0.933, 0.745, 0.301), (0.184, 0.078, 0.635), (0.300, 0.300, 0.300), (0.600, 0.600, 0.600), (0.000, 0.000, 1.000),
+            (0.000, 0.500, 1.000), (0.000, 0.749, 0.749), (0.000, 1.000, 0.000)
+        ]
+
     def update_overlay(self):
         self.update()
 
@@ -47,33 +56,14 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             color_index = id % len(self.COLOR_LIST)
             color = tuple(int(c * 255) for c in self.COLOR_LIST[color_index])  # Scale color to [0, 255]
 
-            mean_color = np.mean(color)
-            text_color = (0, 0, 0) if mean_color > 127 else (255, 255, 255)
-
             confidence = self.cam_widget.detected_objects[7 * i + 5] * 100
             distance = self.cam_widget.detected_objects[7 * i + 4]
             text = f"{self.cam_widget.class_names[id]} {confidence:.1f}% {distance:.2f}m"
-
-            # label_size, baseLine = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
 
             x1 = int(self.cam_widget.detected_objects[7 * i])
             y1 = int(self.cam_widget.detected_objects[7 * i + 1])
             x2 = int(self.cam_widget.detected_objects[7 * i + 2])
             y2 = int(self.cam_widget.detected_objects[7 * i + 3])
-
-            # cv2.rectangle(image, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
-
-            # y = y1 - label_size[1] - baseLine
-            # if y < 0:
-            #     y = 0
-            # x = x1
-            # if x + label_size[0] > image.shape[1]:
-            #     x = image.shape[1] - label_size[0]
-
-            # txt_bk_color = tuple(int(c * 0.7) for c in color)
-            # cv2.rectangle(image, (x, y), (x + label_size[0], y + label_size[1] + baseLine), txt_bk_color, -1)
-
-            # cv2.putText(image, text, (x, y + label_size[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_color, 1)
 
     def draw_lane_indicator(self):
         if self.center is None:
