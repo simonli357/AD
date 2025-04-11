@@ -170,6 +170,23 @@ class Speedometer():
         self.cached_screen_width = screen_width
         self.cached_screen_height = screen_height
 
+        # Reset vbo's
+        if hasattr(self, 'quad_vbo'):
+            self.quad_vbo.delete()
+        self.quad_vbo = vbo.VBO(self.quad_vertices)
+        if hasattr(self, 'large_tick_vbo'):
+            self.large_tick_vbo.delete()
+        self.large_tick_vbo = vbo.VBO(self.large_tick_vertices)
+        if hasattr(self, 'small_tick_vbo'):
+            self.small_tick_vbo.delete()
+        self.small_tick_vbo = vbo.VBO(self.small_tick_vertices)
+        if hasattr(self, 'circle_vbo'):
+            self.circle_vbo.delete()
+        self.circle_vbo = vbo.VBO(self.circle_vertices)
+        if hasattr(self, 'needle_vbo'):
+            self.needle_vbo.delete()
+        self.needle_vbo = vbo.VBO(self.needle_vertices)
+
     def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
              current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
         """
@@ -217,13 +234,11 @@ class Speedometer():
         loc_bg = gl.glGetUniformLocation(self.gauge_shader_program, "uBgColor")
         gl.glUniform4f(loc_bg, 0.0, 0.0, 0.0, 0.0)
 
-        quad_vbo = vbo.VBO(self.quad_vertices)
-        quad_vbo.bind()
+        self.quad_vbo.bind()
         gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, quad_vbo)
+        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-        quad_vbo.unbind()
-        quad_vbo.delete()
+        self.quad_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
 
@@ -252,14 +267,12 @@ class Speedometer():
             gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
             gl.glLineWidth(3.0)
 
-            tick_vbo = vbo.VBO(self.large_tick_vertices)
-            tick_vbo.bind()
+            self.large_tick_vbo.bind()
             gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, tick_vbo)
+            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
             num_vertices = len(self.large_tick_vertices) // 2
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
-            tick_vbo.unbind()
-            tick_vbo.delete()
+            self.large_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
 
@@ -272,14 +285,12 @@ class Speedometer():
             gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
             gl.glLineWidth(1.0)
 
-            tick_vbo = vbo.VBO(self.small_tick_vertices)
-            tick_vbo.bind()
+            self.small_tick_vbo.bind()
             gl.glEnableVertexAttribArray(0)
-            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, tick_vbo)
+            gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
             num_vertices = len(self.small_tick_vertices) // 2
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
-            tick_vbo.unbind()
-            tick_vbo.delete()
+            self.small_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
             gl.glUseProgram(0)
 
@@ -297,13 +308,11 @@ class Speedometer():
         gl.glUniform1f(loc_radius, self.inner_radius)
         gl.glUniform1f(loc_lineWidth, 0.01)
 
-        circle_vbo = vbo.VBO(self.circle_vertices)
-        circle_vbo.bind()
+        self.circle_vbo.bind()
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
         gl.glDrawArrays(gl.GL_LINE_LOOP, 0, self.num_segments)
-        circle_vbo.unbind()
-        circle_vbo.delete()
+        self.circle_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
 
@@ -324,8 +333,7 @@ class Speedometer():
         loc_color = gl.glGetUniformLocation(self.compass_shader_program, "color")
 
         # Bind the needle VBO.
-        needle_vbo = vbo.VBO(self.needle_vertices)
-        needle_vbo.bind()
+        self.needle_vbo.bind()
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
@@ -336,8 +344,7 @@ class Speedometer():
         # Now draw the second triangle in dark red.
         gl.glUniform4f(loc_color, 0.6, 0.0, 0.0, 1.0)  # adjust these values as needed for "dark red"
         gl.glDrawArrays(gl.GL_TRIANGLES, 3, 3)
+        self.needle_vbo.unbind()
 
-        needle_vbo.unbind()
-        needle_vbo.delete()
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)

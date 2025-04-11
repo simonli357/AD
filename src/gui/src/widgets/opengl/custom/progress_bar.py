@@ -16,12 +16,10 @@ class ProgressBar():
         self.shader_program = shader_program
         self.texture_shader = texture_shader
         self.backdrop_color = (1.0, 1.0, 1.0, 0.5)
-        # This shear_fraction determines how much the bottom edge is slanted.
+        # This shear_fraction determines how much the edges are slanted.
         self.shear_fraction = 0.025
-
-        # Optionally, if the geometry rarely changes, you can cache it:
-        self.cached_params = None  # e.g., a dict to store x, y, width, height, shear, etc.
-        self.cached_backdrop_vertices = None
+        self.cached_width = None
+        self.cached_height = None
 
     def compute_geometry(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm):
         """
@@ -34,13 +32,13 @@ class ProgressBar():
           - backdrop_vertices is a NumPy array of 6 vertices (for two triangles).
         """
         # Denormalize coordinates.
-        x = x_norm * screen_width
-        y = y_norm * screen_height
-        width = width_norm * screen_width
-        height = height_norm * screen_height
+        self.x = x_norm * screen_width
+        self.y = y_norm * screen_height
+        self.width = width_norm * screen_width
+        self.height = height_norm * screen_height
 
         # Compute shear offset (applied on the bottom edge).
-        s = self.shear_fraction * width
+        self.s = self.shear_fraction * self.width
 
         # Create vertices for a parallelogram as two triangles.
         # Coordinates:
@@ -48,18 +46,20 @@ class ProgressBar():
         #   Top-left:  (x - width, y)
         #   Bottom-right: (x + s, y - height)
         #   Bottom-left:  (x - width + s, y - height)
-        backdrop_vertices = np.array([
+        self.backdrop_vertices = np.array([
             # First triangle:
-            x - width, y,              # Top-left
-            x, y,                      # Top-right
-            x + s, y - height,         # Bottom-right
+            self.x - self.width, self.y,
+            self.x, self.y,
+            self.x + self.s, self.y - self.height,
             # Second triangle:
-            x - width, y,              # Top-left
-            x + s, y - height,         # Bottom-right
-            x - width + s, y - height  # Bottom-left
+            self.x - self.width, self.y,
+            self.x + self.s, self.y - self.height,
+            self.x - self.width + self.s, self.y - self.height
         ], dtype=np.float32)
 
-        return x, y, width, height, s, backdrop_vertices
+        if hasattr(self, 'backdrop_vbo'):
+            self.backdrop_vbo.delete()
+        self.backdrop_vbo = vbo.VBO(self.backdrop_vertices)
 
     def draw_texture(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture_shader)
@@ -95,23 +95,24 @@ class ProgressBar():
         The bar is rendered as a sheared parallelogram with a filled portion determined
         by 'percentage'. The projection matrix is used by the shader.
         """
-        # You could cache these if the parameters don't change between frames.
-        x, y, width, height, s, backdrop_vertices = self.compute_geometry(screen_width, screen_height,
-                                                                          x_norm, y_norm, width_norm, height_norm)
+        if screen_width != self.cached_width or screen_width != self.cached_height:
+            self.compute_geometry(screen_width, screen_height, x_norm, y_norm, width_norm, height_norm)
+            self.cached_width = screen_width
+            self.cached_height = screen_height
 
         # Compute the filled portion geometry based on the current percentage.
-        fill_width = percentage * width
+        fill_width = percentage * self.width
         # Scale the shear for the filled portion in proportion to the fill width.
-        fill_s = s * (fill_width / width)
+        fill_s = self.s * (fill_width / self.width)
         filled_vertices = np.array([
             # First triangle:
-            x - width, y,                           # Fill Top-left
-            x - width + fill_width, y,                # Fill Top-right
-            x - width + fill_width + fill_s, y - height,  # Fill Bottom-right
+            self.x - self.width, self.y,
+            self.x - self.width + fill_width, self.y,
+            self.x - self.width + fill_width + fill_s, self.y - self.height,
             # Second triangle:
-            x - width, y,                           # Fill Top-left
-            x - width + fill_width + fill_s, y - height,  # Fill Bottom-right
-            x - width + s, y - height                 # Fill Bottom-left
+            self.x - self.width, self.y,
+            self.x - self.width + fill_width + fill_s, self.y - self.height,
+            self.x - self.width + self.s, self.y - self.height
         ], dtype=np.float32)
 
         # --- Draw using the shader ---
@@ -124,15 +125,13 @@ class ProgressBar():
         loc_color = gl.glGetUniformLocation(self.shader_program, "uColor")
 
         # Draw the backdrop.
-        backdrop_vbo = vbo.VBO(backdrop_vertices)
-        backdrop_vbo.bind()
+        self.backdrop_vbo.bind()
         gl.glEnableVertexAttribArray(0)
         # We pass None for offset if we're using a bound VBO.
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, None)
         gl.glUniform4f(loc_color, *self.backdrop_color)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-        backdrop_vbo.unbind()
-        backdrop_vbo.delete()
+        self.backdrop_vbo.unbind()
 
         # Draw the filled portion.
         fill_vbo = vbo.VBO(filled_vertices)
@@ -146,8 +145,8 @@ class ProgressBar():
         gl.glDisableVertexAttribArray(0)
         gl.glUseProgram(0)
 
-        x_text = x - width - (2 * 0.015) * screen_width
-        y_text = y - height * 0.5
+        x_text = self.x - self.width - (2 * 0.015) * screen_width
+        y_text = self.y - self.height * 0.5
 
         x_img = x_text - 35
         y_img = y_text
