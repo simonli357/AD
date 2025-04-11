@@ -265,7 +265,7 @@ class RunOverlay(QWidget):
 
         runs_with_info = []
         for run in self.runs:
-            x0, y0, yaw0, path = run.get('x0'), run.get('y0'), run.get('yaw0'), run.get('path')
+            x0, y0, yaw0, path = float(run.get('x0')), float(run.get('y0')), float(run.get('yaw0')), run.get('path')
             dx = x0 - x0_gps
             dy = y0 - y0_gps
             dist_from_target = np.hypot(dx, dy)

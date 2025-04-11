@@ -125,7 +125,7 @@ class TcpConnection:
 
     def send_gps_msg(self, x0, y0, yaw0, path):
         bytes = self.gps_msg.encode(x0, y0, yaw0, path)
-        self.socket.senddall(bytes)
+        self.socket.sendall(bytes)
 
     ###################
     # Decode
