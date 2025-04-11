@@ -6,7 +6,7 @@
 #include <mutex>
 #include <chrono>
 #include "std_srvs/SetBoolRequest.h"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include "PathManager.hpp"
 #include "MPC.hpp"
 #include <signal.h>
@@ -20,8 +20,12 @@
 #include <ncurses.h>
 #include <std_msgs/Byte.h>
 #include "utils/helper.h"
+#include "Tracking.h"
+#include "GroundTruth.h"
+#include "Tunable.h"
 
 using namespace VehicleConstants;
+using namespace Tunable;
 
 class StateMachine {
 public:
@@ -29,35 +33,7 @@ public:
     nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref,use_beta), path_manager(nh,T,N,v_ref),
     state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real)
     {
-        // tunables
-        std::string mode = real ? "real" : "sim";
-        utils.debug("mode: " + mode, 2);
         bool success = true;
-        success = success && nh.getParam("/" + mode + "/change_lane_yaw", change_lane_yaw);
-        success = success && nh.getParam("/" + mode + "/cw_speed_ratio", cw_speed_ratio);
-        success = success && nh.getParam("/" + mode + "/hw_speed_ratio", hw_speed_ratio);
-        success = success && nh.getParam("/" + mode + "/sign_localization_threshold", sign_localization_threshold);
-        success = success && nh.getParam("/" + mode + "/lane_localization_orientation_threshold", lane_localization_orientation_threshold);
-        success = success && nh.getParam("/" + mode + "/pixel_center_offset", pixel_center_offset);
-        success = success && nh.getParam("/" + mode + "/constant_distance_to_intersection_at_detection", constant_distance_to_intersection_at_detection);
-        success = success && nh.getParam("/" + mode + "/intersection_localization_threshold", intersection_localization_threshold);
-        success = success && nh.getParam("/" + mode + "/stop_duration", stop_duration);
-        success = success && nh.getParam("/" + mode + "/use_stopline", use_stopline);
-        success = success && nh.getParam("/" + mode + "/pedestrian_count_thresh", pedestrian_count_thresh);
-        success = success && nh.getParam("/" + mode + "/parking_base_yaw_target", parking_base_yaw_target);
-        success = success && nh.getParam("/" + mode + "/parking_base_speed", parking_base_speed);
-        success = success && nh.getParam("/" + mode + "/parking_base_thresh", parking_base_thresh);
-        success = success && nh.getParam("/" + mode + "/change_lane_speed", change_lane_speed);
-        success = success && nh.getParam("/" + mode + "/change_lane_thresh", change_lane_thresh);
-        success = success && nh.getParam("/" + mode + "/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold);
-        success = success && nh.getParam("/" + mode + "/sign_localization_orientation_threshold", sign_localization_orientation_threshold);
-        success = success && nh.getParam("/" + mode + "/NORMAL_SPEED", NORMAL_SPEED);
-        success = success && nh.getParam("/" + mode + "/FAST_SPEED", FAST_SPEED);
-        success = success && nh.getParam("/" + mode + "/lane_relocalize", lane_relocalize);
-        success = success && nh.getParam("/" + mode + "/sign_relocalize", sign_relocalize);
-        success = success && nh.getParam("/" + mode + "/intersection_relocalize", intersection_relocalize);
-        success = success && nh.getParam("/" + mode + "/has_light", has_light);
-        success = success && nh.getParam("/" + mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
         success = success && nh.getParam("/emergency", emergency);
         success = success && nh.getParam("/pub_wpts", pubWaypoints);
         success = success && nh.getParam("/kb", keyboardControl);
@@ -80,7 +56,7 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = 10.0;
+        double rateVal = 1 / T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
@@ -95,18 +71,10 @@ public:
     }
     ros::NodeHandle& nh;
 
-// private:
-    //tunables
-    double  change_lane_yaw = 0.15, cw_speed_ratio, hw_speed_ratio, sign_localization_threshold = 0.5, 
-            lane_localization_orientation_threshold = 10, pixel_center_offset = -30.0, constant_distance_to_intersection_at_detection = 0.371,
-            intersection_localization_threshold = 0.5, stop_duration = 3.0, parking_base_yaw_target = 0.166, parking_base_speed=-0.2, parking_base_thresh=0.1,
-            change_lane_speed=0.2, change_lane_thresh=0.05, sign_localization_orientation_threshold = 15, intersection_localization_orientation_threshold = 15,
-            NORMAL_SPEED = 0.175,
-            FAST_SPEED = 0.4, change_lane_offset_scaler = 1.2;
-    bool use_stopline = true, lane_relocalize = true, sign_relocalize = true, intersection_relocalize = true, has_light = false, emergency = false;
+    bool emergency = false;
+
     bool initialized = false;
     bool wait_for_green_flag = false;
-    int pedestrian_count_thresh = 8;
 
     Eigen::Vector3d x_current;
     std::vector<Eigen::Vector2d> PARKING_SPOTS;
@@ -116,7 +84,9 @@ public:
     double detected_dist = 0;
     bool right_park = true;
     int park_count = 0;
-    int stopsign_flag = OBJECT::NONE;
+    OBJECT sign_flag = OBJECT::NONE;
+    ros::Time sign_cooldown_timer = ros::Time::now();
+    ros::Time highway_cooldown_timer = ros::Time::now();
     Eigen::Vector2d destination;
     int state = 0;
     bool sign, ekf, lane, real, dashboard, keyboardControl, hasGps, pubWaypoints;
@@ -292,23 +262,6 @@ public:
         std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
         return maneuver_hardcode(targets, steerings, speeds, thresholds, rate_val);
     }
-    int change_lane_hardcode(bool right, double yaw_offset = 0, double rate_val = 20) {
-        Eigen::VectorXd targets(1);
-        double yaw_target = change_lane_yaw * M_PI;
-        Eigen::VectorXd steering(1);
-        steering << -23.;
-        if (right) {
-            steering *= -1;
-            yaw_target *= -1;
-        }
-        yaw_target += yaw_offset;
-        targets << yaw_target;
-        Eigen::VectorXd speeds(1);
-        speeds << change_lane_speed;
-        Eigen::VectorXd thresholds(1);
-        thresholds << change_lane_thresh;
-        return maneuver_hardcode(targets, steering, speeds, thresholds, rate_val);
-    }
     int maneuver_hardcode(const Eigen::VectorXd &targets, const Eigen::VectorXd &steerings, const Eigen::VectorXd &speeds, const Eigen::VectorXd &thresholds, double rate_val = 20) {
         /* 
         targets: target yaws or distances
@@ -421,73 +374,88 @@ public:
             return false;
         }
     }
-    bool intersection_reached() {
-        if (true) {
-            int idx = path_manager.intersection_index;
-            if (idx == path_manager.intersection_points.size()) {
-                return false;
-            }
-            if (idx > path_manager.intersection_points.size() || idx < 0) {
-                utils.debug("INTERSECTION_REACHED(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(path_manager.intersection_points.size()), 2);
-                stop_for(10*T);
-                exit(1);
-            }
-            auto& next_intersection_point = path_manager.intersection_points[idx];
-            double distance_to_next_intersection_sq = (x_current.head(2) - next_intersection_point.head(2)).squaredNorm();
-            if (distance_to_next_intersection_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
-                double yaw = x_current[2];
-                double yaw_error = Utility::compare_yaw(next_intersection_point[2], yaw);
-                if (yaw_error > 30 * M_PI / 180) {
-                    utils.debug("INTERSECTION_REACHED(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_point[2]) + ", error: " + helper::d2str(yaw_error), 2);
-                    return false;
-                }
-                last_intersection_point = {x_current[0], x_current[1]};
-                path_manager.intersection_index++;
-                if (path_manager.intersection_index < path_manager.intersection_points.size()) {
-                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) + "), intersection: (" + helper::d2str(next_intersection_point[0]) + ", " + helper::d2str(next_intersection_point[1]) + "), distance: " + helper::d2str(std::sqrt(distance_to_next_intersection_sq)) + ", index: " + std::to_string(path_manager.intersection_index) + ", next intersection: (" + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][0]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][1]) + ", " + helper::d2str(path_manager.intersection_points[path_manager.intersection_index][2]) + ")", 2);
-                } else {
-                    utils.debug("INTERSECTION_REACHED(): SUCCESS: x_cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) + "), intersection: (" + helper::d2str(next_intersection_point[0]) + ", " + helper::d2str(next_intersection_point[1]) + "), distance: " + helper::d2str(std::sqrt(distance_to_next_intersection_sq)) + ", index: " + std::to_string(path_manager.intersection_index) + ", no more intersections", 2);
-                }
-                return true;
-            } else {
-                return false;
-            }
+    bool check_intersection() {
+        int idx = path_manager.intersection_index;
+        if (idx >= path_manager.intersection_indices.size()) {
+            return false;
         }
-        if(lane && use_stopline) {
-            if (utils.stopline > 0)
-            {
-                utils.update_states(x_current);
-                update_mpc_states(x_current[0], x_current[1], x_current[2]);
-
-                bool found = false;
-                if (near_intersection()) {
-                    found = true;
-                }
-                if (found) {
-                    double &x = x_current[0];
-                    double &y = x_current[1];
-                    double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
-                    if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD * INTERSECTION_DISTANCE_THRESHOLD) {
-                        utils.debug("INTERSECTION_REACHED(): intersection detected, but distance (" + helper::d2str(std::sqrt(dist_sq)) + ") too close to previous intersection, ignoring...", 4);
-                        return false;
+        auto& target_intersection = GroundTruth::intersections_all[path_manager.intersection_indices[path_manager.intersection_index]];
+        if (target_intersection.associated_sign) {
+            sign_flag = target_intersection.associated_sign->type;
+            if (sign_flag == OBJECT::NONE) {
+                Eigen::Vector3d& target_sign_pose = target_intersection.associated_sign->pose;
+                for (auto& known_static_object: Tracking::get_road_known_static_objects()) {
+                    Eigen::Vector3d& static_object_gt_pose = known_static_object->gt_pose;
+                    double error_sq = (target_sign_pose - static_object_gt_pose).squaredNorm();
+                    if (error_sq < 0.01) {
+                        if (known_static_object->cumulative_confidence < 2.0) {
+                            // utils.debug("CHECK_INTERSECTION(): WARNING: sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), but cumulative confidence too low: " + helper::d2str(known_static_object->cumulative_confidence) + ", sign: " + OBJECT_NAMES[sign_flag] + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
+                            continue;
+                        }
+                        sign_flag = known_static_object->type;
+                        target_intersection.associated_sign->type = sign_flag;
+                        utils.debug("CHECK_INTERSECTION(): sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), sign: " + OBJECT_NAMES[sign_flag] + ", cumulative confidence: " + helper::d2str(known_static_object->cumulative_confidence) + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
+                        break;
                     }
-                    utils.debug("INTERSECTION_REACHED(): setting last intersection point to (" + helper::d2str(x) + ", " + helper::d2str(y) + ")", 2);
-                    last_intersection_point = {x, y};
-                } else {
-                    // utils.debug("INTERSECTION_REACHED(): found false, ignoring...", 2);
-                    return false;
                 }
-                // std::cout << "DEBUG: returning true" << std::endl;
-                if (intersection_relocalize) {
-                    intersection_based_relocalization();
-                }
-                return true;
-            } else return false;
+            }
+        } else {
+            std::cerr << "CHECK_INTERSECTION(): ERROR: no associated sign for intersection " << path_manager.intersection_indices[path_manager.intersection_index] << ", index: " << path_manager.intersection_index << std::endl;
+            assert(false);
         }
-        return false;
+        if (idx > path_manager.intersection_indices.size() || idx < 0) {
+            utils.debug("CHECK_INTERSECTION(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(path_manager.intersection_indices.size()), 2);
+            stop_for(10*T);
+            exit(1);
+        }
+        int intersection_id = path_manager.intersection_indices[idx];
+        const auto& next_intersection_pose = GroundTruth::intersections_all[intersection_id].pose;
+        double distance_to_next_sq = (x_current.head(2) - next_intersection_pose.head(2)).squaredNorm();
+        if (distance_to_next_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
+            double yaw = x_current[2];
+            double yaw_error = Utility::compare_yaw(next_intersection_pose[2], yaw);
+            if (yaw_error > 30 * M_PI / 180) {
+                // utils.debug("CHECK_INTERSECTION(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_pose[2]) + ", error: " + helper::d2str(yaw_error), 2);
+                return false;
+            }
+            last_intersection_point = {x_current[0], x_current[1]};
+            path_manager.intersection_index++;
+            if (path_manager.intersection_index < path_manager.intersection_indices.size()) {
+                int next_idx = path_manager.intersection_indices[path_manager.intersection_index];
+                const auto& next_pose = GroundTruth::intersections_all[next_idx].pose;
+    
+                utils.debug("CHECK_INTERSECTION(): SUCCESS: x_cur: (" +
+                            helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
+                            "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
+                            "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +
+                            ", index: " + std::to_string(path_manager.intersection_index) +
+                            ", next intersection: (" + helper::d2str(next_pose[0]) + ", " + helper::d2str(next_pose[1]) + ", " + helper::d2str(next_pose[2]) + ")", 2);
+            } else {
+                utils.debug("CHECK_INTERSECTION(): SUCCESS: x_cur: (" +
+                            helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
+                            "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
+                            "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +
+                            ", index: " + std::to_string(path_manager.intersection_index) +
+                            ", no more intersections", 2);
+            }
+            if(sign_flag == OBJECT::STOPSIGN) {
+                utils.debug("intersection reached: CASE STOP SIGN, stopping for " + helper::d2str(stop_duration) + " seconds...", 2);
+                mpc.reset_solver();
+                stop_for(stop_duration);
+            } else if(sign_flag == OBJECT::NONE) {
+                utils.debug("intersection reached: WARNING: CASE NO SIGN, proceeding...", 2);
+            } else {
+                utils.debug("intersection reached: CASE " + OBJECT_NAMES[sign_flag] + ", proceeding...", 2);
+            }
+            sign_flag = OBJECT::NONE;
+            return true;
+        } else {
+            return false;
+        }
     }
     bool sign_in_path(int sign_idx, double search_dist) {
-        auto estimated_sign_pose = utils.object_world_pose(sign_idx);
+        auto estimated_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], 
+            utils.object_box(sign_idx), utils.object_distance(sign_idx));
         double x = estimated_sign_pose[0];
         double y = estimated_sign_pose[1];
         int closest_idx = path_manager.closest_waypoint_index;
@@ -501,153 +469,77 @@ public:
                 min_dist_sq = dist_sq;
             }
             if (min_dist_sq < threshold) {
-                // utils.debug("sign_in_path(): sign at (" + helper::d2str(x) + ", " + helper::d2str(y) + ") found in path", 2);
                 return true;
             }
         }
         return false;
     }
     void check_light() {
-        if (stopsign_flag == OBJECT::NONE) wait_for_green_flag = false;
-        utils.update_states(x_current);
-        double &x = x_current[0];
-        double &y = x_current[1];
-        double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
-        if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
-            // distance to last intersection too close
-            return;
+        // check if next intersection's associated sign is a light
+        // if so check if last detection time is recent
+        // if so check if distance within bounds
+        // if so check if light is red
+        // if so stop and wait for green
+        if (sign_flag == OBJECT::NONE) wait_for_green_flag = false;
+        if (sign_flag != OBJECT::LIGHTS) {
+            return; // if next intersection's associated sign is not a light, return
         }
-        // check for traffic light
-        static bool relocalized = false;
-        // if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected
-        if (stopsign_flag == OBJECT::NONE) relocalized = false;
-        static Eigen::Vector2d light_pose(1000.0, 1000.0);
-        if (stopsign_flag != OBJECT::NONE && stopsign_flag != OBJECT::LIGHTS && stopsign_flag != OBJECT::REDLIGHT 
-            && stopsign_flag != OBJECT::GREENLIGHT && stopsign_flag != OBJECT::YELLOWLIGHT)
-        { 
-            return; // sign already detected 
+        if (wait_for_green_flag) {
+            return; // already waited for green
         }
-        double dist = -10.0;
-        bool is_red = false;
-        int sign_index = utils.object_index(OBJECT::REDLIGHT);
-        if(sign_index >= 0) {
-            is_red = true;
-        } else {
-            sign_index = utils.object_index(OBJECT::LIGHTS);
-        }
-        if(sign_index >= 0) is_red = true; // consider LIGHTS as red light
-        if (sign_index < 0) sign_index = utils.object_index(OBJECT::GREENLIGHT);
-        if (sign_index < 0) sign_index = utils.object_index(OBJECT::YELLOWLIGHT);
-        if(sign_index >= 0) {
-            dist = utils.object_distance(sign_index);
-            if (!relocalized && stopsign_flag == OBJECT::NONE && dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                detected_dist = dist;
-                light_pose = utils.object_world_pose(sign_index);
-                // double dist_to_last_intersection_sq = std::pow(light_pose[0] - last_intersection_point[0], 2) + std::pow(light_pose[1] - last_intersection_point[1], 2);
-                // if (dist_to_last_intersection_sq < std::pow(INTERSECTION_TO_SIGN * 2, 2)) {
-                //     utils.debug("check_light(): traffic light detected too close to last intersection, ignoring...", 2);
-                //     return;
-                // }
-                if (sign_in_path(sign_index, dist + 0.2)) {
-                    utils.debug("check_light(): traffic light detected at a distance of: " + helper::d2str(dist), 2);
-                    stopsign_flag = OBJECT::LIGHTS;
-                    if (sign_relocalize) {
-                        std::string sign_type;
-                        const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
-                        relocalized = sign_based_relocalization(light_pose, intersection_signs, sign_type);
-                    }
-                }
+        for(auto& obj: Tracking::road_known_static_objects) {
+            if (obj->type != OBJECT::LIGHTS) continue;
+            auto light_obj = std::dynamic_pointer_cast<Tracking::LightObject>(obj);
+            if (!light_obj) {
+                utils.debug("check_light(): ERROR: object has type LIGHTS but is not a LightObject", 2);
+                continue;
             }
-        }   
-        if (is_red && dist < MAX_LIGHT_DIST && !wait_for_green_flag) {
-            mpc.reset_solver();
-            wait_for_green();
-            wait_for_green_flag = true;
+            if (light_obj->last_detection_time < ros::Time::now() - ros::Duration(0.5)) continue;
+            double dist = (light_obj->gt_pose.head(2) - x_current.head(2)).norm();
+            if (dist > max_light_dist) continue;
+            if (light_obj->current_color == LightColor::RED) {
+                wait_for_green_flag = true;
+                utils.debug("check_light(): red light detected at a distance of: " + helper::d2str(dist) + ", waiting for green...", 2);
+                ros::Time start_wait_time = ros::Time::now();
+                while (ros::Time::now() - start_wait_time < ros::Duration(3.0)) {
+                    if (light_obj->current_color == LightColor::GREEN || light_obj->current_color == LightColor::YELLOW) {
+                        utils.debug("check_light(): green light detected, proceeding...", 2);
+                        break;
+                    }
+                    stop_for(T);
+                }
+                return;
+            }
         }
     }
-    void check_stop_sign() {
-        static bool relocalized = false;
-        if (stopsign_flag != OBJECT::NONE && relocalized) return; // sign already detected 
-        if (stopsign_flag == OBJECT::NONE) relocalized = false;
-        utils.update_states(x_current);
-        double &x = x_current[0];
-        double &y = x_current[1];
-        double dist_sq = std::pow(x - last_intersection_point(0), 2) + std::pow(y - last_intersection_point(1), 2);
-        if (dist_sq < INTERSECTION_DISTANCE_THRESHOLD/1.5 * INTERSECTION_DISTANCE_THRESHOLD/1.5) {
-            // distance to last intersection too close
+    void check_sign_for_relocalization() {
+        if (!sign_relocalize) return;
+        // check cooldown
+        if (sign_cooldown_timer > ros::Time::now()) return;
+        // check sign flag
+        if (sign_flag == OBJECT::NONE) {
             return;
         }
-        
-        int sign_index;
-        double dist = -10.0;
-
-        // check for stop sign
-        sign_index = utils.object_index(OBJECT::STOPSIGN);
-        if (stopsign_flag == OBJECT::NONE) { // if no sign detected
-            if(sign_index >= 0) {
-                dist = utils.object_distance(sign_index);
-                
-                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                    detected_dist = dist;
-                    if (sign_in_path(sign_index, dist + 0.2)) {
-                        utils.debug("check_stop_sign(): stop sign detected at a distance of: " + helper::d2str(dist), 2);
-                        stopsign_flag = OBJECT::STOPSIGN;
-                    }
-                }
-            }
-        }
-        
-        // check for priority sign
-        if (stopsign_flag == OBJECT::NONE) {
-            sign_index = utils.object_index(OBJECT::PRIORITY);
-            if(sign_index >= 0) {
-                dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                    detected_dist = dist;
-                    if (sign_in_path(sign_index, dist + 0.2)) {
-                        utils.debug("check_stop_sign(): priority detected at a distance of: " + helper::d2str(dist), 2);
-                        stopsign_flag = OBJECT::PRIORITY;
-                    }
-                }
-            }
-        }
-
-        // check for roundabout sign
-        if (stopsign_flag == OBJECT::NONE) {
-            sign_index = utils.object_index(OBJECT::ROUNDABOUT);
-            if(sign_index >= 0) {
-                dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                    detected_dist = dist;
-                    if (sign_in_path(sign_index, dist + 0.2)) {
-                        utils.debug("check_stop_sign(): roundabout detected at a distance of: " + helper::d2str(dist), 2);
-                        stopsign_flag = OBJECT::ROUNDABOUT;
-                    }
-                }
-            }
-        }
-        
-        // check for crosswalk
-        if (stopsign_flag == OBJECT::NONE) {
-            sign_index = utils.object_index(OBJECT::CROSSWALK);
-            if(sign_index >= 0) {
-                dist = utils.object_distance(sign_index);
-                if (dist < MAX_SIGN_DIST && dist > MIN_SIGN_DIST) {
-                    detected_dist = dist;
-                    if (sign_in_path(sign_index, dist + 0.2)) {
-                        utils.debug("check_stop_sign(): crosswalk detected at a distance of: " + helper::d2str(dist), 2);
-                        stopsign_flag = OBJECT::CROSSWALK;
-                    }
-                }
-            }
-        }
-        
-        // relocalize based on sign
-        if (sign_relocalize && stopsign_flag != OBJECT::NONE && stopsign_flag != OBJECT::LIGHTS && stopsign_flag != OBJECT::REDLIGHT && stopsign_flag != OBJECT::GREENLIGHT && stopsign_flag != OBJECT::YELLOWLIGHT) {
-            auto sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(sign_index), detected_dist);
-            std::string sign_type;
-            const auto& intersection_signs = utils.get_relevant_signs(stopsign_flag, sign_type);
-            relocalized = sign_based_relocalization(sign_pose, intersection_signs, sign_type);
+        GroundTruth::Intersection& target_intersection = GroundTruth::intersections_all[path_manager.intersection_indices[path_manager.intersection_index]];
+        if (!target_intersection.associated_sign) return;
+        Eigen::Vector3d& target_sign_pose = target_intersection.associated_sign->pose;
+        auto known_static_objects = Tracking::get_road_known_static_objects();
+        for (auto& obj: known_static_objects) {
+            // check type
+            if (obj->type != sign_flag) continue;
+            // check last detection time
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(sign_flag)])) continue;
+            // check confidence
+            if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) continue;
+            double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
+            // check distance
+            if (dist > max_sign_dist || dist < min_sign_dist) continue;
+            // check error against target sign gt
+            double error_sq = (target_sign_pose.head(2) - obj->gt_pose.head(2)).squaredNorm();
+            if (error_sq > 0.01) continue;
+            sign_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::sign_cooldown);
+            if (sign_based_relocalization2(obj)) obj->reset();
+            return;
         }
     }
     int park_sign_detected() {
@@ -661,76 +553,33 @@ public:
         }
         return -1;
     }
-    double check_crosswalk() {
-        static ros::Time crosswalk_cooldown_timer = ros::Time::now();
-        static double detected_dist = -1;
-        if(crosswalk_cooldown_timer > ros::Time::now()) {
-            // std::cout << "crosswalk detected previously, cd expire in " << (crosswalk_cooldown_timer - ros::Time::now()).toSec() << "s" << std::endl;
-            return 100;
+    void check_highway_for_relocalization() {
+        // TODO: move magic numbers to tunable
+        if (!sign_relocalize) return;
+        if(highway_cooldown_timer > ros::Time::now()) {
+            return;
         }
-        int crosswalk_index = utils.object_index(OBJECT::CROSSWALK);
-        if(crosswalk_index >= 0) {
-            detected_dist = utils.object_distance(crosswalk_index);
-            if (detected_dist < MAX_CROSSWALK_DIST && detected_dist > 0) {
-                double cd = (detected_dist + CROSSWALK_LENGTH) / NORMAL_SPEED * cw_speed_ratio;
-                crosswalk_cooldown_timer = ros::Time::now() + ros::Duration(cd);
-                utils.debug("crosswalk detected at a distance of: " + helper::d2str(detected_dist), 2);
-                if (sign_relocalize) {
-                // if (1) {
-                    utils.update_states(x_current);
-                    auto crosswalk_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(crosswalk_index), detected_dist);
-                    std::string sign_type;
-                    const auto& direction_crosswalks = utils.get_relevant_signs(OBJECT::CROSSWALK, sign_type);
-                    int nearestDirectionIndex = Utility::nearest_direction_index(x_current[2]);
-                    sign_based_relocalization(crosswalk_pose, direction_crosswalks, sign_type);
-                }
-                return detected_dist;
+        auto known_static_objects = Tracking::get_road_known_static_objects();
+        for (auto& obj: known_static_objects) {
+            // check type
+            if (obj->type != OBJECT::HIGHWAYEXIT && obj->type != OBJECT::HIGHWAYENTRANCE) continue;
+            // check last detection time
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(obj->type)])) {
+                continue;
             }
-        }
-        return -1;
-    }
-    bool check_highway_signs() {
-        if (!sign_relocalize) return false;
-        static ros::Time hw_cooldown_timer = ros::Time::now();
-        static double detected_dist = -1;
-        static int detection_count = 0;
-        if(hw_cooldown_timer > ros::Time::now()) {
-            return false;
-        }
-        bool is_exit = false;
-        int hw_index = utils.object_index(OBJECT::HIGHWAYENTRANCE);
-        if (hw_index < 0) {
-            hw_index = utils.object_index(OBJECT::HIGHWAYEXIT);
-            is_exit = true;
-        }
-        if(hw_index >= 0) {
-            detected_dist = utils.object_distance(hw_index);
-            // relocalize once at MAX_SIGN_DIST2, then again at MAX_SIGN_DIST
-            double distance_threshold = detection_count == 0 ? MAX_SIGN_DIST2 : MAX_SIGN_DIST;
-            if (detected_dist < distance_threshold && detected_dist > MIN_SIGN_DIST) {
-                std::string hw_type = is_exit ? "exit" : "entrance";
-                utils.update_states(x_current);
-                auto hw_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(hw_index), detected_dist);
-                std::string sign_type;
-                const auto& direction_highways = utils.get_relevant_signs(is_exit ? OBJECT::HIGHWAYEXIT : OBJECT::HIGHWAYENTRANCE, sign_type);
-                bool success = sign_based_relocalization(hw_pose, direction_highways, sign_type);
-                // utils.
-                detection_count++;
-                if (detection_count >= 2) {
-                    double cd = (detected_dist + 4) / FAST_SPEED;
-                    hw_cooldown_timer = ros::Time::now() + ros::Duration(cd);
-                    detection_count = 0;
-                }
-                return success;
+            // check confidence
+            if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) {
+                continue;
             }
+            double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
+            // check distance
+            if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
+                continue;
+            }
+            highway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
+            if (sign_based_relocalization2(obj)) obj->reset();
+            return;
         }
-        return false;
-    }
-    double check_highway() {
-        utils.update_states(x_current);
-        update_mpc_states(x_current[0], x_current[1], x_current[2]);
-        int closest_idx = path_manager.find_closest_waypoint(x_current);
-        return path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYLEFT) || path_manager.attribute_cmp(closest_idx, path_manager.ATTRIBUTE::HIGHWAYRIGHT);
     }
     void check_emergency_stop() {
         if (!emergency) return;
@@ -781,11 +630,28 @@ public:
             rate->sleep();
         }
     }
-    void exit_detected() {
-        // if (utils.object_index(OBJECT::NOENTRY) >= 0) {
-        //     ROS_INFO("no entry detected, signaling end of mission");
-        //     change_state(STATE::DONE);
-        // }
+    bool sign_based_relocalization2(std::shared_ptr<Tracking::KnownStaticObject>& object, double thresh = -1.0) {
+        if (thresh < 0) thresh = sign_localization_threshold;
+        double error_sq = std::pow(object->x - object->gt_pose[0], 2) + std::pow(object->y - object->gt_pose[1], 2);
+        if (error_sq > thresh * thresh) {
+            utils.debug("SIGN_RELOC2(): FAILURE: error too large: " + helper::d2str(std::sqrt(error_sq)) + ", thresh: " + helper::d2str(thresh) + ", estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+            return false;
+        }
+        double current_yaw = x_current[2];
+        double target_yaw = object->gt_pose[2];
+        double yaw_error = Utility::compare_yaw(target_yaw, current_yaw);
+        // check yaw
+        if (yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
+            utils.debug("SIGN_RELOC2(): FAILURE: yaw error too large: " + helper::d2str(yaw_error * 180/M_PI) + ", thresh: " + helper::d2str(sign_localization_orientation_threshold) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+            return false;
+        }
+        double x,y,yaw;
+        utils.get_states(x, y, yaw);
+        utils.recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
+        utils.update_states(x_current);
+        utils.debug("SIGN_RELOC2(): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+        // stop_for(3.0);
+        return true;
     }
     int sign_based_relocalization(const Eigen::Vector2d estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, const std::string& sign_type = "", double thresh = -1.0) {
         int min_index = 0;
@@ -796,7 +662,7 @@ public:
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = Utility::compare_yaw(sign_direction, yaw);
             if(yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
-                utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
+                // utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
                 return 0;
             }
             double x,y;
@@ -804,6 +670,7 @@ public:
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
             utils.update_states(x_current);
             utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI), 2);
+            stop_for(3.0);
             path_manager.reset_target_waypoint_index(x_current);
             mpc.reset_solver();
             return 1;
@@ -955,27 +822,14 @@ public:
             else if (neareastDirection == 2) light_topic_name = "/west_traffic_light";
             else if (neareastDirection == 3) light_topic_name = "/south_traffic_light";
             auto is_green = ros::topic::waitForMessage<std_msgs::Byte>(light_topic_name, ros::Duration(3));
-            int n = 0;
-            double ekf_x, ekf_y;
-            double total_x, total_y;
             while (is_green->data != 1) {
                 is_green = ros::topic::waitForMessage<std_msgs::Byte>(light_topic_name, ros::Duration(3));
                 utils.publish_cmd_vel(0, 0);
-                if (utils.useEkf) {
-                    utils.get_ekf_states(ekf_x, ekf_y);
-                    total_x += ekf_x;
-                    total_y += ekf_y;
-                    n++;
-                }
                 rate->sleep();
             }
             utils.debug("WAIT_FOR_GREEN(): light turned green, proceeding...", 2);
-            if (utils.useEkf) {
-                utils.x0 = total_x / n - utils.odomX;
-                utils.y0 = total_y / n - utils.odomY;
-            }
             return;
-        } else if (true) {
+        } else {
             utils.debug("WAIT_FOR_GREEN(): red light detected, waiting for " + helper::d2str(stop_duration * 2) + "s or until light turns green", 2);
             auto expiring_time = ros::Time::now() + ros::Duration(3.0);
             int green_count = 0;
@@ -999,9 +853,6 @@ public:
                 stop_for(T);
             }
             return;
-        } else {
-            utils.debug("WAIT_FOR_GREEN(): light detected, but in simulation, proceeding ", 2);
-            // stop_for(stop_duration);
         }
     }
     void publish_waypoints() {
@@ -1016,21 +867,6 @@ public:
         utils.waypoints_pub.publish(msg);
         if (utils.tcp_client != nullptr) utils.tcp_client->send_waypoint(msg);
     }
-    void lane_follow(double speed = -2) {
-        if (speed < -1) speed = NORMAL_SPEED;
-        if(pubWaypoints) {
-            publish_waypoints();
-        }
-        double steer = utils.get_steering_angle();
-        //std::cout << "lanefollowing " << steer<<" " << speed << std::endl;
-        if (check_crosswalk() > 0) {
-            speed *= cw_speed_ratio;
-        }
-        if (check_highway() > 0) {
-            speed *= hw_speed_ratio;
-        }
-        utils.publish_cmd_vel(steer, speed);
-    }
     void orientation_follow(double orientation, double speed = -2) {
         if (speed < -1) speed = NORMAL_SPEED;
         if(pubWaypoints) {
@@ -1040,12 +876,6 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         double steer = - yaw_error * 180 / M_PI * 1;
-        if (check_crosswalk() > 0) {
-            speed *= cw_speed_ratio;
-        }
-        if (check_highway() > 0) {
-            speed *= hw_speed_ratio;
-        }
         utils.publish_cmd_vel(steer, speed);
     }
 
@@ -1053,18 +883,7 @@ public:
         int closest_idx = path_manager.closest_waypoint_index;
         double safety_dist = 0.3; // meters
         if (closest_idx < path_manager.overtake_end_index + safety_dist * path_manager.density) return;
-        std::vector<std::shared_ptr<CarObject>> cars;
-        bool ego_car_detected = false;
-        for (auto& obj : utils.road_objects) {
-            auto car = std::dynamic_pointer_cast<CarObject>(obj);
-            if (car != nullptr) {
-                if (!ego_car_detected) {
-                    ego_car_detected = true;
-                    continue;
-                }
-                cars.push_back(car);
-            }
-        }
+        auto cars = Tracking::get_road_cars();
         if (cars.size() == 0) return;
         double min_adj_lane_dist = 1000.;
         double min_adj_lane_lat_dist = 1000.;
@@ -1224,8 +1043,8 @@ public:
     
     void check_car_single() {
         double dist;
-        auto& cars = utils.detected_cars;
-        utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
+        auto cars = Tracking::get_road_cars();
+        // utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
             utils.update_states(x_current);
@@ -1239,9 +1058,7 @@ public:
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist);
-                // auto car_pose = utils.detected_cars[car_index];
-                // compute distance from detected car to closest waypoint in front of car to assess whether car is in same lane
+                auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, true);
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * path_manager.density + closest_idx;
                 // compute distance from car_pose to waypoint, find closest waypoint and distance
@@ -1492,41 +1309,18 @@ void StateMachine::run() {
         utils.update_states(x_current);
         if (sign) {
             pedestrian_detected();
-            exit_detected();
             check_emergency_stop();
         }
         if (state == STATE::MOVING) {
             update_mpc_states();
             solve();
-            if(intersection_reached()) {
-                if(stopsign_flag == OBJECT::STOPSIGN || stopsign_flag == OBJECT::LIGHTS) {
-                    // change_state(STATE::WAITING_FOR_STOPSIGN);
-                    if (stopsign_flag == OBJECT::STOPSIGN) {
-                        utils.debug("intersection reached: CASE STOP SIGN, stopping for " + helper::d2str(stop_duration) + " seconds...", 2);
-                        mpc.reset_solver();
-                        stop_for(stop_duration);
-                    } else if (stopsign_flag == OBJECT::LIGHTS) {
-                        utils.debug("intersection reached: CASE TRAFFIC LIGHT, clearing stopsign flag...", 2);
-                    }
-                    stopsign_flag = OBJECT::NONE;
-                } else if(stopsign_flag == OBJECT::PRIORITY) {
-                    utils.debug("intersection reached: CASE PRIORITY, proceeding...", 2);
-                    stopsign_flag = OBJECT::NONE;
-                } else if(stopsign_flag == OBJECT::CROSSWALK) {
-                    utils.debug("intersection reached: CASE CROSSWALK, proceeding...", 2);
-                    stopsign_flag = OBJECT::NONE;
-                } else if(stopsign_flag == OBJECT::ROUNDABOUT) {
-                    utils.debug("intersection reached: CASE ROUNDABOUT, proceeding...", 2);
-                    stopsign_flag = OBJECT::NONE;
-                } else {
-                    ROS_WARN("intersection reached: CASE NO SIGN, proceeding...");
-                    stopsign_flag = OBJECT::NONE;
-                }
+            if(check_intersection()) {
+                ;
             }
             if (sign) {
-                check_stop_sign();
+                check_sign_for_relocalization();
+                check_highway_for_relocalization();
                 check_light();
-                check_highway_signs();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {
                     auto x1 = PARKING_SIGN_POSES1[0][0];
@@ -1607,20 +1401,14 @@ void StateMachine::run() {
                 }
                 while(1) {
                     pedestrian_detected();
-                    exit_detected();
                     check_emergency_stop();
-                    // check utils.recent_car_indices
-                    // std::cout << "recent car indices size: " << utils.recent_car_indices.size() << std::endl;
-                    std::list<int> cars = utils.recent_car_indices;
-                    // std::cout << "number of cars detected: " << cars.size() << std::endl;
-                    // iterate through all cars and check if any are in the parking spot
+                    auto cars = Tracking::get_road_cars();
                     bool changed = false;
                     bool car_in_spot = false;
                     while(1) {
-                        for (int i : cars) {
-                            utils.debug("PARKING(): checking car: (" + helper::d2str(utils.detected_cars[i][0]) + ", " + helper::d2str(utils.detected_cars[i][1]) + "), error: " + helper::d2str((utils.detected_cars[i] - PARKING_SPOTS[target_spot]).norm()), 5);
-                            Eigen::Vector2d world_pose = utils.detected_cars[i];
-                            Eigen::Vector2d spot = PARKING_SPOTS[target_spot];
+                        for (auto car: cars) {
+                            Eigen::Vector2d world_pose = Eigen::Vector2d(car->x, car->y);
+                            const Eigen::Vector2d& spot = PARKING_SPOTS[target_spot];
                             double error_sq = (world_pose - spot).squaredNorm();
                             double error_threshold_sq = 0.04;
                             if (error_sq < error_threshold_sq) {
@@ -1684,7 +1472,6 @@ void StateMachine::run() {
                 while(1) {
                     x_error = x - PARKING_SPOTS[target_spot][0];
                     pedestrian_detected();
-                    exit_detected();
                     check_emergency_stop();
                     utils.get_states(x, y, yaw);
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
@@ -1909,6 +1696,12 @@ int main(int argc, char **argv) {
         std::cout << "Successfully loaded parameters" << std::endl;
     }
     std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
+    if (!Tunable::loadFromParams(nh, real)) {
+        std::cout << "FATAL ERROR: Failed to load tunable parameters" << std::endl;
+        exit(1);
+    }
+    GroundTruth::initialize_ground_truth();
+    Tracking::initialize_tracking();
     StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
     bool use_tcp = false;
     nh.getParam("/use_tcp", use_tcp);

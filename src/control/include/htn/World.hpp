@@ -4,7 +4,7 @@
 #include "PathManager.hpp"
 #include "htn/Primitives.hpp"
 #include "htn/ValueTypes.hpp"
-#include "utility.hpp"
+#include "Utility.hpp"
 #include "utils/constants.h"
 #include "utils/goto_command.h"
 #include "utils/set_states.h"

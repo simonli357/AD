@@ -179,45 +179,45 @@ class Path:
         self.v_ref = v_ref
         print("v_ref: ", v_ref, ", N: ", N, ", T: ", T, ", x0: ", x0, ", name: ", name)
         self.N = N
-        self.global_planner = GlobalPlanner()
-        if name is not None:
-            self.name = name
-            current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
-                data = yaml.safe_load(stream)
-                destinations = data[name]
-        else:
-            dest_x = dest[0]
-            dest_y = dest[1]
-            destination = self.global_planner.find_closest_node(dest_x, dest_y)
-            print("destination: ", destination, type(destination))
-            destinations = [destination]
+        # self.global_planner = GlobalPlanner()
+        # if name is not None:
+        #     self.name = name
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        #     with open(os.path.join(current_path, 'config/paths.yaml'), 'r') as stream:
+        #         data = yaml.safe_load(stream)
+        #         destinations = data[name]
+        # else:
+        #     dest_x = dest[0]
+        #     dest_y = dest[1]
+        #     destination = self.global_planner.find_closest_node(dest_x, dest_y)
+        #     print("destination: ", destination, type(destination))
+        #     destinations = [destination]
 
         # Plan runs between sequential destinations
-        runs = []
-        attributes = []
-        if x0 is not None:
-            print("x0: ", x0)
-            start = self.global_planner.find_closest_node(x0[0], x0[1])
-            end = self.global_planner.get_node_number(destinations[0])
-            run, _, attribute = self.global_planner.plan_path(start, end)
-            runs.append(run)
-            attributes.append(attribute)
-        for i in range(len(destinations) - 1):
-            start = self.global_planner.get_node_number(destinations[i])
-            end = self.global_planner.get_node_number(destinations[i + 1])
-            run, _, attribute = self.global_planner.plan_path(start, end)
-            # if x0 is not None and i == 0:
-            if False:
-                runs[0] = np.hstack((runs[0], run))
-                attributes[0].extend(attribute)
-            else:
-                # print("run: ", run.shape)
-                runs.append(run)
-                # print(i, ") attribute:\n", attribute)
-                attributes.append(attribute)
+        # runs = []
+        # attributes = []
+        # if x0 is not None:
+        #     print("x0: ", x0)
+        #     start = self.global_planner.find_closest_node(x0[0], x0[1])
+        #     end = self.global_planner.get_node_number(destinations[0])
+        #     run, _, attribute = self.global_planner.plan_path(start, end)
+        #     runs.append(run)
+        #     attributes.append(attribute)
+        # for i in range(len(destinations) - 1):
+        #     start = self.global_planner.get_node_number(destinations[i])
+        #     end = self.global_planner.get_node_number(destinations[i + 1])
+        #     run, _, attribute = self.global_planner.plan_path(start, end)
+        #     # if x0 is not None and i == 0:
+        #     if False:
+        #         runs[0] = np.hstack((runs[0], run))
+        #         attributes[0].extend(attribute)
+        #     else:
+        #         # print("run: ", run.shape)
+        #         runs.append(run)
+        #         # print(i, ") attribute:\n", attribute)
+        #         attributes.append(attribute)
 
-        runs1 = np.hstack(runs)
+        # runs1 = np.hstack(runs)
         runs = []
         # barca = np.array([[0,0], [1.33, -1.27], [2.55, -2.71], [3.26, -4.4], [3.07, -5.91], [1.9, -8.56], [-7.65, -24.357], 
         # [-8.62, -25.8], [-9, -25.7], [-8.5, -27.4], [-4.16, -26.6], [-2.1, -23.5], [-0.2, -22.3],
@@ -454,8 +454,6 @@ class Path:
 def handle_goto_service(req):
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
     config_path='../../planning/scripts/config/mpc_config' + vrefName + '.yaml'
     path = os.path.join(current_path, config_path)
     with open(path, 'r') as f:
@@ -487,8 +485,6 @@ def handle_array_service(req):
     """
     current_path = os.path.dirname(os.path.realpath(__file__))
     vrefName = req.vrefName
-    if int(vrefName) >30:
-        vrefName = "50"
     config_path='../../planning/scripts/config/mpc_config' + vrefName + '.yaml'
     # print("config_path: ", config_path)
     path = os.path.join(current_path, config_path)

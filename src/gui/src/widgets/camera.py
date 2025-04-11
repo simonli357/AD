@@ -15,7 +15,7 @@ class CameraWidget(QtWidgets.QWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.show_depth = False
         self.numObj = 0
-        self.detected_objects = np.zeros(10)
+        self.detected_objects = np.zeros(7)
 
         # Lane
         self.center = None
@@ -45,12 +45,12 @@ class CameraWidget(QtWidgets.QWidget):
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label = QtWidgets.QLabel(container_widget)
-        self.camera_label.setFixedWidth(CameraParams.MIN_WIDTH.value)
-        self.camera_label.setFixedHeight(CameraParams.MIN_HEIGHT.value)
         self.camera_label.setAlignment(QtCore.Qt.AlignCenter)
         self.camera_label.setStyleSheet("""
             background-color: transparent;
         """)
+        self.camera_label.setMaximumWidth(620)
+        self.camera_label.setMaximumHeight(465)
         container_layout.addWidget(self.camera_label)
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -105,12 +105,12 @@ class CameraWidget(QtWidgets.QWidget):
     def add_sign_detection_to_image(self, image):
         for i in range(self.numObj):
             try:
-                id = int(self.detected_objects[10 * i + 6])
+                id = int(self.detected_objects[7 * i + 6])
             except Exception as e:
                 print("Error in sign detection")
                 print(e)
                 return
-            if self.detected_objects[10 * i + 5] < self.confidence_thresholds[id]:
+            if self.detected_objects[7 * i + 5] < self.confidence_thresholds[id]:
                 continue
 
             color_index = id % len(self.COLOR_LIST)
@@ -119,16 +119,16 @@ class CameraWidget(QtWidgets.QWidget):
             mean_color = np.mean(color)
             text_color = (0, 0, 0) if mean_color > 127 else (255, 255, 255)
 
-            confidence = self.detected_objects[10 * i + 5] * 100
-            distance = self.detected_objects[10 * i + 4]
+            confidence = self.detected_objects[7 * i + 5] * 100
+            distance = self.detected_objects[7 * i + 4]
             text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
 
             label_size, baseLine = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
 
-            x1 = int(self.detected_objects[10 * i])
-            y1 = int(self.detected_objects[10 * i + 1])
-            x2 = int(self.detected_objects[10 * i + 2])
-            y2 = int(self.detected_objects[10 * i + 3])
+            x1 = int(self.detected_objects[7 * i])
+            y1 = int(self.detected_objects[7 * i + 1])
+            x2 = int(self.detected_objects[7 * i + 2])
+            y2 = int(self.detected_objects[7 * i + 3])
 
             cv2.rectangle(image, (x1, y1), (x2, y2), color, 2, lineType=cv2.LINE_AA)
 
@@ -177,7 +177,7 @@ class CameraWidget(QtWidgets.QWidget):
 
     def sign_callback(self, sign) -> None:
         if sign.data:
-            self.numObj = len(sign.data) // 10
+            self.numObj = len(sign.data) // 7
             if self.numObj > 0:
                 self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
         else:

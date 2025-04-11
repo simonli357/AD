@@ -290,6 +290,8 @@ class CompileFormWidget(QDialog):
             cmd = self.cmd_cached
         else:
             self.cache['cmd'] = cmd
+        if 'IN_NIX_SHELL' in os.environ:
+            src_ros = 'echo ""'
         self.command = f'{src_ros} && cd {catkin_ws} && {cmd}'
 
     def clear_inputs(self):

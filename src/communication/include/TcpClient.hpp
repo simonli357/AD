@@ -59,7 +59,7 @@ class TcpClient {
 	void send_current_depth_image();
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(const Float32MultiArray &array);
+	void send_sign(const std::vector<float> &data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);

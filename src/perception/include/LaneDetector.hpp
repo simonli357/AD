@@ -234,7 +234,7 @@ class LaneDetector {
 		if (printDuration) {
 			auto stop = high_resolution_clock::now();
 			auto duration = duration_cast<microseconds>(stop - start);
-			ROS_INFO("duration: %ld", duration.count());
+			ROS_INFO("lane duration: %ld", duration.count());
 		}
 	}
 
@@ -471,9 +471,9 @@ class LaneDetector {
 		);
 
 		// Apply morphological operations to remove noise
-		static cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-		cv::morphologyEx(outputImage, outputImage, cv::MORPH_OPEN, kernel);
-		cv::morphologyEx(outputImage, outputImage, cv::MORPH_CLOSE, kernel);
+		// static cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
+		// cv::morphologyEx(outputImage, outputImage, cv::MORPH_OPEN, kernel);
+		// cv::morphologyEx(outputImage, outputImage, cv::MORPH_CLOSE, kernel);
 
 		// Create a mask to remove the top part of the image
 		// static cv::Mat mask;
