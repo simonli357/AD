@@ -31,6 +31,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     io(), serial(nullptr), real(real), it(nh)
 {
+
+    std::cout << "Utility constructor" << std::endl;  
+    message_pub = nh.advertise<std_msgs::String>("/message", 10);
+
     initialize_tcp_client();
     float x_init, y_init, yaw_init;
     x_init = x0;
@@ -106,9 +110,6 @@ void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
 }
 
 void Utility::initialize(float x0, float y0, float yaw0) {
-    std::cout << "Utility constructor" << std::endl;  
-    message_pub = nh.advertise<std_msgs::String>("/message", 10);
-
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
