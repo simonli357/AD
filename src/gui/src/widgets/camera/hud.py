@@ -57,14 +57,14 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
             confidence = self.cam_widget.detected_objects[7 * i + 5] * 100
             distance = self.cam_widget.detected_objects[7 * i + 4]
-            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f}m"
+            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f} m"
 
             x1 = int(self.cam_widget.detected_objects[7 * i])
             y1 = int(self.cam_widget.detected_objects[7 * i + 1])
             x2 = int(self.cam_widget.detected_objects[7 * i + 2])
             y2 = int(self.cam_widget.detected_objects[7 * i + 3])
 
-            self.box_renderer.draw(x1, y1, x2, y2, text, 1.0, color, self.proj_mat)
+            self.box_renderer.draw(x1, y1, x2, y2, text.capitalize(), 1.0, color, self.proj_mat)
 
     def draw_lane_indicator(self):
         if self.center is None:
