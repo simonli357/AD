@@ -19,7 +19,7 @@ class HudRenderer:
         termo_text_x = 0.53 * screen_width
         termo_text_y = termo_icon_y
         self.shader_renderer.draw_texture2D(termo_icon_x, termo_icon_y, self.shader_renderer.thermometer_texture, 25, proj_mat)
-        self.shader_renderer.text_renderer.render_text(f"{self.temperature}°C", termo_text_x, termo_text_y, 1.0, (1.0, 0.0, 0.0), proj_mat)
+        self.shader_renderer.text_renderer.render_text(f"{self.temperature:.0f}°C", termo_text_x, termo_text_y, 1.0, (1.0, 0.0, 0.0), proj_mat)
 
         bar_width = 0.2
         bar_height = 0.01
