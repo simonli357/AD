@@ -37,6 +37,7 @@ namespace Tunable {
     inline double sign_cooldown = 3.0;
     inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5};
     inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+    inline bool use_kf; // use Kalman filter for dynamic object tracking, else use EMA
 
     inline bool loadFromParams(ros::NodeHandle& nh, bool real) {
       bool success = true;
@@ -71,6 +72,7 @@ namespace Tunable {
       success &= nh.getParam(mode + "/sign_cooldown", sign_cooldown);
       success &= nh.getParam(mode + "/cumulative_confidence_thresholds", cumulative_confidence_thresholds);
       success &= nh.getParam(mode + "/recency_thresholds", recency_thresholds);
+      success &= nh.getParam(mode + "/use_kf", use_kf);
       return success;
   }
 }

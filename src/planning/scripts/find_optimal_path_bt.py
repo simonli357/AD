@@ -49,7 +49,8 @@ def plot_path_on_map(graph, path, map_image_path):
     plt.title('Optimal Path on the Map (Following Graph Edges)')
     plt.legend()
     plt.show()
-    
+
+
 class GlobalPlanner:
     def __init__(self):
         self.hw_safety_offset = 0.05
@@ -69,8 +70,8 @@ class GlobalPlanner:
                 x1, y1 = self.pos[u]
                 x2, y2 = self.pos[v]
                 distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-                if self.attribute[u] == 4 or self.attribute[v] == 4 or self.attribute[u] == 5 or self.attribute[v] == 5:
-                    # in highway, distance is 0.5
+                if self.attribute[u] in [4, 5] or self.attribute[v] in [4, 5]:
+                    # In highway, distance is scaled
                     distance *= 0.5
                 self.G[u][v]['weight'] = distance
             else:
@@ -84,7 +85,7 @@ class GlobalPlanner:
         print(f"Base destinations: {self.base_destinations}")
         
         self.destinations = self.base_destinations.copy()
-    
+
     def plan_path(self, start, end):
         if not isinstance(start, str):
             start = str(start)
@@ -104,79 +105,85 @@ class GlobalPlanner:
                 wp_y.append(y)
         return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
-    def find_optimal_sequence(self, start_node, max_distance=150.0):
-        # append start node at the beginning of the destinations list
+    def find_optimal_sequence(self, start_node, max_distance=80.0):
+        """
+        Attempts to find a route (sequence of nodes) that visits all destinations (plus the start)
+        without exceeding max_distance. This version uses pure recursive backtracking. It explores 
+        all valid orders of visiting the destinations, pruning any branch whose running total 
+        exceeds max_distance.
+        
+        If a complete solution (visiting all nodes) is found under the limit, it is returned.
+        Otherwise, the best partial solution (in terms of the number of nodes visited and minimal distance)
+        is returned.
+        """
+        # Prepare the list of nodes: start_node plus all base destinations (if start_node is among them, remove it)
         self.destinations = self.base_destinations.copy()
-        self.destinations.insert(0, start_node)
+        if start_node in self.destinations:
+            print(f"Removing start node {start_node} from destinations")
+            self.destinations.remove(start_node)
+        full_nodes = [start_node] + self.destinations
+
+        # Build a distance matrix for the nodes in full_nodes using Dijkstra.
         self.distance_matrix = {}
-        for start in self.destinations:
-            self.distance_matrix[start] = {}
-            for end in self.destinations:
-                if start == end:
-                    self.distance_matrix[start][end] = 0.0
+        for u in full_nodes:
+            self.distance_matrix[u] = {}
+            for v in full_nodes:
+                if u == v:
+                    self.distance_matrix[u][v] = 0.0
                 else:
                     try:
-                        length = nx.dijkstra_path_length(self.G, start, end, weight='weight')
-                        self.distance_matrix[start][end] = length
+                        length = nx.dijkstra_path_length(self.G, u, v, weight='weight')
+                        self.distance_matrix[u][v] = length
                     except nx.NetworkXNoPath:
-                        self.distance_matrix[start][end] = float('inf')
-                        
-        remaining_budget = max_distance
-        current_node = start_node
-        visited = set([current_node])
-        path = [current_node]
-        total_distance = 0.0
+                        self.distance_matrix[u][v] = float('inf')
 
-        # Create a list of destination candidates excluding the start node
-        candidates = [d for d in self.destinations if d != start_node]
-        
-        while True:
-            best_next = None
-            best_score = float('inf')  # Lower score is better (distance + minimal next hop)
-            
-            for candidate in list(candidates):  # Iterate over a copy to avoid modification issues
-                if candidate in visited:
-                    continue
-                
-                # Get distance from current node to candidate
-                dist_current_to_candidate = self.distance_matrix[current_node].get(candidate, float('inf'))
-                if total_distance + dist_current_to_candidate > remaining_budget:
-                    continue  # Skip if adding this candidate exceeds the budget
-                
-                # Calculate the minimal distance from candidate to any other unvisited candidate
-                min_next_dist = float('inf')
-                for next_candidate in candidates:
-                    if next_candidate == candidate or next_candidate in visited:
-                        continue
-                    dist = self.distance_matrix[candidate].get(next_candidate, float('inf'))
-                    if dist < min_next_dist:
-                        min_next_dist = dist
-                
-                # Score is the current distance plus the minimal next hop
-                score = dist_current_to_candidate + (min_next_dist if min_next_dist != float('inf') else 0)
-                
-                # Prefer lower score (allows more remaining budget)
-                if score < best_score:
-                    best_next = candidate
-                    best_score = score
-            
-            if best_next is not None:
-                # Add the best next candidate to the path
-                dist = self.distance_matrix[current_node][best_next]
-                path.append(best_next)
-                visited.add(best_next)
-                total_distance += dist
-                current_node = best_next
-                candidates.remove(best_next)
-                
-                # Check if remaining budget allows for at least one more minimal hop
-                remaining = remaining_budget - total_distance
-                if remaining <= 0:
-                    break
-            else:
-                break  # No more candidates can be added
-        
-        return path, total_distance
+        # Global variables to track the best complete (all destinations visited)
+        # and the best partial solution.
+        best_complete_path = None
+        best_complete_distance = float('inf')
+        best_partial_path = None
+        best_partial_num_visited = 0
+        best_partial_distance = float('inf')
+
+        def backtrack(current, visited, current_distance, path):
+            nonlocal best_complete_path, best_complete_distance, best_partial_path, best_partial_num_visited, best_partial_distance
+
+            # Update best partial solution if this path visits more nodes or has a lower distance for the same count.
+            if (len(path) > best_partial_num_visited) or (len(path) == best_partial_num_visited and current_distance < best_partial_distance):
+                best_partial_num_visited = len(path)
+                best_partial_distance = current_distance
+                best_partial_path = path.copy()
+
+            # If all nodes have been visited, record complete solution.
+            if len(visited) == len(full_nodes):
+                if current_distance < best_complete_distance:
+                    best_complete_path = path.copy()
+                    best_complete_distance = current_distance
+                # Continue exploring after a complete solution is found.
+                return
+
+            # Try each candidate node not yet visited.
+            for candidate in full_nodes:
+                if candidate not in visited:
+                    d = self.distance_matrix[current][candidate]
+                    # Prune the branch if adding this candidate exceeds the max allowed distance.
+                    if current_distance + d <= max_distance:
+                        visited.add(candidate)
+                        path.append(candidate)
+                        backtrack(candidate, visited, current_distance + d, path)
+                        path.pop()
+                        visited.remove(candidate)
+
+        visited = set([start_node])
+        backtrack(start_node, visited, 0.0, [start_node])
+
+        if best_complete_path is not None:
+            print(f"Found complete path with distance {best_complete_distance:.2f}m")
+            return best_complete_path, best_complete_distance
+        else:
+            print(f"No complete solution found. Best partial path visits {len(best_partial_path)-1} destinations with total distance {best_partial_distance:.2f}m")
+            return best_partial_path, best_partial_distance
+
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
@@ -188,27 +195,18 @@ if __name__ == "__main__":
     
     runs = {}
     
+    max_dist = 75.0  # maximum allowed distance in meters
+    
     for start in starting_points:
         start_str = str(start)
-        total_dist = 0.0
-        max_dist = 157.0
-        while total_dist < 140.0:
-            optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
-            max_dist += 2.0
+        optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
+        # Convert nodes to integers if needed (and remove the start node from the final output)
         optimal_path_ints = [int(node) for node in optimal_path]
-        #remove first node from path
-        optimal_path_ints.pop(0)
+        if optimal_path_ints and optimal_path_ints[0] == int(start):
+            optimal_path_ints.pop(0)
         runs[f'run{start}'] = optimal_path_ints
         print(f"run{start}: distance={total_dist:.2f}m, num_destinations={len(optimal_path)-1}")
     
-    runs_path = os.path.join(current_dir, 'config/runs.yaml')
+    runs_path = os.path.join(current_dir, 'config/runsbt.yaml')
     with open(runs_path, 'w') as f:
         yaml.dump(runs, f, default_flow_style=False)
-        
-    # optimal_path, total_dist = planner.find_optimal_sequence('112')
-    # print(f"Optimal sequence of destinations: {optimal_path}")
-    # print(f"Total distance traveled: {total_dist} meters")
-    # print(f"Number of destinations visited: {len(optimal_path)}")
-    
-    # Plot the optimal path on the map
-    # plot_path_on_map(planner.G, optimal_path, planner.current_dir + '/maps/Competition_track_graph_new.png')

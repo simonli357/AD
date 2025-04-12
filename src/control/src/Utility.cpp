@@ -484,6 +484,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
         if(dist > 3.0 || dist < 0.6) continue;

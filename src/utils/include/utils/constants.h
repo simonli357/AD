@@ -24,10 +24,6 @@ namespace VehicleConstants {
     static constexpr int IMAGE_WIDTH = 640;
     static constexpr double MAX_TAILING_DIST = 0.75;
     static constexpr double MIN_SIGN_DIST = 0.39;  // 0.6 - 0.21
-    static constexpr double MAX_SIGN_DIST = 1.2;
-    static constexpr double MAX_SIGN_DIST2 = 1.5;
-    // static constexpr double MAX_SIGN_DIST = 0.753;
-    // static constexpr double MAX_PARK_DIST = 0.79;  // 1.0 - 0.21
     static constexpr double MAX_PARK_DIST = 1.;  // 1.0 - 0.21
     static constexpr double MAX_CROSSWALK_DIST = 0.79;  // 1.0 - 0.21
     static constexpr double PARKSIGN_TO_CAR = 0.51;
