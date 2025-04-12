@@ -39,7 +39,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
     initialize_tcp_client();
-    float x_init, y_init, yaw_init;
+    double x_init, y_init, yaw_init;
     x_init = x0;
     y_init = y0;
     yaw_init = yaw0;
