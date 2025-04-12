@@ -43,8 +43,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     x_init = x0;
     y_init = y0;
     yaw_init = yaw0;
-    fetch_run_params(x_init, y_init, yaw_init);
-    initialize(x_init, y_init, yaw_init);
+    initialize();
+    fetch_run_params();
 }
 
 Utility::~Utility() {
@@ -93,7 +93,7 @@ void Utility::initialize_tcp_client() {
     }
 }
 
-void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init) {
+void Utility::fetch_run_params() {
     boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
     msg_ptr = nullptr;
     while (!msg_ptr) {
@@ -120,13 +120,13 @@ void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init)
         return std::any_cast<double>(a[4]) < std::any_cast<double>(b[4]);
     });
 
-    x_init = std::any_cast<double>(runs_with_info[0][0]);
-    y_init = std::any_cast<double>(runs_with_info[0][1]);
-    yaw_init = std::any_cast<double>(runs_with_info[0][2]);
+    this->x0 = std::any_cast<double>(runs_with_info[0][0]);
+    this->y0 = std::any_cast<double>(runs_with_info[0][1]);
+    this->yaw0 = std::any_cast<double>(runs_with_info[0][2]);
     pathName = std::any_cast<std::string>(runs_with_info[0][3]);
 }
 
-void Utility::initialize(double x0, double y0, double yaw0) {
+void Utility::initialize() {
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
@@ -192,9 +192,6 @@ void Utility::initialize(double x0, double y0, double yaw0) {
     broadcaster = tf2_ros::TransformBroadcaster();
     publish_static_transforms();
 
-    this->x0 = x0;
-    this->y0 = y0;
-    this->yaw0 = yaw0;
     yaw = yaw0;
     velocity = 0.0;
     odomX = 0.0;
