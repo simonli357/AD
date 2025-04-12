@@ -80,13 +80,18 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         thickness = 5
         x1 = self.center * self.width() - thickness / 2.0
         x2 = self.center * self.width() + thickness / 2.0
-        y1 = 480 * 0.8
-        y2 = 480
+        y1 = self.height() * 0.8
+        y2 = self.height()
         self.lane_renderer.draw(x1, y1, x2, y2, 4, (1.0, 1.0, 0.0), self.proj_mat)
 
         text_x = 0.02 * self.width()
         text_y = 0.04 * self.height()
         y_offset = 30
+
+        text = f"CENTER: {self.center:.2f}"
+        text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
+        self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.proj_mat)
+        text_y += y_offset
 
         if self.stopline_dist:
             text = f"STOPLINE DISTANCE: {self.stopline_dist:.2f}"
