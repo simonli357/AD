@@ -18,6 +18,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
+#include <tf2/utils.h>
 #include <thread>
 #include <vector>
 #include <array>
@@ -27,6 +28,7 @@
 #include <cmath>
 #include <robot_localization/SetPose.h>
 #include <iostream>
+#include "Runs.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
@@ -92,25 +94,35 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
-    std::cout << "Waiting for run parameters" << std::endl;
-    while(true) {
-        boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
-        if (!msg_ptr) {
-            continue;
-        }
-        tcp_client->send_gps_msg(*msg_ptr);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Small delay to allow server to process request
-        if (!tcp_client->get_gps_msgs().empty()) {
-            x_init = tcp_client->get_gps_msgs().front()->x0;
-            y_init = tcp_client->get_gps_msgs().front()->y0;
-            yaw_init = tcp_client->get_gps_msgs().front()->yaw0;
-            pathName = tcp_client->get_gps_msgs().front()->path;
-            break;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
+    msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
+    if (!msg_ptr) {
+        return;
     }
-    std::cout << "Run parameters received" << std::endl;
+    double x = msg_ptr->pose.pose.position.x;
+    double y = msg_ptr->pose.pose.position.y;
+    double z = msg_ptr->pose.pose.position.z;
+    double yaw = tf2::getYaw(msg_ptr->pose.pose.orientation);
+
+    std::vector<std::array<double, 4>> runs_with_info;
+
+    for (auto &run : Runs::runs) {
+        double dx = x - run.x;
+        double dy = y - run.y;
+        double dist = std::sqrt(dx*dx + dy*dy);
+        double yaw_diff = compare_yaw(yaw, run.yaw);
+        if(yaw_diff < 40 * 180/M_PI) {
+            runs_with_info.push_back({run.x, run.y, run.yaw, dist});
+        }
+    }
+    
+    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<double, 4>& a, const std::array<double, 4>& b) {
+        return a[3] < b[3];
+    });
+
+    x_init = runs_with_info[0][0];
+    y_init = runs_with_info[0][1];
+    yaw_init = runs_with_info[0][2];
 }
 
 void Utility::initialize(float x0, float y0, float yaw0) {
