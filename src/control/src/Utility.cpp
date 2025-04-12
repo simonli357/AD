@@ -93,7 +93,7 @@ void Utility::initialize_tcp_client() {
     }
 }
 
-void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
+void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init) {
     boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
     msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
     if (!msg_ptr) {
@@ -104,7 +104,7 @@ void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
     double z = msg_ptr->pose.pose.position.z;
     double yaw = tf2::getYaw(msg_ptr->pose.pose.orientation);
 
-    std::vector<std::array<double, 4>> runs_with_info;
+    std::vector<std::array<std::any, 5>> runs_with_info;
 
     for (auto &run : Runs::runs) {
         double dx = x - run.x;
@@ -112,20 +112,21 @@ void Utility::fetch_run_params(float &x_init, float &y_init, float &yaw_init) {
         double dist = std::sqrt(dx*dx + dy*dy);
         double yaw_diff = compare_yaw(yaw, run.yaw);
         if(yaw_diff < 40 * 180/M_PI) {
-            runs_with_info.push_back({run.x, run.y, run.yaw, dist});
+            runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
         }
     }
     
     std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<double, 4>& a, const std::array<double, 4>& b) {
-        return a[3] < b[3];
+        return a[4] < b[4];
     });
 
-    x_init = runs_with_info[0][0];
-    y_init = runs_with_info[0][1];
-    yaw_init = runs_with_info[0][2];
+    x_init = std::any_cast<double>(runs_with_info[0][0]);
+    y_init = std::any_cast<double>(runs_with_info[0][1]);
+    yaw_init = std::any_cast<double>(runs_with_info[0][2]);
+    pathName = std::any_cast<std::string>(runs_with_info[0][3]);
 }
 
-void Utility::initialize(float x0, float y0, float yaw0) {
+void Utility::initialize(double x0, double y0, double yaw0) {
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees

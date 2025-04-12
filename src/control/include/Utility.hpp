@@ -143,9 +143,9 @@ public:
     ros::Subscriber tf_sub;
 
     // Initialization
-    void initialize(float x0, float y0, float yaw0);
+    void initialize(double x0, double y0, double yaw0);
     void initialize_tcp_client();
-    void fetch_run_params(float &x_init, float &y_init, float &yaw_init);
+    void fetch_run_params(double &x_init, double &y_init, double &yaw_init);
 
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);
