@@ -361,7 +361,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.GREEN, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
