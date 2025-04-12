@@ -78,8 +78,8 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             return
 
         thickness = 5
-        x1 = self.center - thickness / 2.0
-        x2 = self.center + thickness / 2.0
+        x1 = self.center * self.width() - thickness / 2.0
+        x2 = self.center * self.width() + thickness / 2.0
         y1 = 480 * 0.8
         y2 = 480
         self.lane_renderer.draw(x1, y1, x2, y2, 4, (1.0, 1.0, 0.0), self.proj_mat)
