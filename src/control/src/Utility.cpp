@@ -111,7 +111,7 @@ void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init)
         double dy = y - run.y;
         double dist = std::sqrt(dx*dx + dy*dy);
         double yaw_diff = compare_yaw(yaw, run.yaw);
-        if(yaw_diff < 40 * 180/M_PI) {
+        if(yaw_diff < 40.0 / 180 * M_PI) {
             runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
         }
     }
