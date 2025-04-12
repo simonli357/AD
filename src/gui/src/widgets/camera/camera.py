@@ -20,7 +20,7 @@ class CameraWidget(QtWidgets.QWidget):
         self.detected_objects = np.zeros(7)
 
         # Lane
-        self.center = None
+        self.center = 320
         self.crosswalk = False
         self.stopline = False
         self.stopline_dist = None

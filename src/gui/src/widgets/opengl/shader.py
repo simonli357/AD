@@ -5,6 +5,7 @@ from .basic import line_model, circle_model, crosshair_model, triangle_model, ar
 from .obj import load_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
+from .custom.lane import LaneIndicator
 from .custom.detection_box import DetectionBox
 from .custom.speedometer import Speedometer
 from .font import TextRenderer
@@ -80,11 +81,13 @@ class ShaderRenderer:
         self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
+        self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
 
     def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
         self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
         self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
+        self.lane_model = LaneIndicator(self.text_renderer, self.lane_shader)
 
     ##################
     # Draw Functions

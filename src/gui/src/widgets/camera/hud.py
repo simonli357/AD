@@ -3,7 +3,6 @@ from OpenGL import GL as gl
 from ..opengl.shader import ShaderRenderer
 
 import glm
-import numpy as np
 
 
 class CameraOverlay(QtWidgets.QOpenGLWidget):
@@ -32,6 +31,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         self.shader_renderer = ShaderRenderer()
         self.box_renderer = self.shader_renderer.detection_box_model
+        self.lane_renderer = self.shader_renderer.lane_model
         self.proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
         self.view_mat = glm.vec4(1.0)
 
@@ -40,6 +40,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         if not self.cam_widget.has_frame:
             self.shader_renderer.text_renderer.render_text("NO VIDEO", 320, 240, 1.0, (0.0, 1.0, 0.0), self.proj_mat)
         self.draw_detection_boxes()
+        self.draw_lane_indicator()
 
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
@@ -67,13 +68,19 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             self.box_renderer.draw(x1, y1, x2, y2, text.upper(), 1.0, color, self.proj_mat)
 
     def draw_lane_indicator(self):
-        if self.center is None:
+        if self.cam_widget.center is None:
             return
         # Draw the center line
         # cv2.line(image, (int(self.center), image.shape[0]), (int(self.center), int(0.8 * image.shape[0])), (0, 0, 255), 5)
         # cv2.putText(image, f"center: {self.center:.2f}",
         #             (int(image.shape[1] * 0.05), int(image.shape[0] * 0.1)),
         #             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        thickness = 5
+        x1 = self.cam_widget.center - thickness / 2.0
+        x2 = self.cam_widget.center + thickness / 2.0
+        y1 = 480 * 0.8
+        y2 = 480
+        self.lane_renderer.draw(x1, y1, x2, y2, 4, (1.0, 1.0, 0.0), self.proj_mat)
         # # Add text if stopline or crosswalk is detected
         # if self.stopline:
         #     cv2.putText(image, "Stopline detected!",
