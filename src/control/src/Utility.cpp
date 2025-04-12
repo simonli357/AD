@@ -116,8 +116,8 @@ void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init)
         }
     }
     
-    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<double, 4>& a, const std::array<double, 4>& b) {
-        return a[4] < b[4];
+    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<std::any, 4>& a, const std::array<std::any, 4>& b) {
+        return std::any_cast<double>(a[4]) < std::any_cast<double>(b[4]);
     });
 
     x_init = std::any_cast<double>(runs_with_info[0][0]);
