@@ -9,7 +9,7 @@ import cv2
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
 from widgets.sidebar.sidebar import SidebarWidget
@@ -28,8 +28,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 class CommunicationHandler(QObject):
     message_signal = pyqtSignal(str)
     params_signal = pyqtSignal(object, object)
-    camera_frame_signal = pyqtSignal(object)
-    depth_frame_signal = pyqtSignal(object)
+    camera_frame_signal = pyqtSignal(QtGui.QPixmap)
+    depth_frame_signal = pyqtSignal(QtGui.QPixmap)
     lane_signal = pyqtSignal(object)
     road_obj_signal = pyqtSignal(object)
     waypoint_signal = pyqtSignal(object)

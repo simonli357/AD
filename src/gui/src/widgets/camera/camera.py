@@ -49,44 +49,18 @@ class CameraWidget(QtWidgets.QWidget):
         if not self.has_frame:
             self.hud.update_overlay()
 
-    def process_camera_frame(self, cv_image):
-        """Process RGB camera frame"""
+    def process_camera_frame(self, pixmap):
         try:
             if self.show_depth:
                 return
-
-            # cv_image = self.add_sign_detection_to_image(cv_image)
-            # cv_image = self.add_lane_detection_to_image(cv_image)
-            cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-
-            # Convert to QImage
-            h, w, ch = cv_image.shape
-            bytes_per_line = ch * w
-            qt_image = QtGui.QImage(cv_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
             print(f"Camera processing error: {e}")
 
-    def process_depth_frame(self, depth_image):
-        """Process depth camera frame"""
+    def process_depth_frame(self, pixmap):
         try:
             if not self.show_depth:
                 return
-            # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-            # depth_image = self.bridge.imgmsg_to_cv2(depth_frame, "mono16")  # real
-            # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
-            # Apply normalization with a focus on closer objects
-            depth_normalized = cv2.normalize(depth_image, None, 50, 255, cv2.NORM_MINMAX)
-            depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
-            # depth_colored = self.add_sign_detection_to_image(depth_colored)
-            # depth_colored = self.add_lane_detection_to_image(depth_colored)
-
-            # Convert to QImage
-            h, w, ch = depth_colored.shape
-            bytes_per_line = ch * w
-            qt_image = QtGui.QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QtGui.QPixmap.fromImage(qt_image)
             self.update_camera_signal.emit(pixmap)
         except Exception as e:
             print(f"Depth processing error: {e}")
