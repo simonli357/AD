@@ -212,14 +212,24 @@ if __name__ == "__main__":
     
     for start in starting_points:
         start_str = str(start)
-        optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
-        # Convert nodes to integers if needed (and remove the start node from the final output)
+        threshold = 90.0  # starting max distance
+        max_threshold = 150.0  # optional cap to avoid infinite loop
+
+        while threshold <= max_threshold:
+            optimal_path, total_dist = planner.find_optimal_sequence(start_str, threshold)
+
+            if set(planner.base_destinations).issubset(set(optimal_path)):
+                # All destinations included – full solution found
+                print(f"run{start}: distance={total_dist:.2f}m (threshold={threshold}), full solution found.")
+                break
+            else:
+                print(f"run{start}: distance={total_dist:.2f}m (threshold={threshold}), partial solution – retrying...")
+                threshold += 10.0
+
         optimal_path_ints = [int(node) for node in optimal_path]
         if optimal_path_ints and optimal_path_ints[0] == int(start):
             optimal_path_ints.pop(0)
         runs[f'run{start}'] = optimal_path_ints
-        print(f"run{start}: distance={total_dist:.2f}m, num_destinations={len(optimal_path)-1}")
-    
-    runs_path = os.path.join(current_dir, 'config/runs.yaml')
+    runs_path = os.path.join(current_dir, 'config/runs0412.yaml')
     with open(runs_path, 'w') as f:
         yaml.dump(runs, f, default_flow_style=False)
