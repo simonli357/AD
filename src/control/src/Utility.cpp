@@ -95,9 +95,9 @@ void Utility::initialize_tcp_client() {
 
 void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init) {
     boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-    msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
-    if (!msg_ptr) {
-        return;
+    msg_ptr = nullptr;
+    while (!msg_ptr) {
+        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
     }
     double x = msg_ptr->pose.pose.position.x;
     double y = msg_ptr->pose.pose.position.y;
@@ -111,9 +111,9 @@ void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init)
         double dy = y - run.y;
         double dist = std::sqrt(dx*dx + dy*dy);
         double yaw_diff = compare_yaw(yaw, run.yaw);
-        if(yaw_diff < 40.0 / 180 * M_PI) {
-            runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
-        }
+        /* if(yaw_diff < 40.0 / 180 * M_PI) { */
+        runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
+        /* } */
     }
     
     std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<std::any, 5>& a, const std::array<std::any, 5>& b) {
