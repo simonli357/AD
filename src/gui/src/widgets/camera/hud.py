@@ -12,6 +12,12 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.cam_widget = cam_widget
 
+        # Lane
+        self.center = None
+        self.crosswalk = False
+        self.stopline = False
+        self.stopline_dist = None
+
         self.class_names = ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
         self.confidence_thresholds = [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.75, 0.65, 0.65, 0.65]
 
@@ -68,12 +74,12 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             self.box_renderer.draw(x1, y1, x2, y2, text.upper(), 1.0, color, self.proj_mat)
 
     def draw_lane_indicator(self):
-        if self.cam_widget.center is None:
+        if self.center is None:
             return
 
         thickness = 5
-        x1 = self.cam_widget.center - thickness / 2.0
-        x2 = self.cam_widget.center + thickness / 2.0
+        x1 = self.center - thickness / 2.0
+        x2 = self.center + thickness / 2.0
         y1 = 480 * 0.8
         y2 = 480
         self.lane_renderer.draw(x1, y1, x2, y2, 4, (1.0, 1.0, 0.0), self.proj_mat)
@@ -82,19 +88,19 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         text_y = 0.04 * self.height()
         y_offset = 30
 
-        if self.cam_widget.stopline_dist:
-            text = f"STOPLINE DISTANCE: {self.cam_widget.stopline_dist:.2f}"
+        if self.stopline_dist:
+            text = f"STOPLINE DISTANCE: {self.stopline_dist:.2f}"
             text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.proj_mat)
             text_y += y_offset
 
-        if self.cam_widget.stopline:
+        if self.stopline:
             text = "STOPLINE DETECTED"
             text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.proj_mat)
             text_y += y_offset
 
-        if self.cam_widget.crosswalk:
+        if self.crosswalk:
             text = "CROSSWALK DETECTED"
             text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.proj_mat)

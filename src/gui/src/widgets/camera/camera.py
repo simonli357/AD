@@ -19,12 +19,6 @@ class CameraWidget(QtWidgets.QWidget):
         self.numObj = 0
         self.detected_objects = np.zeros(7)
 
-        # Lane
-        self.center = None
-        self.crosswalk = False
-        self.stopline = False
-        self.stopline_dist = None
-
         self.setup_ui()
         self.update_camera_signal.connect(self.update_camera_display)
 
@@ -109,7 +103,7 @@ class CameraWidget(QtWidgets.QWidget):
             self.numObj = 0
 
     def lane_callback(self, lane) -> None:
-        self.center = lane.center
-        self.crosswalk = lane.crosswalk
-        self.stopline = lane.stopline
-        self.stopline_dist = lane.stopline_dist
+        self.hud.center = lane.center
+        self.hud.crosswalk = lane.crosswalk
+        self.hud.stopline = lane.stopline
+        self.hud.stopline_dist = lane.stopline_dist
