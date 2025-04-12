@@ -102,7 +102,8 @@ void Utility::fetch_run_params(double &x_init, double &y_init, double &yaw_init)
     double x = msg_ptr->pose.pose.position.x;
     double y = msg_ptr->pose.pose.position.y;
     double z = msg_ptr->pose.pose.position.z;
-    double yaw = tf2::getYaw(msg_ptr->pose.pose.orientation);
+    auto q1 = tf2::Quaternion(msg_ptr->pose.pose.orientation.x, msg_ptr->pose.pose.orientation.y, msg_ptr->pose.pose.orientation.z, msg_ptr->pose.pose.orientation.w);
+    double yaw = tf2::impl::getYaw(q1);
 
     std::vector<std::array<std::any, 5>> runs_with_info;
 
