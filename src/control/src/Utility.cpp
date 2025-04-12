@@ -104,7 +104,9 @@ void Utility::fetch_run_params() {
     double z = msg_ptr->pose.pose.position.z;
 
     std::vector<std::array<std::any, 5>> runs_with_info;
-
+    while(!imuInitialized) {
+        ros::spinOnce();
+    }
     for (auto &run : Runs::runs) {
         double dx = x - run.x;
         double dy = y - run.y;
