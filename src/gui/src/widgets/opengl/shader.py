@@ -42,6 +42,7 @@ class ShaderRenderer:
         self.white_car_model = load_obj(*object_path('car', 'white'))
         self.red_car_model = load_obj(*object_path('car', 'red'))
         self.blue_car_model = load_obj(*object_path('car', 'blue'))
+        self.orange_car_model = load_obj(*object_path('car', 'orange'))
 
         self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
         self.oneway_sign_model = load_obj(*object_path('oneway_sign', 'oneway'))
@@ -101,6 +102,8 @@ class ShaderRenderer:
             car_model = self.red_car_model
         elif color == NamedColor.BLUE:
             car_model = self.blue_car_model
+        elif color == NamedColor.ORANGE:
+            car_model = self.orange_car_model
         else:
             return
         shader_program = car_model.shader_program
