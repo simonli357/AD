@@ -54,6 +54,9 @@ target_link_libraries(${PROJECT_NAME}
 add_executable(planner
   src/Main.cpp
 )
+target_link_libraries(planner
+  ${PROJECT_NAME}
+)
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
