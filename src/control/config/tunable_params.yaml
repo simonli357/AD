@@ -10,10 +10,10 @@ real:
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: 0.015
   sign_lat_offset: 0.0
-  change_lane_offset_scaler: 1.2
+  change_lane_offset_scaler: 1.3
   max_light_dist: 0.9
   max_sign_dist: 1.5
-  min_sign_dist: 0.5
+  min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
   cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
@@ -21,7 +21,7 @@ real:
   stop_duration: 2.25
 
   sign_localization_threshold: 0.537 #0.357
-  sign_localization_orientation_threshold: 15.0 # degrees
+  sign_localization_orientation_threshold: 25.0 # degrees
   lane_localization_threshold: 0.9
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 0.753
@@ -46,10 +46,10 @@ sim:
   sign_lon_offset: 0.0
   sign_lon_offset_slope: 0.0
   sign_lat_offset: 0.0
-  change_lane_offset_scaler: 1.25
+  change_lane_offset_scaler: 1.3
   max_light_dist: 0.9
   max_sign_dist: 1.5
-  min_sign_dist: 0.5
+  min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
   cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
@@ -57,7 +57,7 @@ sim:
   stop_duration: 1.5
 
   sign_localization_threshold: 0.537 #0.357
-  sign_localization_orientation_threshold: 15.0 # degrees
+  sign_localization_orientation_threshold: 25.0 # degrees
   lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 1.5

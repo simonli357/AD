@@ -8,10 +8,13 @@ import yaml
 ATTRIBUTES = ["normal", "crosswalk", "intersection", "oneway", "highwayLeft", "highwayRight", "roundabout", "stopline", "dotted", "dotted_crosswalk"]
 
 class GlobalPlanner:
-    def __init__(self):
+    def __init__(self, noright=False):
         self.hw_safety_offset = 0.05#0.1
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
-        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        if noright:
+            self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
+        else:
+            self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
@@ -226,5 +229,5 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    # planner.plan_path(56, 54)
-    planner.illustrate_path(252, 287)
+    planner.plan_path(44, 37)
+    # planner.illustrate_path(252, 287)

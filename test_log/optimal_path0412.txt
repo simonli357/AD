@@ -52,3 +52,60 @@ run184: distance=78.57m (threshold=90.0), full solution found.
 Removing start node 209 from destinations
 Found complete path with distance 77.24m
 run209: distance=77.24m (threshold=90.0), full solution found.
+
+slsecret@slsecret-Alienware-x15-R2:~/AD$ /bin/python3 /home/slsecret/AD/src/planning/scripts/compute_runs_distance.py
+0215
+=== Run Distance Summary ===
+run107: Distance = 182.18 meters | Destinations = 23
+run112: Distance = 185.14 meters | Destinations = 23
+run117: Distance = 181.42 meters | Destinations = 23
+run125: Distance = 184.70 meters | Destinations = 22
+run131: Distance = 181.49 meters | Destinations = 23
+run132: Distance = 179.21 meters | Destinations = 22
+run133: Distance = 179.21 meters | Destinations = 22
+run134: Distance = 181.43 meters | Destinations = 23
+run136: Distance = 179.77 meters | Destinations = 22
+run139: Distance = 181.73 meters | Destinations = 23
+run142: Distance = 185.87 meters | Destinations = 23
+run145: Distance = 183.99 meters | Destinations = 23
+run147: Distance = 184.34 meters | Destinations = 23
+run148: Distance = 185.52 meters | Destinations = 23
+run149: Distance = 186.60 meters | Destinations = 23
+run150: Distance = 184.40 meters | Destinations = 23
+run203: Distance = 183.43 meters | Destinations = 23
+run214: Distance = 184.45 meters | Destinations = 23
+run218: Distance = 186.85 meters | Destinations = 23
+run221: Distance = 184.04 meters | Destinations = 23
+run184: Distance = 190.64 meters | Destinations = 22
+run209: Distance = 186.99 meters | Destinations = 22
+
+0412
+=== Summary ===
+Total Distance Across All Runs: 4043.38 meters
+slsecret@slsecret-Alienware-x15-R2:~/AD$ /bin/python3 /home/slsecret/AD/src/planning/scripts/compute_runs_distance.py
+=== Run Distance Summary ===
+run107: Distance = 182.18 meters | Destinations = 23
+run112: Distance = 178.45 meters | Destinations = 22
+run117: Distance = 181.42 meters | Destinations = 22
+run125: Distance = 184.70 meters | Destinations = 22
+run131: Distance = 181.49 meters | Destinations = 23
+run132: Distance = 179.21 meters | Destinations = 22
+run133: Distance = 179.21 meters | Destinations = 22
+run134: Distance = 181.43 meters | Destinations = 23
+run136: Distance = 179.77 meters | Destinations = 22
+run139: Distance = 181.73 meters | Destinations = 23
+run142: Distance = 185.87 meters | Destinations = 23
+run145: Distance = 183.99 meters | Destinations = 23
+run147: Distance = 184.34 meters | Destinations = 23
+run148: Distance = 185.52 meters | Destinations = 23
+run149: Distance = 186.60 meters | Destinations = 23
+run150: Distance = 184.40 meters | Destinations = 23
+run203: Distance = 183.43 meters | Destinations = 23
+run214: Distance = 184.45 meters | Destinations = 23
+run218: Distance = 186.85 meters | Destinations = 23
+run221: Distance = 184.04 meters | Destinations = 23
+run184: Distance = 182.56 meters | Destinations = 22
+run209: Distance = 181.23 meters | Destinations = 22
+
+=== Summary ===
+Total Distance Across All Runs: 4022.86 meters

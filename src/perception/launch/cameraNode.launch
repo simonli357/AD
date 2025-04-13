@@ -26,6 +26,8 @@
 <arg name="use_emergency" default="false"/>
 <arg name="quality" default="90"/>
 <param name="quality" value="$(arg quality)"/>
+<arg name="flip" default="false"/>
+<param name="flip" value="$(arg flip)"/>
 
 <node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true">
     <param name="/use_emergency" value="$(arg use_emergency)"/>

@@ -448,7 +448,10 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
             imu_msg.angular_velocity.x = gyrox*2*M_PI;
             imu_msg.angular_velocity.y = gyroy*2*M_PI;
             imu_msg.angular_velocity.z = gyroz*2*M_PI;
-
+            if (!imuInitialized) {
+                imuInitialized = true;
+                std::cout << "imu initialized" << std::endl;
+            }
             imu_pub.publish(imu_msg); // Publish the IMU message
             // auto end = std::chrono::high_resolution_clock::now();
             // std::chrono::duration<double> elapsed = end - start;
