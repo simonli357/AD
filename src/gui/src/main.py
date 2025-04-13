@@ -22,7 +22,6 @@ from widgets.car.car import CarWidget
 from widgets.terminal.terminal import TerminalWidget
 from widgets.enums import CameraParams
 from std_srvs.srv import TriggerRequest
-from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class CommunicationHandler(QObject):
@@ -40,7 +39,6 @@ class CommunicationHandler(QObject):
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
-    gps_signal = pyqtSignal(PoseWithCovarianceStamped)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -115,7 +113,6 @@ class MainWindow(QMainWindow):
 
         self.run_overlay = RunOverlay(self)
         self.run_overlay.move(80, 5)
-        self.comm.gps_signal.connect(self.run_overlay.match_run)
 
         left_widgets = QWidget()
         self.left_layout = QVBoxLayout(left_widgets)
@@ -205,9 +202,6 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-                if self.server.utility_node_client.gps_msg.pose:
-                    msg = self.server.utility_node_client.gps_msg.pose.popleft()
-                    self.comm.gps_signal.emit(msg)
             self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 

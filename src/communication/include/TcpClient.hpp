@@ -1,6 +1,5 @@
 #pragma once
 
-#include "msg/GpsMsg.hpp"
 #include "msg/ParamsMsg.hpp"
 #include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -49,7 +48,6 @@ class TcpClient {
 	std::queue<std::unique_ptr<GoToCmdSrv>> &get_go_to_cmd_srv_msgs();
 	std::queue<std::unique_ptr<SetStatesSrv>> &get_set_states_srv_msgs();
 	std::queue<std::unique_ptr<WaypointsSrv>> &get_waypoints_srv_msgs();
-	std::queue<std::unique_ptr<GpsMsg>> &get_gps_msgs();
 	std::queue<bool> &get_start_srv_msgs();
 	// Encode
 	void send_type(const std::string &str);
@@ -73,7 +71,6 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
-	void send_gps_msg(const geometry_msgs::PoseWithCovarianceStamped &pose);
 
   private:
 	// Fields
@@ -104,7 +101,6 @@ class TcpClient {
 	std::queue<std::string> strings;
 	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
 	std::queue<std::unique_ptr<ParamsMsg>> params_msgs;
-	std::queue<std::unique_ptr<GpsMsg>> gps_msgs;
 	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
 	std::queue<std::unique_ptr<GoToCmdSrv>> go_to_cmd_srv_msgs;
 	std::queue<std::unique_ptr<SetStatesSrv>> set_states_srv_msgs;
@@ -130,5 +126,4 @@ class TcpClient {
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);
 	void parse_waypoints_srv(std::vector<uint8_t> &bytes);
 	void parse_start_srv(std::vector<uint8_t> &bytes);
-	void parse_gps_msg(std::vector<uint8_t> &bytes);
 };
