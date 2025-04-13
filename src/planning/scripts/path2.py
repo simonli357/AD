@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
+import rospy
+from utils.srv import waypoints, waypointsResponse, go_to, go_to_multiple, go_toResponse, go_to_multipleResponse
+from std_msgs.msg import Float32MultiArray
+
 import numpy as np
 import os
 from scipy.interpolate import UnivariateSpline, splprep, splev
 from global_planner import GlobalPlanner
 import yaml
 import math
-import rospy
-from std_msgs.msg import Float32MultiArray
-from utils.srv import waypoints, waypointsResponse, go_to, go_to_multiple, go_toResponse, go_to_multipleResponse
-
-import numpy as np
+import argparse
 
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
@@ -21,42 +21,48 @@ def smooth_yaw_angles(yaw_angles):
     smooth_yaw = np.concatenate(([yaw_angles[0]], yaw_angles[0] + np.cumsum(diffs)))
     return smooth_yaw
 
-
-def compute_smooth_curvature(waypoints_x, waypoints_y, smooth_factor=0.1):
+def compute_smooth_curvature(waypoints_x, waypoints_y, smooth_factor=0.1, skip=1):
     # Step 1: set up a spline interpolation
     t = np.linspace(0, 1, len(waypoints_x))
     spline_x = UnivariateSpline(t, waypoints_x, k=3, s=smooth_factor)
     spline_y = UnivariateSpline(t, waypoints_y, k=3, s=smooth_factor)
-    # Step 2: get smoothed derivatives of the path
+
+    # Generate a set of smoothed points along the path
     t_smooth = np.linspace(0, 1, len(waypoints_x))
+    x_smooth = spline_x(t_smooth)
+    y_smooth = spline_y(t_smooth)
+
+    # Step 2: get smoothed derivatives of the path using the spline
     dx_dt = spline_x.derivative()(t_smooth)
     dy_dt = spline_y.derivative()(t_smooth)
     ddx_dt = spline_x.derivative(n=2)(t_smooth)
     ddy_dt = spline_y.derivative(n=2)(t_smooth)
-    # Step 3: compute curvature
+
+    # Step 3: compute curvature using the derivatives
     # κ = |dx/dt * d²y/dt² - dy/dt * d²x/dt²| / (dx/dt² + dy/dt²)^(3/2)
-    curvature = np.abs(dx_dt * ddy_dt - dy_dt * ddx_dt) / (dx_dt**2 + dy_dt**2)**(3 / 2)
-    # Step 4: compute tangent
-    tangent_angles = np.arctan2(dy_dt, dx_dt)
-    # Step 5: compute normal
+    curvature = np.abs(dx_dt * ddy_dt - dy_dt * ddx_dt) / ((dx_dt**2 + dy_dt**2)**(3/2))
+
+    # Step 4: compute tangent angles
+    # If skip > 1, compute the tangent angle using positions that are 'skip' indices apart.
+    if skip > 1:
+        tangent_angles = np.zeros_like(x_smooth)
+        n = len(x_smooth)
+        for i in range(n - skip):
+            dx = x_smooth[i + skip] - x_smooth[i]
+            dy = y_smooth[i + skip] - y_smooth[i]
+            tangent_angles[i] = np.arctan2(dy, dx)
+        # For the last few points, use the last valid computed tangent angle.
+        tangent_angles[n - skip:] = tangent_angles[n - skip - 1]
+    else:
+        tangent_angles = np.arctan2(dy_dt, dx_dt)
+
+    # Step 5: compute the normals
     normal_angles = tangent_angles + np.pi / 2
-    # convert normal angles to vectors (dx, dy)
-    dx = np.cos(normal_angles)
-    dy = np.sin(normal_angles)
-    normals = np.vstack((dx, dy)).T
+    dx_normal = np.cos(normal_angles)
+    dy_normal = np.sin(normal_angles)
+    normals = np.vstack((dx_normal, dy_normal)).T
+
     return curvature, tangent_angles, normals
-
-
-def filter_waypoints(waypoints, threshold):
-    filtered_waypoints = [waypoints[0]]
-    for i in range(1, len(waypoints)):
-        if np.linalg.norm(np.array(waypoints[i]) - np.array(waypoints[i - 1])) >= threshold:
-            filtered_waypoints.append(waypoints[i])
-        else:
-            # print("filtered out waypoint: ",i, waypoints[i])
-            continue
-    return np.array(filtered_waypoints)
-
 
 def filter_waypoints_and_attributes(waypoints, attributes, threshold):
     filtered_waypoints = [waypoints[0]]
@@ -123,37 +129,6 @@ def interpolate_attributes(waypoints, attributes, new_waypoints):
 
     return new_attributes
 
-
-def replace_segments(waypoints, waypoints_cw, attributes, attributes_cw, density_factor=1.5, values=[1]):
-    # Find segments where attribute is 1 in 'attributes'
-    segments = find_segments(attributes, values=values)
-
-    new_waypoints = []
-    new_attributes = []
-    last_end = 0
-    for seg in segments:
-        start, end = seg
-        # Add non-replaced segments to waypoints and attributes
-        new_waypoints.extend(waypoints[last_end:start])
-        new_attributes.extend(attributes[last_end:start])
-
-        # Calculate corresponding segment in 'waypoints_cw' and 'attributes_cw'
-        start_cw = int(math.floor(start * density_factor))
-        end_cw = int(math.ceil(end * density_factor))
-
-        # Replace the segment in 'waypoints' and 'attributes' with the corresponding segment in 'waypoints_cw' and 'attributes_cw'
-        new_waypoints.extend(waypoints_cw[start_cw:end_cw])
-        new_attributes.extend(attributes_cw[start_cw:end_cw])
-
-        last_end = end
-
-    # Add the remaining part of the run after the last segment to waypoints and attributes
-    new_waypoints.extend(waypoints[last_end:])
-    new_attributes.extend(attributes[last_end:])
-
-    return np.array(new_waypoints), np.array(new_attributes)
-
-
 def find_segments(array, values):
     """ Find start and end indices of segments in an array where the value matches. """
     segments = []
@@ -169,32 +144,6 @@ def find_segments(array, values):
     return segments
 
 
-def interpolate_waypoints2(waypoints, num_points):
-    # Initialize an array to hold the new interpolated waypoints
-    new_waypoints = np.zeros((num_points, 2))
-
-    # Calculate the total number of segments
-    num_segments = len(waypoints) - 1
-
-    # Calculate the number of points per segment
-    points_per_segment = num_points // num_segments
-
-    # Interpolate points for each segment
-    for i in range(num_segments):
-        start = waypoints[i]
-        end = waypoints[i + 1]
-        # For each segment, interpolate linearly between the start and end
-        for j in range(points_per_segment):
-            t = j / points_per_segment
-            new_waypoints[i * points_per_segment + j] = (1 - t) * start + t * end
-
-    # Handle any remaining points (due to integer division)
-    for i in range(num_points - points_per_segment * num_segments):
-        new_waypoints[-i - 1] = waypoints[-1]
-
-    return new_waypoints
-
-
 class Path:
     def __init__(self, v_ref, N, T, x0=None, name="speedrun", dest=None):
         self.hw_density_factor = rospy.get_param('hw', default=1.33)
@@ -202,13 +151,18 @@ class Path:
         self.v_ref = v_ref
         print("v_ref: ", v_ref, ", N: ", N, ", T: ", T, ", x0: ", x0, ", name: ", name)
         self.N = N
-        self.global_planner = GlobalPlanner()
+        self.global_planner = GlobalPlanner(noright)
         if name is not None:
             self.name = name
             current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/runs0215_modified.yaml'), 'r') as stream:
-                data = yaml.safe_load(stream)
-                destinations = data[name]
+            if noright:
+                with open(os.path.join(current_path, 'config/runs0412_modified.yaml'), 'r') as stream:
+                    data = yaml.safe_load(stream)
+                    destinations = data[name]
+            else:
+                with open(os.path.join(current_path, 'config/runs_noright_modified.yaml'), 'r') as stream:
+                    data = yaml.safe_load(stream)
+                    destinations = data[name]
         else:
             destinations = []
             # check if dest is a list with x and y coordinates or a list containing a list with x and y coordinates
@@ -255,7 +209,6 @@ class Path:
         path_lengths = [np.sum(np.linalg.norm(run[:, 1:] - run[:, :-1], axis=0)) for run in runs]
         self.density = 1 / abs(self.v_ref) / T  # wp/m
         self.region_of_acceptance = 0.05 * 10 / self.density
-        # print("density: ", self.density, ", region_of_acceptance: ", self.region_of_acceptance)
 
         runs_hw = []
         runs_cw = []
@@ -302,16 +255,6 @@ class Path:
             attributes_hw.append(interpolate_attributes(old_run.T, attributes[i], runs_hw[i]))
             attributes[i] = interpolate_attributes(old_run.T, attributes[i], runs[i])
 
-        # print("run1: \n", runs[0].shape)
-        # print("attr1: \n", attributes[0].shape)
-        # print("run_hw1: \n", runs_hw[0].shape)
-        # print("attr_hw1: \n", attributes_hw[0].shape)
-        # print("attr1: \n", attributes[0])
-
-        # for run,i in zip(runs, range(len(runs))):
-        #     np.savetxt(f"run{i+1}.txt", run, fmt="%.8f")
-        # exit()
-        # Combine all runs into a single set of waypoints
         self.waypoints = np.vstack(runs)
         self.waypoints_hw = np.vstack(runs_hw)
         self.waypoints_cw = np.vstack(runs_cw)
@@ -335,13 +278,9 @@ class Path:
             # sort every segment in segments_cw and segments_hw by segment[0], combine into one list
             segments = sorted(segments_cw_with_attributes + segments_hw_with_attributes, key=lambda x: x[0])
             self.segments = segments
-            # print("starts: ", [segment[0] for segment in segments])
-            # print("ends: ", [segment[1] for segment in segments])
 
             starts_cw = []
             ends_cw = []
-            # for i in range(len(segments)):
-            # start, end, attribute = segments[i]
             for segment in segments:
                 start, end, attribute = segment
                 if attribute == 1:
@@ -352,8 +291,6 @@ class Path:
                 ends_cw.append(int(math.ceil(end * density_factor)))
             self.starts_cw = starts_cw
             self.ends_cw = ends_cw
-            # print("starts_cw: ", starts_cw) # good
-            # print("ends_cw: ", ends_cw) # good
 
             starts = []
             ends = []
@@ -371,7 +308,6 @@ class Path:
             self.true_starts = []
             self.true_ends = []
             for i in range(len(segments)):
-                # for i in range(2):
                 start = starts[i]
                 end = ends[i]
                 # Add non-replaced segments to waypoints and attributes
@@ -383,8 +319,6 @@ class Path:
 
                 true_start = start
                 self.true_starts.append(true_start)
-                # if i == 1:
-                #     break
                 # Replace the segment in 'waypoints' and 'attributes' with the corresponding segment in 'waypoints_cw' and 'attributes_cw'
                 attribute = segments[i][2]
                 if attribute == 1:
@@ -407,7 +341,6 @@ class Path:
             self.waypoints = np.array(new_waypoints)
             self.attributes = np.array(new_attributes)
 
-        # self.waypoints = filter_waypoints(self.waypoints, 0.01).T
         thresh = v_ref * T * 1.5
         self.waypoints, self.attributes = filter_waypoints_and_attributes(self.waypoints, self.attributes, thresh)
         self.waypoints = self.waypoints.T
@@ -420,7 +353,6 @@ class Path:
         self.waypoints_y = self.waypoints[1, :]
 
         self.num_waypoints = len(self.waypoints_x)
-        # print("num_waypoints: ", self.num_waypoints)
         self.kappa, self.wp_theta, self.wp_normals = compute_smooth_curvature(self.waypoints_x, self.waypoints_y)
         # linear speed profile
         self.v_refs = self.v_ref / (1 + np.abs(self.kappa)) * (1 + np.abs(self.kappa))
@@ -430,23 +362,14 @@ class Path:
         self.v_refs[mask_cw] *= 1 / 1.5
         self.v_refs[mask_hw1] *= self.hw_density_factor
         self.v_refs[mask_hw2] *= self.hw_density_factor
-        # print("v_refs: \n", self.v_refs, ", wpts: ", self.waypoints.shape, ", attributes: ", self.attributes.shape)
 
-        # nonlinear speed profile
-        # K=1
-        # epsilon=1
-        # self.v_refs = self.v_ref * (K/(abs(self.kappa) + epsilon))**0.5
         num_ramp_waypoints = int(1 * self.density)  # 1 meters
         num_ramp_waypoints = min(num_ramp_waypoints, len(self.v_refs))
         # Linearly increase the reference speed from 0 to v_ref over the first 1 meters
         self.v_refs[:num_ramp_waypoints] = np.linspace(0, self.v_ref, num_ramp_waypoints)
         self.v_refs[-2:] = 0  # stop at the end
-        # print("v_ref: ", self.v_ref)
-        # print("vrefs: ", self.v_refs[0:100])
         k_steer = 0  # 0.4/np.amax(np.abs(self.kappa))
         self.steer_ref = k_steer * self.kappa
-        # self.steer_ref = np.arctan(0.27 * self.kappa)
-        # Extend waypoints and reference values by N
         self.waypoints_x = np.pad(self.waypoints_x, (0, self.N + 4), 'edge')
         self.waypoints_y = np.pad(self.waypoints_y, (0, self.N + 4), 'edge')
         self.kappa = np.pad(self.kappa, (0, self.N + 5), 'edge')
@@ -461,24 +384,23 @@ class Path:
 
         self.attributes = np.pad(self.attributes, (0, self.N + 5), 'edge')
 
-        # bad_idx = self.remove_bad_waypoints()
-        # self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
-        # self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
-        # self.kappa      = np.delete(self.kappa, bad_idx)
-        # self.wp_theta   = np.delete(self.wp_theta, bad_idx)
-        # self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
-        # self.v_refs     = np.delete(self.v_refs, bad_idx)
-        # self.steer_ref  = np.delete(self.steer_ref, bad_idx)
-        # self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
-        # self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
-        # self.attributes = np.delete(self.attributes, bad_idx)
-        # self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
-        # self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
-        # visualize_waypoints2(self.state_refs)
+        bad_idx = self.remove_bad_waypoints()
+        self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
+        self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
+        self.kappa      = np.delete(self.kappa, bad_idx)
+        self.wp_theta   = np.delete(self.wp_theta, bad_idx)
+        self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
+        self.v_refs     = np.delete(self.v_refs, bad_idx)
+        self.steer_ref  = np.delete(self.steer_ref, bad_idx)
+        self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
+        self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
+        self.attributes = np.delete(self.attributes, bad_idx)
+        self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
+        self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
     
     def remove_bad_waypoints(self):
-        max_yaw_change = np.pi * 0.35
-        max_yaw_change2 = np.pi * 0.57
+        max_yaw_change = 35 * np.pi / 180  
+        max_yaw_change2 = 60 * np.pi / 180  
 
         # Convert inputs to numpy arrays (if they aren't already)
         state_refs = np.array(self.state_refs)  # shape: (n, 3)
@@ -505,11 +427,11 @@ class Path:
                 d2 = np.linalg.norm(next_wp[:2] - current[:2])
                 if (yaw_change < max_yaw_change2 and d1 > d2 and d1 > self.v_refs[i] * 0.1 * 1.42 and (d1-d2) > self.v_refs[i] * 0.1 /3):
                     indices_to_fix.append(i)
-                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to fix")
+                    print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to fix")
                     continue
                 else:
                     # Skip adding this waypoint (i.e. mark for removal)
-                    # print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to remove")
+                    print(f"{i}) Yaw1({(valid_indices[-1])}): {previous[2]:.3f}, Yaw2({i}): {current[2]:.3f}, Yaw change: {yaw_change:.3f}, d1: {d1:.3f}, d2: {d2:.3f}, to remove")
                     continue
             # Otherwise, the waypoint is valid.
             valid_indices.append(i)
@@ -528,7 +450,7 @@ class Path:
         print(f"removed indices: {removed_indices}")
         cur_dir = os.path.dirname(os.path.abspath(__file__))      
         np.savetxt(cur_dir + "/state_refs2.txt", self.state_refs, fmt="%.3f")
-        exit()  
+        # exit()  
         for idx in indices_to_fix:
             diff = state_refs[idx + 1, 2] - state_refs[idx - 1, 2]
             while diff > np.pi:
@@ -540,17 +462,7 @@ class Path:
             self.state_refs[idx, 0] = self.state_refs[idx - 1, 0] + (self.state_refs[idx + 1, 0] - self.state_refs[idx - 1, 0]) / 2
         return removed_indices
 
-    def change_lane(self, start_index, end_index, normals, shift_distance=0.36 - 0.1):
-        self.state_refs[start_index:end_index, 0] += normals[start_index:end_index, 0] * shift_distance
-        self.state_refs[start_index:end_index, 1] += normals[start_index:end_index, 1] * shift_distance
-        return self.state_refs
-
     def illustrate_path(self, state_refs):
-        # import matplotlib.pyplot as plt
-        # print("shape: ", state_refs.shape)
-        # plt.plot(state_refs[0,:], state_refs[1,:], 'b-')
-        # plt.show()
-
         import cv2
         self.map = cv2.imread(os.path.dirname(os.path.realpath(__file__)) + '/maps/Track.png')
         size1 = 1000
@@ -753,6 +665,10 @@ if __name__ == "__main__":
     goto_service = rospy.Service('go_to', go_to, handle_goto_service)
     goto_multiple = rospy.Service('go_to_multiple', go_to_multiple, handle_goto_multiple_service)
     rospy.loginfo("go_to service is ready.")
+    args = argparse.ArgumentParser(description='Path Planning Node')
+    args.add_argument('--noright', action='store_true', help='Use no right turns')
+    global noright
+    noright = args.parse_args().noright
     # global hw_density_factor
     # hw_density_factor = rospy.get_param('hw', default=1.33)
     rate = rospy.Rate(10)
