@@ -1,7 +1,10 @@
 #include "map/Track.hpp"
 
+#include <algorithm>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/graphml.hpp>
 #include <iostream>
+#include <limits>
 #include <ros/package.h>
 #include <tinyxml2.h>
 
@@ -16,7 +19,6 @@ Track::Track() {
 	read_graph();
 	adjust_graph();
 	compute_edge_distances();
-	print_graph();
 }
 
 void Track::read_graph() {
@@ -141,6 +143,85 @@ void Track::compute_edge_distances() {
 		double dist = std::sqrt(dx * dx + dy * dy);
 		graph[e].distance = dist;
 	}
+}
+
+std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_map() {
+	std::unordered_map<int, Graph::vertex_descriptor> idMap;
+	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+		auto v = *vp.first;
+		idMap[graph[v].id] = v;
+	}
+	return idMap;
+}
+
+std::vector<Track::VertexProperties> Track::dikstra(int src, int tgt) {
+	auto idMap = build_to_vertex_map();
+
+	auto sIt = idMap.find(src);
+	auto tIt = idMap.find(tgt);
+	if (sIt == idMap.end() || tIt == idMap.end()) {
+		std::cerr << "Dijkstra error: src or tgt ID not found in the graph.\n";
+		return {};
+	}
+	Graph::vertex_descriptor srcV = sIt->second;
+	Graph::vertex_descriptor tgtV = tIt->second;
+
+	if (srcV == tgtV) {
+		return {graph[srcV]};
+	}
+
+	const auto n = boost::num_vertices(graph);
+	std::vector<Graph::vertex_descriptor> predecessor(n);
+	std::vector<double> distance(n, (std::numeric_limits<double>::max)());
+
+	auto indexMap = get(boost::vertex_index, graph);
+
+	auto weightMap = boost::get(&EdgeProperties::distance, graph);
+
+	boost::dijkstra_shortest_paths(
+		graph, srcV,
+		boost::predecessor_map(boost::make_iterator_property_map(predecessor.begin(), indexMap)).distance_map(boost::make_iterator_property_map(distance.begin(), indexMap)).weight_map(weightMap));
+
+	auto tgtIndex = indexMap[tgtV];
+	if (distance[tgtIndex] == (std::numeric_limits<double>::max)()) {
+		std::cerr << "No path from " << src << " to " << tgt << " found.\n";
+		return {};
+	}
+
+	std::vector<Graph::vertex_descriptor> pathVerts;
+	for (auto v = tgtV; v != srcV; v = predecessor[indexMap[v]]) {
+		pathVerts.push_back(v);
+	}
+	pathVerts.push_back(srcV);
+	std::reverse(pathVerts.begin(), pathVerts.end());
+
+	std::vector<VertexProperties> path;
+	path.reserve(pathVerts.size());
+	for (auto v : pathVerts) {
+		path.push_back(graph[v]);
+	}
+
+	return path;
+}
+
+void Track::print_path(const std::vector<VertexProperties> &path) {
+	if (path.empty()) {
+		std::cout << "Empty path\n";
+		return;
+	}
+	double total_dist = 0.0;
+	for (size_t i = 0; i + 1 < path.size(); ++i) {
+		double dx = path[i + 1].x - path[i].x;
+		double dy = path[i + 1].y - path[i].y;
+		total_dist += std::sqrt(dx * dx + dy * dy);
+	}
+	for (size_t i = 0; i < path.size(); ++i) {
+		std::cout << path[i].id;
+		if (i + 1 < path.size()) {
+			std::cout << "->";
+		}
+	}
+	std::cout << "\nTotal Distance: " << total_dist << std::endl;
 }
 
 void Track::print_graph() {

@@ -33,21 +33,27 @@ class Track {
 		ATTRIBUTE attribute;
 	};
 
-    struct EdgeProperties {
-        double distance;
-    };
+	struct EdgeProperties {
+		double distance;
+	};
 
 	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VertexProperties, EdgeProperties>;
+
+	std::vector<VertexProperties> dikstra(int src, int tgt);
+
+	void print_path(const std::vector<VertexProperties> &path);
+	void print_graph();
 
   private:
 	Graph graph;
 
 	double hw_safety_offset = 0.05;
 
+	std::unordered_map<int, Track::Graph::vertex_descriptor> build_to_vertex_map();
+
 	void read_graph();
 	void adjust_graph();
-    void compute_edge_distances();
-	void print_graph();
+	void compute_edge_distances();
 
 	friend std::istream &operator>>(std::istream &in, ATTRIBUTE &attr);
 };
