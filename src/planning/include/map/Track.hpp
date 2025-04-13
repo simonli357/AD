@@ -2,7 +2,6 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
-#include <string>
 
 class Track {
   public:
@@ -39,7 +38,10 @@ class Track {
   private:
 	Graph graph;
 
+	double hw_safety_offset = 0.05;
+
 	void read_graph();
+	void adjust_graph();
 	void print_graph();
 
 	friend std::istream &operator>>(std::istream &in, ATTRIBUTE &attr);
