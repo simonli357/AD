@@ -93,7 +93,7 @@ def main():
     # custom_run = [192, 200] # Unirii oneway 3m
     # visualizer.plot_run('custom_run', custom_run)
     # exit()
-    selected_run = 'run147'
+    selected_run = 'run107'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")

@@ -461,19 +461,19 @@ class Path:
 
         self.attributes = np.pad(self.attributes, (0, self.N + 5), 'edge')
 
-        bad_idx = self.remove_bad_waypoints()
-        self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
-        self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
-        self.kappa      = np.delete(self.kappa, bad_idx)
-        self.wp_theta   = np.delete(self.wp_theta, bad_idx)
-        self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
-        self.v_refs     = np.delete(self.v_refs, bad_idx)
-        self.steer_ref  = np.delete(self.steer_ref, bad_idx)
-        self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
-        self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
-        self.attributes = np.delete(self.attributes, bad_idx)
-        self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
-        self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
+        # bad_idx = self.remove_bad_waypoints()
+        # self.waypoints_x = np.delete(self.waypoints_x, bad_idx)
+        # self.waypoints_y = np.delete(self.waypoints_y, bad_idx)
+        # self.kappa      = np.delete(self.kappa, bad_idx)
+        # self.wp_theta   = np.delete(self.wp_theta, bad_idx)
+        # self.wp_normals = np.delete(self.wp_normals, bad_idx, axis=0)
+        # self.v_refs     = np.delete(self.v_refs, bad_idx)
+        # self.steer_ref  = np.delete(self.steer_ref, bad_idx)
+        # self.state_refs = np.delete(self.state_refs, bad_idx, axis=0)
+        # self.input_refs = np.delete(self.input_refs, bad_idx, axis=0)
+        # self.attributes = np.delete(self.attributes, bad_idx)
+        # self.waypoints = np.delete(self.waypoints, bad_idx, axis=0)
+        # self.state_refs[:, 2] = smooth_yaw_angles(self.state_refs[:, 2])
         # visualize_waypoints2(self.state_refs)
     
     def remove_bad_waypoints(self):
@@ -524,11 +524,11 @@ class Path:
         all_indices = set(range(n))
         valid_set = set(valid_indices)
         removed_indices = sorted(list(all_indices - valid_set))
-        # print(f"indices to fix: {indices_to_fix}")
-        # print(f"removed indices: {removed_indices}")
-        # cur_dir = os.path.dirname(os.path.abspath(__file__))      
-        # np.savetxt(cur_dir + "/state_refs2.txt", self.state_refs, fmt="%.3f")
-        # exit()  
+        print(f"indices to fix: {indices_to_fix}")
+        print(f"removed indices: {removed_indices}")
+        cur_dir = os.path.dirname(os.path.abspath(__file__))      
+        np.savetxt(cur_dir + "/state_refs2.txt", self.state_refs, fmt="%.3f")
+        exit()  
         for idx in indices_to_fix:
             diff = state_refs[idx + 1, 2] - state_refs[idx - 1, 2]
             while diff > np.pi:
@@ -742,7 +742,8 @@ def visualize_waypoints2(waypoints):
     plt.grid(True, color='gainsboro', linestyle='--')
     plt.axis('equal')
     plt.tight_layout()
-    plt.show()
+    plt.savefig('waypoints_plot.png')
+    plt.close()
 
 
 if __name__ == "__main__":

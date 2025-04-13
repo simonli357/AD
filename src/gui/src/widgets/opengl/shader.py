@@ -1,69 +1,34 @@
 from OpenGL import GL as gl
-from OpenGL.GL.shaders import compileProgram, compileShader
-from .loaders import load_mesh, load_map
-from .models import line_model, circle_model, crosshair_model, triangle_model
+from .utils import asset_path, object_path, create_shader_program, shader_path
+from .loaders import load_mesh, load_map, load_2D_texture
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model
 from .obj import load_obj
 from ..enums import NamedColor
+from .custom.progress_bar import ProgressBar
+from .custom.lane import LaneIndicator
+from .custom.detection_box import DetectionBox
+from .custom.speedometer import Speedometer
+from .font import TextRenderer
 
-import os
-import glob
 import glm
 import numpy as np
 
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-asset_dir = os.path.join(current_dir, 'assets')
-shader_dir = os.path.join(current_dir, 'shaders')
-
-
-def create_shader_module(filepath: str, module_type: int) -> int:
-    source_code = ""
-    with open(filepath, "r") as file:
-        source_code = file.readlines()
-    return compileShader(source_code, module_type)
-
-
-def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
-    vertex_module = create_shader_module(vertex_filepath, gl.GL_VERTEX_SHADER)
-    fragment_module = create_shader_module(fragment_filepath, gl.GL_FRAGMENT_SHADER)
-    modules = (vertex_module, fragment_module)
-    if geometry_filepath is not None:
-        modules + (geometry_filepath,)
-    shader = compileProgram(*modules)
-    gl.glDeleteShader(vertex_module)
-    gl.glDeleteShader(fragment_module)
-    return shader
-
-
-def shader_path(dirname: str, filename: str):
-    return os.path.join(shader_dir, dirname, filename)
-
-
-def asset_path(filename: str):
-    return os.path.join(asset_dir, filename)
-
-
-def object_path(dirname: str, mtl_name: str):
-    folder = os.path.join(asset_dir, dirname)
-    # Find .obj file
-    obj_candidates = glob.glob(os.path.join(folder, "*.obj"))
-    obj = obj_candidates[0] if obj_candidates else None
-
-    # Find .mtl file
-    mtl_candidates = glob.glob(os.path.join(folder, f"{mtl_name}.mtl"))
-    mtl = mtl_candidates[0] if mtl_candidates else None
-
-    if obj is None or mtl is None:
-        print("Error loading model")
-        exit(1)
-
-    return dirname, mtl, obj
-
-
 class ShaderRenderer:
     def __init__(self):
+        self.text_renderer = TextRenderer(16)
+        self.large_text_renderer = TextRenderer(48)
+        self.load_textures()
         self.load_models()
         self.load_shaders()
+        self.load_custom_models()
+
+    def load_textures(self):
+        self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
+        self.ram_texture = load_2D_texture(asset_path('ram.png'))
+        self.stack_texture = load_2D_texture(asset_path('stack.png'))
+        self.heap_texture = load_2D_texture(asset_path('heap.png'))
+        self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
 
     def load_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
@@ -72,10 +37,12 @@ class ShaderRenderer:
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
+        self.arrow_model = arrow_model()
 
         self.white_car_model = load_obj(*object_path('car', 'white'))
         self.red_car_model = load_obj(*object_path('car', 'red'))
         self.blue_car_model = load_obj(*object_path('car', 'blue'))
+        self.orange_car_model = load_obj(*object_path('car', 'orange'))
 
         self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
         self.oneway_sign_model = load_obj(*object_path('oneway_sign', 'oneway'))
@@ -93,15 +60,35 @@ class ShaderRenderer:
         self.pedestrian_model = load_obj(*object_path('pedestrian', 'pedestrian'))
 
         self.void_model = load_obj(*object_path('void_symbol', 'void'))
+        self.axis_model = load_obj(*object_path('axis', 'axis'))
         self.destination_model = load_obj(*object_path('destination', 'destination'))
+        self.green_destination_model = load_obj(*object_path('destination', 'green'))
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+        self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
+        self.arrow_shader = create_shader_program(shader_path('axis', 'axis.vert'), shader_path('axis', 'axis.frag'))
+
+        self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
+
+        self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
+        self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
+        self.speedometer_circle_shader = create_shader_program(shader_path('speedometer', 'circle.vert'), shader_path('speedometer', 'circle.frag'))
+        self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
+
+        self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
+        self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
+
+    def load_custom_models(self):
+        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
+        self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
+        self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
+        self.lane_model = LaneIndicator(self.text_renderer, self.lane_shader)
 
     ##################
     # Draw Functions
@@ -115,6 +102,8 @@ class ShaderRenderer:
             car_model = self.red_car_model
         elif color == NamedColor.BLUE:
             car_model = self.blue_car_model
+        elif color == NamedColor.ORANGE:
+            car_model = self.orange_car_model
         else:
             return
         shader_program = car_model.shader_program
@@ -175,12 +164,12 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
 
     def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
-        obj_model = self.destination_model
+        obj_model = self.green_destination_model
         shader_program = obj_model.shader_program
         gl.glUseProgram(shader_program)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.5))
+        model = glm.translate(model, glm.vec3(x, y, -0.5))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         # model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
@@ -343,6 +332,34 @@ class ShaderRenderer:
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
 
+    def draw_texture2D(self, x, y, icon, scale, proj_matrix):
+        gl.glUseProgram(self.texture2D_shader)
+
+        # Set matrices
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
+
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture2D_shader, "model"),
+            1, gl.GL_FALSE, glm.value_ptr(model)
+        )
+        gl.glUniformMatrix4fv(
+            gl.glGetUniformLocation(self.texture2D_shader, "projection"),
+            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
+        )
+
+        # Bind texture
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
+        gl.glUniform1i(gl.glGetUniformLocation(self.texture2D_shader, "texture1"), 0)
+
+        # Draw
+        gl.glBindVertexArray(icon.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glBindVertexArray(0)
+
     def draw_line(self, start, end, color, view_matrix, proj_matrix):
         gl.glUseProgram(self.line_shader)
 
@@ -460,4 +477,70 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.crosshair_model.vao2)
         gl.glDrawArrays(gl.GL_LINES, 0, 4)
 
+        gl.glBindVertexArray(0)
+
+    def draw_axis3D(self, x, y, yaw, scale, proj_matrix, view_matrix):
+        obj_model = self.axis_model
+        shader_program = self.axis_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.1))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        model_loc = gl.glGetUniformLocation(shader_program, "model")
+        view_loc = gl.glGetUniformLocation(shader_program, "view")
+        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if obj_model.texture is not None:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
+            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
+            gl.glUniform1i(texture_location, 0)
+
+        gl.glBindVertexArray(obj_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
+        gl.glBindVertexArray(0)
+
+    def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
+        gl.glUseProgram(self.arrow_shader)
+
+        model_loc = gl.glGetUniformLocation(self.arrow_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.arrow_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.arrow_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.arrow_shader, "color")
+
+        # Draw green arrow (pointing along y)
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 3.0))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, *NamedColor.GREEN.value)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
+        gl.glBindVertexArray(0)
+
+        # Draw red arrow (pointing along x) using the same global position and yaw, with extra -90° rotation
+        model = glm.mat4(1.0)
+        # Global transformation: translate and apply global yaw
+        model = glm.translate(model, glm.vec3(x, y, 3.0))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
+        # Local adjustment: rotate extra -90° so arrow points to x direction
+        model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
+        # Apply scale last
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4f(color_loc, *NamedColor.RED.value)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
         gl.glBindVertexArray(0)

@@ -81,6 +81,7 @@ public:
     double initial_yaw = 0;
     double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
+    std::string pathName;
     double gps_state[3];
     double ekf_state[3];
     std::optional<size_t> car_idx;
@@ -140,6 +141,11 @@ public:
     ros::Subscriber imu_sub;
     ros::Subscriber ekf_sub;
     ros::Subscriber tf_sub;
+
+    // Initialization
+    void initialize();
+    void initialize_tcp_client();
+    void fetch_run_params();
 
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);

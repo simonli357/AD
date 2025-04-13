@@ -21,7 +21,7 @@ std::unique_ptr<Lane2Msg> Lane2Msg::deserialize(std::vector<uint8_t> &bytes) {
     std_msgs::Header header_msg;
     ros::serialization::deserialize(stream, header_msg);
 
-    float center = bool_from_bytes(datatypes[1]);
+    float center = float_from_bytes(datatypes[1]);
     bool stopline = bool_from_bytes(datatypes[2]);
     float stopline_dist = float_from_bytes(datatypes[3]);
     bool crosswalk = bool_from_bytes(datatypes[4]);

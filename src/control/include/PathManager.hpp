@@ -30,8 +30,8 @@
 
 class PathManager {
 public:
-    PathManager(ros::NodeHandle& nh_, double T, int N, double v_ref):
-        nh(nh), T(T), N(N), v_ref(v_ref), density(1/T/v_ref), region_of_acceptance(0.03076923*3 * (0.125*1.3) / density), 
+    PathManager(ros::NodeHandle& nh_, double T, int N, double v_ref, std::string pathName):
+        nh(nh), T(T), N(N), v_ref(v_ref), pathName(pathName), density(1/T/v_ref), region_of_acceptance(0.03076923*3 * (0.125*1.3) / density), 
         region_of_acceptance_cw(region_of_acceptance * 1.0/1.5), region_of_acceptance_hw(region_of_acceptance * 1.5), t0(0.0), closest_waypoint_index(0)
     {
         std::cout << "Path Manager Constructor" << std::endl;
@@ -54,17 +54,17 @@ public:
         std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
 
         waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
-        if(!nh.getParam("/pathName", pathName)) {
-            ROS_ERROR("Failed to get param 'pathName'");
-            pathName = "speedrun";
-        }
+        /* if(!nh.getParam("/pathName", pathName)) { */
+        /*     ROS_ERROR("Failed to get param 'pathName'"); */
+        /*     pathName = "speedrun"; */
+        /* } */
 
         go_to_client = nh.serviceClient<utils::go_to>("/go_to");
         go_to_multiple_client = nh.serviceClient<utils::go_to_multiple>("/go_to_multiple");
         trigger_client = nh.serviceClient<std_srvs::Trigger>("/notify_params_updated");
     }
 
-    PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25) {}
+    PathManager(ros::NodeHandle& nh_): PathManager(nh_, 0.125, 40, 0.25, "speedrun") {}
     ~PathManager() {}
 
     ros::NodeHandle nh;

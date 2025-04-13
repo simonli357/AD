@@ -1,10 +1,10 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.Qt import QPainter, QFont, QColor
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
 from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
+from ..opengl.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
 from ..enums import MapData, NamedColor
 
@@ -55,7 +55,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.numObj = 0
         self.detected_objects = np.zeros(7)
 
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        current_dir = os.path.dirname(os.path.abspath(__file__))
         self.assets_dir = os.path.join(current_dir, 'assets')
         self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
 
@@ -94,26 +94,24 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.car_yaw = 0
 
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-
         self.sign_images = []
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'oneway.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_entrance.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'roundabout.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'parking.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'crosswalk.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'noentry.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'highway_exit.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'priority.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'roadblock.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'pedestrian.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'car.jpg'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_green.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_yellow.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'trafficlight_red.png'))
-        self.sign_images.append(os.path.join(current_dir, 'assets', 'stopsign2.jpg'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_entrance.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roundabout.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'parking.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'crosswalk.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'noentry.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_exit.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'priority.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roadblock.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'pedestrian.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'car.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_green.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_yellow.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
 
         self.setup_ui()
 
@@ -142,7 +140,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
@@ -150,7 +149,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
+        self.destinations_renderer = DestinationsRenderer()
         self.shader_renderer = ShaderRenderer()
+
+        self.update_destinations()
 
         self.sign_models = []
         for path in self.sign_images:
@@ -209,6 +211,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if not self.show_gt:
             return
 
+        if self.show_destinations:
+            self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
+
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
 
@@ -227,20 +232,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             elif entity_type == 'Car':
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
-            elif entity_type == 'Destination':
-                if self.show_destinations:
-                    self.shader_renderer.draw_circle(
-                        center=(x, y),
-                        radius=8.0,
-                        color=(0.0, 0.7, 0.7, 0.7),
-                        view_matrix=self.view_mat,
-                        proj_matrix=self.proj_mat
-                    )
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
-                    mat = self.sign_models[sign_index]
-                    self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
+                    if sign_index is not None:
+                        mat = self.sign_models[sign_index]
+                        self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
 
     def draw_lane(self, x, y, orientation):
         """Draw lane markings using OpenGL lines"""
@@ -279,48 +277,56 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
     def draw_legend(self, x, y):
-        offset = 30
+        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
+        screen_width = viewport[2]
+        screen_height = viewport[3]
+        proj_mat = glm.ortho(0.0, float(screen_width), float(screen_height), 0.0, -1.0, 1.0)
+        view_mat = glm.mat4(1.0)
+        x, y = 0.37 * screen_width, 0.35 * screen_height
+        height = 5
+
+        offset = 35
         y_offset = 0
-        self.render_text("◈", 32, (0, 255, 255, 255), x, y)
-        self.render_text("normal", 18, (255, 255, 255, 255), x + 40, y)
+        self.shader_renderer.draw_triangle(x, y, 0, np.radians(180), (24.0, 24.0), NamedColor.YELLOW.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("NORMAL", x + 62, y - height, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 255, 0, 255), x, y + y_offset)
-        self.render_text("crosswalk", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.GREEN.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("CROSSWALK", x + 80, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 0, 255, 255), x, y + y_offset)
-        self.render_text("intersection", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.RED.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("INTERSECTION", x + 88, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (0, 165, 255, 255), x, y + y_offset)
-        self.render_text("oneway", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.ORANGE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("ONEWAY", x + 64, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (130, 0, 75, 255), x, y + y_offset)
-        self.render_text("highwayLeft", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.INDIGO.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY LEFT", x + 90, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (193, 182, 255, 255), x, y + y_offset)
-        self.render_text("highwayRight", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.LIGHT_PINK.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY RIGHT", x + 94, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (255, 255, 255, 255), x, y + y_offset)
-        self.render_text("roundabout", 18, (255, 255, 255, 255), x + 40, y + y_offset)
+        y_offset = 0
+        x_offset = 200
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.WHITE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("ROUNDABOUT", x + x_offset + 84, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        y_offset = 60
-        x_offset = 180
-        self.render_text("◈", 32, (255, 255, 0, 255), x + x_offset, y + y_offset)
-        self.render_text("stopline", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.CYAN.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("STOPLINE", x + x_offset + 66, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (180, 130, 70, 255), x + x_offset, y + y_offset)
-        self.render_text("dotted", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.STEEL_BLUE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED", x + x_offset + 60, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
-        self.render_text("◈", 32, (128, 0, 128, 255), x + x_offset, y + y_offset)
-        self.render_text("dotted_crosswalk", 18, (255, 255, 255, 255), x + x_offset + 40, y + y_offset)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.PURPLE.value, view_mat, proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED CROSSWALK", x + x_offset + 116, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
         y_offset += offset
 
     def draw_markers(self):
@@ -336,9 +342,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
-        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_x, car_y, car_z)
-        self.main_window.meter_widget.set_yaw(car_yaw / np.pi * 180)
-        self.main_window.meter_widget.set_speed(car_speed * 100)
+        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_speed, car_x, car_y, car_z)
         self.run_statistics.set_car_pose(car_x, car_y, car_z)
         self.car_yaw = car_yaw
         for i in range(len(self.detected_data)):
@@ -355,11 +359,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.BLUE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.ORANGE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self):
         if self.waypoints is None or len(self.waypoints) < 2:
@@ -368,46 +375,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
-                self.shader_renderer.draw_triangle(x1, y1, 0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
                 x1, y1 = x2, y2
-
-    def render_text(self, text, size, color: (int, int, int, int), x, y) -> None:
-        painter = QPainter(self)
-        painter.setRenderHints(
-            QPainter.Antialiasing | QPainter.TextAntialiasing | QPainter.SmoothPixmapTransform
-        )
-
-        # Get current OpenGL color
-        gl_color = gl.glGetDoublev(gl.GL_CURRENT_COLOR)
-        text_color = QColor(
-            int(gl_color[2] * color[2]),
-            int(gl_color[1] * color[1]),
-            int(gl_color[0] * color[0]),
-            int(gl_color[3] * color[3])
-        )
-
-        # Set up font
-        font = QFont("Arial")
-        font.setBold(True)
-        font.setStyleStrategy(QFont.PreferAntialias)
-
-        # Account for high-DPI scaling
-        scale_factor = self.devicePixelRatio()
-        painter.scale(1 / scale_factor, 1 / scale_factor)
-        font.setPixelSize(size * scale_factor)
-
-        painter.setPen(text_color)
-        painter.setFont(font)
-        painter.drawText(int(x * scale_factor),
-                         int(y * scale_factor),
-                         text)
-        painter.end()
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
@@ -484,6 +459,12 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
             self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
 
+    def update_destinations(self):
+        self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
+
+    def update_visited_destination(self, x_visited, y_visited):
+        self.main_window.car_widget.update_visited_destination(x_visited, y_visited)
+
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -502,6 +483,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             5
         )
         self.update_waypoints()
+        self.update_destinations()
 
     def mouseDoubleClickEvent(self, event):
         x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())

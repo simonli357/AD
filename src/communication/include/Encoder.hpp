@@ -4,6 +4,7 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "std_srvs/TriggerRequest.h"
 #include "std_srvs/TriggerResponse.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include <cstdint>
 #include <vector>
 
@@ -20,6 +21,7 @@ class Encoder {
 	std::vector<uint8_t> serializeFloat64MultiArray(std_msgs::Float64MultiArray &array);
 	std::vector<uint8_t> serializeFloat32MultiArray(std_msgs::Float32MultiArray &array);
 	std::vector<uint8_t> serializeROSHeader(std_msgs::Header &header);
+	std::vector<uint8_t> serializePoseWithCovarianceStamped(geometry_msgs::PoseWithCovarianceStamped &pose);
 	std::vector<uint8_t> serializeTriggerRequest(std_srvs::TriggerRequest &request);
 	std::vector<uint8_t> serializeTriggerResponse(std_srvs::TriggerResponse &response);
 

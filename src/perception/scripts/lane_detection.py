@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+import time
 
 class LanePreprocessingVisualizer:
     def __init__(self):
@@ -31,28 +32,34 @@ class LanePreprocessingVisualizer:
         # 3. Sobel X (horizontal gradient)
         sobelx = cv2.Sobel(clahe_applied, cv2.CV_64F, 1, 0, ksize=3)
         sobelx_abs = np.uint8(np.absolute(sobelx))
-
-        # 4. Adaptive Thresholding (on CLAHE image)
+        
+        t1 = time.time()
         adaptive_thresh = cv2.adaptiveThreshold(
-            clahe_applied, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            gray, 255,
+            cv2.ADAPTIVE_THRESH_MEAN_C,
             cv2.THRESH_BINARY,
-            257, -40
+            199, -20
         )
+        t2 = time.time()
         
         adaptive_thresh2 = cv2.adaptiveThreshold(
-            clahe_applied, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
-            199, -40
+            gray, 255,
+            cv2.ADAPTIVE_THRESH_MEAN_C,
+            cv2.THRESH_BINARY_INV,
+            199, -25
         )
         
+        t3 = time.time()
         adaptive_thresh_gray = cv2.adaptiveThreshold(
             gray, 255,
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
             cv2.THRESH_BINARY,
             199, -20
         )
+        t4 = time.time()
+        print(f"Adaptive Threshold Time: {t2 - t1:.4f} seconds")
+        print(f"Adaptive Threshold2 Time : {t3 - t2:.4f} seconds")
+        print(f"Adaptive Threshold Gray Time: {t4 - t3:.4f} seconds")
 
         # 5. Gaussian Blur + Canny Edge Detection
         blurred = cv2.GaussianBlur(clahe_applied, (5, 5), 0)
@@ -64,9 +71,12 @@ class LanePreprocessingVisualizer:
         clahe_l = clahe.apply(l_channel) # Apply CLAHE on L channel, which is more robust to lighting changes.
 
         # 3. Refined Adaptive Threshold + Morph + ROI
+        t4 = time.time()
         kernel = np.ones((3, 3), np.uint8)
         adaptive_refined = cv2.morphologyEx(adaptive_thresh, cv2.MORPH_OPEN, kernel)
         adaptive_refined = cv2.morphologyEx(adaptive_refined, cv2.MORPH_CLOSE, kernel)
+        t5 = time.time()
+        print(f"morphologyEx Time: {t5 - t4:.4f} seconds")
 
         mask_roi = np.zeros_like(adaptive_refined)
         mask_roi[int(adaptive_refined.shape[0] / 2.5):, :] = 255

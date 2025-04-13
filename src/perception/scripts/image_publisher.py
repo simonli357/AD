@@ -13,11 +13,7 @@ def get_image_files_from_dir(directory):
                    if f.lower().endswith(supported_exts)])
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: rosrun your_package image_publisher.py /path/to/image_directory")
-        return
-
-    image_dir = sys.argv[1]
+    image_dir = "/home/slsecret/Downloads/bfmc_data/other/lane_test"
 
     if not os.path.isdir(image_dir):
         rospy.logerr("Provided path is not a directory: {}".format(image_dir))
