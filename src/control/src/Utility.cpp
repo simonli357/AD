@@ -1,3 +1,4 @@
+#include <chrono>
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
@@ -17,6 +18,8 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
+#include <tf2/utils.h>
+#include <thread>
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -25,13 +28,34 @@
 #include <cmath>
 #include <robot_localization/SetPose.h>
 #include <iostream>
+#include "Runs.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
     : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
     io(), serial(nullptr), real(real), it(nh), object_detection_time(ros::Time::now())
 {
+
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
+
+    initialize_tcp_client();
+    double x_init, y_init, yaw_init;
+    x_init = x0;
+    y_init = y0;
+    yaw_init = yaw0;
+    initialize();
+    fetch_run_params();
+}
+
+Utility::~Utility() {
+    stop_car(); 
+    cameraThreadRunning = false;
+    if (cameraThread.joinable()) {
+            cameraThread.join();
+    }
+}
+
+void Utility::initialize_tcp_client() {
     bool use_tcp = false;
     bool use_traffic_server = false;
     if(!nh.getParam("/use_tcp", use_tcp)) {
@@ -67,7 +91,44 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
         tcp_client = nullptr;
         debug("Utility constructor: TCP client not created.", 1);
     }
+}
 
+void Utility::fetch_run_params() {
+    boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
+    msg_ptr = nullptr;
+    while (!msg_ptr) {
+        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
+    }
+    double x = msg_ptr->pose.pose.position.x;
+    double y = msg_ptr->pose.pose.position.y;
+    double z = msg_ptr->pose.pose.position.z;
+
+    std::vector<std::array<std::any, 5>> runs_with_info;
+    while(!imuInitialized) {
+        ros::spinOnce();
+    }
+    for (auto &run : Runs::runs) {
+        double dx = x - run.x;
+        double dy = y - run.y;
+        double dist = std::sqrt(dx*dx + dy*dy);
+        double yaw_diff = compare_yaw(yaw, run.yaw);
+        ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
+        if(yaw_diff < 40.0 / 180 * M_PI) {
+            runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
+        }
+    }
+    
+    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<std::any, 5>& a, const std::array<std::any, 5>& b) {
+        return std::any_cast<double>(a[4]) < std::any_cast<double>(b[4]);
+    });
+
+    this->x0 = std::any_cast<double>(runs_with_info[0][0]);
+    this->y0 = std::any_cast<double>(runs_with_info[0][1]);
+    this->yaw0 = std::any_cast<double>(runs_with_info[0][2]);
+    pathName = std::any_cast<std::string>(runs_with_info[0][3]);
+}
+
+void Utility::initialize() {
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
@@ -128,14 +189,11 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     d = 0.0005;
     last = 0;
     
-    triggerServiceClient = nh_.serviceClient<std_srvs::Trigger>("trigger_service");
+    triggerServiceClient = nh.serviceClient<std_srvs::Trigger>("trigger_service");
     static_broadcaster = tf2_ros::StaticTransformBroadcaster();
     broadcaster = tf2_ros::TransformBroadcaster();
     publish_static_transforms();
 
-    this->x0 = x0;
-    this->y0 = y0;
-    this->yaw0 = yaw0;
     yaw = yaw0;
     velocity = 0.0;
     odomX = 0.0;
@@ -241,14 +299,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double y
     }
 
     timerodom = ros::Time::now();
-}
-
-Utility::~Utility() {
-    stop_car(); 
-    cameraThreadRunning = false;
-    if (cameraThread.joinable()) {
-            cameraThread.join();
-    }
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {

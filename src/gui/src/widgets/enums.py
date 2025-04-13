@@ -37,6 +37,7 @@ class CameraParams(Enum):
     FPS_30 = 0.034  # 30 FPS
     RECORDING_REFRESH_RATE = 0.5  # 1/rate
 
+
 class NamedColor(Enum):
     RED = (1.0, 0.0, 0.0, 1.0)
     BLUE = (0.0, 0.0, 1.0, 1.0)
@@ -44,3 +45,8 @@ class NamedColor(Enum):
     YELLOW = (1.0, 1.0, 0.0, 1.0)
     CYAN = (0.0, 1.0, 1.0, 1.0)
     WHITE = (1.0, 1.0, 1.0, 1.0)
+    ORANGE = (1.0, 0.65, 0.0, 1.0)
+    INDIGO = (0.29, 0.0, 0.51, 1.0)
+    LIGHT_PINK = (1.0, 0.71, 0.76, 1.0)
+    STEEL_BLUE = (0.27, 0.51, 0.71, 1.0)
+    PURPLE = (0.51, 0.0, 0.51, 1.0)
