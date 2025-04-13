@@ -26,22 +26,22 @@ class Track {
 		DOTTED_CROSSWALK = 9,
 	};
 
-	struct VertexProperties {
+	struct Vertex {
 		int id;
 		double x;
 		double y;
 		ATTRIBUTE attribute;
 	};
 
-	struct EdgeProperties {
+	struct Edge {
 		double distance;
 	};
 
-	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VertexProperties, EdgeProperties>;
+	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, Vertex, Edge>;
 
-	std::vector<VertexProperties> dikstra(int src, int tgt);
+	std::vector<Vertex> dikstra(int src, int tgt);
 
-	void print_path(const std::vector<VertexProperties> &path);
+	void print_path(const std::vector<Vertex> &path);
 	void print_graph();
 
   private:

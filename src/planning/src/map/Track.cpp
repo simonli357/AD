@@ -154,7 +154,7 @@ std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_
 	return idMap;
 }
 
-std::vector<Track::VertexProperties> Track::dikstra(int src, int tgt) {
+std::vector<Track::Vertex> Track::dikstra(int src, int tgt) {
 	auto idMap = build_to_vertex_map();
 
 	auto sIt = idMap.find(src);
@@ -176,7 +176,7 @@ std::vector<Track::VertexProperties> Track::dikstra(int src, int tgt) {
 
 	auto indexMap = get(boost::vertex_index, graph);
 
-	auto weightMap = boost::get(&EdgeProperties::distance, graph);
+	auto weightMap = boost::get(&Edge::distance, graph);
 
 	boost::dijkstra_shortest_paths(
 		graph, srcV,
@@ -195,7 +195,7 @@ std::vector<Track::VertexProperties> Track::dikstra(int src, int tgt) {
 	pathVerts.push_back(srcV);
 	std::reverse(pathVerts.begin(), pathVerts.end());
 
-	std::vector<VertexProperties> path;
+	std::vector<Vertex> path;
 	path.reserve(pathVerts.size());
 	for (auto v : pathVerts) {
 		path.push_back(graph[v]);
@@ -204,7 +204,7 @@ std::vector<Track::VertexProperties> Track::dikstra(int src, int tgt) {
 	return path;
 }
 
-void Track::print_path(const std::vector<VertexProperties> &path) {
+void Track::print_path(const std::vector<Vertex> &path) {
 	if (path.empty()) {
 		std::cout << "Empty path\n";
 		return;
