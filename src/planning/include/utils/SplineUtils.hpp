@@ -9,8 +9,9 @@ class SplineUtils {
 	SplineUtils &operator=(const SplineUtils &) = default;
 	~SplineUtils() = default;
 
-	std::vector<Track::Vertex> interpolate_path(const std::vector<Track::Vertex> &path, int density);
+	std::vector<Track::Vertex> interpolate_path(const std::vector<Track::Vertex> &path, int density, double rho = 0.1);
+	void plot_path(const std::vector<Track::Vertex> &original, const std::vector<Track::Vertex> &smoothed);
 
   private:
-	std::vector<double> build_query_normalized(size_t numPoints, int density);
+	std::vector<double> compute_chord_parameters(const std::vector<Track::Vertex> &path);
 };

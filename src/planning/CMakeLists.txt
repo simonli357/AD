@@ -17,6 +17,16 @@ message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 find_package(Boost REQUIRED COMPONENTS graph)
 include_directories(${Boost_INCLUDE_DIRS})
 
+include(FetchContent)
+
+FetchContent_Declare(
+    matplotplusplus
+    GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
+    GIT_TAG        v1.2.2
+)
+
+FetchContent_MakeAvailable(matplotplusplus)
+
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
@@ -57,6 +67,8 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   Boost::graph
+  matplot
+  alglib_control
 )
 
 add_executable(planner
@@ -77,9 +89,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
-
-# file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-# add_library(alglib SHARED ${ALGLIB_SOURCES})
 
 # add_executable(utility 
 # src/utility_main.cpp
