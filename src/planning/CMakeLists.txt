@@ -38,10 +38,33 @@ catkin_package(
 )
 
 include_directories(
-  ${catkin_INCLUDE_DIRS} 
   include 
+  ${catkin_INCLUDE_DIRS} 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
+)
+
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES})
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+)
+
+add_executable(planner
+  src/Main.cpp
+)
+
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION} 
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
 )
 
 # file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)

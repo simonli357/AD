@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="planning" type="planner" name="$(anon planner)" output="screen"> 
+  </node>
+</launch>
