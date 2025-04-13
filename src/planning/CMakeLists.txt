@@ -43,6 +43,7 @@ catkin_package(
 include_directories(
   include
   include/map
+  include/utils
   ${catkin_INCLUDE_DIRS} 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
@@ -50,7 +51,8 @@ include_directories(
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/map/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES} ${MAP})
+file(GLOB UTILS ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS})
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
