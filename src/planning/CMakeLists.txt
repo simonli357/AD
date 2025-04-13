@@ -14,6 +14,8 @@ pkg_search_module(Eigen3 REQUIRED eigen3)
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 
+find_package(Boost REQUIRED COMPONENTS graph)
+include_directories(${Boost_INCLUDE_DIRS})
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
@@ -28,27 +30,31 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   utils
+  roslib
 )
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime
+ CATKIN_DEPENDS message_runtime roslib
 #  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
  DEPENDS system_lib
 )
 
 include_directories(
-  include 
+  include
+  include/map
   ${catkin_INCLUDE_DIRS} 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES})
+file(GLOB MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/map/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${MAP})
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
+  Boost::graph
 )
 
 add_executable(planner
