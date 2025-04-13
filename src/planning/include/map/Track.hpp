@@ -33,7 +33,11 @@ class Track {
 		ATTRIBUTE attribute;
 	};
 
-	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VertexProperties>;
+    struct EdgeProperties {
+        double distance;
+    };
+
+	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VertexProperties, EdgeProperties>;
 
   private:
 	Graph graph;
@@ -42,6 +46,7 @@ class Track {
 
 	void read_graph();
 	void adjust_graph();
+    void compute_edge_distances();
 	void print_graph();
 
 	friend std::istream &operator>>(std::istream &in, ATTRIBUTE &attr);

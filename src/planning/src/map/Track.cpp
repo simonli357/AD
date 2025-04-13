@@ -15,6 +15,7 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 Track::Track() {
 	read_graph();
 	adjust_graph();
+	compute_edge_distances();
 	print_graph();
 }
 
@@ -126,9 +127,33 @@ void Track::adjust_graph() {
 	}
 }
 
+void Track::compute_edge_distances() {
+	for (auto ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
+		auto e = *ep.first;
+		auto s = boost::source(e, graph);
+		auto t = boost::target(e, graph);
+		double sx = graph[s].x;
+		double sy = graph[s].y;
+		double tx = graph[t].x;
+		double ty = graph[t].y;
+		double dx = sx - tx;
+		double dy = sy - ty;
+		double dist = std::sqrt(dx * dx + dy * dy);
+		graph[e].distance = dist;
+	}
+}
+
 void Track::print_graph() {
+	std::cout << "Vertices:\n";
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		auto v = *vp.first;
-		std::cout << "Vertex id: " << graph[v].id << ", x: " << graph[v].x << ", y: " << graph[v].y << ", attribute: " << static_cast<int>(graph[v].attribute) << std::endl;
+		std::cout << "  Vertex id: " << graph[v].id << ", x: " << graph[v].x << ", y: " << graph[v].y << ", attribute: " << static_cast<int>(graph[v].attribute) << std::endl;
+	}
+	std::cout << "\nEdges:\n";
+	for (auto ep = boost::edges(graph); ep.first != ep.second; ++ep.first) {
+		auto e = *ep.first;
+		auto src = boost::source(e, graph);
+		auto tgt = boost::target(e, graph);
+		std::cout << "  " << graph[src].id << " -> " << graph[tgt].id << " | distance=" << graph[e].distance << std::endl;
 	}
 }
