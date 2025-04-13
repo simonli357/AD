@@ -1,0 +1,3 @@
+# apt install libglm-dev
+PyGLM
+freetype-py # or apt install python3-freetype
