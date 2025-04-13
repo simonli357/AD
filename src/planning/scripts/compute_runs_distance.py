@@ -13,7 +13,7 @@ def main():
     starting_points = [str(s) for s in starting_points]
 
     # Load runs
-    runs_yaml_path = os.path.join(current_dir, 'config/runs0412_modified.yaml') 
+    runs_yaml_path = os.path.join(current_dir, 'config/runs_noright_modified.yaml') 
     with open(runs_yaml_path, 'r') as f:
         runs_data = yaml.safe_load(f)
 

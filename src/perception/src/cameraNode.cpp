@@ -209,6 +209,7 @@ class CameraNode {
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			depthImage = cv_ptr_depth->image.clone();
+			cv::flip(depthImage, depthImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
         	// Sign.tcp_client->send_image_depth(depthImage);
@@ -233,6 +234,7 @@ class CameraNode {
 		} else {
 			std::lock_guard<std::mutex> lock(mutex);
       colorImage = cv_ptr->image.clone();
+			cv::flip(colorImage, colorImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
         	Sign.tcp_client->send_image_rgb(colorImage, quality);

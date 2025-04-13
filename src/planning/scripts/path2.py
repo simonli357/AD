@@ -10,6 +10,7 @@ from scipy.interpolate import UnivariateSpline, splprep, splev
 from global_planner import GlobalPlanner
 import yaml
 import math
+import argparse
 
 def smooth_yaw_angles(yaw_angles):
     diffs = np.diff(yaw_angles)
@@ -150,13 +151,18 @@ class Path:
         self.v_ref = v_ref
         print("v_ref: ", v_ref, ", N: ", N, ", T: ", T, ", x0: ", x0, ", name: ", name)
         self.N = N
-        self.global_planner = GlobalPlanner()
+        self.global_planner = GlobalPlanner(noright)
         if name is not None:
             self.name = name
             current_path = os.path.dirname(os.path.abspath(__file__))
-            with open(os.path.join(current_path, 'config/runs0412_modified.yaml'), 'r') as stream:
-                data = yaml.safe_load(stream)
-                destinations = data[name]
+            if noright:
+                with open(os.path.join(current_path, 'config/runs0412_modified.yaml'), 'r') as stream:
+                    data = yaml.safe_load(stream)
+                    destinations = data[name]
+            else:
+                with open(os.path.join(current_path, 'config/runs_noright_modified.yaml'), 'r') as stream:
+                    data = yaml.safe_load(stream)
+                    destinations = data[name]
         else:
             destinations = []
             # check if dest is a list with x and y coordinates or a list containing a list with x and y coordinates
@@ -659,6 +665,10 @@ if __name__ == "__main__":
     goto_service = rospy.Service('go_to', go_to, handle_goto_service)
     goto_multiple = rospy.Service('go_to_multiple', go_to_multiple, handle_goto_multiple_service)
     rospy.loginfo("go_to service is ready.")
+    args = argparse.ArgumentParser(description='Path Planning Node')
+    args.add_argument('--noright', action='store_true', help='Use no right turns')
+    global noright
+    noright = args.parse_args().noright
     # global hw_density_factor
     # hw_density_factor = rospy.get_param('hw', default=1.33)
     rate = rospy.Rate(10)

@@ -472,7 +472,7 @@ public:
             }
         }
     }
-    void check_sign_for_relocalization() {
+    void find_sign_for_relocalization() {
         if (!sign_relocalize) return;
         // check cooldown
         if (sign_cooldown_timer > ros::Time::now()) return;
@@ -513,7 +513,7 @@ public:
         }
         return -1;
     }
-    void check_highway_for_relocalization() {
+    void find_highway_for_relocalization() {
         // TODO: move magic numbers to tunable
         if (!sign_relocalize) return;
         if(highway_cooldown_timer > ros::Time::now()) {
@@ -1278,8 +1278,8 @@ void StateMachine::run() {
                 ;
             }
             if (sign) {
-                check_sign_for_relocalization();
-                check_highway_for_relocalization();
+                find_sign_for_relocalization();
+                find_highway_for_relocalization();
                 check_light();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count < 1) {

@@ -13,7 +13,7 @@ real:
   change_lane_offset_scaler: 1.3
   max_light_dist: 0.9
   max_sign_dist: 1.5
-  min_sign_dist: 0.5
+  min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
   cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
@@ -49,7 +49,7 @@ sim:
   change_lane_offset_scaler: 1.3
   max_light_dist: 0.9
   max_sign_dist: 1.5
-  min_sign_dist: 0.5
+  min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
   cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
