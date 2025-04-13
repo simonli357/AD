@@ -334,46 +334,6 @@ public:
         return 0;
     }
 
-    bool near_intersection() {
-        double yaw = utils.get_yaw();
-        double nearest_direction = Utility::nearest_direction(yaw);
-        double yaw_error = nearest_direction - yaw;
-        if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
-        else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
-        if(std::abs(yaw_error) > 45 * M_PI / 180) {
-            utils.debug("NEAR_INTERSECTION(): FAILURE: yaw error too large: " + helper::d2str(yaw_error), 4);
-            return false;
-        }
-
-        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
-        const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
-                                          (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
-                                          (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
-                                                                        SOUTH_FACING_INTERSECTIONS;
-        
-        static Eigen::Vector2d estimated_position(0, 0);
-        utils.get_states(estimated_position(0), estimated_position(1), yaw);
-        estimated_position[0] += constant_distance_to_intersection_at_detection * cos(yaw);
-        estimated_position[1] += constant_distance_to_intersection_at_detection * sin(yaw);
-
-        double min_error_sq = std::numeric_limits<double>::max();
-        int min_index = 0;
-        for (size_t i = 0; i < direction_intersections.size(); ++i) {
-            double error_sq = std::pow(estimated_position[0] - direction_intersections[i][0], 2) + std::pow(estimated_position[1] - direction_intersections[i][1], 2);
-            if (error_sq < min_error_sq) {
-                min_error_sq = error_sq;
-                min_index = static_cast<int>(i);
-            }
-        }
-        // exit(0);
-        if (min_error_sq < 0.3 * 0.3) {
-            utils.debug("NEAR_INTERSECTION(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
-            return true;
-        } else {
-            utils.debug("NEAR_INTERSECTION(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 4);
-            return false;
-        }
-    }
     bool check_intersection() {
         int idx = path_manager.intersection_index;
         if (idx >= path_manager.intersection_indices.size()) {
@@ -634,7 +594,7 @@ public:
         if (thresh < 0) thresh = sign_localization_threshold;
         double error_sq = std::pow(object->x - object->gt_pose[0], 2) + std::pow(object->y - object->gt_pose[1], 2);
         if (error_sq > thresh * thresh) {
-            utils.debug("SIGN_RELOC2(): FAILURE: error too large: " + helper::d2str(std::sqrt(error_sq)) + ", thresh: " + helper::d2str(thresh) + ", estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+            utils.debug("SIGN_RELOC2("+object->name+"): FAILURE: error too large: " + helper::d2str(std::sqrt(error_sq)) + ", thresh: " + helper::d2str(thresh) + ", estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
             return false;
         }
         double current_yaw = x_current[2];
@@ -642,14 +602,14 @@ public:
         double yaw_error = Utility::compare_yaw(target_yaw, current_yaw);
         // check yaw
         if (yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
-            utils.debug("SIGN_RELOC2(): FAILURE: yaw error too large: " + helper::d2str(yaw_error * 180/M_PI) + ", thresh: " + helper::d2str(sign_localization_orientation_threshold) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+            utils.debug("SIGN_RELOC2("+object->name+"): FAILURE: yaw error too large: " + helper::d2str(yaw_error * 180/M_PI) + ", thresh: " + helper::d2str(sign_localization_orientation_threshold) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
             return false;
         }
         double x,y,yaw;
         utils.get_states(x, y, yaw);
         utils.recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
         utils.update_states(x_current);
-        utils.debug("SIGN_RELOC2(): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
+        utils.debug("SIGN_RELOC2("+object->name+"): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
         // stop_for(3.0);
         return true;
     }

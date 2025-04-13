@@ -54,7 +54,7 @@ def modify_run(run_list):
 def main():
     # Load the original YAML file.
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = os.path.join(current_dir, "config/runsbt.yaml")
+    input_file = os.path.join(current_dir, "config/runs0412.yaml")
     with open(input_file, "r") as f:
         runs = yaml.safe_load(f)
 
@@ -67,7 +67,7 @@ def main():
         runs[run_name] = modify_run(numbers)
 
     # Write the modified runs to a new YAML file.
-    output_file = os.path.join(current_dir, "config/runsbt_modified.yaml")
+    output_file = os.path.join(current_dir, "config/runs0412_modified.yaml")
     with open(output_file, "w") as f:
         yaml.dump(runs, f, default_flow_style=False)
     print(f"Modified runs saved to {output_file}")
