@@ -23,7 +23,7 @@ Track::Track() {
 
 void Track::read_graph() {
 	std::string package_path = ros::package::getPath("planning");
-	std::string graph_file = package_path + "/src/map/track.graphml";
+	std::string graph_file = package_path + "/src/persistence/track.graphml";
 
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError err = doc.LoadFile(graph_file.c_str());

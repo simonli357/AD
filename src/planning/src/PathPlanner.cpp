@@ -1,4 +1,6 @@
 #include "PathPlanner.hpp"
+#include <ros/package.h>
+#include <yaml-cpp/yaml.h>
 
 PathPlanner::PathPlanner() : track(), spline_utils() {}
 
@@ -33,7 +35,8 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 }
 
 void PathPlanner::precompute_path() {
-    
+	std::string package_path = ros::package::getPath("planning");
+	std::string graph_file = package_path + "/src/persistence/runs.yaml";
 }
 
 void PathPlanner::interpolate_path() {
