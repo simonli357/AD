@@ -10,6 +10,7 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 	this->T = T;
 	this->name = "custom path";
 
+    path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
 	path.push_back(start);
 	for (const auto &dest : destination_positions) {
@@ -28,6 +29,7 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 	this->T = T;
 	this->name = name;
 
+    path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
 	path.push_back(start);
 	precompute_path();
