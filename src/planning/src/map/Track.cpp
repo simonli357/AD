@@ -219,6 +219,18 @@ Track::Vertex Track::find_closest_node(double pos_x, double pos_y) {
     return best_node;
 }
 
+Track::Vertex Track::find_node(int id) {
+	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+		auto v = *vp.first;
+		auto &vertex = graph[v];
+        if (vertex.id == id) {	
+            return vertex;
+        }
+    }
+    std::cerr << "Node not found" << std::endl;
+    exit(1);
+}
+
 double Track::sqrt_dist(double x, double y, Vertex dest) {
 	double dx = dest.x - x;
 	double dy = dest.y - y;
