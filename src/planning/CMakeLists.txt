@@ -54,7 +54,7 @@ include_directories(
   include
   include/map
   include/utils
-  include/path
+  include/planner
   ${catkin_INCLUDE_DIRS} 
   ${CURSES_INCLUDE_DIR}
 )
@@ -62,8 +62,8 @@ include_directories(
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/map/*.cpp)
 file(GLOB UTILS ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp)
-file(GLOB PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/path/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS} ${PATH})
+file(GLOB PLANNER ${CMAKE_CURRENT_SOURCE_DIR}/src/planner/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS} ${PLANNER})
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}

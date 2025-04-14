@@ -1,8 +1,8 @@
-#include "path/Path.hpp"
+#include "planner/PathPlanner.hpp"
 
-Path::Path() : track(), spline_utils() {}
+PathPlanner::PathPlanner() : track(), spline_utils() {}
 
-void Path::set_constraints(double vref, int N, int T, std::string name, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
+void PathPlanner::set_constraints(double vref, int N, int T, std::string name, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
     this->vref = vref;
     this->N = N;
     this->T = T;
@@ -20,7 +20,7 @@ void Path::set_constraints(double vref, int N, int T, std::string name, double s
     interpolate_path();
 }
 
-void Path::interpolate_path() {
+void PathPlanner::interpolate_path() {
     std::vector<Vertex> general_path;
     general_path.push_back(path[0]);
     Vertex prev = path[0];
@@ -35,7 +35,7 @@ void Path::interpolate_path() {
     condensed_path = spline_utils.interpolate_path(general_path, N);
 }
 
-void Path::plan_path(std::vector<double> &state_refs, std::vector<double> &input_refs, std::vector<double> &attributes, std::vector<double> &normals) {
+void PathPlanner::plan_path(std::vector<double> &state_refs, std::vector<double> &input_refs, std::vector<double> &attributes, std::vector<double> &normals) {
     for (const auto &v : condensed_path) {
         // State refs
         state_refs.push_back(v.x);

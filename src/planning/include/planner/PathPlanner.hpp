@@ -3,14 +3,14 @@
 #include "SplineUtils.hpp"
 #include "Track.hpp"
 
-class Path {
+class PathPlanner {
   public:
-	Path();
-	Path(Path &&) = default;
-	Path(const Path &) = default;
-	Path &operator=(Path &&) = default;
-	Path &operator=(const Path &) = default;
-	~Path() = default;
+	PathPlanner();
+	PathPlanner(PathPlanner &&) = default;
+	PathPlanner(const PathPlanner &) = default;
+	PathPlanner &operator=(PathPlanner &&) = default;
+	PathPlanner &operator=(const PathPlanner &) = default;
+	~PathPlanner() = default;
 
 	using Vertex = Track::Vertex;
 
