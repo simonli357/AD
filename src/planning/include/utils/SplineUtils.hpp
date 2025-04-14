@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Track.hpp"
+#include "map/Track.hpp"
 
 class SplineUtils {
   public:

@@ -46,15 +46,12 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
  INCLUDE_DIRS include
  CATKIN_DEPENDS message_runtime roslib
-#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
- DEPENDS system_lib
 )
 
 include_directories(
   include
   include/map
   include/utils
-  include/planner
   ${catkin_INCLUDE_DIRS} 
   ${CURSES_INCLUDE_DIR}
 )
@@ -62,8 +59,7 @@ include_directories(
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/map/*.cpp)
 file(GLOB UTILS ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp)
-file(GLOB PLANNER ${CMAKE_CURRENT_SOURCE_DIR}/src/planner/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS} ${PLANNER})
+add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS})
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}

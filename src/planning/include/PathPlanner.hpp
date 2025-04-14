@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SplineUtils.hpp"
-#include "Track.hpp"
+#include "utils/SplineUtils.hpp"
+#include "map/Track.hpp"
 #include <std_msgs/Float32MultiArray.h>
 
 class PathPlanner {

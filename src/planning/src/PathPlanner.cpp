@@ -1,4 +1,4 @@
-#include "planner/PathPlanner.hpp"
+#include "PathPlanner.hpp"
 
 PathPlanner::PathPlanner() : track(), spline_utils() {}
 

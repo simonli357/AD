@@ -113,11 +113,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   utils
   perception
+  planning
 )
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime
+ CATKIN_DEPENDS message_runtime planning
 #  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
  DEPENDS system_lib
 )
@@ -176,6 +177,7 @@ target_link_libraries(controller
   ${CURSES_LIBRARIES}
   # htn
   communication
+  planning
   object_detection_lib
 )
 
