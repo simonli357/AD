@@ -30,7 +30,9 @@ class Track {
 		int id = -1;
 		double x;
 		double y;
-		double yaw = 0;
+		double tangent_angle = 0;
+		double normal_angle = 0;
+		double curvature = 0;
 		ATTRIBUTE attribute;
 	};
 
@@ -42,8 +44,8 @@ class Track {
 
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
-    double sqrt_dist(double x, double y, Vertex dest);
-    double sqrt_dist(Vertex src, Vertex dest);
+	double sqrt_dist(double x, double y, Vertex dest);
+	double sqrt_dist(Vertex src, Vertex dest);
 
 	void print_path(const std::vector<Vertex> &path);
 	void print_graph();

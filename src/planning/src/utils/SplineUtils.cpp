@@ -45,14 +45,23 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 
 		Eigen::Matrix<double, 2, 1> val = spline(t);
 
-		auto derivatives = spline.derivatives(t, 1);
+		auto derivatives = spline.derivatives(t, 2);
 		double dx_dt = derivatives(0, 1);
 		double dy_dt = derivatives(1, 1);
+        double ddx_dt = derivatives(0, 2);
+        double ddy_dt = derivatives(1, 2);
 
 		Vertex v;
 		v.x = val(0);
 		v.y = val(1);
-		v.yaw = std::atan2(dy_dt, dx_dt);
+		v.tangent_angle = std::atan2(dy_dt, dx_dt);
+        v.normal_angle = v.tangent_angle + M_PI / 2;
+
+        double speed = std::sqrt(dx_dt * dx_dt + dy_dt * dy_dt);
+        double denominator = std::pow(speed, 3);
+        if (denominator > 1e-8) {
+            v.curvature = std::abs(dx_dt * ddy_dt - dy_dt * ddx_dt) / denominator;
+        }
 
 		// Find the original segment this interpolated point belongs to
 		auto it = std::upper_bound(t_values.begin(), t_values.end(), t);
@@ -149,8 +158,8 @@ void SplineUtils::plot_path(const std::vector<Vertex> &original, const std::vect
 		const double arrow_length = 0.6;
 		for (size_t i = 0; i < smoothed.size(); i += arrow_step) {
 			const auto &v = smoothed[i];
-			double dx = arrow_length * cos(v.yaw);
-			double dy = arrow_length * sin(v.yaw);
+			double dx = arrow_length * cos(v.tangent_angle);
+			double dy = arrow_length * sin(v.tangent_angle);
 
 			// Use line plot with arrowhead
 			auto arr = arrow(v.x, v.y, v.x + dx, v.y + dy);
