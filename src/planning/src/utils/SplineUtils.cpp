@@ -10,7 +10,7 @@ using Vertex = Track::Vertex;
 using ATTRIBUTE = Track::ATTRIBUTE;
 using Spline2d = Spline<double, 2>;
 
-std::vector<Track::Vertex> SplineUtils::interpolate_path(const std::vector<Track::Vertex> &path, int density) {
+std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, int density) {
 	if (path.size() <= 1 || density <= 0) {
 		return path;
 	}
@@ -34,7 +34,7 @@ std::vector<Track::Vertex> SplineUtils::interpolate_path(const std::vector<Track
 		t_values.push_back(knotVector(degree + i));
 	}
 
-	std::vector<Track::Vertex> result;
+	std::vector<Vertex> result;
 	int totalSteps = (static_cast<int>(path.size()) - 1) * density;
 
 	result.reserve(totalSteps + 1);
@@ -49,7 +49,7 @@ std::vector<Track::Vertex> SplineUtils::interpolate_path(const std::vector<Track
 		double dx_dt = derivatives(0, 1);
 		double dy_dt = derivatives(1, 1);
 
-		Track::Vertex v;
+		Vertex v;
 		v.x = val(0);
 		v.y = val(1);
 		v.yaw = std::atan2(dy_dt, dx_dt);
