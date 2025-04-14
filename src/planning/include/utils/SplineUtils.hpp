@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Track.hpp"
 
 class SplineUtils {
