@@ -1,87 +1,49 @@
 #include "SplineUtils.hpp"
 #include "Track.hpp"
 #include <Eigen/Core>
-#include <interpolation.h>
 #include <matplot/matplot.h>
+#include <unsupported/Eigen/Splines>
 
 using namespace Eigen;
-using namespace alglib;
+using Spline2d = Spline<double, 2>;
 
-std::vector<double> SplineUtils::compute_chord_parameters(const std::vector<Track::Vertex> &path) {
-	std::vector<double> t(path.size(), 0.0);
-	for (size_t i = 1; i < path.size(); ++i) {
-		double dx = path[i].x - path[i - 1].x;
-		double dy = path[i].y - path[i - 1].y;
-		t[i] = t[i - 1] + std::hypot(dx, dy);
-	}
-	// Normalize to [0, 1]
-	double total_length = t.back();
-	if (total_length > 0) {
-		for (auto &val : t)
-			val /= total_length;
-	}
-	return t;
-}
-
-std::vector<Track::Vertex> SplineUtils::interpolate_path(const std::vector<Track::Vertex> &path, int density, double rho) {
-	if (path.size() < 2)
-		return {};
-
-	// 1. Parameterize points using chord-length
-	auto t_params = compute_chord_parameters(path);
-
-	// 2. Prepare ALGLIB input arrays
-	real_1d_array t, x, y;
-	t.setlength(path.size());
-	x.setlength(path.size());
-	y.setlength(path.size());
-
-	for (size_t i = 0; i < path.size(); ++i) {
-		t[i] = t_params[i];
-		x[i] = path[i].x;
-		y[i] = path[i].y;
+std::vector<Track::Vertex> SplineUtils::interpolate_path(const std::vector<Track::Vertex> &path, int density) {
+	/*
+	 * Given a list of vertices forming a path, use Eigen spline interpolation to increase the
+	 * path density by computing additional vertices.
+	 */
+	if (path.size() <= 1 || density <= 0) {
+		return path;
 	}
 
-	// 3. Fit smoothing splines for X and Y coordinates
-	spline1dinterpolant spline_x, spline_y;
-	ae_int_t info;
-	spline1dfitreport rep;
-
-	// Same smoothing factor for X and Y
-	spline1dfit(t, x, path.size(), rho, info, spline_x, rep);
-	spline1dfit(t, y, path.size(), rho, info, spline_y, rep);
-
-	if (info != 1) { // ALGLIB error check
-		std::cerr << "Spline fitting failed!" << std::endl;
-		return {};
+	// Change the dimension: create a 2 x N matrix.
+	Matrix<double, 2, Dynamic> points(2, static_cast<int>(path.size()));
+	for (size_t i = 0; i < path.size(); i++) {
+		points(0, i) = path[i].x;
+		points(1, i) = path[i].y;
 	}
 
-	// 4. Generate dense query points
-	std::vector<double> query_t;
-	size_t num_segments = path.size() - 1;
-	query_t.reserve(num_segments * density);
-	for (size_t i = 0; i < num_segments; ++i) {
-		double t_start = t_params[i];
-		double t_end = t_params[i + 1];
-		for (int j = 0; j < density; ++j) {
-			double t = t_start + (t_end - t_start) * j / density;
-			query_t.push_back(t);
-		}
-	}
+	const int degree = 3;
+	Spline2d spline = SplineFitting<Spline2d>::Interpolate(points, degree);
 
-	// 5. Evaluate splines at query points
+	const auto &knotVector = spline.knots();
+	double t_min = knotVector(degree);
+	double t_max = knotVector(knotVector.size() - degree - 1);
+
 	std::vector<Track::Vertex> result;
-	for (double t : query_t) {
+	int totalSteps = (static_cast<int>(path.size()) - 1) * density;
+
+	result.reserve(totalSteps + 1);
+
+	for (int i = 0; i <= totalSteps; i++) {
+		double alpha = static_cast<double>(i) / static_cast<double>(totalSteps);
+		double t = t_min + alpha * (t_max - t_min);
+
+		Eigen::Matrix<double, 2, 1> val = spline(t);
+
 		Track::Vertex v;
-		v.x = spline1dcalc(spline_x, t);
-		v.y = spline1dcalc(spline_y, t);
-
-		// Find original segment for attribute
-		size_t seg = 0;
-		while (seg < path.size() - 1 && t_params[seg + 1] < t)
-			++seg;
-		v.attribute = path[seg].attribute;
-
+		v.x = val(0);
+		v.y = val(1);
 		result.push_back(v);
 	}
 
@@ -105,6 +67,6 @@ void SplineUtils::plot_path(const std::vector<Track::Vertex> &original, const st
 	auto p1 = scatter(ox, oy);
 	p1->marker_face_color("red").marker_size(8);
 	hold(on);
-	auto p2 = plot(sx, sy)->line_width(2).color("blue");
+	auto p2 = plot(sx, sy)->line_width(1).color("blue");
 	show();
 }
