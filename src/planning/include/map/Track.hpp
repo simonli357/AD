@@ -27,9 +27,10 @@ class Track {
 	};
 
 	struct Vertex {
-		int id;
+		int id = -1;
 		double x;
 		double y;
+		double yaw = 0;
 		ATTRIBUTE attribute;
 	};
 

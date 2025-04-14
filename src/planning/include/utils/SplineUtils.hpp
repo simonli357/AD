@@ -9,6 +9,8 @@ class SplineUtils {
 	SplineUtils &operator=(const SplineUtils &) = default;
 	~SplineUtils() = default;
 
-	std::vector<Track::Vertex> interpolate_path(const std::vector<Track::Vertex> &path, int density);
-	void plot_path(const std::vector<Track::Vertex> &original, const std::vector<Track::Vertex> &smoothed);
+	using Vertex = Track::Vertex;
+
+	std::vector<Vertex> interpolate_path(const std::vector<Vertex> &path, int density);
+	void plot_path(const std::vector<Vertex> &original, const std::vector<Vertex> &smoothed);
 };
