@@ -2,8 +2,8 @@
 #include "Track.hpp"
 #include <Eigen/Core>
 #include <cmath>
-#include <matplot/matplot.h>
 #include <unsupported/Eigen/Splines>
+/* #include <matplot/matplot.h> */
 
 using namespace Eigen;
 using Vertex = Track::Vertex;
@@ -80,108 +80,108 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 	return result;
 }
 
-void SplineUtils::plot_path(const std::vector<Vertex> &original, const std::vector<Vertex> &smoothed) {
-	using namespace matplot;
+/* void SplineUtils::plot_path(const std::vector<Vertex> &original, const std::vector<Vertex> &smoothed) { */
+/* 	using namespace matplot; */
 
-	// Extract original and smoothed coordinates
-	std::vector<double> ox, oy, sx, sy;
-	for (const auto &v : original) {
-		ox.push_back(v.x);
-		oy.push_back(v.y);
-	}
-	for (const auto &v : smoothed) {
-		sx.push_back(v.x);
-		sy.push_back(v.y);
-	}
+/* 	// Extract original and smoothed coordinates */
+/* 	std::vector<double> ox, oy, sx, sy; */
+/* 	for (const auto &v : original) { */
+/* 		ox.push_back(v.x); */
+/* 		oy.push_back(v.y); */
+/* 	} */
+/* 	for (const auto &v : smoothed) { */
+/* 		sx.push_back(v.x); */
+/* 		sy.push_back(v.y); */
+/* 	} */
 
-	figure();
-	auto p1 = scatter(ox, oy);
-	p1->marker_face_color("red").marker_size(8);
-	hold(on);
+/* 	figure(); */
+/* 	auto p1 = scatter(ox, oy); */
+/* 	p1->marker_face_color("red").marker_size(8); */
+/* 	hold(on); */
 
-	if (!smoothed.empty()) {
-		// Map each attribute to a distinct color
-		auto get_color = [](ATTRIBUTE attr) {
-			switch (attr) {
-			case ATTRIBUTE::NORMAL:
-				return "blue";
-			case ATTRIBUTE::CROSSWALK:
-				return "black";
-			case ATTRIBUTE::INTERSECTION:
-				return "green";
-			case ATTRIBUTE::ONEWAY:
-				return "orange";
-			case ATTRIBUTE::HIGHWAY_LEFT:
-				return "red";
-			case ATTRIBUTE::HIGHWAY_RIGHT:
-				return "purple";
-			case ATTRIBUTE::ROUNDABOUT:
-				return "cyan";
-			case ATTRIBUTE::STOPLINE:
-				return "magenta";
-			case ATTRIBUTE::DOTTED:
-				return "yellow";
-			case ATTRIBUTE::DOTTED_CROSSWALK:
-				return "gray";
-			default:
-				return "blue";
-			}
-		};
+/* 	if (!smoothed.empty()) { */
+/* 		// Map each attribute to a distinct color */
+/* 		auto get_color = [](ATTRIBUTE attr) { */
+/* 			switch (attr) { */
+/* 			case ATTRIBUTE::NORMAL: */
+/* 				return "blue"; */
+/* 			case ATTRIBUTE::CROSSWALK: */
+/* 				return "black"; */
+/* 			case ATTRIBUTE::INTERSECTION: */
+/* 				return "green"; */
+/* 			case ATTRIBUTE::ONEWAY: */
+/* 				return "orange"; */
+/* 			case ATTRIBUTE::HIGHWAY_LEFT: */
+/* 				return "red"; */
+/* 			case ATTRIBUTE::HIGHWAY_RIGHT: */
+/* 				return "purple"; */
+/* 			case ATTRIBUTE::ROUNDABOUT: */
+/* 				return "cyan"; */
+/* 			case ATTRIBUTE::STOPLINE: */
+/* 				return "magenta"; */
+/* 			case ATTRIBUTE::DOTTED: */
+/* 				return "yellow"; */
+/* 			case ATTRIBUTE::DOTTED_CROSSWALK: */
+/* 				return "gray"; */
+/* 			default: */
+/* 				return "blue"; */
+/* 			} */
+/* 		}; */
 
-		// Plot path segments with color coding
-		size_t segment_start = 0;
-		ATTRIBUTE current_attr = smoothed[0].attribute;
+/* 		// Plot path segments with color coding */
+/* 		size_t segment_start = 0; */
+/* 		ATTRIBUTE current_attr = smoothed[0].attribute; */
 
-		for (size_t i = 1; i < smoothed.size(); ++i) {
-			if (smoothed[i].attribute != current_attr) {
-				if (i - segment_start >= 1) {
-					std::vector<double> seg_x(sx.begin() + segment_start, sx.begin() + i);
-					std::vector<double> seg_y(sy.begin() + segment_start, sy.begin() + i);
-					auto line = plot(seg_x, seg_y);
-					line->color(get_color(current_attr)).line_width(1);
-				}
-				segment_start = i;
-				current_attr = smoothed[i].attribute;
-			}
-		}
+/* 		for (size_t i = 1; i < smoothed.size(); ++i) { */
+/* 			if (smoothed[i].attribute != current_attr) { */
+/* 				if (i - segment_start >= 1) { */
+/* 					std::vector<double> seg_x(sx.begin() + segment_start, sx.begin() + i); */
+/* 					std::vector<double> seg_y(sy.begin() + segment_start, sy.begin() + i); */
+/* 					auto line = plot(seg_x, seg_y); */
+/* 					line->color(get_color(current_attr)).line_width(1); */
+/* 				} */
+/* 				segment_start = i; */
+/* 				current_attr = smoothed[i].attribute; */
+/* 			} */
+/* 		} */
 
-		// Plot last segment
-		if (smoothed.size() - segment_start >= 1) {
-			std::vector<double> seg_x(sx.begin() + segment_start, sx.end());
-			std::vector<double> seg_y(sy.begin() + segment_start, sy.end());
-			auto line = plot(seg_x, seg_y);
-			line->color(get_color(current_attr)).line_width(1);
-		}
+/* 		// Plot last segment */
+/* 		if (smoothed.size() - segment_start >= 1) { */
+/* 			std::vector<double> seg_x(sx.begin() + segment_start, sx.end()); */
+/* 			std::vector<double> seg_y(sy.begin() + segment_start, sy.end()); */
+/* 			auto line = plot(seg_x, seg_y); */
+/* 			line->color(get_color(current_attr)).line_width(1); */
+/* 		} */
 
-		// Add yaw arrows for every 8th point in smoothed path
-		const int arrow_step = 8;
-		const double arrow_length = 0.6;
-		for (size_t i = 0; i < smoothed.size(); i += arrow_step) {
-			const auto &v = smoothed[i];
-			double dx = arrow_length * cos(v.tangent_angle);
-			double dy = arrow_length * sin(v.tangent_angle);
+/* 		// Add yaw arrows for every 8th point in smoothed path */
+/* 		const int arrow_step = 8; */
+/* 		const double arrow_length = 0.6; */
+/* 		for (size_t i = 0; i < smoothed.size(); i += arrow_step) { */
+/* 			const auto &v = smoothed[i]; */
+/* 			double dx = arrow_length * cos(v.tangent_angle); */
+/* 			double dy = arrow_length * sin(v.tangent_angle); */
 
-			// Use line plot with arrowhead
-			auto arr = arrow(v.x, v.y, v.x + dx, v.y + dy);
-			arr->color("crimson").line_width(0.5);
-		}
+/* 			// Use line plot with arrowhead */
+/* 			auto arr = arrow(v.x, v.y, v.x + dx, v.y + dy); */
+/* 			arr->color("crimson").line_width(0.5); */
+/* 		} */
 
-		// Highlight start and end points
-		std::vector<double> start_x = {smoothed[0].x};
-		std::vector<double> start_y = {smoothed[0].y};
-		auto start_marker = scatter(start_x, start_y);
-		start_marker->marker_face_color("limegreen").marker_size(25);
+/* 		// Highlight start and end points */
+/* 		std::vector<double> start_x = {smoothed[0].x}; */
+/* 		std::vector<double> start_y = {smoothed[0].y}; */
+/* 		auto start_marker = scatter(start_x, start_y); */
+/* 		start_marker->marker_face_color("limegreen").marker_size(25); */
 
-		std::vector<double> end_x = {smoothed.back().x};
-		std::vector<double> end_y = {smoothed.back().y};
-		auto end_marker = scatter(end_x, end_y);
-		end_marker->marker_face_color("orangered").marker_size(25);
-	}
+/* 		std::vector<double> end_x = {smoothed.back().x}; */
+/* 		std::vector<double> end_y = {smoothed.back().y}; */
+/* 		auto end_marker = scatter(end_x, end_y); */
+/* 		end_marker->marker_face_color("orangered").marker_size(25); */
+/* 	} */
 
-	title("Path Visualization with Yaw Directions");
-	xlabel("X Coordinate");
-	ylabel("Y Coordinate");
-	grid(true);
-	axis(equal);
-	show();
-}
+/* 	title("Path Visualization with Yaw Directions"); */
+/* 	xlabel("X Coordinate"); */
+/* 	ylabel("Y Coordinate"); */
+/* 	grid(true); */
+/* 	axis(equal); */
+/* 	show(); */
+/* } */

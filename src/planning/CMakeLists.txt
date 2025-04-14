@@ -17,15 +17,18 @@ message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 find_package(Boost REQUIRED COMPONENTS graph)
 include_directories(${Boost_INCLUDE_DIRS})
 
-include(FetchContent)
+find_package(yaml-cpp REQUIRED)
+include_directories(${YAML_CPP_INCLUDE_DIRS})
 
-FetchContent_Declare(
-    matplotplusplus
-    GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
-    GIT_TAG        v1.2.2
-)
+# include(FetchContent)
 
-FetchContent_MakeAvailable(matplotplusplus)
+# FetchContent_Declare(
+#     matplotplusplus
+#     GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
+#     GIT_TAG        v1.2.2
+# )
+
+# FetchContent_MakeAvailable(matplotplusplus)
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
@@ -64,15 +67,16 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   Boost::graph
-  matplot
+  yaml-cpp
+  # matplot
 )
 
-add_executable(planner
-  src/Main.cpp
-)
-target_link_libraries(planner
-  ${PROJECT_NAME}
-)
+# add_executable(planner
+#   src/Main.cpp
+# )
+# target_link_libraries(planner
+#   ${PROJECT_NAME}
+# )
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
