@@ -55,7 +55,6 @@ include_directories(
   include/map
   include/utils
   ${catkin_INCLUDE_DIRS} 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
 
@@ -68,7 +67,6 @@ target_link_libraries(${PROJECT_NAME}
   ${roscpp_LIBRARIES}
   Boost::graph
   matplot
-  alglib_control
 )
 
 add_executable(planner
