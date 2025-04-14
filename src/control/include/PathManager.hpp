@@ -388,90 +388,31 @@ class PathManager {
 	}
 
 	bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient> &tcp_client) {
-		utils::waypoints srv;
-		srv.request.pathName = pathName;
-		srv.request.x0 = x;
-		srv.request.y0 = y;
-		srv.request.yaw0 = yaw;
-		// convert v_ref to string
-		int vrefInt;
-		if (!nh.getParam("/vrefInt", vrefInt)) {
-			ROS_ERROR("Failed to get param 'vrefInt'");
-			vrefInt = 25;
-		}
-		srv.request.vrefName = std::to_string(vrefInt);
-
         std_msgs::Float32MultiArray state_refs_in;
         std_msgs::Float32MultiArray input_refs_in;
         std_msgs::Float32MultiArray wp_attributes_in;
         std_msgs::Float32MultiArray wp_normals_in;
-        path_planner.set_constraints(v_ref, N, T, pathName, x, y, {});
+        path_planner.set_constraints(v_ref, N, T, x, y, pathName);
         path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
-		if (waypoints_client.call(srv)) {
-			std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
-			std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
-			std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
-			std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
-			int N = state_refs_v.size() / 3;
-			state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
-			remove_large_yaw_jump();
-			input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
-			state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
-			normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+        std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
+        std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
+        std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
+        std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
+        int N = state_refs_v.size() / 3;
+        state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+        remove_large_yaw_jump();
+        input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+        state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+        normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
-			ROS_INFO("initialize(): Received waypoints of size %d", N);
-			tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals);
-			set_params(tcp_client);
-			return true;
-		} else {
-			ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-			return false;
-		}
-	}
+        ROS_INFO("initialize(): Received waypoints of size %d", N);
+        tcp_client->send_waypoints_srv(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
+        set_params(tcp_client);
+        return true;
+    }
 
-	/* bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient> &tcp_client) { */
-	/* 	utils::waypoints srv; */
-	/* 	srv.request.pathName = pathName; */
-	/* 	srv.request.x0 = x; */
-	/* 	srv.request.y0 = y; */
-	/* 	srv.request.yaw0 = yaw; */
-	/* 	// convert v_ref to string */
-	/* 	int vrefInt; */
-	/* 	if (!nh.getParam("/vrefInt", vrefInt)) { */
-	/* 		ROS_ERROR("Failed to get param 'vrefInt'"); */
-	/* 		vrefInt = 25; */
-	/* 	} */
-	/* 	srv.request.vrefName = std::to_string(vrefInt); */
-	/* 	if (waypoints_client.waitForExistence(ros::Duration(5))) { */
-	/* 		ROS_INFO("waypoints service found"); */
-	/* 	} else { */
-	/* 		ROS_INFO("waypoints service not found after 5 seconds"); */
-	/* 		return false; */
-	/* 	} */
-	/* 	if (waypoints_client.call(srv)) { */
-	/* 		std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end());			 // N by 3 */
-	/* 		std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end());			 // N by 2 */
-	/* 		std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1 */
-	/* 		std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end());			 // N by 2 */
-	/* 		int N = state_refs_v.size() / 3; */
-	/* 		state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose(); */
-	/* 		remove_large_yaw_jump(); */
-	/* 		input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose(); */
-	/* 		state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N); */
-	/* 		normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose(); */
-
-	/* 		ROS_INFO("initialize(): Received waypoints of size %d", N); */
-	/* 		tcp_client->send_waypoints_srv(srv.response.state_refs, srv.response.input_refs, srv.response.wp_attributes, srv.response.wp_normals); */
-	/* 		set_params(tcp_client); */
-	/* 		return true; */
-	/* 	} else { */
-	/* 		ROS_INFO("ERROR: initialize(): Failed to call service waypoints"); */
-	/* 		return false; */
-	/* 	} */
-	/* } */
-
-	bool call_go_to_service(double x, double y, double yaw, double dest_x, double dest_y) {
+    bool call_go_to_service(double x, double y, double yaw, double dest_x, double dest_y) {
 		utils::go_to srv;
 		srv.request.x0 = x;
 		srv.request.y0 = y;
@@ -515,54 +456,31 @@ class PathManager {
 	}
 
 	bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>> &destinations) {
-		utils::go_to_multiple srv;
-		srv.request.x0 = x;
-		srv.request.y0 = y;
-		srv.request.yaw0 = yaw;
-		for (const auto &dest : destinations) {
-			srv.request.destinations.push_back(tuple_to_point(dest));
-		}
-		int vrefInt;
-		if (!nh.getParam("/vrefInt", vrefInt)) {
-			ROS_ERROR("Failed to get param 'vrefInt'");
-			vrefInt = 25;
-		}
-		srv.request.vrefName = std::to_string(vrefInt);
-		if (go_to_multiple_client.waitForExistence(ros::Duration(5))) {
-			ROS_INFO("go_to_multiple service found");
-		} else {
-			ROS_INFO("go_to_multiple service not found after 5 seconds");
-			return false;
-		}
-		if (go_to_multiple_client.call(srv)) {
-			std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end());			 // N by 3
-			std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end());			 // N by 2
-			std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
-			std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end());			 // N by 2
-			int N = state_refs_v.size() / 3;
-			state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
-			remove_large_yaw_jump();
-			input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
-			state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
-			normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+        std_msgs::Float32MultiArray state_refs_in;
+        std_msgs::Float32MultiArray input_refs_in;
+        std_msgs::Float32MultiArray wp_attributes_in;
+        std_msgs::Float32MultiArray wp_normals_in;
+        path_planner.set_constraints(v_ref, N, T, x, y, destinations);
+        path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
-			ROS_INFO("initialize(): Received waypoints of size %d", N);
-			target_waypoint_index = 0;
-			last_waypoint_index = target_waypoint_index;
-			closest_waypoint_index = 0;
-			return true;
-		} else {
-			ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-			return false;
-		}
-	}
+        std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
+        std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
+        std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
+        std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
 
-	utils::Point2D tuple_to_point(const std::tuple<float, float> &p) {
-		utils::Point2D pt;
-		pt.x = std::get<0>(p);
-		pt.y = std::get<1>(p);
-		return pt;
-	}
+        int N = state_refs_v.size() / 3;
+        state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+        remove_large_yaw_jump();
+        input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+        state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+        normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+
+        ROS_INFO("initialize(): Received waypoints of size %d", N);
+        target_waypoint_index = 0;
+        last_waypoint_index = target_waypoint_index;
+        closest_waypoint_index = 0;
+        return true;
+    }
 
 	void remove_large_yaw_jump() {
 		for (int i = 2; i < state_refs.rows(); i++) {
