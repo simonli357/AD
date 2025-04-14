@@ -2,11 +2,11 @@
 
 PathPlanner::PathPlanner() : track(), spline_utils() {}
 
-void PathPlanner::set_constraints(double vref, int N, int T, std::string name, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
+void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
     this->vref = vref;
     this->N = N;
     this->T = T;
-    this->name = name;
+    this->name = "custom path";
 
     Vertex start = track.find_closest_node(start_x, start_y);
     path.push_back(start);
@@ -18,6 +18,22 @@ void PathPlanner::set_constraints(double vref, int N, int T, std::string name, d
     }
 
     interpolate_path();
+}
+
+void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name) {
+    this->vref = vref;
+    this->N = N;
+    this->T = T;
+    this->name = name;
+
+    Vertex start = track.find_closest_node(start_x, start_y);
+    path.push_back(start);
+    precompute_path();
+    interpolate_path();
+}
+
+void PathPlanner::precompute_path() {
+    
 }
 
 void PathPlanner::interpolate_path() {
