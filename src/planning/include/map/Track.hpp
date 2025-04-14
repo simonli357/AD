@@ -41,6 +41,9 @@ class Track {
 	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, Vertex, Edge>;
 
 	std::vector<Vertex> dikstra(int src, int tgt);
+	Vertex find_closest_node(double x_pos, double y_pos);
+    double sqrt_dist(double x, double y, Vertex dest);
+    double sqrt_dist(Vertex src, Vertex dest);
 
 	void print_path(const std::vector<Vertex> &path);
 	void print_graph();

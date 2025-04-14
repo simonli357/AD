@@ -112,20 +112,20 @@ void Track::read_graph() {
 void Track::adjust_graph() {
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		auto v = *vp.first;
-		auto &props = graph[v];
+		auto &vertex = graph[v];
 
-		double x = props.x;
-		double y = props.y;
+		double x = vertex.x;
+		double y = vertex.y;
 
-		if (props.id >= 502 && props.id <= 521) {
+		if (vertex.id >= 502 && vertex.id <= 521) {
 			y = y + hw_safety_offset;
-		} else if (props.id >= 483 && props.id <= 502) {
+		} else if (vertex.id >= 483 && vertex.id <= 502) {
 			y = y - hw_safety_offset;
 		}
 		y = 13.786 - y;
 
-		props.x = x;
-		props.y = y;
+		vertex.x = x;
+		vertex.y = y;
 	}
 }
 
@@ -202,6 +202,33 @@ std::vector<Track::Vertex> Track::dikstra(int src, int tgt) {
 	}
 
 	return path;
+}
+
+Track::Vertex Track::find_closest_node(double pos_x, double pos_y) {
+    double best_dist = std::numeric_limits<double>::max();
+    Vertex best_node;
+	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+		auto v = *vp.first;
+		auto &vertex = graph[v];
+        double dist = sqrt_dist(pos_x, pos_y, vertex);
+        if (dist < best_dist) {
+            best_node = vertex;
+            best_dist = dist;
+        }
+	}
+    return best_node;
+}
+
+double Track::sqrt_dist(double x, double y, Vertex dest) {
+	double dx = dest.x - x;
+	double dy = dest.y - y;
+	return std::sqrt(dx * dx + dy * dy);
+}
+
+double Track::sqrt_dist(Vertex src, Vertex dest) {
+	double dx = dest.x - src.x;
+	double dy = dest.y - src.y;
+	return std::sqrt(dx * dx + dy * dy);
 }
 
 void Track::print_path(const std::vector<Vertex> &path) {

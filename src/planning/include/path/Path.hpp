@@ -21,19 +21,12 @@ class Path {
 	int N;
 	int T;
 	std::string name;
-	Vertex start;
-	std::vector<Vertex> destinations;
+	std::vector<Vertex> path;
+    std::vector<Vertex> condensed_path;
 
-	void set_constraints(double vref, int N, int T, std::string name, Vertex start, std::vector<Vertex> destinations);
-
-	void set_N(double N) { this->N = N; }
-	void set_T(double T) { this->T = T; }
-	void set_vref(double vref) { this->vref = vref; }
-	void set_name(std::string name) { this->name = name; }
-	void set_start(Vertex start) { this->start = start; }
-	void set_destinations(std::vector<Vertex> destinations) { this->destinations = destinations; }
-
+	void set_constraints(double vref, int N, int T, std::string name, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
 	void plan_path(std::vector<double> &state_refs, std::vector<double> &input_refs, std::vector<double> &attributes, std::vector<double> &normals);
 
   private:
+    void condense_path();
 };
