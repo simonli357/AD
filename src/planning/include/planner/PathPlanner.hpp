@@ -2,6 +2,7 @@
 
 #include "SplineUtils.hpp"
 #include "Track.hpp"
+#include <std_msgs/Float32MultiArray.h>
 
 class PathPlanner {
   public:
@@ -13,6 +14,7 @@ class PathPlanner {
 	~PathPlanner() = default;
 
 	using Vertex = Track::Vertex;
+    using Float32MultiArray = std_msgs::Float32MultiArray;
 
 	Track track;
 	SplineUtils spline_utils;
@@ -25,7 +27,7 @@ class PathPlanner {
 	std::vector<Vertex> condensed_path;
 
 	void set_constraints(double vref, int N, int T, std::string name, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
-	void plan_path(std::vector<double> &state_refs, std::vector<double> &input_refs, std::vector<double> &attributes, std::vector<double> &normals);
+	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
 
   private:
 	void interpolate_path();

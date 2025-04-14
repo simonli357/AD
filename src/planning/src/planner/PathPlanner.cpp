@@ -35,22 +35,22 @@ void PathPlanner::interpolate_path() {
     condensed_path = spline_utils.interpolate_path(general_path, N);
 }
 
-void PathPlanner::plan_path(std::vector<double> &state_refs, std::vector<double> &input_refs, std::vector<double> &attributes, std::vector<double> &normals) {
+void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray &out_input_refs, Float32MultiArray &out_attributes, Float32MultiArray &out_normals) {
     for (const auto &v : condensed_path) {
         // State refs
-        state_refs.push_back(v.x);
-        state_refs.push_back(v.y);
-        state_refs.push_back(v.tangent_angle);
+        out_state_refs.data.push_back(v.x);
+        out_state_refs.data.push_back(v.y);
+        out_state_refs.data.push_back(v.tangent_angle);
         
         // Input refs
-        input_refs.push_back(vref);
-        input_refs.push_back(v.curvature);
+        out_input_refs.data.push_back(vref);
+        out_input_refs.data.push_back(v.curvature);
 
         // Attributes
-        attributes.push_back(static_cast<double>(v.attribute));
+        out_attributes.data.push_back(static_cast<double>(v.attribute));
 
         // Normals
-        normals.push_back(std::cos(v.normal_angle));
-        normals.push_back(std::sin(v.normal_angle));
+        out_normals.data.push_back(std::cos(v.normal_angle));
+        out_normals.data.push_back(std::sin(v.normal_angle));
     }
 }
