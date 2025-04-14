@@ -13,7 +13,7 @@ def get_image_files_from_dir(directory):
                    if f.lower().endswith(supported_exts)])
 
 def main():
-    image_dir = "/home/slsecret/Downloads/bfmc_data/other/lane_test"
+    image_dir = "/home/slsecret/Downloads/bfmc_data/TestSetData/rf0309b/images"
 
     if not os.path.isdir(image_dir):
         rospy.logerr("Provided path is not a directory: {}".format(image_dir))
