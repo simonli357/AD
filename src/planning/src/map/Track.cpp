@@ -231,13 +231,13 @@ Track::Vertex Track::find_node(int id) {
     exit(1);
 }
 
-double Track::sqrt_dist(double x, double y, Vertex dest) {
+double Track::sqrt_dist(double x, double y, const Vertex &dest) {
 	double dx = dest.x - x;
 	double dy = dest.y - y;
 	return std::sqrt(dx * dx + dy * dy);
 }
 
-double Track::sqrt_dist(Vertex src, Vertex dest) {
+double Track::sqrt_dist(const Vertex &src, const Vertex &dest) {
 	double dx = dest.x - src.x;
 	double dy = dest.y - src.y;
 	return std::sqrt(dx * dx + dy * dy);

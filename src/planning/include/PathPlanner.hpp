@@ -2,6 +2,7 @@
 
 #include "map/Track.hpp"
 #include "utils/SplineUtils.hpp"
+#include "utils/FilterUtils.hpp"
 #include <std_msgs/Float32MultiArray.h>
 
 class PathPlanner {
@@ -18,6 +19,7 @@ class PathPlanner {
 
 	Track track;
 	SplineUtils spline_utils;
+    FilterUtils filter_utils;
 
 	double vref;
 	int N;

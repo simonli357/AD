@@ -45,8 +45,8 @@ class Track {
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
     Vertex find_node(int id);
-	double sqrt_dist(double x, double y, Vertex dest);
-	double sqrt_dist(Vertex src, Vertex dest);
+	double sqrt_dist(double x, double y, const Vertex &dest);
+	double sqrt_dist(const Vertex &src, const Vertex &dest);
 
 	void print_path(const std::vector<Vertex> &path);
 	void print_graph();

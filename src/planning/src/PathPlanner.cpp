@@ -2,7 +2,7 @@
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 
-PathPlanner::PathPlanner() : track(), spline_utils() {}
+PathPlanner::PathPlanner() : track(), spline_utils(), filter_utils() {}
 
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
 	this->vref = vref;
