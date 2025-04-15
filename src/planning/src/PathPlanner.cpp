@@ -66,10 +66,10 @@ void PathPlanner::construct_path() {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
-    path_utils.distance_filter(general_path, distance_threshold, hw_density_factor, cw_density_factor);
+    /* path_utils.distance_filter(general_path, distance_threshold, hw_density_factor, cw_density_factor); */
 	condensed_path = spline_utils.interpolate_path(general_path, density, hw_density_factor, cw_density_factor);
-    path_utils.compute_speeds(condensed_path, vref, density, hw_density_factor, cw_density_factor);
-    path_utils.yaw_filter(condensed_path, yaw_threshold);
+    /* path_utils.compute_speeds(condensed_path, vref, density, hw_density_factor, cw_density_factor); */
+    /* path_utils.yaw_filter(condensed_path, yaw_threshold); */
 }
 
 void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray &out_input_refs, Float32MultiArray &out_attributes, Float32MultiArray &out_normals) {
