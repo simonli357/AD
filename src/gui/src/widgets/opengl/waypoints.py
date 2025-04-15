@@ -52,7 +52,7 @@ class WaypointsRenderer:
         self.ATTRIBUTES = {
             0: (1.0, 1.0, 0.0),    # Yellow
             1: (0.0, 1.0, 0.0),    # Green
-            2: (0.0, 0.0, 1.0),    # Blue
+            2: (1.0, 0.0, 0.0),    # Red
             3: (1.0, 0.5, 0.0),    # Orange
             4: (0.5, 0.0, 0.5),    # Purple
             5: (0.8, 0.7, 1.0),    # Light pink
