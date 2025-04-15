@@ -1,0 +1,76 @@
+#include "utils/PathUtils.hpp"
+
+void PathUtils::yaw_filter(std::vector<Vertex> &path, double max_yaw_change) {
+    for (size_t i = 1; i < path.size();) {
+        double yaw_change = std::fabs(path[i].normal_angle - path[i - 1].normal_angle);
+        if (yaw_change > max_yaw_change) {
+            path.erase(path.begin() + i);
+        } else {
+            ++i;
+        }
+    }
+}
+
+void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double hw_density_factor, double cw_density_factor) {
+    for (size_t i = 1; i < path.size();) {
+        double current_thresh = thresh;
+        switch (path[i].attribute) {
+            case Track::CROSSWALK:
+                current_thresh /= cw_density_factor;
+                break;
+            case Track::HIGHWAY_LEFT:
+                current_thresh *= hw_density_factor;
+                break;
+            case Track::HIGHWAY_RIGHT:
+                current_thresh *= hw_density_factor;
+                break;
+            default:
+                break;
+        }
+
+        double dist = euclidean_distance(path[i], path[i - 1]);
+        if (dist > current_thresh) {
+            path.erase(path.begin() + i);
+        } else {
+            ++i;
+        }
+    }
+}
+
+void PathUtils::compute_speeds(std::vector<Vertex> &path, double vref, double density, double hw_density_factor, double cw_density_factor) {
+    for (auto &v : path) {
+        switch (v.attribute) {
+            case Track::CROSSWALK:
+                v.vref = vref /= cw_density_factor;
+                break;
+            case Track::HIGHWAY_LEFT:
+                v.vref = vref *= hw_density_factor;
+                break;
+            case Track::HIGHWAY_RIGHT:
+                v.vref = vref *= hw_density_factor;
+                break;
+            default:
+                v.vref = vref;
+                break;
+        }
+    }
+    size_t num_ramp_points = std::min(static_cast<size_t>(density), path.size());
+    if (num_ramp_points > 1) {
+        for (size_t i = 0; i < num_ramp_points; i++) {
+            double scaling = static_cast<double>(i) / (num_ramp_points - 1);
+            path[i].vref = scaling * vref;
+        }
+    } 
+    if (path.size() > 1) {
+        path[0].vref = 0;
+        path[1].vref = 0;
+    } else if (path.size() == 1) {
+        path[0].vref = 0;
+    }
+}
+
+double PathUtils::euclidean_distance(const Vertex &src, const Vertex &dest) {
+	double dx = dest.x - src.x;
+	double dy = dest.y - src.y;
+	return std::sqrt(dx * dx + dy * dy);
+}

@@ -1,14 +1,61 @@
 #include "utils/SplineUtils.hpp"
 #include "interpolation.h"
 #include "map/Track.hpp"
-#include <algorithm>
 #include <cmath>
 #include <vector>
 
 using Vertex = Track::Vertex;
 using ATTRIBUTE = Track::ATTRIBUTE;
 
-std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, double density, double smooth_factor) {
+
+std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, double density, double hw_density_factor, double cw_density_factor, double smooth_factor) {
+    std::vector<std::vector<Vertex>> segments;
+    std::vector<Vertex> segment;
+    ATTRIBUTE current_attr = ATTRIBUTE::NORMAL;
+    for (const auto &v : path) {
+        if (v.attribute == current_attr) {
+            segment.push_back(v);
+        } else {
+            current_attr = v.attribute;
+            if (segment.empty()) {
+                segment.push_back(v);
+                continue;
+            }
+            std::vector<Vertex> clone(segment);
+            segments.push_back(clone);
+            segment.clear();
+            segment.push_back(v);
+        }
+    }
+    if (!segment.empty()) {
+        segments.push_back(segment);
+    }
+
+    std::vector<Vertex> condensed_path;
+    for (const auto &segment : segments) {
+        ATTRIBUTE attr = segment[0].attribute;
+        double path_density;
+        switch (attr) {
+            case ATTRIBUTE::CROSSWALK:
+                path_density = segment.size() * density * cw_density_factor;
+                break;
+            case ATTRIBUTE::HIGHWAY_LEFT:
+                path_density = segment.size() * density / hw_density_factor;
+                break;
+            case ATTRIBUTE::HIGHWAY_RIGHT:
+                path_density = segment.size() * density / hw_density_factor;
+                break;
+            default:
+                path_density = segment.size() * density;
+                break;
+        }
+        std::vector<Vertex> condensed_segment = smooth_path(segment, path_density, attr, smooth_factor);
+        condensed_path.insert(condensed_path.end(), condensed_segment.begin(), condensed_segment.end());
+    }
+    return condensed_path;
+}
+
+std::vector<Vertex> SplineUtils::smooth_path(const std::vector<Vertex> &path, double density, ATTRIBUTE attribute, double smooth_factor) {
 	if (path.size() <= 1 || density <= 0) {
 		return path;
 	}
@@ -79,16 +126,8 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 			v.curvature = 0.0;
 		}
 
-		// Assign the attribute based on the segment. Find which segment in 't' t_val falls into.
-		int seg_idx = 0;
-		for (int i = 0; i < n - 1; ++i) {
-			if (t_val >= t[i] && t_val <= t[i + 1]) {
-				seg_idx = i;
-				break;
-			}
-		}
-		seg_idx = std::max(0, std::min(seg_idx, n - 1));
-		v.attribute = path[seg_idx].attribute;
+		// Assign the attribute based on the segment.
+		v.attribute = attribute;
 
 		result.push_back(v);
 	}

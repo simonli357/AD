@@ -1,7 +1,7 @@
 #pragma once
 
 #include "map/Track.hpp"
-#include "utils/FilterUtils.hpp"
+#include "utils/PathUtils.hpp"
 #include "utils/SplineUtils.hpp"
 #include <cmath>
 #include <std_msgs/Float32MultiArray.h>
@@ -20,16 +20,18 @@ class PathPlanner {
 
 	Track track;
 	SplineUtils spline_utils;
-	FilterUtils filter_utils;
+	PathUtils path_utils;
 
 	double vref;
 	int N;
 	double T;
-	double density;
 	std::string name;
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
 
+	double density;
+    double hw_density_factor = 4.0 / 3.0;
+    double cw_density_factor = 3.0 / 2.0;
     double distance_threshold;
     double yaw_threshold = 60 * M_PI / 180;
 
