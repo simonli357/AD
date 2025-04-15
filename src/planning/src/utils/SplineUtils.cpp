@@ -67,14 +67,8 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
                 break;
         }
 
-		if (path[i].attribute == ATTRIBUTE::HIGHWAY_LEFT || path[i].attribute == ATTRIBUTE::HIGHWAY_RIGHT) {
-			effective_density /= hw_density_factor;
-		} else if (path[i].attribute == ATTRIBUTE::CROSSWALK) {
-			effective_density *= cw_density_factor;
-		}
-
 		// Compute number of interpolation steps for this segment.
-		int localSteps = static_cast<int>(std::ceil(seg_length * effective_density));
+		int localSteps = static_cast<int>(std::ceil(effective_density));
 		// Ensure at least one sample per segment.
 		localSteps = std::max(1, localSteps);
 
