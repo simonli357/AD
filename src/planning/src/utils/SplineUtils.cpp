@@ -8,7 +8,7 @@
 using Vertex = Track::Vertex;
 using ATTRIBUTE = Track::ATTRIBUTE;
 
-std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, int density) {
+std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, int density, double smooth_factor) {
 	if (path.size() <= 1 || density <= 0) {
 		return path;
 	}
@@ -33,16 +33,14 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		y_arr[i] = path[i].y;
 	}
 
-	const double s_param = 1.0;
-
 	alglib::spline1dinterpolant spline_x;
 	alglib::spline1dinterpolant spline_y;
 	alglib::ae_int_t info_x = 0;
 	alglib::ae_int_t info_y = 0;
 	alglib::spline1dfitreport rep_x;
 	alglib::spline1dfitreport rep_y;
-	alglib::spline1dfitpenalized(t_arr, x_arr, n, s_param, info_x, spline_x, rep_x);
-	alglib::spline1dfitpenalized(t_arr, y_arr, n, s_param, info_y, spline_y, rep_y);
+	alglib::spline1dfitpenalized(t_arr, x_arr, n, smooth_factor, info_x, spline_x, rep_x);
+	alglib::spline1dfitpenalized(t_arr, y_arr, n, smooth_factor, info_y, spline_y, rep_y);
 
 	int totalSteps = (n - 1) * density;
 	std::vector<Vertex> result;

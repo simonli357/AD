@@ -13,6 +13,5 @@ class SplineUtils {
 
 	using Vertex = Track::Vertex;
 
-	std::vector<Vertex> interpolate_path(const std::vector<Vertex> &path, int density);
-	/* void plot_path(const std::vector<Vertex> &original, const std::vector<Vertex> &smoothed); */
+	std::vector<Vertex> interpolate_path(const std::vector<Vertex> &path, int density, double smooth_factor=0.1);
 };
