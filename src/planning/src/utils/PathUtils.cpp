@@ -2,7 +2,7 @@
 
 void PathUtils::yaw_filter(std::vector<Vertex> &path, double max_yaw_change) {
     for (size_t i = 1; i < path.size();) {
-        double yaw_change = std::fabs(path[i].normal_angle - path[i - 1].normal_angle);
+        double yaw_change = std::fabs(path[i].tangent_angle - path[i - 1].tangent_angle);
         if (yaw_change > max_yaw_change) {
             path.erase(path.begin() + i);
         } else {
