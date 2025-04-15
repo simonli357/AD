@@ -7,8 +7,9 @@ PathPlanner::PathPlanner() : track(), spline_utils() {}
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
 	this->vref = vref;
 	this->N = N;
-	this->T = T;
+	this->T = 0.1;
 	this->name = "custom path";
+    this->density = 1.0 / std::fabs(this->vref) / this->T;
 
     path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
@@ -26,8 +27,9 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name) {
 	this->vref = vref;
 	this->N = N;
-	this->T = T;
+	this->T = 0.1;
 	this->name = name;
+    this->density = 1.0 / std::fabs(this->vref) / this->T;
 
     path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
@@ -65,7 +67,7 @@ void PathPlanner::interpolate_path() {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
-	condensed_path = spline_utils.interpolate_path(general_path, N);
+	condensed_path = spline_utils.interpolate_path(general_path, density);
 }
 
 void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray &out_input_refs, Float32MultiArray &out_attributes, Float32MultiArray &out_normals) {

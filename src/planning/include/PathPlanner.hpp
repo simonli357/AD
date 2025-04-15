@@ -21,7 +21,8 @@ class PathPlanner {
 
 	double vref;
 	int N;
-	int T;
+	double T;
+    double density;
 	std::string name;
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;

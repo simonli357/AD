@@ -8,13 +8,14 @@
 using Vertex = Track::Vertex;
 using ATTRIBUTE = Track::ATTRIBUTE;
 
-std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, int density, double smooth_factor) {
+std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, double density, double smooth_factor) {
 	if (path.size() <= 1 || density <= 0) {
 		return path;
 	}
 
 	const int n = path.size();
 
+	// Compute cumulative arc-length
 	std::vector<double> t(n, 0.0);
 	for (int i = 1; i < n; ++i) {
 		double dx = path[i].x - path[i - 1].x;
@@ -23,6 +24,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		t[i] = t[i - 1] + dist;
 	}
 
+	// Prepare arrays for alglib spline fitting.
 	alglib::real_1d_array t_arr, x_arr, y_arr;
 	t_arr.setlength(n);
 	x_arr.setlength(n);
@@ -33,6 +35,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		y_arr[i] = path[i].y;
 	}
 
+	// Fit penalized splines to x and y components.
 	alglib::spline1dinterpolant spline_x;
 	alglib::spline1dinterpolant spline_y;
 	alglib::ae_int_t info_x = 0;
@@ -42,12 +45,15 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 	alglib::spline1dfitpenalized(t_arr, x_arr, n, smooth_factor, info_x, spline_x, rep_x);
 	alglib::spline1dfitpenalized(t_arr, y_arr, n, smooth_factor, info_y, spline_y, rep_y);
 
-	int totalSteps = (n - 1) * density;
+	// Use the total arc-length (t.back()) to decide the total number of interpolation steps.
+	double t_min = t.front(); // typically 0
+	double t_max = t.back();  // total path length
+	int totalSteps = static_cast<int>(std::ceil(t_max * density));
+
 	std::vector<Vertex> result;
 	result.reserve(totalSteps + 1);
-	double t_min = t.front();
-	double t_max = t.back();
 
+	// Interpolate along the arc-length using equally spaced parameter values.
 	for (int step = 0; step <= totalSteps; ++step) {
 		double alpha = static_cast<double>(step) / static_cast<double>(totalSteps);
 		double t_val = t_min + alpha * (t_max - t_min);
@@ -61,11 +67,11 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		Vertex v;
 		v.x = x_val;
 		v.y = y_val;
-		// Compute the tangent angle using the first derivatives.
+		// Compute the tangent angle using the derivatives.
 		v.tangent_angle = std::atan2(dy, dx);
 		v.normal_angle = v.tangent_angle + M_PI / 2.0;
 
-		// curvature = |dx*d2y - dy*d2x| / (sqrt(dx^2 + dy^2)^3)
+		// Compute curvature = |dx*d2y - dy*d2x| / ( (dx^2 + dy^2)^(3/2) )
 		double speed = std::sqrt(dx * dx + dy * dy);
 		if (speed > 1e-8) {
 			v.curvature = std::abs(dx * d2y - dy * d2x) / (speed * speed * speed);
@@ -73,7 +79,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 			v.curvature = 0.0;
 		}
 
-		// Determine the original segment this interpolated point belongs to.
+		// Assign the attribute based on the segment. Find which segment in 't' t_val falls into.
 		int seg_idx = 0;
 		for (int i = 0; i < n - 1; ++i) {
 			if (t_val >= t[i] && t_val <= t[i + 1]) {
