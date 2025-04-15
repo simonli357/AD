@@ -93,7 +93,6 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x08); // Start Srv
 	tcp_data_types.push_back(0x09); // Params
 	tcp_data_types.push_back(0x0a); // Run params
-	tcp_data_types.push_back(0x0b); // Gps msgs
 }
 
 void TcpClient::set_udp_data_types() {
@@ -115,7 +114,6 @@ void TcpClient::set_tcp_data_actions() {
 	tcp_data_actions[tcp_data_types[5]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
 	tcp_data_actions[tcp_data_types[6]] = &TcpClient::parse_waypoints_srv;	// SetStatesSrv
 	tcp_data_actions[tcp_data_types[7]] = &TcpClient::parse_start_srv;		// StartSrv
-	tcp_data_actions[tcp_data_types[10]] = &TcpClient::parse_gps_msg;		// GpsMsg
 }
 
 void TcpClient::initialize() {
@@ -246,7 +244,6 @@ std::queue<std::unique_ptr<GoToSrv>> &TcpClient::get_go_to_srv_msgs() { return g
 std::queue<std::unique_ptr<GoToCmdSrv>> &TcpClient::get_go_to_cmd_srv_msgs() { return go_to_cmd_srv_msgs; }
 std::queue<std::unique_ptr<SetStatesSrv>> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
 std::queue<std::unique_ptr<WaypointsSrv>> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
-std::queue<std::unique_ptr<GpsMsg>> &TcpClient::get_gps_msgs() { return gps_msgs; }
 std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
 
 // ------------------- //
@@ -365,14 +362,6 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 		run_sent = true;
 	};
 	add_stream_task(std::move(fn));
-}
-
-void TcpClient::send_gps_msg(const geometry_msgs::PoseWithCovarianceStamped &pose) {
-    auto fn = [this, pose]() {
-		std::vector<uint8_t> bytes = GpsMsg(pose).serialize(tcp_data_types[10]);
-		send(tcp_socket, bytes.data(), bytes.size(), 0);
-    };
-    add_stream_task(std::move(fn));
 }
 
 // ------------------- //
@@ -532,8 +521,6 @@ void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) { go_to_cmd_srv
 void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) { set_states_srv_msgs.push(SetStatesSrv().deserialize(bytes)); }
 
 void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) { waypoints_srv_msgs.push(WaypointsSrv().deserialize(bytes)); }
-
-void TcpClient::parse_gps_msg(std::vector<uint8_t> &bytes) { gps_msgs.push(GpsMsg().deserialize(bytes)); }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 	std::string decoded_string(bytes.begin(), bytes.end());

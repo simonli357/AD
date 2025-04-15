@@ -254,25 +254,3 @@ class RunOverlay(QWidget):
             self.sim_config['args'] = f'{path}.launch'
             yaml.dump(self.sim_config, file)
         ConfirmUpdate(path).exec()
-
-    def match_run(self, gps_msg: PoseWithCovarianceStamped) -> None:
-        x0_gps = gps_msg.pose.pose.position.x
-        y0_gps = gps_msg.pose.pose.position.y
-        q = gps_msg.pose.pose.orientation
-        qx, qy, qz, qw = q.x, q.y, q.z, q.w
-        quaternion = [qx, qy, qz, qw]
-        roll, pitch, yaw_gps = tft.euler_from_quaternion(quaternion)
-
-        runs_with_info = []
-        for run in self.runs:
-            x0, y0, yaw0, path = float(run.get('x0')), float(run.get('y0')), float(run.get('yaw0')), run.get('path')
-            dx = x0 - x0_gps
-            dy = y0 - y0_gps
-            dist_from_target = np.hypot(dx, dy)
-            yaw_diff = abs(yaw0 - yaw_gps)
-            runs_with_info.append(((x0, y0, yaw0, path), dist_from_target, yaw_diff))
-
-        # Sort by lowest dist from target, then by lowest yaw_diff
-        runs_with_info.sort(key=lambda r: (r[1], r[2]))
-
-        self.main_window.server.utility_node_client.send_gps_msg(*runs_with_info[0][0])
