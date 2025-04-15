@@ -48,8 +48,9 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		double t_start = t[i];
 		double t_end = t[i + 1];
 		double seg_length = t_end - t_start;
-		if (seg_length <= 0)
-			continue; // Avoid degenerate segments.
+		if (seg_length <= 0) {
+			continue;
+        }
 
 		// Determine effective density for this segment based on its attribute.
 		double effective_density = seg_length * density;
