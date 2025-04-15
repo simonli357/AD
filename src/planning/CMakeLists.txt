@@ -44,11 +44,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   utils
   roslib
+  alglib_pkg
 )
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime roslib
+ CATKIN_DEPENDS message_runtime roslib alglib_pkg
 )
 
 include_directories(
@@ -68,6 +69,7 @@ target_link_libraries(${PROJECT_NAME}
   ${roscpp_LIBRARIES}
   Boost::graph
   yaml-cpp
+  alglib_pkg
   # matplot
 )
 
