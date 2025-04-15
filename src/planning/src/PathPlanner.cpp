@@ -10,7 +10,7 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 	this->T = 0.1; // ERROR: T parameter received is 0 -> set to 0.1 as hotfix
 	this->name = "custom path";
     this->density = 1.0 / std::fabs(this->vref) / this->T;
-
+    this->distance_threshold = vref * this->T * 1.5;
     path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
 	path.push_back(start);
@@ -20,8 +20,7 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 		Vertex node = track.find_closest_node(x, y);
 		path.push_back(node);
 	}
-
-	interpolate_path();
+	construct_path();
 }
 
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name) {
@@ -30,12 +29,12 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 	this->T = 0.1; // ERROR: T parameter received is 0 -> set to 0.1 as hotfix
 	this->name = name;
     this->density = 1.0 / std::fabs(this->vref) / this->T;
-
+    this->distance_threshold = vref * this->T * 1.5;
     path.clear();
 	Vertex start = track.find_closest_node(start_x, start_y);
 	path.push_back(start);
 	precompute_path();
-	interpolate_path();
+	construct_path();
 }
 
 void PathPlanner::precompute_path() {
@@ -55,7 +54,7 @@ void PathPlanner::precompute_path() {
 	}
 }
 
-void PathPlanner::interpolate_path() {
+void PathPlanner::construct_path() {
 	std::vector<Vertex> general_path;
 	general_path.push_back(path[0]);
 	Vertex prev = path[0];
@@ -67,7 +66,9 @@ void PathPlanner::interpolate_path() {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
+    filter_utils.distance_filter(general_path, distance_threshold);
 	condensed_path = spline_utils.interpolate_path(general_path, density);
+    filter_utils.yaw_filter(condensed_path, yaw_threshold);
 }
 
 void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray &out_input_refs, Float32MultiArray &out_attributes, Float32MultiArray &out_normals) {
@@ -78,8 +79,8 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 		out_state_refs.data.push_back(v.tangent_angle);
 
 		// Input refs
-		out_input_refs.data.push_back(vref);
-		out_input_refs.data.push_back(v.curvature);
+		out_input_refs.data.push_back(v.vref);
+		out_input_refs.data.push_back(v.steer_ref);
 
 		// Attributes
 		out_attributes.data.push_back(static_cast<double>(v.attribute));

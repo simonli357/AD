@@ -33,6 +33,8 @@ class Track {
 		double tangent_angle = 0;
 		double normal_angle = 0;
 		double curvature = 0;
+        double vref = 0;
+        double steer_ref = 0;
 		ATTRIBUTE attribute;
 	};
 

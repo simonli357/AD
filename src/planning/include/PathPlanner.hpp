@@ -1,8 +1,9 @@
 #pragma once
 
 #include "map/Track.hpp"
-#include "utils/SplineUtils.hpp"
 #include "utils/FilterUtils.hpp"
+#include "utils/SplineUtils.hpp"
+#include <cmath>
 #include <std_msgs/Float32MultiArray.h>
 
 class PathPlanner {
@@ -19,21 +20,24 @@ class PathPlanner {
 
 	Track track;
 	SplineUtils spline_utils;
-    FilterUtils filter_utils;
+	FilterUtils filter_utils;
 
 	double vref;
 	int N;
 	double T;
-    double density;
+	double density;
 	std::string name;
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
+
+    double distance_threshold;
+    double yaw_threshold = 60 * M_PI / 180;
 
 	void set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
 	void set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name);
 	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
 
   private:
-	void interpolate_path();
-    void precompute_path();
+	void precompute_path();
+	void construct_path();
 };
