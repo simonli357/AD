@@ -7,7 +7,7 @@ PathPlanner::PathPlanner() : track(), spline_utils() {}
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
 	this->vref = vref;
 	this->N = N;
-	this->T = 0.1;
+	this->T = 0.1; // ERROR: T parameter received is 0 -> set to 0.1 as hotfix
 	this->name = "custom path";
     this->density = 1.0 / std::fabs(this->vref) / this->T;
 
@@ -27,7 +27,7 @@ void PathPlanner::set_constraints(double vref, int N, int T, double start_x, dou
 void PathPlanner::set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name) {
 	this->vref = vref;
 	this->N = N;
-	this->T = 0.1;
+	this->T = 0.1; // ERROR: T parameter received is 0 -> set to 0.1 as hotfix
 	this->name = name;
     this->density = 1.0 / std::fabs(this->vref) / this->T;
 
