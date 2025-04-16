@@ -31,6 +31,8 @@ class ShaderRenderer:
             self.load_car_models()
         elif ctx_name == OpenGLContextName.MAP:
             self.load_map_models()
+        elif ctx_name == OpenGLContextName.BARCA:
+            self.load_barca_models()
         else:
             print("Invalid context name")
             exit(1)
@@ -125,8 +127,6 @@ class ShaderRenderer:
 
     def load_map_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
-        self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
-        self.barca_track_model = load_mesh(asset_path('track.obj'))
 
         model_load_tasks = [
             # (object_path args, attribute name)
@@ -170,6 +170,37 @@ class ShaderRenderer:
         self.crosshair_model = crosshair_model()
         self.triangle_model = triangle_model()
         self.arrow_model = arrow_model()
+
+    def load_barca_models(self):
+        self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
+        self.barca_track_model = load_mesh(asset_path('track.obj'))
+
+        model_load_tasks = [
+            # (object_path args, attribute name)
+            (('car', 'white'), 'white_car_model_data'),
+        ]
+
+        # Parallel loading of all obj models
+        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            futures = []
+            for args, attr_name in model_load_tasks:
+                futures.append((
+                    attr_name,
+                    executor.submit(
+                        lambda a: load_obj(*object_path(*a)),
+                        args
+                    )
+                ))
+
+            # Collect results as they complete
+            for attr_name, future in futures:
+                try:
+                    setattr(self, attr_name, future.result())
+                except Exception as e:
+                    print(f"Failed to load {attr_name}: {str(e)}")
+                    raise
+
+        self.white_car_model = create_obj(self.white_car_model_data, self.model_shader)
 
     ##################
     # Draw Functions

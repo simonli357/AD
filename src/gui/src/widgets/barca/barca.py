@@ -1,7 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.Qt import QPainter, QFont, QColor
 from OpenGL import GL as gl
-from ..enums import BarcaMapData, NamedColor
+from ..enums import BarcaMapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
 
@@ -53,7 +52,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.waypoints_renderer = WaypointsRenderer(track='barca')
-        self.shader_renderer = ShaderRenderer()
+        self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.BARCA)
 
     def paintGL(self):
         if self.stop_drawing:

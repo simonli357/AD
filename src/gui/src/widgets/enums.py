@@ -14,6 +14,7 @@ class OpenGLContextName(Enum):
     MAP = 0
     CAR = 1
     CAM = 2
+    BARCA = 3
 
 
 class MapData(Enum):
