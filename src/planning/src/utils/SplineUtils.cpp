@@ -36,7 +36,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
         switch (path[i].id) {
             case 206:
             case 208:
-                weights[i] = 1.0;
+                weights[i] = 0.0;
                 break;
             default:
                 break;
