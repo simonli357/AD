@@ -9,7 +9,6 @@ from python_server.service_calls.waypoints_srv import WaypointsSrv
 from python_server.msg.trigger_msg import TriggerMsg
 from python_server.msg.params_msg import ParamsMsg
 from python_server.msg.run_msg import RunMsg
-from python_server.msg.gps_msg import GpsMsg
 
 
 class TcpConnection:
@@ -29,7 +28,6 @@ class TcpConnection:
                 b'\x08': self.parse_start_srv,
                 b'\x09': self.parse_params,
                 b'\x0a': self.parse_run,
-                b'\x0b': self.parse_gps_msg
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -40,7 +38,6 @@ class TcpConnection:
             self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
-            self.gps_msg = GpsMsg(b'\x0b')
             self.start_srv_msg = False
             self.params = ParamsMsg(b'\x09')
             self.receiver = threading.Thread(target=self.receive, daemon=True)
@@ -123,10 +120,6 @@ class TcpConnection:
         bytes = length + self.types[7] + data
         self.socket.sendall(bytes)
 
-    def send_gps_msg(self, x0, y0, yaw0, path):
-        bytes = self.gps_msg.encode(x0, y0, yaw0, path)
-        self.socket.sendall(bytes)
-
     ###################
     # Decode
     ###################
@@ -185,11 +178,5 @@ class TcpConnection:
     def parse_run(self, bytes):
         try:
             self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
-        except Exception as e:
-            print(e)
-
-    def parse_gps_msg(self, bytes):
-        try:
-            self.gps_msg.decode(bytes)
         except Exception as e:
             print(e)
