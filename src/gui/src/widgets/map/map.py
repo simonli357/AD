@@ -129,8 +129,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LEQUAL)
+        # gl.glEnable(gl.GL_DEPTH_TEST)
+        # gl.glDepthFunc(gl.GL_LEQUAL)
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
@@ -209,7 +209,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
             for x, y in self.run_statistics.visited:
-                self.shader_renderer.draw_circle(self.get_gl_coords(x, y + MapData.REAL_WORLD_HEIGHT.value), 0.7, (0.0, 1.0, 0.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_circle(self.get_gl_coords(x, y), 0.7, (0.0, 1.0, 0.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']

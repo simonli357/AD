@@ -95,11 +95,11 @@ class HidableOverlay(QWidget):
     def update_visited_destinations(self, car_x: float, car_y: float):
         for idx, row in self.destinations.iterrows():
             x = row['X']
-            y = MapData.REAL_WORLD_HEIGHT.value - row['Y']
+            y = row['Y']
             if self.is_near(car_x, car_y, x, y, 0.1, 0.1):
                 self.visited.add((x, y))
                 self.set_dest_visited_num(len(self.visited))
-                self.map_widget.update_visited_destination(x, y)
+                self.map_widget.update_visited_destination(x, MapData.REAL_WORLD_HEIGHT.value - y)
                 break
 
     def set_total_path_distance(self):
@@ -113,7 +113,7 @@ class HidableOverlay(QWidget):
         self.dest_reached_label.setText(f'󰪥  Reached: {dest_visited:.0f}')
 
     def set_car_pose(self, x, y, z):
-        self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{(13.786-y):.2f} z:{z:.1f}")
+        self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{(13.786 - y):.2f} z:{z:.1f}")
 
     def set_car_rotation(self, yaw, steer):
         self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
