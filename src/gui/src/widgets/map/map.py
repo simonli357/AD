@@ -116,15 +116,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        self.cursor_coords_label = QtWidgets.QLabel(self)
-        self.cursor_coords_label.setStyleSheet("""
-            border: none;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #00ff00;
-            font-size: 16px;
-        """)
-        self.cursor_coords_label.hide()
-        self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
         self.run_statistics = HidableOverlay(self)
 
     def get_key_from_value(self, value):
@@ -148,6 +139,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
+        self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
+        self.ortho_view_mat = glm.mat4(1.0)
+
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.destinations_renderer = DestinationsRenderer()
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
@@ -164,8 +158,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if self.view_zoom == 1:
             self.view_center = glm.vec2(0, 0)
-
-        self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -207,12 +199,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_legend(self.width() / 2.7, self.height() / 3)
             pass
 
+        self.update_mouse_pos()
+
     def draw_gt(self):
         if not self.show_gt:
             return
 
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
+
+            for x, y in self.run_statistics.visited:
+                self.shader_renderer.draw_circle((x, y), 0.7, (0.0, 1.0, 0.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
@@ -280,59 +277,57 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
         screen_width = viewport[2]
         screen_height = viewport[3]
-        proj_mat = glm.ortho(0.0, float(screen_width), float(screen_height), 0.0, -1.0, 1.0)
-        view_mat = glm.mat4(1.0)
         x, y = 0.37 * screen_width, 0.35 * screen_height
         height = 5
 
         offset = 35
         y_offset = 0
-        self.shader_renderer.draw_triangle(x, y, 0, np.radians(180), (24.0, 24.0), NamedColor.YELLOW.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("NORMAL", x + 62, y - height, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y, 0, np.radians(180), (24.0, 24.0), NamedColor.YELLOW.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("NORMAL", x + 62, y - height, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.GREEN.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("CROSSWALK", x + 80, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.GREEN.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("CROSSWALK", x + 80, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.RED.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("INTERSECTION", x + 88, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.RED.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("INTERSECTION", x + 88, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.ORANGE.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("ONEWAY", x + 64, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.ORANGE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("ONEWAY", x + 64, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.INDIGO.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("HIGHWAY LEFT", x + 90, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.INDIGO.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY LEFT", x + 90, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.LIGHT_PINK.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("HIGHWAY RIGHT", x + 94, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.LIGHT_PINK.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY RIGHT", x + 94, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
         y_offset = 0
         x_offset = 200
-        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.WHITE.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("ROUNDABOUT", x + x_offset + 84, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.WHITE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("ROUNDABOUT", x + x_offset + 84, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.CYAN.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("STOPLINE", x + x_offset + 66, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.CYAN.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("STOPLINE", x + x_offset + 66, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.STEEL_BLUE.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("DOTTED", x + x_offset + 60, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.STEEL_BLUE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED", x + x_offset + 60, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
-        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.PURPLE.value, view_mat, proj_mat)
-        self.shader_renderer.text_renderer.render_text("DOTTED CROSSWALK", x + x_offset + 116, y - height + y_offset, 1.0, (1, 1, 1), proj_mat)
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.PURPLE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED CROSSWALK", x + x_offset + 116, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
         y_offset += offset
 
     def draw_markers(self):
         for coord in self.cursor_coords:
             x, y = self.get_gl_coords(coord[0], coord[1])
-            self.shader_renderer.draw_marker(x, y, (0, 1, 0, 1), 8.0, 4.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
+            self.shader_renderer.draw_marker(x, y, (1, 0, 0, 1), 10.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
 
     def draw_detected_objects(self):
         if self.detected_data is None or len(self.detected_data) == 0:
@@ -392,12 +387,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             pass
 
     def update_mouse_pos(self):
-        if self.show_mouse:
-            self.cursor_coords_label.show()
-        else:
-            self.cursor_coords_label.hide()
+        if not self.show_mouse:
             return
-
         if self.current_mouse_pos is not None:
             widget_width = self.width()
             widget_height = self.height()
@@ -409,11 +400,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             y_scene = self.current_mouse_pos.y()
 
             x_world, y_world = self.get_real_world_coords(x_scene, y_scene)
-            # Update label text and position
-            self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
-            self.cursor_coords_label.move(
-                int(x_scene - self.cursor_coords_label.width() / 2),
-                int(y_scene - 60))
+
+            self.shader_renderer.text_renderer.render_text(f"X {x_world:.2f}   Y {y_world:.2f}", x_scene, y_scene - 30, 1.0, (0, 1, 0), self.ortho_proj_mat)
 
     def get_real_world_coords(self, x_scene, y_scene):
         widget_width = self.width()
@@ -478,6 +466,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
+        self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         self.run_statistics.move(
             w - self.run_statistics.width() - 5,
             5

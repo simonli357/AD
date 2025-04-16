@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
-from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, quad_model
 from .obj import load_obj, create_obj
 from ..enums import NamedColor, OpenGLContextName
 from .custom.progress_bar import ProgressBar
@@ -15,10 +15,12 @@ from .font import TextRenderer
 import glm
 import multiprocessing
 import numpy as np
+import time
 
 
 class ShaderRenderer:
     def __init__(self, ctx_name):
+        self._start_time = time.perf_counter()
         self.text_renderer = TextRenderer(16)
         self.large_text_renderer = TextRenderer(48)
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
@@ -165,12 +167,14 @@ class ShaderRenderer:
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
+        self.ripple_shader = create_shader_program(shader_path('ripple', 'ripple.vert'), shader_path('ripple', 'ripple.frag'))
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
         self.arrow_shader = create_shader_program(shader_path('arrow', 'arrow.vert'), shader_path('arrow', 'arrow.frag'))
 
         self.line_model = line_model()
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
+        self.quad_model = quad_model()
         self.triangle_model = triangle_model()
         self.arrow_model = arrow_model()
 
@@ -244,6 +248,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
         obj_model = self.green_destination_model
@@ -275,6 +280,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_road_object(self, obj_type, x, y, yaw, scale, view_matrix, proj_matrix, is_animation=False):
         road_obj_model = None
@@ -357,6 +363,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(road_obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, road_obj_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
         gl.glUseProgram(self.barca_shader)
@@ -379,6 +386,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.barca_track_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.barca_track_model.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_texture(self, mat, x, y, z, scale, view_matrix, proj_matrix):
         if mat is None:
@@ -391,18 +399,9 @@ class ShaderRenderer:
         model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
 
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "model"),
-            1, gl.GL_FALSE, glm.value_ptr(model)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "view"),
-            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
         # Bind texture
         gl.glActiveTexture(gl.GL_TEXTURE0)
@@ -413,6 +412,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(mat.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_texture2D(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture2D_shader)
@@ -423,14 +423,8 @@ class ShaderRenderer:
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
         model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
 
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture2D_shader, "model"),
-            1, gl.GL_FALSE, glm.value_ptr(model)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture2D_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture2D_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture2D_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
         # Bind texture
         gl.glActiveTexture(gl.GL_TEXTURE0)
@@ -441,6 +435,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_line(self, start, end, color, view_matrix, proj_matrix):
         gl.glUseProgram(self.line_shader)
@@ -461,25 +456,17 @@ class ShaderRenderer:
         )
 
         # Set matrices
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.line_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.line_shader, "view"),
-            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
-        )
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.line_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.line_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         # Set color
-        gl.glUniform4fv(
-            gl.glGetUniformLocation(self.line_shader, "color"),
-            1, color
-        )
+        gl.glUniform4fv(gl.glGetUniformLocation(self.line_shader, "color"), 1, color)
 
         # Draw
         gl.glBindVertexArray(self.line_model.vao)
         gl.glDrawArrays(gl.GL_LINES, 0, 2)
         gl.glBindVertexArray(0)
         self.line_model.vbo.unbind()
+        gl.glUseProgram(0)
 
     def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix, rot_barca=0):
         gl.glUseProgram(self.triangle_shader)
@@ -503,6 +490,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.triangle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.triangle_model.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_circle(self, center, radius, color, view_matrix, proj_matrix):
         gl.glUseProgram(self.circle_shader)
@@ -511,55 +499,49 @@ class ShaderRenderer:
         gl.glUniform2f(gl.glGetUniformLocation(self.circle_shader, "center"), center[0], center[1])
         gl.glUniform1f(gl.glGetUniformLocation(self.circle_shader, "radius"), radius)
         gl.glUniform4fv(gl.glGetUniformLocation(self.circle_shader, "color"), 1, color)
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.circle_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.circle_shader, "view"),
-            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
-        )
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.circle_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.circle_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
 
         # Draw
         gl.glBindVertexArray(self.circle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
-    def draw_marker(self, x, y, color, scale, line_width, view_matrix, proj_matrix):
-        gl.glUseProgram(self.crosshair_shader)
-
+    def draw_marker(self, x, y, color, scale, view_matrix, proj_matrix):
         # Create model matrix
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
-        # Set uniforms
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.crosshair_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.crosshair_shader, "view"),
-            1, gl.GL_FALSE, glm.value_ptr(view_matrix)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.crosshair_shader, "model"),
-            1, gl.GL_FALSE, glm.value_ptr(model)
-        )
-        gl.glUniform4fv(
-            gl.glGetUniformLocation(self.crosshair_shader, "color"),
-            1, color
-        )
+        gl.glUseProgram(self.ripple_shader)
 
-        # Draw circle
-        gl.glBindVertexArray(self.crosshair_model.vao1)
-        gl.glDrawArrays(gl.GL_LINE_LOOP, 0, 64)
+        # Set uniforms
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform1f(gl.glGetUniformLocation(self.ripple_shader, "time"), time.perf_counter() - self._start_time)
+
+        gl.glBindVertexArray(self.quad_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
+
+        gl.glUseProgram(self.crosshair_shader)
+
+        # Set uniforms
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4fv(gl.glGetUniformLocation(self.crosshair_shader, "color"), 1, color)
+        gl.glUniform1f(gl.glGetUniformLocation(self.crosshair_shader, "time"), time.perf_counter() - self._start_time)
 
         # Draw cross
-        gl.glBindVertexArray(self.crosshair_model.vao2)
-        gl.glDrawArrays(gl.GL_LINES, 0, 4)
-
+        gl.glBindVertexArray(self.crosshair_model.vao)
+        for i in range(4):
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, i * 4, 4)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
         gl.glUseProgram(self.arrow_shader)
@@ -598,3 +580,4 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
         gl.glBindVertexArray(0)
+        gl.glUseProgram(0)

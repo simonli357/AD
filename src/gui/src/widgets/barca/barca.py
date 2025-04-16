@@ -24,19 +24,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         self.drag_start = None
         self.base_view_center = glm.vec2(self.view_center)
 
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.cursor_coords_label = QtWidgets.QLabel(self)
-        self.cursor_coords_label.setStyleSheet("""
-            border: none;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #00ff00;
-            font-size: 16px;
-        """)
-        self.cursor_coords_label.hide()
-        self.cursor_coords_label.setAlignment(QtCore.Qt.AlignCenter)
-
     def render_widget(self) -> None:
         self.update()
 
@@ -44,12 +31,16 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glDisable(gl.GL_BLEND)          # Disable unless transparency needed
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
+
+        self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
+        self.ortho_view_mat = glm.mat4(1.0)
 
         self.waypoints_renderer = WaypointsRenderer(track='barca')
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.BARCA)
@@ -59,8 +50,6 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             return
         if self.view_zoom == 17.0:
             self.view_center = glm.vec2(4, -4)
-
-        self.update_mouse_pos()
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -92,7 +81,9 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             self.view_mat,
             self.proj_mat
         )
+
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
+        self.update_mouse_pos()
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
@@ -118,10 +109,7 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             pass
 
     def update_mouse_pos(self):
-        if self.show_mouse:
-            self.cursor_coords_label.show()
-        else:
-            self.cursor_coords_label.hide()
+        if not self.show_mouse:
             return
 
         if self.current_mouse_pos is not None:
@@ -135,11 +123,8 @@ class BarcaWidget(QtWidgets.QOpenGLWidget):
             y_scene = self.current_mouse_pos.y()
 
             x_world, y_world = self.get_real_world_coords(x_scene, y_scene)
-            # Update label text and position
-            self.cursor_coords_label.setText(f"  ({x_world:.2f}, {y_world:.2f}) ")
-            self.cursor_coords_label.move(
-                int(x_scene - self.cursor_coords_label.width() / 2),
-                int(y_scene - 60))
+
+            self.shader_renderer.text_renderer.render_text(f"X {x_world:.2f}   Y {y_world:.2f}", x_scene, y_scene - 30, 1.0, (0, 1, 0), self.ortho_proj_mat)
 
     def get_real_world_coords(self, x_scene, y_scene):
         widget_width = self.width()

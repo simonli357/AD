@@ -11,6 +11,39 @@ void PathUtils::yaw_filter(std::vector<Vertex> &path, double max_yaw_change) {
     }
 }
 
+void PathUtils::smooth_yaw(std::vector<Vertex> &path) {
+    if (path.size() <= 1) {
+        return;
+    }
+    std::vector<double> yaw_angles;
+    yaw_angles.reserve(path.size());
+    for (const auto& vertex : path) {
+        yaw_angles.push_back(vertex.tangent_angle);
+    }
+    std::vector<double> diffs;
+    diffs.reserve(path.size() - 1);
+    for (size_t i = 1; i < yaw_angles.size(); ++i) {
+        diffs.push_back(yaw_angles[i] - yaw_angles[i-1]);
+    }
+    const double threshold = 0.8 * M_PI;
+    for (auto& diff : diffs) {
+        if (diff > threshold) {
+            diff -= 2 * M_PI;
+        } else if (diff < -threshold) {
+            diff += 2 * M_PI;
+        }
+    }
+    std::vector<double> smooth_yaw;
+    smooth_yaw.reserve(path.size());
+    smooth_yaw.push_back(yaw_angles[0]);
+    for (size_t i = 0; i < diffs.size(); ++i) {
+        smooth_yaw.push_back(smooth_yaw[i] + diffs[i]);
+    }
+    for (size_t i = 0; i < path.size(); ++i) {
+        path[i].tangent_angle = smooth_yaw[i];
+    }
+}
+
 void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double hw_density_factor, double cw_density_factor) {
     for (size_t i = 1; i < path.size();) {
         double current_thresh = thresh;
