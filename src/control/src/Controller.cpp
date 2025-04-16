@@ -109,6 +109,7 @@ public:
                 continue;
             }
             if (utils.tcp_client->tcp_can_send && !utils.tcp_client->run_sent) {
+                utils.fetch_run_params();
                 utils.tcp_client->send_run(path_manager.v_ref, path_manager.pathName, utils.x0, utils.y0, utils.yaw0);
             }
             if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
