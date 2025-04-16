@@ -57,7 +57,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 camera_config_path = os.path.join(current_dir, "rs.yaml")
 with open(os.path.abspath(camera_config_path)) as stream:
     frontConfig = yaml.safe_load(stream)
-width_m = 2
+width_m = 0.5
 height_m = 2
 resolution = 200
 cc = True  # Choose nearest neighbor if true; otherwise linear
@@ -125,33 +125,27 @@ def rotate_image_and_mask(image, angle_deg, roi_mask=None):
 def template_match(map_image, bev_image, mask=None, approx_position=None, search_radius=20, method=cv2.TM_CCOEFF_NORMED, use_full_map=False):
     if use_full_map or approx_position is None:
         roi = map_image
-        roi_mask = mask
         offset_x = 0
         offset_y = 0
     else:
         h, w = bev_image.shape[:2]
         x, y = approx_position
-        print("Approx position px:", approx_position, "m:", (x / desired_ppm, y / desired_ppm))
         # Define ROI boundaries relative to the approx position and template size
-        x1 = max(0, x - search_radius)
-        y1 = max(0, y - search_radius)
-        x2 = min(map_image.shape[1], x + w + search_radius)
-        y2 = min(map_image.shape[0], y + h + search_radius)
+        x1 = max(0, x - search_radius + w)
+        y2 = map_image.shape[0] - max(0, y - search_radius)
+        x2 = min(map_image.shape[1], x + search_radius + w)
+        y1 = map_image.shape[0] - min(map_image.shape[0], y + search_radius)
+        print("map shape:", map_image.shape, "x1:", x1, "y1:", y1, "x2:", x2, "y2:", y2)
+        print("Approx position m:", (x / desired_ppm, y / desired_ppm), ", search_radius: ", search_radius/desired_ppm, ", ROI m:", (x1 / desired_ppm, y1 / desired_ppm), (x2 / desired_ppm, y2 / desired_ppm))
         roi = map_image[y1:y2, x1:x2]
-        if mask is None:
-          print("mask is NOne")
-          roi_mask = np.ones_like(roi, dtype=np.uint8) * 255
-        else:
-          print("mask is not None")
-          cv2.imshow("Mask", mask)
-          cv2.waitKey(1)
-          roi_mask = mask[y1:y2, x1:x2]
+        cv2.imshow("ROI", roi)
+        cv2.waitKey(1)
         offset_x = x1
         offset_y = y1
 
     # Use the ROI mask if available
-    if roi_mask is not None and method in [cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF]:
-        result = cv2.matchTemplate(roi, bev_image, method, mask=roi_mask)
+    if mask is not None and method in [cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF]:
+        result = cv2.matchTemplate(roi, bev_image, method, mask=mask)
     else:
         result = cv2.matchTemplate(roi, bev_image, method)
 
@@ -181,8 +175,8 @@ def image_callback(msg):
     try:
         frame = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         frame = cv2.flip(frame, -1)
-        # processed = preprocess(frame)
-        processed = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        processed = preprocess(frame)
+        # processed = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         processed_warped = cv2.warpPerspective(
             processed, IPM, (outputRes[1], outputRes[0]),
@@ -201,11 +195,11 @@ def image_callback(msg):
 
         methods = [
           cv2.TM_CCOEFF_NORMED,
-          cv2.TM_CCORR_NORMED,
+          cv2.TM_CCORR_NORMED, # bad
           cv2.TM_SQDIFF,
           cv2.TM_SQDIFF_NORMED,
         ]
-        method = methods[2]
+        method = methods[0]
         mask_to_use = rot_mask if method in [cv2.TM_CCORR_NORMED, cv2.TM_SQDIFF] else None
         # best_pos, score = template_match(map_img, rot_bev, mask=mask_to_use, use_full_map=True, method=method)
         best_pos, score = template_match(map_img, rot_bev, mask=mask_to_use, use_full_map=False, method=method, approx_position=(int(x * desired_ppm), int(y * desired_ppm)), search_radius=100)
