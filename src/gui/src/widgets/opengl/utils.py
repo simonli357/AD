@@ -1,6 +1,6 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
-from OpenGL.arrays import ArrayDatatype, GLintArray, GLenumArray
+from OpenGL.arrays import GLintArray, GLenumArray
 from pathlib import Path
 
 import os
@@ -66,57 +66,6 @@ def get_file_signature(filepath: str) -> dict:
         'mtime': stat.st_mtime,
         'ino': stat.st_ino,
     }
-
-
-def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
-    # Generate cache key with file signatures
-    files = [vertex_filepath, fragment_filepath]
-    if geometry_filepath:
-        files.append(geometry_filepath)
-
-    # Get file signatures
-    signatures = [get_file_signature(f) for f in files]
-
-    # Generate content-based key
-    hasher = hashlib.sha256()
-    hasher.update(json.dumps(signatures, sort_keys=True).encode())
-    content_key = hasher.hexdigest()
-
-    # Get driver-specific key component
-    vendor = gl.glGetString(gl.GL_VENDOR).decode()
-    renderer = gl.glGetString(gl.GL_RENDERER).decode()
-    driver_key = hashlib.sha256(f"{vendor}{renderer}".encode()).hexdigest()[:16]
-
-    # Final cache key
-    cache_key = f"{content_key}_{driver_key}"
-    cache_path = Path(binary_cache_dir) / f"{cache_key}.bin"
-
-    # Try loading from cache
-    if cache_path.exists():
-        try:
-            with open(cache_path, 'rb') as f:
-                meta = json.loads(f.readline().decode())
-                current_sigs = [get_file_signature(f['path']) for f in meta['files']]
-
-                if meta['files'] == current_sigs:
-                    # Load binary only if metadata matches
-                    program = load_cached_program(cache_path)
-                    if program:
-                        print(f"Loaded cached shader: {cache_key}")
-                        return program
-        except Exception as e:
-            print(f"Cache load failed: {str(e)}")
-
-    # Compile and cache new program
-    program = compile_shaders(vertex_filepath, fragment_filepath, geometry_filepath)
-
-    # Save to cache with metadata
-    try:
-        save_program_cache(program, cache_path, signatures)
-    except Exception as e:
-        print(f"Cache save failed: {str(e)}")
-
-    return program
 
 
 def compile_shaders(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
@@ -199,3 +148,54 @@ def save_program_cache(program: int, cache_path: Path, signatures: list):
         f.write(json.dumps(meta).encode() + b'\n')
         f.write(struct.pack('I', binary_format[0]))
         f.write(buffer.tobytes())
+
+
+def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
+    # Generate cache key with file signatures
+    files = [vertex_filepath, fragment_filepath]
+    if geometry_filepath:
+        files.append(geometry_filepath)
+
+    # Get file signatures
+    signatures = [get_file_signature(f) for f in files]
+
+    # Generate content-based key
+    hasher = hashlib.sha256()
+    hasher.update(json.dumps(signatures, sort_keys=True).encode())
+    content_key = hasher.hexdigest()
+
+    # Get driver-specific key component
+    vendor = gl.glGetString(gl.GL_VENDOR).decode()
+    renderer = gl.glGetString(gl.GL_RENDERER).decode()
+    driver_key = hashlib.sha256(f"{vendor}{renderer}".encode()).hexdigest()[:16]
+
+    # Final cache key
+    cache_key = f"{content_key}_{driver_key}"
+    cache_path = Path(binary_cache_dir) / f"{cache_key}.bin"
+
+    # Try loading from cache
+    if cache_path.exists():
+        try:
+            with open(cache_path, 'rb') as f:
+                meta = json.loads(f.readline().decode())
+                current_sigs = [get_file_signature(f['path']) for f in meta['files']]
+
+                if meta['files'] == current_sigs:
+                    # Load binary only if metadata matches
+                    program = load_cached_program(cache_path)
+                    if program:
+                        print(f"Loaded cached shader: {cache_key}")
+                        return program
+        except Exception as e:
+            print(f"Cache load failed: {str(e)}")
+
+    # Compile and cache new program
+    program = compile_shaders(vertex_filepath, fragment_filepath, geometry_filepath)
+
+    # Save to cache with metadata
+    try:
+        save_program_cache(program, cache_path, signatures)
+    except Exception as e:
+        print(f"Cache save failed: {str(e)}")
+
+    return program

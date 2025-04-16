@@ -2,7 +2,7 @@ from OpenGL import GL as gl
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
 from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model
-from .obj import load_obj
+from .obj import load_obj, create_obj
 from ..enums import NamedColor
 from .custom.progress_bar import ProgressBar
 from .custom.lane import LaneIndicator
@@ -31,6 +31,9 @@ class ShaderRenderer:
         self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
 
     def load_models(self):
+        from concurrent.futures import ThreadPoolExecutor
+        import multiprocessing
+
         self.bfmc_track_model = load_map(asset_path('track.png'))
         self.barca_track_model = load_mesh(asset_path('track.obj'))
         self.line_model = line_model()
@@ -39,30 +42,78 @@ class ShaderRenderer:
         self.triangle_model = triangle_model()
         self.arrow_model = arrow_model()
 
-        self.white_car_model = load_obj(*object_path('car', 'white'))
-        self.red_car_model = load_obj(*object_path('car', 'red'))
-        self.blue_car_model = load_obj(*object_path('car', 'blue'))
-        self.orange_car_model = load_obj(*object_path('car', 'orange'))
+        model_shader = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
 
-        self.prio_sign_model = load_obj(*object_path('priority_sign', 'prio'))
-        self.oneway_sign_model = load_obj(*object_path('oneway_sign', 'oneway'))
-        self.stop_sign_model = load_obj(*object_path('stop_sign', 'stopsign'))
-        self.highway_entrance_sign_model = load_obj(*object_path('highway_entrance_sign', 'highwayentrance'))
-        self.highway_exit_sign_model = load_obj(*object_path('highway_exit_sign', 'highwayexit'))
-        self.roundabout_sign_model = load_obj(*object_path('roundabout_sign', 'roundabout'))
-        self.parking_sign_model = load_obj(*object_path('parking_sign', 'parking'))
-        self.crosswalk_sign_model = load_obj(*object_path('crosswalk_sign', 'crosswalk'))
-        self.noentry_sign_model = load_obj(*object_path('noentry_sign', 'noentry'))
-        self.traffic_light_model = load_obj(*object_path('traffic_light', 'lights'))
-        self.red_light_model = load_obj(*object_path('traffic_light', 'red'))
-        self.yellow_light_model = load_obj(*object_path('traffic_light', 'yellow'))
-        self.green_light_model = load_obj(*object_path('traffic_light', 'green'))
-        self.pedestrian_model = load_obj(*object_path('pedestrian', 'pedestrian'))
+        model_load_tasks = [
+            # (object_path args, attribute name)
+            (('car', 'white'), 'white_car_model_data'),
+            (('car', 'red'), 'red_car_model_data'),
+            (('car', 'blue'), 'blue_car_model_data'),
+            (('car', 'orange'), 'orange_car_model_data'),
+            (('priority_sign', 'prio'), 'prio_sign_model_data'),
+            (('oneway_sign', 'oneway'), 'oneway_sign_model_data'),
+            (('stop_sign', 'stopsign'), 'stop_sign_model_data'),
+            (('highway_entrance_sign', 'highwayentrance'), 'highway_entrance_sign_model_data'),
+            (('highway_exit_sign', 'highwayexit'), 'highway_exit_sign_model_data'),
+            (('roundabout_sign', 'roundabout'), 'roundabout_sign_model_data'),
+            (('parking_sign', 'parking'), 'parking_sign_model_data'),
+            (('crosswalk_sign', 'crosswalk'), 'crosswalk_sign_model_data'),
+            (('noentry_sign', 'noentry'), 'noentry_sign_model_data'),
+            (('traffic_light', 'lights'), 'traffic_light_model_data'),
+            (('traffic_light', 'red'), 'red_light_model_data'),
+            (('traffic_light', 'yellow'), 'yellow_light_model_data'),
+            (('traffic_light', 'green'), 'green_light_model_data'),
+            (('pedestrian', 'pedestrian'), 'pedestrian_model_data'),
+            (('void_symbol', 'void'), 'void_model_data'),
+            (('axis', 'axis'), 'axis_model_data'),
+            (('destination', 'destination'), 'destination_model_data'),
+            (('destination', 'green'), 'green_destination_model_data'),
+        ]
 
-        self.void_model = load_obj(*object_path('void_symbol', 'void'))
-        self.axis_model = load_obj(*object_path('axis', 'axis'))
-        self.destination_model = load_obj(*object_path('destination', 'destination'))
-        self.green_destination_model = load_obj(*object_path('destination', 'green'))
+        # Parallel loading of all obj models
+        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            futures = []
+            for args, attr_name in model_load_tasks:
+                futures.append((
+                    attr_name,
+                    executor.submit(
+                        lambda a: load_obj(*object_path(*a)),
+                        args
+                    )
+                ))
+
+            # Collect results as they complete
+            for attr_name, future in futures:
+                try:
+                    setattr(self, attr_name, future.result())
+                except Exception as e:
+                    print(f"Failed to load {attr_name}: {str(e)}")
+                    raise
+
+        self.white_car_model = create_obj(self.white_car_model_data, model_shader)
+        self.red_car_model = create_obj(self.red_car_model_data, model_shader)
+        self.blue_car_model = create_obj(self.blue_car_model_data, model_shader)
+        self.orange_car_model = create_obj(self.orange_car_model_data, model_shader)
+
+        self.prio_sign_model = create_obj(self.prio_sign_model_data, model_shader)
+        self.oneway_sign_model = create_obj(self.oneway_sign_model_data, model_shader)
+        self.stop_sign_model = create_obj(self.stop_sign_model_data, model_shader)
+        self.highway_entrance_sign_model = create_obj(self.highway_entrance_sign_model_data, model_shader)
+        self.highway_exit_sign_model = create_obj(self.highway_exit_sign_model_data, model_shader)
+        self.roundabout_sign_model = create_obj(self.roundabout_sign_model_data, model_shader)
+        self.parking_sign_model = create_obj(self.parking_sign_model_data, model_shader)
+        self.crosswalk_sign_model = create_obj(self.crosswalk_sign_model_data, model_shader)
+        self.noentry_sign_model = create_obj(self.noentry_sign_model_data, model_shader)
+        self.traffic_light_model = create_obj(self.traffic_light_model_data, model_shader)
+        self.red_light_model = create_obj(self.red_light_model_data, model_shader)
+        self.yellow_light_model = create_obj(self.yellow_light_model_data, model_shader)
+        self.green_light_model = create_obj(self.green_light_model_data, model_shader)
+        self.pedestrian_model = create_obj(self.pedestrian_model_data, model_shader)
+
+        self.void_model = create_obj(self.void_model_data, model_shader)
+        self.axis_model = create_obj(self.axis_model_data, model_shader)
+        self.destination_model = create_obj(self.destination_model_data, model_shader)
+        self.green_destination_model = create_obj(self.green_destination_model_data, model_shader)
 
     def load_shaders(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
