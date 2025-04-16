@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 from OpenGL import GL as gl
 from .hud import HudRenderer
-from ..enums import MapData, NamedColor
+from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 from ..opengl.gt import GTRenderer
 
@@ -71,7 +71,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
-        self.shader_renderer = ShaderRenderer(use_basic=False)
+        self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
         self.hud_renderer = HudRenderer(self)
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
         self.update_destinations()

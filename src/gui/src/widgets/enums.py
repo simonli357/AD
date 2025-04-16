@@ -10,6 +10,12 @@ class TerminalType(Enum):
     ROSCORE = 6
 
 
+class OpenGLContextName(Enum):
+    MAP = 0
+    CAR = 1
+    CAM = 2
+
+
 class MapData(Enum):
     PNG_WIDTH = 800
     PNG_HEIGHT = 533

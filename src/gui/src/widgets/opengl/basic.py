@@ -129,8 +129,8 @@ def crosshair_model() -> Model:
     circle_vbo.unbind()
 
     cross_vertices = [
-        [-1, 0, 0], [1, 0, 0],
-        [0, -1, 0], [0, 1, 0]
+        [-1.25, 0, 0], [1.25, 0, 0],
+        [0, -1.25, 0], [0, 1.25, 0]
     ]
     cross_vao = gl.glGenVertexArrays(1)
     gl.glBindVertexArray(cross_vao)

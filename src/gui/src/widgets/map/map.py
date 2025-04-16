@@ -6,7 +6,7 @@ from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
 from ..opengl.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
-from ..enums import MapData, NamedColor
+from ..enums import MapData, NamedColor, OpenGLContextName
 
 import pandas as pd
 import os
@@ -150,7 +150,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.destinations_renderer = DestinationsRenderer()
-        self.shader_renderer = ShaderRenderer(use_custom_models=False)
+        self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
 
         self.update_destinations()
 
