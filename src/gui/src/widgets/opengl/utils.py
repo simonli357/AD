@@ -1,12 +1,13 @@
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileProgram, compileShader
 from OpenGL.arrays import ArrayDatatype, GLintArray, GLenumArray
+from pathlib import Path
 
 import os
 import glob
 import hashlib
 import struct
-import ctypes
+import json
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 asset_dir = os.path.join(current_dir, 'assets')
@@ -53,113 +54,148 @@ def create_shader_module(filepath: str, module_type: int) -> int:
     return compileShader(source_code, module_type)
 
 
+def get_file_signature(filepath: str) -> dict:
+    """Get both content hash and metadata for cache validation"""
+    stat = os.stat(filepath)
+    with open(filepath, 'rb') as f:
+        content_hash = hashlib.sha256(f.read()).hexdigest()
+    return {
+        'path': filepath,
+        'content_hash': content_hash,
+        'size': stat.st_size,
+        'mtime': stat.st_mtime,
+        'ino': stat.st_ino,
+    }
+
+
 def create_shader_program(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
-    # Generate content-based hash
-    shader_files = [vertex_filepath, fragment_filepath]
-    if geometry_filepath is not None:
-        shader_files.append(geometry_filepath)
+    # Generate cache key with file signatures
+    files = [vertex_filepath, fragment_filepath]
+    if geometry_filepath:
+        files.append(geometry_filepath)
 
+    # Get file signatures
+    signatures = [get_file_signature(f) for f in files]
+
+    # Generate content-based key
     hasher = hashlib.sha256()
-    for filepath in shader_files:
-        with open(filepath, 'rb') as f:
-            hasher.update(f.read())
-    content_hash = hasher.hexdigest()
+    hasher.update(json.dumps(signatures, sort_keys=True).encode())
+    content_key = hasher.hexdigest()
 
-    # Get OpenGL vendor/renderer information
-    vendor = gl.glGetString(gl.GL_VENDOR).decode('utf-8')
-    renderer = gl.glGetString(gl.GL_RENDERER).decode('utf-8')
-    vr_hasher = hashlib.sha256(f"{vendor}{renderer}".encode()).hexdigest()[:16]
-    cache_key = f"{content_hash}_{vr_hasher}"
-    cache_filename = os.path.join(binary_cache_dir, f"{cache_key}.bin")
+    # Get driver-specific key component
+    vendor = gl.glGetString(gl.GL_VENDOR).decode()
+    renderer = gl.glGetString(gl.GL_RENDERER).decode()
+    driver_key = hashlib.sha256(f"{vendor}{renderer}".encode()).hexdigest()[:16]
+
+    # Final cache key
+    cache_key = f"{content_key}_{driver_key}"
+    cache_path = Path(binary_cache_dir) / f"{cache_key}.bin"
 
     # Try loading from cache
-    if os.path.exists(cache_filename):
-        program = gl.glCreateProgram()
+    if cache_path.exists():
         try:
-            with open(cache_filename, 'rb') as f:
-                data = f.read()
-                if len(data) < 4:
-                    raise ValueError("Invalid cache file")
+            with open(cache_path, 'rb') as f:
+                meta = json.loads(f.readline().decode())
+                current_sigs = [get_file_signature(f['path']) for f in meta['files']]
 
-                binary_format = struct.unpack('I', data[:4])[0]
-                binary_data = data[4:]
-
-                gl.glProgramBinary(program, binary_format, binary_data)
-
-                # Verify program status
-                link_status = gl.glGetProgramiv(program, gl.GL_LINK_STATUS)
-                if link_status == gl.GL_TRUE:
-                    print(f"Loaded cached shader: {cache_key}")
-                    return program
-                else:
-                    gl.glDeleteProgram(program)
-                    print("Cached shader invalid, recompiling...")
+                if meta['files'] == current_sigs:
+                    # Load binary only if metadata matches
+                    program = load_cached_program(cache_path)
+                    if program:
+                        print(f"Loaded cached shader: {cache_key}")
+                        return program
         except Exception as e:
-            gl.glDeleteProgram(program)
-            print(f"Error loading cached shader: {str(e)}, recompiling...")
+            print(f"Cache load failed: {str(e)}")
 
-    # Compile from source if cache miss
+    # Compile and cache new program
+    program = compile_shaders(vertex_filepath, fragment_filepath, geometry_filepath)
+
+    # Save to cache with metadata
+    try:
+        save_program_cache(program, cache_path, signatures)
+    except Exception as e:
+        print(f"Cache save failed: {str(e)}")
+
+    return program
+
+
+def compile_shaders(vertex_filepath: str, fragment_filepath: str, geometry_filepath=None) -> int:
     print(f"Compiling shader: {vertex_filepath}")
     print(f"Compiling shader: {fragment_filepath}")
     if geometry_filepath is not None:
         print(f"Compiling shader: {geometry_filepath}")
-
-    # Compile shaders
-    vertex_module = compileShader(open(vertex_filepath).read(), gl.GL_VERTEX_SHADER)
-    fragment_module = compileShader(open(fragment_filepath).read(), gl.GL_FRAGMENT_SHADER)
-    modules = [vertex_module, fragment_module]
-
+    vertex_module = create_shader_module(vertex_filepath, gl.GL_VERTEX_SHADER)
+    fragment_module = create_shader_module(fragment_filepath, gl.GL_FRAGMENT_SHADER)
+    modules = (vertex_module, fragment_module)
     if geometry_filepath is not None:
-        geometry_module = compileShader(open(geometry_filepath).read(), gl.GL_GEOMETRY_SHADER)
-        modules.append(geometry_module)
+        modules + (geometry_filepath,)
+    shader = compileProgram(*modules)
+    gl.glDeleteShader(vertex_module)
+    gl.glDeleteShader(fragment_module)
+    return shader
 
-    # Link program
-    program = compileProgram(*modules)
 
-    # Cleanup shaders
-    for shader in modules:
-        gl.glDeleteShader(shader)
+def load_cached_program(cache_path: Path) -> int:
+    """Load program from cache file with validation"""
+    with open(cache_path, 'rb') as f:
+        # Skip metadata line
+        f.readline()
+        data = f.read()
 
-    # Save to cache
-    try:
-        # Get binary length using PyOpenGL's array type
-        binary_length = GLintArray.zeros((1,))
-        gl.glGetProgramiv(program, gl.GL_PROGRAM_BINARY_LENGTH, binary_length)
+    program = gl.glCreateProgram()
+    binary_format = GLenumArray.zeros((1,))
+    binary_format[0] = struct.unpack('I', data[:4])[0]
 
-        if binary_length[0] <= 0:
-            print("Empty program binary, skipping cache")
-            return program
+    # Validate binary format support
+    num_formats = GLintArray.zeros((1,))
+    gl.glGetIntegerv(gl.GL_NUM_PROGRAM_BINARY_FORMATS, num_formats)
+    if num_formats[0] < 1:
+        return None
 
-        # Prepare buffers using PyOpenGL compatible types
-        binary_format = GLenumArray.zeros((1,))
-        buffer = gl.arrays.GLubyteArray.zeros((binary_length[0],))
+    gl.glProgramBinary(program, binary_format[0], data[4:], len(data[4:]))
 
-        # Get program binary with proper array handling
-        actual_length = GLintArray.zeros((1,))
-        gl.glGetProgramBinary(
-            program,
-            binary_length[0],
-            actual_length,
-            binary_format,
-            buffer
-        )
-
-        # Verify length match
-        if actual_length[0] != binary_length[0]:
-            print(f"Length mismatch {actual_length[0]} vs {binary_length[0]}")
-            return program
-
-        # Save to cache
-        os.makedirs(binary_cache_dir, exist_ok=True)
-        with open(cache_filename, 'wb') as f:
-            f.write(struct.pack('I', binary_format[0]))
-            f.write(buffer.tobytes())
-
-        print(f"Cached shader: {cache_filename}")
-
-    except Exception as e:
-        print(f"Failed to cache shader: {str(e)}")
-        import traceback
-        traceback.print_exc()
+    # Validate program
+    link_status = GLintArray.zeros((1,))
+    gl.glGetProgramiv(program, gl.GL_LINK_STATUS, link_status)
+    if link_status[0] != gl.GL_TRUE:
+        gl.glDeleteProgram(program)
+        return None
 
     return program
+
+
+def save_program_cache(program: int, cache_path: Path, signatures: list):
+    """Save compiled program to cache with metadata"""
+    binary_length = GLintArray.zeros((1,))
+    gl.glGetProgramiv(program, gl.GL_PROGRAM_BINARY_LENGTH, binary_length)
+
+    if binary_length[0] <= 0:
+        return
+
+    binary_format = GLenumArray.zeros((1,))
+    buffer = gl.arrays.GLubyteArray.zeros((binary_length[0],))
+    actual_length = GLintArray.zeros((1,))
+
+    gl.glGetProgramBinary(
+        program,
+        binary_length[0],
+        actual_length,
+        binary_format,
+        buffer
+    )
+
+    # Create metadata header
+    meta = {
+        'driver': {
+            'vendor': gl.glGetString(gl.GL_VENDOR).decode(),
+            'renderer': gl.glGetString(gl.GL_RENDERER).decode(),
+        },
+        'files': signatures,
+    }
+
+    # Write to cache
+    cache_path.parent.mkdir(exist_ok=True, parents=True)
+    with open(cache_path, 'wb') as f:
+        f.write(json.dumps(meta).encode() + b'\n')
+        f.write(struct.pack('I', binary_format[0]))
+        f.write(buffer.tobytes())
