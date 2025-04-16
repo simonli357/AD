@@ -150,7 +150,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.destinations_renderer = DestinationsRenderer()
-        self.shader_renderer = ShaderRenderer()
+        self.shader_renderer = ShaderRenderer(use_custom_models=False)
 
         self.update_destinations()
 

@@ -71,7 +71,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
-        self.shader_renderer = ShaderRenderer()
+        self.shader_renderer = ShaderRenderer(use_basic=False)
         self.hud_renderer = HudRenderer(self)
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
         self.update_destinations()

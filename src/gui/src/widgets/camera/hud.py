@@ -35,7 +35,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glClearColor(0, 0, 0, 0)
 
-        self.shader_renderer = ShaderRenderer()
+        self.shader_renderer = ShaderRenderer(use_map_models=False, use_object_models=False, use_basic=False)
         self.box_renderer = self.shader_renderer.detection_box_model
         self.lane_renderer = self.shader_renderer.lane_model
         self.proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)

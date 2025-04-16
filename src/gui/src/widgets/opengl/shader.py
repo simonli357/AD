@@ -1,4 +1,6 @@
 from OpenGL import GL as gl
+from concurrent.futures import ThreadPoolExecutor
+
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
 from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model
@@ -11,39 +13,32 @@ from .custom.speedometer import Speedometer
 from .font import TextRenderer
 
 import glm
+import multiprocessing
 import numpy as np
 
 
 class ShaderRenderer:
-    def __init__(self):
+    def __init__(self, use_map_models=True, use_object_models=True, use_custom_models=True, use_basic=True):
         self.text_renderer = TextRenderer(16)
         self.large_text_renderer = TextRenderer(48)
-        self.load_textures()
-        self.load_models()
-        self.load_shaders()
-        self.load_custom_models()
+        self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+        self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
+        if use_basic:
+            self.load_basic_models()
+        if use_map_models:
+            self.load_map_models()
+        if use_object_models:
+            self.load_object_models()
+        if use_custom_models:
+            self.load_custom_models()
 
-    def load_textures(self):
-        self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
-        self.ram_texture = load_2D_texture(asset_path('ram.png'))
-        self.stack_texture = load_2D_texture(asset_path('stack.png'))
-        self.heap_texture = load_2D_texture(asset_path('heap.png'))
-        self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
-
-    def load_models(self):
-        from concurrent.futures import ThreadPoolExecutor
-        import multiprocessing
-
+    def load_map_models(self):
+        self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
         self.bfmc_track_model = load_map(asset_path('track.png'))
         self.barca_track_model = load_mesh(asset_path('track.obj'))
-        self.line_model = line_model()
-        self.circle_model = circle_model()
-        self.crosshair_model = crosshair_model()
-        self.triangle_model = triangle_model()
-        self.arrow_model = arrow_model()
 
+    def load_object_models(self):
         model_shader = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
-
         model_load_tasks = [
             # (object_path args, attribute name)
             (('car', 'white'), 'white_car_model_data'),
@@ -115,15 +110,25 @@ class ShaderRenderer:
         self.destination_model = create_obj(self.destination_model_data, model_shader)
         self.green_destination_model = create_obj(self.green_destination_model_data, model_shader)
 
-    def load_shaders(self):
-        self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
-        self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
-        self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
+    def load_basic_models(self):
         self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
         self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
         self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
         self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
         self.arrow_shader = create_shader_program(shader_path('axis', 'axis.vert'), shader_path('axis', 'axis.frag'))
+
+        self.line_model = line_model()
+        self.circle_model = circle_model()
+        self.crosshair_model = crosshair_model()
+        self.triangle_model = triangle_model()
+        self.arrow_model = arrow_model()
+
+    def load_custom_models(self):
+        self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
+        self.ram_texture = load_2D_texture(asset_path('ram.png'))
+        self.stack_texture = load_2D_texture(asset_path('stack.png'))
+        self.heap_texture = load_2D_texture(asset_path('heap.png'))
+        self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
 
         self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
 
@@ -135,7 +140,6 @@ class ShaderRenderer:
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
         self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
 
-    def load_custom_models(self):
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
         self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
         self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
