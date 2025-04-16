@@ -114,7 +114,5 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
             result.push_back(v);
         }
     }
-
-    result.push_back(path.back());
     return result;
 }
