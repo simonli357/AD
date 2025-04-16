@@ -109,6 +109,9 @@ class ShaderRenderer:
         self.destination_model = create_obj(self.destination_model_data, self.model_shader)
         self.green_destination_model = create_obj(self.green_destination_model_data, self.model_shader)
 
+        self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
+        self.triangle_model = triangle_model()
+
         self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
         self.ram_texture = load_2D_texture(asset_path('ram.png'))
         self.stack_texture = load_2D_texture(asset_path('stack.png'))
