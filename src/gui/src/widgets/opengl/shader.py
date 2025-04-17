@@ -503,17 +503,23 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
-    def draw_circle(self, center, radius, color, view_matrix, proj_matrix):
+    def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix):
         gl.glUseProgram(self.circle_shader)
 
-        # Set uniforms
-        gl.glUniform2f(gl.glGetUniformLocation(self.circle_shader, "center"), center[0], center[1])
-        gl.glUniform1f(gl.glGetUniformLocation(self.circle_shader, "radius"), radius)
-        gl.glUniform4fv(gl.glGetUniformLocation(self.circle_shader, "color"), 1, color)
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.circle_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.circle_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.2))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
 
-        # Draw
+        model_loc = gl.glGetUniformLocation(self.triangle_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.triangle_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.triangle_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.triangle_shader, "color")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+
         gl.glBindVertexArray(self.circle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
         gl.glBindVertexArray(0)
