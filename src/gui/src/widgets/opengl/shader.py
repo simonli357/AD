@@ -240,6 +240,8 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
         if car_model.texture is not None:
+            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
+            gl.glUniform1i(has_texture_loc, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
             texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
