@@ -9,6 +9,6 @@ out vec2 fragCoord;
 
 void main() {
     vec2 position = center + aPos * radius;
-    gl_Position = projection * view * vec4(position, 0.0, 1.0);
+    gl_Position = projection * view * vec4(position, 0.2, 1.0);
     fragCoord = aPos;
 }
