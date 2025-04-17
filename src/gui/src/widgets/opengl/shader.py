@@ -528,7 +528,7 @@ class ShaderRenderer:
     def draw_marker(self, x, y, color, scale, view_matrix, proj_matrix):
         # Create model matrix
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.0))
+        model = glm.translate(model, glm.vec3(x, y, 5.0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
         gl.glUseProgram(self.ripple_shader)
