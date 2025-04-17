@@ -93,6 +93,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.base_view_center = glm.vec2(self.view_center)
 
         self.car_yaw = 0
+
+        self.destinations = self.map_widget.data[self.map_widget.data['Type'] == 'Destination']
         self.next_destination = None
 
         self.sign_images = []
@@ -191,6 +193,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.show_path:
             self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 
+        self.find_next_destination()
+
         self.draw_gt()
         self.draw_markers()
         self.draw_detected_objects()
@@ -201,6 +205,46 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             pass
 
         self.update_mouse_pos()
+
+    def find_next_destination(self):
+        # 1) make sure we have both a car pose and a path
+        if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
+            return
+        if self.state_refs_np is None:
+            return
+
+        # 2) if we already picked a next_destination that's still unvisited, bail
+        if getattr(self, 'next_destination', None) is not None \
+           and self.next_destination not in self.run_statistics.visited:
+            return
+
+        # 3) unpack your sequence of path‐nodes
+        xs = self.state_refs_np[0, :]   # X coords
+        ys = self.state_refs_np[1, :]   # Y coords
+        num_nodes = xs.shape[0]
+
+        # 4) find the node nearest the car
+        dx = xs - self.car_x
+        dy = ys - self.car_y
+        start_idx = int(np.argmin(dx * dx + dy * dy))
+
+        # 5) for each subsequent node, check if it lands “on” a destination
+        tol = 0.01  # world‐unit tolerance—tweak as needed
+        for offset in range(1, num_nodes + 1):
+            idx = (start_idx + offset) % num_nodes
+            node_x, node_y = xs[idx], ys[idx]
+
+            # test every destination
+            for _, row in self.destinations.iterrows():
+                dest_x = row['X']
+                dest_y = row['Y']  # raw‐Y per your get_gl_coords convention
+                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                    # found it!
+                    self.next_destination = (dest_x, dest_y)
+                    return
+
+        # if we got here, none of the nodes was close enough—clear it
+        self.next_destination = None
 
     def draw_gt(self):
         if not self.show_gt:
@@ -335,14 +379,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self):
         if self.detected_data is None or len(self.detected_data) == 0:
             return
-        car_x = self.detected_data[0, self.road_msg_dict['x']]
-        car_y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
-        car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+        self.car_x = self.detected_data[0, self.road_msg_dict['x']]
+        self.car_y = MapData.REAL_WORLD_HEIGHT.value - self.detected_data[0, self.road_msg_dict['y']]
+        self.car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
-        self.main_window.car_widget.set_car_data(car_yaw / np.pi * 180, car_speed, car_x, car_y, car_z)
-        self.run_statistics.set_car_pose(car_x, car_y, car_z)
-        self.car_yaw = car_yaw
+        self.main_window.car_widget.set_car_data(self.car_yaw / np.pi * 180, car_speed, self.car_x, self.car_y, car_z)
+        self.run_statistics.set_car_pose(self.car_x, self.car_y, car_z)
         for i in range(len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]
