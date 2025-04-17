@@ -93,7 +93,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.base_view_center = glm.vec2(self.view_center)
 
         self.car_yaw = 0
-        self.visited = set()
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -209,8 +208,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
-        for x, y in self.visited:
-            self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+        for x, y in self.run_statistics.visited:
+            self.shader_renderer.draw_circle(*self.get_gl_coords(x, y), 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
@@ -451,9 +450,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def update_destinations(self):
         self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
 
-    def update_visited_destination(self, x_visited, y_visited, y):
+    def update_visited_destination(self, x_visited, y_visited):
         self.main_window.car_widget.update_visited_destination(x_visited, y_visited)
-        self.visited.add(self.get_gl_coords(x_visited, y))
 
     def __del__(self):
         self.cleanup_gl_resources()
