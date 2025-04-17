@@ -208,6 +208,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
+        for x, y in self.run_statistics.visited:
+            print(x, y)
+            self.shader_renderer.draw_circle(*self.get_gl_coords(x, y), 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
 
@@ -233,9 +237,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     if sign_index is not None:
                         mat = self.sign_models[sign_index]
                         self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
-
-        for x, y in self.run_statistics.visited:
-            self.shader_renderer.draw_circle(*self.get_gl_coords(x, y), 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
     def draw_lane(self, x, y, orientation):
         """Draw lane markings using OpenGL lines"""
