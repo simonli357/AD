@@ -177,7 +177,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
-                    self.main_window.run_overlay.set_run_name('waypoint run')
+                    self.main_window.run_overlay.set_run_name('--:--')
                     self.main_window.map_widget.run_statistics.dist_traveled = 0
                     self.main_window.map_widget.run_statistics.set_distance_traveled()
                     self.main_window.map_widget.run_statistics.visited.clear()
