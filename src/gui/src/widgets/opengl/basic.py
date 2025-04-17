@@ -54,10 +54,10 @@ def triangle_model() -> Model:
 
 
 def circle_model() -> Model:
-    vertices = []
-    for i in range(64):
-        angle = 6.28318530718 * float(i) / 63.0
-        vertices.append([math.cos(angle), math.sin(angle)])
+    vertices = [[0.0, 0.0]]  # center vertex
+    for i in range(65):
+        angle = 6.28318530718 * float(i) / 64.0
+        vertices.append([np.cos(angle), np.sin(angle)])
 
     vao = gl.glGenVertexArrays(1)
     gl.glBindVertexArray(vao)

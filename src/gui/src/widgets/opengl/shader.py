@@ -507,7 +507,7 @@ class ShaderRenderer:
         gl.glUseProgram(self.circle_shader)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.2))
+        model = glm.translate(model, glm.vec3(x, y, 0.5))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
         model_loc = gl.glGetUniformLocation(self.triangle_shader, "model")
