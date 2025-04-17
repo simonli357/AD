@@ -104,22 +104,22 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             glm.vec3(0, 0, 1)
         )
 
-        self.shader_renderer.draw_car(
-            x=x,
-            y=y,
-            yaw=np.radians(self.yaw),
-            scale=0.32,
-            color=NamedColor.WHITE,
-            view_matrix=self.view_mat,
-            proj_matrix=self.proj_mat
-        )
-
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
             x=0.0,
             y=0.0,
             z=0,
             scale=(self.width(), self.height()),
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
+        )
+
+        self.shader_renderer.draw_car(
+            x=x,
+            y=y,
+            yaw=np.radians(self.yaw),
+            scale=0.32,
+            color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
