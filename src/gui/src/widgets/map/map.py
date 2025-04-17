@@ -626,10 +626,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
-                    self.main_window.run_overlay.set_run_name(run.path_name)
+                    self.run_statistics.dist_traveled = 0
+                    self.run_statistics.set_distance_traveled()
+                    self.run_statistics.visited.clear()
+                    self.run_statistics.set_dest_visited_num(0)
                     self.run_statistics.set_total_path_distance()
-                    self.main_window.barca_widget.update_waypoints()
                     self.update_waypoints()
+                    self.next_destination = None
                     return
                 retries += 1
                 time.sleep(0.1)
