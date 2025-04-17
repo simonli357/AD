@@ -17,7 +17,7 @@ void main() {
     float lineDist = min(d.x, d.y);
 
     // line thickness in world units (here 1 mm)
-    float thickness = 0.001;
+    float thickness = 0.002;
 
     // smoothly antialias the line
     float alpha = 1.0 - smoothstep(thickness - fwidth(lineDist), thickness + fwidth(lineDist), lineDist);

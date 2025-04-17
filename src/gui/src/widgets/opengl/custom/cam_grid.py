@@ -1,6 +1,4 @@
-# camera_grid.py
 from OpenGL import GL as gl
-from OpenGL.arrays import vbo
 
 import numpy as np
 import glm
