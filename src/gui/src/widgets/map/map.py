@@ -591,7 +591,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     path = os.path.dirname(os.path.abspath(__file__))
                     np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
-                    self._refs_len = self._dest_xs.shape[0]
+                    self._refs_len = self.state_refs_np.shape[0]
                     self._refs_xs = self.state_refs_np[0, :].copy()
                     self._refs_ys = self.state_refs_np[1, :].copy()
                     return TriggerResponse(success=True, message="Parameters updated")
