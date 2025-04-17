@@ -2,27 +2,26 @@
 
 in vec3 vWorldPos;
 
-uniform vec3 uColor; // grid line color
-uniform float cellSize; // in meters, e.g. 0.05
+uniform vec3 uColor;
+uniform float cellSize;
 
 out vec4 FragColor;
 
 void main() {
-    // Compute how far we are from the nearest grid line along X and Y
-    vec2 gridCoord = vWorldPos.xy / cellSize;
-    vec2 f = fract(gridCoord) - 0.5;
-    vec2 d = abs(f) * cellSize;
+    vec2 g = vWorldPos.xy / cellSize; // how many cells across?
+    vec2 f = fract(g) - 0.5; // distance to nearest line center in [–0.5, +0.5]
+    vec2 d = abs(f); // always positive
 
-    // pick the closest axis
-    float lineDist = min(d.x, d.y);
+    float distInCells = min(d.x, d.y);
 
-    // line thickness in world units (here 1 mm)
-    float thickness = 0.002;
+    float thicknessInCells = 0.001 / cellSize;
 
-    // smoothly antialias the line
-    float alpha = 1.0 - smoothstep(thickness - fwidth(lineDist), thickness + fwidth(lineDist), lineDist);
+    float w = max(fwidth(g.x), fwidth(g.y));
+
+    float alpha = 1.0 - smoothstep(thicknessInCells - w, thicknessInCells + w, distInCells);
 
     if (alpha < 0.05)
         discard;
+
     FragColor = vec4(uColor, alpha);
 }
