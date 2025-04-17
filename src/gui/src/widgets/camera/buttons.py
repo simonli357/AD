@@ -183,6 +183,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.run_statistics.visited.clear()
                     self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
                     self.main_window.map_widget.run_statistics.set_total_path_distance()
+                    self.main_window.map_widget.next_destination = None
                     return
                 retries += 1
                 time.sleep(0.1)

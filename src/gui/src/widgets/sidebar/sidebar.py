@@ -189,5 +189,12 @@ class SidebarWidget(QtWidgets.QWidget):
     def handle_fetch_run_btn_click(self) -> None:
         try:
             self.main_window.server.utility_node_client.send_string('refresh_run')
+            self.main_window.map_widget.update_waypoints()
+            self.main_window.map_widget.run_statistics.dist_traveled = 0
+            self.main_window.map_widget.run_statistics.set_distance_traveled()
+            self.main_window.map_widget.run_statistics.visited.clear()
+            self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
+            self.main_window.map_widget.run_statistics.set_total_path_distance()
+            self.main_window.map_widget.next_destination = None
         except Exception:
             pass

@@ -93,6 +93,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.base_view_center = glm.vec2(self.view_center)
 
         self.car_yaw = 0
+        self.next_destination = None
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -210,6 +211,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             for x, y in self.run_statistics.visited:
                 gl_x, gl_y = self.get_gl_coords(x, y)
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+            if self.next_destination is not None:
+                self.shader_renderer.draw_marker(*self.get_gl_coords(self.next_destination), (0.0, 1.0, 0.0, 1.0), 10.0, self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
