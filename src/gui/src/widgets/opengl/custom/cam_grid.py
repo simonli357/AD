@@ -14,7 +14,7 @@ class CameraGrid:
         self.loc_cellSize = gl.glGetUniformLocation(shader_program, "cellSize")
 
         # Build a large XY-plane quad centered at origin
-        e = 5
+        e = 30
         verts = np.array([
             [-e, -e, 0.0],
             [e, -e, 0.0],
