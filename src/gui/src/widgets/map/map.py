@@ -216,7 +216,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.run_statistics.visited:
             return
 
-        def async_task(self):
+        def async_task():
             xs = self.state_refs_np[0, :]
             ys = self.state_refs_np[1, :]
             num_nodes = xs.shape[0]
