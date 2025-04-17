@@ -239,13 +239,16 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
+        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
         if car_model.texture is not None:
-            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
             gl.glUniform1i(has_texture_loc, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
             texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
             gl.glUniform1i(texture_location, 0)
+        else:
+            gl.glUniform1i(has_texture_loc, 0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
@@ -271,13 +274,16 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
+        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
         if obj_model.texture is not None:
-            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
             gl.glUniform1i(has_texture_loc, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
             texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
             gl.glUniform1i(texture_location, 0)
+        else:
+            gl.glUniform1i(has_texture_loc, 0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
@@ -354,13 +360,16 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
+        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
         if road_obj_model.texture is not None:
-            has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
             gl.glUniform1i(has_texture_loc, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, road_obj_model.texture)
             texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
             gl.glUniform1i(texture_location, 0)
+        else:
+            gl.glUniform1i(has_texture_loc, 0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(road_obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, road_obj_model.mesh.vertex_count)
