@@ -209,8 +209,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
             for x, y in self.run_statistics.visited:
-                print(x, y)
-                x_gl, y_gl = self.get_gl_coords(x, y)
+                x_gl, y_gl = self.get_gl_coords(x, y - MapData.REAL_WORLD_HEIGHT)
                 self.shader_renderer.draw_circle(x_gl, y_gl, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
