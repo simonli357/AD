@@ -256,7 +256,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 gl_x, gl_y = self.get_gl_coords(x, y)
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             if self.next_destination is not None:
-                self.shader_renderer.draw_marker(self.get_gl_coords(self.next_destination), (0.0, 1.0, 0.0, 1.0), 10.0, self.view_mat, self.proj_mat)
+                gl_x, gl_y = self.get_gl_coords(self.next_destination)
+                self.shader_renderer.draw_marker(gl_x, gl_y, (0.0, 1.0, 0.0, 1.0), 10.0, self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
