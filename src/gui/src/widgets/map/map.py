@@ -211,7 +211,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             for x, y in self.run_statistics.visited:
                 x_real, y_real = x, MapData.REAL_WORLD_HEIGHT.value - y
                 x_gl, y_gl = self.get_gl_coords(x_real, y_real)
-                self.shader_renderer.draw_circle(x_gl, y_gl, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_circle(x_gl, y_gl, 16.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
