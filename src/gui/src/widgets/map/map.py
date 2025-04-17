@@ -13,6 +13,7 @@ import os
 import time
 import numpy as np
 import glm
+import threading
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -215,29 +216,32 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.run_statistics.visited:
             return
 
-        xs = self.state_refs_np[0, :]
-        ys = self.state_refs_np[1, :]
-        num_nodes = xs.shape[0]
+        def async_task(self):
+            xs = self.state_refs_np[0, :]
+            ys = self.state_refs_np[1, :]
+            num_nodes = xs.shape[0]
 
-        dx = xs - self.car_x
-        dy = ys - self.car_y
-        start_idx = int(np.argmin(dx * dx + dy * dy))
+            dx = xs - self.car_x
+            dy = ys - self.car_y
+            start_idx = int(np.argmin(dx * dx + dy * dy))
 
-        tol = 0.1
-        for offset in range(1, num_nodes + 1):
-            idx = (start_idx + offset) % num_nodes
-            node_x, node_y = xs[idx], ys[idx]
+            tol = 0.1
+            for offset in range(1, num_nodes + 1):
+                idx = (start_idx + offset) % num_nodes
+                node_x, node_y = xs[idx], ys[idx]
 
-            # test every destination
-            for _, row in self.destinations.iterrows():
-                dest_x = row['X']
-                dest_y = row['Y']  # raw‐Y per your get_gl_coords convention
-                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
-                    # found it!
-                    self.next_destination = (dest_x, dest_y)
-                    return
+                # test every destination
+                for _, row in self.destinations.iterrows():
+                    dest_x = row['X']
+                    dest_y = row['Y']  # raw‐Y per your get_gl_coords convention
+                    if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                        # found it!
+                        self.next_destination = (dest_x, dest_y)
+                        return
 
-        self.next_destination = None
+            self.next_destination = None
+
+        threading.Thread(target=async_task, daemon=True).start()
 
     def draw_gt(self):
         if not self.show_gt:
