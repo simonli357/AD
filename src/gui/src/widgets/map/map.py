@@ -451,9 +451,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def update_destinations(self):
         self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
 
-    def update_visited_destination(self, x_visited, y_visited, y_non_inverted_visited):
+    def update_visited_destination(self, x_visited, y_visited, y):
         self.main_window.car_widget.update_visited_destination(x_visited, y_visited)
-        self.visited.add(self.get_gl_coords(x_visited, y_non_inverted_visited))
+        self.visited.add(self.get_gl_coords(x_visited, y))
 
     def __del__(self):
         self.cleanup_gl_resources()
