@@ -229,7 +229,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         start_idx = int(np.argmin(dx * dx + dy * dy))
 
         # 5) for each subsequent node, check if it lands “on” a destination
-        tol = 0.01  # world‐unit tolerance—tweak as needed
+        tol = 0.1  # world‐unit tolerance—tweak as needed
         for offset in range(1, num_nodes + 1):
             idx = (start_idx + offset) % num_nodes
             node_x, node_y = xs[idx], ys[idx]
@@ -257,7 +257,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             if self.next_destination is not None:
                 gl_x, gl_y = self.get_gl_coords(*self.next_destination)
-                self.shader_renderer.draw_marker(gl_x, gl_y, (0.0, 1.0, 0.0, 1.0), 10.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_marker(gl_x, gl_y, (0.0, 1.0, 0.0, 1.0), 12.0, self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
