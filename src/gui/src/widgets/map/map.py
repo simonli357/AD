@@ -208,10 +208,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
 
-            for x, y in self.run_statistics.visited:
-                x_gl, y_gl = self.get_gl_coords(x, y - MapData.REAL_WORLD_HEIGHT.value)
-                self.shader_renderer.draw_circle(x_gl, y_gl, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
-
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
 
@@ -231,6 +227,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
+            elif entity_type == 'Destination':
+                if self.show_destinations and (row['X'], MapData.REAL_WORLD_HEIGHT - row['Y']) in self.run_statistics.visited:
+                    self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
