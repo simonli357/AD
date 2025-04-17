@@ -207,29 +207,23 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update_mouse_pos()
 
     def find_next_destination(self):
-        # 1) make sure we have both a car pose and a path
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
             return
         if self.state_refs_np is None:
             return
 
-        # 2) if we already picked a next_destination that's still unvisited, bail
-        if getattr(self, 'next_destination', None) is not None \
-           and self.next_destination not in self.run_statistics.visited:
+        if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.run_statistics.visited:
             return
 
-        # 3) unpack your sequence of path‐nodes
-        xs = self.state_refs_np[0, :]   # X coords
-        ys = self.state_refs_np[1, :]   # Y coords
+        xs = self.state_refs_np[0, :]
+        ys = self.state_refs_np[1, :]
         num_nodes = xs.shape[0]
 
-        # 4) find the node nearest the car
         dx = xs - self.car_x
         dy = ys - self.car_y
         start_idx = int(np.argmin(dx * dx + dy * dy))
 
-        # 5) for each subsequent node, check if it lands “on” a destination
-        tol = 0.1  # world‐unit tolerance—tweak as needed
+        tol = 0.1
         for offset in range(1, num_nodes + 1):
             idx = (start_idx + offset) % num_nodes
             node_x, node_y = xs[idx], ys[idx]
@@ -243,7 +237,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.next_destination = (dest_x, dest_y)
                     return
 
-        # if we got here, none of the nodes was close enough—clear it
         self.next_destination = None
 
     def draw_gt(self):
