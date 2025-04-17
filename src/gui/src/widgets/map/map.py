@@ -208,9 +208,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
-            for x, y in self.visited:
-                print(x, y)
-                self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+
+        for x, y in self.visited:
+            print(x, y)
+            self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
