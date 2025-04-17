@@ -210,7 +210,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def find_next_destination(self):
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
             return
-        if self.state_refs_np is None or not hasattr(self, '_refs_len'):
+        if self.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
             return
 
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.run_statistics.visited:
@@ -591,9 +591,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     path = os.path.dirname(os.path.abspath(__file__))
                     np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
-                    self._refs_len = self.state_refs_np.shape[0]
                     self._refs_xs = self.state_refs_np[0, :].copy()
                     self._refs_ys = self.state_refs_np[1, :].copy()
+                    self._refs_len = self._refs_xs.shape[0]
                     return TriggerResponse(success=True, message="Parameters updated")
                 retries += 1
                 time.sleep(0.1)
