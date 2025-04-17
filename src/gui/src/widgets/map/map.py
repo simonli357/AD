@@ -94,7 +94,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.car_yaw = 0
 
-        self.destinations = self.map_widget.data[self.map_widget.data['Type'] == 'Destination']
+        self.destinations = self.data[self.data['Type'] == 'Destination']
         self.next_destination = None
 
         self.sign_images = []
