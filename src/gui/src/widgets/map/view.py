@@ -97,7 +97,7 @@ class HidableOverlay(QWidget):
             x = row['X']
             y = row['Y']
             y_inverted = MapData.REAL_WORLD_HEIGHT.value - row['Y']
-            if self.is_near(car_x, car_y, x, y, 0.1, 0.1):
+            if self.is_near(car_x, car_y, x, y_inverted, 0.1, 0.1):
                 self.visited.add((x, y))
                 self.set_dest_visited_num(len(self.visited))
                 self.map_widget.update_visited_destination(x, y_inverted)
