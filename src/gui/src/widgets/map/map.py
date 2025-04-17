@@ -93,6 +93,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.base_view_center = glm.vec2(self.view_center)
 
         self.car_yaw = 0
+        self.visited = set()
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -207,6 +208,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
+            for x, y in self.visited:
+                self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
 
         for index, row in self.data.iterrows():
             entity_type, orientation = row['Type'], row['Orientation']
@@ -227,9 +230,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 if self.show_cars:
                     self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
-            elif entity_type == 'Destination':
-                if self.show_destinations and (row['X'], MapData.REAL_WORLD_HEIGHT.value - row['Y']) in self.run_statistics.visited:
-                    self.shader_renderer.draw_circle(x, y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
@@ -452,6 +452,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def update_visited_destination(self, x_visited, y_visited):
         self.main_window.car_widget.update_visited_destination(x_visited, y_visited)
+        self.visited.add(self.get_gl_coords(x_visited, MapData.REAL_WORLD_HEIGHT.value - y_visited))
 
     def __del__(self):
         self.cleanup_gl_resources()
