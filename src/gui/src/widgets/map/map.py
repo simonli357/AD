@@ -487,6 +487,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def update_waypoints(self):
         if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
             self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
+            self._refs_xs = self.state_refs_np[0, :].copy()
+            self._refs_ys = self.state_refs_np[1, :].copy()
+            self._refs_len = self._refs_xs.shape[0]
 
     def update_destinations(self):
         self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
@@ -589,9 +592,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     path = os.path.dirname(os.path.abspath(__file__))
                     np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
-                    self._refs_xs = self.state_refs_np[0, :].copy()
-                    self._refs_ys = self.state_refs_np[1, :].copy()
-                    self._refs_len = self._refs_xs.shape[0]
                     return TriggerResponse(success=True, message="Parameters updated")
                 retries += 1
                 time.sleep(0.1)
