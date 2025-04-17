@@ -485,7 +485,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         return world_x, world_y
 
     def update_waypoints(self):
-        if hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
+        if self.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
             self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
             self._refs_xs = self.state_refs_np[0, :].copy()
             self._refs_ys = self.state_refs_np[1, :].copy()
