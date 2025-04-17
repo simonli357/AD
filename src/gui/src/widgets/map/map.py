@@ -626,6 +626,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                    self.main_window.run_overlay.set_path_name(run.path_name)
                     self.run_statistics.dist_traveled = 0
                     self.run_statistics.set_distance_traveled()
                     self.run_statistics.visited.clear()
