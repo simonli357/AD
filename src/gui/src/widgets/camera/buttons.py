@@ -177,12 +177,12 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
-                    self.main_window.map_widget.update_waypoints()
                     self.main_window.map_widget.run_statistics.dist_traveled = 0
                     self.main_window.map_widget.run_statistics.set_distance_traveled()
                     self.main_window.map_widget.run_statistics.visited.clear()
                     self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
                     self.main_window.map_widget.run_statistics.set_total_path_distance()
+                    self.main_window.map_widget.update_waypoints()
                     self.main_window.map_widget.next_destination = None
                     return
                 retries += 1
@@ -199,6 +199,9 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.main_window.map_widget.run_statistics.set_distance_traveled()
             self.main_window.map_widget.run_statistics.visited.clear()
             self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
+            self.main_window.map_widget.run_statistics.set_total_path_distance()
+            self.main_window.map_widget.update_waypoints()
+            self.main_window.map_widget.next_destination = None
             self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
