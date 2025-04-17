@@ -8,7 +8,7 @@ uniform float cellSize; // meters per cell, e.g. 0.05
 out vec4 FragColor;
 
 // how far out the grid still shows (in world meters)
-const float MAX_DIST = 2.5;
+const float MAX_DIST = 3.5;
 
 void main() {
     // ————— compute cell coords & signed offset from line center —————

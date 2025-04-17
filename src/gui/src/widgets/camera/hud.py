@@ -101,7 +101,9 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
         self.draw_detection_boxes()
         self.draw_lane_indicator()
-        self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.05)
+        # 10 x 10 cm grid
+        self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.1)
+        # 0.5 cm radius sphere at plane intersect
         self.shader_renderer.eye_model.draw(self.proj_mat, self.view_mat, self.extrinsic)
 
     def draw_detection_boxes(self):
