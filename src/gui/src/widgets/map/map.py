@@ -229,12 +229,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 idx = (start_idx + offset) % num_nodes
                 node_x, node_y = xs[idx], ys[idx]
 
-                # test every destination
                 for _, row in self.destinations.iterrows():
                     dest_x = row['X']
-                    dest_y = row['Y']  # raw‐Y per your get_gl_coords convention
+                    dest_y = row['Y']
                     if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
-                        # found it!
                         self.next_destination = (dest_x, dest_y)
                         return
 
