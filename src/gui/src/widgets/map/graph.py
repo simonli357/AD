@@ -26,7 +26,9 @@ class Shapes:
 
 
 class GraphEditor:
-    def __init__(self):
+    def __init__(self, map_widget):
+        self.map_widget = map_widget
+        self.shapes = Shapes()
         self.shader_renderer = ShaderRenderer(OpenGLContextName.GRAPH)
         self.instance_data = InstanceData()
         self.node_instance_renderer = None
@@ -37,15 +39,16 @@ class GraphEditor:
             return
         if len(self.instance_data.positions) == 0:
             self.update_instance_data()
-            self.node_instance_renderer = InstanceRenderer(self.node_base_vertices, self.instance_data.positions)
+            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions)
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
 
     def update_instance_data(self):
         for node_id, data in self.G.nodes(data=True):
             int_id = int(node_id.lstrip('n'))
-            x = float(data.get('x', 0))
-            y = float(data.get('y', 0))
+            x_real = float(data.get('x', 0))
+            y_real = float(data.get('y', 0))
+            x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
