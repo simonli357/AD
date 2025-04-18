@@ -1,6 +1,6 @@
 from ..opengl.shader import ShaderRenderer
 from ..opengl.renderer import InstanceRenderer
-from ..enums import OpenGLContextName
+from ..enums import OpenGLContextName, NamedColor
 from networkx import DiGraph
 
 import numpy as np
@@ -39,7 +39,7 @@ class GraphEditor:
             return
         if len(self.instance_data.positions) == 0:
             self.update_instance_data()
-            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions)
+            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value)
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
 
