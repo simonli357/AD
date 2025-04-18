@@ -120,108 +120,67 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 	return result;
 }
 
-Graph SplineUtils::interpolate_graph(const Graph &graph, double density, double hwDensityFactor, double cwDensityFactor, double smoothFactor) {
+Graph SplineUtils::interpolate_graph(const Graph &graph, double density, double hwDensityFactor, double cwDensityFactor, double smooth_factor) {
 	using namespace boost;
 	Graph result;
-
-	// Nothing to do on empty graph
-	size_t N = num_vertices(graph);
-	if (N == 0)
+	if (num_vertices(graph) == 0)
 		return result;
-
-	// 1) DFS to get a visit order covering all vertices (including disconnected)
-	std::vector<bool> visited(N, false);
-	std::vector<VD> visitOrder;
-	visitOrder.reserve(N);
-
-	std::function<void(VD)> dfs = [&](VD u) {
-		visited[u] = true;
-		visitOrder.push_back(u);
-		for (auto [oe, oe_end] = out_edges(u, graph); oe != oe_end; ++oe) {
-			VD v = target(*oe, graph);
-			if (!visited[v])
-				dfs(v);
-		}
-	};
-	for (auto [vi, vi_end] = vertices(graph); vi != vi_end; ++vi) {
-		if (!visited[*vi])
-			dfs(*vi);
-	}
-
-	// 2) Extract raw vertex data in visit order
-	std::vector<Vertex> raw;
-	raw.reserve(visitOrder.size());
-	for (VD u : visitOrder)
-		raw.push_back(graph[u]);
-
-	// 3) Fit entire path and sample via existing interpolate_path
-	std::vector<Vertex> samples = interpolate_path(raw, density, hwDensityFactor, cwDensityFactor, smoothFactor);
-
-	// 4) Map each original vertex index -> nearest sample index
-	std::vector<size_t> sampleIndex(visitOrder.size());
-	for (size_t i = 0; i < visitOrder.size(); ++i) {
-		const auto &orig = raw[i];
-		double bestDist2 = std::numeric_limits<double>::infinity();
-		size_t bestIdx = 0;
-		for (size_t j = 0; j < samples.size(); ++j) {
-			double dx = samples[j].x - orig.x;
-			double dy = samples[j].y - orig.y;
-			double d2 = dx * dx + dy * dy;
-			if (d2 < bestDist2) {
-				bestDist2 = d2;
-				bestIdx = j;
-			}
-		}
-		sampleIndex[i] = bestIdx;
-	}
-
-	// 5) Copy original vertices into result graph
-	std::vector<VD> old2new(N);
+	std::vector<VD> old2new(num_vertices(graph));
 	for (auto [vi, vi_end] = vertices(graph); vi != vi_end; ++vi) {
 		old2new[*vi] = add_vertex(graph[*vi], result);
 	}
-
-	// 6) For each original edge, subdivide along the sampled spline
 	for (auto [ei, ei_end] = edges(graph); ei != ei_end; ++ei) {
 		VD u = source(*ei, graph);
 		VD v = target(*ei, graph);
-		// find positions in visitOrder
-		auto it_u = std::find(visitOrder.begin(), visitOrder.end(), u);
-		auto it_v = std::find(visitOrder.begin(), visitOrder.end(), v);
-		size_t idx_u = std::distance(visitOrder.begin(), it_u);
-		size_t idx_v = std::distance(visitOrder.begin(), it_v);
-		size_t s0 = sampleIndex[idx_u];
-		size_t s1 = sampleIndex[idx_v];
-		if (s1 < s0)
-			std::swap(s0, s1);
-
-		// If no subdivision needed, copy edge directly
-		if (s0 == s1) {
-			Edge eprop;
-			const auto &A = result[old2new[u]];
-			const auto &B = result[old2new[v]];
-			eprop.distance = std::hypot(B.x - A.x, B.y - A.y);
+		const auto &Vu = graph[u];
+		const auto &Vv = graph[v];
+		double dx = Vv.x - Vu.x;
+		double dy = Vv.y - Vu.y;
+		double length = std::hypot(dx, dy);
+		if (length <= 0) {
+			Edge eprop{0.0};
 			add_edge(old2new[u], old2new[v], eprop, result);
 			continue;
 		}
-
-		// Otherwise, add intermediate vertices
-		VD prev = old2new[u];
-		for (size_t k = s0 + 1; k <= s1; ++k) {
-			VD curr;
-			if (k == s1) {
-				curr = old2new[v];
-			} else {
-				curr = add_vertex(samples[k], result);
-			}
-			Edge eprop;
-			const auto &A = result[prev];
-			const auto &B = result[curr];
-			eprop.distance = std::hypot(B.x - A.x, B.y - A.y);
-			add_edge(prev, curr, eprop, result);
-			prev = curr;
+		double effD = length * density;
+		switch (Vu.attribute) {
+		case ATTRIBUTE::CROSSWALK:
+			effD *= cwDensityFactor;
+			break;
+		case ATTRIBUTE::HIGHWAY_LEFT:
+		case ATTRIBUTE::HIGHWAY_RIGHT:
+			effD /= hwDensityFactor;
+			break;
+		default:
+			break;
+		}
+		int segments = std::max(1, static_cast<int>(std::ceil(effD)));
+		if (segments == 1) {
+			Edge eprop{length};
+			add_edge(old2new[u], old2new[v], eprop, result);
+			continue;
+		}
+		std::vector<VD> chain;
+		chain.push_back(old2new[u]);
+		for (int i = 1; i < segments; ++i) {
+			double alpha = double(i) / segments;
+			Vertex mid = Vu;
+			mid.x = Vu.x + alpha * dx;
+			mid.y = Vu.y + alpha * dy;
+			mid.tangent_angle = std::atan2(dy, dx);
+			mid.normal_angle = mid.tangent_angle + M_PI / 2.0;
+			mid.curvature = 0.0;
+			VD newV = add_vertex(mid, result);
+			chain.push_back(newV);
+		}
+		chain.push_back(old2new[v]);
+		for (size_t j = 0; j + 1 < chain.size(); ++j) {
+			const auto &A = result[chain[j]];
+			const auto &B = result[chain[j + 1]];
+			double d = std::hypot(B.x - A.x, B.y - A.y);
+			Edge eprop{d};
+			add_edge(chain[j], chain[j + 1], eprop, result);
 		}
 	}
-
 	return result;
 }
