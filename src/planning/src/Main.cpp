@@ -1,15 +1,18 @@
 #include "PathPlanner.hpp"
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <cmath>
 #include <gazebo_msgs/ModelState.h>
 #include <gazebo_msgs/SetModelState.h>
 #include <random>
+#include <ros/duration.h>
 #include <ros/init.h>
 #include <ros/node_handle.h>
 #include <ros/service.h>
 
 using Graph = PathPlanner::Graph;
 using Vertex = PathPlanner::Vertex;
+using Edge = PathPlanner::Edge;
 using VD = boost::graph_traits<Graph>::vertex_descriptor;
 
 void teleportCar(ros::ServiceClient &client, const Vertex &vtx) {
@@ -33,7 +36,6 @@ int main(int argc, char **argv) {
 	ros::ServiceClient teleport_client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
 	teleport_client.waitForExistence();
 
-	// Random number generator for vertex selection
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
@@ -43,26 +45,48 @@ int main(int argc, char **argv) {
 
 	VD current = vertices_vec[gen() % vertices_vec.size()];
 
-	ros::Rate rate(10); // 10 Hz teleport rate
-
+	std::vector<VD> path;
+	// Traverse a path through the graph
 	while (ros::ok()) {
-		teleportCar(teleport_client, map[current]);
-		ros::spinOnce();
-
-		// Choose next vertex ensuring it has outgoing edges
-		std::vector<VD> next_options;
-		for (auto ep = out_edges(current, map); ep.first != ep.second; ++ep.first)
-			next_options.push_back(target(*ep.first, map));
-
-		if (next_options.empty()) {
-			// If dead end, pick a new random vertex
-			current = vertices_vec[gen() % vertices_vec.size()];
-		} else {
-			current = next_options[gen() % next_options.size()];
+		// Walk until we hit a junction or dead-end
+		path.clear();
+		path.push_back(current);
+		while (true) {
+			auto [out_begin, out_end] = out_edges(current, map);
+			if (std::distance(out_begin, out_end) != 1)
+				break;
+			VD next = target(*out_begin, map);
+			path.push_back(next);
+			current = next;
 		}
 
-		rate.sleep();
-	}
+		// Walk the smoothed segment with interpolation
+		for (size_t i = 0; i + 1 < path.size() && ros::ok(); ++i) {
+			const Vertex &v0 = map[path[i]];
+			const Vertex &v1 = map[path[i + 1]];
 
-	return 0;
+			double dx = v1.x - v0.x;
+			double dy = v1.y - v0.y;
+			double dist = std::sqrt(dx * dx + dy * dy);
+
+			double vref = std::max(v0.vref, 1.0);
+			double duration = dist / vref;
+
+			int steps = std::max(1, static_cast<int>(duration / 0.02));
+			for (int s = 0; s <= steps && ros::ok(); ++s) {
+				double alpha = static_cast<double>(s) / steps;
+				Vertex interp;
+				interp.x = v0.x + alpha * dx;
+				interp.y = v0.y + alpha * dy;
+				interp.tangent_angle = std::atan2(dy, dx);
+				teleportCar(teleport_client, interp);
+				ros::Duration(0.02).sleep();
+			}
+		}
+
+		// Choose a new random point after one chain finishes
+		current = vertices_vec[gen() % vertices_vec.size()];
+        teleportCar(teleport_client, map[current]);
+        ros::Duration(1.0).sleep();
+	}
 }
