@@ -93,6 +93,7 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x08); // Start Srv
 	tcp_data_types.push_back(0x09); // Params
 	tcp_data_types.push_back(0x0a); // Run params
+	tcp_data_types.push_back(0x0b); // Graph
 }
 
 void TcpClient::set_udp_data_types() {
@@ -204,6 +205,7 @@ void TcpClient::listen() {
 		}
 	}
     run_sent = false;
+    graph_sent = false;
 	tcp_can_send = false;
 }
 
@@ -267,6 +269,19 @@ void TcpClient::send_string(const std::string &str) {
 		std::vector<uint8_t> full_message(total_size);
 		std::memcpy(full_message.data(), &length, message_size);
 		full_message[4] = tcp_data_types[0];
+		std::memcpy(full_message.data() + header_size, str.data(), length);
+		send(tcp_socket, full_message.data(), full_message.size(), 0);
+	};
+	add_stream_task(std::move(fn));
+}
+
+void TcpClient::send_string(const std::string &str, uint8_t datatype) {
+	auto fn = [this, str, datatype]() {
+		uint32_t length = str.size();
+		size_t total_size = header_size + length;
+		std::vector<uint8_t> full_message(total_size);
+		std::memcpy(full_message.data(), &length, message_size);
+		full_message[4] = datatype;
 		std::memcpy(full_message.data() + header_size, str.data(), length);
 		send(tcp_socket, full_message.data(), full_message.size(), 0);
 	};
@@ -359,9 +374,14 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 	auto fn = [this, v_ref, path_name, x_init, y_init, yaw_init]() {
 		std::vector<uint8_t> bytes = RunMsg(v_ref, path_name, x_init, y_init, yaw_init).serialize(tcp_data_types[9]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
-		run_sent = true;
 	};
 	add_stream_task(std::move(fn));
+    run_sent = true;
+}
+
+void TcpClient::send_graph(const std::string &graph) {
+    send_string(graph, tcp_data_types[10]);
+    graph_sent = true;
 }
 
 // ------------------- //
@@ -504,6 +524,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	}
     if (decoded_string == "refresh_run") {
         run_sent = false;
+        graph_sent = false;
         std::cout << "Resending Run Parameters to GUI" << std::endl;
         return;
     }

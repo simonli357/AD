@@ -8,7 +8,7 @@
 
 class PathPlanner {
   public:
-	PathPlanner();
+	PathPlanner(double vref, int N, double T);
 	PathPlanner(PathPlanner &&) = default;
 	PathPlanner(const PathPlanner &) = default;
 	PathPlanner &operator=(PathPlanner &&) = default;
@@ -28,15 +28,17 @@ class PathPlanner {
 	std::string name;
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
+	Track::Graph condensed_graph;
+	std::string serialized_condensed_graph;
 
 	double density;
-    double hw_density_factor = 4.0 / 3.0;
-    double cw_density_factor = 3.0 / 2.0;
-    double distance_threshold;
-    double yaw_threshold = 60 * M_PI / 180;
+	double hw_density_factor = 4.0 / 3.0;
+	double cw_density_factor = 3.0 / 2.0;
+	double distance_threshold;
+	double yaw_threshold = 60 * M_PI / 180;
 
-	void set_constraints(double vref, int N, int T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
-	void set_constraints(double vref, int N, int T, double start_x, double start_y, std::string name);
+	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
+	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name);
 	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
 
   private:

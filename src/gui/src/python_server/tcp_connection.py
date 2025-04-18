@@ -1,5 +1,8 @@
 import threading
 import struct
+import io
+import networkx as nx
+
 from collections import OrderedDict, deque
 from std_msgs.msg import String
 from python_server.service_calls.go_to_srv import GoToSrv
@@ -28,6 +31,7 @@ class TcpConnection:
                 b'\x08': self.parse_start_srv,
                 b'\x09': self.parse_params,
                 b'\x0a': self.parse_run,
+                b'\x0b': self.parse_graph,
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -40,6 +44,7 @@ class TcpConnection:
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
             self.params = ParamsMsg(b'\x09')
+            self.graph_node = None
             self.receiver = threading.Thread(target=self.receive, daemon=True)
             self.receiver.start()
             self.send_string("ack")
@@ -48,7 +53,7 @@ class TcpConnection:
         data = b""
         try:
             while len(data) < length:
-                chunk = self.socket.recv(min(4096, length - len(data)))
+                chunk = self.socket.recv(min(8388608, length - len(data)))
                 if not chunk:
                     raise ConnectionError("Connection lost")
                 data += chunk
@@ -178,5 +183,16 @@ class TcpConnection:
     def parse_run(self, bytes):
         try:
             self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
+        except Exception as e:
+            print(e)
+
+    def parse_graph(self, bytes):
+        try:
+            def async_task():
+                graphml_str = bytes.decode('utf-8')
+                print(graphml_str)
+                buf = io.StringIO(graphml_str)
+                self.graph_node = nx.read_graphml(buf)
+            threading.Thread(target=async_task, daemon=True).start()
         except Exception as e:
             print(e)

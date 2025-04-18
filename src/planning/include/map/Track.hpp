@@ -44,20 +44,20 @@ class Track {
 
 	using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, Vertex, Edge>;
 
+	Graph graph;
+	double hw_safety_offset = 0.05;
+
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
 	Vertex find_node(int id);
 	double sqrt_dist(double x, double y, const Vertex &dest);
 	double sqrt_dist(const Vertex &src, const Vertex &dest);
 
+	std::string serialize_graph(Graph &graph);
 	void print_path(const std::vector<Vertex> &path);
 	void print_graph();
 
   private:
-	Graph graph;
-
-	double hw_safety_offset = 0.05;
-
 	std::unordered_map<int, Track::Graph::vertex_descriptor> build_to_vertex_map();
 
 	void read_graph();

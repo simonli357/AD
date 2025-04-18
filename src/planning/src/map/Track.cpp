@@ -205,30 +205,30 @@ std::vector<Track::Vertex> Track::dikstra(int src, int tgt) {
 }
 
 Track::Vertex Track::find_closest_node(double pos_x, double pos_y) {
-    double best_dist = std::numeric_limits<double>::max();
-    Vertex best_node;
+	double best_dist = std::numeric_limits<double>::max();
+	Vertex best_node;
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
-        double dist = sqrt_dist(pos_x, pos_y, vertex);
-        if (dist < best_dist) {
-            best_node = vertex;
-            best_dist = dist;
-        }
+		double dist = sqrt_dist(pos_x, pos_y, vertex);
+		if (dist < best_dist) {
+			best_node = vertex;
+			best_dist = dist;
+		}
 	}
-    return best_node;
+	return best_node;
 }
 
 Track::Vertex Track::find_node(int id) {
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
-        if (vertex.id == id) {	
-            return vertex;
-        }
-    }
-    std::cerr << "Node not found" << std::endl;
-    exit(1);
+		if (vertex.id == id) {
+			return vertex;
+		}
+	}
+	std::cerr << "Node not found" << std::endl;
+	exit(1);
 }
 
 double Track::sqrt_dist(double x, double y, const Vertex &dest) {
@@ -241,6 +241,23 @@ double Track::sqrt_dist(const Vertex &src, const Vertex &dest) {
 	double dx = dest.x - src.x;
 	double dy = dest.y - src.y;
 	return std::sqrt(dx * dx + dy * dy);
+}
+
+std::string Track::serialize_graph(Graph &graph) {
+	boost::dynamic_properties dp;
+	dp.property("id", get(&Vertex::id, graph));
+	dp.property("x", get(&Vertex::x, graph));
+	dp.property("y", get(&Vertex::y, graph));
+	dp.property("tangent", get(&Vertex::tangent_angle, graph));
+	dp.property("normal", get(&Vertex::normal_angle, graph));
+	dp.property("curv", get(&Vertex::curvature, graph));
+	dp.property("vref", get(&Vertex::vref, graph));
+	dp.property("steer", get(&Vertex::steer_ref, graph));
+	dp.property("attr", get(&Vertex::attribute, graph));
+	dp.property("dist", get(&Edge::distance, graph));
+	std::ostringstream out;
+	write_graphml(out, graph, dp, true);
+	return out.str();
 }
 
 void Track::print_path(const std::vector<Vertex> &path) {

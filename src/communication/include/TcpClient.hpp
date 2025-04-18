@@ -38,6 +38,7 @@ class TcpClient {
 	// Fields
 	bool tcp_can_send = false;
 	bool run_sent = false;
+	bool graph_sent = false;
 	// Methods
 	void initialize();
 	// Storage
@@ -52,6 +53,7 @@ class TcpClient {
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
+	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
 	void send_image_rgb(const cv::Mat &img, int quality = 30);
 	void send_current_rgb_image();
@@ -71,6 +73,7 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
+	void send_graph(const std::string &graph);
 
   private:
 	// Fields
@@ -78,7 +81,7 @@ class TcpClient {
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
 	std::string client_type;
-	const size_t buffer_size = 1024;
+	const size_t buffer_size = 8388608; // 8 MB for graph
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	const uint32_t MAX_DGRAM = 65507;
