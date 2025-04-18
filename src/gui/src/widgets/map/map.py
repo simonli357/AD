@@ -508,6 +508,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update_destinations()
 
     def mouseDoubleClickEvent(self, event):
+        if self.show_graph:
+            return
         x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
         self.cursor_coords.append((x_world, y_world))
         self.cursor_x = x_world
