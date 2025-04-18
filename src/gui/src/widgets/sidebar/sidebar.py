@@ -28,7 +28,7 @@ class SidebarWidget(QtWidgets.QWidget):
         self.toggle_cars_btn = QtWidgets.QPushButton("󰭮")
         self.toggle_destinations_btn = QtWidgets.QPushButton("󰍐")
         self.toggle_path_btn = QtWidgets.QPushButton("󰴠")
-        self.toggle_gt_btn = QtWidgets.QPushButton("󰃬")
+        self.toggle_gt_btn = QtWidgets.QPushButton("󰒕")
         self.toggle_depth_btn = QtWidgets.QPushButton("󰤽")
         self.toggle_graph_editor_btn = QtWidgets.QPushButton("")
         self.fetch_run_btn = QtWidgets.QPushButton("󱑤")
