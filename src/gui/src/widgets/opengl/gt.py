@@ -1,5 +1,5 @@
 import OpenGL.GL as gl
-from .shader import create_shader_program, shader_path
+from .utils import create_shader_program, shader_path
 from ..enums import MapData
 
 import numpy as np

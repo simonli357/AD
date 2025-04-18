@@ -1,6 +1,6 @@
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
-from .shader import create_shader_program, shader_path
+from .utils import create_shader_program, shader_path
 from ..enums import MapData
 import numpy as np
 import glm
