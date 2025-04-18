@@ -41,7 +41,7 @@ class GraphEditor:
             return
         if len(self.instance_data.positions) == 0:
             self.update_instance_data()
-            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=8.0, shader_program=self.node_shader)
+            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=8.0, shader_program=self.shapes.node_shader)
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
 
