@@ -95,7 +95,8 @@ int main(int argc, char **argv) {
 
 	// 3) Drive that cycle forever
 	size_t idx = 0;
-	ros::Rate rate(50); // 50Hz → 0.02s steps
+	ros::Rate rate(30); // 50Hz → 0.02s steps
+    double rate_s = 1.0 / 30.0;
 	while (ros::ok()) {
 		VD u = cycle[idx];
 		VD v = cycle[(idx + 1) % cycle.size()];
@@ -107,7 +108,7 @@ int main(int argc, char **argv) {
 		double dist = std::hypot(dx, dy);
 		double vref = std::max(V0.vref, 1.0);
 		double dur = dist / vref;
-		int steps = std::max(1, int(dur / 0.02));
+		int steps = std::max(1, int(dur / rate_s));
 
 		for (int s = 0; s <= steps && ros::ok(); ++s) {
 			double a = double(s) / steps;
