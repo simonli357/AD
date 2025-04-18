@@ -7,7 +7,6 @@ import threading
 import signal
 import cv2
 
-from networkx import Graph
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets, QtGui
@@ -40,7 +39,7 @@ class CommunicationHandler(QObject):
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
-    graph_signal = pyqtSignal(Graph)
+    graph_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
