@@ -174,9 +174,9 @@ class ButtonsWidget(QtWidgets.QWidget):
             res = self.server.utility_node_client.go_to_cmd_srv_msg
             while (retries < max_retries):
                 if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.main_window.map_widget.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
-                    self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
-                    print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
+                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
+                    print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name('run-custom')
                     self.main_window.reset_run_statistics()
                     return

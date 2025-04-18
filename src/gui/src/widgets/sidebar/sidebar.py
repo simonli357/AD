@@ -171,7 +171,7 @@ class SidebarWidget(QtWidgets.QWidget):
 
     def handle_save_path_btn_click(self) -> None:
         path = os.path.dirname(os.path.abspath(__file__))
-        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
+        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
         print("saved state refs")
 
     def handle_fetch_run_btn_click(self) -> None:
@@ -198,5 +198,3 @@ class SidebarWidget(QtWidgets.QWidget):
             print("Failed to set states")
         except Exception as e:
             print(e)
-
-

@@ -36,8 +36,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.show_nodes = False
         self.show_gt = True
         self.show_graph = False
-        self.state_refs_np = None
-        self.attributes_np = None
         self.sign_size = 20
 
         self.road_msg_length = 8
@@ -206,7 +204,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def find_next_destination(self):
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
             return
-        if self.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
+        if self.main_window.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
             return
 
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
@@ -480,10 +478,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         return world_x, world_y
 
     def update_waypoints(self):
-        if self.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
-            self.waypoints_renderer.update_waypoints(self.state_refs_np, self.attributes_np, self.width(), self.height())
-            self._refs_xs = self.state_refs_np[0, :].copy()
-            self._refs_ys = self.state_refs_np[1, :].copy()
+        if self.main_window.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
+            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, self.width(), self.height())
+            self._refs_xs = self.main_window.state_refs_np[0, :].copy()
+            self._refs_ys = self.main_window.state_refs_np[1, :].copy()
             self._refs_len = self._refs_xs.shape[0]
 
     def update_destinations(self):
@@ -572,13 +570,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             params = self.server.utility_node_client.params
             while (retries < max_retries):
                 if (len(params.state_refs) > 0 and len(params.attributes) > 0):
-                    self.state_refs_np = params.state_refs.popleft()
-                    self.attributes_np = params.attributes.popleft()
-                    print("state ref shape: ", self.state_refs_np.shape)
+                    self.main_window.state_refs_np = params.state_refs.popleft()
+                    self.main_window.attributes_np = params.attributes.popleft()
+                    print("state ref shape: ", self.main_window.state_refs_np.shape)
                     # print first 3 rows
-                    print("state ref: ", self.state_refs_np.T[:, :3])
+                    print("state ref: ", self.main_window.state_refs_np.T[:, :3])
                     path = os.path.dirname(os.path.abspath(__file__))
-                    np.savetxt(os.path.join(path, 'state_refs.txt'), self.state_refs_np.T, fmt='%.4f')
+                    np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
                     return TriggerResponse(success=True, message="Parameters updated")
                 retries += 1
@@ -611,9 +609,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             res = self.server.utility_node_client.waypoints_srv_msg
             while (retries < max_retries):
                 if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-                    self.attributes_np = np.array(res.wp_attributes.data)
-                    print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
+                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
+                    print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name(run.path_name)
                     self.main_window.reset_run_statistics()
                     return

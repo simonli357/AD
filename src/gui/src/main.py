@@ -66,6 +66,8 @@ class MainWindow(QMainWindow):
         self.server = server
         self.comm = CommunicationHandler()
         self.show_barca = False
+        self.state_refs_np = None
+        self.attributes_np = None
         self.destinations = []
         self.visited = set()
 
