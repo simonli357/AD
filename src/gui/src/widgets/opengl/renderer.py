@@ -1,12 +1,16 @@
 import OpenGL.GL as gl
 import numpy as np
 import glm
+
 from .utils import create_shader_program, shader_path
 
 
 class InstanceRenderer:
-    def __init__(self, base_vertices, positions, colors=(1.0, 1.0, 1.0, 1.0), rotations=None, scales=None):
-        self.prog = create_shader_program(shader_path('instance', 'instance.vert'), shader_path('instance', 'instance.frag'))
+    def __init__(self, base_vertices, positions, colors=(1.0, 1.0, 1.0, 1.0), rotations=None, scales=None, shader_program=None):
+        if shader_program is not None:
+            self.prog = shader_program
+        else:
+            self.prog = create_shader_program(shader_path('instance', 'instance.vert'), shader_path('instance', 'instance.frag'))
 
         self.positions = np.array(positions, dtype=np.float32)
         n = len(self.positions)

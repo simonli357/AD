@@ -1,5 +1,6 @@
 from ..opengl.shader import ShaderRenderer
 from ..opengl.renderer import InstanceRenderer
+from ..opengl.utils import create_shader_program, shader_path
 from ..enums import OpenGLContextName, NamedColor
 from networkx import DiGraph
 
@@ -14,6 +15,7 @@ class InstanceData:
 
 class Shapes:
     def __init__(self):
+        self.node_shader = create_shader_program(shader_path('node', 'node.vert'), shader_path('node', 'node.frag'))
         self.node_base_vertices = np.array([
             # Positions (3D for proper matrix transformations)
             [0.0, 0.5, 0.1],  # Top
@@ -39,7 +41,7 @@ class GraphEditor:
             return
         if len(self.instance_data.positions) == 0:
             self.update_instance_data()
-            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=5.0)
+            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=8.0, shader_program=self.node_shader)
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
 
