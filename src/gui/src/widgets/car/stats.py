@@ -11,6 +11,7 @@ class HidableOverlay(QWidget):
         self.setMouseTracking(True)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMaximumWidth(300)
         self.setStyleSheet("""
             background-color: transparent;
             border: none;
@@ -116,7 +117,7 @@ class HidableOverlay(QWidget):
         self.car_pose_label.setText(f"󰵉  x:{x:.2f} y:{(13.786 - y):.2f} z:{z:.1f}")
 
     def set_car_rotation(self, yaw, steer):
-        self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}  ")
+        self.car_rotation_label.setText(f"󰵗  yaw:{yaw:.2f} steer:{steer:.2f}")
 
     def update_global_rect(self):
         if self.parent():
