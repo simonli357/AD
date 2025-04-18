@@ -376,7 +376,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
         self.main_window.car_widget.set_car_data(self.car_yaw / np.pi * 180, car_speed, self.car_x, MapData.REAL_WORLD_HEIGHT.value - self.car_y, car_z)
-        self.run_statistics.set_car_pose(self.car_x, self.car_y, car_z)
         for i in range(len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]

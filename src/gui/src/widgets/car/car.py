@@ -58,6 +58,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
+        self.run_statistics.set_car_pose(x, y, z)
 
     def render_widget(self) -> None:
         self.update()
