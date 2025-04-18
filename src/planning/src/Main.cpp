@@ -1,6 +1,8 @@
 #include "PathPlanner.hpp"
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/exception.hpp>
 #include <boost/graph/graph_traits.hpp>
+#include <boost/graph/graph_utility.hpp>
 #include <cmath>
 #include <gazebo_msgs/ModelState.h>
 #include <gazebo_msgs/SetModelState.h>
@@ -27,66 +29,97 @@ void teleportCar(ros::ServiceClient &client, const Vertex &vtx) {
 	client.call(srv);
 }
 
+std::vector<VD> findRandomCycle(const Graph &g, VD start, std::mt19937 &gen) {
+	std::unordered_map<VD, int> visited;
+	std::vector<VD> path;
+	VD cur = start;
+
+	while (true) {
+		visited[cur] = path.size();
+		path.push_back(cur);
+
+		auto [out_i, out_end] = out_edges(cur, g);
+		if (out_i == out_end)
+			break; // dead‑end
+
+		std::advance(out_i, gen() % std::distance(out_i, out_end));
+		VD nxt = target(*out_i, g);
+
+		if (visited.count(nxt)) {
+			// extract the loop portion
+			int idx = visited[nxt];
+			return std::vector<VD>(path.begin() + idx, path.end());
+		}
+		cur = nxt;
+	}
+	return {}; // no cycle
+}
+
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "planning_node");
 	ros::NodeHandle nh;
+
 	PathPlanner planner(32, 40, 0.1);
 	Graph map = planner.condensed_graph;
 
-	ros::ServiceClient teleport_client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
-	teleport_client.waitForExistence();
+	auto tele_client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
+	tele_client.waitForExistence();
+
+	// build a list of all vertices
+	std::vector<VD> verts;
+	for (auto [vi, vi_end] = vertices(map); vi != vi_end; ++vi)
+		verts.push_back(*vi);
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	std::vector<VD> vertices_vec;
-	for (auto vp = vertices(map); vp.first != vp.second; ++vp.first)
-		vertices_vec.push_back(*vp.first);
+	// pick an arbitrary start
+	VD start = verts[gen() % verts.size()];
 
-	VD current = vertices_vec[gen() % vertices_vec.size()];
+	std::vector<VD> cycle;
+    std::vector<VD> best;
+    // try N random starts and keep the longest
+    for (int i = 0; i < 200; ++i) {
+        VD s = verts[gen() % verts.size()];
+        auto c = findRandomCycle(map, s, gen);
+        if (c.size() > best.size())
+            best = std::move(c);
+    }
+    cycle = std::move(best);
+    ROS_INFO("Longest random cycle has length %zu", cycle.size());
 
-	std::vector<VD> path;
-	// Traverse a path through the graph
-	while (ros::ok()) {
-		// Walk until we hit a junction or dead-end
-		path.clear();
-		path.push_back(current);
-		while (true) {
-			auto [out_begin, out_end] = out_edges(current, map);
-			if (std::distance(out_begin, out_end) != 1)
-				break;
-			VD next = target(*out_begin, map);
-			path.push_back(next);
-			current = next;
-		}
-
-		// Walk the smoothed segment with interpolation
-		for (size_t i = 0; i + 1 < path.size() && ros::ok(); ++i) {
-			const Vertex &v0 = map[path[i]];
-			const Vertex &v1 = map[path[i + 1]];
-
-			double dx = v1.x - v0.x;
-			double dy = v1.y - v0.y;
-			double dist = std::sqrt(dx * dx + dy * dy);
-
-			double vref = std::max(v0.vref, 1.0);
-			double duration = dist / vref;
-
-			int steps = std::max(1, static_cast<int>(duration / 0.02));
-			for (int s = 0; s <= steps && ros::ok(); ++s) {
-				double alpha = static_cast<double>(s) / steps;
-				Vertex interp;
-				interp.x = v0.x + alpha * dx;
-				interp.y = v0.y + alpha * dy;
-				interp.tangent_angle = std::atan2(dy, dx);
-				teleportCar(teleport_client, interp);
-				ros::Duration(0.02).sleep();
-			}
-		}
-
-		// Choose a new random point after one chain finishes
-		current = vertices_vec[gen() % vertices_vec.size()];
-        teleportCar(teleport_client, map[current]);
-        ros::Duration(1.0).sleep();
+	if (cycle.empty()) {
+		ROS_ERROR("No cycle found in the graph at all!");
+		return 1;
 	}
+
+	// 3) Drive that cycle forever
+	size_t idx = 0;
+	ros::Rate rate(50); // 50Hz → 0.02s steps
+	while (ros::ok()) {
+		VD u = cycle[idx];
+		VD v = cycle[(idx + 1) % cycle.size()];
+
+		// straight‐line interpolation exactly as before
+		const auto &V0 = map[u];
+		const auto &V1 = map[v];
+		double dx = V1.x - V0.x, dy = V1.y - V0.y;
+		double dist = std::hypot(dx, dy);
+		double vref = std::max(V0.vref, 1.0);
+		double dur = dist / vref;
+		int steps = std::max(1, int(dur / 0.02));
+
+		for (int s = 0; s <= steps && ros::ok(); ++s) {
+			double a = double(s) / steps;
+			Vertex p;
+			p.x = V0.x + a * dx;
+			p.y = V0.y + a * dy;
+			p.tangent_angle = std::atan2(dy, dx);
+			teleportCar(tele_client, p);
+			rate.sleep();
+		}
+
+		idx = (idx + 1) % cycle.size();
+	}
+	return 0;
 }
