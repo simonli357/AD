@@ -30,10 +30,8 @@ class PathPlanner {
 	std::string name;
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
-	Track::Graph condensed_graph;
 
 	std::string serialized_graph = track.serialize_graph(track.graph);
-	std::string serialized_condensed_graph;
 
 	double density;
 	double hw_density_factor = 4.0 / 3.0;

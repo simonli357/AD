@@ -5,8 +5,6 @@
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
     this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
-	condensed_graph = spline_utils.interpolate_graph(track.graph, density, hw_density_factor, cw_density_factor);
-	/* serialized_condensed_graph = track.serialize_graph(condensed_graph); */
 }
 
 void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {

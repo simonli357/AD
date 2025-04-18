@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 	ros::NodeHandle nh;
 
 	PathPlanner planner(32, 40, 0.1);
-	Graph map = planner.condensed_graph;
+	Graph map = planner.track.graph;
 
 	// build a list of all vertices
 	std::vector<VD> verts;
