@@ -33,8 +33,8 @@ class Track {
 		double tangent_angle = 0;
 		double normal_angle = 0;
 		double curvature = 0;
-        double vref = 0;
-        double steer_ref = 0;
+		double vref = 0;
+		double steer_ref = 0;
 		ATTRIBUTE attribute;
 	};
 
@@ -46,7 +46,7 @@ class Track {
 
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
-    Vertex find_node(int id);
+	Vertex find_node(int id);
 	double sqrt_dist(double x, double y, const Vertex &dest);
 	double sqrt_dist(const Vertex &src, const Vertex &dest);
 
