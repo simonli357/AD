@@ -95,8 +95,8 @@ int main(int argc, char **argv) {
 
 	// 3) Drive that cycle forever
 	size_t idx = 0;
-	ros::Rate rate(30); // 50Hz → 0.02s steps
-    double rate_s = 1.0 / 30.0;
+	ros::Rate rate(250);
+    double rate_s = 1.0 / 250.0;
 	while (ros::ok()) {
 		VD u = cycle[idx];
 		VD v = cycle[(idx + 1) % cycle.size()];
