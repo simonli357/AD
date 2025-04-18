@@ -85,10 +85,23 @@ class InstanceRenderer:
         for i, pos in enumerate(self.positions):
             m = glm.mat4(1.0)
             m = glm.translate(m, glm.vec3(*pos))
+
             if self.rotations is not None:
-                m = glm.rotate(*self.rotations[i])
+                r = self.rotations[i]
+                if hasattr(r, "__len__") and len(r) == 4:
+                    angle, x, y, z = r
+                    m = glm.rotate(m, float(angle), glm.vec3(x, y, z))
+                else:
+                    angle = float(r)
+                    m = glm.rotate(m, angle, glm.vec3(0, 0, 1))
             if self.scales is not None:
-                m = glm.scale(*self.scales[i])
+                s = self.scales[i]
+                if hasattr(s, "__len__") and len(s) == 3:
+                    sx, sy, sz = s
+                    m = glm.scale(m, glm.vec3(float(sx), float(sy), float(sz)))
+                else:
+                    u = float(s)
+                    m = glm.scale(m, glm.vec3(u, u, u))
             self.mats[i] = np.array(m.to_list(), dtype=np.float32)
 
     def render(self, proj_mat, view_mat):
