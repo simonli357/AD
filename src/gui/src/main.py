@@ -220,7 +220,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-                if self.server.utility_node_client.graph_node is not None:
+                if self.server.utility_node_client.graph_msg:
                     graph = self.server.utility_node_client.graph_msg.popleft()
                     self.comm.graph_signal.emit(graph)
             self.render_callbacks()
