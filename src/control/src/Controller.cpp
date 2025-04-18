@@ -112,7 +112,7 @@ public:
                 utils.tcp_client->send_run(path_manager.v_ref, path_manager.pathName, utils.x0, utils.y0, utils.yaw0);
             }
             if (utils.tcp_client->tcp_can_send && !utils.tcp_client->graph_sent) {
-                utils.tcp_client->send_graph(path_manager.path_planner.serialized_condensed_graph);
+                utils.tcp_client->send_graph(path_manager.path_planner.serialized_graph);
             }
             if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;

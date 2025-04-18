@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/graphml.hpp>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <ros/package.h>
@@ -22,7 +23,7 @@ Track::Track() {
 }
 
 void Track::read_graph() {
-	std::string package_path = ros::package::getPath("planning");
+	package_path = ros::package::getPath("planning");
 	std::string graph_file = package_path + "/src/persistence/track.graphml";
 
 	tinyxml2::XMLDocument doc;
@@ -244,6 +245,7 @@ double Track::sqrt_dist(const Vertex &src, const Vertex &dest) {
 }
 
 std::string Track::serialize_graph(Graph &graph) {
+	std::string graph_file = package_path + "/src/persistence/graph.graphml";
 	boost::dynamic_properties dp;
 	dp.property("id", get(&Vertex::id, graph));
 	dp.property("x", get(&Vertex::x, graph));
@@ -257,6 +259,11 @@ std::string Track::serialize_graph(Graph &graph) {
 	dp.property("dist", get(&Edge::distance, graph));
 	std::ostringstream out;
 	write_graphml(out, graph, dp, true);
+    std::ofstream file(graph_file);
+    if (file.is_open()) {
+        file << out.str();
+        file.close();
+    }
 	return out.str();
 }
 

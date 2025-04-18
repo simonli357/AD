@@ -29,6 +29,8 @@ class PathPlanner {
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
 	Track::Graph condensed_graph;
+
+	std::string serialized_graph = track.serialize_graph(track.graph);
 	std::string serialized_condensed_graph;
 
 	double density;

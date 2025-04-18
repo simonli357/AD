@@ -81,7 +81,7 @@ class TcpClient {
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
 	std::string client_type;
-	const size_t buffer_size = 8388608; // 8 MB for graph
+	const size_t buffer_size = 4096;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	const uint32_t MAX_DGRAM = 65507;

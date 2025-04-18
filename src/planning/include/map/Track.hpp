@@ -2,6 +2,7 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
+#include <string>
 
 class Track {
   public:
@@ -46,6 +47,7 @@ class Track {
 
 	Graph graph;
 	double hw_safety_offset = 0.05;
+	std::string package_path;
 
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
