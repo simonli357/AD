@@ -55,7 +55,7 @@ class Track {
 	double sqrt_dist(double x, double y, const Vertex &dest);
 	double sqrt_dist(const Vertex &src, const Vertex &dest);
 
-	std::string serialize_graph(Graph &graph);
+	std::string serialize_graph(Graph &graph, bool save_to_file = false);
 	void print_path(const std::vector<Vertex> &path);
 	void print_graph();
 

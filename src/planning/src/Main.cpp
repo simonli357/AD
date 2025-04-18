@@ -1,14 +1,8 @@
-/* #include <iostream> */
-/* #include "map/Track.hpp" */
-/* #include <utils/SplineUtils.hpp> */
+#include "PathPlanner.hpp"
+#include <iostream>
 
 int main(int argc, char **argv) {
-    /* std::cout << "TEST NODE - Planning" << std::endl; */
-    /* Track graph; */
-    /* SplineUtils interpolator; */
-    /* interpolator.plot_path( */
-    /*     graph.dikstra(44, 287), */
-    /*     interpolator.interpolate_path(graph.dikstra(44, 287), 40) */
-    /* ); */
+    std::cout << "TEST NODE - Planning" << std::endl;
+    PathPlanner planner(0.25, 40, 0.1);
 	return 0;
 }
