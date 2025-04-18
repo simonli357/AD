@@ -1,6 +1,9 @@
 #version 330 core
 layout(location = 0) in vec3 aPos;
-layout(location = 1) in mat4 instanceMatrix;
+layout(location = 1) in vec4 aColor;
+layout(location = 2) in mat4 instanceMatrix;
+
+out vec4 Color;
 
 uniform mat4 projection;
 uniform mat4 view;
