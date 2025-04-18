@@ -37,9 +37,14 @@ class ShaderRenderer:
             self.load_map_models()
         elif ctx_name == OpenGLContextName.BARCA:
             self.load_barca_models()
+        elif ctx_name == OpenGLContextName.GRAPH:
+            self.load_graph_models()
         else:
             print("Invalid context name")
             exit(1)
+
+    def load_graph_models(self):
+        pass
 
     def load_cam_models(self):
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))

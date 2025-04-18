@@ -3,7 +3,6 @@ from OpenGL.arrays import vbo
 from collections import namedtuple
 
 import numpy as np
-import math
 
 Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count'])
 

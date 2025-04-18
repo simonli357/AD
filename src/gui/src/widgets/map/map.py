@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .view import HidableOverlay
+from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
 from ..opengl.destinations import DestinationsRenderer
@@ -150,6 +151,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.destinations_renderer = DestinationsRenderer()
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
+        self.graph_editor = GraphEditor()
 
         self.update_destinations()
 
@@ -192,15 +194,18 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
-        if self.show_path:
-            self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
+        if self.show_graph:
+            self.graph_editor.draw(self.proj_mat, self.view_mat)
+        else:
+            if self.show_path:
+                self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 
-        self.find_next_destination()
+            self.find_next_destination()
 
-        self.draw_gt()
-        self.draw_markers()
-        self.draw_detected_objects()
-        self.draw_path_nodes()
+            self.draw_gt()
+            self.draw_markers()
+            self.draw_detected_objects()
+            self.draw_path_nodes()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
