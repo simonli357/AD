@@ -13,15 +13,15 @@ class HidableOverlay(QWidget):
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMinimumSize(330, 180)
         self.setStyleSheet("""
-            background-color: rgba(40, 40, 40, 0.7);
+            background-color: transparent;
             border: none;
             border-radius: 8px;
         """)
-        self.map_widget = self.parent()
+        self.car_widget = self.parent()
         self.global_rect = QtCore.QRect()
         self.event_filter_installed = False
 
-        self.destinations = self.map_widget.data[self.map_widget.data['Type'] == 'Destination']
+        self.destinations = None
         self.path = []
         self.visited = set()
         self.dist_traveled = 0
@@ -34,42 +34,42 @@ class HidableOverlay(QWidget):
         self.total_dist_label = QLabel('󰣰  Distance: --:--')
         self.total_dist_label.setStyleSheet("""
             border: none;
-            padding: 5px;
+            padding: 2px;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 12px;
         """)
         self.dist_traveled_label = QLabel('  Traveled: --:--')
         self.dist_traveled_label.setStyleSheet("""
             border: none;
-            padding: 5px;
+            padding: 2px;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 12px;
         """)
         self.dest_reached_label = QLabel('󰪥  Reached: --:--')
         self.dest_reached_label.setStyleSheet("""
             border: none;
-            padding: 5px;
+            padding: 2px;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 12px;
         """)
         self.car_pose_label = QLabel('󰵉  Pose: --:--')
         self.car_pose_label.setStyleSheet("""
             border: none;
-            padding: 5px;
+            padding: 2px;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 12px;
         """)
         self.car_rotation_label = QLabel('󰵗  Rotation: --:--')
         self.car_rotation_label.setStyleSheet("""
             border: none;
-            padding: 5px;
+            padding: 2px;
             background-color: transparent;
             color: yellow;
-            font-size: 20px;
+            font-size: 12px;
         """)
 
         self.layout.addWidget(self.total_dist_label)
@@ -93,14 +93,14 @@ class HidableOverlay(QWidget):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def update_visited_destinations(self, car_x: float, car_y: float):
-        for idx, row in self.destinations.iterrows():
+        for idx, row in self.car_widget.main_window.destinations.iterrows():
             x = row['X']
             y = row['Y']
             y_inverted = MapData.REAL_WORLD_HEIGHT.value - row['Y']
             if self.is_near(car_x, car_y, x, y_inverted, 0.1, 0.1):
-                self.visited.add((x, y))
+                self.car_widget.main_window.visited.add((x, y))
                 self.set_dest_visited_num(len(self.visited))
-                self.map_widget.update_visited_destination(x, y_inverted)
+                self.car_widget.update_visited_destination(x, y_inverted)
                 break
 
     def set_total_path_distance(self):

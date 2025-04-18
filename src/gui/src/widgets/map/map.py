@@ -1,7 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
-from .view import HidableOverlay
 from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
 from ..opengl.waypoints import WaypointsRenderer
@@ -95,9 +94,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.drag_start = None
         self.base_view_center = glm.vec2(self.view_center)
 
-        self.car_yaw = 0
-
         self.destinations = self.data[self.data['Type'] == 'Destination']
+        self.main_window.set_destinations(self.destinations)
         self.next_destination = None
 
         self.sign_images = []
@@ -119,19 +117,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
         self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
 
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.run_statistics = HidableOverlay(self)
-
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
 
     def render_widget(self) -> None:
         self.update()
-
-    def set_steer(self, steer):
-        self.run_statistics.set_car_rotation(self.car_yaw, steer)
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -219,7 +209,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
             return
 
-        if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.run_statistics.visited:
+        if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
             return
 
         def async_task():
@@ -252,7 +242,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         if self.show_destinations:
             self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
-            for x, y in self.run_statistics.visited:
+            for x, y in self.main_window.visited:
                 gl_x, gl_y = self.get_gl_coords(x, y)
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
             if self.next_destination is not None:
@@ -500,9 +490,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def update_destinations(self):
         self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
 
-    def update_visited_destination(self, x_visited, y_visited):
-        self.main_window.car_widget.update_visited_destination(x_visited, y_visited)
-
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -517,10 +504,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
-        self.run_statistics.move(
-            w - self.run_statistics.width() - 5,
-            5
-        )
         self.update_waypoints()
         self.update_destinations()
 
@@ -633,13 +616,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name(run.path_name)
-                    self.run_statistics.dist_traveled = 0
-                    self.run_statistics.set_distance_traveled()
-                    self.run_statistics.visited.clear()
-                    self.run_statistics.set_dest_visited_num(0)
-                    self.run_statistics.set_total_path_distance()
-                    self.update_waypoints()
-                    self.next_destination = None
+                    self.main_window.reset_run_statistics()
                     return
                 retries += 1
                 time.sleep(0.1)

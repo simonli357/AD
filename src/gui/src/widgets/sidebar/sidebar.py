@@ -191,13 +191,7 @@ class SidebarWidget(QtWidgets.QWidget):
             while (retries < max_retries):
                 if self.server.utility_node_client.set_states_srv_msg.success:
                     print("Successful set_states service call")
-                    self.main_window.map_widget.run_statistics.dist_traveled = 0
-                    self.main_window.map_widget.run_statistics.set_distance_traveled()
-                    self.main_window.map_widget.run_statistics.visited.clear()
-                    self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
-                    self.main_window.map_widget.run_statistics.set_total_path_distance()
-                    self.main_window.map_widget.update_waypoints()
-                    self.main_window.map_widget.next_destination = None
+                    self.main_window.reset_run_statistics()
                     return
                 retries += 1
                 time.sleep(0.1)

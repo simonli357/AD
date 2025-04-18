@@ -178,13 +178,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.map_widget.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.map_widget.state_refs_np.shape)
                     self.main_window.run_overlay.set_run_name('run-custom')
-                    self.main_window.map_widget.run_statistics.dist_traveled = 0
-                    self.main_window.map_widget.run_statistics.set_distance_traveled()
-                    self.main_window.map_widget.run_statistics.visited.clear()
-                    self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
-                    self.main_window.map_widget.run_statistics.set_total_path_distance()
-                    self.main_window.map_widget.update_waypoints()
-                    self.main_window.map_widget.next_destination = None
+                    self.main_window.reset_run_statistics()
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -196,13 +190,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.call_start_service(not self.started)
         if not self.started:
             print("Starting")
-            self.main_window.map_widget.run_statistics.dist_traveled = 0
-            self.main_window.map_widget.run_statistics.set_distance_traveled()
-            self.main_window.map_widget.run_statistics.visited.clear()
-            self.main_window.map_widget.run_statistics.set_dest_visited_num(0)
-            self.main_window.map_widget.run_statistics.set_total_path_distance()
-            self.main_window.map_widget.update_waypoints()
-            self.main_window.map_widget.next_destination = None
+            self.main_window.reset_run_statistics()
             self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
@@ -232,12 +220,12 @@ class ButtonsWidget(QtWidgets.QWidget):
             else:
                 print("Not a valid destination")
         else:
-            cursor_coords = self.main_window.map_widget.run_statistics.get_path()
+            cursor_coords = self.main_window.car_widget.run_statistics.get_path()
             self.call_goto_service(cursor_coords)
-            self.main_window.map_widget.run_statistics.set_total_path_distance()
+            self.main_window.car_widget.run_statistics.set_total_path_distance()
 
     def handle_clear_path_click(self) -> None:
-        self.main_window.map_widget.run_statistics.clear_path()
+        self.main_window.car_widget.run_statistics.clear_path()
 
     def handle_record_click(self) -> None:
         if self.recording:

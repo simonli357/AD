@@ -66,6 +66,8 @@ class MainWindow(QMainWindow):
         self.server = server
         self.comm = CommunicationHandler()
         self.show_barca = False
+        self.destinations = []
+        self.visited = set()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.recording_path = os.path.join(current_dir, 'frames')
@@ -96,7 +98,6 @@ class MainWindow(QMainWindow):
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
-        self.comm.steer_signal.connect(self.map_widget.set_steer)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
 
@@ -189,6 +190,18 @@ class MainWindow(QMainWindow):
     def handle_sign_update(self, sign):
         self.map_widget.sign_callback(sign)
         self.cam_widget.sign_callback(sign)
+
+    def set_destinations(self, destinations):
+        self.destinations = destinations
+
+    def reset_run_statistics(self):
+        self.car_widget.run_statistics.dist_traveled = 0
+        self.car_widget.run_statistics.set_distance_traveled()
+        self.car_widget.run_statistics.visited.clear()
+        self.car_widget.run_statistics.set_dest_visited_num(0)
+        self.car_widget.run_statistics.set_total_path_distance()
+        self.map_widget.update_waypoints()
+        self.map_widget.next_destination = None
 
     def tcp_callbacks(self) -> None:
         while self.alive:
