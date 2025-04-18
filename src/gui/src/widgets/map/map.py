@@ -7,6 +7,7 @@ from ..opengl.waypoints import WaypointsRenderer
 from ..opengl.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
 from ..enums import MapData, NamedColor, OpenGLContextName
+from networkx import Graph
 
 import pandas as pd
 import os
@@ -117,6 +118,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
+
+    def update_graph(self, graph: Graph):
+        self.graph_editor.G = graph
 
     def render_widget(self) -> None:
         self.update()

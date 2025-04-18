@@ -7,6 +7,7 @@ import threading
 import signal
 import cv2
 
+from networkx import Graph
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets, QtGui
@@ -39,6 +40,7 @@ class CommunicationHandler(QObject):
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
+    graph_signal = pyqtSignal(Graph)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -102,6 +104,7 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+        self.comm.graph_signal.connect(self.map_widget.update_graph)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.cam_widget.update_hud)
@@ -217,6 +220,9 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
+                if self.server.utility_node_client.graph_node is not None:
+                    graph = self.server.utility_node_client.graph_msg.popleft()
+                    self.comm.graph_signal.emit(graph)
             self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 

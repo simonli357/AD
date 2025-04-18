@@ -38,13 +38,13 @@ class TcpConnection:
             self.triggers = TriggerMsg(b'\x02')
             self.messages = deque()
             self.run_msg = deque()
+            self.graph_msg = deque()
             self.go_to_srv_msg = GoToSrv(b'\x04')
             self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
             self.set_states_srv_msg = SetStatesSrv(b'\x06')
             self.waypoints_srv_msg = WaypointsSrv(b'\x07')
             self.start_srv_msg = False
             self.params = ParamsMsg(b'\x09')
-            self.graph_node = None
             self.receiver = threading.Thread(target=self.receive, daemon=True)
             self.receiver.start()
             self.send_string("ack")
@@ -191,7 +191,7 @@ class TcpConnection:
             def async_task():
                 graphml_str = bytes.decode('utf-8')
                 buf = io.StringIO(graphml_str)
-                self.graph_node = nx.read_graphml(buf)
+                self.graph_msg.append(nx.read_graphml(buf))
             threading.Thread(target=async_task, daemon=True).start()
         except Exception as e:
             print(e)
