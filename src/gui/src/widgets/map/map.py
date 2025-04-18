@@ -35,6 +35,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.show_path = True
         self.show_nodes = False
         self.show_gt = True
+        self.show_graph = False
         self.state_refs_np = None
         self.attributes_np = None
         self.sign_size = 20
