@@ -16,6 +16,8 @@ class PathPlanner {
 	~PathPlanner() = default;
 
 	using Vertex = Track::Vertex;
+    using Edge = Track::Edge;
+    using Graph = Track::Graph;
 	using Float32MultiArray = std_msgs::Float32MultiArray;
 
 	Track track;

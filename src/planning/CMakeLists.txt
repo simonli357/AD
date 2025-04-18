@@ -20,16 +20,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(yaml-cpp REQUIRED)
 include_directories(${YAML_CPP_INCLUDE_DIRS})
 
-# include(FetchContent)
-
-# FetchContent_Declare(
-#     matplotplusplus
-#     GIT_REPOSITORY https://github.com/alandefreitas/matplotplusplus.git
-#     GIT_TAG        v1.2.2
-# )
-
-# FetchContent_MakeAvailable(matplotplusplus)
-
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
@@ -70,15 +60,14 @@ target_link_libraries(${PROJECT_NAME}
   Boost::graph
   yaml-cpp
   alglib_pkg
-  # matplot
 )
 
-# add_executable(planner
-#   src/Main.cpp
-# )
-# target_link_libraries(planner
-#   ${PROJECT_NAME}
-# )
+add_executable(planner
+  src/Main.cpp
+)
+target_link_libraries(planner
+  ${PROJECT_NAME}
+)
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -91,11 +80,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
-
-# add_executable(utility 
-# src/utility_main.cpp
-# src/utility.cpp
-# )
-# target_link_libraries(utility
-# ${catkin_LIBRARIES}
-# )
