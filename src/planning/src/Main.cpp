@@ -19,7 +19,7 @@ using VD = boost::graph_traits<Graph>::vertex_descriptor;
 
 void teleportCar(ros::ServiceClient &client, const Vertex &vtx) {
 	gazebo_msgs::SetModelState srv;
-	srv.request.model_state.model_name = "car1";
+	srv.request.model_state.model_name = "sign130";
 	srv.request.model_state.pose.position.x = vtx.x;
 	srv.request.model_state.pose.position.y = vtx.y;
 	srv.request.model_state.pose.position.z = 0;
