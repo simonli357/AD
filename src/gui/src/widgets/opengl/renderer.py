@@ -21,6 +21,20 @@ class InstanceRenderer:
                 "colors must be length‑4 tuple or an (N,4) array"
             )
 
+        if rotations is None:
+            self.rotations = None
+        elif isinstance(rotations, (int, float)):
+            self.rotations = np.full(n, rotations, dtype=np.float32)
+        else:
+            self.rotations = np.array(rotations, dtype=np.float32)
+
+        if scales is None:
+            self.scales = None
+        elif isinstance(scales, (int, float)):
+            self.scales = np.full(n, scales, dtype=np.float32)
+        else:
+            self.scales = np.array(scales, dtype=np.float32)
+
         self.vao = gl.glGenVertexArrays(1)
         gl.glBindVertexArray(self.vao)
 
@@ -67,6 +81,16 @@ class InstanceRenderer:
         self.vertex_count = len(base_vertices) // 3
         self.instance_count = n
 
+        self.mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
+        for i, pos in enumerate(self.positions):
+            m = glm.mat4(1.0)
+            m = glm.translate(m, glm.vec3(*pos))
+            if self.rotations is not None:
+                m = glm.rotate(*self.rotations[i])
+            if self.scales is not None:
+                m = glm.scale(*self.scales[i])
+            self.mats[i] = np.array(m.to_list(), dtype=np.float32)
+
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
 
@@ -75,14 +99,8 @@ class InstanceRenderer:
         gl.glUniformMatrix4fv(p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
         gl.glUniformMatrix4fv(v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
 
-        mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
-        for i, pos in enumerate(self.positions):
-            m = glm.mat4(1.0)
-            m = glm.translate(m, glm.vec3(*pos))
-            mats[i] = np.array(m.to_list(), dtype=np.float32)
-
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, mats.nbytes, mats)
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.mats.nbytes, self.mats)
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawArraysInstanced(
