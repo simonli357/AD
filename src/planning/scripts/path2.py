@@ -151,6 +151,7 @@ class Path:
         self.v_ref = v_ref
         print("v_ref: ", v_ref, ", N: ", N, ", T: ", T, ", x0: ", x0, ", name: ", name)
         self.N = N
+        # noright = False
         self.global_planner = GlobalPlanner(noright)
         if name is not None:
             self.name = name

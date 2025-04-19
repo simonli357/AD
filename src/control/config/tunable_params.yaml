@@ -39,7 +39,7 @@ real:
 
 sim:
   lane_relocalize: false
-  sign_relocalize: false
+  sign_relocalize: true
   intersection_relocalize: false
   has_light: false
   use_kf: false

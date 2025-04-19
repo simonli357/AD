@@ -18,4 +18,3 @@ madgwick:
   world_frame: enu               # Frame convention ('enu' or 'ned')
   use_magnetic_field_msg: false  # Set to true if using magnetometer data
   publish_tf: false 
-  use_magnetic_field_msg: false
