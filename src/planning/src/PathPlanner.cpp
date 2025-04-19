@@ -92,7 +92,8 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 		out_attributes.data.push_back(static_cast<double>(v.attribute));
 
 		// Normals
-		out_normals.data.push_back(v.normal_angle);
+		out_normals.data.push_back(std::cos(v.normal_angle));
+		out_normals.data.push_back(std::sin(v.normal_angle));
 	}
     std::string path = helper::getSourceDirectory();
     /* saveTxt(out_state_refs, path + "/state_refs.txt", 3); */
