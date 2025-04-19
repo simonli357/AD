@@ -214,7 +214,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
             return
-        if self.no_destinations or len(self.main_window.visited) == self.num_destinations:
+        if self.no_destinations:
+            return
+        if not self.initial_destination_scan and len(self.main_window.visited) == self.num_destinations:
             return
 
         def async_task():
