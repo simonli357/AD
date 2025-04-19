@@ -37,7 +37,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         }
 
         # RealSense extrinsics: x, y, z, roll, pitch, yaw
-        self.REALSENSE_TF_REAL = (-0.113, 0.0, 0.2573, 0.0, 0.2617, 0.0)
+        self.REALSENSE_TF_REAL = (-0.11, -0.032, 0.25, 0, 0.0, 0)
 
     def update_overlay(self):
         self.update()
