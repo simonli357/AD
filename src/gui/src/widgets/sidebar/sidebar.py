@@ -170,9 +170,14 @@ class SidebarWidget(QtWidgets.QWidget):
         self.call_set_states_service()
 
     def handle_save_path_btn_click(self) -> None:
-        path = os.path.dirname(os.path.abspath(__file__))
-        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
-        print("saved state refs")
+        path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(path, 'saved')
+        os.makedirs(path, exist_ok=True)
+        if self.main_window.map_widget.show_graph:
+            self.main_window.map_widget.graph_editor.export(os.path.join(path, 'graph.graphml'))
+        else:
+            np.savetxt(os.path.join(path, 'state_refs1.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+            print("saved state refs")
 
     def handle_fetch_run_btn_click(self) -> None:
         try:

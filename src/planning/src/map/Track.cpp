@@ -17,9 +17,50 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
-	read_graph();
-	adjust_graph();
-	compute_edge_distances();
+	read_boost_graph();
+	/* read_graph(); */
+	/* adjust_graph(); */
+	/* compute_edge_distances(); */
+}
+
+void Track::read_boost_graph() {
+	// 1) open file
+	const std::string pkg = ros::package::getPath("planning");
+	const std::string fname = pkg + "/src/persistence/graph.graphml";
+	std::ifstream in(fname);
+	if (!in.is_open()) {
+		std::cerr << "[Track] Failed to open: " << fname << "\n";
+		return;
+	}
+
+	graph.clear(); // wipe any old data
+
+	// 2) bind only the key‐IDs you care about
+	boost::dynamic_properties dp(boost::ignore_other_properties);
+
+	// node data keys
+	dp.property("d2", get(&Vertex::id, graph));			   // node.attr.id
+	dp.property("d7", get(&Vertex::x, graph));			   // node.attr.x
+	dp.property("d8", get(&Vertex::y, graph));			   // node.attr.y
+	dp.property("d5", get(&Vertex::tangent_angle, graph)); // node.attr.tangent
+	dp.property("d3", get(&Vertex::normal_angle, graph));  // node.attr.normal
+	dp.property("d1", get(&Vertex::curvature, graph));	   // node.attr.curv
+	dp.property("d6", get(&Vertex::vref, graph));		   // node.attr.vref
+	dp.property("d4", get(&Vertex::steer_ref, graph));	   // node.attr.steer
+	dp.property("d0", get(&Vertex::attr_raw, graph));	   // node.attr.attr
+
+	// edge data key
+	dp.property("d9", get(&Edge::distance, graph)); // edge.attr.dist
+
+	// 3) parse
+	try {
+		boost::read_graphml(in, graph, dp);
+		for (auto v : boost::make_iterator_range(vertices(graph))) {
+			graph[v].attribute = static_cast<ATTRIBUTE>(graph[v].attr_raw);
+		}
+	} catch (const std::exception &ex) {
+		std::cerr << "[Track] Error parsing GraphML: " << ex.what() << "\n";
+	}
 }
 
 void Track::read_graph() {
@@ -258,14 +299,14 @@ std::string Track::serialize_graph(Graph &graph, bool save_to_file) {
 	dp.property("dist", get(&Edge::distance, graph));
 	std::ostringstream out;
 	write_graphml(out, graph, dp, true);
-    if (save_to_file) {
-        std::string graph_file = package_path + "/src/persistence/graph.graphml";
-        std::ofstream file(graph_file);
-        if (file.is_open()) {
-            file << out.str();
-            file.close();
-        }
-    }
+	if (save_to_file) {
+		std::string graph_file = package_path + "/src/persistence/graph.graphml";
+		std::ofstream file(graph_file);
+		if (file.is_open()) {
+			file << out.str();
+			file.close();
+		}
+	}
 	return out.str();
 }
 

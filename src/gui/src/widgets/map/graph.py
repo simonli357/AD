@@ -5,6 +5,7 @@ from ..enums import OpenGLContextName, NamedColor
 from networkx import DiGraph
 
 import numpy as np
+import networkx as nx
 
 
 class InstanceData:
@@ -54,3 +55,6 @@ class GraphEditor:
             z = 0.0
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
+
+    def export(self, path):
+        nx.write_graphml(self.G, path)
