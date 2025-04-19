@@ -17,49 +17,118 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
-	read_boost_graph();
+	read_graph_xml();
 	/* read_graph(); */
 	/* adjust_graph(); */
 	/* compute_edge_distances(); */
 }
 
-void Track::read_boost_graph() {
-	// 1) open file
-	const std::string pkg = ros::package::getPath("planning");
-	const std::string fname = pkg + "/src/persistence/graph.graphml";
-	std::ifstream in(fname);
-	if (!in.is_open()) {
-		std::cerr << "[Track] Failed to open: " << fname << "\n";
+void Track::read_graph_xml() {
+	// 0) Build a map from attr.name → key‑ID
+	std::string path = ros::package::getPath("planning") + "/src/persistence/graph.graphml";
+	tinyxml2::XMLDocument doc;
+	if (doc.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
+		std::cerr << "[Track] Failed to load GraphML for key scan: " << path << "\n";
+		return;
+	}
+	auto *graphml = doc.FirstChildElement("graphml");
+	if (!graphml) {
+		std::cerr << "[Track] Missing <graphml> root\n";
+		return;
+	}
+	std::unordered_map<std::string, std::string> name2id;
+	for (auto *keyElem = graphml->FirstChildElement("key"); keyElem; keyElem = keyElem->NextSiblingElement("key")) {
+		const char *id = keyElem->Attribute("id");
+		const char *name = keyElem->Attribute("attr.name");
+		if (id && name)
+			name2id[name] = id;
+	}
+
+	// 1) Now re-open for node/edge parsing
+	tinyxml2::XMLDocument doc2;
+	if (doc2.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
+		std::cerr << "[Track] Failed to reload GraphML: " << path << "\n";
+		return;
+	}
+	auto *graphElem = doc2.FirstChildElement("graphml")->FirstChildElement("graph");
+	if (!graphElem) {
+		std::cerr << "[Track] Missing <graph> element\n";
 		return;
 	}
 
-	graph.clear(); // wipe any old data
+	graph.clear();
+	// Map XML node‑ids ("n0","n1",…) to vertex_descriptors
+	std::unordered_map<std::string, Graph::vertex_descriptor> xml2vd;
 
-	// 2) bind only the key‐IDs you care about
-	boost::dynamic_properties dp(boost::ignore_other_properties);
+	// 2) Parse <node>
+	for (auto *nodeElem = graphElem->FirstChildElement("node"); nodeElem; nodeElem = nodeElem->NextSiblingElement("node")) {
+		const char *xmlId = nodeElem->Attribute("id");
+		if (!xmlId)
+			continue;
 
-	// node data keys
-	dp.property("d2", get(&Vertex::id, graph));			   // node.attr.id
-	dp.property("d7", get(&Vertex::x, graph));			   // node.attr.x
-	dp.property("d8", get(&Vertex::y, graph));			   // node.attr.y
-	dp.property("d5", get(&Vertex::tangent_angle, graph)); // node.attr.tangent
-	dp.property("d3", get(&Vertex::normal_angle, graph));  // node.attr.normal
-	dp.property("d1", get(&Vertex::curvature, graph));	   // node.attr.curv
-	dp.property("d6", get(&Vertex::vref, graph));		   // node.attr.vref
-	dp.property("d4", get(&Vertex::steer_ref, graph));	   // node.attr.steer
-	dp.property("d0", get(&Vertex::attr_raw, graph));	   // node.attr.attr
+		// temporary holders
+		Track::Vertex tmp;
+		tmp.id = -1;
+		tmp.x = tmp.y = 0.0;
+		tmp.tangent_angle = tmp.normal_angle = tmp.curvature = tmp.vref = tmp.steer_ref = 0.0;
 
-	// edge data key
-	dp.property("d9", get(&Edge::distance, graph)); // edge.attr.dist
+		int attr_raw = 0;
 
-	// 3) parse
-	try {
-		boost::read_graphml(in, graph, dp);
-		for (auto v : boost::make_iterator_range(vertices(graph))) {
-			graph[v].attribute = static_cast<ATTRIBUTE>(graph[v].attr_raw);
+		// fill them from <data key="…">
+		for (auto *dataElem = nodeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
+			const char *key = dataElem->Attribute("key");
+			const char *txt = dataElem->GetText();
+			if (!key || !txt)
+				continue;
+
+			if (key == name2id["attr"])
+				attr_raw = std::stoi(txt);
+			else if (key == name2id["curv"])
+				tmp.curvature = std::stod(txt);
+			else if (key == name2id["id"])
+				tmp.id = std::stoi(txt);
+			else if (key == name2id["normal"])
+				tmp.normal_angle = std::stod(txt);
+			else if (key == name2id["steer"])
+				tmp.steer_ref = std::stod(txt);
+			else if (key == name2id["tangent"])
+				tmp.tangent_angle = std::stod(txt);
+			else if (key == name2id["vref"])
+				tmp.vref = std::stod(txt);
+			else if (key == name2id["x"])
+				tmp.x = std::stod(txt);
+			else if (key == name2id["y"])
+				tmp.y = std::stod(txt);
 		}
-	} catch (const std::exception &ex) {
-		std::cerr << "[Track] Error parsing GraphML: " << ex.what() << "\n";
+
+		tmp.attribute = static_cast<ATTRIBUTE>(attr_raw);
+
+		// add to Boost graph
+		auto vd = boost::add_vertex(graph);
+		graph[vd] = tmp;
+		xml2vd[xmlId] = vd;
+	}
+
+	// 3) Parse <edge>
+	for (auto *edgeElem = graphElem->FirstChildElement("edge"); edgeElem; edgeElem = edgeElem->NextSiblingElement("edge")) {
+		const char *src = edgeElem->Attribute("source");
+		const char *tgt = edgeElem->Attribute("target");
+		if (!src || !tgt)
+			continue;
+		auto itS = xml2vd.find(src), itT = xml2vd.find(tgt);
+		if (itS == xml2vd.end() || itT == xml2vd.end())
+			continue;
+
+		double dist = 0.0;
+		for (auto *dataElem = edgeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
+			const char *key = dataElem->Attribute("key");
+			const char *txt = dataElem->GetText();
+			if (key == name2id["dist"] && txt)
+				dist = std::stod(txt);
+		}
+
+		auto e = boost::add_edge(itS->second, itT->second, graph).first;
+		graph[e].distance = dist;
 	}
 }
 

@@ -28,7 +28,7 @@ class Track {
 	};
 
 	struct Vertex {
-		long id = -1;
+		int id = -1;
 		double x;
 		double y;
 		double tangent_angle = 0;
@@ -36,7 +36,6 @@ class Track {
 		double curvature = 0;
 		double vref = 0;
 		double steer_ref = 0;
-		int attr_raw = -1;
 		ATTRIBUTE attribute;
 	};
 
@@ -63,7 +62,7 @@ class Track {
   private:
 	std::unordered_map<int, Track::Graph::vertex_descriptor> build_to_vertex_map();
 
-	void read_boost_graph();
+	void read_graph_xml();
 	void read_graph();
 	void adjust_graph();
 	void compute_edge_distances();
