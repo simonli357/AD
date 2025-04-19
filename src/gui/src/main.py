@@ -207,6 +207,7 @@ class MainWindow(QMainWindow):
         self.map_widget.update_waypoints()
         self.map_widget.next_destination = None
         self.map_widget.initial_destination_scan = True
+        self.map_widget.no_destinations = False
 
     def tcp_callbacks(self) -> None:
         while self.alive:
