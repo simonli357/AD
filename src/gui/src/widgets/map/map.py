@@ -97,6 +97,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.next_destination = None
         self.no_destinations = False
         self.initial_destination_scan = True
+        self.num_destinations = 0
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -213,7 +214,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
             return
-        if self.no_destinations:
+        if self.no_destinations or len(self.main_window.visited) == self.num_destinations:
             return
 
         def async_task():
@@ -229,19 +230,28 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 idx = (start_idx + offset) % num_nodes
                 node_x, node_y = xs[idx], ys[idx]
 
-                for _, row in self.destinations.iterrows():
-                    dest_x = row['X']
-                    dest_y = row['Y']
-                    if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
-                        self.next_destination = (dest_x, dest_y)
-                        if self.initial_destination_scan:
-                            self.initial_destination_scan = False
-                        return
+                if not self.initial_destination_scan:
+                    for _, row in self.destinations.iterrows():
+                        dest_x = row['X']
+                        dest_y = row['Y']
+                        if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                            self.next_destination = (dest_x, dest_y)
+                            return
+                else:
+                    self.initial_destination_scan = False
+                    found = False
+                    for _, row in self.destinations.iterrows():
+                        dest_x = row['X']
+                        dest_y = row['Y']
+                        if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                            self.num_destinations += 1
+                            if not found:
+                                self.next_destination = (dest_x, dest_y)
+                                found = True
+                    if not found:
+                        self.no_destinations = True
 
             self.next_destination = None
-            if self.initial_destination_scan:
-                self.initial_destination_scan = False
-                self.no_destinations = True
 
         threading.Thread(target=async_task, daemon=True).start()
 

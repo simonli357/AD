@@ -208,6 +208,7 @@ class MainWindow(QMainWindow):
         self.map_widget.next_destination = None
         self.map_widget.initial_destination_scan = True
         self.map_widget.no_destinations = False
+        self.map_widget.num_destinations = 0
 
     def tcp_callbacks(self) -> None:
         while self.alive:
