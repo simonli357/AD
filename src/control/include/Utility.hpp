@@ -360,11 +360,14 @@ public:
         static Eigen::Vector3d P_v;
         P_v << Z_c, -X_c, 0;
 
+        // std::cout << "before: " << P_v[0] << ", " << P_v[1] << std::endl;
         if (real) {
             P_v[0] += REALSENSE_TF_REAL[0];
         } else {
             P_v[0] += REALSENSE_TF[0];
         }
+        P_v[1] += REALSENSE_TF[1];
+        // std::cout << "after: " << P_v[0] << ", " << P_v[1] << std::endl;
 
         // Rotation matrix from vehicle to world coordinates
         static Eigen::Matrix2d R_vw;
