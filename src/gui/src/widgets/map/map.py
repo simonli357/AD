@@ -95,7 +95,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.destinations = self.data[self.data['Type'] == 'Destination']
         self.main_window.set_destinations(self.destinations)
         self.next_destination = None
-        self.destination_scanned = False
+        self.no_destinations = False
+        self.initial_destination_scan = True
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -212,7 +213,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
             return
-        if self.destination_scanned:
+        if self.no_destinations:
             return
 
         def async_task():
@@ -233,13 +234,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     dest_y = row['Y']
                     if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
                         self.next_destination = (dest_x, dest_y)
-                        self.destination_scanned = False
+                        if self.initial_destination_scan:
+                            self.initial_destination_scan = False
                         return
 
             self.next_destination = None
+            if self.initial_destination_scan:
+                self.initial_destination_scan = False
+                self.no_destinations = True
 
         threading.Thread(target=async_task, daemon=True).start()
-        self.destination_scanned = True
 
     def draw_gt(self):
         if not self.show_gt:
