@@ -31,6 +31,7 @@ class CameraNode {
 		nh.param(nodeName + "/pubImage", pubImage, false);
 		nh.param(nodeName + "/thread", useRosTimer, false);
 		nh.param(nodeName + "/flip", flip, false);
+		nh.param(nodeName + "/send_depth", send_depth, false);
 		nh.param("quality", quality, 30);
 
 		if (!realsense) {
@@ -176,7 +177,7 @@ class CameraNode {
 	cv_bridge::CvImagePtr cv_ptr_depth;
 	ros::Timer signTimer, laneTimer;
 
-	bool doLane, doSign, realsense, pubImage, useRosTimer, flip;
+	bool doLane, doSign, realsense, pubImage, useRosTimer, flip, send_depth;
 	std::thread lane_thread, sign_thread;
 	int mainLoopRate;
 	int quality = 30;
@@ -210,10 +211,12 @@ class CameraNode {
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			depthImage = cv_ptr_depth->image.clone();
-			if (flip) cv::flip(depthImage, depthImage, -1);
+			if (flip) {
+				cv::flip(depthImage, depthImage, -1);
+			}
 		}
-		if (Sign.tcp_client != nullptr) {
-        	// Sign.tcp_client->send_image_depth(depthImage);
+		if (Sign.tcp_client != nullptr && send_depth) {
+        	Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// mutex.unlock();
 	}

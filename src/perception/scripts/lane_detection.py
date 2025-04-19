@@ -45,7 +45,7 @@ class LanePreprocessingVisualizer:
         adaptive_thresh2 = cv2.adaptiveThreshold(
             gray, 255,
             cv2.ADAPTIVE_THRESH_MEAN_C,
-            cv2.THRESH_BINARY_INV,
+            cv2.ADAPTIVE_THRESH_MEAN_C,
             199, -25
         )
         
