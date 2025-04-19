@@ -8,7 +8,8 @@ ncnn_model: "sissi753-opt"
 # v8_model: "citycocov2lgtclab_20"
 # v8_model: "xinya"
 # v8_model: "xinyi"
-v8_model: "xenia"
+# v8_model: "xenia"
+v8_model: "lynn"
 min_ground_distance: 429 #mm
 
 madgwick:
