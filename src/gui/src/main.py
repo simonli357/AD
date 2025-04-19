@@ -39,6 +39,7 @@ class CommunicationHandler(QObject):
     render_barca_widget_signal = pyqtSignal()
     render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
+    graph_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -66,6 +67,10 @@ class MainWindow(QMainWindow):
         self.server = server
         self.comm = CommunicationHandler()
         self.show_barca = False
+        self.state_refs_np = None
+        self.attributes_np = None
+        self.destinations = []
+        self.visited = set()
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.recording_path = os.path.join(current_dir, 'frames')
@@ -96,9 +101,9 @@ class MainWindow(QMainWindow):
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
-        self.comm.steer_signal.connect(self.map_widget.set_steer)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+        self.comm.graph_signal.connect(self.map_widget.update_graph)
 
         self.comm.render_widget_signal.connect(self.car_widget.render_widget)
         self.comm.render_widget_signal.connect(self.cam_widget.update_hud)
@@ -190,6 +195,19 @@ class MainWindow(QMainWindow):
         self.map_widget.sign_callback(sign)
         self.cam_widget.sign_callback(sign)
 
+    def set_destinations(self, destinations):
+        self.destinations = destinations
+
+    def reset_run_statistics(self):
+        self.car_widget.run_statistics.dist_traveled = 0
+        self.car_widget.run_statistics.set_distance_traveled()
+        self.car_widget.run_statistics.visited.clear()
+        self.car_widget.run_statistics.set_dest_visited_num(0)
+        self.car_widget.run_statistics.set_total_path_distance()
+        self.map_widget.update_waypoints()
+        self.map_widget.next_destination = None
+        self.map_widget.destination_scanned = False
+
     def tcp_callbacks(self) -> None:
         while self.alive:
             if self.server.utility_node_client.socket is not None:
@@ -202,6 +220,9 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
+                if self.server.utility_node_client.graph_msg:
+                    graph = self.server.utility_node_client.graph_msg.popleft()
+                    self.comm.graph_signal.emit(graph)
             self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 

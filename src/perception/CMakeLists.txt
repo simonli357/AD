@@ -41,6 +41,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   utils
   communication
+  alglib_pkg
 )
 
 find_package(CUDA REQUIRED)
@@ -105,7 +106,6 @@ include_directories(
   ${TENSORRT_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
@@ -128,7 +128,6 @@ target_link_libraries(object_detection_lib PUBLIC
   nvparsers
   nvonnxparser
   realsense2::realsense2
-  alglib
   ${TENSORRT_LIB_DIR}
 )
 target_include_directories(object_detection_lib PUBLIC
@@ -138,7 +137,6 @@ target_include_directories(object_detection_lib PUBLIC
   ${TENSORRT_INCLUDE_DIR}                      
   ${ncnn_INCLUDE_DIR}                          
   ${CUDA_INCLUDE_DIRS} 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src                        
 )
 
 catkin_package(
@@ -155,6 +153,7 @@ catkin_package(
   sensor_msgs
   communication
   LIBRARIES object_detection_lib
+  alglib_pkg
   # CFG_EXTRAS perception-extras.cmake
 )
 # install(DIRECTORY include/
@@ -174,9 +173,6 @@ catkin_package(
 #   ${CMAKE_CURRENT_BINARY_DIR}/perception-extras.cmake
 #   @ONLY
 # )
-
-file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-add_library(alglib SHARED ${ALGLIB_SOURCES})
 
 # add_executable(lane
 #   src/lane.cpp
@@ -219,7 +215,7 @@ target_link_libraries(cameraNode
   nvinfer
   nvparsers
   nvonnxparser
-  alglib
+  alglib_pkg
   ${Python3_LIBRARIES}
   communication
 )

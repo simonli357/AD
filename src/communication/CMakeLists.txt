@@ -19,8 +19,6 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
 )
 
-catkin_python_setup()
-
 catkin_package(
    INCLUDE_DIRS include
    CATKIN_DEPENDS message_runtime nav_msgs roscpp rospy sensor_msgs std_msgs utils image_transport cv_bridge

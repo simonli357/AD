@@ -1,13 +1,14 @@
 import OpenGL.GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
-from .utils import create_shader_program, shader_path, asset_dir
+from .utils import asset_dir
 from .loaders import load_texture
 
 import numpy as np
 import os
 
 MeshData = namedtuple('MeshData', ['vao', 'vbo_positions', 'vbo_texcoords', 'vbo_colors', 'vertex_count'])
+ModelData = namedtuple('ModelData', ['dirname', 'materials', 'position_array', 'texcoord_array', 'color_array'])
 Model = namedtuple('Model', ['mesh', 'texture', 'shader_program'])
 
 
@@ -202,23 +203,21 @@ def load_obj(dirname, mtl_path, obj_path):
     # 2) Parse geometry with material references
     position_array, texcoord_array, color_array = load_obj_with_materials(obj_path, materials)
 
-    # 3) Create the mesh
-    mesh_data = create_mesh(position_array, texcoord_array, color_array)
+    return ModelData(dirname, materials, position_array, texcoord_array, color_array)
 
-    # If there's exactly one material with a map_Kd, you could do:
-    #   texture_path = next((m["map_Kd"] for m in materials.values() if m["map_Kd"]), None)
-    # Or handle multi-texture differently. For simplicity, let’s pick the first non-empty map_Kd:
+
+def create_obj(obj: ModelData, shader_program) -> Model:
+    mesh = create_mesh(obj.position_array, obj.texcoord_array, obj.color_array)
+
     texture_path = None
-    for mat_name, mat_info in materials.items():
+    for mat_name, mat_info in obj.materials.items():
         if mat_info["map_Kd"] is not None:
             texture_path = mat_info["map_Kd"]
             break
 
     if texture_path:
-        texture_path = os.path.join(asset_dir, dirname, texture_path)
+        texture_path = os.path.join(asset_dir, obj.dirname, texture_path)
 
-    texture_id = load_texture(texture_path) if texture_path else None
+    texture = load_texture(texture_path) if texture_path else None
 
-    shader_program = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
-
-    return Model(mesh_data, texture_id, shader_program)
+    return Model(mesh, texture, shader_program)

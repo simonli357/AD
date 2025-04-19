@@ -14,6 +14,11 @@ pkg_search_module(Eigen3 REQUIRED eigen3)
 include_directories(${Eigen3_INCLUDE_DIRS})
 message(STATUS "Found Eigen version: ${Eigen3_VERSION}")
 
+find_package(Boost REQUIRED COMPONENTS graph)
+include_directories(${Boost_INCLUDE_DIRS})
+
+find_package(yaml-cpp REQUIRED)
+include_directories(${YAML_CPP_INCLUDE_DIRS})
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
@@ -28,29 +33,50 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   utils
+  roslib
+  alglib_pkg
 )
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime
-#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
- DEPENDS system_lib
+ CATKIN_DEPENDS message_runtime roslib alglib_pkg
 )
 
 include_directories(
+  include
+  include/map
+  include/utils
   ${catkin_INCLUDE_DIRS} 
-  include 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
 
-# file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-# add_library(alglib SHARED ${ALGLIB_SOURCES})
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB MAP ${CMAKE_CURRENT_SOURCE_DIR}/src/map/*.cpp)
+file(GLOB UTILS ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${MAP} ${UTILS})
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  ${roscpp_LIBRARIES}
+  Boost::graph
+  yaml-cpp
+  alglib_pkg
+)
 
-# add_executable(utility 
-# src/utility_main.cpp
-# src/utility.cpp
-# )
-# target_link_libraries(utility
-# ${catkin_LIBRARIES}
-# )
+add_executable(planner
+  src/Main.cpp
+)
+target_link_libraries(planner
+  ${PROJECT_NAME}
+)
+
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION} 
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)

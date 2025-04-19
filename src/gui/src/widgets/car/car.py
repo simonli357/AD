@@ -1,7 +1,8 @@
 from PyQt5 import QtWidgets, QtCore
 from OpenGL import GL as gl
 from .hud import HudRenderer
-from ..enums import MapData, NamedColor
+from .stats import HidableOverlay
+from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 from ..opengl.gt import GTRenderer
 
@@ -13,7 +14,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.stop_drawing = False
         self.main_window = self.parent()
 
@@ -29,9 +29,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.updated_dest_size = 10.0
         self.updated_dest_rot = 0
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.run_statistics = HidableOverlay(self)
 
     def set_steer(self, steer: float):
         self.steer = steer
+        self.run_statistics.set_car_rotation(self.yaw, steer)
 
     def update_sw_load(self, load_msg):
         self.hud_renderer.cores_usage = load_msg.cores_usage
@@ -45,14 +50,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             dx = x - self.x_pos
             dy = y - self.y_pos
             displacement = np.sqrt(dx**2 + dy**2)
-            self.main_window.map_widget.run_statistics.dist_traveled += displacement
-            self.main_window.map_widget.run_statistics.set_distance_traveled()
-            self.main_window.map_widget.run_statistics.update_visited_destinations(x, y)
+            self.run_statistics.dist_traveled += displacement
+            self.run_statistics.set_distance_traveled()
+            self.run_statistics.update_visited_destinations(x, y)
         self.yaw = yaw
         self.speed = speed * 100
         self.x_pos = x
         self.y_pos = y
         self.z_pos = z
+        self.run_statistics.set_car_pose(x, y, z)
 
     def render_widget(self) -> None:
         self.update()
@@ -71,7 +77,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
-        self.shader_renderer = ShaderRenderer()
+        self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
         self.hud_renderer = HudRenderer(self)
         self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
         self.update_destinations()
@@ -104,22 +110,22 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             glm.vec3(0, 0, 1)
         )
 
-        self.shader_renderer.draw_car(
-            x=x,
-            y=y,
-            yaw=np.radians(self.yaw),
-            scale=0.32,
-            color=NamedColor.WHITE,
-            view_matrix=self.view_mat,
-            proj_matrix=self.proj_mat
-        )
-
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
             x=0.0,
             y=0.0,
             z=0,
             scale=(self.width(), self.height()),
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
+        )
+
+        self.shader_renderer.draw_car(
+            x=x,
+            y=y,
+            yaw=np.radians(self.yaw),
+            scale=0.32,
+            color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )

@@ -3,10 +3,8 @@ from OpenGL.arrays import vbo
 from collections import namedtuple
 
 import numpy as np
-import math
 
 Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count'])
-Model2 = namedtuple('Model2', ['vao1', 'vao2', 'vbo1', 'vbo2', 'v_count1', 'v_count2'])
 
 
 def line_model() -> Model:
@@ -55,10 +53,10 @@ def triangle_model() -> Model:
 
 
 def circle_model() -> Model:
-    vertices = []
-    for i in range(64):
-        angle = 6.28318530718 * float(i) / 63.0
-        vertices.append([math.cos(angle), math.sin(angle)])
+    vertices = [[0.0, 0.0]]  # center vertex
+    for i in range(65):
+        angle = 6.28318530718 * float(i) / 64.0
+        vertices.append([np.cos(angle), np.sin(angle)])
 
     vao = gl.glGenVertexArrays(1)
     gl.glBindVertexArray(vao)
@@ -108,40 +106,81 @@ def arrow_model() -> Model:
     return Model(arrow_vao, arrow_vbo, None, 9)
 
 
-def crosshair_model() -> Model:
-    vertices = []
-    for i in range(64):
-        angle = 6.28318530718 * float(i) / 63.0
-        vertices.append([math.cos(angle), math.sin(angle)])
+def crosshair_model(thickness=0.075, inner=0.25, outer=1.25) -> Model:
+    """
+      - thickness: half‑width of each arm, in object‑space units
+      - inner:   the start‑offset of each arm from center
+      - outer:   the end‑offset of each arm from center
+    """
+    t = thickness
+    i = inner
+    o = outer
 
-    circle_vao = gl.glGenVertexArrays(1)
-    gl.glBindVertexArray(circle_vao)
+    # 4 strips, each 4 verts (x,y,z):
+    verts = [
+        # ── left horizontal arm ───────────────────
+        -o, t, 0.0,
+        -o, -t, 0.0,
+        -i, t, 0.0,
+        -i, -t, 0.0,
 
-    # Create and configure VBO
-    circle_vbo = vbo.VBO(np.array(vertices, dtype=np.float32))
-    circle_vbo.bind()
+        # ── right horizontal arm ──────────────────
+        i, t, 0.0,
+        i, -t, 0.0,
+        o, t, 0.0,
+        o, -t, 0.0,
 
-    # Set vertex attribute pointer
-    gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
-    gl.glEnableVertexAttribArray(0)
+        # ── bottom vertical arm ───────────────────
+        -t, -o, 0.0,
+        t, -o, 0.0,
+        -t, -i, 0.0,
+        t, -i, 0.0,
 
-    gl.glBindVertexArray(0)
-    circle_vbo.unbind()
-
-    cross_vertices = [
-        [-1, 0, 0], [1, 0, 0],
-        [0, -1, 0], [0, 1, 0]
+        # ── top vertical arm ──────────────────────
+        -t, i, 0.0,
+        t, i, 0.0,
+        -t, o, 0.0,
+        t, o, 0.0,
     ]
-    cross_vao = gl.glGenVertexArrays(1)
-    gl.glBindVertexArray(cross_vao)
+    data = np.array(verts, dtype=np.float32)
 
-    cross_vbo = vbo.VBO(np.array(cross_vertices, dtype=np.float32))
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    cross_vbo = vbo.VBO(data)
     cross_vbo.bind()
 
-    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
     gl.glEnableVertexAttribArray(0)
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
     gl.glBindVertexArray(0)
     cross_vbo.unbind()
 
-    return Model2(circle_vao, cross_vao, circle_vbo, cross_vbo, len(vertices), len(cross_vertices))
+    # total vertices = 16
+    return Model(vao, cross_vbo, None, 16)
+
+
+def quad_model() -> Model:
+    verts = [
+        [-1, -1, 0, 0, 0],
+        [1, -1, 0, 1, 0],
+        [-1, 1, 0, 0, 1],
+        [1, 1, 0, 1, 1],
+    ]
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    quad_vbo = vbo.VBO(np.array(verts, dtype=np.float32))
+    quad_vbo.bind()
+
+    # pos @ loc=0, uv @ loc=1
+    stride = 5 * 4
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, stride, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+    gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, False, stride, gl.ctypes.c_void_p(12))
+    gl.glEnableVertexAttribArray(1)
+
+    gl.glBindVertexArray(0)
+    quad_vbo.unbind()
+
+    return Model(vao, quad_vbo, None, 4)

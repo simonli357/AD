@@ -95,11 +95,7 @@ file(GLOB_RECURSE sim_solvers
 add_library(acados_shared_lib SHARED ${ocp_solvers} ${cascadi_fun} ${cost_fun} ${sim_solvers})
 target_link_libraries(acados_shared_lib acados hpipm blasfeo)
 
-file(GLOB_RECURSE ALGLIB_SOURCES_CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-add_library(alglib_control SHARED ${ALGLIB_SOURCES_CONTROL})
-
 find_package(Curses REQUIRED)
-find_package(communication REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
@@ -111,26 +107,28 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
   tf
   message_generation
+  alglib_pkg
   utils
   perception
+  planning
+  communication
 )
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime
+ CATKIN_DEPENDS message_runtime planning alglib_pkg
 #  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
  DEPENDS system_lib
 )
 
 include_directories(
-  ${catkin_INCLUDE_DIRS} 
   include 
   include/object-detection
   include/htn
   include/htn/actions
   include/htn/actions/park
+  ${catkin_INCLUDE_DIRS} 
   ${realsense2_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
   ${CURSES_INCLUDE_DIR}
 )
 
@@ -174,9 +172,10 @@ target_link_libraries(controller
   acados_shared_lib 
   ${catkin_LIBRARIES}
   ${CURSES_LIBRARIES}
-  # htn
-  communication
   object_detection_lib
+  communication
+  planning
+  # htn
 )
 
 # add_executable(controller2

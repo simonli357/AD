@@ -1,10 +1,8 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QImage
 from ..enums import CameraParams
 from .hud import CameraOverlay
 
-import cv2
 import numpy as np
 
 

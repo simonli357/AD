@@ -1,0 +1,60 @@
+from ..opengl.shader import ShaderRenderer
+from ..opengl.renderer import InstanceRenderer
+from ..opengl.utils import create_shader_program, shader_path
+from ..enums import OpenGLContextName, NamedColor
+from networkx import DiGraph
+
+import numpy as np
+import networkx as nx
+
+
+class InstanceData:
+    def __init__(self):
+        self.ids = []
+        self.positions = []
+
+
+class Shapes:
+    def __init__(self):
+        self.node_shader = create_shader_program(shader_path('node', 'node.vert'), shader_path('node', 'node.frag'))
+        self.node_base_vertices = np.array([
+            # Positions (3D for proper matrix transformations)
+            [0.0, 0.5, 0.1],  # Top
+            [0.5, 0.0, 0.1],  # Right
+            [-0.5, 0.0, 0.1],  # Left
+            [-0.5, 0.0, 0.1],  # Left
+            [0.5, 0.0, 0.1],  # Right
+            [0.0, -0.5, 0.1],  # Bottom
+        ], dtype=np.float32).flatten()
+
+
+class GraphEditor:
+    def __init__(self, map_widget):
+        self.map_widget = map_widget
+        self.shapes = Shapes()
+        self.shader_renderer = ShaderRenderer(OpenGLContextName.GRAPH)
+        self.instance_data = InstanceData()
+        self.node_instance_renderer = None
+        self.G = DiGraph()
+
+    def draw(self, proj_mat, view_mat):
+        if self.G is None:
+            return
+        if len(self.instance_data.positions) == 0:
+            self.update_instance_data()
+            self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=8.0, shader_program=self.shapes.node_shader)
+        if self.node_instance_renderer is not None:
+            self.node_instance_renderer.render(proj_mat, view_mat)
+
+    def update_instance_data(self):
+        for node_id, data in self.G.nodes(data=True):
+            int_id = int(node_id.lstrip('n'))
+            x_real = float(data.get('x', 0))
+            y_real = float(data.get('y', 0))
+            x, y = self.map_widget.get_gl_coords(x_real, y_real)
+            z = 0.0
+            self.instance_data.ids.append(int_id)
+            self.instance_data.positions.append((x, y, z))
+
+    def export(self, path):
+        nx.write_graphml(self.G, path)

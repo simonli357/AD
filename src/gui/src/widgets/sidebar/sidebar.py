@@ -28,8 +28,9 @@ class SidebarWidget(QtWidgets.QWidget):
         self.toggle_cars_btn = QtWidgets.QPushButton("󰭮")
         self.toggle_destinations_btn = QtWidgets.QPushButton("󰍐")
         self.toggle_path_btn = QtWidgets.QPushButton("󰴠")
-        self.toggle_gt_btn = QtWidgets.QPushButton("󰄧")
+        self.toggle_gt_btn = QtWidgets.QPushButton("󰒕")
         self.toggle_depth_btn = QtWidgets.QPushButton("󰤽")
+        self.toggle_graph_editor_btn = QtWidgets.QPushButton("")
         self.fetch_run_btn = QtWidgets.QPushButton("󱑤")
         self.set_states_btn = QtWidgets.QPushButton("󰵉")
         self.set_yaw_btn = QtWidgets.QPushButton("󰆋")
@@ -42,6 +43,7 @@ class SidebarWidget(QtWidgets.QWidget):
         self.buttons.append(self.toggle_path_btn)
         self.buttons.append(self.toggle_gt_btn)
         self.buttons.append(self.toggle_depth_btn)
+        self.buttons.append(self.toggle_graph_editor_btn)
         self.buttons.append(self.fetch_run_btn)
         self.buttons.append(self.set_states_btn)
         self.buttons.append(self.set_yaw_btn)
@@ -54,6 +56,7 @@ class SidebarWidget(QtWidgets.QWidget):
         self.toggle_path_btn.setToolTip("Toggle Path")
         self.toggle_gt_btn.setToolTip("Toggle Ground Truth")
         self.toggle_depth_btn.setToolTip("Toggle Depth")
+        self.toggle_graph_editor_btn.setToolTip("Toggle Graph Editor")
         self.fetch_run_btn.setToolTip("Fetch Simulator Run")
         self.set_states_btn.setToolTip("Set States")
         self.set_yaw_btn.setToolTip("Set Yaw")
@@ -96,27 +99,7 @@ class SidebarWidget(QtWidgets.QWidget):
         self.update_button_style(self.toggle_path_btn, self.map_widget.show_path)
         self.update_button_style(self.toggle_gt_btn, self.map_widget.show_gt)
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
-
-    def call_set_states_service(self, x=-200.0, y=-200.0):
-        print("set states service called")
-        try:
-            if self.server.utility_node_client.socket is None:
-                return
-            self.server.utility_node_client.send_set_states_srv(x, y)
-            max_retries = 50
-            retries = 0
-            while (retries < max_retries):
-                if self.server.utility_node_client.set_states_srv_msg.success:
-                    print("Successful set_states service call")
-                    time.sleep(0.5)
-                    self.map_widget.map_widget.graphics_view.dist_traveled = 0
-                    self.main_window.map_widget.graphics_view.set_distance_traveled()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to set states")
-        except Exception as e:
-            print(e)
+        self.update_button_style(self.toggle_depth_btn, self.map_widget.show_graph)
 
     def connect_signals(self) -> None:
         self.toggle_sign_btn.clicked.connect(self.handle_sign_btn_click)
@@ -126,6 +109,7 @@ class SidebarWidget(QtWidgets.QWidget):
         self.toggle_path_btn.clicked.connect(self.handle_path_btn_click)
         self.toggle_gt_btn.clicked.connect(self.handle_gt_btn_click)
         self.toggle_depth_btn.clicked.connect(self.handle_depth_btn_click)
+        self.toggle_graph_editor_btn.clicked.connect(self.handle_graph_btn_click)
         self.set_states_btn.clicked.connect(self.handle_states_btn_click)
         self.set_yaw_btn.clicked.connect(self.handle_yaw_btn_click)
         self.save_path_btn.clicked.connect(self.handle_save_path_btn_click)
@@ -171,6 +155,10 @@ class SidebarWidget(QtWidgets.QWidget):
         self.cam_widget.show_depth = not self.cam_widget.show_depth
         self.update_button_style(self.toggle_depth_btn, self.cam_widget.show_depth)
 
+    def handle_graph_btn_click(self) -> None:
+        self.map_widget.show_graph = not self.map_widget.show_graph
+        self.update_button_style(self.toggle_graph_editor_btn, self.map_widget.show_graph)
+
     def handle_states_btn_click(self) -> None:
         if not self.map_widget.show_nodes:
             self.call_set_states_service(self.map_widget.cursor_x, self.map_widget.cursor_y)
@@ -182,12 +170,36 @@ class SidebarWidget(QtWidgets.QWidget):
         self.call_set_states_service()
 
     def handle_save_path_btn_click(self) -> None:
-        path = os.path.dirname(os.path.abspath(__file__))
-        np.savetxt(os.path.join(path, 'state_refs1.txt'), self.state_refs_np.T, fmt='%.4f')
-        print("saved state refs")
+        path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(path, 'saved')
+        os.makedirs(path, exist_ok=True)
+        if self.main_window.map_widget.show_graph:
+            self.main_window.map_widget.graph_editor.export(os.path.join(path, 'graph.graphml'))
+        else:
+            np.savetxt(os.path.join(path, 'state_refs1.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+            print("saved state refs")
 
     def handle_fetch_run_btn_click(self) -> None:
         try:
             self.main_window.server.utility_node_client.send_string('refresh_run')
         except Exception:
             pass
+
+    def call_set_states_service(self, x=-200.0, y=-200.0):
+        print("set states service called")
+        try:
+            if self.server.utility_node_client.socket is None:
+                return
+            self.server.utility_node_client.send_set_states_srv(x, y)
+            max_retries = 50
+            retries = 0
+            while (retries < max_retries):
+                if self.server.utility_node_client.set_states_srv_msg.success:
+                    print("Successful set_states service call")
+                    self.main_window.reset_run_statistics()
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to set states")
+        except Exception as e:
+            print(e)

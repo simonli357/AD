@@ -1,6 +1,6 @@
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
-from .shader import create_shader_program, shader_path
+from .utils import create_shader_program, shader_path
 from ..enums import MapData
 import numpy as np
 import glm
@@ -52,7 +52,7 @@ class WaypointsRenderer:
         self.ATTRIBUTES = {
             0: (1.0, 1.0, 0.0),    # Yellow
             1: (0.0, 1.0, 0.0),    # Green
-            2: (0.0, 0.0, 1.0),    # Blue
+            2: (1.0, 0.0, 0.0),    # Red
             3: (1.0, 0.5, 0.0),    # Orange
             4: (0.5, 0.0, 0.5),    # Purple
             5: (0.8, 0.7, 1.0),    # Light pink
@@ -63,8 +63,8 @@ class WaypointsRenderer:
         }
 
         self.shader_program = create_shader_program(
-            shader_path('diamond', 'diamond.vert'),
-            shader_path('diamond', 'diamond.frag')
+            shader_path('diamonds', 'diamonds.vert'),
+            shader_path('diamonds', 'diamonds.frag')
         )
 
     def get_gl_coords(self, real_x, real_y, widget_width, widget_height):
