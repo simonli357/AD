@@ -5,6 +5,10 @@
 #include "utils/SplineUtils.hpp"
 #include <cmath>
 #include <std_msgs/Float32MultiArray.h>
+#include <fstream>
+#include <iomanip>
+#include <stdexcept>
+#include <string>
 
 class PathPlanner {
   public:
@@ -16,8 +20,8 @@ class PathPlanner {
 	~PathPlanner() = default;
 
 	using Vertex = Track::Vertex;
-    using Edge = Track::Edge;
-    using Graph = Track::Graph;
+	using Edge = Track::Edge;
+	using Graph = Track::Graph;
 	using Float32MultiArray = std_msgs::Float32MultiArray;
 
 	Track track;
@@ -46,4 +50,33 @@ class PathPlanner {
   private:
 	void precompute_path();
 	void construct_path();
+	static void saveTxt(const std_msgs::Float32MultiArray &msg, const std::string &filename, std::size_t elemsPerRow = 0, int precision = 6, const std::string &delim = " ") {
+		const auto &data = msg.data;
+		const std::size_t N = data.size();
+		if (N == 0)
+			throw std::runtime_error("io::saveTxt – message contains no data");
+
+		// If the caller didn’t supply a row length, try to infer it from the layout.
+		if (elemsPerRow == 0) {
+			if (!msg.layout.dim.empty())
+				elemsPerRow = msg.layout.dim.front().size;
+			else
+				elemsPerRow = N; // one giant row
+		}
+		if (elemsPerRow == 0 || N % elemsPerRow != 0)
+			throw std::runtime_error("io::saveTxt – invalid elemsPerRow for data size");
+
+		std::ofstream file(filename, std::ios::trunc);
+		if (!file)
+			throw std::runtime_error("io::saveTxt – cannot open " + filename);
+
+		file << std::fixed << std::setprecision(precision);
+
+		for (std::size_t i = 0; i < N; ++i) {
+			file << data[i];
+			bool endOfRow = ((i + 1) % elemsPerRow == 0);
+			file << (endOfRow ? std::string("\n") : delim);
+		}
+		file.flush();
+	}
 };

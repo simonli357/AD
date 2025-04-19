@@ -1,6 +1,7 @@
 #include "PathPlanner.hpp"
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
+#include "utils/helper.h"
 
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
     this->T = 0.1;
@@ -93,4 +94,8 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 		// Normals
 		out_normals.data.push_back(v.normal_angle);
 	}
+    std::string path = helper::getSourceDirectory();
+    saveTxt(out_state_refs, path + "/state_refs.txt", 3);
+    saveTxt(out_input_refs, path + "/input_refs.txt", 2);
+    saveTxt(out_attributes, path + "/attributes.txt", 1);
 }

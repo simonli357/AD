@@ -1,4 +1,5 @@
 #include "utils/PathUtils.hpp"
+#include <iostream>
 
 void PathUtils::normalize_yaw(std::vector<Vertex> &path, double max_yaw_change) {
 	static auto normalize_angle = [](double a) {
@@ -87,13 +88,13 @@ void PathUtils::compute_speeds(std::vector<Vertex> &path, double vref, double de
 	for (auto &v : path) {
 		switch (v.attribute) {
 		case Track::CROSSWALK:
-			v.vref = vref /= cw_density_factor;
+			v.vref = vref / cw_density_factor;
 			break;
 		case Track::HIGHWAY_LEFT:
-			v.vref = vref *= hw_density_factor;
+			v.vref = vref * hw_density_factor;
 			break;
 		case Track::HIGHWAY_RIGHT:
-			v.vref = vref *= hw_density_factor;
+			v.vref = vref * hw_density_factor;
 			break;
 		default:
 			v.vref = vref;
