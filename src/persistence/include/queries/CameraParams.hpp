@@ -16,4 +16,6 @@ class CameraParams {
 
 	std::array<double, 4> fetch_camera_sim_params();
 	std::array<double, 4> fetch_camera_real_params();
+	std::array<double, 6> fetch_realsense_sim_params();
+	std::array<double, 6> fetch_realsense_real_params();
 };
