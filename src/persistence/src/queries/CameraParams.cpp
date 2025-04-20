@@ -1,122 +1,72 @@
 #include "queries/CameraParams.hpp"
 #include "sqlite3.h"
-#include <stdexcept>
 
 CameraParams::CameraParams(Database &db) : db(db) {}
 
-std::array<double, 4> CameraParams::fetch_camera_sim_params() {
-	const char *sql = R"(
-      SELECT name, value
-      FROM camera_params_sim
-      ORDER BY CASE name
-        WHEN 'fx' THEN 0
-        WHEN 'fy' THEN 1
-        WHEN 'cx' THEN 2
-        WHEN 'cy' THEN 3
-      END;
-    )";
-
-	sqlite3_stmt *stmt = nullptr;
-	if (sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		throw std::runtime_error("Failed to prepare table");
+void CameraParams::set_camera_sim_params(std::array<double,4> &params) {
+    static const char* names[4] = {"fx","fy","cx","cy"};
+    char *err = nullptr;
+    db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "INSERT OR REPLACE INTO camera_params_sim (name,value) VALUES (?,?);";
+    db.check_rc(sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr), db.conn.get(), "prepare failed");
+    for (int i = 0; i < 4; ++i) {
+        sqlite3_bind_text   (stmt, 1, names[i], -1, SQLITE_STATIC);
+        sqlite3_bind_double (stmt, 2, params[i]);
+        db.check_rc(sqlite3_step  (stmt), db.conn.get(), "step failed");
+        db.check_rc(sqlite3_reset (stmt), db.conn.get(), "reset failed");
     }
-
-	std::array<double, 4> out;
-	int idx = 0;
-	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-		double val = sqlite3_column_double(stmt, 1);
-		out[idx++] = val;
-	}
-	sqlite3_finalize(stmt);
-	return out;
+    sqlite3_finalize(stmt);
+    db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-std::array<double, 4> CameraParams::fetch_camera_real_params() {
-	const char *sql = R"(
-      SELECT name, value
-      FROM camera_params_real
-      ORDER BY CASE name
-        WHEN 'fx' THEN 0
-        WHEN 'fy' THEN 1
-        WHEN 'cx' THEN 2
-        WHEN 'cy' THEN 3
-      END;
-    )";
-
-	sqlite3_stmt *stmt = nullptr;
-	if (sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		throw std::runtime_error("Failed to prepare table");
+void CameraParams::set_camera_real_params(std::array<double,4> &params) {
+    static const char* names[4] = {"fx","fy","cx","cy"};
+    char *err = nullptr;
+    db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "INSERT OR REPLACE INTO camera_params_real (name,value) VALUES (?,?);";
+    db.check_rc(sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr), db.conn.get(), "prepare failed");
+    for (int i = 0; i < 4; ++i) {
+        sqlite3_bind_text   (stmt, 1, names[i], -1, SQLITE_STATIC);
+        sqlite3_bind_double (stmt, 2, params[i]);
+        db.check_rc(sqlite3_step  (stmt), db.conn.get(), "step failed");
+        db.check_rc(sqlite3_reset (stmt), db.conn.get(), "reset failed");
     }
-
-	std::array<double, 4> out;
-	int idx = 0;
-	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-		double val = sqlite3_column_double(stmt, 1);
-		out[idx++] = val;
-	}
-	sqlite3_finalize(stmt);
-	return out;
+    sqlite3_finalize(stmt);
+    db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-
-std::array<double, 6> CameraParams::fetch_realsense_sim_params() {
-	const char *sql = R"(
-      SELECT name, value
-      FROM realsense_tf_sim
-      ORDER BY CASE name
-        WHEN 'x' THEN 0
-        WHEN 'y' THEN 1
-        WHEN 'z' THEN 2
-        WHEN 'roll' THEN 3
-        WHEN 'pitch' THEN 4
-        WHEN 'yaw' THEN 5
-      END;
-    )";
-
-	sqlite3_stmt *stmt = nullptr;
-	if (sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		throw std::runtime_error("Failed to prepare table");
+void CameraParams::set_realsense_tf_sim_params(std::array<double,6> &params) {
+    static const char* names[6] = {"x","y","z","roll","pitch","yaw"};
+    char *err = nullptr;
+    db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "INSERT OR REPLACE INTO realsense_tf_sim (name,value) VALUES (?,?);";
+    db.check_rc(sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr), db.conn.get(), "prepare failed");
+    for (int i = 0; i < 6; ++i) {
+        sqlite3_bind_text   (stmt, 1, names[i], -1, SQLITE_STATIC);
+        sqlite3_bind_double (stmt, 2, params[i]);
+        db.check_rc(sqlite3_step  (stmt), db.conn.get(), "step failed");
+        db.check_rc(sqlite3_reset (stmt), db.conn.get(), "reset failed");
     }
-
-	std::array<double, 6> out;
-	int idx = 0;
-	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-		double val = sqlite3_column_double(stmt, 1);
-		out[idx++] = val;
-	}
-	sqlite3_finalize(stmt);
-	return out;
+    sqlite3_finalize(stmt);
+    db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-std::array<double, 6> CameraParams::fetch_realsense_real_params() {
-	const char *sql = R"(
-      SELECT name, value
-      FROM realsense_tf_real
-      ORDER BY CASE name
-        WHEN 'x' THEN 0
-        WHEN 'y' THEN 1
-        WHEN 'z' THEN 2
-        WHEN 'roll' THEN 3
-        WHEN 'pitch' THEN 4
-        WHEN 'yaw' THEN 5
-      END;
-    )";
-
-	sqlite3_stmt *stmt = nullptr;
-	if (sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		throw std::runtime_error("Failed to prepare table");
+void CameraParams::set_realsense_tf_real_params(std::array<double,6> &params) {
+    static const char* names[6] = {"x","y","z","roll","pitch","yaw"};
+    char *err = nullptr;
+    db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "INSERT OR REPLACE INTO realsense_tf_real (name,value) VALUES (?,?);";
+    db.check_rc(sqlite3_prepare_v2(db.conn.get(), sql, -1, &stmt, nullptr), db.conn.get(), "prepare failed");
+    for (int i = 0; i < 6; ++i) {
+        sqlite3_bind_text   (stmt, 1, names[i], -1, SQLITE_STATIC);
+        sqlite3_bind_double (stmt, 2, params[i]);
+        db.check_rc(sqlite3_step  (stmt), db.conn.get(), "step failed");
+        db.check_rc(sqlite3_reset (stmt), db.conn.get(), "reset failed");
     }
-
-	std::array<double, 6> out;
-	int idx = 0;
-	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		const char *name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
-		double val = sqlite3_column_double(stmt, 1);
-		out[idx++] = val;
-	}
-	sqlite3_finalize(stmt);
-	return out;
+    sqlite3_finalize(stmt);
+    db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }

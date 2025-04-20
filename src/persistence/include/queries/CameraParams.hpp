@@ -14,8 +14,8 @@ class CameraParams {
 
 	Database &db;
 
-	std::array<double, 4> fetch_camera_sim_params();
-	std::array<double, 4> fetch_camera_real_params();
-	std::array<double, 6> fetch_realsense_sim_params();
-	std::array<double, 6> fetch_realsense_real_params();
+	void set_camera_sim_params(std::array<double, 4> &params);
+	void set_camera_real_params(std::array<double, 4> &params);
+	void set_realsense_tf_sim_params(std::array<double, 6> &params);
+	void set_realsense_tf_real_params(std::array<double, 6> &param);
 };

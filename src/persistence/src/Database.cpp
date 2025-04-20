@@ -56,6 +56,12 @@ void Database::initialize_tables() {
 	}
 }
 
+void Database::check_rc(int rc, sqlite3* db, const char* msg) {
+    if (rc != SQLITE_OK && rc != SQLITE_DONE) {
+        throw std::runtime_error(std::string(msg) + ": " + sqlite3_errmsg(db));
+    }
+}
+
 void Database::print_tables() {
 	const char *list_sql = R"(
         SELECT name 

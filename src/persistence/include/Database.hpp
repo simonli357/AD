@@ -21,6 +21,7 @@ class Database {
 
     std::unique_ptr<CameraParams> cam_queries;
 
+    void check_rc(int rc, sqlite3* db, const char* msg);
 	void print_tables();
 
   private:

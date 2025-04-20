@@ -283,13 +283,21 @@ namespace VehicleConstants {
         ODOM,
         EKF
     };
-    
-    // Edit in persistence/src/tables in the future
-    inline std::array<double, 4> CAMERA_PARAMS = {0, 0, 0, 0};
-    inline std::array<double, 4> CAMERA_PARAMS_REAL = {0, 0, 0, 0};
-
-    inline std::array<double, 6> REALSENSE_TF = {0, 0, 0, 0, 0, 0};
-    inline std::array<double, 6> REALSENSE_TF_REAL = {0, 0, 0, 0, 0, 0};
+    static constexpr std::array<double, 4> CAMERA_PARAMS = {
+        554.3826904296875, 
+        554.3826904296875, 
+        320, 
+        240
+    };
+    static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {
+        607.40564,  // fx
+        607.05829,  // fy
+        322.97223,  // cx
+        244.39398   // cy
+    };
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.11, -0.032, 0.25, 0, 0.0, 0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.11, -0.032, 0.25, 0, 0.0, 0};
+    // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
 #endif // VEHICLE_CONSTANTS_H
