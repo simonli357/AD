@@ -1,5 +1,6 @@
 #include <memory>
 #include <sqlite3.h>
+#include <string>
 
 class Database {
   public:
@@ -11,6 +12,11 @@ class Database {
 	~Database() = default;
 
 	using DB = std::unique_ptr<sqlite3, decltype(&sqlite3_close)>;
-
+	std::string pkg_path;
 	DB db;
+
+	void print_tables();
+
+  private:
+	void initialize_tables();
 };
