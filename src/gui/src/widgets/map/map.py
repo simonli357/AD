@@ -227,7 +227,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             dy = ys - self.car_y
             start_idx = int(np.argmin(dx * dx + dy * dy))
 
-            tol = 0.3
+            tol = 0.2
             found = False
             skip = 5
             for offset in range(1, num_nodes + 1, skip):
