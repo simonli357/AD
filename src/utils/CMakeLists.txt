@@ -4,6 +4,7 @@ project(utils)
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
+  persistence
 )
 
 add_message_files(
@@ -35,13 +36,21 @@ generate_messages(
    std_msgs
 )
 
-
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime persistence
 )
 
 include_directories(
   include
+  include/utils
   ${catkin_INCLUDE_DIRS}
+)
+
+add_library(utils
+  src/utils/constants.cpp
+)
+target_link_libraries(utils
+  persistence
+  ${catkin_LIBRARIES}
 )

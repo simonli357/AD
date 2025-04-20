@@ -5,8 +5,9 @@
 #include <iterator>
 #include <ros/package.h>
 #include <stdexcept>
+#include "queries/CameraParams.hpp"
 
-Database::Database() : db(nullptr, sqlite3_close) {
+Database::Database() : conn(nullptr, sqlite3_close) {
 	pkg_path = ros::package::getPath("persistence");
 	std::string path = pkg_path + "/share/database.db";
 	sqlite3 *raw = nullptr;
@@ -16,9 +17,15 @@ Database::Database() : db(nullptr, sqlite3_close) {
 			sqlite3_close(raw);
 		throw std::runtime_error("Failed to open SQLite DB");
 	}
-	db.reset(raw);
+	conn.reset(raw);
+
+    // Queries
+    cam_queries = std::make_unique<CameraParams>(*this);
+
 	initialize_tables();
 }
+
+Database::~Database() = default;
 
 void Database::initialize_tables() {
 	std::string sql_dir = pkg_path + "/src/tables";
@@ -31,7 +38,7 @@ void Database::initialize_tables() {
 			std::string sql{std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>()};
 
 			char *errMsg = nullptr;
-			int rc = sqlite3_exec(db.get(), sql.c_str(), nullptr, nullptr, &errMsg);
+			int rc = sqlite3_exec(conn.get(), sql.c_str(), nullptr, nullptr, &errMsg);
 			if (rc != SQLITE_OK) {
 				std::string e = errMsg ? errMsg : "unknown_error";
 				sqlite3_free(errMsg);
@@ -51,9 +58,9 @@ void Database::print_tables() {
     )";
 
 	sqlite3_stmt *list_stmt = nullptr;
-	int rc = sqlite3_prepare_v2(db.get(), list_sql, -1, &list_stmt, nullptr);
+	int rc = sqlite3_prepare_v2(conn.get(), list_sql, -1, &list_stmt, nullptr);
 	if (rc != SQLITE_OK) {
-		std::cerr << "Failed to prepare print_tables query: " << sqlite3_errmsg(db.get()) << "\n";
+		std::cerr << "Failed to prepare print_tables query: " << sqlite3_errmsg(conn.get()) << "\n";
 		return;
 	}
 
@@ -67,7 +74,7 @@ void Database::print_tables() {
 		{
 			std::string pragma_sql = "PRAGMA table_info(" + std::string(tbl) + ");";
 			sqlite3_stmt *pragma_stmt = nullptr;
-			if (sqlite3_prepare_v2(db.get(), pragma_sql.c_str(), -1, &pragma_stmt, nullptr) == SQLITE_OK) {
+			if (sqlite3_prepare_v2(conn.get(), pragma_sql.c_str(), -1, &pragma_stmt, nullptr) == SQLITE_OK) {
 				while (sqlite3_step(pragma_stmt) == SQLITE_ROW) {
 					// column name is in the 2nd field of PRAGMA table_info
 					const char *col_name = reinterpret_cast<const char *>(sqlite3_column_text(pragma_stmt, 1));
@@ -87,7 +94,7 @@ void Database::print_tables() {
 		{
 			std::string select_sql = "SELECT * FROM " + std::string(tbl) + ";";
 			sqlite3_stmt *select_stmt = nullptr;
-			if (sqlite3_prepare_v2(db.get(), select_sql.c_str(), -1, &select_stmt, nullptr) == SQLITE_OK) {
+			if (sqlite3_prepare_v2(conn.get(), select_sql.c_str(), -1, &select_stmt, nullptr) == SQLITE_OK) {
 				int ncols = sqlite3_column_count(select_stmt);
 				while (sqlite3_step(select_stmt) == SQLITE_ROW) {
 					for (int i = 0; i < ncols; ++i) {
@@ -97,14 +104,14 @@ void Database::print_tables() {
 					std::cout << "\n";
 				}
 			} else {
-				std::cerr << "Failed to query rows for table " << tbl << ": " << sqlite3_errmsg(db.get()) << "\n";
+				std::cerr << "Failed to query rows for table " << tbl << ": " << sqlite3_errmsg(conn.get()) << "\n";
 			}
 			sqlite3_finalize(select_stmt);
 		}
 	}
 
 	if (rc != SQLITE_DONE) {
-		std::cerr << "Error iterating tables: " << sqlite3_errmsg(db.get()) << "\n";
+		std::cerr << "Error iterating tables: " << sqlite3_errmsg(conn.get()) << "\n";
 	}
 
 	sqlite3_finalize(list_stmt);

@@ -25,11 +25,13 @@ catkin_package(
 
 include_directories(
   include
+  include/queries
   ${catkin_INCLUDE_DIRS}
 )
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-add_library(${PROJECT_NAME} ${SOURCES})
+file(GLOB QUERIES ${CMAKE_CURRENT_SOURCE_DIR}/src/queries/*.cpp)
+add_library(${PROJECT_NAME} ${SOURCES} ${QUERIES})
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}

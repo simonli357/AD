@@ -5,6 +5,7 @@
 #include <vector>
 #include <mutex>
 #include <chrono>
+#include "Database.hpp"
 #include "std_srvs/SetBoolRequest.h"
 #include "Utility.hpp"
 #include "PathManager.hpp"
@@ -12,6 +13,7 @@
 #include <signal.h>
 #include <fstream>
 #include <iostream>
+#include "utils/constants.h"
 #include "utils/waypoints.h"
 #include "utils/goto_command.h"
 #include "utils/set_states.h"
@@ -1635,6 +1637,8 @@ void signalHandler(int signum) {
 }
 
 int main(int argc, char **argv) {
+    Database db;
+    VehicleConstants::init_params(db);
 
     std::cout.precision(3);
     //create anonymous node handle

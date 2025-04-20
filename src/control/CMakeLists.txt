@@ -109,6 +109,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   alglib_pkg
   utils
+  persistence
   perception
   planning
   communication
@@ -116,7 +117,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime planning alglib_pkg
+ CATKIN_DEPENDS message_runtime planning alglib_pkg persistence utils
 #  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf2 tf2_geometry_msgs tf2_ros
  DEPENDS system_lib
 )
@@ -175,6 +176,8 @@ target_link_libraries(controller
   object_detection_lib
   communication
   planning
+  persistence
+  utils
   # htn
 )
 
