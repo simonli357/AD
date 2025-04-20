@@ -130,6 +130,9 @@ public:
         yaw = new_yaw;
     }
     virtual void populate_msg(std_msgs::Float32MultiArray& msg) const {
+        if (cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
+            return;
+        }
         msg.data.push_back(static_cast<float>(type));
         msg.data.push_back(static_cast<float>(x));
         msg.data.push_back(static_cast<float>(y));

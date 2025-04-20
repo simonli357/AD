@@ -885,6 +885,9 @@ public:
         double car_speed;
         double car_speed_adj;
         for (auto& car : cars) {
+            if (car->cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) {
+                continue;
+            }
             Eigen::Vector2d car_pose(car->x, car->y);
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
