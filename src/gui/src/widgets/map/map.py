@@ -228,6 +228,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             start_idx = int(np.argmin(dx * dx + dy * dy))
 
             tol = 0.25
+            found = False
             for offset in range(1, num_nodes + 1):
                 idx = (start_idx + offset) % num_nodes
                 node_x, node_y = xs[idx], ys[idx]
@@ -240,8 +241,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                             self.next_destination = (dest_x, dest_y)
                             return
                 else:
-                    self.initial_destination_scan = False
-                    found = False
                     for _, row in self.destinations.iterrows():
                         dest_x = row['X']
                         dest_y = row['Y']
@@ -253,6 +252,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     if not found:
                         self.no_destinations = True
 
+            self.initial_destination_scan = False
             self.next_destination = None
 
         threading.Thread(target=async_task, daemon=True).start()
