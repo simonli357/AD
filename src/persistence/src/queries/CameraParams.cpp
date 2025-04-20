@@ -1,5 +1,6 @@
 #include "queries/CameraParams.hpp"
 #include "sqlite3.h"
+#include <iostream>
 #include <stdexcept>
 
 CameraParams::CameraParams(Database &db) : db(db) {}
@@ -26,6 +27,7 @@ std::array<double, 4> CameraParams::fetch_camera_sim_params() {
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		const char *name = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
 		double val = sqlite3_column_double(stmt, 1);
+        std::cout << "CAM: "  << val << std::endl;
 		out[idx++] = val;
 	}
 	sqlite3_finalize(stmt);
