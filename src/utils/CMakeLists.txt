@@ -38,6 +38,7 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
+  LIBRARIES utils
   CATKIN_DEPENDS message_runtime persistence
 )
 
@@ -50,6 +51,12 @@ include_directories(
 add_library(utils
   src/utils/constants.cpp
 )
+
+set_target_properties(utils
+  PROPERTIES
+    OUTPUT_NAME     utility
+)
+
 target_link_libraries(utils
   persistence
   ${catkin_LIBRARIES}
