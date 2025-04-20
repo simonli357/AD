@@ -3,7 +3,7 @@
 
 CameraParams::CameraParams(Database &db) : db(db) {}
 
-void CameraParams::set_camera_sim_params(std::array<double,4> &params) {
+void CameraParams::set_camera_sim_params(const std::array<double,4> &params) {
     static const char* names[4] = {"fx","fy","cx","cy"};
     char *err = nullptr;
     db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
@@ -20,7 +20,7 @@ void CameraParams::set_camera_sim_params(std::array<double,4> &params) {
     db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-void CameraParams::set_camera_real_params(std::array<double,4> &params) {
+void CameraParams::set_camera_real_params(const std::array<double,4> &params) {
     static const char* names[4] = {"fx","fy","cx","cy"};
     char *err = nullptr;
     db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
@@ -37,7 +37,7 @@ void CameraParams::set_camera_real_params(std::array<double,4> &params) {
     db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-void CameraParams::set_realsense_tf_sim_params(std::array<double,6> &params) {
+void CameraParams::set_realsense_tf_sim_params(const std::array<double,6> &params) {
     static const char* names[6] = {"x","y","z","roll","pitch","yaw"};
     char *err = nullptr;
     db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
@@ -54,7 +54,7 @@ void CameraParams::set_realsense_tf_sim_params(std::array<double,6> &params) {
     db.check_rc(sqlite3_exec(db.conn.get(), "COMMIT;", nullptr, nullptr, &err), db.conn.get(), "COMMIT failed");
 }
 
-void CameraParams::set_realsense_tf_real_params(std::array<double,6> &params) {
+void CameraParams::set_realsense_tf_real_params(const std::array<double,6> &params) {
     static const char* names[6] = {"x","y","z","roll","pitch","yaw"};
     char *err = nullptr;
     db.check_rc(sqlite3_exec(db.conn.get(), "BEGIN;", nullptr, nullptr, &err), db.conn.get(), "BEGIN failed");
