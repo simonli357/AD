@@ -29,9 +29,6 @@ std::array<double, 4> CameraParams::fetch_camera_sim_params() {
 		out[idx++] = val;
 	}
 	sqlite3_finalize(stmt);
-	if (idx != 4) {
-		throw std::runtime_error("Expected 4 camera params");
-    }
 	return out;
 }
 
@@ -60,8 +57,5 @@ std::array<double, 4> CameraParams::fetch_camera_real_params() {
 		out[idx++] = val;
 	}
 	sqlite3_finalize(stmt);
-	if (idx != 4) {
-		throw std::runtime_error("Expected 4 camera params");
-    }
 	return out;
 }
