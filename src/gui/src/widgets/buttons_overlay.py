@@ -22,7 +22,7 @@ class ButtonsOverlay(QWidget):
 
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        main_dir = os.path.dirname(os.path.dirname(current_dir))
+        main_dir = os.path.dirname(current_dir)
         runs_file = os.path.join(main_dir, 'runs.xml')
         tree = ET.parse(runs_file)
         root = tree.getroot()
