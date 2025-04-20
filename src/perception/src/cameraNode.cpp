@@ -310,6 +310,10 @@ class CameraNode {
 		}
 		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
 		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
+		if (flip) {
+			cv::flip(colorImage, colorImage, -1);
+			cv::flip(depthImage, depthImage, -1);
+		}
 		// cv::remap(colorImage, colorImage, map1, map2, cv::INTER_LINEAR);
 		// cv::remap(depthImage, depthImage, map1, map2, cv::INTER_NEAREST);
 
