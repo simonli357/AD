@@ -236,6 +236,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                         self.next_destination = (dest_x, dest_y)
                         return
         self.no_destinations = True
+        self.next_destination = None
 
     def draw_gt(self):
         if not self.show_gt:
