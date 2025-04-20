@@ -177,7 +177,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                     self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
                     self.main_window.attributes_np = np.array(res.wp_attributes.data)
                     print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.run_overlay.set_run_name('run-custom')
+                    self.main_window.buttons_overlay.set_run_name('run-custom')
                     self.main_window.reset_run_statistics()
                     return
                 retries += 1
