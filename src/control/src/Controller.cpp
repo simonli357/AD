@@ -1637,13 +1637,14 @@ void signalHandler(int signum) {
 }
 
 int main(int argc, char **argv) {
-    Database db;
-    VehicleConstants::init_params(db);
-
     std::cout.precision(3);
     //create anonymous node handle
     ros::init(argc, argv, "mpc_node", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     ros::NodeHandle nh;
+
+    Database db;
+    VehicleConstants::init_params(db);
+
     double T, v_ref, T_park;
     int N;
     bool sign, ekf, lane, real, use_beta, async;
