@@ -206,9 +206,7 @@ class MainWindow(QMainWindow):
         self.car_widget.run_statistics.set_total_path_distance()
         self.map_widget.update_waypoints()
         self.map_widget.next_destination = None
-        self.map_widget.initial_destination_scan = True
         self.map_widget.no_destinations = False
-        self.map_widget.num_destinations = 0
 
     def tcp_callbacks(self) -> None:
         while self.alive:

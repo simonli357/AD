@@ -96,8 +96,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.main_window.set_destinations(self.destinations)
         self.next_destination = None
         self.no_destinations = False
-        self.initial_destination_scan = True
-        self.num_destinations = 0
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -212,54 +210,32 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if self.main_window.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
             return
-        if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
+        if self.next_destination is not None and self.next_destination not in self.main_window.visited:
             return
         if self.no_destinations:
             return
-        if not self.initial_destination_scan and len(self.main_window.visited) == self.num_destinations:
-            return
 
-        def async_task():
-            xs, ys = self._refs_xs, self._refs_ys
-            num_nodes = self._refs_len
+        xs, ys = self._refs_xs, self._refs_ys
+        num_nodes = self._refs_len
 
-            dx = xs - self.car_x
-            dy = ys - self.car_y
-            start_idx = int(np.argmin(dx * dx + dy * dy))
+        dx = xs - self.car_x
+        dy = ys - self.car_y
+        start_idx = int(np.argmin(dx * dx + dy * dy))
 
-            tol = 0.2
-            found = False
-            skip = 5
-            for offset in range(1, num_nodes + 1, skip):
-                idx = (start_idx + offset) % num_nodes
-                node_x, node_y = xs[idx], ys[idx]
-
-                if not self.initial_destination_scan:
-                    for _, row in self.destinations.iterrows():
-                        dest_x = row['X']
-                        dest_y = row['Y']
-                        if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
-                            self.next_destination = (dest_x, dest_y)
-                            return
-                else:
-                    for _, row in self.destinations.iterrows():
-                        dest_x = row['X']
-                        dest_y = row['Y']
-                        if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
-                            self.num_destinations += 1
-                            if not found:
-                                self.next_destination = (dest_x, dest_y)
-                                found = True
-
-            if not found:
-                self.no_destinations = True
-            else:
-                return
-
-            self.initial_destination_scan = False
-            self.next_destination = None
-
-        threading.Thread(target=async_task, daemon=True).start()
+        tol = 0.2
+        skip = 5
+        for offset in range(1, num_nodes + 1, skip):
+            idx = (start_idx + offset) % num_nodes
+            node_x, node_y = xs[idx], ys[idx]
+            for _, row in self.destinations.iterrows():
+                dest_x = row['X']
+                dest_y = row['Y']
+                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                    next_destination = (dest_x, dest_y)
+                    if next_destination not in self.main_window.visited:
+                        self.next_destination = (dest_x, dest_y)
+                        return
+        self.no_destinations = True
 
     def draw_gt(self):
         if not self.show_gt:
