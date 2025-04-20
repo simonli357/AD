@@ -13,7 +13,6 @@ import os
 import time
 import numpy as np
 import glm
-import threading
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -95,7 +94,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.destinations = self.data[self.data['Type'] == 'Destination']
         self.main_window.set_destinations(self.destinations)
         self.next_destination = None
-        self.destination_scanned = False
+        self.no_destinations = False
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -210,36 +209,33 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if self.main_window.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
             return
-        if getattr(self, 'next_destination', None) is not None and self.next_destination not in self.main_window.visited:
+        if self.next_destination is not None and self.next_destination not in self.main_window.visited:
             return
-        if self.destination_scanned:
+        if self.no_destinations:
             return
 
-        def async_task():
-            xs, ys = self._refs_xs, self._refs_ys
-            num_nodes = self._refs_len
+        xs, ys = self._refs_xs, self._refs_ys
+        num_nodes = self._refs_len
 
-            dx = xs - self.car_x
-            dy = ys - self.car_y
-            start_idx = int(np.argmin(dx * dx + dy * dy))
+        dx = xs - self.car_x
+        dy = ys - self.car_y
+        start_idx = int(np.argmin(dx * dx + dy * dy))
 
-            tol = 0.25
-            for offset in range(1, num_nodes + 1):
-                idx = (start_idx + offset) % num_nodes
-                node_x, node_y = xs[idx], ys[idx]
-
-                for _, row in self.destinations.iterrows():
-                    dest_x = row['X']
-                    dest_y = row['Y']
-                    if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+        tol = 0.2
+        skip = 3
+        for offset in range(1, num_nodes + 1, skip):
+            idx = (start_idx + offset) % num_nodes
+            node_x, node_y = xs[idx], ys[idx]
+            for _, row in self.destinations.iterrows():
+                dest_x = row['X']
+                dest_y = row['Y']
+                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                    next_destination = (dest_x, dest_y)
+                    if next_destination not in self.main_window.visited:
                         self.next_destination = (dest_x, dest_y)
-                        self.destination_scanned = False
                         return
-
-            self.next_destination = None
-
-        threading.Thread(target=async_task, daemon=True).start()
-        self.destination_scanned = True
+        self.no_destinations = True
+        self.next_destination = None
 
     def draw_gt(self):
         if not self.show_gt:
@@ -584,7 +580,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     print("state ref shape: ", self.main_window.state_refs_np.shape)
                     # print first 3 rows
                     print("state ref: ", self.main_window.state_refs_np.T[:, :3])
-                    path = os.path.dirname(os.path.abspath(__file__))
+                    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    path = os.path.join(path, 'saved')
                     np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
                     return TriggerResponse(success=True, message="Parameters updated")
@@ -621,7 +618,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.main_window.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.run_overlay.set_run_name(run.path_name)
+                    self.main_window.buttons_overlay.set_run_name(run.path_name)
                     self.main_window.reset_run_statistics()
                     return
                 retries += 1
