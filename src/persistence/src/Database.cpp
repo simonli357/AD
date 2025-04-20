@@ -1,3 +1,4 @@
+#include "queries/CameraParams.hpp"
 #include <Database.hpp>
 #include <filesystem>
 #include <fstream>
@@ -5,10 +6,18 @@
 #include <iterator>
 #include <ros/package.h>
 #include <stdexcept>
-#include "queries/CameraParams.hpp"
 
 Database::Database() : conn(nullptr, sqlite3_close) {
 	pkg_path = ros::package::getPath("persistence");
+
+	std::filesystem::path share_dir = std::filesystem::path(pkg_path) / "share";
+	std::error_code ec;
+	if (!std::filesystem::exists(share_dir)) {
+		if (!std::filesystem::create_directories(share_dir, ec)) {
+			throw std::runtime_error("Failed to create share directory '" + share_dir.string() + "': " + ec.message());
+		}
+	}
+
 	std::string path = pkg_path + "/share/database.db";
 	sqlite3 *raw = nullptr;
 	int rc = sqlite3_open(path.c_str(), &raw);
@@ -20,8 +29,8 @@ Database::Database() : conn(nullptr, sqlite3_close) {
 	conn.reset(raw);
 	initialize_tables();
 
-    // Queries
-    cam_queries = std::make_unique<CameraParams>(*this);
+	// Queries
+	cam_queries = std::make_unique<CameraParams>(*this);
 }
 
 Database::~Database() = default;
