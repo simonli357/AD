@@ -229,7 +229,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
             tol = 0.25
             found = False
-            for offset in range(1, num_nodes + 1):
+            skip = 5
+            for offset in range(1, num_nodes + 1, skip):
                 idx = (start_idx + offset) % num_nodes
                 node_x, node_y = xs[idx], ys[idx]
 
