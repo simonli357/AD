@@ -16,7 +16,7 @@ from widgets.sidebar.sidebar import SidebarWidget
 from widgets.camera.camera import CameraWidget
 from widgets.camera.buttons import ButtonsWidget
 from widgets.map.map import MapWidget
-from widgets.map.run import RunOverlay
+from widgets.buttons_overlay import ButtonsOverlay
 from widgets.barca.barca import BarcaWidget
 from widgets.car.car import CarWidget
 from widgets.terminal.terminal import TerminalWidget
@@ -116,8 +116,8 @@ class MainWindow(QMainWindow):
         root_layout = QHBoxLayout(root_widget)
         root_layout.setContentsMargins(10, 10, 10, 10)
 
-        self.run_overlay = RunOverlay(self)
-        self.run_overlay.move(80, 5)
+        self.buttons_overlay = ButtonsOverlay(self)
+        self.buttons_overlay.move(80, 5)
 
         left_widgets = QWidget()
         self.left_layout = QVBoxLayout(left_widgets)

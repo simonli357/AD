@@ -1,13 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy, QLabel, QMenu, QDialog, QDialogButtonBox, QVBoxLayout
 from PyQt5 import QtCore
-from geometry_msgs.msg import PoseWithCovarianceStamped
 
 import os
 import xml.etree.ElementTree as ET
 import yaml
-import tf.transformations as tft
-import sys
-import numpy as np
 
 
 class CommentedTreeBuilder(ET.TreeBuilder):
@@ -70,7 +66,7 @@ class ConfirmUpdate(QDialog):
         self.close()
 
 
-class RunOverlay(QWidget):
+class ButtonsOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumSize(300, 60)
@@ -82,31 +78,10 @@ class RunOverlay(QWidget):
         self.read_from_cache()
         self.setup_ui()
 
-    def create_default_config(self, config):
-        default_config = {
-            'catkin_ws': '/path/to/catkin_ws',
-            'args': 'args'
-        }
-        os.makedirs(os.path.dirname(config), exist_ok=True)
-        with open(config, 'w') as file:
-            yaml.dump(default_config, file)
-
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         main_dir = os.path.dirname(os.path.dirname(current_dir))
         runs_file = os.path.join(main_dir, 'runs.xml')
-        controller_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'controller.yaml')
-        self.sim_file = os.path.join(main_dir, 'widgets', 'forms', 'appdata', 'simulator.yaml')
-        if not os.path.isfile(self.sim_file):
-            self.create_default_config(self.sim_file)
-        if not os.path.isfile(controller_file):
-            self.create_default_config(controller_file)
-        with open(self.sim_file, 'r') as file:
-            self.sim_config = yaml.safe_load(file)
-        with open(controller_file, 'r') as file:
-            cache = yaml.safe_load(file)
-            catkin_ws = cache['catkin_ws']
-            self.launchfile = f'{catkin_ws}/src/control/launch/controller.launch'
         tree = ET.parse(runs_file)
         root = tree.getroot()
         self.runs = []
@@ -121,42 +96,7 @@ class RunOverlay(QWidget):
                 current_run = {}
 
     def update_launch_params(self, x0, y0, yaw0, path):
-        try:
-            parser = ET.XMLParser(target=CommentedTreeBuilder())
-            tree = ET.parse(self.launchfile, parser)
-            root = tree.getroot()
-            for arg in root.findall('.//arg'):
-                name = arg.get('name')
-                if name == 'x0':
-                    arg.set('default', x0)
-                elif name == 'y0':
-                    arg.set('default', y0)
-                elif name == 'yaw0':
-                    arg.set('default', yaw0)
-                elif name == 'path':
-                    arg.set('default', path)
-            with open(self.launchfile, 'wb') as f:
-                self.serialize_xml(root, f)
-        except Exception as e:
-            print(f"Failed to update launch file: {e}")
-
-    def serialize_xml(self, elem, file, indent=0):
-        if elem.tag is ET.Comment:
-            file.write(b'  ' * indent + b'<!--' + elem.text.encode() + b'-->\n')
-            return
-        file.write(b'  ' * indent + b'<' + elem.tag.encode())
-        for name, value in elem.attrib.items():
-            file.write(b' %s="%s"' % (name.encode(), value.encode()))
-        if len(elem) or elem.text:
-            file.write(b'>')
-            if elem.text:
-                file.write(elem.text.encode())
-            file.write(b'\n')
-            for child in elem:
-                self.serialize_xml(child, file, indent + 1)
-            file.write(b'  ' * indent + b'</' + elem.tag.encode() + b'>\n')
-        else:
-            file.write(b'/>\n')
+        pass
 
     def setup_ui(self):
         self.run_wrapper = QHBoxLayout(self)

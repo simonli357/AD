@@ -13,7 +13,6 @@ import os
 import time
 import numpy as np
 import glm
-import threading
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
@@ -581,7 +580,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     print("state ref shape: ", self.main_window.state_refs_np.shape)
                     # print first 3 rows
                     print("state ref: ", self.main_window.state_refs_np.T[:, :3])
-                    path = os.path.dirname(os.path.abspath(__file__))
+                    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    path = os.path.join(path, 'saved')
                     np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
                     print("saved state refs")
                     return TriggerResponse(success=True, message="Parameters updated")
@@ -618,7 +618,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
                     self.main_window.attributes_np = np.array(res.wp_attributes.data)
                     print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.run_overlay.set_run_name(run.path_name)
+                    self.main_window.buttons_overlay.set_run_name(run.path_name)
                     self.main_window.reset_run_statistics()
                     return
                 retries += 1
