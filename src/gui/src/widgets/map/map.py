@@ -250,8 +250,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                             if not found:
                                 self.next_destination = (dest_x, dest_y)
                                 found = True
-                    if not found:
-                        self.no_destinations = True
+
+            if not found:
+                self.no_destinations = True
+            else:
+                return
 
             self.initial_destination_scan = False
             self.next_destination = None
