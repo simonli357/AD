@@ -18,11 +18,10 @@ Database::Database() : conn(nullptr, sqlite3_close) {
 		throw std::runtime_error("Failed to open SQLite DB");
 	}
 	conn.reset(raw);
+	initialize_tables();
 
     // Queries
     cam_queries = std::make_unique<CameraParams>(*this);
-
-	initialize_tables();
 }
 
 Database::~Database() = default;
