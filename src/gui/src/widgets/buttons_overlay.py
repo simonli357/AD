@@ -1,9 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSizePolicy, QLabel, QMenu, QDialog, QDialogButtonBox, QVBoxLayout
-from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QMenu
 
 import os
 import xml.etree.ElementTree as ET
-import yaml
 
 
 class CommentedTreeBuilder(ET.TreeBuilder):
@@ -13,68 +11,12 @@ class CommentedTreeBuilder(ET.TreeBuilder):
         self.end(ET.Comment)
 
 
-class ConfirmUpdate(QDialog):
-    def __init__(self, run_name=None):
-        super().__init__()
-        self.run_name = run_name
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setup_ui()
-        self.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.05);
-            color: green;
-            font-size: 24px;
-        """)
-
-    def setup_ui(self):
-        QBtn = QDialogButtonBox.Ok
-        self.buttonBox = QDialogButtonBox(QBtn)
-        ok_button = self.buttonBox.button(QDialogButtonBox.Ok)
-        ok_button.setObjectName("okButton")
-        self.buttonBox.setStyleSheet("""
-            QPushButton#okButton {
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-            }
-            QPushButton:hover {
-                opacity: 0.9;
-            }
-        """)
-        self.buttonBox.accepted.connect(self.accept)
-
-        self.info = QLabel(f'Injected {self.run_name} into controller launchfile.')
-        self.info.setStyleSheet("""
-            background-color: transparent;
-            padding-bottom: 5px;
-        """)
-        self.info2 = QLabel('Restart Controller and Simulator to apply changes.')
-        self.info2.setStyleSheet("""
-            background-color: transparent;
-            padding-bottom: 20px;
-        """)
-
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setAlignment(QtCore.Qt.AlignLeft)
-        self.layout.addWidget(self.info)
-        self.layout.addWidget(self.info2)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
-
-    def accept(self):
-        self.close()
-
-
 class ButtonsOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumSize(300, 60)
         self.main_window = self.parent()
         self.runs = []
-        self.launchfile = None
-        self.sim_config = None
-        self.sim_file = None
         self.read_from_cache()
         self.setup_ui()
 
@@ -94,9 +36,6 @@ class ButtonsOverlay(QWidget):
             if name == 'path':
                 self.runs.append(current_run)
                 current_run = {}
-
-    def update_launch_params(self, x0, y0, yaw0, path):
-        pass
 
     def setup_ui(self):
         self.run_wrapper = QHBoxLayout(self)
@@ -184,13 +123,12 @@ class ButtonsOverlay(QWidget):
     def swap_map(self) -> None:
         self.main_window.toggle_map()
 
+    def update_launch_params(self, x0, y0, yaw0, path):
+        pass
+
     def on_action_triggered(self, run):
         x0 = run.get('x0')
         y0 = run.get('y0')
         yaw0 = run.get('yaw0')
         path = run.get('path')
         self.update_launch_params(x0, y0, yaw0, path)
-        with open(self.sim_file, 'w') as file:
-            self.sim_config['args'] = f'{path}.launch'
-            yaml.dump(self.sim_config, file)
-        ConfirmUpdate(path).exec()
