@@ -38,7 +38,7 @@ std::array<double, 4> CameraParams::fetch_camera_sim_params() {
 std::array<double, 4> CameraParams::fetch_camera_real_params() {
 	const char *sql = R"(
       SELECT name, value
-      FROM camera_params_sim
+      FROM camera_params_real
       ORDER BY CASE name
         WHEN 'fx' THEN 0
         WHEN 'fy' THEN 1
