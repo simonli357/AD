@@ -1,14 +1,16 @@
 BEGIN TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS camera_params_sim (
-  name TEXT PRIMARY KEY,
-  value REAL NOT NULL
+  name  TEXT    PRIMARY KEY,
+  value REAL    NOT NULL
+);
+CREATE TABLE IF NOT EXISTS camera_params_real (
+  name  TEXT    PRIMARY KEY,
+  value REAL    NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS camera_params_real (
-  name TEXT PRIMARY KEY,
-  value REAL NOT NULL
-);
+DELETE FROM camera_params_sim;
+DELETE FROM camera_params_real;
 
 INSERT OR REPLACE INTO camera_params_sim (name, value) VALUES
   ('fx', 554.3826904296875),
