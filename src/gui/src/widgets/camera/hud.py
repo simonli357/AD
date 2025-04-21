@@ -137,7 +137,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             dx = p1.x - p0.x
             dy = p1.y - p0.y
             dist = np.hypot(dx, dy)
-            self.shader_renderer.large_text_renderer.render_text(f"{dist*100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
