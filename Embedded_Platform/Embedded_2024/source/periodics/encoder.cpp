@@ -3,6 +3,7 @@
 #include "periodics/encoder.hpp"
 #include <cstdio>
 #include <cmath>
+#include <algorithm>
 
 namespace periodics {
 
@@ -17,10 +18,12 @@ CEncoder::CEncoder(uint32_t f_period,
 {
     // compute sampling frequency and hysteresis
     _fs  = 1000.0f / m_period;   // Hz
-    _hys = 3.0f;                 // degrees of hysteresis
+    _hys = 1.0f;                 // degrees of hysteresis
+    _speedHys  = 50.0f;         // speed hysteresis (deg/s)
+
 
     // design 2nd-order Butterworth via bilinear transform
-    float cutoffHz = 10.0f;
+    float cutoffHz = 30.0f;
     float K  = tanf(M_PI * cutoffHz / _fs);
     float K2 = K * K;
     float norm = 1.0f + sqrtf(2.0f)*K + K2;
@@ -41,6 +44,42 @@ CEncoder::CEncoder(uint32_t f_period,
 CEncoder::~CEncoder() {
 }
 
+float CEncoder::applyHampel(float newSampleDeg)
+{
+    // 1) insert into circular buffer
+    _hampelBuf[_hampelIdx] = newSampleDeg;
+    _hampelIdx = (_hampelIdx + 1) % HAMPEL_WINDOW;
+    if (_hampelCount < HAMPEL_WINDOW) {
+        ++_hampelCount;
+        return newSampleDeg;         // not enough data yet
+    }
+
+    // 2) copy & sort to find median
+    float sorted[HAMPEL_WINDOW];
+    for (size_t i = 0; i < HAMPEL_WINDOW; ++i)
+        sorted[i] = _hampelBuf[i];
+    std::sort(sorted, sorted + HAMPEL_WINDOW);
+    float median = sorted[HAMPEL_WINDOW/2];
+
+    // 3) compute Median Absolute Deviation (MAD)
+    float dev[HAMPEL_WINDOW];
+    for (size_t i = 0; i < HAMPEL_WINDOW; ++i)
+        dev[i] = fabsf(_hampelBuf[i] - median);
+    std::sort(dev, dev + HAMPEL_WINDOW);
+    float mad = dev[HAMPEL_WINDOW/2];
+
+    // 4) threshold = max(K·MAD, minimum)
+    float thresh = HAMPEL_K * mad;
+    if (thresh < HAMPEL_MINTH) thresh = HAMPEL_MINTH;
+
+    // 5) spike veto
+    if (fabsf(newSampleDeg - median) > thresh) {
+        return median;    // reject spike
+    }
+    return newSampleDeg;  // accept sample
+}
+
+
 float CEncoder::applyHysteresis(float angle) {
     if      (angle >  _lastAngle + _hys) _lastAngle = angle;
     else if (angle <  _lastAngle - _hys) _lastAngle = angle;
@@ -48,9 +87,18 @@ float CEncoder::applyHysteresis(float angle) {
     return _lastAngle = angle;
 }
 
+float CEncoder::applySpeedHysteresis(float speed) {
+    if      (speed >  _lastSpeed + _speedHys) _lastSpeed = speed;
+    else if (speed <  _lastSpeed - _speedHys) _lastSpeed = speed;
+    else                                      speed = _lastSpeed;
+    return _lastSpeed = speed;
+}
+
 float CEncoder::readAngleDegrees() {
     // 1) Raw PWM → angle (0..360°)
     float rawDeg = m_pwm.dutycycle() * 360.0f;
+    // 1.1) Sanitize angle
+    // rawDeg = applyHampel(rawDeg);
     // 2) Convert to radians
     float rawRad = rawDeg * M_PI / 180.0f;
     // 3) Split and filter
@@ -67,20 +115,36 @@ float CEncoder::readAngleDegrees() {
 
 float CEncoder::readAngularSpeed() {
     float angle = readAngleDegrees();
-    float dt = m_dt;
-    // MATLAB-style filtered derivative
-    constexpr float Tfd = 0.07f;
-    float a = Tfd / (Tfd + dt);
-    float b = 1.0f / (Tfd + dt);
+    float dt    = m_dt;
 
+    // wrap-around difference
     float delta = angle - m_prevAngle;
     if (delta >  180.0f) delta -= 360.0f;
     if (delta < -180.0f) delta += 360.0f;
 
-    float speed = a * m_prevSpeed + b * delta;
+    // compute raw derivative
+    float rawDeriv = delta / dt;
+
+    // first-order low-pass on derivative
+    constexpr float Tfd = 0.03f;               // derivative filter time constant
+    float alpha = Tfd / (Tfd + dt);
+    float beta  = dt  / (Tfd + dt);
+    float rawSpeed = alpha * m_prevSpeed + beta * rawDeriv;
+
+    // optional extra smoothing
+    static float speedFilt = rawSpeed;
+    constexpr float tau = 0.1f;               // extra smoothing time constant
+    float a2 = tau / (tau + dt);
+    speedFilt = a2 * speedFilt + (1.0f - a2) * rawSpeed;
+
+    // apply hysteresis to speed
+    float speed = applySpeedHysteresis(speedFilt);
+
+    // update state
     m_prevAngle = angle;
-    m_prevSpeed = speed;
-    return speed;
+    m_prevSpeed = rawSpeed;
+
+    return -speed;
 }
 
 float CEncoder::readAngularAcceleration() {
@@ -121,9 +185,9 @@ void CEncoder::_run() {
     float angle = readAngleDegrees();
     float speed = readAngularSpeed();
     float acc   = readAngularAcceleration();
-    printf("PWM Angle: %.2f°\n", angle);
-    printf("PWM Speed: %.2f°/s\n", speed);
-    printf("PWM Acceleration: %.2f°/s²\n", acc);
+    printf("@AN:%.2f°\n", angle);
+    printf("@SP:%.2f°/s\n", speed);
+    // printf("PWM Acceleration: %.2f°/s²\n", acc);
 }
 
 } // namespace periodics

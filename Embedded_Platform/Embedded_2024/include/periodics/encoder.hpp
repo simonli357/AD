@@ -6,6 +6,7 @@
 #include <utils/task.hpp>
 #include "PwmIn.h"
 #include <cmath>
+#include <algorithm>
 
 namespace periodics {
 
@@ -32,11 +33,23 @@ public:
     /** @return angular acceleration (deg/s²) */
     float readAngularAcceleration();
 
+    /** @return filtered angle in [0,360)° */
+    float applyHampel(float rawAngleDeg);
+
+    static constexpr size_t HAMPEL_WINDOW = 7;       // must be odd
+    static constexpr float  HAMPEL_K      = 3.0f;    // threshold factor (3×MAD)
+    static constexpr float  HAMPEL_MINTH  = 0.5f;    // minimum absolute threshold [deg]
+
+    float  _hampelBuf[HAMPEL_WINDOW] = {0};
+    size_t _hampelIdx              = 0;
+    size_t _hampelCount            = 0;
+
     /** @return turn count */
     int getTurnCount();
 
     /** @return linear speed (m/s) */
     float getLinearSpeed();
+
 
     /** @return linear acceleration (m/s²) */
     float getLinearAcceleration();
@@ -65,12 +78,15 @@ private:
     };
 
     float applyHysteresis(float angle);
+    float applySpeedHysteresis(float speed);
 
     // IIR filter state
     float _fs;        ///< sampling frequency (Hz)
     float _hys;       ///< hysteresis half-width (°)
+    float _speedHys;     ///< speed hysteresis half-width (deg/s)
     Biquad _sinF, _cosF;
     float  _lastAngle{0.0f};
+    float _lastSpeed{0.0f};
 };
 
 } // namespace periodics
