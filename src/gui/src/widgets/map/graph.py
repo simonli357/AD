@@ -170,13 +170,14 @@ class GraphEditor:
         return False
 
     def mouseReleaseEventNonDrag(self, event):
-        self._dragging = False
-        xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
-        node_key = self.instance_data.keys[self._drag_index]
-        self.G.nodes[node_key]['x'] = float(xw)
-        self.G.nodes[node_key]['y'] = float(yw)
-        self.node_instance_renderer.color_instance(self._drag_index, NamedColor.INDIGO.value)
-        self._drag_index = None
+        if event.button() == Qt.LeftButton:
+            self._dragging = False
+            xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
+            node_key = self.instance_data.keys[self._drag_index]
+            self.G.nodes[node_key]['x'] = float(xw)
+            self.G.nodes[node_key]['y'] = float(yw)
+            self.node_instance_renderer.color_instance(self._drag_index, NamedColor.INDIGO.value)
+            self._drag_index = None
 
     def mouseReleaseEventDragging(self, event):
         pass
