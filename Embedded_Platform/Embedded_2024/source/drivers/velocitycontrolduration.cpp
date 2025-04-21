@@ -54,7 +54,7 @@ namespace drivers{
         // If the accumulated ticks exceed the target time, stop the movement and deactivate the task.
         if(m_ticksRun >= m_targetTime+0.1)
         {
-            m_speedingControl.setSpeed(0.0);
+            // m_speedingControl.setSpeed(0.0);
             m_steeringControl.CalculateAngle(0.0);
             m_isActive = false;
         }
