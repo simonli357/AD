@@ -4,6 +4,7 @@ from ..enums import OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 
 import glm
+import numpy as np
 
 
 class CameraOverlay(QtWidgets.QOpenGLWidget):
@@ -131,6 +132,13 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
                 self.view_mat,
             )
 
+        if len(self.click_history) == 2:
+            p0, p1 = self.click_history
+            dx = p1.x - p0.x
+            dy = p1.y - p0.y
+            dist = np.hypot(dx, dy)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist*100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
+
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
             try:
@@ -240,8 +248,9 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         y_ndc = 1.0 - 2.0 * event.y() / h
 
         if event.button() == QtCore.Qt.RightButton:
-            self.click_history.clear()
+            if len(self.click_history) > 0:
+                self.click_history.pop()
         elif event.button() == QtCore.Qt.LeftButton:
             hit = self.unproject_to_plane(x_ndc, y_ndc)
-            if hit is not None:
+            if hit is not None and len(self.click_history) < 3:
                 self.click_history.append(hit)
