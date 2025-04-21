@@ -447,6 +447,17 @@ public:
             position_history.pop_front();
         }
     }
+
+    void populate_msg(std_msgs::Float32MultiArray& msg) const override {
+        msg.data.push_back(static_cast<float>(type));
+        msg.data.push_back(static_cast<float>(x));
+        msg.data.push_back(static_cast<float>(y));
+        msg.data.push_back(static_cast<float>(yaw));
+        msg.data.push_back(static_cast<float>(speed));
+        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(z));
+        msg.data.push_back(static_cast<float>(id));
+    }
 };
 
 inline constexpr std::array<int, 8> KNOWN_STATIC_SIGNS = {
