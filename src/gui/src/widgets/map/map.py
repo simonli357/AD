@@ -126,6 +126,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def render_widget(self) -> None:
         self.update()
 
+    def setup_destinations_renderer(self):
+        dest_positions = list(zip(
+            *self.get_gl_coords(self.destinations['X'], self.destinations['Y']),
+            self.destinations.get('Z', pd.Series(0.5, index=self.destinations.index))
+        ))
+        self.destinations_renderer = DestinationsRenderer(dest_positions, scales=8.0)
+
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -142,11 +149,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.ortho_view_mat = glm.mat4(1.0)
 
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
-        self.destinations_renderer = DestinationsRenderer()
+        self.setup_destinations_renderer()
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
         self.graph_editor = GraphEditor(map_widget=self)
-
-        self.update_destinations()
 
         self.sign_models = []
         for path in self.sign_images:
@@ -263,7 +268,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
         if self.show_destinations:
-            self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
+            self.destinations_renderer.render(self.proj_mat, self.view_mat)
             for x, y in self.main_window.visited:
                 gl_x, gl_y = self.get_gl_coords(x, y)
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
@@ -508,9 +513,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self._refs_ys = self.main_window.state_refs_np[1, :].copy()
             self._refs_len = self._refs_xs.shape[0]
 
-    def update_destinations(self):
-        self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
-
     def handle_measurement_click(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             if len(self.click_history) < 2:
@@ -537,7 +539,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         self.update_waypoints()
-        self.update_destinations()
+        self.setup_destinations_renderer()
 
     def mousePressEvent(self, event):
         if self.show_graph:
