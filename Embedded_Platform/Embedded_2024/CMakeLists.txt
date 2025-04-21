@@ -19,6 +19,7 @@ file(GLOB_RECURSE MY_SOURCE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/source/drivers/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/periodics/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/utils/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/PwmIn/*.cpp"      # Include directory for PwmIn
 )
 
 add_executable(${APP_TARGET} ${MY_SOURCE_FILES})
@@ -31,6 +32,7 @@ set(includeDirs
     ${CMAKE_CURRENT_SOURCE_DIR}/include/drivers
     ${CMAKE_CURRENT_SOURCE_DIR}/include/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/include/periodics
+    ${CMAKE_CURRENT_SOURCE_DIR}/PwmIn
 )
 
 target_include_directories(${APP_TARGET}

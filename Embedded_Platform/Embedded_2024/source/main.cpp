@@ -19,11 +19,14 @@ periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 // It's a task for sending periodically the IMU values
 periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
 
+// Task for controlling the encoder
+periodics::CEncoder g_encoder(0.0001/g_baseTick, g_rpi, D2);
+
 //PIN for a motor speed in ms, inferior and superior limit
-drivers::CSpeedingMotor g_speedingDriver(D3, -50.0, 50.0); //speed in cm/s
+drivers::CSpeedingMotor g_speedingDriver(0.1/g_baseTick,g_rpi,D3, g_encoder); //speed in cm/s
 
 //PIN for angle in servo degrees, inferior and superior limit
-drivers::CSteeringMotor g_steeringDriver(0.05 / g_baseTick, g_rpi, D4, -100.0, 100.0, g_imu, g_speedingDriver);
+drivers::CSteeringMotor g_steeringDriver(0.05 / g_baseTick, g_rpi, D4, g_imu, g_speedingDriver);
 
 // Task responsible for configuring the vehicle's speed and steering over a specified duration.
 drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
@@ -31,18 +34,19 @@ drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_st
 // Create the motion controller, which controls the robot states and the robot moves based on the transmitted command over the serial interface. 
 brain::CRobotStateMachine g_robotstatemachine(0.1/g_baseTick, g_rpi, g_steeringDriver, g_speedingDriver);
 
+
 // Map for redirecting messages with the key and the callback functions. If the message key equals to one of the enumerated keys, than it will be applied the paired callback function.
 drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
-    {"1",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSPEEDcommand)},
-    {"2",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSTEERcommand)},
-    {"3",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBRAKEcommand)},
+    // {"1",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSPEEDcommand)},
+    // {"2",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSTEERcommand)},
+    // {"3",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBRAKEcommand)},
     // {"4",mbed::callback(&g_motorCalibration,&periodics::CTotalVoltage::SpeedMotorCalibration)},
     // {"5",mbed::callback(&g_totalvoltage,&periodics::CTotalVoltage::TotalPublisherCommand)},
     // {"6",mbed::callback(&g_instantconsumption,&periodics::CInstantConsumption ::InstantPublisherCommand)},
     {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
-    {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},
+    // {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},
     // {"8",mbed::callback(&g_complexMoves, &drivers::CComplexMoves::serialCallbackComplexMovesCommand)},
-    {"9",mbed::callback(&g_velocityControlDuration, &drivers::CVelocityControlDuration::serialCallbackVCDCommand)},
+    // {"9",mbed::callback(&g_velocityControlDuration, &drivers::CVelocityControlDuration::serialCallbackVCDCommand)},
     // Callback for the PWM input command
     {"10",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPWMcommand)},
     {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
@@ -62,7 +66,8 @@ utils::CTask* g_taskList[] = {
     &g_robotstatemachine,
     &g_velocityControlDuration,
     &g_serialMonitor,
-    &g_steeringDriver
+    &g_steeringDriver,
+    &g_encoder
 }; 
 
 // Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 
