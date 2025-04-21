@@ -14,7 +14,7 @@ class CommentedTreeBuilder(ET.TreeBuilder):
 class ButtonsOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(300, 60)
+        self.setMinimumSize(350, 60)
         self.main_window = self.parent()
         self.runs = []
         self.read_from_cache()
