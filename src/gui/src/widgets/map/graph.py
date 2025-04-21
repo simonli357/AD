@@ -58,3 +58,21 @@ class GraphEditor:
 
     def export(self, path):
         nx.write_graphml(self.G, path)
+
+    ##############
+    # Events
+    ##############
+
+    # Return false if we want parent behavior
+    def mousePressEvent(self, event) -> bool:
+        return False
+
+    # Return false if we want parent behavior
+    def mouseMoveEvent(self, event) -> bool:
+        return False
+
+    def mouseReleaseEventNonDrag(self, event):
+        pass
+
+    def mouseReleaseEventDragging(self, event):
+        pass

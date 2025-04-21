@@ -540,6 +540,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update_destinations()
 
     def mousePressEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mousePressEvent(event):
+                return
+
         if event.button() == QtCore.Qt.LeftButton:
             self._press_pos = event.pos()
             self._is_dragging = False
@@ -553,6 +557,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 self.cursor_coords.clear()
 
     def mouseMoveEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mouseMoveEvent(event):
+                return
+
         self.current_mouse_pos = event.pos()
         if event.buttons() & QtCore.Qt.LeftButton and self._press_pos is not None:
             dist = (event.pos() - self._press_pos).manhattanLength()
@@ -578,7 +586,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def mouseReleaseEvent(self, event):
         if self.show_graph:
+            if self._is_dragging:
+                self.graph_editor.mouseReleaseEventDragging(event)
+            elif not self._is_dragging:
+                self.graph_editor.mouseReleaseEventNonDrag(event)
+            self._press_pos = None
             return
+
         if event.button() == QtCore.Qt.LeftButton:
             if not self._is_dragging and not self.measuring:
                 self.handle_marker_click(event)
