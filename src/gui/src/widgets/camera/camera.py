@@ -12,6 +12,7 @@ class CameraWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.main_window = self.parent()
         self.has_frame = False
         self.show_depth = False
         self.numObj = 0

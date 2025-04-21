@@ -12,6 +12,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
         self.cam_widget = cam_widget
+        self.use_sim = True
 
         # Lane
         self.center = None
@@ -28,26 +29,43 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             (0.000, 0.500, 1.000), (0.000, 0.749, 0.749), (0.000, 1.000, 0.000)
         ]
 
-        # RealSense intrinsics
-        self.CAMERA_PARAMS_REAL = {
-            "fx": 607.40564,
-            "fy": 607.05829,
-            "cx": 322.97223,
-            "cy": 244.39398,
-        }
+        self.cam_real_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_real_params()
+        self.cam_sim_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_sim_params()
 
-        # RealSense extrinsics: x, y, z, roll, pitch, yaw
-        self.REALSENSE_TF_REAL = (-0.11, -0.032, 0.25, 0, 0.0, 0)
+        self.realsense_tf_sim = self.cam_widget.main_window.database.cam_queries.fetch_realsense_sim_params()
+        self.realsense_tf_real = self.cam_widget.main_window.database.cam_queries.fetch_realsense_real_params()
+
+        self.upload_camera_params()
 
     def update_overlay(self):
         self.update()
 
+    def upload_camera_params(self):
+        if not self.use_sim:
+            fx, fy, cx, cy = self.cam_real_params
+            tx, ty, tz, roll, pitch, yaw = self.realsense_tf_real
+        else:
+            fx, fy, cx, cy = self.cam_sim_params
+            tx, ty, tz, roll, pitch, yaw = self.realsense_tf_sim
+
+        # intrinsics
+        self.CAMERA_PARAMS = {
+            "fx": fx,
+            "fy": fy,
+            "cx": cx,
+            "cy": cy,
+        }
+
+        # extrinsics
+        self.REALSENSE_TF = (tx, ty, tz, roll, pitch, yaw)
+        self.update_camera_matrices(self.width(), self.height())
+
     def update_camera_matrices(self, w, h):
         # 1) Extract intrinsics
-        fx = self.CAMERA_PARAMS_REAL["fx"]
-        fy = self.CAMERA_PARAMS_REAL["fy"]
-        cx = self.CAMERA_PARAMS_REAL["cx"]
-        cy = self.CAMERA_PARAMS_REAL["cy"]
+        fx = self.CAMERA_PARAMS["fx"]
+        fy = self.CAMERA_PARAMS["fy"]
+        cx = self.CAMERA_PARAMS["cx"]
+        cy = self.CAMERA_PARAMS["cy"]
 
         # 2) Choose near/far planes (tweak as needed)
         near = 0.1
@@ -68,7 +86,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.proj_mat = P
 
         # 5) Extract extrinsics
-        tx, ty, tz, roll, pitch, yaw = self.REALSENSE_TF_REAL
+        tx, ty, tz, roll, pitch, yaw = self.REALSENSE_TF
 
         swap = glm.rotate(glm.mat4(1.0), -glm.pi() / 2.0, glm.vec3(1, 0, 0))
         flipZ = glm.rotate(glm.mat4(1.0), glm.pi(), glm.vec3(0, 0, 1))

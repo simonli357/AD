@@ -12,6 +12,7 @@ from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
+from database.database import Database
 from widgets.sidebar.sidebar import SidebarWidget
 from widgets.camera.camera import CameraWidget
 from widgets.camera.buttons import ButtonsWidget
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
         self.server = server
+        self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
         self.state_refs_np = None
