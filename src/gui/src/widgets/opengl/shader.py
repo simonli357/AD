@@ -46,6 +46,8 @@ class ShaderRenderer:
     def load_graph_models(self):
         self.selected_node_shader = create_shader_program(shader_path('node', 'selected_node.vert'), shader_path('node', 'selected_node.frag'))
         self.selected_node_model = diamond_model()
+        self.arrow_shader = create_shader_program(shader_path('arrow', 'arrow.vert'), shader_path('arrow', 'arrow.frag'))
+        self.arrow_model = arrow_model()
 
     def load_cam_models(self):
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
@@ -594,6 +596,40 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.crosshair_model.vao)
         for i in range(4):
             gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, i * 4, 4)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
+
+    def draw_arrow_between(self, start, end, color, thickness, view_matrix, proj_matrix, z=3.0):
+        x0, y0 = start
+        x1, y1 = end
+
+        dx, dy = x1 - x0, y1 - y0
+        length = np.hypot(dx, dy)
+        if length < 1e-6:
+            return  # nothing visible
+
+        # Correct rotation:
+        theta = np.arctan2(dy, dx)
+        angle = theta - np.pi / 2
+
+        # build model matrix
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x0, y0, z))
+        model = glm.rotate(model, angle, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(thickness, length, 1.0))
+
+        # upload & draw (unchanged)
+        gl.glUseProgram(self.arrow_shader)
+
+        def loc(name):
+            return gl.glGetUniformLocation(self.arrow_shader, name)
+        gl.glUniformMatrix4fv(loc("model"), 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(loc("view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(loc("projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(loc("color"), *color)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 

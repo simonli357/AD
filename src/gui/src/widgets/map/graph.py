@@ -9,6 +9,7 @@ import networkx as nx
 
 class InstanceData:
     def __init__(self):
+        self.ids_str = []
         self.ids = []
         self.positions = []
 
@@ -17,6 +18,7 @@ class Shapes:
     def __init__(self):
         self.node_shader = create_shader_program(shader_path('node', 'node.vert'), shader_path('node', 'node.frag'))
         self.node_default_scale = 8.0
+        self.arrow_thickness = 10.0
         self.node_base_vertices = np.array([
             # Positions (3D for proper matrix transformations)
             [0.0, 0.5, 0.1],  # Top
@@ -55,6 +57,23 @@ class GraphEditor:
         if self.prev_hovered is not None:
             self.shader_renderer.draw_selected_node(*self.instance_data.positions[self.prev_hovered], NamedColor.PURPLE.value, 8.0, 0.0, view_mat, proj_mat)
 
+        if hasattr(self, 'id2pos'):
+            for u, v in self.G.edges():
+                start = self.id2pos.get(u)
+                end = self.id2pos.get(v)
+                if start is None or end is None:
+                    continue
+
+                self.shader_renderer.draw_arrow_between(
+                    (start[0], start[1]),
+                    (end[0], end[1]),
+                    NamedColor.RED.value,
+                    self.shapes.arrow_thickness,
+                    view_mat,
+                    proj_mat,
+                    z=start[2]
+                )
+
     def hide_selected_instance(self, mouse_x, mouse_y, view_mat, proj_mat):
         if self.node_instance_renderer is None:
             return
@@ -84,8 +103,13 @@ class GraphEditor:
             y_real = float(data.get('y', 0))
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
+            self.instance_data.ids_str.append(node_id)
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
+        self.id2pos = {
+            nid: pos
+            for nid, pos in zip(self.instance_data.ids_str, self.instance_data.positions)
+        }
 
     def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2

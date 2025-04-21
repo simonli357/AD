@@ -1,7 +1,6 @@
 #version 330 core
 layout(location = 0) out vec4 FragColor;
 
-// this must match the out from your vertex shader:
 in vec2 vLocalPos;
 
 uniform vec4 color; // interior fill color

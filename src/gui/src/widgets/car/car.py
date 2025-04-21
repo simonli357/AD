@@ -1,10 +1,10 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from .stats import HidableOverlay
 from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
-from ..opengl.gt import GTRenderer
+from ..opengl.instance.gt import GTRenderer
 
 import numpy as np
 import glm

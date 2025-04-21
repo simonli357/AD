@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from OpenGL import GL as gl
 from ..enums import BarcaMapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
-from ..opengl.waypoints import WaypointsRenderer
+from ..opengl.instance.waypoints import WaypointsRenderer
 
 import glm
 import numpy as np

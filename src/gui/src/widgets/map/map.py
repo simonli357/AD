@@ -3,8 +3,8 @@ from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
-from ..opengl.waypoints import WaypointsRenderer
-from ..opengl.destinations import DestinationsRenderer
+from ..opengl.instance.waypoints import WaypointsRenderer
+from ..opengl.instance.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
 from ..enums import MapData, NamedColor, OpenGLContextName
 
@@ -201,11 +201,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_path_nodes()
             self.draw_measurement_points()
 
-        if self.view_zoom == 1.0:
-            self.draw_legend(self.width() / 2.7, self.height() / 3)
-            pass
+            if self.view_zoom == 1.0:
+                self.draw_legend(self.width() / 2.7, self.height() / 3)
+                pass
 
-        self.update_mouse_pos()
+            self.update_mouse_pos()
 
     def draw_measurement_points(self):
         if len(self.click_history) > 0:
