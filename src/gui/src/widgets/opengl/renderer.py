@@ -108,6 +108,50 @@ class InstanceRenderer:
                     m = glm.scale(m, glm.vec3(u, u, u))
             self.mats[i] = np.array(m.to_list(), dtype=np.float32)
 
+    def _update_instance_matrix(self, index: int):
+        # rebuild the model matrix for a single instance
+        pos = self.positions[index]
+        m = glm.mat4(1.0)
+        m = glm.translate(m, glm.vec3(*pos))
+        # apply rotation
+        if self.rotations is not None:
+            r = self.rotations[index]
+            if hasattr(r, '__len__') and len(r) == 4:
+                angle, x, y, z = r
+                m = glm.rotate(m, float(angle), glm.vec3(x, y, z))
+            else:
+                m = glm.rotate(m, float(r), glm.vec3(0, 0, 1))
+        # apply scale
+        if self.scales is not None:
+            s = self.scales[index]
+            if hasattr(s, '__len__') and len(s) == 3:
+                sx, sy, sz = s
+                m = glm.scale(m, glm.vec3(float(sx), float(sy), float(sz)))
+            else:
+                u = float(s)
+                m = glm.scale(m, glm.vec3(u, u, u))
+        self.mats[index] = np.array(m.to_list(), dtype=np.float32)
+
+    def scale_instance(self, index: int, scale: float):
+        # update the scale and rebuild the matrix
+        if self.scales is None:
+            self.scales = np.ones(self.instance_count, dtype=np.float32)
+        self.scales[index] = scale
+        self._update_instance_matrix(index)
+
+    def rotate_instance(self, index: int, rotation):
+        # update the rotation and rebuild
+        if self.rotations is None:
+            self.rotations = np.zeros(self.instance_count, dtype=np.float32)
+        self.rotations[index] = rotation
+        self._update_instance_matrix(index)
+
+    def translate_instance(self, index: int, x: float, y: float):
+        # update the position (keeping z if present) and rebuild
+        z = float(self.positions[index][2]) if self.positions.shape[1] >= 3 else 0.0
+        self.positions[index] = np.array([x, y, z], dtype=np.float32)
+        self._update_instance_matrix(index)
+
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
 
