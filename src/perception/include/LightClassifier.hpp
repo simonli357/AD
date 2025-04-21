@@ -81,10 +81,11 @@ class LightClassifier {
 
             const int img_height = detected_light.rows;
             const int img_width = detected_light.cols;
-            const int circle_diameter = (img_width * 0.5);
-            const int empirical_y_center_red = circle_diameter/2 + img_height/22;
-            const int empirical_y_center_yellow = empirical_y_center_red + circle_diameter;
-            const int empirical_y_center_green = empirical_y_center_yellow + circle_diameter;
+            // const int circle_diameter = (img_width * 0.85);
+            const int circle_diameter = (img_height*0.9/3);
+            const int empirical_y_center_red = circle_diameter/2 + img_height/32;
+            const int empirical_y_center_yellow = empirical_y_center_red + circle_diameter + img_height/32;
+            const int empirical_y_center_green = empirical_y_center_yellow + circle_diameter + img_height/32;
             const int empirical_x_center = img_width/2;
             
             if (show) {
