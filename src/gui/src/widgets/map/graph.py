@@ -12,6 +12,7 @@ import networkx as nx
 class InstanceData:
     def __init__(self):
         self.ids = []
+        self.keys = []
         self.positions = []
         self.starts = []
         self.ends = []
@@ -98,6 +99,7 @@ class GraphEditor:
             y_real = float(data.get('y', 0))
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
+            self.instance_data.keys.append(node_id)
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
 
@@ -126,6 +128,12 @@ class GraphEditor:
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def export(self, path):
+        for u, v, data in self.G.edges(data=True):
+            x1 = float(self.G.nodes[u]['x'])
+            y1 = float(self.G.nodes[u]['y'])
+            x2 = float(self.G.nodes[v]['x'])
+            y2 = float(self.G.nodes[v]['y'])
+            data['distance'] = np.hypot(x2 - x1, y2 - y1)
         nx.write_graphml(self.G, path)
 
     ##############
@@ -163,6 +171,10 @@ class GraphEditor:
 
     def mouseReleaseEventNonDrag(self, event):
         self._dragging = False
+        xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
+        node_key = self.instance_data.keys[self._drag_index]
+        self.G.nodes[node_key]['x'] = float(xw)
+        self.G.nodes[node_key]['y'] = float(yw)
         self.node_instance_renderer.color_instance(self._drag_index, NamedColor.INDIGO.value)
         self._drag_index = None
 
