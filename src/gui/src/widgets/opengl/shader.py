@@ -11,7 +11,7 @@ from .custom.lane import LaneIndicator
 from .custom.detection_box import DetectionBox
 from .custom.speedometer import Speedometer
 from .custom.cam_grid import CameraGrid
-from .custom.cam_eye import CameraEye
+from .custom.cam_point import CameraPoint
 from .font import TextRenderer
 
 import glm
@@ -50,12 +50,12 @@ class ShaderRenderer:
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
         self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
         self.grid_shader = create_shader_program(shader_path('grid', 'grid.vert'), shader_path('grid', 'grid.frag'))
-        self.eye_shader = create_shader_program(shader_path('sphere', 'sphere.vert'), shader_path('sphere', 'sphere.frag'))
+        self.point_shader = create_shader_program(shader_path('sphere', 'sphere.vert'), shader_path('sphere', 'sphere.frag'))
 
         self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
         self.lane_model = LaneIndicator(self.text_renderer, self.lane_shader)
         self.grid_model = CameraGrid(self.grid_shader)
-        self.eye_model = CameraEye(self.eye_shader)
+        self.point_model = CameraPoint(self.point_shader)
 
     def load_car_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))

@@ -14,6 +14,8 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.cam_widget = cam_widget
         self.use_sim = True
 
+        self.click_history = []
+
         # Lane
         self.center = None
         self.crosswalk = False
@@ -121,8 +123,13 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.draw_lane_indicator()
         # 10 x 10 cm grid
         self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.1)
-        # 0.5 cm radius sphere at plane intersect
-        self.shader_renderer.eye_model.draw(self.proj_mat, self.view_mat, self.extrinsic)
+        # Clicked coords
+        for world_pt in self.click_history:
+            self.shader_renderer.point_model.draw_at(
+                world_pt,
+                self.proj_mat,
+                self.view_mat,
+            )
 
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
@@ -192,6 +199,32 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             world_pt = self.extrinsic * cam_pt
         return world_pt.x, world_pt.y, world_pt.z
 
+    def unproject_to_plane(self, x_ndc, y_ndc):
+        # build clip space points at near and far
+        clip_near = glm.vec4(x_ndc, y_ndc, -1.0, 1.0)
+        clip_far = glm.vec4(x_ndc, y_ndc, +1.0, 1.0)
+        # eye space = inverse(Proj) * clip
+        eye_near = glm.inverse(self.proj_mat) * clip_near
+        eye_far = glm.inverse(self.proj_mat) * clip_far
+        eye_near /= eye_near.w
+        eye_far /= eye_far.w
+        # world space = inverse(View) * eye
+        world_near = glm.inverse(self.view_mat) * eye_near
+        world_far = glm.inverse(self.view_mat) * eye_far
+        world_near /= world_near.w
+        world_far /= world_far.w
+        # ray direction
+        dir = glm.normalize(glm.vec3(world_far - world_near))
+        # intersect with z=0 plane: origin = world_near.xyz
+        orig = glm.vec3(world_near)
+        if abs(dir.z) < 1e-6:
+            return None
+        t = -orig.z / dir.z
+        if t < 0:
+            return None
+        hit = orig + dir * t
+        return hit
+
     ################
     # Events
     ################
@@ -200,3 +233,15 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         super().resizeGL(w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         self.update_camera_matrices(w, h)
+
+    def mousePressEvent(self, event):
+        w, h = self.width(), self.height()
+        x_ndc = 2.0 * event.x() / w - 1.0
+        y_ndc = 1.0 - 2.0 * event.y() / h
+
+        if event.button() == QtCore.Qt.RightButton:
+            self.click_history.clear()
+        elif event.button() == QtCore.Qt.LeftButton:
+            hit = self.unproject_to_plane(x_ndc, y_ndc)
+            if hit is not None:
+                self.click_history.append(hit)
