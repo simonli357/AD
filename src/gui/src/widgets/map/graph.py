@@ -2,6 +2,7 @@ from ..opengl.shader import ShaderRenderer
 from ..opengl.renderer import InstanceRenderer
 from ..opengl.utils import create_shader_program, shader_path
 from ..enums import OpenGLContextName, NamedColor
+from ..opengl.instance.arrows import ArrowInstanceRenderer
 
 import numpy as np
 import networkx as nx
@@ -9,9 +10,10 @@ import networkx as nx
 
 class InstanceData:
     def __init__(self):
-        self.ids_str = []
         self.ids = []
         self.positions = []
+        self.starts = []
+        self.ends = []
 
 
 class Shapes:
@@ -37,6 +39,7 @@ class GraphEditor:
         self.shader_renderer = ShaderRenderer(OpenGLContextName.GRAPH)
         self.instance_data = InstanceData()
         self.node_instance_renderer = None
+        self.arrow_instance_renderer = None
         self.prev_hovered = None
         self.G = map_widget.main_window.database.graph_queries.fetch_graph()
 
@@ -50,29 +53,15 @@ class GraphEditor:
         if len(self.instance_data.positions) == 0:
             self.update_instance_data()
             self.node_instance_renderer = InstanceRenderer(self.shapes.node_base_vertices, self.instance_data.positions, NamedColor.INDIGO.value, scales=self.shapes.node_default_scale, shader_program=self.shapes.node_shader)
+            self.arrow_instance_renderer = ArrowInstanceRenderer(self.instance_data.starts, self.instance_data.ends, color=(1, 0, 0, 1), thickness=20.0)
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
+        if self.arrow_instance_renderer is not None:
+            self.arrow_instance_renderer.render(proj_mat, view_mat)
 
         self.hide_selected_instance(mouse_x, mouse_y, view_mat, proj_mat)
         if self.prev_hovered is not None:
             self.shader_renderer.draw_selected_node(*self.instance_data.positions[self.prev_hovered], NamedColor.PURPLE.value, 8.0, 0.0, view_mat, proj_mat)
-
-        if hasattr(self, 'id2pos'):
-            for u, v in self.G.edges():
-                start = self.id2pos.get(u)
-                end = self.id2pos.get(v)
-                if start is None or end is None:
-                    continue
-
-                self.shader_renderer.draw_arrow_between(
-                    (start[0], start[1]),
-                    (end[0], end[1]),
-                    NamedColor.RED.value,
-                    self.shapes.arrow_thickness,
-                    view_mat,
-                    proj_mat,
-                    z=start[2]
-                )
 
     def hide_selected_instance(self, mouse_x, mouse_y, view_mat, proj_mat):
         if self.node_instance_renderer is None:
@@ -103,13 +92,28 @@ class GraphEditor:
             y_real = float(data.get('y', 0))
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
-            self.instance_data.ids_str.append(node_id)
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
-        self.id2pos = {
+
+        id2pos = {
             nid: pos
-            for nid, pos in zip(self.instance_data.ids_str, self.instance_data.positions)
+            for nid, pos in zip(self.instance_data.ids, self.instance_data.positions)
         }
+
+        for u, v in self.G.edges():
+            try:
+                ui = int(str(u).lstrip('n'))
+                vi = int(str(v).lstrip('n'))
+            except ValueError:
+                continue
+
+            start = id2pos.get(ui)
+            end = id2pos.get(vi)
+            if start is None or end is None:
+                continue
+
+            self.instance_data.starts.append((start[0], start[1]))
+            self.instance_data.ends.append((end[0], end[1]))
 
     def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
