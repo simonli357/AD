@@ -157,6 +157,7 @@ class SidebarWidget(QtWidgets.QWidget):
 
     def handle_graph_btn_click(self) -> None:
         self.map_widget.show_graph = not self.map_widget.show_graph
+        self.map_widget.graph_editor.G = self.main_window.database.graph_queries.fetch_graph()
         self.update_button_style(self.toggle_graph_editor_btn, self.map_widget.show_graph)
 
     def handle_states_btn_click(self) -> None:

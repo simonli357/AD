@@ -2,9 +2,9 @@ from ..opengl.shader import ShaderRenderer
 from ..opengl.renderer import InstanceRenderer
 from ..opengl.utils import create_shader_program, shader_path
 from ..enums import OpenGLContextName, NamedColor
-from networkx import DiGraph
 
 import numpy as np
+import time
 import networkx as nx
 
 
@@ -35,7 +35,7 @@ class GraphEditor:
         self.shader_renderer = ShaderRenderer(OpenGLContextName.GRAPH)
         self.instance_data = InstanceData()
         self.node_instance_renderer = None
-        self.G = DiGraph()
+        self.G = map_widget.main_window.database.graph_queries.fetch_graph()
 
     def draw(self, proj_mat, view_mat):
         if self.G is None:

@@ -4,7 +4,8 @@
 #include <sqlite3.h>
 #include <string>
 
-class CameraParams;
+class CameraQueries;
+class GraphQueries;
 
 class Database {
   public:
@@ -19,9 +20,10 @@ class Database {
 	std::string pkg_path;
 	DB conn;
 
-    std::unique_ptr<CameraParams> cam_queries;
+	std::unique_ptr<CameraQueries> cam_queries;
+	std::unique_ptr<GraphQueries> graph_queries;
 
-    void check_rc(int rc, sqlite3* db, const char* msg);
+	void check_rc(int rc, sqlite3 *db, const char *msg);
 	void print_tables();
 
   private:

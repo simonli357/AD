@@ -6,6 +6,8 @@ from ..opengl.shader import ShaderRenderer
 import glm
 import numpy as np
 import math
+import time
+import threading
 
 
 class CameraOverlay(QtWidgets.QOpenGLWidget):
@@ -33,18 +35,30 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             (0.000, 0.500, 1.000), (0.000, 0.749, 0.749), (0.000, 1.000, 0.000)
         ]
 
-        self.cam_real_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_real_params()
-        self.cam_sim_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_sim_params()
+        self.cam_real_params = None
+        self.cam_sim_params = None
+        self.realsense_tf_sim = None
+        self.realsense_tf_real = None
 
-        self.realsense_tf_sim = self.cam_widget.main_window.database.cam_queries.fetch_realsense_sim_params()
-        self.realsense_tf_real = self.cam_widget.main_window.database.cam_queries.fetch_realsense_real_params()
-
-        self.upload_camera_params()
+        threading.Thread(target=self.fetch_camera_params, daemon=True).start()
 
     def update_overlay(self):
         self.update()
 
+    def fetch_camera_params(self):
+        while self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:
+            self.upload_camera_params()
+            time.sleep(1.0)
+
     def upload_camera_params(self):
+        try:
+            self.cam_real_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_real_params()
+            self.cam_sim_params = self.cam_widget.main_window.database.cam_queries.fetch_camera_sim_params()
+            self.realsense_tf_sim = self.cam_widget.main_window.database.cam_queries.fetch_realsense_sim_params()
+            self.realsense_tf_real = self.cam_widget.main_window.database.cam_queries.fetch_realsense_real_params()
+        except Exception:
+            return
+
         if not self.use_sim:
             fx, fy, cx, cy = self.cam_real_params
             tx, ty, tz, roll, pitch, yaw = self.realsense_tf_real
@@ -117,10 +131,14 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
         self.hud_view_mat = glm.vec4(1.0)
 
-        self.update_camera_matrices(self.width(), self.height())
+        self.upload_camera_params()
 
     def paintGL(self):
+        if self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:
+            return
+
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+
         self.draw_detection_boxes()
         self.draw_lane_indicator()
         # 10 x 10 cm grid
@@ -252,7 +270,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         super().resizeGL(w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
-        self.update_camera_matrices(w, h)
+        self.upload_camera_params()
 
     def mousePressEvent(self, event):
         w, h = self.width(), self.height()

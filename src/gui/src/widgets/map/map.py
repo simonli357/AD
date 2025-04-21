@@ -123,9 +123,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
 
-    def update_graph(self, graph):
-        self.graph_editor.G = graph
-
     def render_widget(self) -> None:
         self.update()
 

@@ -3,14 +3,14 @@
 #include "Database.hpp"
 #include <array>
 
-class CameraParams {
+class CameraQueries {
   public:
-	CameraParams(Database &db);
-	CameraParams(CameraParams &&) = default;
-	CameraParams(const CameraParams &) = delete;
-	CameraParams &operator=(CameraParams &&) = delete;
-	CameraParams &operator=(const CameraParams &) = delete;
-	~CameraParams() = default;
+	CameraQueries(Database &db);
+	CameraQueries(CameraQueries &&) = default;
+	CameraQueries(const CameraQueries &) = delete;
+	CameraQueries &operator=(CameraQueries &&) = delete;
+	CameraQueries &operator=(const CameraQueries &) = delete;
+	~CameraQueries() = default;
 
 	Database &db;
 

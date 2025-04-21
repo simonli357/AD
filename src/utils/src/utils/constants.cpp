@@ -1,5 +1,5 @@
 #include "utils/constants.h"
-#include "queries/CameraParams.hpp"
+#include "queries/CameraQueries.hpp"
 
 void VehicleConstants::init_params(Database &db) {
     db.cam_queries->set_camera_sim_params(CAMERA_PARAMS);

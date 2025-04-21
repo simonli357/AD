@@ -6,6 +6,7 @@
 #include <mutex>
 #include <chrono>
 #include "Database.hpp"
+#include "queries/GraphQueries.hpp"
 #include "std_srvs/SetBoolRequest.h"
 #include "Utility.hpp"
 #include "PathManager.hpp"
@@ -31,7 +32,7 @@ using namespace Tunable;
 
 class StateMachine {
 public:
-    StateMachine(ros::NodeHandle& nh_, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real, bool use_beta): 
+    StateMachine(ros::NodeHandle& nh_, Database &db, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real, bool use_beta): 
     nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref,use_beta), path_manager(nh,T,N,v_ref, utils.pathName),
     state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real)
     {
@@ -66,6 +67,7 @@ public:
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(T), 2);
         utils.debug("state machine initialized", 2);
+        db.graph_queries->set_graph(path_manager.path_planner.serialized_graph);
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -112,9 +114,6 @@ public:
             if (utils.tcp_client->tcp_can_send && !utils.tcp_client->run_sent) {
                 utils.fetch_run_params();
                 utils.tcp_client->send_run(path_manager.v_ref, path_manager.pathName, utils.x0, utils.y0, utils.yaw0);
-            }
-            if (utils.tcp_client->tcp_can_send && !utils.tcp_client->graph_sent) {
-                utils.tcp_client->send_graph(path_manager.path_planner.serialized_graph);
             }
             if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
@@ -1670,7 +1669,7 @@ int main(int argc, char **argv) {
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
-    StateMachine sm(nh, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
+    StateMachine sm(nh, db, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
     bool use_tcp = false;
     nh.getParam("/use_tcp", use_tcp);
 

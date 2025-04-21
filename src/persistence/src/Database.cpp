@@ -1,4 +1,5 @@
-#include "queries/CameraParams.hpp"
+#include "queries/CameraQueries.hpp"
+#include "queries/GraphQueries.hpp"
 #include <Database.hpp>
 #include <filesystem>
 #include <fstream>
@@ -30,7 +31,8 @@ Database::Database() : conn(nullptr, sqlite3_close) {
 	initialize_tables();
 
 	// Queries
-	cam_queries = std::make_unique<CameraParams>(*this);
+	cam_queries = std::make_unique<CameraQueries>(*this);
+	graph_queries = std::make_unique<GraphQueries>(*this);
 }
 
 Database::~Database() = default;
@@ -56,10 +58,10 @@ void Database::initialize_tables() {
 	}
 }
 
-void Database::check_rc(int rc, sqlite3* db, const char* msg) {
-    if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        throw std::runtime_error(std::string(msg) + ": " + sqlite3_errmsg(db));
-    }
+void Database::check_rc(int rc, sqlite3 *db, const char *msg) {
+	if (rc != SQLITE_OK && rc != SQLITE_DONE) {
+		throw std::runtime_error(std::string(msg) + ": " + sqlite3_errmsg(db));
+	}
 }
 
 void Database::print_tables() {

@@ -31,7 +31,6 @@ class TcpConnection:
                 b'\x08': self.parse_start_srv,
                 b'\x09': self.parse_params,
                 b'\x0a': self.parse_run,
-                b'\x0b': self.parse_graph,
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -183,15 +182,5 @@ class TcpConnection:
     def parse_run(self, bytes):
         try:
             self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
-        except Exception as e:
-            print(e)
-
-    def parse_graph(self, bytes):
-        try:
-            def async_task():
-                graphml_str = bytes.decode('utf-8')
-                buf = io.StringIO(graphml_str)
-                self.graph_msg.append(nx.read_graphml(buf))
-            threading.Thread(target=async_task, daemon=True).start()
         except Exception as e:
             print(e)

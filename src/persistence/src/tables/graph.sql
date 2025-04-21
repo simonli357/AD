@@ -1,0 +1,8 @@
+BEGIN TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS graph (
+  name   TEXT    PRIMARY KEY,
+  value  TEXT    NOT NULL
+);
+
+COMMIT;

@@ -38,7 +38,6 @@ class TcpClient {
 	// Fields
 	bool tcp_can_send = false;
 	bool run_sent = false;
-	bool graph_sent = false;
 	// Methods
 	void initialize();
 	// Storage
@@ -73,7 +72,6 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
-	void send_graph(const std::string &graph);
 
   private:
 	// Fields
