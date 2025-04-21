@@ -133,7 +133,7 @@ class GraphEditor:
             y1 = float(self.G.nodes[u]['y'])
             x2 = float(self.G.nodes[v]['x'])
             y2 = float(self.G.nodes[v]['y'])
-            data['distance'] = np.hypot(x2 - x1, y2 - y1)
+            data['dist'] = np.hypot(x2 - x1, y2 - y1)
         nx.write_graphml(self.G, path)
 
     ##############
