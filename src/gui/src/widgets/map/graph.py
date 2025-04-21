@@ -51,9 +51,11 @@ class GraphEditor:
         if self.node_instance_renderer is not None:
             self.node_instance_renderer.render(proj_mat, view_mat)
 
-        self.draw_node_border(mouse_x, mouse_y)
+        self.hide_selected_instance(mouse_x, mouse_y, view_mat, proj_mat)
+        if self.prev_hovered is not None:
+            self.shader_renderer.draw_selected_node(*self.instance_data.positions[self.prev_hovered], NamedColor.PURPLE.value, 8.0, 0.0, view_mat, proj_mat)
 
-    def draw_node_border(self, mouse_x, mouse_y):
+    def hide_selected_instance(self, mouse_x, mouse_y, view_mat, proj_mat):
         if self.node_instance_renderer is None:
             return
 
@@ -73,7 +75,6 @@ class GraphEditor:
             # hide new
             if nearest is not None:
                 self.node_instance_renderer.scale_instance(nearest, 0.0)
-                # Draw selected node
             self.prev_hovered = nearest
 
     def update_instance_data(self):

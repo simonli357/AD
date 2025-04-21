@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
-from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, quad_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, quad_model, diamond_model
 from .obj import load_obj, create_obj
 from ..enums import NamedColor, OpenGLContextName
 from .custom.progress_bar import ProgressBar
@@ -44,7 +44,8 @@ class ShaderRenderer:
             exit(1)
 
     def load_graph_models(self):
-        pass
+        self.selected_node_shader = create_shader_program(shader_path('node', 'selected_node.vert'), shader_path('node', 'selected_node.frag'))
+        self.selected_node_model = diamond_model()
 
     def load_cam_models(self):
         self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
@@ -225,6 +226,29 @@ class ShaderRenderer:
     ##################
     # Draw Functions
     ##################
+
+    def draw_selected_node(self, x, y, z, color, scale, rot, view_matrix, proj_matrix):
+        gl.glUseProgram(self.selected_node_shader)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        model_loc = gl.glGetUniformLocation(self.selected_node_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.selected_node_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.selected_node_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.selected_node_shader, "color")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.selected_node_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.selected_node_model.vertex_count)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
     def draw_car(self, x, y, yaw, color: NamedColor, scale, view_matrix, proj_matrix):
         car_model = None

@@ -75,6 +75,34 @@ def circle_model() -> Model:
     return Model(vao, circle_vbo, None, len(vertices))
 
 
+def diamond_model() -> Model:
+    vertices = np.array([
+        # Positions (3D for proper matrix transformations)
+        [0.0, 0.5, 0.1],  # Top
+        [0.5, 0.0, 0.1],  # Right
+        [-0.5, 0.0, 0.1],  # Left
+        [-0.5, 0.0, 0.1],  # Left
+        [0.5, 0.0, 0.1],  # Right
+        [0.0, -0.5, 0.1],  # Bottom
+    ], dtype=np.float32).flatten()
+
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    # Create and configure VBO
+    diamond_vbo = vbo.VBO(vertices)
+    diamond_vbo.bind()
+
+    # Set vertex attribute pointer
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    diamond_vbo.unbind()
+
+    return Model(vao, diamond_vbo, None, len(vertices))
+
+
 def arrow_model() -> Model:
     vertices = np.array([
         # Rect Triangle 1
