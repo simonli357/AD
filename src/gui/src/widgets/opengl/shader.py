@@ -51,11 +51,13 @@ class ShaderRenderer:
         self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
         self.grid_shader = create_shader_program(shader_path('grid', 'grid.vert'), shader_path('grid', 'grid.frag'))
         self.point_shader = create_shader_program(shader_path('sphere', 'sphere.vert'), shader_path('sphere', 'sphere.frag'))
+        self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
 
         self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
         self.lane_model = LaneIndicator(self.text_renderer, self.lane_shader)
         self.grid_model = CameraGrid(self.grid_shader)
         self.point_model = CameraPoint(self.point_shader)
+        self.line_model = line_model()
 
     def load_car_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))
@@ -514,11 +516,11 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
-    def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix):
+    def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix, z=0.5):
         gl.glUseProgram(self.circle_shader)
 
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0.5))
+        model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
         model_loc = gl.glGetUniformLocation(self.circle_shader, "model")

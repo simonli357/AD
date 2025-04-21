@@ -38,7 +38,8 @@ class ButtonsOverlay(QWidget):
                 current_run = {}
 
     def setup_ui(self):
-        self.run_wrapper = QHBoxLayout(self)
+        self.wrapper = QHBoxLayout(self)
+
         self.run_label = QLabel("--:--")
         self.run_label.setStyleSheet("""
             color: white;
@@ -49,6 +50,7 @@ class ButtonsOverlay(QWidget):
             border-radius: 8px;
             padding: 5px 20px 5px 20px;
         """)
+
         self.change_run_btn = QPushButton("")
         self.change_run_btn.setStyleSheet("""
             QPushButton {
@@ -65,6 +67,7 @@ class ButtonsOverlay(QWidget):
             }
         """)
         self.change_run_btn.clicked.connect(self.show_menu)
+
         self.swap_map_btn = QPushButton("  󰓡")
         self.swap_map_btn.setStyleSheet("""
             QPushButton {
@@ -82,9 +85,13 @@ class ButtonsOverlay(QWidget):
         """)
         self.swap_map_btn.clicked.connect(self.swap_map)
 
-        self.run_wrapper.addWidget(self.run_label)
-        self.run_wrapper.addWidget(self.change_run_btn)
-        self.run_wrapper.addWidget(self.swap_map_btn)
+        self.measuring_btn = QPushButton("󰭍")
+        self.measuring_btn.clicked.connect(self.handle_measuring_clicked)
+
+        self.wrapper.addWidget(self.run_label)
+        self.wrapper.addWidget(self.change_run_btn)
+        self.wrapper.addWidget(self.swap_map_btn)
+        self.wrapper.addWidget(self.measuring_btn)
 
         self.menu = QMenu(self)
         self.menu.setStyleSheet("""
@@ -107,13 +114,35 @@ class ButtonsOverlay(QWidget):
                 background-color: purple;
             }
         """)
+
         for run in self.runs:
             path_name = run.get('path', 'Unknown')
             self.menu.addAction(path_name, lambda checked=False, r=run: self.on_action_triggered(r))
 
+        self.update_button_style(self.measuring_btn, self.main_window.map_widget.measuring)
+
+    def update_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "#ffcc00" if is_active else "rgba(255, 255, 255, 0.08);"  # Light green/red
+        button.setStyleSheet(f"""
+            QPushButton {{
+                color: white;
+                border: none;
+                font-size: 24px;
+                font-weight: bold;
+                background-color: rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 5px 12px 5px 10px;
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: #e6e600;
+            }}
+        """)
+
     def set_run_name(self, name: str) -> None:
         self.run_label.setText(f' {name}')
-        self.run_wrapper.update()
+        self.wrapper.update()
         self.adjustSize()
 
     def show_menu(self) -> None:
@@ -122,6 +151,14 @@ class ButtonsOverlay(QWidget):
 
     def swap_map(self) -> None:
         self.main_window.toggle_map()
+
+    def handle_measuring_clicked(self) -> None:
+        self.main_window.map_widget.measuring = not self.main_window.map_widget.measuring
+        if not self.main_window.map_widget.measuring:
+            self.main_window.map_widget.click_history.clear()
+        else:
+            self.main_window.map_widget.cursor_coords.clear()
+        self.update_button_style(self.measuring_btn, self.main_window.map_widget.measuring)
 
     def update_launch_params(self, x0, y0, yaw0, path):
         pass

@@ -36,6 +36,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.show_nodes = False
         self.show_gt = True
         self.show_graph = False
+        self.measuring = False
+
         self.sign_size = 20
 
         self.road_msg_length = 8
@@ -200,12 +202,31 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_markers()
             self.draw_detected_objects()
             self.draw_path_nodes()
+            self.draw_measurement_points()
 
         if self.view_zoom == 1.0:
             self.draw_legend(self.width() / 2.7, self.height() / 3)
             pass
 
         self.update_mouse_pos()
+
+    def draw_measurement_points(self):
+        if len(self.click_history) > 0:
+            for x_real, y_real in self.click_history:
+                x, y = self.get_gl_coords(x_real, y_real)
+                self.shader_renderer.draw_circle(x, y, 1.0, NamedColor.GREEN.value, self.view_mat, self.proj_mat, z=5.0)
+        if len(self.click_history) == 1:
+            x, y = self.get_gl_coords(self.click_history[0][0], self.click_history[0][1])
+            x_mouse_real, y_mouse_real = self.get_real_world_coords(self.current_mouse_pos.x(), self.current_mouse_pos.y())
+            x_mouse, y_mouse = self.get_gl_coords(x_mouse_real, y_mouse_real)
+            self.shader_renderer.draw_line((x, y), (x_mouse, y_mouse), NamedColor.RED.value, self.view_mat, self.proj_mat)
+        if len(self.click_history) == 2:
+            p0, p1 = self.click_history
+            dx = p1[0] - p0[0]
+            dy = p1[0] - p0[0]
+            dist = np.hypot(dx, dy)
+            self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
 
     def find_next_destination(self):
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
@@ -493,6 +514,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def update_destinations(self):
         self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
 
+    def handle_measurement_click(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            if len(self.click_history) < 2:
+                x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
+                self.click_history.append((x_world, y_world))
+
+    def handle_marker_click(self, event):
+        xw, yw = self.get_real_world_coords(event.x(), event.y())
+        self.cursor_coords.append((xw, yw))
+        self.cursor_x, self.cursor_y = xw, yw
+
     def __del__(self):
         self.cleanup_gl_resources()
 
@@ -510,15 +542,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update_waypoints()
         self.update_destinations()
 
-    def mouseDoubleClickEvent(self, event):
-        if self.show_graph:
-            return
-        if len(self.click_history) < 3:
-            x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
-            self.click_history.append((x_world, y_world))
-        if event.button() == QtCore.Qt.RightButton:
-            self.click_history.pop()
-
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
             self._press_pos = event.pos()
@@ -527,7 +550,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
         if event.button() == QtCore.Qt.RightButton:
-            self.cursor_coords.clear()
+            if self.measuring and len(self.click_history) > 0:
+                self.click_history.pop(0)
+            else:
+                self.cursor_coords.clear()
 
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()
@@ -554,12 +580,13 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.view_center.y += delta.y() * world_per_pixel_y
 
     def mouseReleaseEvent(self, event):
+        if self.show_graph:
+            return
         if event.button() == QtCore.Qt.LeftButton:
-            if not self._is_dragging:
-                # it was a click, not a drag!
-                xw, yw = self.get_real_world_coords(event.x(), event.y())
-                self.cursor_coords.append((xw, yw))
-                self.cursor_x, self.cursor_y = xw, yw
+            if not self._is_dragging and not self.measuring:
+                self.handle_marker_click(event)
+            elif not self._is_dragging and self.measuring:
+                self.handle_measurement_click(event)
             # clear press marker
             self._press_pos = None
 
