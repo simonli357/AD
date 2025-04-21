@@ -12,6 +12,7 @@ class ArrowInstanceRenderer:
         ends: np.ndarray,
         color=(1.0, 0.0, 0.0, 1.0),
         thickness: float = 1.0,
+        edge_pairs: list = None,
         shader_program=None,
     ):
         self.base_verts = np.array([
@@ -39,6 +40,8 @@ class ArrowInstanceRenderer:
         # 2) per-instance data
         self.starts = np.array(starts, dtype=np.float32)
         self.ends = np.array(ends, dtype=np.float32)
+        self.edge_pairs = list(edge_pairs) if edge_pairs is not None else []
+        self.thickness = thickness
         N = len(self.starts)
 
         # 3) colors
@@ -118,6 +121,57 @@ class ArrowInstanceRenderer:
         gl.glBindVertexArray(0)
 
         self.instance_count = N
+
+    def _rebuild_matrix(self, i):
+        """Recompute mats[i] from self.starts[i], self.ends[i]."""
+        x0, y0 = self.starts[i]
+        x1, y1 = self.ends[i]
+        dx, dy = x1 - x0, y1 - y0
+        length = np.hypot(dx, dy)
+        if length < 1e-6:
+            mat = glm.mat4(0.0)
+        else:
+            theta = np.arctan2(dy, dx)
+            angle = theta - np.pi / 2
+            mat = glm.mat4(1.0)
+            mat = glm.translate(mat, glm.vec3(x0, y0, 0))
+            mat = glm.rotate(mat, float(angle), glm.vec3(0, 0, 1))
+            mat = glm.scale(mat, glm.vec3(self.thickness, length, 1.0))
+        self.mats[i] = np.array(mat.to_list(), dtype=np.float32)
+
+    def update_for_node(self, node_id, new_gl_pos):
+        """
+        Called when one node moves: only adjust the arrows
+        whose ui==node_id or vi==node_id.
+        """
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        stride_bytes = 16 * 4  # 16 floats × 4 bytes
+
+        for i, (ui, vi) in enumerate(self.edge_pairs):
+            updated = False
+            # if this arrow starts on the moved node, update its start
+            if ui == node_id:
+                self.starts[i] = (new_gl_pos[0], new_gl_pos[1])
+                updated = True
+            # if it ends on the moved node, update its end
+            if vi == node_id:
+                self.ends[i] = (new_gl_pos[0], new_gl_pos[1])
+                updated = True
+
+            if updated:
+                # rebuild that one matrix
+                self._rebuild_matrix(i)
+                # push *only* its 64 bytes
+                offset = i * stride_bytes
+                # note: .tobytes() flattens the 4×4 float32 matrix
+                gl.glBufferSubData(
+                    gl.GL_ARRAY_BUFFER,
+                    offset,
+                    stride_bytes,
+                    self.mats[i].tobytes()
+                )
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)

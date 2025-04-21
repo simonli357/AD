@@ -152,6 +152,14 @@ class InstanceRenderer:
         self.positions[index] = np.array([x, y, z], dtype=np.float32)
         self._update_instance_matrix(index)
 
+    def color_instance(self, index: int, color):
+        c = np.array(color, dtype=np.float32)
+        self.colors[index] = c
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
+        offset = index * 4 * 4
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, offset, c.nbytes, c)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
 
