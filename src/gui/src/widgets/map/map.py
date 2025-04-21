@@ -23,6 +23,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.main_window = self.parent()
         self.server = self.main_window.server
         self.cursor_coords = []
+        self.click_history = []
         self.cursor_x = 3.86
         self.cursor_y = 3.62
 
@@ -81,6 +82,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMouseTracking(True)
+        self._press_pos = None
+        self._is_dragging = False
         self.stop_drawing = False
         self.current_mouse_pos = None
         self.last_mouse_pos = None
@@ -510,13 +513,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def mouseDoubleClickEvent(self, event):
         if self.show_graph:
             return
-        x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
-        self.cursor_coords.append((x_world, y_world))
-        self.cursor_x = x_world
-        self.cursor_y = y_world
+        if len(self.click_history) < 3:
+            x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
+            self.click_history.append((x_world, y_world))
+        if event.button() == QtCore.Qt.RightButton:
+            self.click_history.pop()
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
+            self._press_pos = event.pos()
+            self._is_dragging = False
             self.drag_start = event.pos()
             self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
@@ -525,23 +531,37 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         self.current_mouse_pos = event.pos()
-        if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
-            # Calculate delta movement
-            delta = event.pos() - self.last_mouse_pos
-            self.last_mouse_pos = event.pos()
+        if event.buttons() & QtCore.Qt.LeftButton and self._press_pos is not None:
+            dist = (event.pos() - self._press_pos).manhattanLength()
+            if dist > QtWidgets.QApplication.startDragDistance():
+                self._is_dragging = True
+                if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
+                    # Calculate delta movement
+                    delta = event.pos() - self.last_mouse_pos
+                    self.last_mouse_pos = event.pos()
 
-            # Convert pixel delta to world coordinates
-            zoom_factor = 1.0 / self.view_zoom
-            half_width = self.width() * zoom_factor / 2
-            half_height = self.height() * zoom_factor / 2
+                    # Convert pixel delta to world coordinates
+                    zoom_factor = 1.0 / self.view_zoom
+                    half_width = self.width() * zoom_factor / 2
+                    half_height = self.height() * zoom_factor / 2
 
-            # Calculate world units per pixel
-            world_per_pixel_x = (2 * half_width) / self.width()
-            world_per_pixel_y = (2 * half_height) / self.height()
+                    # Calculate world units per pixel
+                    world_per_pixel_x = (2 * half_width) / self.width()
+                    world_per_pixel_y = (2 * half_height) / self.height()
 
-            # Update view center
-            self.view_center.x -= delta.x() * world_per_pixel_x
-            self.view_center.y += delta.y() * world_per_pixel_y
+                    # Update view center
+                    self.view_center.x -= delta.x() * world_per_pixel_x
+                    self.view_center.y += delta.y() * world_per_pixel_y
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            if not self._is_dragging:
+                # it was a click, not a drag!
+                xw, yw = self.get_real_world_coords(event.x(), event.y())
+                self.cursor_coords.append((xw, yw))
+                self.cursor_x, self.cursor_y = xw, yw
+            # clear press marker
+            self._press_pos = None
 
     def wheelEvent(self, event):
         # Get mouse position in normalized device coordinates
