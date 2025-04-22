@@ -194,6 +194,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             proj_matrix=self.proj_mat
         )
 
+        self.update_car_data()
+
         if self.show_graph:
             self.graph_editor.draw(self.proj_mat, self.view_mat)
         else:
@@ -396,7 +398,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x, y = self.get_gl_coords(coord[0], coord[1])
             self.shader_renderer.draw_marker(x, y, (1, 0, 0, 1), 10.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
 
-    def draw_detected_objects(self):
+    def update_car_data(self):
         if self.detected_data is None or len(self.detected_data) == 0:
             return
         self.car_x = self.detected_data[0, self.road_msg_dict['x']]
@@ -405,6 +407,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
         self.main_window.car_widget.set_car_data(self.car_yaw / np.pi * 180, car_speed, self.car_x, MapData.REAL_WORLD_HEIGHT.value - self.car_y, car_z)
+
+    def draw_detected_objects(self):
+        if self.detected_data is None or len(self.detected_data) == 0:
+            return
         for i in range(len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]
