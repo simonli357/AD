@@ -487,7 +487,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
-    def draw_line(self, start, end, color, view_matrix, proj_matrix, z=3.0):
+    def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
         gl.glUseProgram(self.line_shader)
 
         # Create proper vertex data with x,y coordinates
