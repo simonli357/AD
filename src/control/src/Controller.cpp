@@ -32,7 +32,7 @@ using namespace Tunable;
 
 class StateMachine {
 public:
-    StateMachine(ros::NodeHandle& nh_): 
+    StateMachine(ros::NodeHandle& nh_, Database &db): 
     nh(nh_), utils(nh), mpc(Tunable::T,Tunable::N,Tunable::v_ref,Tunable::use_beta), path_manager(nh,Tunable::T,Tunable::N,Tunable::v_ref, utils.pathName),
     state(STATE::INIT)
     {
@@ -1625,13 +1625,16 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "mpc_node", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
+    Database db;
+    VehicleConstants::init_params(db);
+
     if (!Tunable::loadFromParams(nh)) {
         std::cout << "FATAL ERROR: Failed to load tunable parameters" << std::endl;
         exit(1);
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
-    StateMachine sm(nh);
+    StateMachine sm(nh, db);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
