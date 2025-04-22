@@ -9,8 +9,8 @@ Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count'])
 
 def line_model() -> Model:
     vertex_array = np.array([
-        [0.0, 0.0],  # Start point
-        [1.0, 1.0]    # End point
+        [0.0, 0.0, 0.0],  # Start point
+        [1.0, 1.0, 0.0]    # End point
     ], dtype=np.float32).flatten()
 
     vao = gl.glGenVertexArrays(1)
@@ -21,7 +21,7 @@ def line_model() -> Model:
     line_vbo.bind()
 
     # Set vertex attribute pointer
-    gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
     gl.glEnableVertexAttribArray(0)
 
     gl.glBindVertexArray(0)
