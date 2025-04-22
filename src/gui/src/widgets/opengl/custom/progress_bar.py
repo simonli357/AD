@@ -35,9 +35,7 @@ class ProgressBar:
 
         pos_loc = gl.glGetAttribLocation(self.shader_program, "aUV")
         gl.glEnableVertexAttribArray(pos_loc)
-        gl.glVertexAttribPointer(pos_loc,
-                                 2, gl.GL_FLOAT, gl.GL_FALSE,
-                                 2 * 4, gl.ctypes.c_void_p(0))
+        gl.glVertexAttribPointer(pos_loc, 2, gl.GL_FLOAT, gl.GL_FALSE, 2 * 4, gl.ctypes.c_void_p(0))
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
@@ -49,6 +47,9 @@ class ProgressBar:
         self.uFillFrac_loc = gl.glGetUniformLocation(self.shader_program, "uFillFrac")  # float
         self.uColor_loc = gl.glGetUniformLocation(self.shader_program, "uColor")
 
+        self.texture_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
+        self.texture_u_proj = gl.glGetUniformLocation(self.texture_shader, "projection")
+
     def draw_texture(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture_shader)
 
@@ -58,14 +59,8 @@ class ProgressBar:
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
         model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
 
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "model"),
-            1, gl.GL_FALSE, glm.value_ptr(model)
-        )
-        gl.glUniformMatrix4fv(
-            gl.glGetUniformLocation(self.texture_shader, "projection"),
-            1, gl.GL_FALSE, glm.value_ptr(proj_matrix)
-        )
+        gl.glUniformMatrix4fv(self.texture_u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.texture_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
         # Bind texture
         gl.glActiveTexture(gl.GL_TEXTURE0)
