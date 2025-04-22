@@ -55,23 +55,20 @@ class DetectionBox:
         gl.glUniform4f(self.u_color_loc, *color, 1.0)
         gl.glDrawArrays(gl.GL_LINE_LOOP, 0, 4)
 
-        # — draw the background quad —
-        # measure text
+        # --- Draw the background quad ——
         tw, th = self.text_renderer.compute_text_size(label_text, 1.0)
         pad = 5.0
+
         bw = max((x2 - x1), tw + pad * 2)
         bh = th + pad * 2
-        # place background *below* the top edge
-        bg_x, bg_y = x1, y2 + pad
+
+        bg_x, bg_y = x1, y1 - bh
+
         gl.glUniform4f(self.u_rect_loc, bg_x, bg_y, bw, bh)
         gl.glUniform4f(self.u_color_loc, *color, 0.5)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, 4)
 
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
-
-        # — draw the text on top —
-        # center text in that bg rect:
+        # center your text in that quad:
         text_x = bg_x + bw * 0.5
         text_y = bg_y + bh * 0.5
         self.text_renderer.render_text(label_text, text_x, text_y, 1.0, color, proj_mat)
