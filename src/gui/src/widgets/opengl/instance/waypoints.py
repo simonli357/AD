@@ -90,8 +90,8 @@ class WaypointsRenderer:
 
         # compile shaders
         self.shader_program = create_shader_program(
-            shader_path('diamonds', 'diamonds_instanced.vert'),
-            shader_path('diamonds', 'diamonds_instanced.frag')
+            shader_path('diamonds', 'diamonds.vert'),
+            shader_path('diamonds', 'diamonds.frag')
         )
 
     def get_gl_coords(self, real_x, real_y, w, h):
