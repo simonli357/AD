@@ -127,11 +127,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.update()
 
     def setup_destinations_renderer(self):
-        dest_positions = list(zip(
+        self.dest_positions = list(zip(
             *self.get_gl_coords(self.destinations['X'], self.destinations['Y']),
             self.destinations.get('Z', pd.Series(0.5, index=self.destinations.index))
         ))
-        self.destinations_renderer = DestinationsRenderer(dest_positions, scales=8.0)
+        self.destinations_renderer = DestinationsRenderer(self.dest_positions, scales=8.0)
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
