@@ -12,6 +12,9 @@ class InstanceRenderer:
         else:
             self.prog = create_shader_program(shader_path('instance', 'instance.vert'), shader_path('instance', 'instance.frag'))
 
+        self.p_loc = gl.glGetUniformLocation(self.prog, "projection")
+        self.v_loc = gl.glGetUniformLocation(self.prog, "view")
+
         self.positions = np.array(positions, dtype=np.float32)
         n = len(self.positions)
 
@@ -21,9 +24,7 @@ class InstanceRenderer:
         elif cols.ndim == 2 and cols.shape[1] == 4 and cols.shape[0] == n:
             self.colors = cols
         else:
-            raise ValueError(
-                "colors must be length‑4 tuple or an (N,4) array"
-            )
+            raise ValueError("colors must be length‑4 tuple or an (N,4) array")
 
         if rotations is None:
             self.rotations = None
@@ -45,29 +46,21 @@ class InstanceRenderer:
         self.vertex_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vertex_vbo)
         verts = np.array(base_vertices, dtype=np.float32)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, verts.nbytes,
-                        verts, gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, verts.nbytes, verts, gl.GL_STATIC_DRAW)
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, 0, None)
 
         self.color_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        self.colors.nbytes,
-                        self.colors,
-                        gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.colors.nbytes, self.colors, gl.GL_STATIC_DRAW)
         gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT,
-                                 False, 0, None)
+        gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, False, 0, None)
         gl.glVertexAttribDivisor(1, 1)  # advance per-instance
 
         self.instance_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         empty = np.zeros((n, 4, 4), dtype=np.float32)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        empty.nbytes,
-                        None,
-                        gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, empty.nbytes, None, gl.GL_DYNAMIC_DRAW)
 
         stride = 4 * 4 * 4
         for i in range(4):
@@ -163,10 +156,8 @@ class InstanceRenderer:
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
 
-        p_loc = gl.glGetUniformLocation(self.prog, "projection")
-        v_loc = gl.glGetUniformLocation(self.prog, "view")
-        gl.glUniformMatrix4fv(p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-        gl.glUniformMatrix4fv(v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
+        gl.glUniformMatrix4fv(self.p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        gl.glUniformMatrix4fv(self.v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
 
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.mats.nbytes, self.mats)

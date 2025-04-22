@@ -37,6 +37,9 @@ class ArrowInstanceRenderer:
             frag = shader_path('arrow', 'arrows.frag')
             self.prog = create_shader_program(vert, frag)
 
+        self.p_loc = gl.glGetUniformLocation(self.prog, "projection")
+        self.v_loc = gl.glGetUniformLocation(self.prog, "view")
+
         # 2) per-instance data
         self.starts = np.array(starts, dtype=np.float32)
         self.ends = np.array(ends, dtype=np.float32)
@@ -83,20 +86,14 @@ class ArrowInstanceRenderer:
         # base-vertex VBO
         self.vertex_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vertex_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        self.base_verts.nbytes,
-                        self.base_verts,
-                        gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.base_verts.nbytes, self.base_verts, gl.GL_STATIC_DRAW)
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, 0, None)
 
         # color VBO (per-instance)
         self.color_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        self.colors.nbytes,
-                        self.colors,
-                        gl.GL_STATIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.colors.nbytes, self.colors, gl.GL_STATIC_DRAW)
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, False, 0, None)
         gl.glVertexAttribDivisor(1, 1)
@@ -104,10 +101,7 @@ class ArrowInstanceRenderer:
         # instance‐matrix VBO
         self.instance_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        self.mats.nbytes,
-                        self.mats,
-                        gl.GL_DYNAMIC_DRAW)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.mats.nbytes, self.mats, gl.GL_DYNAMIC_DRAW)
         stride = 16 * 4  # 4×4 floats × 4 bytes
         for col in range(4):
             loc = 2 + col
@@ -175,10 +169,9 @@ class ArrowInstanceRenderer:
 
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
-        p_loc = gl.glGetUniformLocation(self.prog, "projection")
-        v_loc = gl.glGetUniformLocation(self.prog, "view")
-        gl.glUniformMatrix4fv(p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-        gl.glUniformMatrix4fv(v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
+
+        gl.glUniformMatrix4fv(self.p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        gl.glUniformMatrix4fv(self.v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
 
         # update instance matrices if you’ve changed starts/ends/thickness
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)

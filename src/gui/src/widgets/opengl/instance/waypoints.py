@@ -89,10 +89,9 @@ class WaypointsRenderer:
         }
 
         # compile shaders
-        self.shader_program = create_shader_program(
-            shader_path('diamonds', 'diamonds.vert'),
-            shader_path('diamonds', 'diamonds.frag')
-        )
+        self.shader_program = create_shader_program(shader_path('diamonds', 'diamonds.vert'), shader_path('diamonds', 'diamonds.frag'))
+        self.loc_p = gl.glGetUniformLocation(self.shader_program, "projection")
+        self.loc_v = gl.glGetUniformLocation(self.shader_program, "view")
 
     def get_gl_coords(self, real_x, real_y, w, h):
         if w == 0 or h == 0:
@@ -149,10 +148,8 @@ class WaypointsRenderer:
         gl.glBindVertexArray(self.vao)
 
         # uniforms
-        loc_p = gl.glGetUniformLocation(self.shader_program, "projection")
-        loc_v = gl.glGetUniformLocation(self.shader_program, "view")
-        gl.glUniformMatrix4fv(loc_p, 1, gl.GL_FALSE, glm.value_ptr(projection))
-        gl.glUniformMatrix4fv(loc_v, 1, gl.GL_FALSE, glm.value_ptr(view))
+        gl.glUniformMatrix4fv(self.loc_p, 1, gl.GL_FALSE, glm.value_ptr(projection))
+        gl.glUniformMatrix4fv(self.loc_v, 1, gl.GL_FALSE, glm.value_ptr(view))
 
         # draw
         gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, 6, self.num_instances)
