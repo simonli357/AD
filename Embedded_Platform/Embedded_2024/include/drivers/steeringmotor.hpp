@@ -22,8 +22,6 @@ namespace drivers
     class ISteeringCommand
     {
         public:
-            virtual void setAngle(float f_angle) = 0 ;
-            virtual bool inRange(float f_angle) = 0 ;
             virtual void PWMAngle(float f_PWM) = 0 ;
             virtual float CalculateAngle(float f_angle) = 0 ;
             virtual void setPID(float proportional, float integral, float derivative) = 0 ; 
@@ -57,17 +55,11 @@ namespace drivers
                 uint32_t f_period,
                 UnbufferedSerial&             f_serialPort,
                 PinName f_pwm_pin,
-                float f_inf_limit,
-                float f_sup_limit,
                 periodics::CImu& f_imu,
                 drivers::CSpeedingMotor& f_speeding
             );
             /* Destructor */
             ~CSteeringMotor();
-            /* Set angle */
-            void setAngle(float f_angle); 
-            /* Check if angle in range */
-            bool inRange(float f_angle);
             void PWMAngle( float f_PWM);
             float CalculateAngle(float f_angle);
             void setPID(float proportional, float integral, float derivative);
@@ -84,10 +76,6 @@ namespace drivers
             int8_t ms_period = 20;
             /** @brief step_value */
             float step_value = 0.0009505;
-            /** @brief Inferior limit */
-            const float m_inf_limit;
-            /** @brief Superior limit */
-            const float m_sup_limit;
             // IMU class reference
             periodics::CImu& m_imu;
             // Speeding class reference
@@ -112,12 +100,6 @@ namespace drivers
             /* reference to Serial object */
             UnbufferedSerial&   m_serialPort;
 
-            /* interpolate the step value and the zero default based on the steering value */
-            std::pair<float, float> interpolate(float steering, const float steeringValueP[], const float steeringValueN[], const float stepValues[], const float zeroDefaultValues[], int size);
-
-            // Predefined values for steering reference and interpolation
-            const float steeringValueP[2] = {15.0, 20.0};
-            const float steeringValueN[2] = {-15.0, -20.0};
             const float stepValues[2] = {0.0008594, 0.000951570};
             const float zeroDefaultValues[2] = {0.07714891, 0.07672070};
     }; // class ISteeringCommand

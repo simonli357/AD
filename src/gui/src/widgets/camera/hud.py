@@ -187,7 +187,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
             confidence = self.cam_widget.detected_objects[7 * i + 5] * 100
             distance = self.cam_widget.detected_objects[7 * i + 4]
-            text = f"{self.class_names[id]} {confidence:.1f}% {distance:.2f} m"
+            text = f"{confidence:.2f}% {distance:.2f} m {self.class_names[id]}"
 
             x1 = int(self.cam_widget.detected_objects[7 * i])
             y1 = int(self.cam_widget.detected_objects[7 * i + 1])

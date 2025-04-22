@@ -32,23 +32,14 @@ using namespace Tunable;
 
 class StateMachine {
 public:
-    StateMachine(ros::NodeHandle& nh_, Database &db, double T, int N, double v_ref, bool sign, bool ekf, bool lane, double T_park, std::string robot_name, double x_init, double y_init, double yaw_init, bool real, bool use_beta): 
-    nh(nh_), utils(nh, real, x_init, y_init, yaw_init, sign, ekf, lane, robot_name), mpc(T,N,v_ref,use_beta), path_manager(nh,T,N,v_ref, utils.pathName),
-    state(STATE::INIT), sign(sign), ekf(ekf), lane(lane), T_park(T_park), T(T), real(real)
+    StateMachine(ros::NodeHandle& nh_): 
+    nh(nh_), utils(nh), mpc(Tunable::T,Tunable::N,Tunable::v_ref,Tunable::use_beta), path_manager(nh,Tunable::T,Tunable::N,Tunable::v_ref, utils.pathName),
+    state(STATE::INIT)
     {
         bool success = true;
-        success = success && nh.getParam("/emergency", emergency);
-        success = success && nh.getParam("/pub_wpts", pubWaypoints);
-        success = success && nh.getParam("/kb", keyboardControl);
         if (keyboardControl) {
             utils.debug("keyboard control enabled", 2);
             change_state(STATE::KEYBOARD_CONTROL);
-        }
-        success = success && nh.getParam("/dashboard", dashboard);
-        success = success && nh.getParam("/gps", hasGps);
-        if (!success) {
-            ROS_ERROR("Failed to get parameters");
-            ros::shutdown();
         }
 
         //initialize parking spots
@@ -59,13 +50,13 @@ public:
             PARKING_SPOTS.push_back(spot_left);
         }
 
-        double rateVal = 1 / T;
+        double rateVal = 1 / Tunable::T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
         set_states_server = nh.advertiseService("/set_states", &StateMachine::set_states_callback, this);
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
-        utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(T), 2);
+        utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(path_manager.path_planner.serialized_graph);
     }
@@ -74,8 +65,6 @@ public:
     }
     ros::NodeHandle& nh;
 
-    bool emergency = false;
-
     bool initialized = false;
     bool wait_for_green_flag = false;
 
@@ -83,7 +72,6 @@ public:
     std::vector<Eigen::Vector2d> PARKING_SPOTS;
 
     std::array<double, 4> bbox = {0.0, 0.0, 0.0, 0.0};
-    double T_park, T;
     double detected_dist = 0;
     bool right_park = true;
     int park_count = 0;
@@ -92,7 +80,6 @@ public:
     ros::Time highway_cooldown_timer = ros::Time::now();
     Eigen::Vector2d destination;
     int state = 0;
-    bool sign, ekf, lane, real, dashboard, keyboardControl, hasGps, pubWaypoints;
     
     ros::Rate* rate;
 
@@ -180,10 +167,6 @@ public:
         return 1;
     }
     int start() {
-        static int testing = 2;
-        if (testing == 2) {
-            nh.getParam("/test", testing);
-        }
         if (testing) {
             change_state(STATE::TESTING);
         } else {
@@ -564,7 +547,7 @@ public:
     void pedestrian_detected() {
         int pedestrian_count = 0;
         bool detected;
-        if (real) {
+        if (Tunable::real) {
             detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
         } else {
             // detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
@@ -573,14 +556,14 @@ public:
         if (detected) {
             mpc.reset_solver();
             while (true) {
-                if (real) {
+                if (Tunable::real) {
                     detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
                 } else {
                     detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
                 }
                 if (detected) {
                     double dist;
-                    if (real) dist = utils.object_distance(utils.object_index(OBJECT::HIGHWAYEXIT));
+                    if (Tunable::real) dist = utils.object_distance(utils.object_index(OBJECT::HIGHWAYEXIT));
                     else dist = utils.object_distance(utils.object_index(OBJECT::PEDESTRIAN));
                     utils.debug("pedestrian_detected(): girl detected at a distance of: " + helper::d2str(dist), 2);
                     stop_for(stop_duration);
@@ -886,6 +869,9 @@ public:
         double car_speed;
         double car_speed_adj;
         for (auto& car : cars) {
+            if (car->cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) {
+                continue;
+            }
             Eigen::Vector2d car_pose(car->x, car->y);
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
@@ -1271,7 +1257,7 @@ void StateMachine::run() {
     std::cout << "State Machine running..." << std::endl;
     while (ros::ok()) {
         utils.update_states(x_current);
-        if (sign) {
+        if (Tunable::sign) {
             pedestrian_detected();
             check_emergency_stop();
         }
@@ -1281,7 +1267,7 @@ void StateMachine::run() {
             if(check_intersection()) {
                 ;
             }
-            if (sign) {
+            if (Tunable::sign) {
                 find_sign_for_relocalization();
                 find_highway_for_relocalization();
                 check_light();
@@ -1620,7 +1606,6 @@ void StateMachine::run() {
     }
 }
 
-
 StateMachine *globalStateMachinePtr = nullptr;
 void signalHandler(int signum) {
     if (globalStateMachinePtr) {
@@ -1637,41 +1622,16 @@ void signalHandler(int signum) {
 
 int main(int argc, char **argv) {
     std::cout.precision(3);
-    //create anonymous node handle
     ros::init(argc, argv, "mpc_node", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
-    Database db;
-    VehicleConstants::init_params(db);
-
-    double T, v_ref, T_park;
-    int N;
-    bool sign, ekf, lane, real, use_beta, async;
-    std::string name;
-    std::string nodeName = ros::this_node::getName();
-    std::cout << "node name: " << nodeName << std::endl;
-    bool success = nh.getParam(nodeName + "/lane", lane) && nh.getParam(nodeName+"/ekf", ekf) && nh.getParam(nodeName+"/sign", sign) && nh.getParam("T", T) && nh.getParam("N", N) && nh.getParam("constraints/v_ref", v_ref);
-    double x0, y0, yaw0, vref;
-    success = success && nh.getParam(nodeName+"/name", name) && nh.getParam(nodeName+"/vref", vref) && nh.getParam(nodeName+"/x0", x0) && nh.getParam(nodeName+"/y0", y0) && nh.getParam(nodeName+"/yaw0", yaw0);
-    success = success && nh.getParam("/T_park", T_park);
-    success = success && nh.getParam(nodeName+"/real", real);
-    success = success && nh.getParam("/use_beta", use_beta) && nh.getParam("/async", async);
-    if (!success) {
-        std::cout << "Failed to get parameters" << std::endl;
-        exit(1);
-    } else {
-        std::cout << "Successfully loaded parameters" << std::endl;
-    }
-    std::cout << "ekf: " << ekf << ", sign: " << sign << ", T: " << T << ", N: " << N << ", vref: " << vref << ", real: " << real << std::endl;
-    if (!Tunable::loadFromParams(nh, real)) {
+    if (!Tunable::loadFromParams(nh)) {
         std::cout << "FATAL ERROR: Failed to load tunable parameters" << std::endl;
         exit(1);
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
-    StateMachine sm(nh, db, T, N, vref, sign, ekf, lane, T_park, name, x0, y0, yaw0, real, use_beta);
-    bool use_tcp = false;
-    nh.getParam("/use_tcp", use_tcp);
+    StateMachine sm(nh);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
