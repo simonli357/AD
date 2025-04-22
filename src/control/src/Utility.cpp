@@ -30,19 +30,15 @@
 #include <iostream>
 #include "Runs.h"
 
-Utility::Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign, bool useEkf, bool subLane, std::string robot_name, bool subModel, bool subImu, bool pubOdom) 
-    : nh(nh_), useIMU(useIMU), subLane(subLane), subSign(subSign), subModel(subModel), subImu(subImu), pubOdom(pubOdom), useEkf(useEkf), robot_name(robot_name),
-    io(), serial(nullptr), real(real), it(nh), object_detection_time(ros::Time::now())
+Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
+    : nh(nh_), pubOdom(pubOdom),
+    io(), serial(nullptr), it(nh), object_detection_time(ros::Time::now())
 {
 
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
     initialize_tcp_client();
-    double x_init, y_init, yaw_init;
-    x_init = x0;
-    y_init = y0;
-    yaw_init = yaw0;
     initialize();
     fetch_run_params();
 }
@@ -56,37 +52,15 @@ Utility::~Utility() {
 }
 
 void Utility::initialize_tcp_client() {
-    bool use_tcp = false;
-    bool use_traffic_server = false;
-    if(!nh.getParam("/use_tcp", use_tcp)) {
-        debug("Utility constructor: WARNING: Failed to get 'use_tcp' parameter. Defaulting to false.", 1);
-        use_tcp = false;
-    }
-    if(!nh.getParam("/use_traffic_server", use_traffic_server)) {
-        debug("Utility constructor: WARNING: Failed to get 'use_traffic_server' parameter. Defaulting to false.", 1);
-        use_traffic_server = false;
-    }
-    if(use_traffic_server) {
+    if(Tunable::use_traffic_server) {
         debug("Utility constructor: Attempting to create Traffic Server TCP client...", 1);
-        std::string traffic_server_ip;
-        if(!nh.getParam("/traffic_server_ip", traffic_server_ip)) {
-            debug("Utility constructor: ERROR: Failed to get 'traffic_server_ip_address' parameter. Traffic Server TCP client not created.", 1);
-            traffic_client = nullptr;
-        } else {
-            traffic_client = std::make_unique<TrafficClient>(traffic_server_ip);
-            debug("Utility constructor: TCP client created successfully.", 1);
-        }
+        traffic_client = std::make_unique<TrafficClient>(Tunable::traffic_server_ip);
+        debug("Utility constructor: TCP client created successfully.", 1);
     }
-    if(use_tcp) {
+    if(Tunable::use_tcp) {
         debug("Utility constructor: Attempting to create TCP client...", 1);
-        std::string ip_address;
-        if(!nh.getParam("/ip", ip_address)) {
-            debug("Utility constructor: ERROR: Failed to get 'ip_address' parameter. TCP client not created.", 1);
-            tcp_client = nullptr;
-        } else {
-            tcp_client = std::make_shared<TcpClient>(true, "utility_node_client", ip_address);
-            debug("Utility constructor: TCP client created successfully.", 1);
-        }
+        tcp_client = std::make_shared<TcpClient>(true, "utility_node_client", Tunable::ip_address);
+        debug("Utility constructor: TCP client created successfully.", 1);
     } else {
         tcp_client = nullptr;
         debug("Utility constructor: TCP client not created.", 1);
@@ -112,7 +86,7 @@ void Utility::fetch_run_params() {
         double dy = y - run.y;
         double dist = std::sqrt(dx*dx + dy*dy);
         double yaw_diff = compare_yaw(yaw, run.yaw);
-        ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
+        // ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
         if(yaw_diff < 40.0 / 180 * M_PI) {
             runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
         }
@@ -132,23 +106,6 @@ void Utility::initialize() {
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
-    std::string mode = real ? "/real" : "/sim";
-    bool success = true;
-    success = success && nh.getParam("/debug_level", debugLevel);
-    success = success && nh.getParam("/gps", hasGps);
-    success = success && nh.getParam("/use_beta", use_beta);
-    success = success && nh.getParam("/camera", camera);
-    success = success && nh.getParam("/steer_offset", steer_offset);
-    success = success && nh.getParam("/speed_offset", speed_offset);
-    success = success && nh.getParam("/steer_offset_minimum", steer_offset_minimum);
-    success = success && nh.getParam("/steer_offset_maximum", steer_offset_maximum);
-    double odom_publish_frequency = 50; 
-    success = success && nh.getParam(mode + "/odom_rate", odom_publish_frequency);
-
-    if (!success) {
-        std::cout << "Utility Constructor(): Failed to get parameters" << std::endl;
-        exit(1);
-    }
 
     if (true) {
         try {
@@ -161,20 +118,8 @@ void Utility::initialize() {
         }
     }
     q_transform.setRPY(REALSENSE_TF[3], REALSENSE_TF[4], REALSENSE_TF[5]); // 3 values are roll, pitch, yaw of the imu
-    nh.getParam("/x_offset", x_offset);
-    nh.getParam("/y_offset", y_offset);
-    bool model;
-    auto ns = ros::this_node::getName();
-    if(nh.getParam(ns + "/subModel", model)) {
-        this->subModel = model;
-    } else {
-        std::cout << "failed to get subModel from param server, using default: " << this->subModel << std::endl;
-    }
-    std::string nodeName = ros::this_node::getName();
-    nh.param<double>(nodeName + "/rate", rateVal, 500);
-    rate = new ros::Rate(rateVal);
-    wheelbase = WHEELBASE;
-    if (real) {
+    rate = new ros::Rate(Tunable::rateVal);
+    if (Tunable::real) {
         l_r = L_R_REAL;
         l_f = L_F_REAL;
     } else {
@@ -218,7 +163,7 @@ void Utility::initialize() {
     std::fill(std::begin(odom_msg.pose.covariance), std::end(odom_msg.pose.covariance), 0.0);
     std::fill(std::begin(odom_msg.twist.covariance), std::end(odom_msg.twist.covariance), 0.0);
 
-    double dt = 1.0 / odom_publish_frequency;
+    double dt = 1.0 / Tunable::odom_rate;
     double variance_v = sigma_v * sigma_v;
     double sigma_delta_rad = sigma_delta * M_PI / 180;
     double variance_yaw_rate = std::pow((sigma_v / 0.27 * std::tan(sigma_delta_rad)), 2);
@@ -239,9 +184,9 @@ void Utility::initialize() {
     state_offset_pub = nh.advertise<std_msgs::Float32MultiArray>("/state_offset", 3);
     
     if (pubOdom) {
-        odom_pub_timer = nh.createTimer(ros::Duration(1.0 / odom_publish_frequency), &Utility::odom_pub_timer_callback, this);
+        odom_pub_timer = nh.createTimer(ros::Duration(1.0 / Tunable::odom_rate), &Utility::odom_pub_timer_callback, this);
     }
-    if (useEkf) {
+    if (Tunable::ekf) {
         this->subModel = false;
         ekf_sub = nh.subscribe("/odometry/filtered", 3, &Utility::ekf_callback, this);
     } 
@@ -249,18 +194,16 @@ void Utility::initialize() {
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
     }
     std::string imu_topic_name;
-    bool realsense_imu;
-    nh.param<bool>("/realsense_imu", realsense_imu, false);
     std::string car_imu_topic = "/" + robot_name + "/imu";
-    if (real) car_imu_topic = "/" + robot_name + "/imu";
-    if (realsense_imu) {
+    if (Tunable::real) car_imu_topic = "/" + robot_name + "/imu";
+    if (Tunable::realsense_imu) {
         imu_topic_name = "/realsense/imu";
     } else {
         imu_topic_name = car_imu_topic;
     }
     debug("imu topic: " + imu_topic_name, 2);
-    if (subImu) {
-        if (!real || realsense_imu) {
+    if (true) {
+        if (!Tunable::real || realsense_imu) {
             debug("waiting for Imu message", 1);
             ros::topic::waitForMessage<sensor_msgs::Imu>(imu_topic_name);
             std::cout << "received message from Imu" << std::endl;
@@ -284,7 +227,7 @@ void Utility::initialize() {
     }
 
     timerpid = ros::Time::now();
-    if (subSign) {
+    if (Tunable::sign) {
         if (camera) {
             std::cout << "camera enabled in control node" << std::endl;
             cameraNodeConstructor(nh);
@@ -486,6 +429,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
+    // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << std::endl;
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
@@ -606,21 +550,21 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 
     m_chassis.getRPY(roll, pitch, yaw);
 
-    // if (real) yaw *= -1;
-    // ROS_INFO("yaw: %.3f, pitch: %.3f", yaw * 180 / M_PI, pitch * 180 / M_PI);
+    // if (Tunable::real) yaw *= -1;
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
-        if (real) initial_yaw = yaw;
+        if (Tunable::real) initial_yaw = yaw;
         std::cout << "imu initialized" << ", intial yaw is " << yaw * 180 / M_PI << " degrees" << std::endl;
     }
     if (!initializationFlag && x0 > 0 && y0 > 0) {
         initializationFlag = true;
         debug("initialized in imu callback", 2);
     }
-    if (real) yaw = yaw - initial_yaw;
+    if (Tunable::real) yaw = yaw - initial_yaw;
     // yaw = yaw - initial_yaw + yaw0;
     yaw = yaw_mod(yaw);
+    // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);
@@ -635,10 +579,6 @@ void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // y0 = ekf_y - odomY;
     // tf2::fromMsg(msg->pose.pose.orientation, tf2_quat);
     // ekf_yaw = tf2::impl::getYaw(tf2_quat);
-    if (subSign) {
-        car_pose_msg.data[0] = ekf_x;
-        car_pose_msg.data[1] = ekf_y;
-    }
 }
 void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);
@@ -652,16 +592,11 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
             return; 
         }
     }
-    
     auto& car_inertial = msg->twist[*car_idx];
     x_speed = msg->twist[*car_idx].linear.x;
     y_speed = msg->twist[*car_idx].linear.y;
-    gps_x = msg->pose[*car_idx].position.x + x_offset;
-    gps_y = msg->pose[*car_idx].position.y + y_offset;
-    if (subSign && !useEkf) {
-        car_pose_msg.data[0] = gps_x;
-        car_pose_msg.data[1] = gps_y;
-    }
+    gps_x = msg->pose[*car_idx].position.x;
+    gps_y = msg->pose[*car_idx].position.y;
 }
 
 void Utility::stop_car() {
@@ -686,7 +621,7 @@ void Utility::set_pose_using_service(double x, double y, double yaw) {
     pose_msg.pose.pose.orientation.z = q.z();
     pose_msg.pose.pose.orientation.w = q.w();
 
-    if (useEkf) {
+    if (Tunable::ekf) {
         std::cout << "waiting for set_pose service" << std::endl;
         ros::service::waitForService("/set_pose");
     }
@@ -871,10 +806,10 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
 
     double delta_rad = -steering_angle * M_PI / 180.0;
     double beta = 0;
-    if (use_beta) beta = atan((l_r / wheelbase) * tan(delta_rad));
+    if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
 
     double magnitude = v_eff * dt * odomRatio;
-    double yaw_rate = dt * magnitude * tan(delta_rad) / wheelbase * cos(beta);
+    double yaw_rate = dt * magnitude * tan(delta_rad) / WHEELBASE * cos(beta);
 
     double k1_x = magnitude * cos(yaw + beta);
     double k1_y = magnitude * sin(yaw + beta);

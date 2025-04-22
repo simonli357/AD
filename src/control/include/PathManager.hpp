@@ -103,6 +103,7 @@ class PathManager {
 		int current_idx = 0;
 		double threshold = INTERSECTION_DISTANCE_THRESHOLD;
 
+		std::cout << "FIND_INTERSECTIONS(): state_refs size: " << state_refs.rows() << ", threshold: " << threshold << ", density: " << density << ", T: " << T << ", v_ref: " << v_ref << std::endl;
 		while (current_idx < state_refs.rows()) {
 			double x = state_refs(current_idx, 0);
 			double y = state_refs(current_idx, 1);

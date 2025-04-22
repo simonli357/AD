@@ -50,36 +50,25 @@ using namespace Tunable;
 class Utility {
 public:
     
-    Utility(ros::NodeHandle& nh_, bool real, double x0, double y0, double yaw0, bool subSign = true, bool useEkf = false, bool subLane = false,  std::string robot_name = "car1", bool subModel = false, bool subImu = true, bool pubOdom = true);
+    Utility(ros::NodeHandle& nh_, bool pubOdom = true);
     ~Utility();
     void callTriggerService();
 // private:
     ros::NodeHandle& nh;
     ros::ServiceClient triggerServiceClient;
     
-    std::string robot_name;
-
     bool emergency = false;
     int num_obj = 0;
     std::mutex general_mutex;
-    bool pubOdom, useIMU, subLane, subSign, subModel, subImu, useEkf, hasGps;
-    int debugLevel = 5;
+    bool pubOdom, subModel;
     std_msgs::String debug_msg;
-    bool real, use_beta, camera = false;
-    double rateVal;
     ros::Rate* rate;
 
-    double l_r, l_f, wheelbase, odomRatio, maxspeed, center, image_center, p, d, last;
-    // bool stopline = false;
+    double l_r, l_f, odomRatio, maxspeed, center, image_center, p, d, last;
     int stopline = -1;
-    double speed_offset = 0.0;
-    double steer_offset = 0.0;
-    double steer_offset_minimum = 2.0;
-    double steer_offset_maximum = 9.0;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
-    double x_offset, y_offset;
     double x0 = -1, y0 = -1, yaw0 = 0;
     std::string pathName;
     double gps_state[3];
@@ -119,7 +108,6 @@ public:
     nav_msgs::Odometry ekf_msg;
     std_msgs::String msg;
     std_msgs::String msg2;
-    std_msgs::Float32MultiArray car_pose_msg;
     std_msgs::Float32MultiArray state_offset_msg;
 
     gazebo_msgs::ModelStates model;
@@ -188,7 +176,6 @@ public:
     void lane_follow();
     void idle();
     double get_steering_angle(double offset=-20);
-    void set_rate(double rateVal);
     double get_current_orientation();
     std::array<double, 3> get_real_states() const;
     boost::asio::io_service io;
@@ -225,13 +212,10 @@ public:
         }
     }
     int recalibrate_states(double x_offset, double y_offset) {
-        if(useEkf) {
+        if(Tunable::ekf) {
             if (hasGps) {
                 x0 += x_offset;
                 y0 += y_offset;
-                // ekf_x += x_offset;
-                // ekf_y += y_offset;
-                // set_pose_using_service(ekf_x, ekf_y, yaw);
             } else {
                 x0 += x_offset;
                 y0 += y_offset;
@@ -255,7 +239,7 @@ public:
         return 1;
     }
     int reinitialize_states() {
-        if(useEkf) {
+        if(Tunable::ekf) {
             std::cout << "waiting for ekf message" << std::endl;
             ros::topic::waitForMessage<nav_msgs::Odometry>("/odometry/filtered");
             std::cout << "received message from ekf" << std::endl;
@@ -331,7 +315,7 @@ public:
         double fy = CAMERA_PARAMS[1];
         double cx = CAMERA_PARAMS[2];
         double cy = CAMERA_PARAMS[3];
-        if (real) {
+        if (Tunable::real) {
             fx = CAMERA_PARAMS_REAL[0];
             fy = CAMERA_PARAMS_REAL[1];
             cx = CAMERA_PARAMS_REAL[2];
@@ -361,7 +345,7 @@ public:
         P_v << Z_c, -X_c, 0;
 
         // std::cout << "before: " << P_v[0] << ", " << P_v[1] << std::endl;
-        if (real) {
+        if (Tunable::real) {
             P_v[0] += REALSENSE_TF_REAL[0];
         } else {
             P_v[0] += REALSENSE_TF[0];

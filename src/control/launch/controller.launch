@@ -1,51 +1,4 @@
 <launch>
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   <arg name="sign" default="true"/>
   <arg name="ekf" default="false"/>
   <arg name="lane" default="true"/>
@@ -61,10 +14,10 @@
   <arg name="speed_offset" default="0"/>
   <param name="speed_offset" value="$(arg speed_offset)"/>
   <!-- run -->
-  <arg name="x0" default="5.15"/>
-  <arg name="y0" default="2.096"/>
-  <arg name="yaw0" default="1.5708"/>
-  <arg name="path" default="run214"/>
+  <arg name="x0" default="3.83"/>
+  <arg name="y0" default="0.376"/>
+  <arg name="yaw0" default="3.14159"/>
+  <arg name="path" default="run184"/>
   <param name="x0" value="$(arg x0)"/>
   <param name="y0" value="$(arg y0)"/>
   <param name="yaw0" value="$(arg yaw0)"/>
@@ -129,53 +82,6 @@
   <arg name="debug" default=""/>
   <!-- <node pkg="control" type="path2.py" name="path_planner" output="screen"></node>  -->
   <node pkg="control" type="controller" name="$(anon mpc_controller)" output="screen" launch-prefix="$(arg debug)">
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     <param name="sign" value="$(arg sign)"/>
     <param name="ekf" value="$(arg ekf)"/>
     <param name="lane" value="$(arg lane)"/>

@@ -81,23 +81,30 @@ public:
         double threshold_value = std::min(std::max(maxVal - 55.0, 30.0), 200.0);
         // cv::threshold(img_roi, thresh, threshold_value, 255, cv::THRESH_BINARY);
 
-        img_roi = image(cv::Rect(0, 384, 640, 96));
+        img_roi = image(cv::Rect(0, 280, 640, 96));
 
         // DISPLAY
-        // cv::imshow("img_roi", img_roi);
-        // cv::waitKey(1);
+        cv::imshow("img_roi", img_roi);
+        cv::waitKey(1);
 
         hist = cv::Mat::zeros(1, w, CV_32SC1);
-        cv::reduce(thresh, hist, 0, cv::REDUCE_SUM, CV_32S);
+        // cv::reduce(thresh, hist, 0, cv::REDUCE_SUM, CV_32S);
+        cv::reduce(img_roi, hist, 0, cv::REDUCE_SUM, CV_32S);
 
         extract_lanes(hist);
         std::vector<double> centers;
+        std::cout << "lane size: " << lanes.size() << std::endl;
+        for(auto lane: lanes) {
+            std::cout << lane << " ";
+        }
+        std::cout << std::endl;
         for (size_t i = 0; i < lanes.size() / 2; ++i) {
             if (abs(lanes[2 * i] - lanes[2 * i + 1])>350 && threshold_value>50){
                 stopline = true;
                 // Calculate the distance to the stopline
                 static cv::Mat row_sums;
-                cv::reduce(thresh, row_sums, 1, cv::REDUCE_SUM, CV_32S);
+                // cv::reduce(thresh, row_sums, 1, cv::REDUCE_SUM, CV_32S);
+                cv::reduce(img_roi, row_sums, 1, cv::REDUCE_SUM, CV_32S);
                 for (int r = 0; r < row_sums.rows; ++r) {
                     if (row_sums.at<int>(r, 0) > 0) { // Stopline detected in this row
                         stopline_dist = row_sums.rows - r; // Distance from bottom of ROI
@@ -114,7 +121,11 @@ public:
             }
         }
 
-        // std::cout << "centers size: " << centers.size() << std::endl;
+        std::cout << "centers size: " << centers.size() << std::endl;
+        for(auto center: centers) {
+            std::cout << center << " ";
+        }
+        std::cout << std::endl;
         double center = -1;
         if (centers.size() == 2) center = (centers[0] + centers.back()) / 2;
 
@@ -134,8 +145,10 @@ public:
             cv::line(image, cv::Point(static_cast<int>(center), image.rows), cv::Point(static_cast<int>(center), static_cast<int>(0.8 * image.rows)), cv::Scalar(0, 0, 255), 5);
             cv::Mat add;
             cv::cvtColor(padded_thresh, add, cv::COLOR_GRAY2BGR);
-            // cv::imshow("Lane", image + add);
-            // cv::waitKey(1);
+            cv::Mat image_bgr = cv::Mat::zeros(480, 640, CV_8UC3);
+            cv::cvtColor(image, image_bgr, cv::COLOR_GRAY2BGR);
+            cv::imshow("Lane", image_bgr + add);
+            cv::waitKey(1);
         }
         if (print) {
             std::cout << "center: " << center << std::endl;
