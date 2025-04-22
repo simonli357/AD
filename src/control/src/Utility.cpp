@@ -426,6 +426,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     } else {
         emergency = false;
     }
+    std::lock_guard<std::mutex> lock(Tracking::container_mutex);
     object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
