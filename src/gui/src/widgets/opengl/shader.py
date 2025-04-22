@@ -487,13 +487,13 @@ class ShaderRenderer:
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
-    def draw_line(self, start, end, color, view_matrix, proj_matrix):
+    def draw_line(self, start, end, color, view_matrix, proj_matrix, z=3.0):
         gl.glUseProgram(self.line_shader)
 
         # Create proper vertex data with x,y coordinates
         vertices = np.array([
-            [start[0], start[1]],
-            [end[0], end[1]]
+            [start[0], start[1], z],
+            [end[0], end[1], z]
         ], dtype=np.float32).flatten()
 
         # Update VBO data
