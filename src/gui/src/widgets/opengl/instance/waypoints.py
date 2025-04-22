@@ -7,7 +7,7 @@ import math
 
 
 class WaypointsRenderer:
-    def __init__(self, track, max_instances=2000):
+    def __init__(self, track, max_instances=8000):
         self.track = track
         self.num_instances = 0
         self.max_instances = max_instances
