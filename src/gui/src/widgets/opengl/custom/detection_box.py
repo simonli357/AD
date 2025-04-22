@@ -1,84 +1,77 @@
 from OpenGL import GL as gl
-from OpenGL.arrays import vbo
-
 import numpy as np
 
 
-class DetectionBox():
+class DetectionBox:
     def __init__(self, text_renderer, shader_program):
         self.text_renderer = text_renderer
         self.shader_program = shader_program
 
-    def draw(self, x1, y1, x2, y2, label_text, line_width, color, proj_mat):
-        vertices = np.array([
-            [x1, y1],
-            [x2, y1],
-            [x2, y2],
-            [x1, y2],
+        # ——— 1) Create a unit‐quad VAO/VBO once ———
+        #    geometry: (0,0), (1,0), (1,1), (0,1)
+        unit_quad = np.array([
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [0.0, 1.0],
         ], dtype=np.float32)
 
-        gl.glLineWidth(line_width)
+        self.vao = gl.glGenVertexArrays(1)
+        self.vbo = gl.glGenBuffers(1)
 
+        gl.glBindVertexArray(self.vao)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER,
+            unit_quad.nbytes,
+            unit_quad,
+            gl.GL_STATIC_DRAW
+        )
+
+        pos_loc = gl.glGetAttribLocation(shader_program, "aPos")
+        gl.glEnableVertexAttribArray(pos_loc)
+        gl.glVertexAttribPointer(pos_loc, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+
+        # ——— 2) Cache uniform locations ———
+        self.u_proj_loc = gl.glGetUniformLocation(shader_program, "uProjection")
+        self.u_color_loc = gl.glGetUniformLocation(shader_program, "uColor")
+        self.u_rect_loc = gl.glGetUniformLocation(shader_program, "uRect")
+
+    def draw(self, x1, y1, x2, y2, label_text, line_width, color, proj_mat):
         gl.glUseProgram(self.shader_program)
+        gl.glBindVertexArray(self.vao)
 
-        proj_location = gl.glGetUniformLocation(self.shader_program, "projection")
+        # — set projection once —
         proj_array = np.array(proj_mat.to_list(), dtype=np.float32)
-        gl.glUniformMatrix4fv(proj_location, 1, gl.GL_FALSE, proj_array)
+        gl.glUniformMatrix4fv(self.u_proj_loc, 1, gl.GL_FALSE, proj_array)
 
-        color_loc = gl.glGetUniformLocation(self.shader_program, "color")
-        gl.glUniform4f(color_loc, *color, 1.0)
-
-        box_vbo = vbo.VBO(vertices)
-        box_vbo.bind()
-
-        position_loc = gl.glGetAttribLocation(self.shader_program, "position")
-        gl.glEnableVertexAttribArray(position_loc)
-        gl.glVertexAttribPointer(position_loc, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, box_vbo)
-
+        # — draw the box outline —
+        gl.glLineWidth(line_width)
+        # rect: (x, y, width, height)
+        gl.glUniform4f(self.u_rect_loc, x1, y1, x2 - x1, y2 - y1)
+        gl.glUniform4f(self.u_color_loc, *color, 1.0)
         gl.glDrawArrays(gl.GL_LINE_LOOP, 0, 4)
 
-        gl.glDisableVertexAttribArray(position_loc)
-        box_vbo.unbind()
-        box_vbo.delete()
-
-        # --- Draw the label background with padding ---
-        # Compute the text dimensions (without padding)
-        text_width, text_height = self.text_renderer.compute_text_size(label_text, 1.0)
-        # Define padding in pixels
-        padding = 5.0
-
-        # Calculate the padded rectangle coordinates.
-        # Assuming (x1, y1) is the bottom-left of the detection box where the label touches it:
-        bg_x1 = x1
-        bg_y1 = y1
-        bg_x2 = max(x1 + text_width + padding * 2, x2)
-        bg_y2 = y1 - text_height - padding * 2
-
-        bg_vertices = np.array([
-            [bg_x1, bg_y1],
-            [bg_x2, bg_y1],
-            [bg_x2, bg_y2],
-            [bg_x1, bg_y2],
-        ], dtype=np.float32)
-
-        # Set the uniform color to a semi-transparent color for the background.
-        gl.glUniform4f(color_loc, *color, 0.5)
-
-        bg_vbo = vbo.VBO(bg_vertices)
-        bg_vbo.bind()
-        gl.glEnableVertexAttribArray(position_loc)
-        gl.glVertexAttribPointer(position_loc, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, bg_vbo)
+        # — draw the background quad —
+        # measure text
+        tw, th = self.text_renderer.compute_text_size(label_text, 1.0)
+        pad = 5.0
+        bw = max((x2 - x1), tw + pad * 2)
+        bh = th + pad * 2
+        # place background *below* the top edge
+        bg_x, bg_y = x1, y2 + pad
+        gl.glUniform4f(self.u_rect_loc, bg_x, bg_y, bw, bh)
+        gl.glUniform4f(self.u_color_loc, *color, 0.5)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, 4)
-        gl.glDisableVertexAttribArray(position_loc)
-        bg_vbo.unbind()
-        bg_vbo.delete()
 
-        # --- Draw the text label ---
-        # Calculate the center of the padded background rectangle.
-        text_center_x = bg_x1 + padding + text_width / 2
-        text_center_y = (bg_y1 + bg_y2) / 2.0
-
-        # The text renderer's render_text method centers the text around the specified coordinates.
-        self.text_renderer.render_text(label_text, text_center_x, text_center_y, 1.0, color, proj_mat)
-
+        gl.glBindVertexArray(0)
         gl.glUseProgram(0)
+
+        # — draw the text on top —
+        # center text in that bg rect:
+        text_x = bg_x + bw * 0.5
+        text_y = bg_y + bh * 0.5
+        self.text_renderer.render_text(label_text, text_x, text_y, 1.0, color, proj_mat)
