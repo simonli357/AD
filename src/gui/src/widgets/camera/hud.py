@@ -1,6 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
 from OpenGL import GL as gl
-from PyQt5.QtCore import QTimer
 from ..enums import OpenGLContextName, NamedColor
 from ..opengl.shader import ShaderRenderer
 
@@ -42,10 +41,6 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.realsense_tf_real = None
 
         threading.Thread(target=self.fetch_camera_params, daemon=True).start()
-
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.update)
-        self._timer.start(1000 // 60)
 
     def fetch_camera_params(self):
         while self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:

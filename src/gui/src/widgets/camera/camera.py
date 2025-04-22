@@ -40,6 +40,7 @@ class CameraWidget(QtWidgets.QWidget):
 
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
+        self.hud.update()
 
     def process_camera_frame(self, pixmap):
         try:
