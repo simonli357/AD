@@ -36,9 +36,6 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
-    render_widget_signal = pyqtSignal()
-    render_barca_widget_signal = pyqtSignal()
-    render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
 
 
@@ -104,12 +101,6 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
-
-        self.comm.render_widget_signal.connect(self.car_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.cam_widget.update_hud)
-
-        self.comm.render_barca_widget_signal.connect(self.barca_widget.render_widget)
-        self.comm.render_map_widget_signal.connect(self.map_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -220,7 +211,6 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-            self.render_callbacks()
             time.sleep(CameraParams.FPS_30.value)
 
     def udp_callbacks(self) -> None:
@@ -269,13 +259,6 @@ class MainWindow(QMainWindow):
                 time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
             else:
                 time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-
-    def render_callbacks(self) -> None:
-        self.comm.render_widget_signal.emit()
-        if self.show_barca:
-            self.comm.render_barca_widget_signal.emit()
-        else:
-            self.comm.render_map_widget_signal.emit()
 
     def closeEvent(self, event):
         try:

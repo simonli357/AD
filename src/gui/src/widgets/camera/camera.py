@@ -13,7 +13,6 @@ class CameraWidget(QtWidgets.QWidget):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.main_window = self.parent()
-        self.has_frame = False
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(7)
@@ -41,12 +40,6 @@ class CameraWidget(QtWidgets.QWidget):
 
     def update_camera_display(self, pixmap):
         self.camera_label.setPixmap(pixmap)
-        self.has_frame = True
-        self.hud.update_overlay()
-
-    def update_hud(self):
-        if not self.has_frame:
-            self.hud.update_overlay()
 
     def process_camera_frame(self, pixmap):
         try:
