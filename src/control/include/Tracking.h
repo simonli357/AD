@@ -13,6 +13,7 @@
 #include "KalmanFilter.h"
 #include <atomic>
 #include <mutex>
+#include <shared_mutex>
 
 using namespace VehicleConstants;
 
@@ -57,7 +58,7 @@ public:
     int id;
     OBJECT type;
     std::string name;
-
+    mutable std::mutex mtx;
     double x, y = 0;
     double yaw = 0.0;
     double z = 0.0;
@@ -87,6 +88,7 @@ public:
     }
 
     virtual bool is_same_object(double new_x, double new_y) const {
+        std::lock_guard<std::mutex> lock(mtx);
         double dx = x - new_x;
         double dy = y - new_y;
         double distance = std::hypot(dx, dy);
@@ -97,6 +99,7 @@ public:
     }
 
     virtual void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) {
+        std::lock_guard<std::mutex> lock(mtx);
         if (new_type != type) {
             throw std::invalid_argument("Cannot merge different types of objects");
         }
@@ -120,6 +123,7 @@ public:
     }
 
     virtual void update(double x, double y) {
+        std::lock_guard<std::mutex> lock(mtx);
         this->x = x;
         this->y = y;
         cumulative_confidence += 1.0;
@@ -129,9 +133,11 @@ public:
         position_history.push_back({x, y, 1.0});
     }
     virtual void update_yaw(double new_yaw) {
+        std::lock_guard<std::mutex> lock(mtx);
         yaw = new_yaw;
     }
     virtual void populate_msg(std_msgs::Float32MultiArray& msg) const {
+        std::lock_guard<std::mutex> lock(mtx);
         if (cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
             return;
         }
@@ -174,6 +180,7 @@ public:
     }
 
     void reset() {
+        std::lock_guard<std::mutex> lock(mtx);
         RoadObject::x = gt_pose[0];
         RoadObject::y = gt_pose[1];
         RoadObject::yaw = gt_pose[2];
@@ -301,7 +308,7 @@ public:
     }
 
     void populate_msg(std_msgs::Float32MultiArray& msg) const override {
-        // msg.data.push_back(static_cast<float>(type));
+        std::lock_guard<std::mutex> lock(mtx);
         auto type = OBJECT::LIGHTS;
         if (current_color == LightColor::GREEN) {
             type = OBJECT::GREENLIGHT;
@@ -341,6 +348,7 @@ public:
     }
 
     bool is_same_object(double new_x, double new_y) const override {
+        std::lock_guard<std::mutex> lock(mtx);
         double dt = (ros::Time::now() - last_detection_time).toSec();
         double pred_x = x + speed * std::cos(yaw) * dt;
         double pred_y = y + speed * std::sin(yaw) * dt;
@@ -349,6 +357,7 @@ public:
     }
 
     void merge(double new_x, double new_y, double yaw, double new_conf, OBJECT new_type) override {
+        std::lock_guard<std::mutex> lock(mtx);
         if (new_type != type) {
             throw std::invalid_argument("Cannot merge different types of objects");
         }
@@ -414,6 +423,7 @@ public:
     
     }
     void predict() {
+        std::lock_guard<std::mutex> lock(mtx);
         if (use_kf && kf) {
             double dt = (ros::Time::now() - last_prediction_time).toSec();
             kf->predict(dt);
@@ -436,6 +446,7 @@ public:
     }
     
     void update(double x, double y, double yaw, double speed, double z, double steer) {
+        std::lock_guard<std::mutex> lock(mtx);
         this->x = x;
         this->y = y;
         this->yaw = yaw;
@@ -451,6 +462,7 @@ public:
     }
 
     void populate_msg(std_msgs::Float32MultiArray& msg) const override {
+        std::lock_guard<std::mutex> lock(mtx);
         msg.data.push_back(static_cast<float>(type));
         msg.data.push_back(static_cast<float>(x));
         msg.data.push_back(static_cast<float>(y));
@@ -481,7 +493,6 @@ inline std::vector<std::shared_ptr<DynamicObject>> road_pedestrians;
 inline std::mutex container_mutex;
 
 inline void predict_dynamic_objects() {
-    std::lock_guard<std::mutex> lock(container_mutex);
     for (auto& obj : road_cars) {
         obj->predict();
     }
@@ -491,7 +502,6 @@ inline void predict_dynamic_objects() {
 }
 
 inline std::vector<std::shared_ptr<RoadObject>> get_road_objects() {
-    std::lock_guard<std::mutex> lock(container_mutex);
     return road_objects; // return a copy of the vector
 }
 inline std::vector<std::shared_ptr<DynamicObject>> get_road_cars() {
@@ -535,7 +545,6 @@ inline std::shared_ptr<T> get_most_recent_object(const std::vector<std::shared_p
     return (most_recent_it != objects.end()) ? *most_recent_it : nullptr;
 }
 inline void create_ego_car(double x, double y, double yaw) {
-    std::lock_guard<std::mutex> lock(container_mutex);
     ego_car = std::make_shared<EgoCarObject>(x, y, yaw);
     return;
 }
@@ -549,7 +558,6 @@ inline void initialize_tracking() {
     create_ego_car(0, 0, 0);
 }
 inline void create_object(OBJECT type, double x, double y, double yaw, double confidence) {
-    std::lock_guard<std::mutex> lock(container_mutex);
     switch (type) {
         case OBJECT::CAR: {
             auto car = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
@@ -569,7 +577,6 @@ inline void create_object(OBJECT type, double x, double y, double yaw, double co
     }
 }
 inline void create_known_static_object(OBJECT type, double x, double y, double yaw, double confidence, const std::vector<double> &gt_pose) {
-	std::lock_guard<std::mutex> lock(container_mutex);
     // check every object in road_known_static_objects, if gt is same as existing object, merge, else create new
     // for (const auto& obj : road_known_static_objects) {
     //     if(!obj->is_same_type(type)) continue;
@@ -623,7 +630,6 @@ inline const std_msgs::Float32MultiArray& get_msg() {
 }
 
 inline void cleanup_stale_objects() {
-    std::lock_guard<std::mutex> lock(container_mutex);
     ros::Time now = ros::Time::now();
     road_objects.erase(std::remove_if(road_objects.begin(), road_objects.end(),
         [now](const std::shared_ptr<RoadObject>& obj) {
