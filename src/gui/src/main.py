@@ -245,7 +245,7 @@ class MainWindow(QMainWindow):
                 self.comm.steer_signal.emit(steer)
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
-            time.sleep(CameraParams.FPS_60.value)
+            time.sleep(CameraParams.FPS_30.value)
 
     def cam_record_callback(self) -> None:
         while self.alive:
