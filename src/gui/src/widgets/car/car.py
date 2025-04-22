@@ -84,6 +84,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.update_destinations()
 
         self.renderers = {
+            'Car': GTRenderer(self.shader_renderer.red_car_model),
             'Oneway': GTRenderer(self.shader_renderer.oneway_sign_model),
             'Stopsign': GTRenderer(self.shader_renderer.stop_sign_model),
             'Highway Entrance': GTRenderer(self.shader_renderer.highway_entrance_sign_model),
@@ -180,9 +181,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.32, self.view_mat, self.proj_mat)
+                self.renderers['Car'].add_instance(x, y, orientation, glm.vec3(0.32, 0.32, 0.32))
             else:
-                self.renderers[object_dict[obj_type]].add_instance(x, y, orientation, glm.vec3(32.0, 32.0, 32.0))
+                R1 = glm.rotate(glm.mat4(1.0), 180, glm.vec3(0, 0, 1))
+                R2 = glm.rotate(glm.mat4(1.0), 90, glm.vec3(1, 0, 0))
+                R3 = glm.rotate(glm.mat4(1.0), orientation, glm.vec3(0, 0, 1))
+                R = R3 * R2 * R1
+                self.renderers[object_dict[obj_type]].add_instance(x, y, R, glm.vec3(32.0, 32.0, 32.0))
         self.draw_road_objects()
 
     def draw_road_objects(self):
