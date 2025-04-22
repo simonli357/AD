@@ -247,18 +247,21 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.no_destinations:
             return
 
-        xs, ys = self._refs_xs, self._refs_ys
         num_nodes = self._refs_len
-
-        dx = xs - self.car_x
-        dy = ys - self.car_y
-        start_idx = int(np.argmin(dx * dx + dy * dy))
 
         dest_radius = 0.14
         wp_radius = 0.02
-        for offset in range(1, num_nodes + 1):
+        skip = 5
+
+        start_idx = None
+        for i, (nx, ny) in enumerate(zip(self._refs_xs, self._refs_ys)):
+            if self.is_near(self.car_x, self.car_y, nx, ny, dest_radius, wp_radius):
+                start_idx = i
+                break
+
+        for offset in range(1, num_nodes + 1, skip):
             idx = (start_idx + offset) % num_nodes
-            node_x, node_y = xs[idx], ys[idx]
+            node_x, node_y = self._refs_xs[idx], self._refs_ys[idx]
             for _, row in self.destinations.iterrows():
                 dest_x = row['X']
                 dest_y = row['Y']
