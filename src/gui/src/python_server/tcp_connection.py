@@ -1,7 +1,5 @@
 import threading
 import struct
-import io
-import networkx as nx
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
