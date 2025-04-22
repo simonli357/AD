@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-            time.sleep(CameraParams.FPS_30.value)
+            time.sleep(CameraParams.FPS5.value)
 
     def udp_callbacks(self) -> None:
         while self.alive:
@@ -245,7 +245,7 @@ class MainWindow(QMainWindow):
                 self.comm.steer_signal.emit(steer)
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
-            time.sleep(CameraParams.FPS_30.value)
+            time.sleep(CameraParams.FPS_60.value)
 
     def cam_record_callback(self) -> None:
         while self.alive:
