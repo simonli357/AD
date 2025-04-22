@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
                 if self.server.utility_node_client.run_msg:
                     run = self.server.utility_node_client.run_msg.popleft()
                     self.comm.run_signal.emit(run)
-            time.sleep(CameraParams.FPS5.value)
+            time.sleep(CameraParams.FPS_5.value)
 
     def udp_callbacks(self) -> None:
         while self.alive:
