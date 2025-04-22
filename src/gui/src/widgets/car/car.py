@@ -183,11 +183,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             elif object_dict[obj_type] == 'Car':
                 self.renderers['Car'].add_instance(x, y, orientation, glm.vec3(0.32, 0.32, 0.32))
             else:
-                R1 = glm.rotate(glm.mat4(1.0), 180, glm.vec3(0, 0, 1))
-                R2 = glm.rotate(glm.mat4(1.0), 90, glm.vec3(1, 0, 0))
-                R3 = glm.rotate(glm.mat4(1.0), orientation, glm.vec3(0, 0, 1))
-                R = R3 * R2 * R1
-                self.renderers[object_dict[obj_type]].add_instance(x, y, R, glm.vec3(32.0, 32.0, 32.0))
+                self.renderers[object_dict[obj_type]].add_sign(x, y, orientation, glm.vec3(32.0, 32.0, 32.0))
         self.draw_road_objects()
 
     def draw_road_objects(self):

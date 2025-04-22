@@ -61,6 +61,17 @@ class GTRenderer:
         mat_np = np.array(m, dtype=np.float32).T.flatten()
         self._pending_matrices.append(mat_np)
 
+    def add_sign(self, x: float, y: float, orientation: float, scale: Tuple[float, float, float]) -> None:
+        """Queue one instance transform for (x,y), yaw=orientation, and XYZ scale."""
+        m = glm.mat4(1.0)
+        m = glm.translate(m, glm.vec3(x, y, 0.0))
+        m = glm.rotate(m, orientation, glm.vec3(0.0, 0.0, 1.0))
+        m = glm.scale(m, glm.vec3(*scale))
+        m = glm.rotate(m, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
+        m = glm.rotate(m, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+        mat_np = np.array(m, dtype=np.float32).T.flatten()
+        self._pending_matrices.append(mat_np)
+
     def upload_instances(self) -> None:
         """Upload all queued instance matrices to the GPU buffer."""
         if not self._pending_matrices:
