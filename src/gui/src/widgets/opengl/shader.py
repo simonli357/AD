@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
-from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, quad_model, diamond_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, ripple_model, diamond_model
 from .obj import load_obj, create_obj
 from ..enums import NamedColor, OpenGLContextName
 from .custom.progress_bar import ProgressBar
@@ -44,9 +44,7 @@ class ShaderRenderer:
             exit(1)
 
     def load_graph_models(self):
-        self.selected_node_shader = create_shader_program(shader_path('node', 'selected_node.vert'), shader_path('node', 'selected_node.frag'))
-        self.selected_node_model = diamond_model()
-        self.arrow_shader = create_shader_program(shader_path('arrow', 'arrow.vert'), shader_path('arrow', 'arrow.frag'))
+        self.diamond_model = diamond_model()
         self.arrow_model = arrow_model()
 
     def load_cam_models(self):
@@ -127,7 +125,6 @@ class ShaderRenderer:
         self.destination_model = create_obj(self.destination_model_data, self.model_shader)
         self.green_destination_model = create_obj(self.green_destination_model_data, self.model_shader)
 
-        self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
         self.triangle_model = triangle_model()
 
         self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
@@ -180,17 +177,10 @@ class ShaderRenderer:
         self.red_car_model = create_obj(self.red_car_model_data, self.model_shader)
         self.orange_car_model = create_obj(self.orange_car_model_data, self.model_shader)
 
-        self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
-        self.circle_shader = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
-        self.crosshair_shader = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
-        self.ripple_shader = create_shader_program(shader_path('ripple', 'ripple.vert'), shader_path('ripple', 'ripple.frag'))
-        self.triangle_shader = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
-        self.arrow_shader = create_shader_program(shader_path('arrow', 'arrow.vert'), shader_path('arrow', 'arrow.frag'))
-
         self.line_model = line_model()
         self.circle_model = circle_model()
         self.crosshair_model = crosshair_model()
-        self.quad_model = quad_model()
+        self.ripple_model = ripple_model()
         self.triangle_model = triangle_model()
         self.arrow_model = arrow_model()
 
@@ -229,26 +219,21 @@ class ShaderRenderer:
     # Draw Functions
     ##################
 
-    def draw_selected_node(self, x, y, z, color, scale, rot, view_matrix, proj_matrix):
-        gl.glUseProgram(self.selected_node_shader)
+    def draw_diamond(self, x, y, z, color, scale, rot, view_matrix, proj_matrix):
+        gl.glUseProgram(self.diamond_model.shader_program)
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
-        model_loc = gl.glGetUniformLocation(self.selected_node_shader, "model")
-        view_loc = gl.glGetUniformLocation(self.selected_node_shader, "view")
-        proj_loc = gl.glGetUniformLocation(self.selected_node_shader, "projection")
-        color_loc = gl.glGetUniformLocation(self.selected_node_shader, "color")
+        gl.glUniformMatrix4fv(self.diamond_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.diamond_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.diamond_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.diamond_model.u_color, color[0], color[1], color[2], color[3])
 
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
-
-        gl.glBindVertexArray(self.selected_node_model.vao)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.selected_node_model.vertex_count)
+        gl.glBindVertexArray(self.diamond_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.diamond_model.vertex_count)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
@@ -270,23 +255,17 @@ class ShaderRenderer:
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
 
-        model_loc = gl.glGetUniformLocation(shader_program, "model")
-        view_loc = gl.glGetUniformLocation(shader_program, "view")
-        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+        gl.glUniformMatrix4fv(car_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(car_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(car_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-
-        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
         if car_model.texture is not None:
-            gl.glUniform1i(has_texture_loc, 1)  # Set to true
+            gl.glUniform1i(car_model.u_hasTex, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
-            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
-            gl.glUniform1i(texture_location, 0)
+            gl.glUniform1i(car_model.u_tex, 0)
         else:
-            gl.glUniform1i(has_texture_loc, 0)
+            gl.glUniform1i(car_model.u_hasTex, 0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(car_model.mesh.vao)
@@ -302,116 +281,23 @@ class ShaderRenderer:
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, -0.5))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
-        # model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, scale))
 
-        model_loc = gl.glGetUniformLocation(shader_program, "model")
-        view_loc = gl.glGetUniformLocation(shader_program, "view")
-        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
+        gl.glUniformMatrix4fv(obj_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(obj_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(obj_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-
-        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
         if obj_model.texture is not None:
-            gl.glUniform1i(has_texture_loc, 1)  # Set to true
+            gl.glUniform1i(obj_model.u_hasTex, 1)  # Set to true
             gl.glActiveTexture(gl.GL_TEXTURE0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
-            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
-            gl.glUniform1i(texture_location, 0)
+            gl.glUniform1i(obj_model.u_tex, 0)
         else:
-            gl.glUniform1i(has_texture_loc, 0)
+            gl.glUniform1i(obj_model.u_hasTex, 0)
             gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
-
-    def draw_road_object(self, obj_type, x, y, yaw, scale, view_matrix, proj_matrix, is_animation=False):
-        road_obj_model = None
-        is_car = False
-        z = 0
-        if obj_type == 'Car':
-            if not is_animation:
-                return
-            scale = scale / 300.0
-            z = 0.1
-            is_car = True
-            road_obj_model = self.red_car_model
-        elif obj_type == 'Oneway':
-            road_obj_model = self.oneway_sign_model
-        elif obj_type == 'Stopsign':
-            road_obj_model = self.stop_sign_model
-        elif obj_type == 'Highway Entrance':
-            road_obj_model = self.highway_entrance_sign_model
-        elif obj_type == 'Highway Exit':
-            road_obj_model = self.highway_exit_sign_model
-        elif obj_type == 'Roundabout':
-            road_obj_model = self.roundabout_sign_model
-        elif obj_type == 'Parking':
-            road_obj_model = self.parking_sign_model
-        elif obj_type == 'Crosswalk':
-            road_obj_model = self.crosswalk_sign_model
-        elif obj_type == 'No Entry':
-            road_obj_model = self.noentry_sign_model
-        elif obj_type == 'Priority':
-            road_obj_model = self.prio_sign_model
-        elif obj_type == 'Light':
-            scale = scale / 1.5
-            z = 0.05
-            road_obj_model = self.traffic_light_model
-        elif obj_type == 'Green Light':
-            scale = scale / 1.5
-            z = 0.05
-            road_obj_model = self.green_light_model
-        elif obj_type == 'Yellow Light':
-            scale = scale / 1.5
-            z = 0.05
-            road_obj_model = self.yellow_light_model
-        elif obj_type == 'Red Light':
-            scale = scale / 1.5
-            z = 0.05
-            road_obj_model = self.red_light_model
-        elif obj_type == 'Pedestrian':
-            if is_animation:
-                z = 0.1
-                scale = scale / 1.5
-            road_obj_model = self.pedestrian_model
-        else:
-            return
-        shader_program = road_obj_model.shader_program
-        gl.glUseProgram(shader_program)
-
-        model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, z))
-        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
-        if not is_car:
-            model = glm.rotate(model, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
-        model = glm.scale(model, glm.vec3(scale, scale, scale))
-
-        model_loc = gl.glGetUniformLocation(shader_program, "model")
-        view_loc = gl.glGetUniformLocation(shader_program, "view")
-        proj_loc = gl.glGetUniformLocation(shader_program, "projection")
-
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-
-        has_texture_loc = gl.glGetUniformLocation(shader_program, "hasTexture")
-        if road_obj_model.texture is not None:
-            gl.glUniform1i(has_texture_loc, 1)  # Set to true
-            gl.glActiveTexture(gl.GL_TEXTURE0)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, road_obj_model.texture)
-            texture_location = gl.glGetUniformLocation(shader_program, "uTexture")
-            gl.glUniform1i(texture_location, 0)
-        else:
-            gl.glUniform1i(has_texture_loc, 0)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-
-        gl.glBindVertexArray(road_obj_model.mesh.vao)
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, road_obj_model.mesh.vertex_count)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
@@ -488,7 +374,7 @@ class ShaderRenderer:
         gl.glUseProgram(0)
 
     def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
-        gl.glUseProgram(self.line_shader)
+        gl.glUseProgram(self.line_model.shader_program)
 
         # Create proper vertex data with x,y coordinates
         vertices = np.array([
@@ -506,10 +392,10 @@ class ShaderRenderer:
         )
 
         # Set matrices
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.line_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.line_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.line_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.line_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         # Set color
-        gl.glUniform4fv(gl.glGetUniformLocation(self.line_shader, "color"), 1, color)
+        gl.glUniform4fv(self.line_model.u_color, 1, color)
 
         # Draw
         gl.glBindVertexArray(self.line_model.vao)
@@ -519,7 +405,7 @@ class ShaderRenderer:
         gl.glUseProgram(0)
 
     def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix, rot_barca=0):
-        gl.glUseProgram(self.triangle_shader)
+        gl.glUseProgram(self.triangle_model.shader_program)
 
         model = glm.mat4(1.0)
         model = glm.rotate(model, glm.radians(rot_barca), glm.vec3(0, 0, 1))
@@ -527,15 +413,10 @@ class ShaderRenderer:
         model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
 
-        model_loc = gl.glGetUniformLocation(self.triangle_shader, "model")
-        view_loc = gl.glGetUniformLocation(self.triangle_shader, "view")
-        proj_loc = gl.glGetUniformLocation(self.triangle_shader, "projection")
-        color_loc = gl.glGetUniformLocation(self.triangle_shader, "color")
-
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+        gl.glUniformMatrix4fv(self.triangle_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.triangle_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.triangle_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.triangle_model.u_color, color[0], color[1], color[2], color[3])
 
         gl.glBindVertexArray(self.triangle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.triangle_model.vertex_count)
@@ -543,21 +424,16 @@ class ShaderRenderer:
         gl.glUseProgram(0)
 
     def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix, z=0.5):
-        gl.glUseProgram(self.circle_shader)
+        gl.glUseProgram(self.circle_model.shader_program)
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, z))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
-        model_loc = gl.glGetUniformLocation(self.circle_shader, "model")
-        view_loc = gl.glGetUniformLocation(self.circle_shader, "view")
-        proj_loc = gl.glGetUniformLocation(self.circle_shader, "projection")
-        color_loc = gl.glGetUniformLocation(self.circle_shader, "color")
-
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+        gl.glUniformMatrix4fv(self.circle_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.circle_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.circle_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.circle_model.u_color, color[0], color[1], color[2], color[3])
 
         gl.glBindVertexArray(self.circle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
@@ -570,27 +446,27 @@ class ShaderRenderer:
         model = glm.translate(model, glm.vec3(x, y, 5.0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
 
-        gl.glUseProgram(self.ripple_shader)
+        gl.glUseProgram(self.ripple_model.shader_program)
 
         # Set uniforms
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.ripple_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniform1f(gl.glGetUniformLocation(self.ripple_shader, "time"), time.perf_counter() - self._start_time)
+        gl.glUniformMatrix4fv(self.ripple_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.ripple_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.ripple_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform1f(self.ripple_model.u_time, time.perf_counter() - self._start_time)
 
-        gl.glBindVertexArray(self.quad_model.vao)
+        gl.glBindVertexArray(self.ripple_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
-        gl.glUseProgram(self.crosshair_shader)
+        gl.glUseProgram(self.crosshair_model.shader_program)
 
         # Set uniforms
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.crosshair_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniform4fv(gl.glGetUniformLocation(self.crosshair_shader, "color"), 1, color)
-        gl.glUniform1f(gl.glGetUniformLocation(self.crosshair_shader, "time"), time.perf_counter() - self._start_time)
+        gl.glUniformMatrix4fv(self.crosshair_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.crosshair_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.crosshair_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4fv(self.crosshair_model.u_color, 1, color)
+        gl.glUniform1f(self.crosshair_model.u_time, time.perf_counter() - self._start_time)
 
         # Draw cross
         gl.glBindVertexArray(self.crosshair_model.vao)
@@ -619,14 +495,12 @@ class ShaderRenderer:
         model = glm.scale(model, glm.vec3(thickness, length, 1.0))
 
         # upload & draw (unchanged)
-        gl.glUseProgram(self.arrow_shader)
+        gl.glUseProgram(self.arrow_model.shader_program)
 
-        def loc(name):
-            return gl.glGetUniformLocation(self.arrow_shader, name)
-        gl.glUniformMatrix4fv(loc("model"), 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(loc("view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(loc("projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(loc("color"), *color)
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.arrow_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.arrow_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.arrow_model.u_color, *color)
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
@@ -634,22 +508,18 @@ class ShaderRenderer:
         gl.glUseProgram(0)
 
     def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
-        gl.glUseProgram(self.arrow_shader)
-
-        model_loc = gl.glGetUniformLocation(self.arrow_shader, "model")
-        view_loc = gl.glGetUniformLocation(self.arrow_shader, "view")
-        proj_loc = gl.glGetUniformLocation(self.arrow_shader, "projection")
-        color_loc = gl.glGetUniformLocation(self.arrow_shader, "color")
+        gl.glUseProgram(self.arrow_model.shader_program)
 
         # Draw green arrow (pointing along y)
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 3.0))
         model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
-        gl.glUniform4f(color_loc, *NamedColor.GREEN.value)
+
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.arrow_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.arrow_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.arrow_model.u_color, *NamedColor.GREEN.value)
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
@@ -664,8 +534,8 @@ class ShaderRenderer:
         model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
         # Apply scale last
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniform4f(color_loc, *NamedColor.RED.value)
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4f(self.arrow_model.u_color, *NamedColor.RED.value)
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)

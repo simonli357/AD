@@ -9,7 +9,7 @@ import os
 
 MeshData = namedtuple('MeshData', ['vao', 'vbo_positions', 'vbo_texcoords', 'vbo_colors', 'vertex_count'])
 ModelData = namedtuple('ModelData', ['dirname', 'materials', 'position_array', 'texcoord_array', 'color_array'])
-Model = namedtuple('Model', ['mesh', 'texture', 'shader_program'])
+Model = namedtuple('Model', ['mesh', 'texture', 'shader_program', 'u_model', 'u_view', 'u_proj', 'u_hasTex', 'u_tex'])
 
 
 def parse_mtl(mtl_filename):
@@ -220,4 +220,10 @@ def create_obj(obj: ModelData, shader_program) -> Model:
 
     texture = load_texture(texture_path) if texture_path else None
 
-    return Model(mesh, texture, shader_program)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_hasTex = gl.glGetUniformLocation(shader_program, "hasTexture")
+    u_tex = gl.glGetUniformLocation(shader_program, "uTexture")
+
+    return Model(mesh, texture, shader_program, u_model, u_view, u_proj, u_hasTex, u_tex)
