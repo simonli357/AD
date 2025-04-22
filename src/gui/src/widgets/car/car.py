@@ -133,7 +133,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
         if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
-            self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
+            self.shader_renderer.draw_destination(self.current_destx, self.current_desty, 0, self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
         self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
