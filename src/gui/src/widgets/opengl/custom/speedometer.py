@@ -1,7 +1,9 @@
-import math
-import numpy as np
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
+from PyQt5 import QtWidgets
+
+import math
+import numpy as np
 import glm
 
 
@@ -18,8 +20,8 @@ class Speedometer():
         self.compass_shader_program = compass_shader_program
 
         # Ratios and constants
-        self.innerRadius_ratio = 0.23
-        self.outerRadius_ratio = 0.24
+        self.innerRadius_ratio = 0.20
+        self.outerRadius_ratio = 0.21
         self.large_tick_length_ratio = 0.02
         self.small_tick_length_ratio = 0.01
         self.maxSweep = 280.0
@@ -47,8 +49,11 @@ class Speedometer():
         self.cached_center = (cx, cy)
 
         # Compute radii in pixels.
-        innerRadius = self.innerRadius_ratio * screen_height
-        outerRadius = self.outerRadius_ratio * screen_height
+        screen = QtWidgets.QApplication.primaryScreen()
+        max_screen_height = screen.size().height() / 2.3
+        min_dim = max(screen_height, max_screen_height)
+        innerRadius = self.innerRadius_ratio * min_dim
+        outerRadius = self.outerRadius_ratio * min_dim
 
         # Precompute gauge quad vertices (covers full circle enclosing outerRadius).
         left = cx - outerRadius
