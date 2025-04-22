@@ -11,6 +11,8 @@
 #include "utils/constants.h"
 #include "Tunable.h"
 #include "KalmanFilter.h"
+#include <atomic>
+#include <mutex>
 
 using namespace VehicleConstants;
 
@@ -42,7 +44,7 @@ static const std::array<TrackingParams, 17> OBJECT_TRACKING_PARAMS = {{
     {MIN_SIGN_DIST, 0.0, 1}      // NONE
 }};
 
-inline int OBJECT_COUNT = 0;
+inline std::atomic<int> OBJECT_COUNT = 0;
 inline bool is_known_static_object(OBJECT obj) {
     return std::find(KNOWN_STATIC_OBJECTS.begin(), KNOWN_STATIC_OBJECTS.end(), obj) != KNOWN_STATIC_OBJECTS.end();
 }
@@ -71,7 +73,7 @@ public:
     static constexpr size_t HISTORY_SIZE = 5;
 
     RoadObject(OBJECT type, double x, double y, double yaw, double confidence)
-        : id(OBJECT_COUNT++), type(type), x(x), y(y), yaw(yaw), confidence(confidence), speed(0) {
+        : id(OBJECT_COUNT.fetch_add(1)), type(type), x(x), y(y), yaw(yaw), confidence(confidence), speed(0) {
         name = OBJECT_NAMES[type];
         detection_count = 1;
         cumulative_confidence = confidence;
@@ -81,7 +83,7 @@ public:
     }
 
     virtual ~RoadObject() {
-        OBJECT_COUNT--;
+        OBJECT_COUNT.fetch_sub(1);
     }
 
     virtual bool is_same_object(double new_x, double new_y) const {
@@ -138,7 +140,7 @@ public:
         msg.data.push_back(static_cast<float>(y));
         msg.data.push_back(static_cast<float>(yaw));
         msg.data.push_back(static_cast<float>(speed));
-        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(cumulative_confidence));
         msg.data.push_back(static_cast<float>(z));
         msg.data.push_back(static_cast<float>(id));
     }
@@ -313,7 +315,7 @@ public:
         msg.data.push_back(static_cast<float>(y));
         msg.data.push_back(static_cast<float>(yaw));
         msg.data.push_back(static_cast<float>(speed));
-        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(cumulative_confidence));
         msg.data.push_back(static_cast<float>(z));
         msg.data.push_back(static_cast<float>(id));
     }
@@ -454,7 +456,7 @@ public:
         msg.data.push_back(static_cast<float>(y));
         msg.data.push_back(static_cast<float>(yaw));
         msg.data.push_back(static_cast<float>(speed));
-        msg.data.push_back(static_cast<float>(confidence));
+        msg.data.push_back(static_cast<float>(cumulative_confidence));
         msg.data.push_back(static_cast<float>(z));
         msg.data.push_back(static_cast<float>(id));
     }
@@ -533,6 +535,7 @@ inline std::shared_ptr<T> get_most_recent_object(const std::vector<std::shared_p
     return (most_recent_it != objects.end()) ? *most_recent_it : nullptr;
 }
 inline void create_ego_car(double x, double y, double yaw) {
+    std::lock_guard<std::mutex> lock(container_mutex);
     ego_car = std::make_shared<EgoCarObject>(x, y, yaw);
     return;
 }
@@ -593,19 +596,6 @@ inline void reset_msg() {
     ros_msg.data.clear();
     ros_msg.layout.data_offset = 0;
     ros_msg.layout.dim.clear();
-}
-
-inline void create_msg(const std::vector<std::shared_ptr<RoadObject>>& objects) {
-    for (const auto& obj : objects) {
-        ros_msg.data.push_back(static_cast<float>(obj->type));
-        ros_msg.data.push_back(static_cast<float>(obj->x));
-        ros_msg.data.push_back(static_cast<float>(obj->y));
-        ros_msg.data.push_back(static_cast<float>(obj->yaw));
-        ros_msg.data.push_back(static_cast<float>(obj->speed));
-        ros_msg.data.push_back(static_cast<float>(obj->confidence));
-        ros_msg.data.push_back(static_cast<float>(obj->z));
-        ros_msg.data.push_back(static_cast<float>(obj->id));
-    }
 }
 
 inline std_msgs::Float32MultiArray& create_all_msgs() {

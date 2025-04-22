@@ -192,6 +192,7 @@ class SignFastest {
             } else { // sign
                 expected_dist = SIGN_H2D_RATIO / height;
             }
+            // std::cout << "distance: " << distance << ", expected_dist: " << expected_dist << std::endl;
             if (distance > expected_dist * 3 || distance < expected_dist * 1/3) return false;
             return true;
         }
@@ -313,7 +314,7 @@ class SignFastest {
                     detected_indices[class_id] = 1;
                     sign_counter[class_id]++;
                     if (sign_counter[class_id] < counter_thresholds[class_id]) {
-                        // ROS_INFO("%s detected but counter is only %d", class_names[class_id].c_str(), sign_counter[class_id]);
+                        ROS_INFO("%s detected but counter is only %d", class_names[class_id].c_str(), sign_counter[class_id]);
                         continue;
                     }
                     float confidence = box.probability;
@@ -387,7 +388,8 @@ class SignFastest {
                 
                 double expected_dist = distance_makes_sense(finalDepth, db.class_id, db.x1, db.y1, db.x2, db.y2);
                 if (!expected_dist) {
-                    // ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f", expected_dist, distance);
+                    ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f, x1: %d, y1: %d, x2: %d, y2: %d, id: %d",
+                            expected_dist, finalDepth, db.x1, db.y1, db.x2, db.y2, db.class_id);
                     continue;
                 }
                 // Populate the sign message.
