@@ -45,7 +45,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.update)
-        self._timer.start(1000 // 60)
+        self._timer.start(1000 // 30)
 
     def fetch_camera_params(self):
         while self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:

@@ -123,7 +123,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self._timer = QTimer(self)
         self._timer.timeout.connect(self.update)
-        self._timer.start(1000 // 60)
+        self._timer.start(1000 // 30)
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
