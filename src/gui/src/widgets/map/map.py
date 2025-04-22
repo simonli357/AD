@@ -234,6 +234,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
             self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
 
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
+
     def find_next_destination(self):
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
             return
@@ -251,15 +254,15 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         dy = ys - self.car_y
         start_idx = int(np.argmin(dx * dx + dy * dy))
 
-        tol = 0.2
-        skip = 3
-        for offset in range(1, num_nodes + 1, skip):
+        dest_radius = 0.14
+        wp_radius = 0.02
+        for offset in range(1, num_nodes + 1):
             idx = (start_idx + offset) % num_nodes
             node_x, node_y = xs[idx], ys[idx]
             for _, row in self.destinations.iterrows():
                 dest_x = row['X']
                 dest_y = row['Y']
-                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                if self.is_near(dest_x, dest_y, node_x, node_y, dest_radius, wp_radius):
                     next_destination = (dest_x, dest_y)
                     if next_destination not in self.main_window.visited:
                         self.next_destination = (dest_x, dest_y)
