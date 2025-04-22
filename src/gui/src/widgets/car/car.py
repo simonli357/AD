@@ -27,8 +27,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.cam_dist = 32.0
         self.cam_height = self.cam_dist / 1.25
 
-        self.updated_dest_size = 10.0
-        self.updated_dest_rot = 0
         self.setup_ui()
 
     def setup_ui(self):
@@ -134,10 +132,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
-        # Grow visited destination until out of sight
-        if self.updated_dest_size < 10.0:
-            self.updated_dest_size += 0.1
-            self.updated_dest_rot += 0.4
         if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
             self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
@@ -146,7 +140,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 4.5
-        self.updated_dest_rot = 0
         self.current_destx, self.current_desty = self.get_gl_coords(x_visited, y_visited)
 
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
