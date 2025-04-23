@@ -1,5 +1,4 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QTimer
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from .stats import HidableOverlay
@@ -30,10 +29,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.cam_height = self.cam_dist / 1.25
 
         self.setup_ui()
-
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.update)
-        self._timer.start(1000 // 30)
 
     def setup_ui(self):
         self.run_statistics = HidableOverlay(self)
@@ -159,6 +154,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         # HUD
         self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
+
+        self.update()
 
     def update_visited_destination(self, x_visited, y_visited):
         self.updated_dest_size = 4.5

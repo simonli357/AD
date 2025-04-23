@@ -1,5 +1,4 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import QTimer
 from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .graph import GraphEditor
@@ -17,8 +16,6 @@ import glm
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
-    update_map_signal = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()
@@ -121,10 +118,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
         self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
 
-        self._timer = QTimer(self)
-        self._timer.timeout.connect(self.update)
-        self._timer.start(1000 // 30)
-
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
 
@@ -215,6 +208,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 pass
 
             self.update_mouse_pos()
+
+        self.update()
 
     def draw_measurement_points(self):
         if len(self.click_history) > 0:
