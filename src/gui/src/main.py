@@ -143,15 +143,15 @@ class MainWindow(QMainWindow):
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.udp_callbacks)
-        self.udp_timer.start(int(CameraParams.FPS_60 * 1000))
+        self.udp_timer.start(int(CameraParams.FPS_60.value * 1000))
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.tcp_callbacks)
-        self.udp_timer.start(int(CameraParams.FPS_5 * 1000))
+        self.udp_timer.start(int(CameraParams.FPS_5.value * 1000))
 
         self.cam_timer = QTimer(self)
         self.cam_timer.timeout.connect(self.cam_record_callback)
-        self.cam_timer.start(int(CameraParams.RECORDING_REFRESH_RATE * 1000))
+        self.cam_timer.start(int(CameraParams.RECORDING_REFRESH_RATE.value * 1000))
 
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
         self.cam_thread.start()
