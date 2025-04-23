@@ -1,9 +1,9 @@
 import threading
+import queue
 import numpy as np
 import cv2
 import struct
 
-from collections import OrderedDict, deque
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
@@ -11,168 +11,151 @@ from PyQt5.QtGui import QPixmap, QImage
 
 
 class UdpConnection:
-    def __init__(self, udp_socket=None):
+    def __init__(self,
+                 udp_socket,
+                 on_rgb_frame=None,
+                 on_depth_frame=None,
+                 on_lane2=None,
+                 on_road_obj=None,
+                 on_waypoint=None,
+                 on_sign=None,
+                 on_steer=None,
+                 on_sw_load=None):
         self.socket = udp_socket
         self.MAX_DGRAM = 65507
-        if udp_socket is not None:
-            self.socket.settimeout(None)
-            self.data_actions = OrderedDict({
-                1: self.store_lane2,
-                2: self.store_road_object,
-                3: self.store_waypoint,
-                4: self.store_sign,
-                5: self.store_rgb_image,
-                6: self.store_depth_image,
-                7: self.store_steer,
-                8: self.store_sw_load,
-            })
-            self.types = list(self.data_actions.keys())
-            self.lane2_buf = deque([], 1)
-            self.road_object_buf = deque([], 1)
-            self.waypoint_buf = deque([], 1)
-            self.sign_buf = deque([], 1)
-            self.rgb_buf = deque([], 1)
-            self.depth_buf = deque([], 1)
-            self.steer_buf = deque([], 1)
-            self.sw_load_buf = deque([], 1)
-            threading.Thread(target=self.receive, daemon=True).start()
 
-    def receive(self):
+        # callbacks (Qt signal .emit methods)
+        self.on_rgb_frame = on_rgb_frame
+        self.on_depth_frame = on_depth_frame
+        self.on_lane2 = on_lane2
+        self.on_road_obj = on_road_obj
+        self.on_waypoint = on_waypoint
+        self.on_sign = on_sign
+        self.on_steer = on_steer
+        self.on_sw_load = on_sw_load
+
+        # internal queues for each message type
+        self._queues = {
+            'rgb': queue.Queue(maxsize=1),
+            'depth': queue.Queue(maxsize=1),
+            'lane2': queue.Queue(maxsize=1),
+            'road': queue.Queue(maxsize=1),
+            'wayp': queue.Queue(maxsize=1),
+            'sign': queue.Queue(maxsize=1),
+            'steer': queue.Queue(maxsize=1),
+            'sw': queue.Queue(maxsize=1),
+        }
+
+        # dispatch table: raw handlers enqueue
+        self.data_actions = {
+            1: lambda b: self._enqueue('lane2', b),
+            2: lambda b: self._enqueue('road', b),
+            3: lambda b: self._enqueue('wayp', b),
+            4: lambda b: self._enqueue('sign', b),
+            5: lambda b: self._enqueue('rgb', b),
+            6: lambda b: self._enqueue('depth', b),
+            7: lambda b: self._enqueue('steer', b),
+            8: lambda b: self._enqueue('sw', b),
+        }
+
+        # start receive thread
+        threading.Thread(target=self._receive_loop, daemon=True).start()
+        # start worker threads
+        threading.Thread(target=self._worker_rgb, daemon=True).start()
+        threading.Thread(target=self._worker_depth, daemon=True).start()
+        threading.Thread(target=self._worker_lane2, daemon=True).start()
+        threading.Thread(target=self._worker_road, daemon=True).start()
+        threading.Thread(target=self._worker_wayp, daemon=True).start()
+        threading.Thread(target=self._worker_sign, daemon=True).start()
+        threading.Thread(target=self._worker_steer, daemon=True).start()
+        threading.Thread(target=self._worker_sw, daemon=True).start()
+
+    def _receive_loop(self):
         while True:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-                if len(seg) < 6:
+                if len(seg) < 5:
                     continue
-                message_type = seg[4]
-                bytes = seg[5:]
-                if message_type in self.data_actions:
-                    self.data_actions[message_type](bytes)
-            except Exception as e:
-                print(e)
-                continue
+                msg_type = seg[4]
+                payload = seg[5:]
+                handler = self.data_actions.get(msg_type)
+                if handler:
+                    handler(payload)
+            except Exception:
+                # ignore invalid or closed socket
+                pass
 
-    ###################
-    # Data actions
-    ###################
-
-    def store_lane2(self, bytes):
-        self.lane2_buf.append(bytes)
-
-    def store_road_object(self, bytes):
-        self.road_object_buf.append(bytes)
-
-    def store_waypoint(self, bytes):
-        self.waypoint_buf.append(bytes)
-
-    def store_sign(self, bytes):
-        self.sign_buf.append(bytes)
-
-    def store_rgb_image(self, bytes):
-        self.rgb_buf.append(bytes)
-
-    def store_depth_image(self, bytes):
-        self.depth_buf.append(bytes)
-
-    def store_steer(self, bytes):
-        self.steer_buf.append(bytes)
-
-    def store_sw_load(self, bytes):
-        self.sw_load_buf.append(bytes)
-
-    ####################
-    # Utility methods
-    ####################
-
-    def parse_lane2(self):
+    def _enqueue(self, key, raw_bytes):
+        q = self._queues[key]
         try:
-            if len(self.lane2_buf) > 0:
-                return Lane2Msg().decode(self.lane2_buf[0])
-            return None
-        except Exception as e:
-            print(e)
-            return None
+            q.put_nowait(raw_bytes)
+        except Exception:
+            pass
 
-    def parse_road_object(self):
-        try:
-            if len(self.road_object_buf) > 0:
-                return Float32MultiArray().deserialize(self.road_object_buf[0])
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    # worker threads:
+    def _worker_rgb(self):
+        while True:
+            raw = self._queues['rgb'].get()
+            arr = np.frombuffer(raw, dtype=np.uint8)
+            cv_img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+            rgb = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb.shape
+            qimg = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888)
+            pix = QPixmap.fromImage(qimg)
+            if self.on_rgb_frame:
+                self.on_rgb_frame(pix)
 
-    def parse_waypoint(self):
-        try:
-            if len(self.waypoint_buf) > 0:
-                return Float32MultiArray().deserialize(self.waypoint_buf[0])
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_depth(self):
+        while True:
+            raw = self._queues['depth'].get()
+            arr = np.frombuffer(raw, dtype=np.uint8)
+            cv_img = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED).astype(np.uint16)
+            norm = cv2.normalize(cv_img, None, 50, 255, cv2.NORM_MINMAX)
+            col = cv2.applyColorMap(norm.astype(np.uint8), cv2.COLORMAP_TURBO)
+            h, w, ch = col.shape
+            qimg = QImage(col.data, w, h, ch * w, QImage.Format_RGB888)
+            pix = QPixmap.fromImage(qimg)
+            if self.on_depth_frame:
+                self.on_depth_frame(pix)
 
-    def parse_sign(self):
-        try:
-            if len(self.sign_buf) > 0:
-                return Float32MultiArray().deserialize(self.sign_buf[0])
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_lane2(self):
+        while True:
+            raw = self._queues['lane2'].get()
+            msg = Lane2Msg().decode(raw)
+            if self.on_lane2:
+                self.on_lane2(msg)
 
-    def parse_rgb_image(self):
-        try:
-            if len(self.rgb_buf) > 0:
-                np_array = np.frombuffer(self.rgb_buf[0], dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-                # Convert to QImage
-                h, w, ch = cv_image.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(cv_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                return QPixmap.fromImage(qt_image)
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_road(self):
+        while True:
+            raw = self._queues['road'].get()
+            msg = Float32MultiArray().deserialize(raw)
+            if self.on_road_obj:
+                self.on_road_obj(msg)
 
-    def parse_depth_image(self):
-        try:
-            if len(self.depth_buf) > 0:
-                np_array = np.frombuffer(self.depth_buf[0], dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                cv_image = (cv_image).astype(np.uint16)
-                # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-                # depth_image = self.bridge.imgmsg_to_cv2(depth_frame, "mono16")  # real
-                # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
-                # Apply normalization with a focus on closer objects
-                depth_normalized = cv2.normalize(cv_image, None, 50, 255, cv2.NORM_MINMAX)
-                depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
-                # Convert to QImage
-                h, w, ch = depth_colored.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                return QPixmap.fromImage(qt_image)
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_wayp(self):
+        while True:
+            raw = self._queues['wayp'].get()
+            msg = Float32MultiArray().deserialize(raw)
+            if self.on_waypoint:
+                self.on_waypoint(msg)
 
-    def parse_steer(self):
-        try:
-            if len(self.steer_buf) > 0:
-                bytes = self.steer_buf[0]
-                return struct.unpack('f', bytes[:4])[0]
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_sign(self):
+        while True:
+            raw = self._queues['sign'].get()
+            msg = Float32MultiArray().deserialize(raw)
+            if self.on_sign:
+                self.on_sign(msg)
 
-    def parse_sw_load(self):
-        try:
-            if len(self.sw_load_buf) > 0:
-                bytes = self.sw_load_buf[0]
-                return SWLoadMsg().decode(bytes)
-            return None
-        except Exception as e:
-            print(e)
-            return None
+    def _worker_steer(self):
+        while True:
+            raw = self._queues['steer'].get()
+            val = struct.unpack('f', raw[:4])[0]
+            if self.on_steer:
+                self.on_steer(val)
+
+    def _worker_sw(self):
+        while True:
+            raw = self._queues['sw'].get()
+            msg = SWLoadMsg().decode(raw)
+            if self.on_sw_load:
+                self.on_sw_load(msg)
