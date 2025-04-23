@@ -43,8 +43,8 @@ class ShaderRenderer:
         gl.glUniform1i(loc2D, 0)
         gl.glUseProgram(0)
 
-        self.tex2D_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
-        self.tex2D_u_proj = gl.glGetUniformLocation(self.texture_shader, "projection")
+        self.tex2D_u_model = gl.glGetUniformLocation(self.texture2D_shader, "model")
+        self.tex2D_u_proj = gl.glGetUniformLocation(self.texture2D_shader, "projection")
 
         self._last_bound_texture = None
         self._last_bound_tex2D = None
