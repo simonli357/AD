@@ -12,7 +12,6 @@ from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from python_server.server import Server
-from python_server.udp_connection import UdpConnection
 from database.database import Database
 from widgets.sidebar.sidebar import SidebarWidget
 from widgets.camera.camera import CameraWidget
@@ -58,27 +57,13 @@ class MapContainer(QtWidgets.QStackedWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, server):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
-        self.comm = CommunicationHandler()
-
-        self.server = Server()
-        self.server.udp_connection = UdpConnection(
-            udp_socket=self.server.udp_socket,
-            on_rgb_frame=self.comm.camera_frame_signal.emit,
-            on_depth_frame=self.comm.depth_frame_signal.emit,
-            on_lane2=self.comm.lane_signal.emit,
-            on_road_obj=self.comm.road_obj_signal.emit,
-            on_waypoint=self.comm.waypoint_signal.emit,
-            on_sign=self.comm.sign_signal.emit,
-            on_steer=self.comm.steer_signal.emit,
-            on_sw_load=self.comm.sw_load_signal.emit
-        )
-        self.server.initialize()
-
+        self.server = server
         self.database = Database()
+        self.comm = CommunicationHandler()
         self.show_barca = False
         self.state_refs_np = None
         self.attributes_np = None
@@ -156,8 +141,10 @@ class MainWindow(QMainWindow):
 
         self.terminal_widget.add_message("AD IDE INITIALIZED")
 
+        self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
+        self.udp_thread.start()
         self.tcp_thread.start()
         self.cam_thread.start()
 
@@ -226,6 +213,40 @@ class MainWindow(QMainWindow):
                     self.comm.run_signal.emit(run)
             time.sleep(CameraParams.FPS_5.value)
 
+    def udp_callbacks(self) -> None:
+        while self.alive:
+            rgb_image = None
+            depth_image = None
+            if self.cam_widget.show_depth:
+                depth_image = self.server.udp_connection.parse_depth_image()
+            else:
+                rgb_image = self.server.udp_connection.parse_rgb_image()
+
+            sign = self.server.udp_connection.parse_sign()
+            waypoint = self.server.udp_connection.parse_waypoint()
+            road_obj = self.server.udp_connection.parse_road_object()
+            lane2 = self.server.udp_connection.parse_lane2()
+            steer = self.server.udp_connection.parse_steer()
+            load = self.server.udp_connection.parse_sw_load()
+
+            if rgb_image is not None:
+                self.comm.camera_frame_signal.emit(rgb_image)
+            if depth_image is not None:
+                self.comm.depth_frame_signal.emit(depth_image)
+            if lane2 is not None:
+                self.comm.lane_signal.emit(lane2)
+            if road_obj is not None:
+                self.comm.road_obj_signal.emit(road_obj)
+            if waypoint is not None:
+                self.comm.waypoint_signal.emit(waypoint)
+            if sign is not None:
+                self.comm.sign_signal.emit(sign)
+            if steer is not None:
+                self.comm.steer_signal.emit(steer)
+            if load is not None:
+                self.comm.sw_load_signal.emit(load)
+            time.sleep(CameraParams.FPS_60.value)
+
     def cam_record_callback(self) -> None:
         while self.alive:
             if self.cam_buttons_widget.recording:
@@ -265,8 +286,10 @@ if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     app = QApplication(sys.argv)
+    server = Server()
+    server.initialize()
 
-    window = MainWindow()
+    window = MainWindow(server)
     window.show()
 
     app.exec()
