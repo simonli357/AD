@@ -62,6 +62,30 @@ class Speedometer():
         self.small_tick_vertices = None  # small tick vertices
         self.label_data = None           # list of (label, x, y) for large ticks
 
+        # VBO's
+        quad_placeholder = np.zeros((6 * 2,), dtype=np.float32)
+        self.quad_vbo = vbo.VBO(quad_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Large ticks: maxSweep=280°, interval=40° → 8 ticks → 8 lines → 16 verts
+        large_ticks_count = int(self.maxSweep / self.large_tick_interval) + 1
+        large_placeholder = np.zeros((large_ticks_count * 2 * 2,), dtype=np.float32)
+        self.large_tick_vbo = vbo.VBO(large_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Small ticks: (total ticks) – (large ticks)
+        total_ticks = int(self.maxSweep / self.tick_step) + 1
+        small_ticks_count = total_ticks - large_ticks_count
+        small_placeholder = np.zeros((small_ticks_count * 2 * 2,), dtype=np.float32)
+        self.small_tick_vbo = vbo.VBO(small_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Inner circle (LINE_LOOP): num_segments points → num_segments verts
+        self.num_segments = 128
+        circle_placeholder = np.zeros((self.num_segments * 2,), dtype=np.float32)
+        self.circle_vbo = vbo.VBO(circle_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Compass needle: 6 verts → 6 × (x,y)
+        needle_placeholder = np.zeros((6 * 2,), dtype=np.float32)
+        self.needle_vbo = vbo.VBO(needle_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
     def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer):
         """Compute and cache the geometry for the gauge and tick marks."""
         # Compute gauge center based on normalized values.
@@ -193,21 +217,25 @@ class Speedometer():
         self.cached_screen_height = screen_height
 
         # Reset vbo's
-        if hasattr(self, 'quad_vbo'):
-            self.quad_vbo.delete()
-        self.quad_vbo = vbo.VBO(self.quad_vertices)
-        if hasattr(self, 'large_tick_vbo'):
-            self.large_tick_vbo.delete()
-        self.large_tick_vbo = vbo.VBO(self.large_tick_vertices)
-        if hasattr(self, 'small_tick_vbo'):
-            self.small_tick_vbo.delete()
-        self.small_tick_vbo = vbo.VBO(self.small_tick_vertices)
-        if hasattr(self, 'circle_vbo'):
-            self.circle_vbo.delete()
-        self.circle_vbo = vbo.VBO(self.circle_vertices)
-        if hasattr(self, 'needle_vbo'):
-            self.needle_vbo.delete()
-        self.needle_vbo = vbo.VBO(self.needle_vertices)
+        self.quad_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.quad_vertices.nbytes, self.quad_vertices)
+        self.quad_vbo.unbind()
+
+        self.large_tick_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.large_tick_vertices.nbytes, self.large_tick_vertices)
+        self.large_tick_vbo.unbind()
+
+        self.small_tick_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.small_tick_vertices.nbytes, self.small_tick_vertices)
+        self.small_tick_vbo.unbind()
+
+        self.circle_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.circle_vertices.nbytes, self.circle_vertices)
+        self.circle_vbo.unbind()
+
+        self.needle_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.needle_vertices.nbytes, self.needle_vertices)
+        self.needle_vbo.unbind()
 
     def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
         """
