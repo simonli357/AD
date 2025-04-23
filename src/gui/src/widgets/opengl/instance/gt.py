@@ -6,112 +6,116 @@ import glm
 
 
 class GTRenderer:
+    """
+    Instance renderer with incremental updates and hide-on-remove.
+    """
+
     def __init__(self, model, max_instances=1024):
         self.model = model
         self.vertex_count = model.mesh.vertex_count
 
-        # --- (same shader setup as before) ---
-        self.shader_program = create_shader_program(shader_path('models', 'models.vert'), shader_path('models', 'models.frag'))
-        self._u_proj = gl.glGetUniformLocation(self.shader_program, "projection")
-        self._u_view = gl.glGetUniformLocation(self.shader_program, "view")
-        self._u_hasTex = gl.glGetUniformLocation(self.shader_program, "hasTexture")
-        self._u_tex = gl.glGetUniformLocation(self.shader_program, "uTexture")
+        # compile & cache shader
+        self.shader_program = create_shader_program(
+            shader_path('models', 'models.vert'),
+            shader_path('models', 'models.frag')
+        )
+        self._u_proj = gl.glGetUniformLocation(self.shader_program, 'projection')
+        self._u_view = gl.glGetUniformLocation(self.shader_program, 'view')
+        self._u_hasTex = gl.glGetUniformLocation(self.shader_program, 'hasTexture')
+        self._u_tex = gl.glGetUniformLocation(self.shader_program, 'uTexture')
 
-        # pre-allocate instance buffer
-        self.stride = 16 * 4  # bytes per mat4
+        # instance bookkeeping
         self.capacity = max_instances
-        self.ids = set()
-        self.id_to_index = {}      # maps your id → slot index
-        self._last_pose = {}
-        self.free_slots = list(range(self.capacity))[::-1]
+        self.id_to_index = {}    # id -> slot index
+        self.current_count = 0   # number of assigned slots
+        self._last_pose = {}     # id -> (x,y,yaw)
 
-        # create + bind VBO
+        # create & initialize VBO
         self.instance_vbo = gl.glGenBuffers(1)
         gl.glBindVertexArray(model.mesh.vao)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        # allocate ‘empty’ storage up to capacity
-        gl.glBufferData(gl.GL_ARRAY_BUFFER,
-                        self.capacity * self.stride,
-                        None,
-                        gl.GL_DYNAMIC_DRAW)
-
-        # set up the 4 matrix attributes (locations 3,4,5,6)
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER,
+            self.capacity * 16 * 4,
+            None,
+            gl.GL_DYNAMIC_DRAW
+        )
+        stride = 16 * 4
         for i in range(4):
             loc = 3 + i
             gl.glEnableVertexAttribArray(loc)
             gl.glVertexAttribPointer(
                 loc, 4, gl.GL_FLOAT, gl.GL_FALSE,
-                self.stride, gl.ctypes.c_void_p(i * 16)
+                stride, gl.ctypes.c_void_p(i * 16)
             )
             gl.glVertexAttribDivisor(loc, 1)
-
-        # unbind
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
     def _upload_matrix(self, index: int, mat_np: np.ndarray):
-        """Update just one instance’s 16-float matrix at slot ‘index’."""
-        offset = index * self.stride
+        """Upload one mat4 to VBO slot index."""
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         gl.glBufferSubData(
             gl.GL_ARRAY_BUFFER,
-            offset,
+            index * 16 * 4,
             mat_np.nbytes,
             mat_np
         )
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
     def set_ids(self, ids):
-        # find which IDs disappeared:
-        gone = set(self.id_to_index) - set(ids)
-        for gid in gone:
-            idx = self.id_to_index.pop(gid)
-            # hide that slot:
-            hide_mat = np.zeros((16,), dtype=np.float32)
-            self._upload_matrix(idx, hide_mat)
-            # recycle the slot
-            self.free_slots.append(idx)
-        self.ids = set(ids)
+        """
+        Hide any instances not in the provided ids set by moving them off-screen.
+        ids: iterable of active instance IDs.
+        """
+        ids = set(ids)
+        # compute off-screen hide matrix once
+        hide_mat = glm.translate(glm.mat4(1.0), glm.vec3(1e6, 1e6, 1e6))
+        hide_np = np.array(hide_mat, dtype=np.float32).T.flatten()
+        # hide any slot whose id is not active
+        for inst_id, idx in self.id_to_index.items():
+            if inst_id not in ids:
+                self._upload_matrix(idx, hide_np)
 
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
+        """
+        Assign or update an instance transform. Uses stable slots: once assigned, id retains index.
+        """
+        # skip if pose unchanged
         old = self._last_pose.get(id)
-        if old is not None:
-            old_x, old_y, old_yaw = old
-            if (np.isclose(x, old_x) and np.isclose(y, old_y) and np.isclose(yaw, old_yaw)):
-                return
-
+        if old and np.allclose((x, y, yaw), old):
+            return
+        # build transform matrix
         m = glm.mat4(1.0)
         m = glm.translate(m, glm.vec3(x, y, 0.0))
         m = glm.rotate(m, yaw, glm.vec3(0, 0, 1))
         if extra_rot:
-            m = glm.rotate(m, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
-            m = glm.rotate(m, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+            m = glm.rotate(m, glm.radians(180), glm.vec3(0, 0, 1))
+            m = glm.rotate(m, glm.radians(90), glm.vec3(1, 0, 0))
         m = glm.scale(m, glm.vec3(*scale))
         mat_np = np.array(m, dtype=np.float32).T.flatten()
 
+        # assign slot if new
         if id not in self.id_to_index:
-            if not self.free_slots:
-                raise RuntimeError("Exceeded capacity!")
-            idx = self.free_slots.pop()
+            if self.current_count >= self.capacity:
+                raise RuntimeError('Exceeded max_instances!')
+            idx = self.current_count
             self.id_to_index[id] = idx
+            self.current_count += 1
         else:
             idx = self.id_to_index[id]
 
+        # upload matrix for this instance
         self._upload_matrix(idx, mat_np)
         self._last_pose[id] = (x, y, yaw)
 
     def draw(self, projection: glm.mat4, view: glm.mat4):
-        if not self.id_to_index:
+        """Draw all assigned slots (including hidden ones)."""
+        if self.current_count == 0:
             return
-
-        count = len(self.id_to_index)
-        if count == 0:
-            return
-
         gl.glUseProgram(self.shader_program)
         gl.glUniformMatrix4fv(self._u_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
         gl.glUniformMatrix4fv(self._u_view, 1, gl.GL_FALSE, glm.value_ptr(view))
-
         if self.model.texture:
             gl.glUniform1i(self._u_hasTex, 1)
             gl.glActiveTexture(gl.GL_TEXTURE0)
@@ -119,13 +123,10 @@ class GTRenderer:
             gl.glUniform1i(self._u_tex, 0)
         else:
             gl.glUniform1i(self._u_hasTex, 0)
-
         gl.glBindVertexArray(self.model.mesh.vao)
         gl.glDrawArraysInstanced(
-            gl.GL_TRIANGLES,
-            0,
-            self.vertex_count,
-            count
+            gl.GL_TRIANGLES, 0, self.vertex_count,
+            self.current_count
         )
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
