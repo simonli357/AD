@@ -139,7 +139,7 @@ class UdpConnection:
                 ba = QByteArray(self.depth_buf[0])
                 pix.loadFromData(ba)
                 return pix
-                return None
+            return None
         except Exception as e:
             print(e)
             return None
