@@ -258,7 +258,7 @@ class MainWindow(QMainWindow):
                 now = time.time()
                 if abs(self.car_widget.speed) > 0.02:
                     filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                    cv2.imwrite(filename, rgb_image)
+                    rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
         try:
