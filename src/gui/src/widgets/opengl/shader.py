@@ -29,6 +29,26 @@ class ShaderRenderer:
         self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
         self.model_shader = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
 
+        gl.glUseProgram(self.texture_shader)
+        loc = gl.glGetUniformLocation(self.texture_shader, "texture1")
+        gl.glUniform1i(loc, 0)
+        gl.glUseProgram(0)
+
+        self.texture_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
+        self.texture_u_proj = gl.glGetUniformLocation(self.texture_shader, "projection")
+        self.texture_u_view = gl.glGetUniformLocation(self.texture_shader, "view")
+
+        gl.glUseProgram(self.texture2D_shader)
+        loc2D = gl.glGetUniformLocation(self.texture2D_shader, "texture1")
+        gl.glUniform1i(loc2D, 0)
+        gl.glUseProgram(0)
+
+        self.tex2D_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
+        self.tex2D_u_proj = gl.glGetUniformLocation(self.texture_shader, "projection")
+
+        self._last_bound_texture = None
+        self._last_bound_tex2D = None
+
         if ctx_name == OpenGLContextName.CAM:
             self.load_cam_models()
         elif ctx_name == OpenGLContextName.CAR:
@@ -330,47 +350,47 @@ class ShaderRenderer:
 
         gl.glUseProgram(self.texture_shader)
 
-        # Set matrices
-        model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, z))
-        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+        if mat.texture_id != self._last_bound_texture:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, mat.texture_id)
+            self._last_bound_texture = mat.texture_id
 
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "view"), 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.texture_u_model, 1, gl.GL_FALSE, glm.value_ptr(glm.translate(glm.mat4(1.0), glm.vec3(x, y, z)) * glm.scale(glm.mat4(1.0), glm.vec3(scale[0], scale[1], 1.0))))
+        gl.glUniformMatrix4fv(self.texture_u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.texture_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        # Bind texture
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, mat.texture_id)
-        gl.glUniform1i(gl.glGetUniformLocation(self.texture_shader, "texture1"), 0)
-
-        # Draw
         gl.glBindVertexArray(mat.vao)
-        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glDrawElements(gl.GL_TRIANGLES, mat.vertex_count, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+
         gl.glUseProgram(0)
 
     def draw_texture2D(self, x, y, icon, scale, proj_matrix):
+        if icon is None:
+            return
+
         gl.glUseProgram(self.texture2D_shader)
 
-        # Set matrices
+        # only bind if the texture changed
+        if icon.texture_id != self._last_bound_tex2D:
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
+            self._last_bound_tex2D = icon.texture_id
+
+        # build & upload model matrix
         model = glm.mat4(1.0)
-        model = glm.translate(model, glm.vec3(x, y, 0))
+        model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
         model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
 
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture2D_shader, "model"), 1, gl.GL_FALSE, glm.value_ptr(model))
-        gl.glUniformMatrix4fv(gl.glGetUniformLocation(self.texture2D_shader, "projection"), 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.tex2D_u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.tex2D_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        # Bind texture
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
-        gl.glUniform1i(gl.glGetUniformLocation(self.texture2D_shader, "texture1"), 0)
-
-        # Draw
+        # draw quad
         gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+
         gl.glUseProgram(0)
 
     def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
