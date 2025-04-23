@@ -259,6 +259,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 start_idx = i
                 break
 
+        if start_idx is None or not (0 <= start_idx < num_nodes):
+            return
+
         for offset in range(1, num_nodes + 1, skip):
             idx = (start_idx + offset) % num_nodes
             node_x, node_y = self._refs_xs[idx], self._refs_ys[idx]
