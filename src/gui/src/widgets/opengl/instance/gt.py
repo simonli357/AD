@@ -20,9 +20,10 @@ class GTRenderer:
         # pre-allocate instance buffer
         self.stride = 16 * 4  # bytes per mat4
         self.capacity = max_instances
-        self.num_instances = 0
+        self.ids = set()
         self.id_to_index = {}      # maps your id → slot index
         self._last_pose = {}
+        self.free_slots = list(range(self.capacity))[::-1]
 
         # create + bind VBO
         self.instance_vbo = gl.glGenBuffers(1)
@@ -60,6 +61,18 @@ class GTRenderer:
         )
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
+    def set_ids(self, ids):
+        # find which IDs disappeared:
+        gone = set(self.id_to_index) - set(ids)
+        for gid in gone:
+            idx = self.id_to_index.pop(gid)
+            # hide that slot:
+            hide_mat = np.zeros((16,), dtype=np.float32)
+            self._upload_matrix(idx, hide_mat)
+            # recycle the slot
+            self.free_slots.append(idx)
+        self.ids = set(ids)
+
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
         old = self._last_pose.get(id)
         if old is not None:
@@ -76,22 +89,25 @@ class GTRenderer:
         m = glm.scale(m, glm.vec3(*scale))
         mat_np = np.array(m, dtype=np.float32).T.flatten()
 
-        if id in self.id_to_index:
-            idx = self.id_to_index[id]
-        else:
-            idx = self.num_instances
-            if idx >= self.capacity:
-                raise RuntimeError("Exceeded max_instances!")
+        if id not in self.id_to_index:
+            if not self.free_slots:
+                raise RuntimeError("Exceeded capacity!")
+            idx = self.free_slots.pop()
             self.id_to_index[id] = idx
-            self.num_instances += 1
+        else:
+            idx = self.id_to_index[id]
 
         self._upload_matrix(idx, mat_np)
-
         self._last_pose[id] = (x, y, yaw)
 
     def draw(self, projection: glm.mat4, view: glm.mat4):
-        if self.num_instances == 0:
+        if not self.id_to_index:
             return
+
+        count = len(self.id_to_index)
+        if count == 0:
+            return
+
         gl.glUseProgram(self.shader_program)
         gl.glUniformMatrix4fv(self._u_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
         gl.glUniformMatrix4fv(self._u_view, 1, gl.GL_FALSE, glm.value_ptr(view))
@@ -109,7 +125,7 @@ class GTRenderer:
             gl.GL_TRIANGLES,
             0,
             self.vertex_count,
-            self.num_instances
+            count
         )
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
