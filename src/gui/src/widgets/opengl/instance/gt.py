@@ -1,103 +1,101 @@
-import OpenGL.GL as gl
 from ..utils import create_shader_program, shader_path
+
+import OpenGL.GL as gl
 import numpy as np
 import glm
-from typing import Tuple, List
 
 
 class GTRenderer:
-    """
-    Instance renderer for any road-object model. Queues up per-instance transforms
-    and renders them all with one instanced draw call.
-    """
-
-    def __init__(self, model):
+    def __init__(self, model, max_instances=1024):
         self.model = model
-        self.num_instances = 0
-
-        # Base mesh VAO and vertex count
-        self.vao = model.mesh.vao
         self.vertex_count = model.mesh.vertex_count
 
-        # Load instanced shader
+        # --- (same shader setup as before) ---
         self.shader_program = create_shader_program(shader_path('models', 'models.vert'), shader_path('models', 'models.frag'))
-
-        # Create and configure instance VBO
-        self.instance_vbo = gl.glGenBuffers(1)
-        gl.glBindVertexArray(self.vao)
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, 0, None, gl.GL_DYNAMIC_DRAW)
-
-        # A 4x4 matrix = 16 floats; we use attrib locations 3,4,5,6
-        stride = 16 * 4
-        for i in range(4):
-            loc = 3 + i
-            gl.glEnableVertexAttribArray(loc)
-            gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(i * 16))
-            gl.glVertexAttribDivisor(loc, 1)
-
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-        gl.glBindVertexArray(0)
-
-        # Cache uniform locations
         self._u_proj = gl.glGetUniformLocation(self.shader_program, "projection")
         self._u_view = gl.glGetUniformLocation(self.shader_program, "view")
         self._u_hasTex = gl.glGetUniformLocation(self.shader_program, "hasTexture")
         self._u_tex = gl.glGetUniformLocation(self.shader_program, "uTexture")
 
-        # Buffer for new instance matrices each frame
-        self._pending_matrices: List[np.ndarray] = []
+        # pre-allocate instance buffer
+        self.stride = 16 * 4  # bytes per mat4
+        self.capacity = max_instances
+        self.num_instances = 0
+        self.id_to_index = {}      # maps your id → slot index
+        self._last_pose = {}
 
-    def clear_instances(self) -> None:
-        """Clear all queued instances (call at start of frame)."""
-        self._pending_matrices.clear()
-
-    def add_instance(self, x: float, y: float, orientation: float, scale: Tuple[float, float, float]) -> None:
-        """Queue one instance transform for (x,y), yaw=orientation, and XYZ scale."""
-        m = glm.mat4(1.0)
-        m = glm.translate(m, glm.vec3(x, y, 0.0))
-        m = glm.rotate(m, orientation, glm.vec3(0.0, 0.0, 1.0))
-        m = glm.scale(m, glm.vec3(*scale))
-        mat_np = np.array(m, dtype=np.float32).T.flatten()
-        self._pending_matrices.append(mat_np)
-
-    def add_sign(self, x: float, y: float, orientation: float, scale: Tuple[float, float, float]) -> None:
-        """Queue one instance transform for (x,y), yaw=orientation, and XYZ scale."""
-        m = glm.mat4(1.0)
-        m = glm.translate(m, glm.vec3(x, y, 0.0))
-        m = glm.rotate(m, orientation, glm.vec3(0.0, 0.0, 1.0))
-        m = glm.scale(m, glm.vec3(*scale))
-        m = glm.rotate(m, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
-        m = glm.rotate(m, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
-        mat_np = np.array(m, dtype=np.float32).T.flatten()
-        self._pending_matrices.append(mat_np)
-
-    def upload_instances(self) -> None:
-        """Upload all queued instance matrices to the GPU buffer."""
-        if not self._pending_matrices:
-            self.num_instances = 0
-            return
-
-        arr = np.vstack(self._pending_matrices).astype(np.float32)
-        self.num_instances = arr.shape[0]
-
+        # create + bind VBO
+        self.instance_vbo = gl.glGenBuffers(1)
+        gl.glBindVertexArray(model.mesh.vao)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, arr.nbytes, arr, gl.GL_DYNAMIC_DRAW)
+        # allocate ‘empty’ storage up to capacity
+        gl.glBufferData(gl.GL_ARRAY_BUFFER,
+                        self.capacity * self.stride,
+                        None,
+                        gl.GL_DYNAMIC_DRAW)
+
+        # set up the 4 matrix attributes (locations 3,4,5,6)
+        for i in range(4):
+            loc = 3 + i
+            gl.glEnableVertexAttribArray(loc)
+            gl.glVertexAttribPointer(
+                loc, 4, gl.GL_FLOAT, gl.GL_FALSE,
+                self.stride, gl.ctypes.c_void_p(i * 16)
+            )
+            gl.glVertexAttribDivisor(loc, 1)
+
+        # unbind
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+        gl.glBindVertexArray(0)
+
+    def _upload_matrix(self, index: int, mat_np: np.ndarray):
+        """Update just one instance’s 16-float matrix at slot ‘index’."""
+        offset = index * self.stride
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        gl.glBufferSubData(
+            gl.GL_ARRAY_BUFFER,
+            offset,
+            mat_np.nbytes,
+            mat_np
+        )
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
-    def draw(self, projection: glm.mat4, view: glm.mat4) -> None:
-        """Render all queued instances in a single instanced draw call."""
+    def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
+        old = self._last_pose.get(id)
+        if old is not None:
+            old_x, old_y, old_yaw = old
+            if (np.isclose(x, old_x) and np.isclose(y, old_y) and np.isclose(yaw, old_yaw)):
+                return
+
+        m = glm.mat4(1.0)
+        m = glm.translate(m, glm.vec3(x, y, 0.0))
+        m = glm.rotate(m, yaw, glm.vec3(0, 0, 1))
+        if extra_rot:
+            m = glm.rotate(m, np.radians(180), glm.vec3(0.0, 0.0, 1.0))
+            m = glm.rotate(m, np.radians(90), glm.vec3(1.0, 0.0, 0.0))
+        m = glm.scale(m, glm.vec3(*scale))
+        mat_np = np.array(m, dtype=np.float32).T.flatten()
+
+        if id in self.id_to_index:
+            idx = self.id_to_index[id]
+        else:
+            idx = self.num_instances
+            if idx >= self.capacity:
+                raise RuntimeError("Exceeded max_instances!")
+            self.id_to_index[id] = idx
+            self.num_instances += 1
+
+        self._upload_matrix(idx, mat_np)
+
+        self._last_pose[id] = (x, y, yaw)
+
+    def draw(self, projection: glm.mat4, view: glm.mat4):
         if self.num_instances == 0:
             return
-
         gl.glUseProgram(self.shader_program)
-        gl.glBindVertexArray(self.vao)
-
-        # Upload common uniforms
         gl.glUniformMatrix4fv(self._u_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
         gl.glUniformMatrix4fv(self._u_view, 1, gl.GL_FALSE, glm.value_ptr(view))
 
-        # Bind texture if present
         if self.model.texture:
             gl.glUniform1i(self._u_hasTex, 1)
             gl.glActiveTexture(gl.GL_TEXTURE0)
@@ -106,8 +104,12 @@ class GTRenderer:
         else:
             gl.glUniform1i(self._u_hasTex, 0)
 
-        # Draw instances
-        gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, self.vertex_count, self.num_instances)
-
+        gl.glBindVertexArray(self.model.mesh.vao)
+        gl.glDrawArraysInstanced(
+            gl.GL_TRIANGLES,
+            0,
+            self.vertex_count,
+            self.num_instances
+        )
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)

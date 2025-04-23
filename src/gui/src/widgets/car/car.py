@@ -6,6 +6,7 @@ from .stats import HidableOverlay
 from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 from ..opengl.instance.gt import GTRenderer
+from ..opengl.instance.model import ModelInstanceRenderer
 
 import numpy as np
 import glm
@@ -80,7 +81,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
         self.hud_renderer = HudRenderer(self)
 
-        self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model)
+        self.destinations_renderer = ModelInstanceRenderer(self.shader_renderer.destination_model)
         self.update_destinations()
 
         self.renderers = {
@@ -166,12 +167,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
-        self.clear_road_objects()
+
         for i in range(len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
             x_real = detected_data[i, road_msg_dict['x']]
             y_real = detected_data[i, road_msg_dict['y']]
             orientation = detected_data[i, road_msg_dict['orientation']]
+            id = detected_data[i, road_msg_dict['id']]
 
             # Convert map coordinates to pixel coordinates
             x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
@@ -181,14 +183,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.renderers['Car'].add_instance(x, y, orientation, glm.vec3(0.32, 0.32, 0.32))
+                self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.32, 0.32, 0.32))
             else:
-                self.renderers[object_dict[obj_type]].add_sign(x, y, orientation, glm.vec3(32.0, 32.0, 32.0))
+                self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), True)
         self.draw_road_objects()
 
     def draw_road_objects(self):
         for renderer in self.renderers.values():
-            renderer.upload_instances()
             renderer.draw(self.proj_mat, self.view_mat)
 
     def clear_road_objects(self):
