@@ -80,21 +80,21 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.update_destinations()
 
         self.renderers = {
-            'Car': GTRenderer(self.shader_renderer.red_car_model),
-            'Oneway': GTRenderer(self.shader_renderer.oneway_sign_model),
-            'Stopsign': GTRenderer(self.shader_renderer.stop_sign_model),
-            'Highway Entrance': GTRenderer(self.shader_renderer.highway_entrance_sign_model),
-            'Highway Exit': GTRenderer(self.shader_renderer.highway_exit_sign_model),
-            'Roundabout': GTRenderer(self.shader_renderer.roundabout_sign_model),
-            'Parking': GTRenderer(self.shader_renderer.parking_sign_model),
-            'Crosswalk': GTRenderer(self.shader_renderer.crosswalk_sign_model),
-            'No Entry': GTRenderer(self.shader_renderer.noentry_sign_model),
-            'Priority': GTRenderer(self.shader_renderer.prio_sign_model),
-            'Light': GTRenderer(self.shader_renderer.traffic_light_model),
-            'Green Light': GTRenderer(self.shader_renderer.green_light_model),
-            'Yellow Light': GTRenderer(self.shader_renderer.yellow_light_model),
-            'Red Light': GTRenderer(self.shader_renderer.red_light_model),
-            'Pedestrian': GTRenderer(self.shader_renderer.pedestrian_model),
+            'Car': GTRenderer(self.shader_renderer.red_car_model, 'Car'),
+            'Oneway': GTRenderer(self.shader_renderer.oneway_sign_model, 'Oneway'),
+            'Stopsign': GTRenderer(self.shader_renderer.stop_sign_model, 'Stopsign'),
+            'Highway Entrance': GTRenderer(self.shader_renderer.highway_entrance_sign_model, 'Highway Entrance'),
+            'Highway Exit': GTRenderer(self.shader_renderer.highway_exit_sign_model, 'Highway Exit'),
+            'Roundabout': GTRenderer(self.shader_renderer.roundabout_sign_model, 'Roundabout'),
+            'Parking': GTRenderer(self.shader_renderer.parking_sign_model, 'Parking'),
+            'Crosswalk': GTRenderer(self.shader_renderer.crosswalk_sign_model, 'Crosswalk'),
+            'No Entry': GTRenderer(self.shader_renderer.noentry_sign_model, 'No Entry'),
+            'Priority': GTRenderer(self.shader_renderer.prio_sign_model, 'Priority'),
+            'Light': GTRenderer(self.shader_renderer.traffic_light_model, 'Light'),
+            'Green Light': GTRenderer(self.shader_renderer.green_light_model, 'Green Light'),
+            'Yellow Light': GTRenderer(self.shader_renderer.yellow_light_model, 'Yellow Light'),
+            'Red Light': GTRenderer(self.shader_renderer.red_light_model, 'Red Light'),
+            'Pedestrian': GTRenderer(self.shader_renderer.pedestrian_model, 'Pedestrian'),
         }
 
     def paintGL(self):
@@ -164,7 +164,23 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
-        ids = set()
+        ids = {
+            'Car': set(),
+            'Oneway': set(),
+            'Stopsign': set(),
+            'Highway Entrance': set(),
+            'Highway Exit': set(),
+            'Roundabout': set(),
+            'Parking': set(),
+            'Crosswalk': set(),
+            'No Entry': set(),
+            'Priority': set(),
+            'Light': set(),
+            'Green Light': set(),
+            'Yellow Light': set(),
+            'Red Light': set(),
+            'Pedestrian': set(),
+        }
         for i in range(len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
             x_real = detected_data[i, road_msg_dict['x']]
@@ -181,15 +197,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 continue
             elif object_dict[obj_type] == 'Car':
                 self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.32, 0.32, 0.32))
-                ids.add(id)
+                ids['Car'].add(id)
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), True)
-                ids.add(id)
+                ids[object_dict[obj_type]].add(id)
         self.draw_road_objects(ids)
 
     def draw_road_objects(self, ids):
         for renderer in self.renderers.values():
-            renderer.set_ids(ids)
+            renderer.set_ids(ids[renderer.obj_type])
             renderer.draw(self.proj_mat, self.view_mat)
 
     def clear_road_objects(self):

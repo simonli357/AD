@@ -10,8 +10,9 @@ class GTRenderer:
     Instance renderer with incremental updates and hide-on-remove.
     """
 
-    def __init__(self, model, max_instances=1024):
+    def __init__(self, model, obj_type, max_instances=1024):
         self.model = model
+        self.obj_type = obj_type
         self.vertex_count = model.mesh.vertex_count
 
         # compile & cache shader
@@ -68,17 +69,9 @@ class GTRenderer:
         Hide any instances not in the provided ids set by moving them off-screen.
         ids: set of active instance IDs.
         """
-        # 1) build a list of stale IDs
-        stale = [inst_id for inst_id in self.id_to_index
-                 if inst_id not in ids]
-
-        # 2) remove & hide each one
-        for inst_id in stale:
-            idx = self.id_to_index.pop(inst_id)
-            # move it off-screen (or zero-scale) to hide it:
-            self._upload_matrix(idx, self.hide_np)
-            # if you cache poses, drop that too:
-            self._last_pose.pop(inst_id, None)
+        for inst_id, idx in self.id_to_index.items():
+            if inst_id not in ids:
+                self._upload_matrix(idx, self.hide_np)
 
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
         """
