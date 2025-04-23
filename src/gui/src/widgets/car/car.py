@@ -191,7 +191,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             # Convert map coordinates to pixel coordinates
             x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
             # orientation = 2 * np.pi - orientation
-            orientation = - orientation
 
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
