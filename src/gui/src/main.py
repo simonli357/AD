@@ -256,7 +256,7 @@ class MainWindow(QMainWindow):
             rgb_image = self.server.udp_connection.parse_rgb_image()
             if rgb_image is not None:
                 now = time.time()
-                if abs(self.meter_widget.speed) > 0.02:
+                if abs(self.car_widget.speed) > 0.02:
                     filename = self.recording_path + f"/frame_{int(now)}.jpg"
                     cv2.imwrite(filename, rgb_image)
 
