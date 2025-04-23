@@ -8,6 +8,7 @@ from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import QByteArray
 
 
 class UdpConnection:
@@ -122,14 +123,10 @@ class UdpConnection:
     def parse_rgb_image(self):
         try:
             if len(self.rgb_buf) > 0:
-                np_array = np.frombuffer(self.rgb_buf[0], dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-                cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-                # Convert to QImage
-                h, w, ch = cv_image.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(cv_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                return QPixmap.fromImage(qt_image)
+                pix = QPixmap()
+                ba = QByteArray(self.rgb_buf[0])
+                pix.loadFromData(ba)
+                return pix
             return None
         except Exception as e:
             print(e)
@@ -138,21 +135,11 @@ class UdpConnection:
     def parse_depth_image(self):
         try:
             if len(self.depth_buf) > 0:
-                np_array = np.frombuffer(self.depth_buf[0], dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                cv_image = (cv_image).astype(np.uint16)
-                # depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-                # depth_image = self.bridge.imgmsg_to_cv2(depth_frame, "mono16")  # real
-                # depth_image = cv2.resize(depth_image, (self.camera_w, self.camera_h))
-                # Apply normalization with a focus on closer objects
-                depth_normalized = cv2.normalize(cv_image, None, 50, 255, cv2.NORM_MINMAX)
-                depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
-                # Convert to QImage
-                h, w, ch = depth_colored.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                return QPixmap.fromImage(qt_image)
-            return None
+                pix = QPixmap()
+                ba = QByteArray(self.depth_buf[0])
+                pix.loadFromData(ba)
+                return pix
+                return None
         except Exception as e:
             print(e)
             return None
