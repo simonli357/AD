@@ -27,7 +27,7 @@ class GTRenderer:
         self.current_count = 0   # number of assigned slots
         self._last_pose = {}     # id -> (x,y,yaw)
 
-        hide_mat = glm.translate(glm.mat4(1.0), glm.vec3(1e6, 1e6, 1e6))
+        hide_mat = glm.scale(glm.mat4(1.0), glm.vec3(0.0, 0.0, 0.0))
         self.hide_np = np.array(hide_mat, dtype=np.float32).T.flatten()
 
         # create & initialize VBO
@@ -70,7 +70,9 @@ class GTRenderer:
         """
         for inst_id, idx in self.id_to_index.items():
             if inst_id not in ids:
+                idx = self.id_to_index.pop(inst_id)
                 self._upload_matrix(idx, self.hide_np)
+                del self._last_pose[inst_id]
 
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
         """
