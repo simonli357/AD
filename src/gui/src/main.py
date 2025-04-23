@@ -252,17 +252,13 @@ class MainWindow(QMainWindow):
             self.comm.sw_load_signal.emit(load)
 
     def cam_record_callback(self) -> None:
-        while self.alive:
-            if self.cam_buttons_widget.recording:
-                rgb_image = self.server.udp_connection.parse_rgb_image()
-                if rgb_image is not None:
-                    now = time.time()
-                    if self.recording and abs(self.meter_widget.speed) > 0.02:
-                        filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                        cv2.imwrite(filename, rgb_image)
-                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-            else:
-                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
+        if self.cam_buttons_widget.recording:
+            rgb_image = self.server.udp_connection.parse_rgb_image()
+            if rgb_image is not None:
+                now = time.time()
+                if self.recording and abs(self.meter_widget.speed) > 0.02:
+                    filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                    cv2.imwrite(filename, rgb_image)
 
     def closeEvent(self, event):
         try:
