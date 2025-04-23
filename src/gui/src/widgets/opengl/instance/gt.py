@@ -72,7 +72,7 @@ class GTRenderer:
             if inst_id not in ids:
                 idx = self.id_to_index.pop(inst_id)
                 self._upload_matrix(idx, self.hide_np)
-                del self._last_pose[inst_id]
+                self._last_pose.pop(inst_id, None)
 
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
         """
