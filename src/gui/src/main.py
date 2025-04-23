@@ -141,11 +141,9 @@ class MainWindow(QMainWindow):
 
         self.terminal_widget.add_message("AD IDE INITIALIZED")
 
-        self.udp_cam_thread = threading.Thread(target=self.udp_cam_callbacks, args=(), daemon=True)
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
-        self.udp_cam_thread.start()
         self.udp_thread.start()
         self.tcp_thread.start()
         self.cam_thread.start()
@@ -215,7 +213,7 @@ class MainWindow(QMainWindow):
                     self.comm.run_signal.emit(run)
             time.sleep(CameraParams.FPS_5.value)
 
-    def udp_cam_callbacks(self) -> None:
+    def udp_callbacks(self) -> None:
         while self.alive:
             rgb_image = None
             depth_image = None
@@ -224,15 +222,6 @@ class MainWindow(QMainWindow):
             else:
                 rgb_image = self.server.udp_connection.parse_rgb_image()
 
-            if rgb_image is not None:
-                self.comm.camera_frame_signal.emit(rgb_image)
-            if depth_image is not None:
-                self.comm.depth_frame_signal.emit(depth_image)
-
-            time.sleep(CameraParams.FPS_60.value)
-
-    def udp_callbacks(self) -> None:
-        while self.alive:
             sign = self.server.udp_connection.parse_sign()
             waypoint = self.server.udp_connection.parse_waypoint()
             road_obj = self.server.udp_connection.parse_road_object()
@@ -240,6 +229,10 @@ class MainWindow(QMainWindow):
             steer = self.server.udp_connection.parse_steer()
             load = self.server.udp_connection.parse_sw_load()
 
+            if rgb_image is not None:
+                self.comm.camera_frame_signal.emit(rgb_image)
+            if depth_image is not None:
+                self.comm.depth_frame_signal.emit(depth_image)
             if lane2 is not None:
                 self.comm.lane_signal.emit(lane2)
             if road_obj is not None:
@@ -252,7 +245,7 @@ class MainWindow(QMainWindow):
                 self.comm.steer_signal.emit(steer)
             if load is not None:
                 self.comm.sw_load_signal.emit(load)
-            time.sleep(CameraParams.FPS_30.value)
+            time.sleep(CameraParams.FPS_60.value)
 
     def cam_record_callback(self) -> None:
         while self.alive:
