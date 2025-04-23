@@ -166,6 +166,8 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             self.shader_renderer.draw_line((p0.x, p0.y), (p1.x, p1.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
             self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
+        self.update()
+
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
             try:
