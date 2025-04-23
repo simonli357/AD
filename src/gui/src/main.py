@@ -145,6 +145,7 @@ class MainWindow(QMainWindow):
         self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
         self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
+        self.udp_cam_thread.start()
         self.udp_thread.start()
         self.tcp_thread.start()
         self.cam_thread.start()
