@@ -15,10 +15,7 @@ class GTRenderer:
         self.vertex_count = model.mesh.vertex_count
 
         # compile & cache shader
-        self.shader_program = create_shader_program(
-            shader_path('models', 'models.vert'),
-            shader_path('models', 'models.frag')
-        )
+        self.shader_program = create_shader_program(shader_path('models', 'models.vert'), shader_path('models', 'models.frag'))
         self._u_proj = gl.glGetUniformLocation(self.shader_program, 'projection')
         self._u_view = gl.glGetUniformLocation(self.shader_program, 'view')
         self._u_hasTex = gl.glGetUniformLocation(self.shader_program, 'hasTexture')
@@ -29,6 +26,9 @@ class GTRenderer:
         self.id_to_index = {}    # id -> slot index
         self.current_count = 0   # number of assigned slots
         self._last_pose = {}     # id -> (x,y,yaw)
+
+        hide_mat = glm.translate(glm.mat4(1.0), glm.vec3(1e6, 1e6, 1e6))
+        self.hide_np = np.array(hide_mat, dtype=np.float32).T.flatten()
 
         # create & initialize VBO
         self.instance_vbo = gl.glGenBuffers(1)
@@ -66,16 +66,11 @@ class GTRenderer:
     def set_ids(self, ids):
         """
         Hide any instances not in the provided ids set by moving them off-screen.
-        ids: iterable of active instance IDs.
+        ids: set of active instance IDs.
         """
-        ids = set(ids)
-        # compute off-screen hide matrix once
-        hide_mat = glm.translate(glm.mat4(1.0), glm.vec3(1e6, 1e6, 1e6))
-        hide_np = np.array(hide_mat, dtype=np.float32).T.flatten()
-        # hide any slot whose id is not active
         for inst_id, idx in self.id_to_index.items():
             if inst_id not in ids:
-                self._upload_matrix(idx, hide_np)
+                self._upload_matrix(idx, self.hide_np)
 
     def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
         """

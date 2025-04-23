@@ -181,9 +181,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 continue
             elif object_dict[obj_type] == 'Car':
                 self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.32, 0.32, 0.32))
+                ids.add(id)
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), True)
-            ids.add(id)
+                ids.add(id)
         self.draw_road_objects(ids)
 
     def draw_road_objects(self, ids):
