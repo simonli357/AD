@@ -218,10 +218,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             renderer.set_ids(self.road_objects_ids[renderer.obj_type])
             renderer.draw(self.proj_mat, self.view_mat)
 
-    def clear_road_objects(self):
-        for renderer in self.renderers.values():
-            renderer.clear_instances()
-
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
             return
