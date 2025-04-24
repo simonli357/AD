@@ -230,7 +230,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         angle = 0
         for i in range(0, len(waypoints) - 1, 4):
             if i + 3 > len(waypoints):
-                positions.append(x1, y1, 0.1)
+                positions.append((x1, y1, 0.1))
                 rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(waypoints[i + 2], MapData.REAL_WORLD_HEIGHT.value - waypoints[i + 3])

@@ -451,7 +451,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                positions.append(x1, y1, 2.0)
+                positions.append((x1, y1, 2.0))
                 rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
