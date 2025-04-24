@@ -365,7 +365,7 @@ public:
             kf->update(new_x, new_y);
             x = kf->x();
             y = kf->y();
-            yaw = kf->yaw();
+            // yaw = kf->yaw();
             speed = kf->speed();
         } else {
             ros::Time current_time = ros::Time::now();
@@ -395,11 +395,11 @@ public:
         
                 double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
                 double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
-                yaw = std::atan2(sin_blend, cos_blend);
+                // yaw = std::atan2(sin_blend, cos_blend);
             } else if (valid_inst) {
-                yaw = std::atan2(dy_inst, dx_inst);
+                // yaw = std::atan2(dy_inst, dx_inst);
             } else if (valid_avg) {
-                yaw = std::atan2(dy_avg, dx_avg);
+                // yaw = std::atan2(dy_avg, dx_avg);
             }
         
             // Position update (EMA)
@@ -429,7 +429,7 @@ public:
             kf->predict(dt);
             x = kf->x();
             y = kf->y();
-            yaw = kf->yaw();
+            // yaw = kf->yaw();
             speed = kf->speed();
         }
     }

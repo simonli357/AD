@@ -60,7 +60,7 @@ public:
     bool emergency = false;
     int num_obj = 0;
     std::mutex general_mutex;
-    bool pubOdom, subModel;
+    bool pubOdom;
     std_msgs::String debug_msg;
     ros::Rate* rate;
 
@@ -179,7 +179,6 @@ public:
     double get_current_orientation();
     std::array<double, 3> get_real_states() const;
     boost::asio::io_service io;
-    // boost::asio::serial_port serial;
     std::unique_ptr<boost::asio::serial_port> serial;
     double get_yaw() {
         return yaw;
@@ -485,66 +484,6 @@ public:
 
     void reset_yaw() {
         initial_yaw = yaw;
-    }
-    static double nearest_direction(double yaw) {
-        yaw = yaw_mod(yaw, M_PI);
-
-        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
-
-        double minDifference = std::abs(yaw - directions[0]);
-        double nearestDirection = directions[0];
-
-        for (int i = 1; i < 5; ++i) {
-            double difference = std::abs(yaw - directions[i]);
-            if (difference < minDifference) {
-                minDifference = difference;
-                nearestDirection = directions[i];
-            }
-        }
-        while (nearestDirection - yaw > M_PI) {
-            nearestDirection -= 2 * M_PI;
-        }
-        while (nearestDirection - yaw < -M_PI) {
-            nearestDirection += 2 * M_PI;
-        }
-        return nearestDirection;
-    }
-    
-    static int nearest_direction_index(double yaw) {
-        yaw = yaw_mod(yaw, M_PI);
-
-        static const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
-
-        double minDifference = std::abs(yaw - directions[0]);
-        double nearestDirection = directions[0];
-
-        int closest_index = 0;
-        for (int i = 1; i < 5; ++i) {
-            double difference = std::abs(yaw - directions[i]);
-            if (difference < minDifference) {
-                minDifference = difference;
-                nearestDirection = directions[i];
-                closest_index = i;
-            }
-        }
-        if (closest_index == 4) {
-            closest_index = 0;
-        }
-        return closest_index;
-    }
-
-    static double yaw_mod(double& io_yaw, double ref=0) {
-        double yaw = io_yaw;
-        while (yaw - ref > M_PI) yaw -= 2 * M_PI;
-        while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
-        io_yaw = yaw;
-        return yaw;
-    }
-    static double compare_yaw(double yaw1, double yaw2) {
-        // returns the absolute difference between two yaw angles
-        double diff = yaw1 - yaw2;
-        diff = yaw_mod(diff);
-        return std::abs(diff);
     }
 
     void debug(const std::string& message, int level) {
