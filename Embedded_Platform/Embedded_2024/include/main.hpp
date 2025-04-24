@@ -51,3 +51,5 @@
 #include <utils/task.hpp>
 // Header file for the steering motor functionnality
 #include <drivers/steeringmotor.hpp>
+// Header file for the encoder functionality
+#include <periodics/encoder.hpp>

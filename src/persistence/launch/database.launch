@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="persistence" type="db" name="$(anon database)" output="screen"> 
+  </node>
+</launch>

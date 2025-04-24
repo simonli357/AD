@@ -5,6 +5,8 @@
 #include <vector>
 #include <mutex>
 #include <chrono>
+#include "Database.hpp"
+#include "queries/GraphQueries.hpp"
 #include "std_srvs/SetBoolRequest.h"
 #include "Utility.hpp"
 #include "PathManager.hpp"
@@ -12,6 +14,7 @@
 #include <signal.h>
 #include <fstream>
 #include <iostream>
+#include "utils/constants.h"
 #include "utils/waypoints.h"
 #include "utils/goto_command.h"
 #include "utils/set_states.h"
@@ -30,7 +33,7 @@ using namespace Tunable;
 
 class StateMachine {
 public:
-    StateMachine(ros::NodeHandle& nh_): 
+    StateMachine(ros::NodeHandle& nh_, Database &db): 
     nh(nh_), utils(nh), mpc(Tunable::T,Tunable::N,Tunable::v_ref,Tunable::use_beta), //path_manager(nh,Tunable::T,Tunable::N,Tunable::v_ref, utils.pathName),
     state(STATE::INIT)
     {
@@ -57,6 +60,7 @@ public:
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
+        db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -99,9 +103,6 @@ public:
             if (utils.tcp_client->tcp_can_send && !utils.tcp_client->run_sent) {
                 utils.fetch_run_params();
                 utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
-            }
-            if (utils.tcp_client->tcp_can_send && !utils.tcp_client->graph_sent) {
-                utils.tcp_client->send_graph(PathManager::path_planner.serialized_graph);
             }
             if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
                 std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
@@ -1651,6 +1652,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "mpc_node", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
+    Database db;
+    VehicleConstants::init_params(db);
+
     if (!Tunable::loadFromParams(nh)) {
         std::cout << "FATAL ERROR: Failed to load tunable parameters" << std::endl;
         exit(1);
@@ -1672,7 +1676,7 @@ int main(int argc, char **argv) {
     EgoCar::initialize_prediction(x0, y0);
     EgoCar::start_prediction_thread();
 
-    StateMachine sm(nh);
+    StateMachine sm(nh, db);
 
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);

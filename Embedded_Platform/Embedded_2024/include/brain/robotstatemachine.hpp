@@ -62,14 +62,11 @@ namespace brain
             /* Destructor */
             ~CRobotStateMachine();
             /* Serial callback method for Speed */ 
-            void serialCallbackSPEEDcommand(char const * a, char * b);
-            void serialCallbackBOTHcommand(char const * a, char * b);
             void serialCallbackPWMcommand(char const * a, char * b);
             void serialCallbackComputecommand(char const * a, char * b);
             /* Serial callback method for Steering */ 
             void serialCallbackSTEERcommand(char const * a, char * b);
-            /* Serial callback method for braking */
-            void serialCallbackBRAKEcommand(char const * a, char * b);
+
             void serialCallbackPIDcommand(char const * a, char * b);
             void serialCallbackSetcommand(char const * a, char * b);
 

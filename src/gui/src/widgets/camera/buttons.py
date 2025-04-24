@@ -35,19 +35,19 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.start_btn = QtWidgets.QPushButton("")
         self.reset_timer_btn = QtWidgets.QPushButton("")
         self.goto_btn = QtWidgets.QPushButton("󰓾")
-        self.clear_path_btn = QtWidgets.QPushButton("󰼊")
+        self.toggle_sim_btn = QtWidgets.QPushButton("")
         self.record_btn = QtWidgets.QPushButton("󰿎")
 
         self.buttons.append(self.start_btn)
         self.buttons.append(self.reset_timer_btn)
         self.buttons.append(self.goto_btn)
-        self.buttons.append(self.clear_path_btn)
+        self.buttons.append(self.toggle_sim_btn)
         self.buttons.append(self.record_btn)
 
         self.start_btn.setToolTip("Start/Pause/Resume")
         self.reset_timer_btn.setToolTip("Reset Timer")
         self.goto_btn.setToolTip("Go To")
-        self.clear_path_btn.setToolTip("Clear Path")
+        self.toggle_sim_btn.setToolTip("SIM/REAL")
         self.record_btn.setToolTip("Record")
 
         for btn in self.buttons:
@@ -87,13 +87,14 @@ class ButtonsWidget(QtWidgets.QWidget):
 
         self.update_stop_button_style(self.start_btn, self.started)
         self.update_recording_button_style(self.record_btn, self.recording)
+        self.update_sim_button_style(self.toggle_sim_btn, self.main_window.cam_widget.hud.use_sim)
 
     def connect_signals(self) -> None:
         self.reset_timer_btn.clicked.connect(self.handle_stop_click)
         self.start_btn.clicked.connect(self.handle_start_click)
         self.goto_btn.clicked.connect(self.handle_goto_click)
         self.record_btn.clicked.connect(self.handle_record_click)
-        self.clear_path_btn.clicked.connect(self.handle_clear_path_click)
+        self.toggle_sim_btn.clicked.connect(self.handle_toggle_sim_click)
 
     def update_stop_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -119,6 +120,21 @@ class ButtonsWidget(QtWidgets.QWidget):
             }}
             QPushButton:hover {{
                 background-color: rgba(255, 255, 255, 0.3);
+            }}
+        """)
+
+    def update_sim_button_style(self, button, is_active):
+        """Update button color based on boolean state"""
+        color = "rgba(0, 255, 0, 0.3)" if is_active else "rgba(255, 255, 255, 0.08)"
+        hover_color = "rgba(0, 255, 0, 0.5)"
+        font_color = "#00ff00" if is_active else "#ffffff"
+        button.setStyleSheet(f"""
+            QPushButton {{
+                color: {font_color};
+                background-color: {color};
+            }}
+            QPushButton:hover {{
+                background-color: {hover_color};
             }}
         """)
 
@@ -224,8 +240,10 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.call_goto_service(cursor_coords)
             self.main_window.car_widget.run_statistics.set_total_path_distance()
 
-    def handle_clear_path_click(self) -> None:
-        self.main_window.car_widget.run_statistics.clear_path()
+    def handle_toggle_sim_click(self) -> None:
+        self.main_window.cam_widget.hud.use_sim = not self.main_window.cam_widget.hud.use_sim
+        self.main_window.cam_widget.hud.upload_camera_params()
+        self.update_sim_button_style(self.toggle_sim_btn, self.main_window.cam_widget.hud.use_sim)
 
     def handle_record_click(self) -> None:
         if self.recording:

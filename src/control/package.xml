@@ -83,6 +83,7 @@
   <depend>planning</depend>
   <depend>communication</depend>
   <depend>alglib_pkg</depend>
+  <depend>persistence</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -1,10 +1,12 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from .stats import HidableOverlay
 from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
-from ..opengl.gt import GTRenderer
+from ..opengl.instance.gt import GTRenderer
+from ..opengl.instance.model import ModelInstanceRenderer
+from ..opengl.instance.path import PathRenderer
 
 import numpy as np
 import glm
@@ -24,11 +26,31 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 32.0
+        self.cam_dist = 45.0
         self.cam_height = self.cam_dist / 1.25
+        self.forward_offset = 5.0
+        self.fov = 45.0
 
-        self.updated_dest_size = 10.0
-        self.updated_dest_rot = 0
+        self.visited = set()
+
+        self.road_objects_ids = {
+            'Car': set(),
+            'Oneway': set(),
+            'Stopsign': set(),
+            'Highway Entrance': set(),
+            'Highway Exit': set(),
+            'Roundabout': set(),
+            'Parking': set(),
+            'Crosswalk': set(),
+            'No Entry': set(),
+            'Priority': set(),
+            'Light': set(),
+            'Green Light': set(),
+            'Yellow Light': set(),
+            'Red Light': set(),
+            'Pedestrian': set(),
+        }
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -60,15 +82,11 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.z_pos = z
         self.run_statistics.set_car_pose(x, y, z)
 
-    def render_widget(self) -> None:
-        self.update()
-
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDisable(gl.GL_BLEND)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
@@ -77,10 +95,38 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        self.proj_mat = glm.perspective(
+            self.fov,
+            aspect,
+            0.1,
+            1000.0
+        )
+
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
         self.hud_renderer = HudRenderer(self)
-        self.destinations_renderer = GTRenderer(self.shader_renderer.destination_model, 'Destination')
+
+        self.destinations_renderer = ModelInstanceRenderer(self.shader_renderer.destination_model)
+        self.visited_destinations_renderer = GTRenderer(self.shader_renderer.green_destination_model, 'Destination')
         self.update_destinations()
+
+        self.renderers = {
+            'Car': GTRenderer(self.shader_renderer.red_car_model, 'Car'),
+            'Oneway': GTRenderer(self.shader_renderer.oneway_sign_model, 'Oneway'),
+            'Stopsign': GTRenderer(self.shader_renderer.stop_sign_model, 'Stopsign'),
+            'Highway Entrance': GTRenderer(self.shader_renderer.highway_entrance_sign_model, 'Highway Entrance'),
+            'Highway Exit': GTRenderer(self.shader_renderer.highway_exit_sign_model, 'Highway Exit'),
+            'Roundabout': GTRenderer(self.shader_renderer.roundabout_sign_model, 'Roundabout'),
+            'Parking': GTRenderer(self.shader_renderer.parking_sign_model, 'Parking'),
+            'Crosswalk': GTRenderer(self.shader_renderer.crosswalk_sign_model, 'Crosswalk'),
+            'No Entry': GTRenderer(self.shader_renderer.noentry_sign_model, 'No Entry'),
+            'Priority': GTRenderer(self.shader_renderer.prio_sign_model, 'Priority'),
+            'Light': GTRenderer(self.shader_renderer.traffic_light_model, 'Light'),
+            'Green Light': GTRenderer(self.shader_renderer.green_light_model, 'Green Light'),
+            'Yellow Light': GTRenderer(self.shader_renderer.yellow_light_model, 'Yellow Light'),
+            'Red Light': GTRenderer(self.shader_renderer.red_light_model, 'Red Light'),
+            'Pedestrian': GTRenderer(self.shader_renderer.pedestrian_model, 'Pedestrian'),
+        }
 
     def paintGL(self):
         if self.stop_drawing:
@@ -88,27 +134,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        self.proj_mat = glm.perspective(
-            glm.radians(45.0),
-            aspect,
-            0.1,
-            100.0
-        )
-
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
 
         cam_x = x - self.cam_dist * np.cos(np.radians(self.yaw))
         cam_y = y - self.cam_dist * np.sin(np.radians(self.yaw))
 
-        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
-        target_pos = glm.vec3(x, y, 0)
+        rad_yaw = np.radians(self.yaw)
+        target_x = x + self.forward_offset * np.cos(rad_yaw)
+        target_y = y + self.forward_offset * np.sin(rad_yaw)
 
-        self.view_mat = glm.lookAt(
-            cam_pos,
-            target_pos,
-            glm.vec3(0, 0, 1)
-        )
+        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
+        target_pos = glm.vec3(target_x, target_y, 0.0)
+        self.view_mat = glm.lookAt(cam_pos, target_pos, glm.vec3(0, 0, 1))
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
@@ -124,67 +161,91 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x=x,
             y=y,
             yaw=np.radians(self.yaw),
-            scale=0.32,
+            scale=0.8,
             color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
 
         self.destinations_renderer.draw(self.proj_mat, self.view_mat)
+        self.visited_destinations_renderer.draw(self.proj_mat, self.view_mat)
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
-
-        # Grow visited destination until out of sight
-        if self.updated_dest_size < 10.0:
-            self.updated_dest_size += 0.1
-            self.updated_dest_rot += 0.4
-        if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
-            self.shader_renderer.draw_destination(self.current_destx, self.current_desty, np.radians(self.updated_dest_rot), self.updated_dest_size, self.view_mat, self.proj_mat)
 
         # HUD
         self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
 
+        self.update()
+
     def update_visited_destination(self, x_visited, y_visited):
-        self.updated_dest_size = 4.5
-        self.updated_dest_rot = 0
-        self.current_destx, self.current_desty = self.get_gl_coords(x_visited, y_visited)
+        x, y = self.get_gl_coords(x_visited, y_visited)
+        self.visited.add((x, y))
+        self.visited_destinations_renderer.add_or_update_instance((x, y), x, y, 0, (5.0, 5.0, 5.0), z=-0.5)
+        self.visited_destinations_renderer.set_ids(self.visited)
+
+    def clear_road_objects(self):
+        for id_set in self.road_objects_ids.values():
+            id_set.clear()
 
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
+
+        self.clear_road_objects()
+
         for i in range(len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
             x_real = detected_data[i, road_msg_dict['x']]
             y_real = detected_data[i, road_msg_dict['y']]
             orientation = detected_data[i, road_msg_dict['orientation']]
+            id = detected_data[i, road_msg_dict['id']]
 
             # Convert map coordinates to pixel coordinates
             x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
             # orientation = 2 * np.pi - orientation
-            orientation = - orientation
 
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, 0.32, self.view_mat, self.proj_mat)
+                self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.8, 0.8, 0.8))
+                self.road_objects_ids['Car'].add(id)
             else:
-                self.shader_renderer.draw_road_object(object_dict[obj_type], x, y, orientation, 32.0, self.view_mat, self.proj_mat)
+                self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
+                self.road_objects_ids[object_dict[obj_type]].add(id)
+        self.draw_road_objects()
+
+    def draw_road_objects(self):
+        for renderer in self.renderers.values():
+            renderer.set_ids(self.road_objects_ids[renderer.obj_type])
+            renderer.draw(self.proj_mat, self.view_mat)
 
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
             return
+
+        positions = []
+        rotations = []
+
         x1, y1 = self.get_gl_coords(waypoints[0], MapData.REAL_WORLD_HEIGHT.value - waypoints[1])
         angle = 0
         for i in range(0, len(waypoints) - 1, 4):
             if i + 3 > len(waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 0.1, angle, (1, 1), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 0.1))
+                rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(waypoints[i + 2], MapData.REAL_WORLD_HEIGHT.value - waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
-                self.shader_renderer.draw_triangle(x1, y1, 0.1, angle, (1, 1), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 0.1))
+                rotations.append((angle, 0, 0, 1))
                 x1, y1 = x2, y2
+
+        if hasattr(self, 'path_node_renderer'):
+            self.path_node_renderer.transform_all(positions=positions, rotations=rotations)
+        else:
+            self.path_node_renderer = PathRenderer(positions=positions, rotations=rotations)
+        self.path_node_renderer.render(self.proj_mat, self.view_mat)
 
     def get_gl_coords(self, real_x, real_y):
         # Convert real-world to OpenGL world coordinates
@@ -193,7 +254,18 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         return world_x, world_y
 
     def update_destinations(self):
-        self.destinations_renderer.update_data(self.main_window.map_widget.data.iterrows(), self.width(), self.height())
+        self.destinations_renderer.clear_instances()
+        for _, row in self.main_window.destinations.iterrows():
+            real_x = row['X']
+            real_y = MapData.REAL_WORLD_HEIGHT.value - row['Y']
+            x, y = self.get_gl_coords(real_x, real_y)
+            self.destinations_renderer.add_instance(
+                x=x,
+                y=y,
+                orientation=0.0,
+                scale=(4.0, 4.0, 4.0)
+            )
+        self.destinations_renderer.upload_instances()
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
@@ -216,4 +288,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
+
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        self.proj_mat = glm.perspective(
+            glm.radians(45.0),
+            aspect,
+            0.1,
+            2000.0
+        )
+
         self.update_destinations()

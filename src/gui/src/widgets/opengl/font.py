@@ -13,10 +13,11 @@ class TextRenderer:
         font_path = shader_path('text', 'Arial.ttf')
         self._init_freetype(font_path, pixel_size)
         self._init_render_data()
-        self.text_shader = create_shader_program(
-            shader_path('text', 'text.vert'),
-            shader_path('text', 'text.frag')
-        )
+        self.text_shader = create_shader_program(shader_path('text', 'text.vert'), shader_path('text', 'text.frag'))
+
+        self.loc_proj = gl.glGetUniformLocation(self.text_shader, "projection")
+        self.loc_textColor = gl.glGetUniformLocation(self.text_shader, "textColor")
+        self.loc_sampler = gl.glGetUniformLocation(self.text_shader, "text")
 
     def _init_freetype(self, font_path, pixel_size):
         face = freetype.Face(font_path)
@@ -103,13 +104,14 @@ class TextRenderer:
         y = y - text_height / 2.0
 
         gl.glUseProgram(self.text_shader)
-        loc_proj = gl.glGetUniformLocation(self.text_shader, "projection")
-        gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
-        loc_textColor = gl.glGetUniformLocation(self.text_shader, "textColor")
-        gl.glUniform3f(loc_textColor, color[0], color[1], color[2])
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        gl.glUniformMatrix4fv(self.loc_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
+        gl.glUniform3f(self.loc_textColor, color[0], color[1], color[2])
         # Ensure that texture unit 0 is used.
-        loc_sampler = gl.glGetUniformLocation(self.text_shader, "text")
-        gl.glUniform1i(loc_sampler, 0)
+        gl.glUniform1i(self.loc_sampler, 0)
         gl.glActiveTexture(gl.GL_TEXTURE0)
         gl.glBindVertexArray(self.VAO)
 
@@ -161,4 +163,5 @@ class TextRenderer:
 
         gl.glBindVertexArray(0)
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glDisable(gl.GL_BLEND)
         gl.glUseProgram(0)

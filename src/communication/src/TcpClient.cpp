@@ -93,7 +93,6 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x08); // Start Srv
 	tcp_data_types.push_back(0x09); // Params
 	tcp_data_types.push_back(0x0a); // Run params
-	tcp_data_types.push_back(0x0b); // Graph
 }
 
 void TcpClient::set_udp_data_types() {
@@ -205,7 +204,6 @@ void TcpClient::listen() {
 		}
 	}
     run_sent = false;
-    graph_sent = false;
 	tcp_can_send = false;
 }
 
@@ -379,11 +377,6 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
     run_sent = true;
 }
 
-void TcpClient::send_graph(const std::string &graph) {
-    send_string(graph, tcp_data_types[10]);
-    graph_sent = true;
-}
-
 // ------------------- //
 // UDP Encoding
 // ------------------- //
@@ -524,7 +517,6 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	}
     if (decoded_string == "refresh_run") {
         run_sent = false;
-        graph_sent = false;
         std::cout << "Resending Run Parameters to GUI" << std::endl;
         return;
     }

@@ -1,10 +1,14 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include "Database.hpp"
 #include <cmath>
 #include <array>
+#include <string>
+#include <vector>
 
 namespace VehicleConstants {
+    void init_params(Database &db);
     // vehicle constants
     static constexpr double WHEELBASE = 0.260;
     // static constexpr double L_R_SIM = 0.130;

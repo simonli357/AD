@@ -5,13 +5,13 @@ import os
 import time
 import threading
 import signal
-import cv2
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import pyqtSignal, QObject, Qt
+from PyQt5.QtCore import pyqtSignal, QObject, Qt, QTimer
 from python_server.server import Server
+from database.database import Database
 from widgets.sidebar.sidebar import SidebarWidget
 from widgets.camera.camera import CameraWidget
 from widgets.camera.buttons import ButtonsWidget
@@ -35,11 +35,7 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
-    render_widget_signal = pyqtSignal()
-    render_barca_widget_signal = pyqtSignal()
-    render_map_widget_signal = pyqtSignal()
     sw_load_signal = pyqtSignal(object)
-    graph_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -65,6 +61,7 @@ class MainWindow(QMainWindow):
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
         self.server = server
+        self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
         self.state_refs_np = None
@@ -103,13 +100,6 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
-        self.comm.graph_signal.connect(self.map_widget.update_graph)
-
-        self.comm.render_widget_signal.connect(self.car_widget.render_widget)
-        self.comm.render_widget_signal.connect(self.cam_widget.update_hud)
-
-        self.comm.render_barca_widget_signal.connect(self.barca_widget.render_widget)
-        self.comm.render_map_widget_signal.connect(self.map_widget.render_widget)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -150,11 +140,19 @@ class MainWindow(QMainWindow):
 
         self.terminal_widget.add_message("AD IDE INITIALIZED")
 
-        self.udp_thread = threading.Thread(target=self.udp_callbacks, args=(), daemon=True)
-        self.tcp_thread = threading.Thread(target=self.tcp_callbacks, args=(), daemon=True)
+        self.udp_timer = QTimer(self)
+        self.udp_timer.timeout.connect(self.udp_callbacks)
+        self.udp_timer.start(int(CameraParams.FPS_60.value * 1000))
+
+        self.udp_timer = QTimer(self)
+        self.udp_timer.timeout.connect(self.tcp_callbacks)
+        self.udp_timer.start(int(CameraParams.FPS_5.value * 1000))
+
+        self.cam_timer = QTimer(self)
+        self.cam_timer.timeout.connect(self.cam_record_callback)
+        self.cam_timer.start(int(CameraParams.RECORDING_REFRESH_RATE.value * 1000))
+
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
-        self.udp_thread.start()
-        self.tcp_thread.start()
         self.cam_thread.start()
 
     def toggle_map(self) -> None:
@@ -209,76 +207,57 @@ class MainWindow(QMainWindow):
         self.map_widget.no_destinations = False
 
     def tcp_callbacks(self) -> None:
-        while self.alive:
-            if self.server.utility_node_client.socket is not None:
-                if self.server.utility_node_client.messages:
-                    msg = self.server.utility_node_client.messages.popleft()
-                    self.comm.message_signal.emit(msg.data)
-                if self.server.utility_node_client.triggers.msgs:
-                    req, res = self.server.utility_node_client.triggers.msgs.popleft()
-                    self.comm.params_signal.emit(req, res)
-                if self.server.utility_node_client.run_msg:
-                    run = self.server.utility_node_client.run_msg.popleft()
-                    self.comm.run_signal.emit(run)
-                if self.server.utility_node_client.graph_msg:
-                    graph = self.server.utility_node_client.graph_msg.popleft()
-                    self.comm.graph_signal.emit(graph)
-            self.render_callbacks()
-            time.sleep(CameraParams.FPS_30.value)
+        if self.server.utility_node_client.socket is not None:
+            if self.server.utility_node_client.messages:
+                msg = self.server.utility_node_client.messages.popleft()
+                self.comm.message_signal.emit(msg.data)
+            if self.server.utility_node_client.triggers.msgs:
+                req, res = self.server.utility_node_client.triggers.msgs.popleft()
+                self.comm.params_signal.emit(req, res)
+            if self.server.utility_node_client.run_msg:
+                run = self.server.utility_node_client.run_msg.popleft()
+                self.comm.run_signal.emit(run)
 
     def udp_callbacks(self) -> None:
-        while self.alive:
-            rgb_image = None
-            depth_image = None
-            if self.cam_widget.show_depth:
-                depth_image = self.server.udp_connection.parse_depth_image()
-            else:
-                rgb_image = self.server.udp_connection.parse_rgb_image()
+        rgb_image = None
+        depth_image = None
+        if self.cam_widget.show_depth:
+            depth_image = self.server.udp_connection.parse_depth_image()
+        else:
+            rgb_image = self.server.udp_connection.parse_rgb_image()
 
-            sign = self.server.udp_connection.parse_sign()
-            waypoint = self.server.udp_connection.parse_waypoint()
-            road_obj = self.server.udp_connection.parse_road_object()
-            lane2 = self.server.udp_connection.parse_lane2()
-            steer = self.server.udp_connection.parse_steer()
-            load = self.server.udp_connection.parse_sw_load()
+        sign = self.server.udp_connection.parse_sign()
+        waypoint = self.server.udp_connection.parse_waypoint()
+        road_obj = self.server.udp_connection.parse_road_object()
+        lane2 = self.server.udp_connection.parse_lane2()
+        steer = self.server.udp_connection.parse_steer()
+        load = self.server.udp_connection.parse_sw_load()
 
-            if rgb_image is not None:
-                self.comm.camera_frame_signal.emit(rgb_image)
-            if depth_image is not None:
-                self.comm.depth_frame_signal.emit(depth_image)
-            if lane2 is not None:
-                self.comm.lane_signal.emit(lane2)
-            if road_obj is not None:
-                self.comm.road_obj_signal.emit(road_obj)
-            if waypoint is not None:
-                self.comm.waypoint_signal.emit(waypoint)
-            if sign is not None:
-                self.comm.sign_signal.emit(sign)
-            if steer is not None:
-                self.comm.steer_signal.emit(steer)
-            if load is not None:
-                self.comm.sw_load_signal.emit(load)
-            time.sleep(CameraParams.FPS_60.value)
+        if rgb_image is not None:
+            self.comm.camera_frame_signal.emit(rgb_image)
+        if depth_image is not None:
+            self.comm.depth_frame_signal.emit(depth_image)
+        if lane2 is not None:
+            self.comm.lane_signal.emit(lane2)
+        if road_obj is not None:
+            self.comm.road_obj_signal.emit(road_obj)
+        if waypoint is not None:
+            self.comm.waypoint_signal.emit(waypoint)
+        if sign is not None:
+            self.comm.sign_signal.emit(sign)
+        if steer is not None:
+            self.comm.steer_signal.emit(steer)
+        if load is not None:
+            self.comm.sw_load_signal.emit(load)
 
     def cam_record_callback(self) -> None:
-        while self.alive:
-            if self.cam_buttons_widget.recording:
-                rgb_image = self.server.udp_connection.parse_rgb_image()
-                if rgb_image is not None:
-                    now = time.time()
-                    if self.recording and abs(self.meter_widget.speed) > 0.02:
-                        filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                        cv2.imwrite(filename, rgb_image)
-                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-            else:
-                time.sleep(CameraParams.RECORDING_REFRESH_RATE.value)
-
-    def render_callbacks(self) -> None:
-        self.comm.render_widget_signal.emit()
-        if self.show_barca:
-            self.comm.render_barca_widget_signal.emit()
-        else:
-            self.comm.render_map_widget_signal.emit()
+        if self.cam_buttons_widget.recording:
+            rgb_image = self.server.udp_connection.parse_rgb_image()
+            if rgb_image is not None:
+                now = time.time()
+                if abs(self.car_widget.speed) > 0.02:
+                    filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                    rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
         try:

@@ -3,7 +3,7 @@ import numpy as np
 import glm
 
 
-class CameraEye:
+class CameraPoint:
     def __init__(self, shader_program, radius=0.005, sectors=16, stacks=16):
         self.shader_program = shader_program
 
@@ -69,33 +69,22 @@ class CameraEye:
 
         return verts, indices
 
-    def draw(self, proj_mat, view_mat, extrinsic, color=(1.0, 0.0, 0.0)):
+    def draw_at(self, world_pt: glm.vec3, proj_mat: glm.mat4, view_mat: glm.mat4, color=(0, 1, 0)):
         gl.glUseProgram(self.shader_program)
-        gl.glUniformMatrix4fv(self.loc_uProj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-        gl.glUniformMatrix4fv(self.loc_uView, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
-        gl.glUniform3f(self.loc_uColor, *color)
+        # upload projection + view
+        locP = gl.glGetUniformLocation(self.shader_program, "uProj")
+        locV = gl.glGetUniformLocation(self.shader_program, "uView")
+        locM = gl.glGetUniformLocation(self.shader_program, "uModel")
+        locC = gl.glGetUniformLocation(self.shader_program, "uColor")
+        gl.glUniformMatrix4fv(locP, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        gl.glUniformMatrix4fv(locV, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
+        gl.glUniform3f(locC, *color)
 
-        # --- compute intersection exactly like CameraRay ---
-        origin = glm.vec3(extrinsic[3])
-        fwd4 = extrinsic * glm.vec4(0, 0, -1, 0)
-        dir = glm.normalize(glm.vec3(fwd4))
-        if abs(dir.z) < 1e-6:
-            gl.glUseProgram(0)
-            return
-        t = -origin.z / dir.z
-        if t < 0:
-            gl.glUseProgram(0)
-            return
-        intersect = origin + dir * t
+        # build model = translate(world_pt) * scale(radius)
+        M = glm.translate(glm.mat4(1.0), world_pt) * self.scale_mat
+        gl.glUniformMatrix4fv(locM, 1, gl.GL_FALSE, glm.value_ptr(M))
 
-        # build model matrix = translate(intersect) * scale(0.05)
-        M = glm.translate(glm.mat4(1.0), intersect) * self.scale_mat
-        gl.glUniformMatrix4fv(self.loc_uModel, 1, gl.GL_FALSE, glm.value_ptr(M))
-
-        # draw sphere
+        # draw
         gl.glBindVertexArray(self.vao)
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo)
         gl.glDrawElements(gl.GL_TRIANGLES, self.index_count, gl.GL_UNSIGNED_INT, None)
-        gl.glBindVertexArray(0)
-
-        gl.glUseProgram(0)
