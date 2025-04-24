@@ -17,4 +17,5 @@ class SplineUtils {
 	using ATTRIBUTE = Track::ATTRIBUTE;
 
 	std::vector<Vertex> interpolate_path(const std::vector<Vertex> &path, double density, double hw_density_factor, double cw_density_factor, double smooth_factor = 0);
+    std::vector<Vertex> resample_by_distance(const std::vector<Vertex> &in, double ds);
 };

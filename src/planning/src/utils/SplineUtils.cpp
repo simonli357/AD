@@ -120,7 +120,7 @@ using VD = boost::graph_traits<Graph>::vertex_descriptor;
 /* 	return result; */
 /* } */
 
-std::vector<Vertex> resample_by_distance(const std::vector<Vertex> &in, double ds) {
+std::vector<Vertex> SplineUtils::resample_by_distance(const std::vector<Vertex> &in, double ds) {
 	std::vector<Vertex> out;
 	if (in.empty())
 		return out;
