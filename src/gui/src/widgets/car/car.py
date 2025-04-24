@@ -128,6 +128,12 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             'Pedestrian': GTRenderer(self.shader_renderer.pedestrian_model, 'Pedestrian'),
         }
 
+        self._cam_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
+        self.MIN_SLERP = 0.05
+        self.MAX_SLERP = 0.5
+        self.MAX_ANGLE = np.radians(20.5)
+        self.DEAD_ZONE = np.radians(3.0)
+
     def paintGL(self):
         if self.stop_drawing:
             return
@@ -136,15 +142,28 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
 
-        cam_x = x - self.cam_dist * np.cos(np.radians(self.yaw))
-        cam_y = y - self.cam_dist * np.sin(np.radians(self.yaw))
+        raw_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
 
-        rad_yaw = np.radians(self.yaw)
-        target_x = x + self.forward_offset * np.cos(rad_yaw)
-        target_y = y + self.forward_offset * np.sin(rad_yaw)
+        q_delta = raw_quat * glm.conjugate(self._cam_quat)
+        w_clamped = np.clip(q_delta.w, -1.0, 1.0)
+        angle_diff = 2.0 * np.arccos(w_clamped)
 
-        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
-        target_pos = glm.vec3(target_x, target_y, 0.0)
+        if angle_diff < self.DEAD_ZONE:
+            blend = 0.0
+        else:
+            blend = np.interp(
+                angle_diff,
+                [0.0, self.MAX_ANGLE],
+                [self.MIN_SLERP, self.MAX_SLERP],
+                right=self.MAX_SLERP
+            )
+
+        self._cam_quat = glm.slerp(self._cam_quat, raw_quat, blend)
+
+        forward_vec = self._cam_quat * glm.vec3(1, 0, 0)
+
+        cam_pos = glm.vec3(x, y, self.cam_height) - forward_vec * self.cam_dist
+        target_pos = glm.vec3(x, y, 0.0)
         self.view_mat = glm.lookAt(cam_pos, target_pos, glm.vec3(0, 0, 1))
 
         self.shader_renderer.draw_texture(
