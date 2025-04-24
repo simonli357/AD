@@ -143,6 +143,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
         self.ortho_view_mat = glm.mat4(1.0)
 
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
+
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
         self.setup_destinations_renderer()
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
@@ -164,16 +174,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.view_center = glm.vec2(*self.get_gl_coords(self.car_x, self.car_y))
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
-
-        self.proj_mat = glm.ortho(
-            -half_width, half_width,
-            -half_height, half_height,
-            -100.0, 100.0
-        )
 
         self.view_mat = glm.lookAt(
             glm.vec3(self.view_center.x, self.view_center.y, 1.0),
@@ -649,6 +649,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.view_center += glm.vec2(
             mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
             mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+        )
+
+        # Update projection matrix
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
         )
 
     ##################
