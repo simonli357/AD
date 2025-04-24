@@ -25,9 +25,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 35.0
-        self.cam_height = self.cam_dist / 1.25
-        self.forward_offset = 6.0
+        self.cam_dist = 40.0
+        self.cam_height = self.cam_dist / 1.15
+        self.forward_offset = 8
 
         self.visited = set()
 
@@ -152,17 +152,16 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
-        if hasattr(self, 'current_destx') and hasattr(self, 'current_desty'):
-            self.shader_renderer.draw_destination(self.current_destx, self.current_desty, 0, self.updated_dest_size, self.view_mat, self.proj_mat)
-
         # HUD
         self.hud_renderer.draw_hud(self.hud_proj_mat, self.width(), self.height())
 
         self.update()
 
-    def update_visited_destination(self, x_visited, y_visited, idx):
+    def update_visited_destination(self, x_visited, y_visited):
         x, y = self.get_gl_coords(x_visited, y_visited)
-        self.visited_destinations_renderer.add_or_update_instance(id, x, y, 0, 4.5)
+        self.visited.add((x, y))
+        self.visited_destinations_renderer.add_or_update_instance((x, y), x, y, 0, (5.0, 5.0, 5.0), z=-0.5)
+        self.visited_destinations_renderer.set_ids(self.visited)
 
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
@@ -201,7 +200,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.8, 0.8, 0.8))
                 ids['Car'].add(id)
             else:
-                self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), True)
+                self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 ids[object_dict[obj_type]].add(id)
         self.draw_road_objects(ids)
 

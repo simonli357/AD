@@ -73,7 +73,7 @@ class GTRenderer:
             if inst_id not in ids:
                 self._upload_matrix(idx, self.hide_np)
 
-    def add_or_update_instance(self, id, x, y, yaw, scale, extra_rot=False):
+    def add_or_update_instance(self, id, x, y, yaw, scale, z=0, extra_rot=False):
         """
         Assign or update an instance transform. Uses stable slots: once assigned, id retains index.
         """
@@ -83,7 +83,7 @@ class GTRenderer:
             return
         # build transform matrix
         m = glm.mat4(1.0)
-        m = glm.translate(m, glm.vec3(x, y, 0.0))
+        m = glm.translate(m, glm.vec3(x, y, z))
         m = glm.rotate(m, yaw, glm.vec3(0, 0, 1))
         if extra_rot:
             m = glm.rotate(m, glm.radians(180), glm.vec3(0, 0, 1))
