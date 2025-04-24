@@ -60,7 +60,7 @@ public:
         start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
-        db.graph_queries->set_graph(path_manager.path_planner.serialized_graph);
+        db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
     }
     ~StateMachine() {
         // utils.stop_car();
