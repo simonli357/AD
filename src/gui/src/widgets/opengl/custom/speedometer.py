@@ -96,9 +96,9 @@ class Speedometer():
         # Compute radii in pixels.
         screen = QtWidgets.QApplication.primaryScreen()
         max_screen_height = screen.size().height() / 2.3
-        min_dim = max(screen_height, max_screen_height)
-        innerRadius = self.innerRadius_ratio * min_dim
-        outerRadius = self.outerRadius_ratio * min_dim
+        self.min_dim = max(screen_height, max_screen_height)
+        innerRadius = self.innerRadius_ratio * self.min_dim
+        outerRadius = self.outerRadius_ratio * self.min_dim
 
         # Precompute gauge quad vertices (covers full circle enclosing outerRadius).
         left = cx - outerRadius
@@ -262,8 +262,8 @@ class Speedometer():
         progress = max(0.0, min(1.0, progress))
 
         # Use precomputed radii.
-        innerRadius = self.innerRadius_ratio * screen_height
-        outerRadius = self.outerRadius_ratio * screen_height
+        innerRadius = self.innerRadius_ratio * self.min_dim
+        outerRadius = self.outerRadius_ratio * self.min_dim
 
         # Draw the gauge arc quad.
         gl.glUseProgram(self.gauge_shader_program)
