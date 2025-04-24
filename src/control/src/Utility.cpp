@@ -30,6 +30,7 @@
 #include <iostream>
 #include "Runs.h"
 #include "EgoCar.h"
+#include "PathManager.hpp"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -492,7 +493,20 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                     }
                 }
             } else {
-                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], ego_yaw, confidence);
+                double object_yaw = ego_yaw;
+                if (type == OBJECT::CAR) {
+                    int closest_index = PathManager::find_closest_waypoint2(world_states, 0.15);
+                    if (closest_index >= 0) {
+                        object_yaw = PathManager::state_refs(closest_index, 2);
+                        // debug("Sign Callback()!!: new CAR detected at (" +
+                        //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                        //     "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
+                        //     std::to_string(object_yaw), 2);
+                    } else {
+                        // TODO: Check against known parking spots
+                    }
+                }
+                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], object_yaw, confidence);
                 debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
                     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
                     "), road_objects size: " + std::to_string(road_objects->size()), 2);

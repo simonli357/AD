@@ -277,6 +277,45 @@ inline void get_current_waypoints(Eigen::MatrixXd& output) {
 		output = state_refs.block(start, 0, end, 3);
 }
 
+inline int find_closest_waypoint2(
+	const Eigen::Vector2d& pt,
+	double threshold = 0.1)
+{
+	const int M = state_refs.rows();
+	if (M == 0) return -1;
+
+	// clamp our search window
+	int min_index = 0;
+	int max_index = M - 1;
+	const int window_size = max_index - min_index + 1;
+	if (window_size <= 0) return -1;
+
+	// 1) grab the x,y columns and slice out [min_index..max_index]
+	//    gives a (window_size x 2) matrix
+	auto xy_win = state_refs
+									.leftCols<2>()
+									.middleRows(min_index, window_size);
+
+	// 2) subtract pt from every row (broadcast)
+	//    diff(i,0:1) = xy_win(i,0:1) - pt
+	Eigen::MatrixXd diff = xy_win.rowwise() - pt.transpose();
+
+	// 3) squared norms of each row -> VectorXd of length window_size
+	Eigen::VectorXd dist2 = diff.rowwise().squaredNorm();
+
+	// build an index‐vector [min_index, min_index+1, …, max_index]
+	Eigen::VectorXi idxs = Eigen::VectorXi::LinSpaced(window_size, min_index, max_index);
+
+	// mask: if dist2(i) < threshold^2, keep idxs(i), else -1
+	double thr2 = threshold * threshold;
+	Eigen::VectorXi valid = (dist2.array() < thr2)
+													 .select(idxs, Eigen::VectorXi::Constant(window_size, -1));
+
+	// the answer is the maximum entry of valid (or –1 if all were –1)
+	int best = valid.maxCoeff();
+	return best;
+}
+
 inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index = -1, int max_index = -1) {
 	double current_norm = x_current.head(2).squaredNorm();
 
