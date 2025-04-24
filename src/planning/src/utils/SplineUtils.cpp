@@ -96,7 +96,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 		double segLen = arcLengthSegment(t0, t1);
 
 		// Compute effective density per-segment
-		double eff_density = segLen * density * 0.8;
+		double eff_density = segLen * density * 0.9;
 		switch (path[i].attribute) {
 		case ATTRIBUTE::CROSSWALK:
 			eff_density *= cw_density_factor;
