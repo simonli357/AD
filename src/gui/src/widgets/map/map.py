@@ -157,8 +157,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
         if self.view_zoom == 1:
             self.view_center = glm.vec2(0, 0)
+
+        self.update_car_data()
         if self.main_window.cam_buttons_widget.started:
-            self.update_car_data()
             self.view_center = glm.vec2(*self.get_gl_coords(self.car_x, self.car_y))
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
