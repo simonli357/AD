@@ -314,8 +314,6 @@ class CameraNode {
 			cv::flip(colorImage, colorImage, -1);
 			cv::flip(depthImage, depthImage, -1);
 		}
-		// cv::remap(colorImage, colorImage, map1, map2, cv::INTER_LINEAR);
-		// cv::remap(depthImage, depthImage, map1, map2, cv::INTER_NEAREST);
 
 		if (!useRosTimer) {
 			if (doLane) {

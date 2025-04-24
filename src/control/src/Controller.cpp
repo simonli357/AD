@@ -23,6 +23,7 @@
 #include "Tracking.h"
 #include "GroundTruth.h"
 #include "Tunable.h"
+#include "EgoCar.h"
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -198,7 +199,7 @@ public:
     void update_mpc_states(double x, double y, double yaw) {
         if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
             double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
-            yaw = Utility::yaw_mod(yaw, ref_yaw);
+            yaw = helper::yaw_mod(yaw, ref_yaw);
         }
         x_current << x, y, yaw;
     }
@@ -257,8 +258,8 @@ public:
         // get current states
         utils.get_states(x0, y0, yaw0);
         // get closest direction
-        yaw0 = Utility::nearest_direction(yaw0);
-        yaw0 = Utility::yaw_mod(yaw0);
+        yaw0 = helper::nearest_direction(yaw0);
+        yaw0 = helper::yaw_mod(yaw0);
         Eigen::VectorXd yaw0_vec = Eigen::VectorXd::Constant(targets.size(), yaw0);
         Eigen::VectorXd target_yaws = targets + yaw0_vec;
         // std::cout << "target yaws: " << target_yaws.transpose() << std::endl;
@@ -275,7 +276,7 @@ public:
         double yaw_error_sign = yaw_error > 0 ? 1 : -1;
         while(1) {
             yaw = utils.get_yaw();
-            yaw = Utility::yaw_mod(yaw);
+            yaw = helper::yaw_mod(yaw);
             yaw_error = yaw - target_yaws(stage-1);
             utils.debug("maneuver_hardcode(): stage " + helper::d2str(stage) + ", yaw: " + helper::d2str(yaw) + ", target yaw: " + helper::d2str(target_yaws(stage-1)) + ", yaw error: " + helper::d2str(yaw_error), 5);
             while(std::abs(yaw_error) > M_PI * 1.2) {
@@ -359,7 +360,7 @@ public:
         double distance_to_next_sq = (x_current.head(2) - next_intersection_pose.head(2)).squaredNorm();
         if (distance_to_next_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
             double yaw = x_current[2];
-            double yaw_error = Utility::compare_yaw(next_intersection_pose[2], yaw);
+            double yaw_error = helper::compare_yaw(next_intersection_pose[2], yaw);
             if (yaw_error > 30 * M_PI / 180) {
                 // utils.debug("CHECK_INTERSECTION(): FAILURE: yaw error too large: current: " + helper::d2str(yaw) + ", target: " + helper::d2str(next_intersection_pose[2]) + ", error: " + helper::d2str(yaw_error), 2);
                 return false;
@@ -585,7 +586,7 @@ public:
         }
         double current_yaw = x_current[2];
         double target_yaw = object->gt_pose[2];
-        double yaw_error = Utility::compare_yaw(target_yaw, current_yaw);
+        double yaw_error = helper::compare_yaw(target_yaw, current_yaw);
         // check yaw
         if (yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
             utils.debug("SIGN_RELOC2("+object->name+"): FAILURE: yaw error too large: " + helper::d2str(yaw_error * 180/M_PI) + ", thresh: " + helper::d2str(sign_localization_orientation_threshold) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
@@ -606,7 +607,7 @@ public:
         if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
             double yaw = utils.get_yaw();
             double sign_direction = EMPIRICAL_POSES[min_index][2];
-            double yaw_error = Utility::compare_yaw(sign_direction, yaw);
+            double yaw_error = helper::compare_yaw(sign_direction, yaw);
             if(yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
                 // utils.debug("SIGN_RELOC(" + sign_type + "): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(sign_localization_orientation_threshold), 2);
                 return 0;
@@ -629,7 +630,7 @@ public:
         // stop_for(0.5);
         // check orientation
         double yaw = utils.get_yaw();
-        double nearest_direction = Utility::nearest_direction(yaw);
+        double nearest_direction = helper::nearest_direction(yaw);
         double yaw_error = nearest_direction - yaw;
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -638,7 +639,7 @@ public:
             return 0;
         }
 
-        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
+        int nearestDirectionIndex = helper::nearest_direction_index(yaw);
         const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
                                           (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
@@ -691,7 +692,7 @@ public:
             return 0;
         }
         int num_waypoints = static_cast<int>((lookahead + lookbehind) * path_manager.density);
-        double nearest_direction = Utility::nearest_direction(utils.get_yaw());
+        double nearest_direction = helper::nearest_direction(utils.get_yaw());
         if (!path_manager.is_straight_line(start_idx, num_waypoints, nearest_direction, 0.1)) {
             // utils.debug("LANE_RELOC(): FAILURE: not a straight line"+ helper::d2str(count), 4);
             return 0;
@@ -711,7 +712,7 @@ public:
             return 0;
         }
         double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
-        int nearestDirectionIndex = Utility::nearest_direction_index(yaw);
+        int nearestDirectionIndex = helper::nearest_direction_index(yaw);
         const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
                                     (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
                                     (nearestDirectionIndex == 2) ? WEST_FACING_LANE_CENTERS :
@@ -761,7 +762,7 @@ public:
     }
     void wait_for_green() {
         if (has_light) {
-            int neareastDirection = Utility::nearest_direction_index(utils.get_yaw());
+            int neareastDirection = helper::nearest_direction_index(utils.get_yaw());
             static std::string light_topic_name;
             if (neareastDirection == 0) light_topic_name = "/east_traffic_light";
             else if (neareastDirection == 1) light_topic_name = "/north_traffic_light";
@@ -1192,7 +1193,7 @@ void StateMachine::update_mpc_states() {
     double yaw = x_current(2);
     if(path_manager.closest_waypoint_index < path_manager.state_refs.rows() && path_manager.state_refs.rows() > 0) {
         double ref_yaw = path_manager.state_refs(path_manager.closest_waypoint_index, 2);
-        yaw = Utility::yaw_mod(yaw, ref_yaw);
+        yaw = helper::yaw_mod(yaw, ref_yaw);
     }
     x_current(2) = yaw;
 }
@@ -1218,7 +1219,7 @@ void StateMachine::solve() {
         Eigen::Block<Eigen::MatrixXd> input_refs_block = path_manager.input_refs.block(idx, 0, N, 2);
         int status = mpc.solve(state_refs_block, input_refs_block, x_current);
         
-        // x_current(2) = Utility::yaw_mod(x_current(2));
+        // x_current(2) = helper::yaw_mod(x_current(2));
         // auto state_refs = utils.waypoints_to_world(utils.lane_waypoints, x_current);
         // state_refs = PathManager::smooth_yaw_angles(state_refs);
         // int status = mpc.solve(state_refs, input_refs_block, x_current);
@@ -1333,7 +1334,7 @@ void StateMachine::run() {
             int target_spot = 0;
             auto temp_rate = ros::Rate(50);
             if (true) {
-                double orientation = Utility::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(utils.get_yaw());
                 ROS_INFO("orientation: %.3f", orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
@@ -1399,12 +1400,12 @@ void StateMachine::run() {
             stop_for(stop_duration/2);
             if (hard_code) {
                 // right_park = true; //temp
-                double orientation = Utility::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(utils.get_yaw());
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
                 double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
                 double initial_yaw_error = orientation - yaw;
-                initial_yaw_error = Utility::yaw_mod(initial_yaw_error); // normalize to [-pi, pi]
+                initial_yaw_error = helper::yaw_mod(initial_yaw_error); // normalize to [-pi, pi]
                 // ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
                 utils.debug("orientation: " + helper::d2str(orientation) + ", yaw: " + helper::d2str(yaw), 4);
                 // exit(0);
@@ -1414,7 +1415,7 @@ void StateMachine::run() {
             utils.get_states(x, y, yaw);
             double x_error = x - PARKING_SPOTS[target_spot][0];
             if (std::abs(x_error) > 0.15) {
-                double orientation = Utility::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(utils.get_yaw());
                 ROS_INFO("parked but x offset too large: %.3f, adjusting... orientation: %.3f", x_error, orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
@@ -1630,6 +1631,21 @@ int main(int argc, char **argv) {
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
+    
+    // EgoCar::initialize(nh);
+    // EgoCar::start_sensors_thread();
+    // ros::Rate wait_rate(10);
+    // while (ros::ok() && (!EgoCar::first_imu_received || !EgoCar::first_speed_received)) {
+    //     ROS_INFO_THROTTLE(1.0, "Waiting for IMU and speed data...");
+    //     wait_rate.sleep();
+    // }
+    // ROS_INFO("EgoCar is fully initialized.");
+    // auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
+    // double x0 = gps_msg->pose.pose.position.x;
+    // double y0 = gps_msg->pose.pose.position.y;
+    // EgoCar::initialize_ekf(x0, y0);
+    // EgoCar::start_ekf_thread();
+
     StateMachine sm(nh);
 
     globalStateMachinePtr = &sm;

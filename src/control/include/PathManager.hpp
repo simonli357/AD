@@ -5,6 +5,7 @@
 #include "PathPlanner.hpp"
 #include "TcpClient.hpp"
 #include "Utility.hpp"
+#include "utils/helper.h"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_srvs/TriggerResponse.h"
 #include "utils/Point2D.h"
@@ -109,9 +110,9 @@ class PathManager {
 			double y = state_refs(current_idx, 1);
 			double yaw = state_refs(current_idx, 2);
 
-			int nearest_dir_idx = Utility::nearest_direction_index(yaw);
-			double dir_yaw = Utility::nearest_direction(yaw);
-			double yaw_error = Utility::compare_yaw(yaw, dir_yaw);
+			int nearest_dir_idx = helper::nearest_direction_index(yaw);
+			double dir_yaw = helper::nearest_direction(yaw);
+			double yaw_error = helper::compare_yaw(yaw, dir_yaw);
 
 			if (yaw_error * 180 / M_PI > 15) {
 				current_idx += static_cast<int>(density * threshold * 0.33 / 2);
@@ -122,7 +123,7 @@ class PathManager {
 			double min_error_sq = std::numeric_limits<double>::max();
 			int closest_idx = -1;
 			for (size_t i = 0; i < intersections_all.size(); ++i) {
-				double yaw_error2 = Utility::compare_yaw(dir_yaw, intersections_all[i].pose[2]);
+				double yaw_error2 = helper::compare_yaw(dir_yaw, intersections_all[i].pose[2]);
 				if (yaw_error2 * 180 / M_PI > 1) {
 					continue;
 				}
@@ -374,11 +375,11 @@ class PathManager {
 			return false;
 		}
 
-		target_angle = Utility::yaw_mod(target_angle); // now between -pi and pi
+		target_angle = helper::yaw_mod(target_angle); // now between -pi and pi
 		for (int i = start_idx; i < start_idx + num_waypoints; ++i) {
 			double yaw = state_refs(i, 2);
-			yaw = Utility::yaw_mod(yaw); // between -pi and pi
-			double diff = Utility::compare_yaw(target_angle, yaw);
+			yaw = helper::yaw_mod(yaw); // between -pi and pi
+			double diff = helper::compare_yaw(target_angle, yaw);
 			// Check if yaw is within the threshold of target_angle
 			if (diff > threshold) {
 				return false;

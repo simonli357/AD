@@ -29,6 +29,7 @@
 #include <robot_localization/SetPose.h>
 #include <iostream>
 #include "Runs.h"
+#include "EgoCar.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -85,7 +86,7 @@ void Utility::fetch_run_params() {
         double dx = x - run.x;
         double dy = y - run.y;
         double dist = std::sqrt(dx*dx + dy*dy);
-        double yaw_diff = compare_yaw(yaw, run.yaw);
+        double yaw_diff = helper::compare_yaw(yaw, run.yaw);
         // ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
         if(yaw_diff < 40.0 / 180 * M_PI) {
             runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
@@ -150,7 +151,6 @@ void Utility::initialize() {
     if (x0 > 0 && y0 > 0) {
         set_pose_using_service(x0, y0, yaw0);
     }
-    // Tracking::create_ego_car(x0, y0, yaw0);
     initializationFlag = false;
     gps_x = x0;
     gps_y = y0;
@@ -362,12 +362,10 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
             }
 
             static double accel_mag;
-
-
             {
                 // std::lock_guard<std::mutex> lock(general_mutex);
                 this->yaw = -yaw_deg * M_PI/180;
-                this->yaw = yaw_mod(this->yaw);
+                this->yaw = helper::yaw_mod(this->yaw);
             }
 
             static bool debug_imu = false;
@@ -481,7 +479,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
 
                 if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
                     double sign_yaw = relevant_signs[min_index][2];
-                    double yaw_error = compare_yaw(sign_yaw, ego_yaw);
+                    double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 
                     if (yaw_error < 35 * M_PI / 180) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
@@ -564,7 +562,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     }
     if (Tunable::real) yaw = yaw - initial_yaw;
     // yaw = yaw - initial_yaw + yaw0;
-    yaw = yaw_mod(yaw);
+    yaw = helper::yaw_mod(yaw);
     // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
@@ -871,6 +869,10 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     // ros::Duration(0.03).sleep();
     msg.data = "{\"action\":\"1\",\"speed\":" + std::to_string(vel) + "}";
     cmd_vel_pub.publish(msg);
+    
+    // velocity_command = velocity;
+    // steer_command = steering_angle;
+    // EgoCar::send_speed_and_steer(velocity, steering_angle);
 }
 void Utility::lane_follow() {
     steer_command = get_steering_angle();
