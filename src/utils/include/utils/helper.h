@@ -3,6 +3,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <cmath>
+#include <Eigen/Dense>
 
 namespace helper {
     inline std::string getSourceDirectory() {
@@ -22,5 +24,109 @@ namespace helper {
         out << std::fixed << std::setprecision(precision) << value;
         return out.str();
     }
+
+    inline double yaw_mod(double& io_yaw, double ref=0) {
+        double yaw = io_yaw;
+        while (yaw - ref > M_PI) yaw -= 2 * M_PI;
+        while (yaw - ref <= -M_PI) yaw += 2 * M_PI;
+        io_yaw = yaw;
+        return yaw;
+    }
+    
+    inline double compare_yaw(double yaw1, double yaw2) {
+        // returns the absolute difference between two yaw angles
+        double diff = yaw1 - yaw2;
+        diff = yaw_mod(diff);
+        return std::abs(diff);
+    }
+    
+    inline const double directions[5] = {0, M_PI / 2, M_PI, 3 * M_PI / 2, 2 * M_PI};
+    inline double nearest_direction(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
+
+        double minDifference = std::abs(yaw - directions[0]);
+        double nearestDirection = directions[0];
+
+        for (int i = 1; i < 5; ++i) {
+            double difference = std::abs(yaw - directions[i]);
+            if (difference < minDifference) {
+                minDifference = difference;
+                nearestDirection = directions[i];
+            }
+        }
+        while (nearestDirection - yaw > M_PI) {
+            nearestDirection -= 2 * M_PI;
+        }
+        while (nearestDirection - yaw < -M_PI) {
+            nearestDirection += 2 * M_PI;
+        }
+        return nearestDirection;
+    }
+    
+    inline int nearest_direction_index(double yaw) {
+        yaw = yaw_mod(yaw, M_PI);
+
+        double minDifference = std::abs(yaw - directions[0]);
+        double nearestDirection = directions[0];
+
+        int closest_index = 0;
+        for (int i = 1; i < 5; ++i) {
+            double difference = std::abs(yaw - directions[i]);
+            if (difference < minDifference) {
+                minDifference = difference;
+                nearestDirection = directions[i];
+                closest_index = i;
+            }
+        }
+        if (closest_index == 4) {
+            closest_index = 0;
+        }
+        return closest_index;
+    }
+
+    template <typename EigenType> inline void saveToFile(const EigenType &data, const std::string &filename) {
+		std::string dir = helper::getSourceDirectory();
+		std::string file_path = dir + "/" + filename;
+		std::ofstream file(file_path);
+		if (file.is_open()) {
+			file << data << "\n";
+		} else {
+			std::cerr << "Unable to open file: " << filename << std::endl;
+		}
+		file.close();
+		std::cout << "Saved to " << file_path << std::endl;
+	}
+	inline Eigen::MatrixXd loadTxt(const std::string &filename) {
+		std::ifstream file(filename);
+		if (!file.is_open()) {
+			throw std::runtime_error("Unable to open file: " + filename);
+		}
+
+		std::string line;
+		std::vector<double> matrixEntries;
+		int numRows = 0;
+		int numCols = -1;
+
+		while (std::getline(file, line)) {
+			std::istringstream iss(line);
+			double num;
+			std::vector<double> lineEntries;
+
+			while (iss >> num) {
+				lineEntries.push_back(num);
+			}
+
+			if (numCols == -1) {
+				numCols = lineEntries.size();
+			} else if (lineEntries.size() != numCols) {
+				throw std::runtime_error("Inconsistent number of columns");
+			}
+
+			matrixEntries.insert(matrixEntries.end(), lineEntries.begin(), lineEntries.end());
+			numRows++;
+		}
+
+		return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(matrixEntries.data(), numRows, numCols);
+	}
 }
 
