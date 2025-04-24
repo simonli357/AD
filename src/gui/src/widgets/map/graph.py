@@ -173,6 +173,8 @@ class GraphEditor:
         if event.button() == Qt.LeftButton:
             self._dragging = False
             xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
+            if self._drag_index is None:
+                return
             node_key = self.instance_data.keys[self._drag_index]
             self.G.nodes[node_key]['x'] = float(xw)
             self.G.nodes[node_key]['y'] = float(yw)
