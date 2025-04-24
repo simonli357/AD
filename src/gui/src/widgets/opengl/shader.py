@@ -256,8 +256,13 @@ class ShaderRenderer:
             car_model = self.orange_car_model
         else:
             return
+
         shader_program = car_model.shader_program
         gl.glUseProgram(shader_program)
+
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glCullFace(gl.GL_BACK)
+        gl.glFrontFace(gl.GL_CCW)
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
@@ -279,6 +284,7 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
+        gl.glDisable(gl.GL_CULL_FACE)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
