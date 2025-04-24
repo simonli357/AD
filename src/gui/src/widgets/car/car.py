@@ -25,8 +25,11 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 32.0
+        self.cam_dist = 35.0
         self.cam_height = self.cam_dist / 1.25
+        self.forward_offset = 6.0
+
+        self.visited = set()
 
         self.setup_ui()
 
@@ -76,6 +79,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer = HudRenderer(self)
 
         self.destinations_renderer = ModelInstanceRenderer(self.shader_renderer.destination_model)
+        self.visited_destinations_renderer = GTRenderer(self.shader_renderer.green_destination_model, 'Destination')
         self.update_destinations()
 
         self.renderers = {
@@ -107,7 +111,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             glm.radians(45.0),
             aspect,
             0.1,
-            100.0
+            2000.0
         )
 
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
@@ -115,14 +119,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         cam_x = x - self.cam_dist * np.cos(np.radians(self.yaw))
         cam_y = y - self.cam_dist * np.sin(np.radians(self.yaw))
 
-        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
-        target_pos = glm.vec3(x, y, 0)
+        rad_yaw = np.radians(self.yaw)
+        target_x = x + self.forward_offset * np.cos(rad_yaw)
+        target_y = y + self.forward_offset * np.sin(rad_yaw)
 
-        self.view_mat = glm.lookAt(
-            cam_pos,
-            target_pos,
-            glm.vec3(0, 0, 1)
-        )
+        cam_pos = glm.vec3(cam_x, cam_y, self.cam_height)
+        target_pos = glm.vec3(target_x, target_y, 0.0)
+        self.view_mat = glm.lookAt(cam_pos, target_pos, glm.vec3(0, 0, 1))
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
@@ -145,6 +148,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         )
 
         self.destinations_renderer.draw(self.proj_mat, self.view_mat)
+        self.visited_destinations_renderer.draw(self.proj_mat, self.view_mat)
         self.draw_path_nodes(self.main_window.map_widget.waypoints)
         self.draw_detected_objects(self.main_window.map_widget.detected_data, self.main_window.map_widget.road_msg_dict, self.main_window.map_widget.object_dict)
 
@@ -156,9 +160,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.update()
 
-    def update_visited_destination(self, x_visited, y_visited):
-        self.updated_dest_size = 4.5
-        self.current_destx, self.current_desty = self.get_gl_coords(x_visited, y_visited)
+    def update_visited_destination(self, x_visited, y_visited, idx):
+        x, y = self.get_gl_coords(x_visited, y_visited)
+        self.visited_destinations_renderer.add_or_update_instance(id, x, y, 0, 4.5)
 
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:

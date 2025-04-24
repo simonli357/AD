@@ -100,7 +100,7 @@ class HidableOverlay(QWidget):
             if self.is_near(car_x, car_y, x, y_inverted, 0.1, 0.1):
                 self.car_widget.main_window.visited.add((x, y))
                 self.set_dest_visited_num(len(self.visited))
-                self.car_widget.update_visited_destination(x, y_inverted)
+                self.car_widget.update_visited_destination(x, y_inverted, idx)
                 break
 
     def set_total_path_distance(self):

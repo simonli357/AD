@@ -5,7 +5,6 @@ import os
 import time
 import threading
 import signal
-import cv2
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
