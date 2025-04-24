@@ -129,10 +129,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         }
 
         self._cam_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
-        self.MIN_SLERP = 0.04
-        self.MAX_SLERP = 0.08
+        self.MIN_SLERP = 0.0
+        self.MAX_SLERP = 0.75
         self.MAX_ANGLE = np.radians(20.5)
-        self.DEAD_ZONE = np.radians(3.0)
+        self.DEAD_ZONE = np.radians(2.0)
 
     def paintGL(self):
         if self.stop_drawing:
@@ -143,6 +143,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
 
         raw_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
+        if glm.dot(self._cam_quat, raw_quat) < 0.0:
+            raw_quat = -raw_quat
 
         q_delta = raw_quat * glm.conjugate(self._cam_quat)
         w_clamped = np.clip(q_delta.w, -1.0, 1.0)
@@ -158,12 +160,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 right=self.MAX_SLERP
             )
 
-        self._cam_quat = glm.slerp(self._cam_quat, raw_quat, blend)
+        self._cam_quat = glm.normalize(glm.slerp(self._cam_quat, raw_quat, blend))
 
         forward_vec = self._cam_quat * glm.vec3(1, 0, 0)
 
         cam_pos = glm.vec3(x, y, self.cam_height) - forward_vec * self.cam_dist
-        target_pos = glm.vec3(x + self.forward_offset, y, 0.0)
+        glm_forward = glm.vec3(forward_vec.x, forward_vec.y, 0.0)
+        target_pos = glm.vec3(x, y, 0.0) + glm_forward * self.forward_offset
         self.view_mat = glm.lookAt(cam_pos, target_pos, glm.vec3(0, 0, 1))
 
         self.shader_renderer.draw_texture(
