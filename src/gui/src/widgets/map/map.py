@@ -565,6 +565,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
         self.update_waypoints()
         self.setup_destinations_renderer()
 
