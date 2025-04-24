@@ -222,7 +222,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if len(self.click_history) == 2:
             p0, p1 = self.click_history
             dx = p1[0] - p0[0]
-            dy = p1[0] - p0[0]
+            dy = p1[1] - p0[1]
             dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
             self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)

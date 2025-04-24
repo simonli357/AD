@@ -144,9 +144,12 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         self.draw_detection_boxes()
         self.draw_lane_indicator()
-        # 10 x 10 cm grid
         self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.1)
-        # Clicked coords
+        self.draw_measurement_points()
+
+        self.update()
+
+    def draw_measurement_points(self):
         for world_pt in self.click_history:
             self.shader_renderer.point_model.draw_at(
                 world_pt,
@@ -159,8 +162,9 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             p = self.click_history[0]
             dx = p.x - cam_world.x
             dy = p.y - cam_world.y
-            dz = p.z - cam_world.z
-            dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+            # dz = p.z - cam_world.z
+            # dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+            dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line((p.x, p.y), (cam_world.x, cam_world.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
             self.shader_renderer.text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
@@ -171,8 +175,6 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line((p0.x, p0.y), (p1.x, p1.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
             self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
-
-        self.update()
 
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
