@@ -14,122 +14,54 @@ class UdpConnection:
         self.socket = udp_socket
         self.MAX_DGRAM = 65507
 
-        self._raw = {
-            'lane2': queue.Queue(maxsize=1),
-            'road': queue.Queue(maxsize=1),
-            'waypoint': queue.Queue(maxsize=1),
-            'sign': queue.Queue(maxsize=1),
-            'rgb': queue.Queue(maxsize=1),
-            'depth': queue.Queue(maxsize=1),
-            'steer': queue.Queue(maxsize=1),
-            'sw_load': queue.Queue(maxsize=1),
-        }
+        self._raw_image = queue.Queue(maxsize=1)
+        self._raw_depth = queue.Queue(maxsize=1)
+        self._raw_other = queue.Queue(maxsize=1)
 
+        self.rgb_buf = queue.Queue(maxsize=1)
+        self.depth_buf = queue.Queue(maxsize=1)
         self.lane2_buf = queue.Queue(maxsize=1)
         self.road_object_buf = queue.Queue(maxsize=1)
         self.waypoint_buf = queue.Queue(maxsize=1)
         self.sign_buf = queue.Queue(maxsize=1)
-        self.rgb_buf = queue.Queue(maxsize=1)
-        self.depth_buf = queue.Queue(maxsize=1)
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
 
         if udp_socket is not None:
             threading.Thread(target=self._receive_loop, daemon=True).start()
-            threading.Thread(target=self._steer_worker, daemon=True).start()
-            threading.Thread(target=self._lane2_worker, daemon=True).start()
-            threading.Thread(target=self._road_worker, daemon=True).start()
-            threading.Thread(target=self._waypoint_worker, daemon=True).start()
-            threading.Thread(target=self._sign_worker, daemon=True).start()
             threading.Thread(target=self._image_worker, daemon=True).start()
             threading.Thread(target=self._depth_worker, daemon=True).start()
-            threading.Thread(target=self._sw_load_worker, daemon=True).start()
+            threading.Thread(target=self._other_worker, daemon=True).start()
 
     def _receive_loop(self):
-        """Demultiplex incoming UDP packets into type‐specific raw queues."""
+        """Read UDP datagrams and push raw payloads into one of three queues."""
         while True:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-                if len(seg) < 6:
+                if len(seg) < 5:
                     continue
                 typ = seg[4]
                 payload = seg[5:]
-                if typ == 1:
-                    self._enqueue_raw('lane2', payload)
-                elif typ == 2:
-                    self._enqueue_raw('road', payload)
-                elif typ == 3:
-                    self._enqueue_raw('waypoint', payload)
-                elif typ == 4:
-                    self._enqueue_raw('sign', payload)
-                elif typ == 5:
-                    self._enqueue_raw('rgb', payload)
-                elif typ == 6:
-                    self._enqueue_raw('depth', payload)
-                elif typ == 7:
-                    self._enqueue_raw('steer', payload)
-                elif typ == 8:
-                    self._enqueue_raw('sw_load', payload)
+                if typ == 5:       # RGB frame
+                    self._enqueue_raw(self._raw_image, payload)
+                elif typ == 6:     # Depth frame
+                    self._enqueue_raw(self._raw_depth, payload)
+                else:              # everything else
+                    if typ in (1, 2, 3, 4, 7, 8):
+                        self._enqueue_raw(self._raw_other, (typ, payload))
             except Exception:
-                # ignore transient errors
                 continue
 
-    def _enqueue_raw(self, key, raw):
-        """Try to append raw bytes into its queue, dropping old if necessary."""
-        q = self._raw[key]
+    def _enqueue_raw(self, q: queue.Queue, item):
+        """Try to put item into q, dropping it if q is full."""
         try:
-            q.put_nowait(raw)
+            q.put_nowait(item)
         except queue.Full:
             pass
 
-    def _steer_worker(self):
-        while True:
-            raw = self._raw['steer'].get()
-            try:
-                val = struct.unpack('f', raw[:4])[0]
-                self._try_put(self.steer_buf, val)
-            except Exception:
-                pass
-
-    def _lane2_worker(self):
-        while True:
-            raw = self._raw['lane2'].get()
-            try:
-                msg = Lane2Msg().decode(raw)
-                self._try_put(self.lane2_buf, msg)
-            except Exception:
-                pass
-
-    def _road_worker(self):
-        while True:
-            raw = self._raw['road'].get()
-            try:
-                msg = Float32MultiArray().deserialize(raw)
-                self._try_put(self.road_object_buf, msg)
-            except Exception:
-                pass
-
-    def _waypoint_worker(self):
-        while True:
-            raw = self._raw['waypoint'].get()
-            try:
-                msg = Float32MultiArray().deserialize(raw)
-                self._try_put(self.waypoint_buf, msg)
-            except Exception:
-                pass
-
-    def _sign_worker(self):
-        while True:
-            raw = self._raw['sign'].get()
-            try:
-                msg = Float32MultiArray().deserialize(raw)
-                self._try_put(self.sign_buf, msg)
-            except Exception:
-                pass
-
     def _image_worker(self):
         while True:
-            raw = self._raw['rgb'].get()
+            raw = self._raw_image.get()
             try:
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
@@ -139,7 +71,7 @@ class UdpConnection:
 
     def _depth_worker(self):
         while True:
-            raw = self._raw['depth'].get()
+            raw = self._raw_depth.get()
             try:
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
@@ -147,25 +79,47 @@ class UdpConnection:
             except Exception:
                 pass
 
-    def _sw_load_worker(self):
+    def _other_worker(self):
         while True:
-            raw = self._raw['sw_load'].get()
+            typ, raw = self._raw_other.get()
             try:
-                msg = SWLoadMsg().decode(raw)
-                self._try_put(self.sw_load_buf, msg)
+                if typ == 1:  # lane2
+                    msg = Lane2Msg().decode(raw)
+                    self._try_put(self.lane2_buf, msg)
+                elif typ == 2:  # road object
+                    msg = Float32MultiArray().deserialize(raw)
+                    self._try_put(self.road_object_buf, msg)
+                elif typ == 3:  # waypoint
+                    msg = Float32MultiArray().deserialize(raw)
+                    self._try_put(self.waypoint_buf, msg)
+                elif typ == 4:  # sign
+                    msg = Float32MultiArray().deserialize(raw)
+                    self._try_put(self.sign_buf, msg)
+                elif typ == 7:  # steer
+                    val = struct.unpack('f', raw[:4])[0]
+                    self._try_put(self.steer_buf, val)
+                elif typ == 8:  # sw_load
+                    msg = SWLoadMsg().decode(raw)
+                    self._try_put(self.sw_load_buf, msg)
             except Exception:
                 pass
 
-    def _try_put(self, buf, item):
-        """Helper: append to buf if empty, else drop."""
+    def _try_put(self, buf: queue.Queue, item):
+        """Helper: put item into buf if empty; if full, drop it."""
         try:
             buf.put_nowait(item)
         except queue.Full:
             pass
 
-    def parse_steer(self):
+    def parse_rgb_image(self):
         try:
-            return self.steer_buf.get_nowait()
+            return self.rgb_buf.get_nowait()
+        except queue.Empty:
+            return None
+
+    def parse_depth_image(self):
+        try:
+            return self.depth_buf.get_nowait()
         except queue.Empty:
             return None
 
@@ -193,15 +147,9 @@ class UdpConnection:
         except queue.Empty:
             return None
 
-    def parse_rgb_image(self):
+    def parse_steer(self):
         try:
-            return self.rgb_buf.get_nowait()
-        except queue.Empty:
-            return None
-
-    def parse_depth_image(self):
-        try:
-            return self.depth_buf.get_nowait()
+            return self.steer_buf.get_nowait()
         except queue.Empty:
             return None
 
