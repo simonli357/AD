@@ -1631,7 +1631,7 @@ int main(int argc, char **argv) {
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
-    
+
     // EgoCar::initialize(nh);
     // EgoCar::start_sensors_thread();
     // ros::Rate wait_rate(10);

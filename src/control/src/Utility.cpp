@@ -187,10 +187,10 @@ void Utility::initialize() {
         odom_pub_timer = nh.createTimer(ros::Duration(1.0 / Tunable::odom_rate), &Utility::odom_pub_timer_callback, this);
     }
     if (Tunable::ekf) {
-        this->subModel = false;
         ekf_sub = nh.subscribe("/odometry/filtered", 3, &Utility::ekf_callback, this);
     } 
-    if (this->subModel) {
+    if (subModel) {
+        std::cout << "SUBMODEL IS TRUEEE!!!" << std::endl;
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
     }
     std::string imu_topic_name;
@@ -869,7 +869,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     // ros::Duration(0.03).sleep();
     msg.data = "{\"action\":\"1\",\"speed\":" + std::to_string(vel) + "}";
     cmd_vel_pub.publish(msg);
-    
+
     // velocity_command = velocity;
     // steer_command = steering_angle;
     // EgoCar::send_speed_and_steer(velocity, steering_angle);

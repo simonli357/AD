@@ -60,7 +60,7 @@ public:
     bool emergency = false;
     int num_obj = 0;
     std::mutex general_mutex;
-    bool pubOdom, subModel;
+    bool pubOdom;
     std_msgs::String debug_msg;
     ros::Rate* rate;
 
