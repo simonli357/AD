@@ -6,6 +6,7 @@ from ..opengl.shader import ShaderRenderer
 from ..opengl.instance.waypoints import WaypointsRenderer
 from ..opengl.instance.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
+from ..opengl.instance.path import PathRenderer
 from ..enums import MapData, NamedColor, OpenGLContextName
 
 import pandas as pd
@@ -442,18 +443,31 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def draw_path_nodes(self):
         if self.waypoints is None or len(self.waypoints) < 2:
             return
+
+        positions = []
+        rotations = []
+
         x1, y1 = self.get_gl_coords(self.waypoints[0], self.waypoints[1])
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append(x1, y1, 2.0)
+                rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
                 self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 2.0))
+                rotations.append((angle, 0, 0, 1))
                 x1, y1 = x2, y2
+
+        if hasattr(self, 'path_node_renderer'):
+            self.path_node_renderer.transform_all(positions=positions, rotations=rotations)
+        else:
+            self.path_node_renderer = PathRenderer(positions=positions, rotations=rotations)
+        self.path_node_renderer.render(self.proj_mat, self.view_mat)
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True

@@ -6,6 +6,7 @@ from ..enums import MapData, NamedColor, OpenGLContextName
 from ..opengl.shader import ShaderRenderer
 from ..opengl.instance.gt import GTRenderer
 from ..opengl.instance.model import ModelInstanceRenderer
+from ..opengl.instance.path import PathRenderer
 
 import numpy as np
 import glm
@@ -75,6 +76,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        self.proj_mat = glm.perspective(
+            glm.radians(45.0),
+            aspect,
+            0.1,
+            2000.0
+        )
+
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
         self.hud_renderer = HudRenderer(self)
 
@@ -105,14 +114,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             return
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
-        self.proj_mat = glm.perspective(
-            glm.radians(45.0),
-            aspect,
-            0.1,
-            2000.0
-        )
 
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
 
@@ -216,18 +217,30 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_path_nodes(self, waypoints):
         if waypoints is None or len(waypoints) < 2:
             return
+
+        positions = []
+        rotations = []
+
         x1, y1 = self.get_gl_coords(waypoints[0], MapData.REAL_WORLD_HEIGHT.value - waypoints[1])
         angle = 0
         for i in range(0, len(waypoints) - 1, 4):
             if i + 3 > len(waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 0.1, angle, (1, 1), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append(x1, y1, 0.1)
+                rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(waypoints[i + 2], MapData.REAL_WORLD_HEIGHT.value - waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
-                self.shader_renderer.draw_triangle(x1, y1, 0.1, angle, (1, 1), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 0.1))
+                rotations.append((angle, 0, 0, 1))
                 x1, y1 = x2, y2
+
+        if hasattr(self, 'path_node_renderer'):
+            self.path_node_renderer.transform_all(positions=positions, rotations=rotations)
+        else:
+            self.path_node_renderer = PathRenderer(positions=positions, rotations=rotations)
+        self.path_node_renderer.render(self.proj_mat, self.view_mat)
 
     def get_gl_coords(self, real_x, real_y):
         # Convert real-world to OpenGL world coordinates
@@ -270,4 +283,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
+
+        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        self.proj_mat = glm.perspective(
+            glm.radians(45.0),
+            aspect,
+            0.1,
+            2000.0
+        )
+
         self.update_destinations()
