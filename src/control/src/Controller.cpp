@@ -1669,8 +1669,8 @@ int main(int argc, char **argv) {
     auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
     double x0 = gps_msg->pose.pose.position.x;
     double y0 = gps_msg->pose.pose.position.y;
-    EgoCar::initialize_bkf(x0, y0);
-    EgoCar::start_bkf_thread();
+    EgoCar::initialize_prediction(x0, y0);
+    EgoCar::start_prediction_thread();
 
     StateMachine sm(nh);
 

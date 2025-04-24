@@ -27,6 +27,18 @@ inline double roll = 0.0;
 inline double pitch = 0.0;
 inline double yaw = 0.0;
 inline double speed = 0.0;
+inline double x0 = 0.0;
+inline double y0 = 0.0;
+inline double height = 0.0;
+inline double odomX = 0.0;
+inline double odomY = 0.0;
+inline double odomYaw = 0.0;
+inline double dx = 0.0;
+inline double dy = 0.0;
+inline double dyaw = 0.0;
+inline double dheight = 0.0;
+inline double wheelbase = VehicleConstants::WHEELBASE;
+inline double l_r = VehicleConstants::L_R_REAL;
 
 inline double steer_command = 0.0;
 inline double velocity_command = 0.0;
@@ -34,7 +46,7 @@ inline std::chrono::steady_clock::time_point last_imu_time;
 inline std::chrono::steady_clock::time_point last_speed_time;
 
 inline std::unique_ptr<BicycleKalmanFilter> bkf;
-inline std::chrono::steady_clock::time_point last_bkf_time;
+inline std::chrono::steady_clock::time_point last_predict_time;
 
 inline std::mutex state_mutex;
 inline std::atomic<bool> first_imu_received{false};
@@ -51,9 +63,9 @@ inline std_msgs::String command_msg;
 inline ros::Timer imu_timer;
 
 inline std::atomic<bool> sensors_running{false};
-inline std::atomic<bool> bkf_running{false};
+inline std::atomic<bool> prediction_running{false};
 inline std::unique_ptr<std::thread> sensors_thread;
-inline std::unique_ptr<std::thread> bkf_thread;
+inline std::unique_ptr<std::thread> prediction_thread;
 
 inline double raw_roll()   {
     std::lock_guard<std::mutex> lock(state_mutex);
@@ -73,15 +85,15 @@ inline double raw_speed()  {
 }
 inline double get_x() {
     std::lock_guard<std::mutex> lock(state_mutex);
-    return bkf ? bkf->getX() : 0.0;
+    return bkf ? bkf->getX() : odomX + x0;
 }
 inline double get_y() {
     std::lock_guard<std::mutex> lock(state_mutex);
-    return bkf ? bkf->getY() : 0.0;
+    return bkf ? bkf->getY() : odomY + y0;
 }
 inline double get_yaw() {
     std::lock_guard<std::mutex> lock(state_mutex);
-    return bkf ? bkf->getYaw() : 0.0;
+    return bkf ? bkf->getYaw() : yaw;
 }
 inline void update_states(Eigen::Vector3d& o_state) {
     std::lock_guard<std::mutex> lock(state_mutex);
@@ -89,9 +101,9 @@ inline void update_states(Eigen::Vector3d& o_state) {
         auto bkf_state = bkf->getState();
         o_state = bkf_state;
     } else {
-        o_state[0] = 0.0;
-        o_state[1] = 0.0;
-        o_state[2] = 0.0;
+        o_state[0] = odomX + x0;
+        o_state[1] = odomY + y0;
+        o_state[2] = yaw;
     }
 }
 inline double get_speed_command() {
@@ -199,6 +211,73 @@ inline void serial_update() {
     }
 }
 
+inline int rk4() {
+    double speed = get_speed_command();
+    double steering_angle = get_steer_command();
+    auto now = std::chrono::steady_clock::now();
+    double dt = std::chrono::duration<double>(now - last_predict_time).count();
+    if (dt < 0) {
+        return 0;
+    }
+    last_predict_time = now;
+    if (std::abs(pitch) <3 * M_PI / 180) {
+        pitch = 0;
+    }
+    dheight = speed * dt * sin(pitch);
+    double v_eff = speed * cos(pitch);
+
+    double delta_rad = -steering_angle * M_PI / 180.0;
+    double beta = 0;
+    if (Tunable::use_beta) beta = atan((l_r / wheelbase) * tan(delta_rad));
+
+    double magnitude = v_eff * dt;
+    double yaw_rate = dt * magnitude * tan(delta_rad) / wheelbase * cos(beta);
+
+    double k1_x = magnitude * cos(yaw + beta);
+    double k1_y = magnitude * sin(yaw + beta);
+
+    double k2_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k2_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k3_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k3_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    double k4_x = magnitude * cos((yaw + yaw_rate / 2) + beta);
+    double k4_y = magnitude * sin((yaw + yaw_rate / 2) + beta);
+
+    dx = 1 / 6.0 * (k1_x + 2 * k2_x + 2 * k3_x + k4_x);
+    dy = 1 / 6.0 * (k1_y + 2 * k2_y + 2 * k3_y + k4_y);
+    dyaw = yaw_rate;
+    return 1;
+}
+inline void odometry() {
+    {
+        rk4();
+        {
+            std::lock_guard<std::mutex> lock(state_mutex);
+            odomX += dx;
+            odomY += dy;
+            height -= dheight;
+        }
+    }
+}
+
+int recalibrate_states(double x_offset, double y_offset) {
+    if(Tunable::ekf) {
+        if (hasGps) {
+            x0 += x_offset;
+            y0 += y_offset;
+        } else {
+            x0 += x_offset;
+            y0 += y_offset;
+        }
+    } else {
+        x0 += x_offset;
+        y0 += y_offset;
+    }
+    return 1;
+}
+
 inline void read_sensors() {
     if (!Tunable::real) {
         ros::spinOnce();
@@ -210,6 +289,7 @@ inline void read_sensors() {
 
 inline void sensors_thread_loop() {
     ros::Rate rate(50.0);
+    last_predict_time = std::chrono::steady_clock::now();
     while (sensors_running) {
         read_sensors();
         // {
@@ -239,51 +319,45 @@ inline void stop_sensors_thread() {
     sensors_thread.reset();
 }
 
-inline void bkf_thread_loop(double hz) {
+inline void prediction_thread_loop(double hz) {
     ros::Rate rate(hz);
-    while (bkf_running) {
-        if (!(first_imu_received && first_speed_received && bkf)) {
+    while (prediction_running) {
+        if (!(first_imu_received && first_speed_received)) {
             rate.sleep();
             continue;
         }
-        auto now = std::chrono::steady_clock::now();
-        double dt = std::chrono::duration<double>(now - last_bkf_time).count();
-        if (dt > 0) {
-            double curr_speed, cmd_steer;
-            {
-                std::lock_guard<std::mutex> lock(state_mutex);
-                curr_speed = velocity_command;
-                std::cout << "curr_speed: " << curr_speed << ", steer_command: " << steer_command << std::endl;
-                cmd_steer = steer_command;
+        if (bkf) {
+            auto now = std::chrono::steady_clock::now();
+            double dt = std::chrono::duration<double>(now - last_predict_time).count();
+            if (dt > 0) {
+                double curr_speed = get_speed_command();
+                double cmd_steer = get_steer_command();
+                bkf->predict(cmd_steer, curr_speed, dt);
+                last_predict_time = now;
             }
-            bkf->predict(cmd_steer, curr_speed, dt);
-            last_bkf_time = now;
-            double x = bkf->getX();
-            double y = bkf->getY();
-            double yaw = bkf->getYaw();
-            double speed = curr_speed;
-            Tracking::ego_car->update(x, y, yaw, speed, 0, steer_command * 180.0 / M_PI);
+        } else {
+            odometry();
         }
         rate.sleep();
     }
 }
 
-inline void start_bkf_thread() {
-    if (bkf_running) return;
-    bkf_running = true;
-    last_bkf_time = std::chrono::steady_clock::now();
-    bkf_thread = std::make_unique<std::thread>(
-        []{ bkf_thread_loop(50); }
+inline void start_prediction_thread() {
+    if (prediction_running) return;
+    prediction_running = true;
+    last_predict_time = std::chrono::steady_clock::now();
+    prediction_thread = std::make_unique<std::thread>(
+        []{ prediction_thread_loop(50); }
     );
 }
 
-inline void stop_bkf_thread() {
-    if (!bkf_running) return;
-    bkf_running = false;
-    if (bkf_thread && bkf_thread->joinable()) {
-        bkf_thread->join();
+inline void stop_prediction_thread() {
+    if (!prediction_running) return;
+    prediction_running = false;
+    if (prediction_thread && prediction_thread->joinable()) {
+        prediction_thread->join();
     }
-    bkf_thread.reset();
+    prediction_thread.reset();
 }
 
 inline void initialize(ros::NodeHandle& nh) {
@@ -308,17 +382,23 @@ inline void initialize(ros::NodeHandle& nh) {
     command_publisher = nh.advertise<std_msgs::String>("/car1/command", 8);
 }
 
-inline void initialize_bkf(double x0, double y0) {
-    bkf = std::make_unique<BicycleKalmanFilter>(WHEELBASE, L_R_REAL, Tunable::use_beta);
+inline void initialize_prediction(double x0_, double y0_) {
     while (!first_imu_received) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    double yaw0 = raw_yaw();
-    std::cout << "EgoCar::initialize_bkf(): initializing EKF: x0: " << x0 << ", y0: " << y0 << ", yaw0: " << yaw0 << std::endl;
-    double std_x = 0.01; // x
-    double std_y = 0.01; // y
-    double std_yaw = 0.05 * M_PI/180; // yaw
-    bkf->init(x0, y0, yaw0, std_x, std_y, std_yaw);
+    x0 = x0_;
+    y0 = y0_;
+    if (Tunable::ekf) {
+        bkf = std::make_unique<BicycleKalmanFilter>(WHEELBASE, L_R_REAL, Tunable::use_beta);
+        double yaw0 = raw_yaw();
+        std::cout << "EgoCar::initialize_bkf(): initializing EKF: x0: " << x0 << ", y0: " << y0 << ", yaw0: " << yaw0 << std::endl;
+        double std_x = 0.01; // x
+        double std_y = 0.01; // y
+        double std_yaw = 0.05 * M_PI/180; // yaw
+        bkf->init(x0, y0, yaw0, std_x, std_y, std_yaw);
+    } else {
+        bkf = nullptr;
+    }
 }
 
 inline bool send_speed_and_steer(double velocity, double steer) {
