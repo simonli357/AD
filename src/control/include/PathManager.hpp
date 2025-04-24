@@ -37,16 +37,6 @@ class PathManager {
 		std::cout << "Path Manager Constructor" << std::endl;
 		v_ref_int = static_cast<int>(v_ref * 100); // convert to cm/s
 
-		// std::string dir = helper::getSourceDirectory();
-		// std::string v_ref_int_str = std::to_string(v_ref_int);
-		// std::string path_name = "_speedrun";
-		// path_name = "_path1";
-		// state_refs = loadTxt(dir + "/../../../control/scripts/paths/state_refs" + path_name +v_ref_int_str+ ".txt");
-		// remove_large_yaw_jump();
-		// input_refs = loadTxt(dir + "/../../../control/scripts/paths/input_refs" + path_name +v_ref_int_str+ ".txt");
-		// state_attributes = loadTxt(dir + "/../../../control/scripts/paths/wp_attributes" + path_name +v_ref_int_str+ ".txt");
-		// normals = loadTxt(dir + "/../../../control/scripts/paths/wp_normals"+ path_name +v_ref_int_str+ ".txt");
-
 		state_refs_ptr = &state_refs;
 		target_waypoint_index = 0;
 		last_waypoint_index = target_waypoint_index;
@@ -54,10 +44,6 @@ class PathManager {
 		std::cout << "v ref: " << v_ref << ", int:" << v_ref_int << std::endl;
 
 		waypoints_client = nh.serviceClient<utils::waypoints>("/waypoint_path");
-		/* if(!nh.getParam("/pathName", pathName)) { */
-		/*     ROS_ERROR("Failed to get param 'pathName'"); */
-		/*     pathName = "speedrun"; */
-		/* } */
 
 		go_to_client = nh.serviceClient<utils::go_to>("/go_to");
 		go_to_multiple_client = nh.serviceClient<utils::go_to_multiple>("/go_to_multiple");
@@ -227,7 +213,6 @@ class PathManager {
 	void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
 		if (shift_right)
 			shift_distance *= -1;
-		// state_refs.block(start_index, 0, end_index-start_index, 2) += normals.block(start_index, 0, end_index-start_index, 2) * shift_distance;
 
 		// Total number of points
 		int total_points = end_index - start_index;
@@ -259,7 +244,6 @@ class PathManager {
 				current_shift = shift_distance * progress;
 			}
 
-			// Apply the shift to the current waypoint
 			state_refs.block(i, 0, 1, 2) += normals.block(i, 0, 1, 2) * current_shift;
 		}
 	}
@@ -273,45 +257,11 @@ class PathManager {
 		output = state_refs.block(start, 0, end, 3);
 	}
 
-	// int find_next_waypoint(int &output_target, const Eigen::Vector3d &i_current_state, int min_index = -1, int max_index = -1) {
-	//     int target = 0;
-	//     int closest_index = find_closest_waypoint(i_current_state, min_index, max_index);
-
-	//     // If no valid waypoint was found, default to index 0.
-	//     if (closest_index < 0) {
-	//         target = 0;
-	//     } else {
-	//         Eigen::Vector2d current_pos = i_current_state.head(2);
-	//         Eigen::Vector2d waypoint_pos = (*state_refs_ptr).row(closest_index).head(2);
-	//         double yaw = i_current_state(2);
-	//         Eigen::Vector2d heading(cos(yaw), sin(yaw));
-
-	//         // Compute the vector from the current position to the waypoint.
-	//         Eigen::Vector2d vec_to_waypoint = waypoint_pos - current_pos;
-
-	//         // If the dot product is negative, the waypoint is behind the vehicle,
-	//         // so we use the next waypoint.
-	//         if (heading.dot(vec_to_waypoint) < 0.0) {
-	//             target = std::min(closest_index + 1, static_cast<int>((*state_refs_ptr).rows()) - 1);
-	//         } else {
-	//             target = closest_index;
-	//         }
-	//     }
-
-	//     output_target = std::min(target, static_cast<int>((*state_refs_ptr).rows()) - 1);
-	//     last_waypoint_index = output_target;
-	//     return 1;
-	// }
 	int find_next_waypoint(int &output_target, const Eigen::Vector3d &i_current_state, int min_index = -1, int max_index = -1) {
 		int target = 0;
 		static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
 		static int lookahead = 1;
-		if (v_ref > 0.375)
-			lookahead = 1;
-
-		// static Eigen::Vector3d last_state = i_current_state;
-		// double distance_travelled_sq = (i_current_state.head(2) - last_state.head(2)).squaredNorm();
-		// last_state = i_current_state;
+		if (v_ref > 0.375) lookahead = 1;
 
 		static int count = 0;
 		closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
@@ -330,8 +280,6 @@ class PathManager {
 			target = target_waypoint_index + 1;
 			count++;
 		}
-		/* std::cout << (*state_refs_ptr).row(target) << "closest: " << closest_waypoint_index << ", target: " << target << ", limit: " << limit << ", lookahead: " << lookahead << ", count: " << count <<
-		 * std::endl; */
 
 		output_target = std::min(target, static_cast<int>((*state_refs_ptr).rows()) - 1);
 		last_waypoint_index = output_target;
@@ -351,7 +299,6 @@ class PathManager {
 		if (max_index < 0)
 			max_index = std::min(target_waypoint_index + limit, static_cast<int>(state_refs.rows()) - 1); // state_refs.rows() - 1;
 
-		// for (int i = min_index; i < max_index; ++i) {
 		for (int i = max_index; i >= min_index; --i) {
 			double distance_sq = (state_refs.row(i).head(2).squaredNorm() - 2 * state_refs.row(i).head(2).dot(x_current.head(2)) + current_norm);
 
@@ -385,60 +332,90 @@ class PathManager {
 				return false;
 			}
 		}
-
 		return true;
 	}
 
 	bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient> &tcp_client) {
-        std_msgs::Float32MultiArray state_refs_in;
-        std_msgs::Float32MultiArray input_refs_in;
-        std_msgs::Float32MultiArray wp_attributes_in;
-        std_msgs::Float32MultiArray wp_normals_in;
-        path_planner.set_constraints(v_ref, N, T, x, y, pathName);
-        path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
+			std_msgs::Float32MultiArray state_refs_in;
+			std_msgs::Float32MultiArray input_refs_in;
+			std_msgs::Float32MultiArray wp_attributes_in;
+			std_msgs::Float32MultiArray wp_normals_in;
+			path_planner.set_constraints(v_ref, N, T, x, y, pathName);
+			path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
-        std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
-        std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
-        std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
-        std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
-        int N = state_refs_v.size() / 3;
-        state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
-        remove_large_yaw_jump();
-        input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
-        state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
-        normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+			std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
+			std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
+			std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
+			std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
+			int N = state_refs_v.size() / 3;
+			state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+			remove_large_yaw_jump();
+			input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+			state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+			normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
-        ROS_INFO("initialize(): Received waypoints of size %d", N);
-        tcp_client->send_waypoints_srv(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
-        set_params(tcp_client);
-        return true;
-    }
+			ROS_INFO("initialize(): Received waypoints of size %d", N);
+			tcp_client->send_waypoints_srv(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
+			set_params(tcp_client);
+			return true;
+	}
 
-    bool call_go_to_service(double x, double y, double yaw, double dest_x, double dest_y) {
-		utils::go_to srv;
-		srv.request.x0 = x;
-		srv.request.y0 = y;
-		srv.request.yaw0 = yaw;
-		srv.request.dest_x = dest_x;
-		srv.request.dest_y = dest_y;
-		// convert v_ref to string
-		int vrefInt;
-		if (!nh.getParam("/vrefInt", vrefInt)) {
-			ROS_ERROR("Failed to get param 'vrefInt'");
-			vrefInt = 25;
-		}
-		srv.request.vrefName = std::to_string(vrefInt);
-		if (go_to_client.waitForExistence(ros::Duration(5))) {
-			ROS_INFO("go_to service found");
-		} else {
-			ROS_INFO("go_to service not found after 5 seconds");
-			return false;
-		}
-		if (go_to_client.call(srv)) {
-			std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end());			 // N by 3
-			std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end());			 // N by 2
-			std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
-			std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end());			 // N by 2
+	bool call_go_to_service(double x, double y, double yaw, double dest_x, double dest_y) {
+			utils::go_to srv;
+			srv.request.x0 = x;
+			srv.request.y0 = y;
+			srv.request.yaw0 = yaw;
+			srv.request.dest_x = dest_x;
+			srv.request.dest_y = dest_y;
+			// convert v_ref to string
+			int vrefInt;
+			if (!nh.getParam("/vrefInt", vrefInt)) {
+				ROS_ERROR("Failed to get param 'vrefInt'");
+				vrefInt = 25;
+			}
+			srv.request.vrefName = std::to_string(vrefInt);
+			if (go_to_client.waitForExistence(ros::Duration(5))) {
+				ROS_INFO("go_to service found");
+			} else {
+				ROS_INFO("go_to service not found after 5 seconds");
+				return false;
+			}
+			if (go_to_client.call(srv)) {
+				std::vector<double> state_refs_v(srv.response.state_refs.data.begin(), srv.response.state_refs.data.end());			 // N by 3
+				std::vector<double> input_refs_v(srv.response.input_refs.data.begin(), srv.response.input_refs.data.end());			 // N by 2
+				std::vector<double> wp_attributes_v(srv.response.wp_attributes.data.begin(), srv.response.wp_attributes.data.end()); // N by 1
+				std::vector<double> wp_normals_v(srv.response.wp_normals.data.begin(), srv.response.wp_normals.data.end());			 // N by 2
+				int N = state_refs_v.size() / 3;
+				state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
+				remove_large_yaw_jump();
+				input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
+				state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
+				normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
+
+				ROS_INFO("initialize(): Received waypoints of size %d", N);
+				target_waypoint_index = 0;
+				last_waypoint_index = target_waypoint_index;
+				closest_waypoint_index = 0;
+				return true;
+			} else {
+				ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
+				return false;
+			}
+	}
+
+	bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>> &destinations) {
+			std_msgs::Float32MultiArray state_refs_in;
+			std_msgs::Float32MultiArray input_refs_in;
+			std_msgs::Float32MultiArray wp_attributes_in;
+			std_msgs::Float32MultiArray wp_normals_in;
+			path_planner.set_constraints(v_ref, N, T, x, y, destinations);
+			path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
+
+			std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
+			std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
+			std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
+			std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
+
 			int N = state_refs_v.size() / 3;
 			state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
 			remove_large_yaw_jump();
@@ -451,38 +428,7 @@ class PathManager {
 			last_waypoint_index = target_waypoint_index;
 			closest_waypoint_index = 0;
 			return true;
-		} else {
-			ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
-			return false;
-		}
 	}
-
-	bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>> &destinations) {
-        std_msgs::Float32MultiArray state_refs_in;
-        std_msgs::Float32MultiArray input_refs_in;
-        std_msgs::Float32MultiArray wp_attributes_in;
-        std_msgs::Float32MultiArray wp_normals_in;
-        path_planner.set_constraints(v_ref, N, T, x, y, destinations);
-        path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
-
-        std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
-        std::vector<double> input_refs_v(input_refs_in.data.begin(), input_refs_in.data.end());			 // N by 2
-        std::vector<double> wp_attributes_v(wp_attributes_in.data.begin(), wp_attributes_in.data.end()); // N by 1
-        std::vector<double> wp_normals_v(wp_normals_in.data.begin(), wp_normals_in.data.end());			 // N by 2
-
-        int N = state_refs_v.size() / 3;
-        state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
-        remove_large_yaw_jump();
-        input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
-        state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
-        normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
-
-        ROS_INFO("initialize(): Received waypoints of size %d", N);
-        target_waypoint_index = 0;
-        last_waypoint_index = target_waypoint_index;
-        closest_waypoint_index = 0;
-        return true;
-    }
 
 	void remove_large_yaw_jump() {
 		for (int i = 2; i < state_refs.rows(); i++) {
@@ -503,6 +449,7 @@ class PathManager {
 			}
 		}
 	}
+
 	static Eigen::MatrixXd smooth_yaw_angles(const Eigen::MatrixXd &state_refs) {
 		int N = state_refs.rows();
 		if (N == 0)
@@ -525,18 +472,17 @@ class PathManager {
 			}
 		}
 
-		// Compute the smoothed yaw angles
 		Eigen::VectorXd smooth_yaw(N);
 		smooth_yaw(0) = yaw_angles(0);
 		for (int i = 1; i < N; ++i) {
 			smooth_yaw(i) = smooth_yaw(i - 1) + diffs(i - 1);
 		}
 
-		// Update the yaw column in the result matrix
 		smoothed_refs.col(2) = smooth_yaw;
 
 		return smoothed_refs;
 	}
+
 	bool set_params(const std::shared_ptr<TcpClient> &tcp_client) {
 		std::vector<double> state_refs_v(state_refs.data(), state_refs.data() + state_refs.size());
 		nh.setParam("/state_refs", state_refs_v);
@@ -574,61 +520,7 @@ class PathManager {
 			ROS_ERROR("Failed to call the notification service.");
 		}
 
-		/* if (trigger_client.call(trigger_srv)) { */
-		/*     if (trigger_srv.response.success) { */
-		/*         ROS_INFO("Python node notified successfully."); */
-		/*     } else { */
-		/*         ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str()); */
-		/*     } */
-		/* } else { */
-		/*     ROS_ERROR("Failed to call the notification service."); */
-		/* } */
 		return true;
-	}
-	template <typename EigenType> static void saveToFile(const EigenType &data, const std::string &filename) {
-		std::string dir = helper::getSourceDirectory();
-		std::string file_path = dir + "/" + filename;
-		std::ofstream file(file_path);
-		if (file.is_open()) {
-			file << data << "\n";
-		} else {
-			std::cerr << "Unable to open file: " << filename << std::endl;
-		}
-		file.close();
-		std::cout << "Saved to " << file_path << std::endl;
-	}
-	static Eigen::MatrixXd loadTxt(const std::string &filename) {
-		std::ifstream file(filename);
-		if (!file.is_open()) {
-			throw std::runtime_error("Unable to open file: " + filename);
-		}
-
-		std::string line;
-		std::vector<double> matrixEntries;
-		int numRows = 0;
-		int numCols = -1;
-
-		while (std::getline(file, line)) {
-			std::istringstream iss(line);
-			double num;
-			std::vector<double> lineEntries;
-
-			while (iss >> num) {
-				lineEntries.push_back(num);
-			}
-
-			if (numCols == -1) {
-				numCols = lineEntries.size();
-			} else if (lineEntries.size() != numCols) {
-				throw std::runtime_error("Inconsistent number of columns");
-			}
-
-			matrixEntries.insert(matrixEntries.end(), lineEntries.begin(), lineEntries.end());
-			numRows++;
-		}
-
-		// Use Eigen::Map with row-major layout
-		return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(matrixEntries.data(), numRows, numCols);
 	}
 };
 #endif // PathManager_HPP

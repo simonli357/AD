@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
+#include <Eigen/Dense>
 
 namespace helper {
     inline std::string getSourceDirectory() {
@@ -82,5 +83,50 @@ namespace helper {
         }
         return closest_index;
     }
+
+    template <typename EigenType> inline void saveToFile(const EigenType &data, const std::string &filename) {
+		std::string dir = helper::getSourceDirectory();
+		std::string file_path = dir + "/" + filename;
+		std::ofstream file(file_path);
+		if (file.is_open()) {
+			file << data << "\n";
+		} else {
+			std::cerr << "Unable to open file: " << filename << std::endl;
+		}
+		file.close();
+		std::cout << "Saved to " << file_path << std::endl;
+	}
+	inline Eigen::MatrixXd loadTxt(const std::string &filename) {
+		std::ifstream file(filename);
+		if (!file.is_open()) {
+			throw std::runtime_error("Unable to open file: " + filename);
+		}
+
+		std::string line;
+		std::vector<double> matrixEntries;
+		int numRows = 0;
+		int numCols = -1;
+
+		while (std::getline(file, line)) {
+			std::istringstream iss(line);
+			double num;
+			std::vector<double> lineEntries;
+
+			while (iss >> num) {
+				lineEntries.push_back(num);
+			}
+
+			if (numCols == -1) {
+				numCols = lineEntries.size();
+			} else if (lineEntries.size() != numCols) {
+				throw std::runtime_error("Inconsistent number of columns");
+			}
+
+			matrixEntries.insert(matrixEntries.end(), lineEntries.begin(), lineEntries.end());
+			numRows++;
+		}
+
+		return Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(matrixEntries.data(), numRows, numCols);
+	}
 }
 
