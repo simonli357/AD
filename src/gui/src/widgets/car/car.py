@@ -129,8 +129,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         }
 
         self._cam_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
-        self.MIN_SLERP = 0.05
-        self.MAX_SLERP = 0.5
+        self.MIN_SLERP = 0.04
+        self.MAX_SLERP = 0.08
         self.MAX_ANGLE = np.radians(20.5)
         self.DEAD_ZONE = np.radians(3.0)
 
@@ -163,7 +163,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         forward_vec = self._cam_quat * glm.vec3(1, 0, 0)
 
         cam_pos = glm.vec3(x, y, self.cam_height) - forward_vec * self.cam_dist
-        target_pos = glm.vec3(x, y, 0.0)
+        target_pos = glm.vec3(x, y, 0.0) + glm.vec3(self.forward_offset, 0, 0)
         self.view_mat = glm.lookAt(cam_pos, target_pos, glm.vec3(0, 0, 1))
 
         self.shader_renderer.draw_texture(
