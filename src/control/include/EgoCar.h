@@ -263,14 +263,12 @@ inline void odometry() {
 }
 
 inline int recalibrate_states(double x_offset, double y_offset) {
-    if(Tunable::ekf) {
-        if (hasGps) {
-            x0 += x_offset;
-            y0 += y_offset;
-        } else {
-            x0 += x_offset;
-            y0 += y_offset;
-        }
+    if(bkf) {
+        double x = bkf->getX();
+        double y = bkf->getY();
+        double new_x = x + x_offset;
+        double new_y = y + y_offset;
+        bkf->updatePosition(new_x, new_y, 0.001, 0.001);
     } else {
         x0 += x_offset;
         y0 += y_offset;
