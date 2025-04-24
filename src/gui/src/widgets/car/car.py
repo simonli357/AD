@@ -100,7 +100,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             self.fov,
             aspect,
             0.1,
-            2000.0
+            1000.0
         )
 
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAR)
