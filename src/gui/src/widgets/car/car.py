@@ -182,9 +182,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.visited_destinations_renderer.add_or_update_instance((x, y), x, y, 0, (5.0, 5.0, 5.0), z=-0.5)
         self.visited_destinations_renderer.set_ids(self.visited)
 
+    def clear_road_objects(self):
+        for id_set in self.road_objects_ids.values():
+            id_set.clear()
+
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
+
+        self.clear_road_objects()
 
         for i in range(len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
