@@ -480,7 +480,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
 
-                if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
+                if (helper::get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 

@@ -602,7 +602,7 @@ public:
         x = EgoCar::get_x();
         y = EgoCar::get_y();
         yaw = EgoCar::get_yaw();
-        utils.recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
+        EgoCar::recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
         EgoCar::update_states(x_current);
         utils.debug("SIGN_RELOC2("+object->name+"): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
         // stop_for(3.0);
@@ -612,7 +612,7 @@ public:
         int min_index = 0;
         double min_error_sq = 1000.0;
         if (thresh < 0) thresh = sign_localization_threshold;
-        if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
+        if (helper::get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
             double yaw = EgoCar::get_yaw();
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = helper::compare_yaw(sign_direction, yaw);
@@ -623,7 +623,7 @@ public:
             double x,y;
             x = EgoCar::get_x();
             y = EgoCar::get_y();
-            utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
+            EgoCar::recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
             EgoCar::update_states(x_current);
             utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI), 2);
             stop_for(3.0);
@@ -675,7 +675,7 @@ public:
         // exit(0);
         if (min_error_sq < intersection_localization_threshold * intersection_localization_threshold) {
             utils.debug("intersection based relocalization(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
-            utils.recalibrate_states(direction_intersections[min_index][0] - estimated_position[0], direction_intersections[min_index][1] - estimated_position[1]);
+            EgoCar::recalibrate_states(direction_intersections[min_index][0] - estimated_position[0], direction_intersections[min_index][1] - estimated_position[1]);
             return 1; // Successful relocalization
         } else {
             utils.debug("intersection based relocalization(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
@@ -741,7 +741,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
-                utils.recalibrate_states(0, min_error);
+                EgoCar::recalibrate_states(0, min_error);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running y: " + helper::d2str(x_current[1]) + ", estimated running y: " + helper::d2str(LANE_CENTERS[min_index] - offset), 2);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
                 return 1;
@@ -761,7 +761,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
-                utils.recalibrate_states(min_error, 0);
+                EgoCar::recalibrate_states(min_error, 0);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running x: " + helper::d2str(x_current[0]) + ", estimated running x: " + helper::d2str(LANE_CENTERS[min_index] + offset), 2);
                 return 1;
@@ -963,7 +963,7 @@ public:
         }
         // double static_distance = CAR_LENGTH * 2 + MIN_DIST_TO_CAR * 2;
         double static_distance = CAR_LENGTH + MIN_DIST_TO_CAR * 2;
-        double ego_speed = utils.velocity_command;
+        double ego_speed = 0.32;
         car_speed = 0;
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;
@@ -1193,7 +1193,7 @@ public:
     
     bool set_states_callback(utils::set_states::Request &req, utils::set_states::Response &res) {
         if (req.x >= 0 && req.y >= 0) {
-            utils.set_states(req.x, req.y);
+            EgoCar::set_states(req.x, req.y);
         } else {
             utils.reset_yaw();
         }
@@ -1638,10 +1638,10 @@ void signalHandler(int signum) {
         globalStateMachinePtr->utils.stop_car();
         globalStateMachinePtr->call_trigger_service();
     }
-    if (globalStateMachinePtr->utils.serial && globalStateMachinePtr->utils.serial->is_open()) {
-        globalStateMachinePtr->utils.serial->close();
+    if (EgoCar::serial_port && EgoCar::serial_port->is_open()) {
+        EgoCar::serial_port->close();
     }
-    globalStateMachinePtr->utils.serial.reset();
+    EgoCar::serial_port.reset();
     ros::shutdown();
     exit(signum);
 }

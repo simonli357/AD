@@ -275,6 +275,20 @@ inline int recalibrate_states(double x_offset, double y_offset) {
     }
     return 1;
 }
+inline int set_states(double x, double y) {
+    if (!bkf) {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        x0 = x;
+        y0 = y;
+        odomX = 0;
+        odomY = 0;
+        return 0;
+    } else {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        bkf->updatePosition(x, y, 0.001, 0.001);
+        return 1;
+    }
+}
 
 inline void read_sensors() {
     if (!Tunable::real) {
