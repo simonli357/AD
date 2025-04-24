@@ -26,9 +26,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 40.0
-        self.cam_height = self.cam_dist / 1.15
-        self.forward_offset = 8
+        self.cam_dist = 45.0
+        self.cam_height = self.cam_dist / 1.25
+        self.forward_offset = 5.0
+        self.fov = 45.0
 
         self.visited = set()
 
@@ -96,7 +97,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         aspect = self.width() / self.height() if self.height() != 0 else 1.0
         self.proj_mat = glm.perspective(
-            glm.radians(45.0),
+            self.fov,
             aspect,
             0.1,
             2000.0
