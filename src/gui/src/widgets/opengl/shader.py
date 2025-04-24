@@ -262,7 +262,7 @@ class ShaderRenderer:
 
         gl.glEnable(gl.GL_CULL_FACE)
         gl.glCullFace(gl.GL_BACK)
-        gl.glFrontFace(gl.GL_CCW)
+        gl.glFrontFace(gl.GL_CW)
 
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
