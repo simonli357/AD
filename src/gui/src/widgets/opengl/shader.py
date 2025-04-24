@@ -260,10 +260,6 @@ class ShaderRenderer:
         shader_program = car_model.shader_program
         gl.glUseProgram(shader_program)
 
-        gl.glEnable(gl.GL_CULL_FACE)
-        gl.glCullFace(gl.GL_BACK)
-        gl.glFrontFace(gl.GL_CW)
-
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
@@ -284,7 +280,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
-        gl.glDisable(gl.GL_CULL_FACE)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 
@@ -345,6 +340,9 @@ class ShaderRenderer:
 
         gl.glUseProgram(self.texture_shader)
 
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         # Set matrices
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, z))
@@ -363,10 +361,14 @@ class ShaderRenderer:
         gl.glBindVertexArray(mat.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+        gl.glDisable(gl.GL_BLEND)
         gl.glUseProgram(0)
 
     def draw_texture2D(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture2D_shader)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
         # Set matrices
         model = glm.mat4(1.0)
@@ -386,6 +388,7 @@ class ShaderRenderer:
         gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
         gl.glBindVertexArray(0)
+        gl.glDisable(gl.GL_BLEND)
         gl.glUseProgram(0)
 
     def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
@@ -463,6 +466,9 @@ class ShaderRenderer:
 
         gl.glUseProgram(self.ripple_model.shader_program)
 
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         # Set uniforms
         gl.glUniformMatrix4fv(self.ripple_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
         gl.glUniformMatrix4fv(self.ripple_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
@@ -487,6 +493,8 @@ class ShaderRenderer:
         gl.glBindVertexArray(self.crosshair_model.vao)
         for i in range(4):
             gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, i * 4, 4)
+
+        gl.glDisable(gl.GL_BLEND)
         gl.glBindVertexArray(0)
         gl.glUseProgram(0)
 

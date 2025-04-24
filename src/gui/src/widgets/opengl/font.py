@@ -104,6 +104,10 @@ class TextRenderer:
         y = y - text_height / 2.0
 
         gl.glUseProgram(self.text_shader)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         gl.glUniformMatrix4fv(self.loc_proj, 1, gl.GL_FALSE, glm.value_ptr(projection))
         gl.glUniform3f(self.loc_textColor, color[0], color[1], color[2])
         # Ensure that texture unit 0 is used.
@@ -159,4 +163,5 @@ class TextRenderer:
 
         gl.glBindVertexArray(0)
         gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glDisable(gl.GL_BLEND)
         gl.glUseProgram(0)

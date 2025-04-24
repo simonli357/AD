@@ -118,9 +118,15 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.view_mat = glm.inverse(self.extrinsic)
 
     def initializeGL(self):
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glClearColor(0, 0, 0, 0)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.CAM)
         self.box_renderer = self.shader_renderer.detection_box_model
@@ -134,7 +140,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         if self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:
             return
 
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         self.draw_detection_boxes()
         self.draw_lane_indicator()

@@ -267,6 +267,10 @@ class Speedometer():
 
         # Draw the gauge arc quad.
         gl.glUseProgram(self.gauge_shader_program)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         loc_proj = gl.glGetUniformLocation(self.gauge_shader_program, "uProjection")
         gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
 
@@ -298,6 +302,8 @@ class Speedometer():
             steer = -120 * abs(current_steer) / max_steer
         init_angle = 180
         self.draw_compass_needle(proj_mat, init_angle + steer)
+
+        gl.glDisable(gl.GL_BLEND)
 
     def draw_ticks(self, proj_mat):
         """Draw ticks using the precomputed tick buffers and text labels."""

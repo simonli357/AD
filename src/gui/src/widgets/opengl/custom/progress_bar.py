@@ -84,6 +84,10 @@ class ProgressBar:
         proj = glm.value_ptr(proj_mat)
 
         gl.glUseProgram(self.shader_program)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         gl.glBindVertexArray(self.vao)
 
         # set projection
@@ -130,3 +134,5 @@ class ProgressBar:
             (1.0, 1.0, 1.0, 1.0),      # white color RGBA
             proj_mat
         )
+
+        gl.glDisable(gl.GL_BLEND)

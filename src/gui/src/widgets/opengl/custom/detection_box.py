@@ -42,6 +42,8 @@ class DetectionBox:
 
     def draw(self, x1, y1, x2, y2, label_text, line_width, color, proj_mat):
         gl.glUseProgram(self.shader_program)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
         gl.glBindVertexArray(self.vao)
 
         # — set projection once —
@@ -67,6 +69,10 @@ class DetectionBox:
         gl.glUniform4f(self.u_rect_loc, bg_x, bg_y, bw, bh)
         gl.glUniform4f(self.u_color_loc, *color, 0.5)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, 4)
+
+        gl.glDisable(gl.GL_BLEND)
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
 
         # center your text in that quad:
         text_x = bg_x + bw * 0.5
