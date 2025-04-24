@@ -32,6 +32,24 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.visited = set()
 
+        self.road_objects_ids = {
+            'Car': set(),
+            'Oneway': set(),
+            'Stopsign': set(),
+            'Highway Entrance': set(),
+            'Highway Exit': set(),
+            'Roundabout': set(),
+            'Parking': set(),
+            'Crosswalk': set(),
+            'No Entry': set(),
+            'Priority': set(),
+            'Light': set(),
+            'Green Light': set(),
+            'Yellow Light': set(),
+            'Red Light': set(),
+            'Pedestrian': set(),
+        }
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -167,23 +185,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
-        ids = {
-            'Car': set(),
-            'Oneway': set(),
-            'Stopsign': set(),
-            'Highway Entrance': set(),
-            'Highway Exit': set(),
-            'Roundabout': set(),
-            'Parking': set(),
-            'Crosswalk': set(),
-            'No Entry': set(),
-            'Priority': set(),
-            'Light': set(),
-            'Green Light': set(),
-            'Yellow Light': set(),
-            'Red Light': set(),
-            'Pedestrian': set(),
-        }
+
         for i in range(len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
             x_real = detected_data[i, road_msg_dict['x']]
@@ -199,15 +201,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 continue
             elif object_dict[obj_type] == 'Car':
                 self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.8, 0.8, 0.8))
-                ids['Car'].add(id)
+                self.road_objects_ids['Car'].add(id)
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
-                ids[object_dict[obj_type]].add(id)
-        self.draw_road_objects(ids)
+                self.road_objects_ids[object_dict[obj_type]].add(id)
+        self.draw_road_objects()
 
-    def draw_road_objects(self, ids):
+    def draw_road_objects(self):
         for renderer in self.renderers.values():
-            renderer.set_ids(ids[renderer.obj_type])
+            renderer.set_ids(self.road_objects_ids[renderer.obj_type])
             renderer.draw(self.proj_mat, self.view_mat)
 
     def clear_road_objects(self):
