@@ -297,7 +297,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 1.5, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
@@ -428,10 +428,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]

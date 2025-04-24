@@ -138,7 +138,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x=x,
             y=y,
             yaw=np.radians(self.yaw),
-            scale=0.32,
+            scale=0.8,
             color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
@@ -194,7 +194,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.32, 0.32, 0.32))
+                self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.8, 0.8, 0.8))
                 ids['Car'].add(id)
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), True)
