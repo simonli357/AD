@@ -153,8 +153,10 @@ public:
             if(!utils.reinitialize_states()) ROS_WARN("Failed to reinitialize");
         }
         double x, y, yaw;
-        utils.get_states(x, y, yaw);
-        utils.update_states(x_current);
+        x = EgoCar::get_x();
+        y = EgoCar::get_y();
+        yaw = EgoCar::get_yaw();
+        EgoCar::update_states(x_current);
         utils.debug("start(): x=" + helper::d2str(x) + ", y=" + helper::d2str(y) + ", yaw=" + helper::d2str(yaw), 2);
         PathManager::call_waypoint_service(x, y, yaw, utils.tcp_client);
         destination = PathManager::state_refs.row(PathManager::state_refs.rows()-1).head(2);
@@ -209,7 +211,7 @@ public:
     void stop_for(double duration) {
         ros::Time timer = ros::Time::now() + ros::Duration(duration);
         while (ros::Time::now() < timer) {
-            utils.publish_cmd_vel(0.0, 0.0);
+            EgoCar::send_speed_and_steer(0.0, 0.0);
             rate->sleep();
         }
         // TODO: reset path manager idx
@@ -256,8 +258,9 @@ public:
         thresholds: thresholds for each target        
         */
         double x0, y0, yaw0;
-        // get current states
-        utils.get_states(x0, y0, yaw0);
+        x0 = EgoCar::get_x();
+        y0 = EgoCar::get_y();
+        yaw0 = EgoCar::get_yaw();
         // get closest direction
         yaw0 = helper::nearest_direction(yaw0);
         yaw0 = helper::yaw_mod(yaw0);
@@ -272,11 +275,11 @@ public:
         
         double steering_angle = steerings(stage-1);
         double speed = speeds(stage-1);
-        double yaw = utils.get_yaw();
+        double yaw = EgoCar::get_yaw();
         double yaw_error = yaw - target_yaws(stage-1);
         double yaw_error_sign = yaw_error > 0 ? 1 : -1;
         while(1) {
-            yaw = utils.get_yaw();
+            yaw = EgoCar::get_yaw();
             yaw = helper::yaw_mod(yaw);
             yaw_error = yaw - target_yaws(stage-1);
             utils.debug("maneuver_hardcode(): stage " + helper::d2str(stage) + ", yaw: " + helper::d2str(yaw) + ", target yaw: " + helper::d2str(target_yaws(stage-1)) + ", yaw error: " + helper::d2str(yaw_error), 5);
@@ -290,7 +293,9 @@ public:
             bool exit_cond;
             if (std::abs(steering_angle) < 0.1) {
                 double x, y, yaw;
-                utils.get_states(x, y, yaw);
+                x = EgoCar::get_x();
+                y = EgoCar::get_y();
+                yaw = EgoCar::get_yaw();
                 double dist_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
                 exit_cond = std::abs(dist_sq - targets(stage-1) * targets(stage-1)) < thresholds(stage-1) * thresholds(stage-1);
                 orientation_follow(yaw0, speed);
@@ -301,7 +306,7 @@ public:
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
                 utils.debug("maneuver_hardcode(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
-                utils.publish_cmd_vel(steering_angle, speed);
+                EgoCar::send_speed_and_steer(speed, steering_angle);
             }
             if (exit_cond) {
                 utils.debug("stage " + helper::d2str(stage) + " completed. yaw error: " + helper::d2str(yaw_error), 3);
@@ -594,9 +599,11 @@ public:
             return false;
         }
         double x,y,yaw;
-        utils.get_states(x, y, yaw);
+        x = EgoCar::get_x();
+        y = EgoCar::get_y();
+        yaw = EgoCar::get_yaw();
         utils.recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
-        utils.update_states(x_current);
+        EgoCar::update_states(x_current);
         utils.debug("SIGN_RELOC2("+object->name+"): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
         // stop_for(3.0);
         return true;
@@ -606,7 +613,7 @@ public:
         double min_error_sq = 1000.0;
         if (thresh < 0) thresh = sign_localization_threshold;
         if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
-            double yaw = utils.get_yaw();
+            double yaw = EgoCar::get_yaw();
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = helper::compare_yaw(sign_direction, yaw);
             if(yaw_error > sign_localization_orientation_threshold * M_PI / 180) {
@@ -614,9 +621,10 @@ public:
                 return 0;
             }
             double x,y;
-            utils.get_states(x, y, yaw);
+            x = EgoCar::get_x();
+            y = EgoCar::get_y();
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
-            utils.update_states(x_current);
+            EgoCar::update_states(x_current);
             utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI), 2);
             stop_for(3.0);
             PathManager::reset_target_waypoint_index(x_current);
@@ -630,7 +638,7 @@ public:
     int intersection_based_relocalization() {
         // stop_for(0.5);
         // check orientation
-        double yaw = utils.get_yaw();
+        double yaw = EgoCar::get_yaw();
         double nearest_direction = helper::nearest_direction(yaw);
         double yaw_error = nearest_direction - yaw;
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
@@ -647,7 +655,10 @@ public:
                                                                         SOUTH_FACING_INTERSECTIONS;
         
         static Eigen::Vector2d estimated_position(0, 0);
-        utils.get_states(estimated_position(0), estimated_position(1), yaw);
+        // utils.get_states(estimated_position(0), estimated_position(1), yaw);
+        estimated_position[0] = EgoCar::get_x();
+        estimated_position[1] = EgoCar::get_y();
+        yaw = EgoCar::get_yaw();
         estimated_position[0] += constant_distance_to_intersection_at_detection * cos(yaw);
         estimated_position[1] += constant_distance_to_intersection_at_detection * sin(yaw);
 
@@ -693,18 +704,18 @@ public:
             return 0;
         }
         int num_waypoints = static_cast<int>((lookahead + lookbehind) * PathManager::density);
-        double nearest_direction = helper::nearest_direction(utils.get_yaw());
+        double nearest_direction = helper::nearest_direction(EgoCar::get_yaw());
         if (!PathManager::is_straight_line(start_idx, num_waypoints, nearest_direction, 0.1)) {
             // utils.debug("LANE_RELOC(): FAILURE: not a straight line"+ helper::d2str(count), 4);
             return 0;
         }
-        utils.update_states(x_current);
+        EgoCar::update_states(x_current);
         double center = utils.center + pixel_center_offset;
         if (center < 180 || center > 460) {
             // utils.debug("LANE_RELOC(): FAILURE: center out of bounds: " + helper::d2str(center), 4);
             return 0;
         }
-        double yaw = utils.get_yaw();
+        double yaw = EgoCar::get_yaw();
         double yaw_error = nearest_direction - yaw;
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -763,7 +774,7 @@ public:
     }
     void wait_for_green() {
         if (has_light) {
-            int neareastDirection = helper::nearest_direction_index(utils.get_yaw());
+            int neareastDirection = helper::nearest_direction_index(EgoCar::get_yaw());
             static std::string light_topic_name;
             if (neareastDirection == 0) light_topic_name = "/east_traffic_light";
             else if (neareastDirection == 1) light_topic_name = "/north_traffic_light";
@@ -772,7 +783,7 @@ public:
             auto is_green = ros::topic::waitForMessage<std_msgs::Byte>(light_topic_name, ros::Duration(3));
             while (is_green->data != 1) {
                 is_green = ros::topic::waitForMessage<std_msgs::Byte>(light_topic_name, ros::Duration(3));
-                utils.publish_cmd_vel(0, 0);
+                EgoCar::send_speed_and_steer(0, 0);
                 rate->sleep();
             }
             utils.debug("WAIT_FOR_GREEN(): light turned green, proceeding...", 2);
@@ -820,11 +831,11 @@ public:
         if(pubWaypoints) {
             publish_waypoints();
         }
-        double yaw_error = orientation - utils.get_yaw();
+        double yaw_error = orientation - EgoCar::get_yaw();
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         double steer = - yaw_error * 180 / M_PI * 1;
-        utils.publish_cmd_vel(steer, speed);
+        EgoCar::send_speed_and_steer(speed, steer);
     }
 
     void check_car() {
@@ -998,7 +1009,7 @@ public:
         // utils.debug("CHECK_CAR(): number of cars detected: " + helper::d2str(cars.size()), 5);
         int car_index = utils.object_index(OBJECT::CAR);
         if(car_index >= 0) { // if car detected
-            utils.update_states(x_current);
+            EgoCar::update_states(x_current);
             update_mpc_states(x_current[0], x_current[1], x_current[2]);
             utils.debug("CHECK_CAR(): current state: " + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]), 4);
             int closest_idx = PathManager::find_closest_waypoint(x_current);
@@ -1008,7 +1019,9 @@ public:
             if (dist < MAX_CAR_DIST && dist > 0 && closest_idx >= PathManager::overtake_end_index + safety_dist * PathManager::density) { // if car is within range and ahead of ego car
                 utils.object_box(car_index, bbox);
                 double x, y, yaw;
-                utils.get_states(x, y, yaw);
+                x = EgoCar::get_x();
+                y = EgoCar::get_y();
+                yaw = EgoCar::get_yaw();
                 auto car_pose = utils.estimate_object_pose2d(x, y, yaw, bbox, dist, true);
                 double look_ahead_dist = dist * 1.5;
                 int look_ahead_index = look_ahead_dist * PathManager::density + closest_idx;
@@ -1119,7 +1132,7 @@ public:
     }
     
     bool goto_command_callback(utils::goto_command::Request &req, utils::goto_command::Response &res) {
-        utils.update_states(x_current);
+        EgoCar::update_states(x_current);
         if (!PathManager::call_go_to_service(x_current[0], x_current[1], x_current[2], req.dest_x, req.dest_y)) {
             res.success = false;
             return false;
@@ -1149,7 +1162,7 @@ public:
     }
 
     bool goto_multiple_command_callback(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
-        utils.update_states(x_current);
+        EgoCar::update_states(x_current);
         if (!PathManager::call_go_to_multiple_service(x_current[0], x_current[1], x_current[2], coords)) {
             res.success = false;
             return false;
@@ -1190,7 +1203,7 @@ public:
 };
 
 void StateMachine::update_mpc_states() {
-    utils.update_states(x_current);
+    EgoCar::update_states(x_current);
     double yaw = x_current(2);
     if(PathManager::closest_waypoint_index < PathManager::state_refs.rows() && PathManager::state_refs.rows() > 0) {
         double ref_yaw = PathManager::state_refs(PathManager::closest_waypoint_index, 2);
@@ -1244,7 +1257,7 @@ void StateMachine::publish_commands() {
     
     // std::cout << "speed: " << speed*100 << ", steer:" << steer << std::endl;
 
-    utils.publish_cmd_vel(steer, speed);
+    EgoCar::send_speed_and_steer(speed, steer);
 }
 void StateMachine::change_state(STATE new_state) {
     // std::cout << "Changing from " << state_names[state] << " to " << state_names[new_state] << std::endl;
@@ -1257,7 +1270,7 @@ void StateMachine::run() {
     static bool wrong_lane = false;
     std::cout << "State Machine running..." << std::endl;
     while (ros::ok()) {
-        utils.update_states(x_current);
+        EgoCar::update_states(x_current);
         if (Tunable::sign) {
             pedestrian_detected();
             check_emergency_stop();
@@ -1335,10 +1348,12 @@ void StateMachine::run() {
             int target_spot = 0;
             auto temp_rate = ros::Rate(50);
             if (true) {
-                double orientation = helper::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(EgoCar::get_yaw());
                 ROS_INFO("orientation: %.3f", orientation);
                 double x0, y0, yaw0;
-                utils.get_states(x0, y0, yaw0);
+                x0 = EgoCar::get_x();
+                y0 = EgoCar::get_y();
+                yaw0 = EgoCar::get_yaw();
                 int park_index = utils.object_index(OBJECT::PARK);
                 if(park_index >= 0) {
                     double dist = utils.object_distance(park_index);
@@ -1379,7 +1394,9 @@ void StateMachine::run() {
                         ROS_INFO("car in spot, changing to target spot %d at (%.3f, %.3f), right: %s", target_spot, PARKING_SPOTS[target_spot][0], PARKING_SPOTS[target_spot][1], right_park ? "true" : "false");
                     }
                     double x, y, yaw;
-                    utils.get_states(x, y, yaw);
+                    x = EgoCar::get_x();
+                    y = EgoCar::get_y();
+                    yaw = EgoCar::get_yaw();
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
                     if (norm_sq >= offset * offset)
                     {
@@ -1401,9 +1418,11 @@ void StateMachine::run() {
             stop_for(stop_duration/2);
             if (hard_code) {
                 // right_park = true; //temp
-                double orientation = helper::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(EgoCar::get_yaw());
                 double x, y, yaw;
-                utils.get_states(x, y, yaw);
+                x = EgoCar::get_x();
+                y = EgoCar::get_y();
+                yaw = EgoCar::get_yaw();
                 double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
                 double initial_yaw_error = orientation - yaw;
                 initial_yaw_error = helper::yaw_mod(initial_yaw_error); // normalize to [-pi, pi]
@@ -1413,23 +1432,29 @@ void StateMachine::run() {
                 parking_maneuver_hardcode(right_park, false, 1/T_park, initial_y_error, initial_yaw_error);
             }
             double x, y, yaw;
-            utils.get_states(x, y, yaw);
+            x = EgoCar::get_x();
+            y = EgoCar::get_y();
+            yaw = EgoCar::get_yaw();
             double x_error = x - PARKING_SPOTS[target_spot][0];
             if (std::abs(x_error) > 0.15) {
-                double orientation = helper::nearest_direction(utils.get_yaw());
+                double orientation = helper::nearest_direction(EgoCar::get_yaw());
                 ROS_INFO("parked but x offset too large: %.3f, adjusting... orientation: %.3f", x_error, orientation);
                 double x0, y0, yaw0;
-                utils.get_states(x0, y0, yaw0);
+                x0 = EgoCar::get_x();
+                y0 = EgoCar::get_y();
+                yaw0 = EgoCar::get_yaw();
                 while(1) {
                     x_error = x - PARKING_SPOTS[target_spot][0];
                     pedestrian_detected();
                     check_emergency_stop();
-                    utils.get_states(x, y, yaw);
+                    x = EgoCar::get_x();
+                    y = EgoCar::get_y();
+                    yaw = EgoCar::get_yaw();
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);
                     if (x_error > 0 && x_error < 0.05 || x_error < 0 && x_error > -0.05)
                     {
                         ROS_INFO("parking spot reached, stopping...");
-                        utils.publish_cmd_vel(0.0, 0.0);
+                        EgoCar::send_speed_and_steer(0.0, 0.0);
                         break;
                     }
                     double speed = NORMAL_SPEED;
@@ -1450,7 +1475,7 @@ void StateMachine::run() {
                 // right_park = true;
                 parking_maneuver_hardcode(right_park, true, 1/T_park);
             }
-            utils.update_states(x_current);
+            EgoCar::update_states(x_current);
             PathManager::target_waypoint_index = PathManager::find_closest_waypoint(x_current);
             std::cout << "exiting_park(): target waypoint index: " << PathManager::target_waypoint_index << ", at (" << PathManager::state_refs(PathManager::target_waypoint_index, 0) << ", " << PathManager::state_refs(PathManager::target_waypoint_index, 1) << ")" << std::endl;
             std::cout << "exiting_park(): closest waypoint index: " << PathManager::closest_waypoint_index << ", at (" << PathManager::state_refs(PathManager::closest_waypoint_index, 0) << ", " << PathManager::state_refs(PathManager::closest_waypoint_index, 1) << ")" << std::endl;
@@ -1461,7 +1486,7 @@ void StateMachine::run() {
         } else if (state == STATE::INIT) {
             // initialize();
             if (dashboard) {
-                // utils.publish_cmd_vel(0, 0);
+                // EgoCar::send_speed_and_steer(0, 0);
                 rate->sleep();
             } else {
                 initialize();
@@ -1548,7 +1573,7 @@ void StateMachine::run() {
                 printw("Velocity: %f\n", velocity);
                 printw("Steering angle: %f\n", steering_angle);
                 printw("Press 'q' to quit.");
-                utils.publish_cmd_vel(steering_angle, velocity);
+                EgoCar::send_speed_and_steer(velocity, steering_angle);
 
             }
 
@@ -1633,19 +1658,19 @@ int main(int argc, char **argv) {
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
 
-    // EgoCar::initialize(nh);
-    // EgoCar::start_sensors_thread();
-    // ros::Rate wait_rate(10);
-    // while (ros::ok() && (!EgoCar::first_imu_received || !EgoCar::first_speed_received)) {
-    //     ROS_INFO_THROTTLE(1.0, "Waiting for IMU and speed data...");
-    //     wait_rate.sleep();
-    // }
-    // ROS_INFO("EgoCar is fully initialized.");
-    // auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
-    // double x0 = gps_msg->pose.pose.position.x;
-    // double y0 = gps_msg->pose.pose.position.y;
-    // EgoCar::initialize_ekf(x0, y0);
-    // EgoCar::start_ekf_thread();
+    EgoCar::initialize(nh);
+    EgoCar::start_sensors_thread();
+    ros::Rate wait_rate(10);
+    while (ros::ok() && (!EgoCar::first_imu_received || !EgoCar::first_speed_received)) {
+        ROS_INFO_THROTTLE(1.0, "Waiting for IMU and speed data...");
+        wait_rate.sleep();
+    }
+    ROS_INFO("EgoCar is fully initialized.");
+    auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
+    double x0 = gps_msg->pose.pose.position.x;
+    double y0 = gps_msg->pose.pose.position.y;
+    EgoCar::initialize_bkf(x0, y0);
+    EgoCar::start_bkf_thread();
 
     StateMachine sm(nh);
 

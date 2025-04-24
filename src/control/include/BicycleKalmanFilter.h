@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <iostream>
+#include <mutex>
 
 class BicycleKalmanFilter {
 public:
@@ -17,8 +18,8 @@ public:
 
         // process noise Q (for [x, y, yaw])
         Q_.setZero();
-        Q_(0,0) = std::pow(0.0005, 2); // standard deviation of 0.01 m
-        Q_(1,1) = std::pow(0.0005, 2); // standard deviation of 0.01 m
+        Q_(0,0) = std::pow(0.0005, 2); // standard deviation
+        Q_(1,1) = std::pow(0.0005, 2); // standard deviation
         Q_(2,2) = std::pow(1 * M_PI/180.0, 2); // 5.73 degrees
 
         // constant matrices
@@ -37,6 +38,7 @@ public:
     // initialize state and covariance by providing standard deviations
     void init(double x0, double y0, double yaw0,
               double std_x, double std_y, double std_yaw) {
+        std::lock_guard<std::mutex> lock(mutex_);
         x_ << x0, y0, normalizeAngle(yaw0);
         P_.setZero();
         P_(0,0) = std_x * std_x;
@@ -46,6 +48,7 @@ public:
 
     // Predict state using control inputs: steering_angle and speed
     inline void predict(double steering_angle, double speed, double dt) {
+        std::lock_guard<std::mutex> lock(mutex_);
         if (dt <= 0) return;
 
         // slip angle beta
@@ -102,6 +105,7 @@ public:
     // Position update (x, y)
     inline void updatePosition(double meas_x, double meas_y,
                                double std_dev_x, double std_dev_y) {
+        std::lock_guard<std::mutex> lock(mutex_);
         Eigen::Vector2d z;
         z << meas_x, meas_y;
         R_pos_(0,0) = std_dev_x * std_dev_x;
@@ -111,6 +115,7 @@ public:
 
     // Yaw update
     inline void updateYaw(double meas_yaw, double std_dev) {
+        std::lock_guard<std::mutex> lock(mutex_);
         while (x_(2) - meas_yaw > M_PI)  meas_yaw += 2.0 * M_PI;
         while (x_(2) - meas_yaw < -M_PI) meas_yaw -= 2.0 * M_PI;
         Eigen::VectorXd z(1);
@@ -120,13 +125,29 @@ public:
     }
 
     // getters
-    inline double getX() const   { return x_(0); }
-    inline double getY() const   { return x_(1); }
-    inline double getYaw() const { return normalizeAngle(x_(2)); }
-    inline const Eigen::Vector3d& getState() const { return x_; }
-    inline const Eigen::Matrix3d& getCovariance() const { return P_; }
+    inline double getX() const   { 
+        std::lock_guard<std::mutex> lock(mutex_);
+        return x_(0); 
+    }
+    inline double getY() const   { 
+        std::lock_guard<std::mutex> lock(mutex_);
+        return x_(1); 
+    }
+    inline double getYaw() const { 
+        std::lock_guard<std::mutex> lock(mutex_);
+        return normalizeAngle(x_(2)); 
+    }
+    inline const Eigen::Vector3d getState() const { 
+        std::lock_guard<std::mutex> lock(mutex_);
+        return x_; 
+    }
+    inline const Eigen::Matrix3d getCovariance() const { 
+        std::lock_guard<std::mutex> lock(mutex_);
+        return P_; 
+    }
 
 private:
+    mutable std::mutex mutex_;
     Eigen::Vector3d x_;          // state: [x, y, yaw]
     Eigen::Matrix3d P_;          // covariance
     Eigen::Matrix3d Q_;          // process noise

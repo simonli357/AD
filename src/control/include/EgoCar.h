@@ -33,8 +33,8 @@ inline double velocity_command = 0.0;
 inline std::chrono::steady_clock::time_point last_imu_time;
 inline std::chrono::steady_clock::time_point last_speed_time;
 
-inline std::unique_ptr<BicycleKalmanFilter> ekf;
-inline std::chrono::steady_clock::time_point last_ekf_time;
+inline std::unique_ptr<BicycleKalmanFilter> bkf;
+inline std::chrono::steady_clock::time_point last_bkf_time;
 
 inline std::mutex state_mutex;
 inline std::atomic<bool> first_imu_received{false};
@@ -51,9 +51,9 @@ inline std_msgs::String command_msg;
 inline ros::Timer imu_timer;
 
 inline std::atomic<bool> sensors_running{false};
-inline std::atomic<bool> ekf_running{false};
+inline std::atomic<bool> bkf_running{false};
 inline std::unique_ptr<std::thread> sensors_thread;
-inline std::unique_ptr<std::thread> ekf_thread;
+inline std::unique_ptr<std::thread> bkf_thread;
 
 inline double raw_roll()   {
     std::lock_guard<std::mutex> lock(state_mutex);
@@ -71,6 +71,37 @@ inline double raw_speed()  {
     std::lock_guard<std::mutex> lock(state_mutex);
     return speed;
 }
+inline double get_x() {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    return bkf ? bkf->getX() : 0.0;
+}
+inline double get_y() {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    return bkf ? bkf->getY() : 0.0;
+}
+inline double get_yaw() {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    return bkf ? bkf->getYaw() : 0.0;
+}
+inline void update_states(Eigen::Vector3d& o_state) {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    if (bkf) {
+        auto bkf_state = bkf->getState();
+        o_state = bkf_state;
+    } else {
+        o_state[0] = 0.0;
+        o_state[1] = 0.0;
+        o_state[2] = 0.0;
+    }
+}
+inline double get_speed_command() {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    return velocity_command;
+}
+inline double get_steer_command() {
+    std::lock_guard<std::mutex> lock(state_mutex);
+    return steer_command;
+}
 inline void update_orientation(double r, double p, double yy) {
     std::lock_guard<std::mutex> lock(state_mutex);
     roll = r;
@@ -85,7 +116,7 @@ inline void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     tf2::Matrix3x3(q).getRPY(r, p, yy);
     update_orientation(r, p, yy);
     double yaw = raw_yaw();
-    if (ekf) ekf->updateYaw(yaw, 0.312262*M_PI/180.0);
+    if (bkf) bkf->updateYaw(yaw, 0.312262*M_PI/180.0);
     if (!first_imu_received) {
         first_imu_received = true;
         ROS_INFO("EgoCar(): IMU initialized");
@@ -96,7 +127,7 @@ inline void encoder_callback(const utils::encoder& msg) {
     {
         std::lock_guard<std::mutex> lock(state_mutex);
         speed = msg.speed;
-        // if (ekf) ekf->updateSpeed(speed, 0.01047);
+        // if (bkf) bkf->updateSpeed(speed, 0.01047);
         last_speed_time = std::chrono::steady_clock::now();
     }
     if (!first_speed_received) {
@@ -150,7 +181,7 @@ inline void serial_update() {
         y = helper::yaw_mod(y);
         update_orientation(r, p, y);
         double cur_yaw = raw_yaw();
-        if (ekf) ekf->updateYaw(cur_yaw, 0.312262*M_PI/180.0);
+        if (bkf) bkf->updateYaw(cur_yaw, 0.312262*M_PI/180.0);
         {
             std::lock_guard<std::mutex> lock(state_mutex);
             last_speed_time = std::chrono::steady_clock::now();
@@ -168,8 +199,7 @@ inline void serial_update() {
     }
 }
 
-// Single-step update: process either ROS callbacks or serial I/O
-inline void update_values_once() {
+inline void read_sensors() {
     if (!Tunable::real) {
         ros::spinOnce();
     } else {
@@ -181,7 +211,7 @@ inline void update_values_once() {
 inline void sensors_thread_loop() {
     ros::Rate rate(50.0);
     while (sensors_running) {
-        update_values_once();
+        read_sensors();
         // {
         //     std::lock_guard<std::mutex> lock(state_mutex);
         //     ROS_INFO("EgoCar(): roll: %.2f, pitch: %.2f, yaw: %.2f, speed: %.2f",
@@ -209,15 +239,15 @@ inline void stop_sensors_thread() {
     sensors_thread.reset();
 }
 
-inline void ekf_thread_loop(double hz) {
+inline void bkf_thread_loop(double hz) {
     ros::Rate rate(hz);
-    while (ekf_running) {
-        if (!(first_imu_received && first_speed_received && ekf)) {
+    while (bkf_running) {
+        if (!(first_imu_received && first_speed_received && bkf)) {
             rate.sleep();
             continue;
         }
         auto now = std::chrono::steady_clock::now();
-        double dt = std::chrono::duration<double>(now - last_ekf_time).count();
+        double dt = std::chrono::duration<double>(now - last_bkf_time).count();
         if (dt > 0) {
             double curr_speed, cmd_steer;
             {
@@ -226,11 +256,11 @@ inline void ekf_thread_loop(double hz) {
                 std::cout << "curr_speed: " << curr_speed << ", steer_command: " << steer_command << std::endl;
                 cmd_steer = steer_command;
             }
-            ekf->predict(cmd_steer, curr_speed, dt);
-            last_ekf_time = now;
-            double x = ekf->getX();
-            double y = ekf->getY();
-            double yaw = ekf->getYaw();
+            bkf->predict(cmd_steer, curr_speed, dt);
+            last_bkf_time = now;
+            double x = bkf->getX();
+            double y = bkf->getY();
+            double yaw = bkf->getYaw();
             double speed = curr_speed;
             Tracking::ego_car->update(x, y, yaw, speed, 0, steer_command * 180.0 / M_PI);
         }
@@ -238,22 +268,22 @@ inline void ekf_thread_loop(double hz) {
     }
 }
 
-inline void start_ekf_thread() {
-    if (ekf_running) return;
-    ekf_running = true;
-    last_ekf_time = std::chrono::steady_clock::now();
-    ekf_thread = std::make_unique<std::thread>(
-        []{ ekf_thread_loop(50); }
+inline void start_bkf_thread() {
+    if (bkf_running) return;
+    bkf_running = true;
+    last_bkf_time = std::chrono::steady_clock::now();
+    bkf_thread = std::make_unique<std::thread>(
+        []{ bkf_thread_loop(50); }
     );
 }
 
-inline void stop_ekf_thread() {
-    if (!ekf_running) return;
-    ekf_running = false;
-    if (ekf_thread && ekf_thread->joinable()) {
-        ekf_thread->join();
+inline void stop_bkf_thread() {
+    if (!bkf_running) return;
+    bkf_running = false;
+    if (bkf_thread && bkf_thread->joinable()) {
+        bkf_thread->join();
     }
-    ekf_thread.reset();
+    bkf_thread.reset();
 }
 
 inline void initialize(ros::NodeHandle& nh) {
@@ -278,17 +308,17 @@ inline void initialize(ros::NodeHandle& nh) {
     command_publisher = nh.advertise<std_msgs::String>("/car1/command", 8);
 }
 
-inline void initialize_ekf(double x0, double y0) {
-    ekf = std::make_unique<BicycleKalmanFilter>(WHEELBASE, L_R_REAL, Tunable::use_beta);
+inline void initialize_bkf(double x0, double y0) {
+    bkf = std::make_unique<BicycleKalmanFilter>(WHEELBASE, L_R_REAL, Tunable::use_beta);
     while (!first_imu_received) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     double yaw0 = raw_yaw();
-    std::cout << "EgoCar::initialize_ekf(): initializing EKF: x0: " << x0 << ", y0: " << y0 << ", yaw0: " << yaw0 << std::endl;
+    std::cout << "EgoCar::initialize_bkf(): initializing EKF: x0: " << x0 << ", y0: " << y0 << ", yaw0: " << yaw0 << std::endl;
     double std_x = 0.01; // x
     double std_y = 0.01; // y
     double std_yaw = 0.05 * M_PI/180; // yaw
-    ekf->init(x0, y0, yaw0, std_x, std_y, std_yaw);
+    bkf->init(x0, y0, yaw0, std_x, std_y, std_yaw);
 }
 
 inline bool send_speed_and_steer(double velocity, double steer) {

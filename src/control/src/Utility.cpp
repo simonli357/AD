@@ -428,7 +428,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     std::lock_guard<std::mutex> lock(Tracking::container_mutex);
     object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
-    get_states(ego_x, ego_y, ego_yaw);
+    ego_x = EgoCar::get_x();
+    ego_y = EgoCar::get_y();
+    ego_yaw = EgoCar::get_yaw();
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << std::endl;
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     Tracking::predict_dynamic_objects();
@@ -617,7 +619,7 @@ void Utility::stop_car() {
     msg.data = "{\"action\":\"1\",\"speed\":" + std::to_string(0.0) + "}";
     msg2.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(0.0) + "}";
     for (int i = 0; i < 10; i++) {
-        publish_cmd_vel(0.0, 0.0);
+        EgoCar::send_speed_and_steer(0.0, 0.0);
         ros::Duration(0.15).sleep();
     }
     // std::cout << "sent commands to stop car" << std::endl;
@@ -890,12 +892,12 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
 }
 void Utility::lane_follow() {
     steer_command = get_steering_angle();
-    publish_cmd_vel(steer_command, 0.175);
+    EgoCar::send_speed_and_steer(0.175, steer_command);
 }
 void Utility::idle() {
     steer_command = 0.0;
     velocity_command = 0.0;
-    publish_cmd_vel(steer_command, velocity_command);
+    EgoCar::send_speed_and_steer(velocity_command, steer_command);
 }
 double Utility::get_steering_angle(double offset) {
     ros::Time now = ros::Time::now();
