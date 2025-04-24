@@ -1,5 +1,4 @@
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt5 import QtWidgets, QtCore
 from ..enums import CameraParams
 from .hud import CameraOverlay
 
@@ -7,18 +6,15 @@ import numpy as np
 
 
 class CameraWidget(QtWidgets.QWidget):
-    update_camera_signal = pyqtSignal(QtGui.QPixmap)
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.has_frame = False
+        self.main_window = self.parent()
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(7)
 
         self.setup_ui()
-        self.update_camera_signal.connect(self.update_camera_display)
 
     def setup_ui(self):
         self.camera_label = QtWidgets.QLabel(self)
@@ -38,20 +34,11 @@ class CameraWidget(QtWidgets.QWidget):
         layout.addWidget(self.camera_label, alignment=QtCore.Qt.AlignCenter)
         self.setLayout(layout)
 
-    def update_camera_display(self, pixmap):
-        self.camera_label.setPixmap(pixmap)
-        self.has_frame = True
-        self.hud.update_overlay()
-
-    def update_hud(self):
-        if not self.has_frame:
-            self.hud.update_overlay()
-
     def process_camera_frame(self, pixmap):
         try:
             if self.show_depth:
                 return
-            self.update_camera_signal.emit(pixmap)
+            self.camera_label.setPixmap(pixmap)
         except Exception as e:
             print(f"Camera processing error: {e}")
 
@@ -59,7 +46,7 @@ class CameraWidget(QtWidgets.QWidget):
         try:
             if not self.show_depth:
                 return
-            self.update_camera_signal.emit(pixmap)
+            self.camera_label.setPixmap(pixmap)
         except Exception as e:
             print(f"Depth processing error: {e}")
 

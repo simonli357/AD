@@ -1,7 +1,9 @@
-import math
-import numpy as np
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
+from PyQt5 import QtWidgets
+
+import math
+import numpy as np
 import glm
 
 
@@ -17,9 +19,30 @@ class Speedometer():
         self.circle_shader_program = circle_shader_program
         self.compass_shader_program = compass_shader_program
 
+        # Uniforms
+        self.loc_center = gl.glGetUniformLocation(self.gauge_shader_program, "uCenter")
+        self.loc_inner = gl.glGetUniformLocation(self.gauge_shader_program, "uInnerRadius")
+        self.loc_outer = gl.glGetUniformLocation(self.gauge_shader_program, "uOuterRadius")
+        self.loc_progress = gl.glGetUniformLocation(self.gauge_shader_program, "uProgress")
+        self.loc_fill = gl.glGetUniformLocation(self.gauge_shader_program, "uFillColor")
+        self.loc_bg = gl.glGetUniformLocation(self.gauge_shader_program, "uBgColor")
+
+        self.tick_u_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
+        self.tick_u_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
+
+        self.circle_u_proj = gl.glGetUniformLocation(self.circle_shader_program, 'uProjection')
+        self.circle_u_center = gl.glGetUniformLocation(self.circle_shader_program, 'uCenter')
+        self.circle_u_color = gl.glGetUniformLocation(self.circle_shader_program, 'color')
+        self.circle_u_radius = gl.glGetUniformLocation(self.circle_shader_program, 'radius')
+        self.circle_u_lineWidth = gl.glGetUniformLocation(self.circle_shader_program, 'lineWidth')
+
+        self.compass_u_proj = gl.glGetUniformLocation(self.compass_shader_program, "uProjection")
+        self.compass_u_model = gl.glGetUniformLocation(self.compass_shader_program, "uModel")
+        self.compass_u_color = gl.glGetUniformLocation(self.compass_shader_program, "color")
+
         # Ratios and constants
-        self.innerRadius_ratio = 0.23
-        self.outerRadius_ratio = 0.24
+        self.innerRadius_ratio = 0.20
+        self.outerRadius_ratio = 0.21
         self.large_tick_length_ratio = 0.02
         self.small_tick_length_ratio = 0.01
         self.maxSweep = 280.0
@@ -39,6 +62,30 @@ class Speedometer():
         self.small_tick_vertices = None  # small tick vertices
         self.label_data = None           # list of (label, x, y) for large ticks
 
+        # VBO's
+        quad_placeholder = np.zeros((6 * 2,), dtype=np.float32)
+        self.quad_vbo = vbo.VBO(quad_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Large ticks: maxSweep=280°, interval=40° → 8 ticks → 8 lines → 16 verts
+        large_ticks_count = int(self.maxSweep / self.large_tick_interval) + 1
+        large_placeholder = np.zeros((large_ticks_count * 2 * 2,), dtype=np.float32)
+        self.large_tick_vbo = vbo.VBO(large_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Small ticks: (total ticks) – (large ticks)
+        total_ticks = int(self.maxSweep / self.tick_step) + 1
+        small_ticks_count = total_ticks - large_ticks_count
+        small_placeholder = np.zeros((small_ticks_count * 2 * 2,), dtype=np.float32)
+        self.small_tick_vbo = vbo.VBO(small_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Inner circle (LINE_LOOP): num_segments points → num_segments verts
+        self.num_segments = 128
+        circle_placeholder = np.zeros((self.num_segments * 2,), dtype=np.float32)
+        self.circle_vbo = vbo.VBO(circle_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
+        # Compass needle: 6 verts → 6 × (x,y)
+        needle_placeholder = np.zeros((6 * 2,), dtype=np.float32)
+        self.needle_vbo = vbo.VBO(needle_placeholder, usage=gl.GL_DYNAMIC_DRAW)
+
     def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer):
         """Compute and cache the geometry for the gauge and tick marks."""
         # Compute gauge center based on normalized values.
@@ -47,8 +94,11 @@ class Speedometer():
         self.cached_center = (cx, cy)
 
         # Compute radii in pixels.
-        innerRadius = self.innerRadius_ratio * screen_height
-        outerRadius = self.outerRadius_ratio * screen_height
+        screen = QtWidgets.QApplication.primaryScreen()
+        max_screen_height = screen.size().height() / 2.3
+        self.min_dim = max(screen_height, max_screen_height)
+        innerRadius = self.innerRadius_ratio * self.min_dim
+        outerRadius = self.outerRadius_ratio * self.min_dim
 
         # Precompute gauge quad vertices (covers full circle enclosing outerRadius).
         left = cx - outerRadius
@@ -167,24 +217,27 @@ class Speedometer():
         self.cached_screen_height = screen_height
 
         # Reset vbo's
-        if hasattr(self, 'quad_vbo'):
-            self.quad_vbo.delete()
-        self.quad_vbo = vbo.VBO(self.quad_vertices)
-        if hasattr(self, 'large_tick_vbo'):
-            self.large_tick_vbo.delete()
-        self.large_tick_vbo = vbo.VBO(self.large_tick_vertices)
-        if hasattr(self, 'small_tick_vbo'):
-            self.small_tick_vbo.delete()
-        self.small_tick_vbo = vbo.VBO(self.small_tick_vertices)
-        if hasattr(self, 'circle_vbo'):
-            self.circle_vbo.delete()
-        self.circle_vbo = vbo.VBO(self.circle_vertices)
-        if hasattr(self, 'needle_vbo'):
-            self.needle_vbo.delete()
-        self.needle_vbo = vbo.VBO(self.needle_vertices)
+        self.quad_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.quad_vertices.nbytes, self.quad_vertices)
+        self.quad_vbo.unbind()
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat,
-             current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
+        self.large_tick_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.large_tick_vertices.nbytes, self.large_tick_vertices)
+        self.large_tick_vbo.unbind()
+
+        self.small_tick_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.small_tick_vertices.nbytes, self.small_tick_vertices)
+        self.small_tick_vbo.unbind()
+
+        self.circle_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.circle_vertices.nbytes, self.circle_vertices)
+        self.circle_vbo.unbind()
+
+        self.needle_vbo.bind()
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.needle_vertices.nbytes, self.needle_vertices)
+        self.needle_vbo.unbind()
+
+    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
         """
         Draw the gauge arc and tick marks using precomputed geometry.
         Assumes that update_geometry() has been called if screen dimensions or gauge
@@ -209,26 +262,24 @@ class Speedometer():
         progress = max(0.0, min(1.0, progress))
 
         # Use precomputed radii.
-        innerRadius = self.innerRadius_ratio * screen_height
-        outerRadius = self.outerRadius_ratio * screen_height
+        innerRadius = self.innerRadius_ratio * self.min_dim
+        outerRadius = self.outerRadius_ratio * self.min_dim
 
         # Draw the gauge arc quad.
         gl.glUseProgram(self.gauge_shader_program)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         loc_proj = gl.glGetUniformLocation(self.gauge_shader_program, "uProjection")
         gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
 
-        loc_center = gl.glGetUniformLocation(self.gauge_shader_program, "uCenter")
-        gl.glUniform2f(loc_center, cx, cy)
-        loc_inner = gl.glGetUniformLocation(self.gauge_shader_program, "uInnerRadius")
-        gl.glUniform1f(loc_inner, innerRadius)
-        loc_outer = gl.glGetUniformLocation(self.gauge_shader_program, "uOuterRadius")
-        gl.glUniform1f(loc_outer, outerRadius)
-        loc_progress = gl.glGetUniformLocation(self.gauge_shader_program, "uProgress")
-        gl.glUniform1f(loc_progress, progress)
-        loc_fill = gl.glGetUniformLocation(self.gauge_shader_program, "uFillColor")
-        gl.glUniform4f(loc_fill, *fill_color)
-        loc_bg = gl.glGetUniformLocation(self.gauge_shader_program, "uBgColor")
-        gl.glUniform4f(loc_bg, 0.0, 0.0, 0.0, 0.0)
+        gl.glUniform2f(self.loc_center, cx, cy)
+        gl.glUniform1f(self.loc_inner, innerRadius)
+        gl.glUniform1f(self.loc_outer, outerRadius)
+        gl.glUniform1f(self.loc_progress, progress)
+        gl.glUniform4f(self.loc_fill, *fill_color)
+        gl.glUniform4f(self.loc_bg, 0.0, 0.0, 0.0, 0.0)
 
         self.quad_vbo.bind()
         gl.glEnableVertexAttribArray(0)
@@ -236,7 +287,6 @@ class Speedometer():
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         self.quad_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)
 
         # Draw the ticks.
         self.draw_ticks(proj_mat)
@@ -252,15 +302,15 @@ class Speedometer():
         init_angle = 180
         self.draw_compass_needle(proj_mat, init_angle + steer)
 
+        gl.glDisable(gl.GL_BLEND)
+
     def draw_ticks(self, proj_mat):
         """Draw ticks using the precomputed tick buffers and text labels."""
         # Draw large ticks.
         if self.large_tick_vertices is not None and len(self.large_tick_vertices) > 0:
             gl.glUseProgram(self.tick_shader_program)
-            loc_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
-            gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-            loc_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
-            gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
+            gl.glUniformMatrix4fv(self.tick_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+            gl.glUniform4f(self.tick_u_color, 1.0, 1.0, 1.0, 1.0)
             gl.glLineWidth(3.0)
 
             self.large_tick_vbo.bind()
@@ -270,15 +320,12 @@ class Speedometer():
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             self.large_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
-            gl.glUseProgram(0)
 
         # Draw small ticks.
         if self.small_tick_vertices is not None and len(self.small_tick_vertices) > 0:
             gl.glUseProgram(self.tick_shader_program)
-            loc_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
-            gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-            loc_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
-            gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
+            gl.glUniformMatrix4fv(self.tick_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+            gl.glUniform4f(self.tick_u_color, 1.0, 1.0, 1.0, 1.0)
             gl.glLineWidth(1.0)
 
             self.small_tick_vbo.bind()
@@ -288,21 +335,15 @@ class Speedometer():
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             self.small_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
-            gl.glUseProgram(0)
 
     def draw_circle(self, proj_mat):
         gl.glUseProgram(self.circle_shader_program)
-        loc_proj = gl.glGetUniformLocation(self.circle_shader_program, 'uProjection')
-        loc_center = gl.glGetUniformLocation(self.circle_shader_program, 'uCenter')
-        loc_color = gl.glGetUniformLocation(self.circle_shader_program, 'color')
-        loc_radius = gl.glGetUniformLocation(self.circle_shader_program, 'radius')
-        loc_lineWidth = gl.glGetUniformLocation(self.circle_shader_program, 'lineWidth')
-        gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
         cx, cy = self.cached_center
-        gl.glUniform2f(loc_center, cx, cy)
-        gl.glUniform4f(loc_color, 1.0, 1.0, 1.0, 1.0)
-        gl.glUniform1f(loc_radius, self.inner_radius)
-        gl.glUniform1f(loc_lineWidth, 0.01)
+        gl.glUniformMatrix4fv(self.circle_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        gl.glUniform2f(self.circle_u_center, cx, cy)
+        gl.glUniform4f(self.circle_u_color, 1.0, 1.0, 1.0, 1.0)
+        gl.glUniform1f(self.circle_u_radius, self.inner_radius)
+        gl.glUniform1f(self.circle_u_lineWidth, 0.01)
 
         self.circle_vbo.bind()
         gl.glEnableVertexAttribArray(0)
@@ -310,23 +351,17 @@ class Speedometer():
         gl.glDrawArrays(gl.GL_LINE_LOOP, 0, self.num_segments)
         self.circle_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)
 
     def draw_compass_needle(self, proj_mat, angle):
         gl.glUseProgram(self.compass_shader_program)
-        loc_proj = gl.glGetUniformLocation(self.compass_shader_program, "uProjection")
-        gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
         cx, cy = self.cached_center
-        # Build the model matrix: translate to (cx,cy), rotate by the given angle,
-        # and scale the needle (adjust scale factor as needed).
+        scale_factor = 0.05 * self.cached_screen_height
         model = glm.translate(glm.mat4(1.0), glm.vec3(cx, cy, 0.0))
         model = glm.rotate(model, glm.radians(angle), glm.vec3(0.0, 0.0, 1.0))
-        scale_factor = 0.05 * self.cached_screen_height
         model = glm.scale(model, glm.vec3(scale_factor, scale_factor, 1.0))
-        loc_model = gl.glGetUniformLocation(self.compass_shader_program, "uModel")
-        gl.glUniformMatrix4fv(loc_model, 1, gl.GL_FALSE, glm.value_ptr(model))
-        # Get the location of the color uniform.
-        loc_color = gl.glGetUniformLocation(self.compass_shader_program, "color")
+
+        gl.glUniformMatrix4fv(self.compass_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
+        gl.glUniformMatrix4fv(self.compass_u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
 
         # Bind the needle VBO.
         self.needle_vbo.bind()
@@ -334,13 +369,12 @@ class Speedometer():
         gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
         # Draw first triangle in bright red.
-        gl.glUniform4f(loc_color, 1.0, 0.0, 0.0, 1.0)
+        gl.glUniform4f(self.compass_u_color, 1.0, 0.0, 0.0, 1.0)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 3)
 
         # Now draw the second triangle in dark red.
-        gl.glUniform4f(loc_color, 0.6, 0.0, 0.0, 1.0)  # adjust these values as needed for "dark red"
+        gl.glUniform4f(self.compass_u_color, 0.6, 0.0, 0.0, 1.0)  # adjust these values as needed for "dark red"
         gl.glDrawArrays(gl.GL_TRIANGLES, 3, 3)
         self.needle_vbo.unbind()
 
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)

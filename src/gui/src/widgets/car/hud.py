@@ -23,7 +23,7 @@ class HudRenderer:
 
         bar_width = 0.2
         bar_height = 0.01
-        x_norm_init = 0.66
+        x_norm_init = 0.77
         y_norm_init = 0.64 + 0.06 * 3
 
         # HEAP
@@ -71,7 +71,7 @@ class HudRenderer:
         )
         y_norm_init += 0.06
 
-        x_norm_init = 0.98
+        x_norm_init = 1.09
         y_norm_init = 0.64
         # CPU Stats
         for use in self.cores_usage[:6]:
@@ -94,7 +94,7 @@ class HudRenderer:
             screen_width,
             screen_height,
             0.18,
-            0.7,
+            0.73,
             proj_mat,
             self.car_widget.speed,
             self.car_widget.steer

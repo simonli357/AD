@@ -4,9 +4,10 @@ project(utils)
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
+  persistence
 )
 
- add_message_files(
+add_message_files(
    FILES
    IMU.msg
    localisation.msg
@@ -21,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
  )
  
 ## Generate services in the 'srv' folder
- add_service_files(
+add_service_files(
   FILES
   waypoints.srv
   go_to.srv
@@ -30,18 +31,33 @@ find_package(catkin REQUIRED COMPONENTS
   set_states.srv
 )
 
- generate_messages(
+generate_messages(
    DEPENDENCIES
    std_msgs
- )
-
+)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS message_runtime
+  LIBRARIES utils
+  CATKIN_DEPENDS message_runtime persistence
 )
 
 include_directories(
   include
+  include/utils
   ${catkin_INCLUDE_DIRS}
+)
+
+add_library(utils
+  src/utils/constants.cpp
+)
+
+set_target_properties(utils
+  PROPERTIES
+    OUTPUT_NAME     utility
+)
+
+target_link_libraries(utils
+  persistence
+  ${catkin_LIBRARIES}
 )

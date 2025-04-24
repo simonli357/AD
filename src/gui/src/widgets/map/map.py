@@ -3,9 +3,10 @@ from std_srvs.srv import TriggerResponse
 from OpenGL import GL as gl
 from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
-from ..opengl.waypoints import WaypointsRenderer
-from ..opengl.destinations import DestinationsRenderer
+from ..opengl.instance.waypoints import WaypointsRenderer
+from ..opengl.instance.destinations import DestinationsRenderer
 from ..opengl.loaders import load_2D_texture
+from ..opengl.instance.path import PathRenderer
 from ..enums import MapData, NamedColor, OpenGLContextName
 
 import pandas as pd
@@ -16,13 +17,12 @@ import glm
 
 
 class MapWidget(QtWidgets.QOpenGLWidget):
-    update_map_signal = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = self.parent()
         self.server = self.main_window.server
         self.cursor_coords = []
+        self.click_history = []
         self.cursor_x = 3.86
         self.cursor_y = 3.62
 
@@ -35,6 +35,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.show_nodes = False
         self.show_gt = True
         self.show_graph = False
+        self.measuring = False
+
         self.sign_size = 20
 
         self.road_msg_length = 8
@@ -81,6 +83,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMouseTracking(True)
+        self._press_pos = None
+        self._is_dragging = False
         self.stop_drawing = False
         self.current_mouse_pos = None
         self.last_mouse_pos = None
@@ -118,18 +122,18 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
 
-    def update_graph(self, graph):
-        self.graph_editor.G = graph
-
-    def render_widget(self) -> None:
-        self.update()
+    def setup_destinations_renderer(self):
+        self.dest_positions = list(zip(
+            *self.get_gl_coords(self.destinations['X'], self.destinations['Y']),
+            self.destinations.get('Z', pd.Series(0.5, index=self.destinations.index))
+        ))
+        self.destinations_renderer = DestinationsRenderer(self.dest_positions, scales=8.0)
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LEQUAL)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        gl.glDisable(gl.GL_BLEND)
         gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
         gl.glDisable(gl.GL_POLYGON_SMOOTH)
         gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
@@ -139,12 +143,20 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
         self.ortho_view_mat = glm.mat4(1.0)
 
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
+
         self.waypoints_renderer = WaypointsRenderer(track='bfmc')
-        self.destinations_renderer = DestinationsRenderer()
+        self.setup_destinations_renderer()
         self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
         self.graph_editor = GraphEditor(map_widget=self)
-
-        self.update_destinations()
 
         self.sign_models = []
         for path in self.sign_images:
@@ -157,17 +169,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.view_zoom == 1:
             self.view_center = glm.vec2(0, 0)
 
+        self.update_car_data()
+        if self.main_window.cam_buttons_widget.started:
+            self.view_center = glm.vec2(*self.get_gl_coords(self.car_x, self.car_y))
+
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-        zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
-
-        self.proj_mat = glm.ortho(
-            -half_width, half_width,
-            -half_height, half_height,
-            -100.0, 100.0
-        )
 
         self.view_mat = glm.lookAt(
             glm.vec3(self.view_center.x, self.view_center.y, 1.0),
@@ -197,12 +203,32 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_markers()
             self.draw_detected_objects()
             self.draw_path_nodes()
-
-        if self.view_zoom == 1.0:
+            self.draw_measurement_points()
             self.draw_legend(self.width() / 2.7, self.height() / 3)
-            pass
+            self.update_mouse_pos()
 
-        self.update_mouse_pos()
+        self.update()
+
+    def draw_measurement_points(self):
+        if len(self.click_history) > 0:
+            for x_real, y_real in self.click_history:
+                x, y = self.get_gl_coords(x_real, y_real)
+                self.shader_renderer.draw_circle(x, y, 1.0, NamedColor.GREEN.value, self.view_mat, self.proj_mat, z=5.0)
+        if len(self.click_history) == 1:
+            x, y = self.get_gl_coords(self.click_history[0][0], self.click_history[0][1])
+            x_mouse_real, y_mouse_real = self.get_real_world_coords(self.current_mouse_pos.x(), self.current_mouse_pos.y())
+            x_mouse, y_mouse = self.get_gl_coords(x_mouse_real, y_mouse_real)
+            self.shader_renderer.draw_line((x, y), (x_mouse, y_mouse), NamedColor.RED.value, self.view_mat, self.proj_mat)
+        if len(self.click_history) == 2:
+            p0, p1 = self.click_history
+            dx = p1[0] - p0[0]
+            dy = p1[1] - p0[1]
+            dist = np.hypot(dx, dy)
+            self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
+
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def find_next_destination(self):
         if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
@@ -214,22 +240,28 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if self.no_destinations:
             return
 
-        xs, ys = self._refs_xs, self._refs_ys
         num_nodes = self._refs_len
 
-        dx = xs - self.car_x
-        dy = ys - self.car_y
-        start_idx = int(np.argmin(dx * dx + dy * dy))
+        dest_radius = 0.14
+        wp_radius = 0.02
+        skip = 5
 
-        tol = 0.2
-        skip = 3
+        start_idx = None
+        for i, (nx, ny) in enumerate(zip(self._refs_xs, self._refs_ys)):
+            if self.is_near(self.car_x, self.car_y, nx, ny, dest_radius, wp_radius):
+                start_idx = i
+                break
+
+        if start_idx is None or not (0 <= start_idx < num_nodes):
+            return
+
         for offset in range(1, num_nodes + 1, skip):
             idx = (start_idx + offset) % num_nodes
-            node_x, node_y = xs[idx], ys[idx]
+            node_x, node_y = self._refs_xs[idx], self._refs_ys[idx]
             for _, row in self.destinations.iterrows():
                 dest_x = row['X']
                 dest_y = row['Y']
-                if abs(node_x - dest_x) <= tol and abs(node_y - dest_y) <= tol:
+                if self.is_near(dest_x, dest_y, node_x, node_y, dest_radius, wp_radius):
                     next_destination = (dest_x, dest_y)
                     if next_destination not in self.main_window.visited:
                         self.next_destination = (dest_x, dest_y)
@@ -242,7 +274,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
         if self.show_destinations:
-            self.destinations_renderer.draw((0.0, 0.7, 0.7, 1.0), self.proj_mat, self.view_mat)
+            self.destinations_renderer.render(self.proj_mat, self.view_mat)
             for x, y in self.main_window.visited:
                 gl_x, gl_y = self.get_gl_coords(x, y)
                 self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
@@ -267,7 +299,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 0.55, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 1.5, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
@@ -313,6 +345,11 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             return
 
     def draw_legend(self, x, y):
+        if self.main_window.cam_buttons_widget.started:
+            return
+        if self.view_zoom != 1.0:
+            return
+
         viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
         screen_width = viewport[2]
         screen_height = viewport[3]
@@ -368,7 +405,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x, y = self.get_gl_coords(coord[0], coord[1])
             self.shader_renderer.draw_marker(x, y, (1, 0, 0, 1), 10.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
 
-    def draw_detected_objects(self):
+    def update_car_data(self):
         if self.detected_data is None or len(self.detected_data) == 0:
             return
         self.car_x = self.detected_data[0, self.road_msg_dict['x']]
@@ -377,6 +414,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         car_z = self.detected_data[0, self.road_msg_dict['z']]
         car_speed = self.detected_data[0, self.road_msg_dict['speed']]
         self.main_window.car_widget.set_car_data(self.car_yaw / np.pi * 180, car_speed, self.car_x, MapData.REAL_WORLD_HEIGHT.value - self.car_y, car_z)
+
+    def draw_detected_objects(self):
+        if self.detected_data is None or len(self.detected_data) == 0:
+            return
         for i in range(len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]
@@ -386,35 +427,47 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # Convert map coordinates to pixel coordinates
             x, y = self.get_gl_coords(x_real, y_real)
             # orientation = 2 * np.pi - orientation
-            orientation = - orientation
 
             if self.object_dict[obj_type] == 'Car':
                 if i == 0:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.WHITE, 0.55, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
                 else:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.ORANGE, 0.55, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
-                self.shader_renderer.draw_axis2D(x, y, -orientation, 25.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
 
     def draw_path_nodes(self):
         if self.waypoints is None or len(self.waypoints) < 2:
             return
+
+        positions = []
+        rotations = []
+
         x1, y1 = self.get_gl_coords(self.waypoints[0], self.waypoints[1])
         angle = 0
         for i in range(0, len(self.waypoints) - 1, 4):
             if i + 3 > len(self.waypoints):
-                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 2.0))
+                rotations.append((angle, 0, 0, 1))
             else:
                 x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
                 dx = x2 - x1
                 dy = y2 - y1
                 angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
                 self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 2.0))
+                rotations.append((angle, 0, 0, 1))
                 x1, y1 = x2, y2
+
+        if hasattr(self, 'path_node_renderer'):
+            self.path_node_renderer.transform_all(positions=positions, rotations=rotations)
+        else:
+            self.path_node_renderer = PathRenderer(positions=positions, rotations=rotations)
+        self.path_node_renderer.render(self.proj_mat, self.view_mat)
 
     def cleanup_gl_resources(self):
         self.stop_drawing = True
@@ -487,8 +540,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self._refs_ys = self.main_window.state_refs_np[1, :].copy()
             self._refs_len = self._refs_xs.shape[0]
 
-    def update_destinations(self):
-        self.destinations_renderer.update_data(self.data.iterrows(), self.width(), self.height())
+    def handle_measurement_click(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            if len(self.click_history) < 2:
+                x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
+                self.click_history.append((x_world, y_world))
+
+    def handle_marker_click(self, event):
+        xw, yw = self.get_real_world_coords(event.x(), event.y())
+        self.cursor_coords.append((xw, yw))
+        self.cursor_x, self.cursor_y = xw, yw
 
     def __del__(self):
         self.cleanup_gl_resources()
@@ -504,44 +565,78 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
         self.update_waypoints()
-        self.update_destinations()
-
-    def mouseDoubleClickEvent(self, event):
-        if self.show_graph:
-            return
-        x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
-        self.cursor_coords.append((x_world, y_world))
-        self.cursor_x = x_world
-        self.cursor_y = y_world
+        self.setup_destinations_renderer()
 
     def mousePressEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mousePressEvent(event):
+                return
+
         if event.button() == QtCore.Qt.LeftButton:
+            self._press_pos = event.pos()
+            self._is_dragging = False
             self.drag_start = event.pos()
             self.base_view_center = glm.vec2(self.view_center)
             self.last_mouse_pos = event.pos()
         if event.button() == QtCore.Qt.RightButton:
-            self.cursor_coords.clear()
+            if self.measuring and len(self.click_history) > 0:
+                self.click_history.pop(0)
+            else:
+                self.cursor_coords.clear()
 
     def mouseMoveEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mouseMoveEvent(event):
+                return
+
         self.current_mouse_pos = event.pos()
-        if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
-            # Calculate delta movement
-            delta = event.pos() - self.last_mouse_pos
-            self.last_mouse_pos = event.pos()
+        if event.buttons() & QtCore.Qt.LeftButton and self._press_pos is not None:
+            dist = (event.pos() - self._press_pos).manhattanLength()
+            if dist > QtWidgets.QApplication.startDragDistance():
+                self._is_dragging = True
+                if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
+                    # Calculate delta movement
+                    delta = event.pos() - self.last_mouse_pos
+                    self.last_mouse_pos = event.pos()
 
-            # Convert pixel delta to world coordinates
-            zoom_factor = 1.0 / self.view_zoom
-            half_width = self.width() * zoom_factor / 2
-            half_height = self.height() * zoom_factor / 2
+                    # Convert pixel delta to world coordinates
+                    zoom_factor = 1.0 / self.view_zoom
+                    half_width = self.width() * zoom_factor / 2
+                    half_height = self.height() * zoom_factor / 2
 
-            # Calculate world units per pixel
-            world_per_pixel_x = (2 * half_width) / self.width()
-            world_per_pixel_y = (2 * half_height) / self.height()
+                    # Calculate world units per pixel
+                    world_per_pixel_x = (2 * half_width) / self.width()
+                    world_per_pixel_y = (2 * half_height) / self.height()
 
-            # Update view center
-            self.view_center.x -= delta.x() * world_per_pixel_x
-            self.view_center.y += delta.y() * world_per_pixel_y
+                    # Update view center
+                    self.view_center.x -= delta.x() * world_per_pixel_x
+                    self.view_center.y += delta.y() * world_per_pixel_y
+
+    def mouseReleaseEvent(self, event):
+        if self.show_graph:
+            if self._is_dragging:
+                self.graph_editor.mouseReleaseEventDragging(event)
+            elif not self._is_dragging:
+                self.graph_editor.mouseReleaseEventNonDrag(event)
+            self._press_pos = None
+            return
+
+        if event.button() == QtCore.Qt.LeftButton:
+            if not self._is_dragging and not self.measuring:
+                self.handle_marker_click(event)
+            elif not self._is_dragging and self.measuring:
+                self.handle_measurement_click(event)
+            # clear press marker
+            self._press_pos = None
 
     def wheelEvent(self, event):
         # Get mouse position in normalized device coordinates
@@ -562,6 +657,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.view_center += glm.vec2(
             mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
             mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+        )
+
+        # Update projection matrix
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
         )
 
     ##################

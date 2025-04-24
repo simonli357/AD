@@ -1,16 +1,19 @@
 from OpenGL import GL as gl
 from OpenGL.arrays import vbo
 from collections import namedtuple
+from .utils import create_shader_program, shader_path
 
 import numpy as np
 
-Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count'])
+Model = namedtuple('Model', ['vao', 'vbo', 'ebo', 'vertex_count', 'shader_program', 'u_model', 'u_view', 'u_proj', 'u_color', 'u_time'], defaults=[None])
 
 
 def line_model() -> Model:
+    shader_program = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
+
     vertex_array = np.array([
-        [0.0, 0.0],  # Start point
-        [1.0, 1.0]    # End point
+        [0.0, 0.0, 0.0],  # Start point
+        [1.0, 1.0, 0.0]    # End point
     ], dtype=np.float32).flatten()
 
     vao = gl.glGenVertexArrays(1)
@@ -21,16 +24,23 @@ def line_model() -> Model:
     line_vbo.bind()
 
     # Set vertex attribute pointer
-    gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
     gl.glEnableVertexAttribArray(0)
 
     gl.glBindVertexArray(0)
     line_vbo.unbind()
 
-    return Model(vao, line_vbo, None, 2)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(vao, line_vbo, None, 2, shader_program, u_model, u_view, u_proj, u_color)
 
 
 def triangle_model() -> Model:
+    shader_program = create_shader_program(shader_path('triangle', 'triangle.vert'), shader_path('triangle', 'triangle.frag'))
+
     vertex_array = np.array([
         0.0, 0.6667, 0.0,
         -0.5, -0.3333, 0.0,
@@ -49,10 +59,17 @@ def triangle_model() -> Model:
     gl.glBindVertexArray(0)
     triangle_vbo.unbind()
 
-    return Model(vao, triangle_vbo, None, 3)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(vao, triangle_vbo, None, 3, shader_program, u_model, u_view, u_proj, u_color)
 
 
 def circle_model() -> Model:
+    shader_program = create_shader_program(shader_path('circle', 'circle.vert'), shader_path('circle', 'circle.frag'))
+
     vertices = [[0.0, 0.0]]  # center vertex
     for i in range(65):
         angle = 6.28318530718 * float(i) / 64.0
@@ -72,10 +89,52 @@ def circle_model() -> Model:
     gl.glBindVertexArray(0)
     circle_vbo.unbind()
 
-    return Model(vao, circle_vbo, None, len(vertices))
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(vao, circle_vbo, None, len(vertices), shader_program, u_model, u_view, u_proj, u_color)
+
+
+def diamond_model() -> Model:
+    shader_program = create_shader_program(shader_path('diamonds', 'diamond.vert'), shader_path('diamonds', 'diamond.frag'))
+
+    vertices = np.array([
+        # Positions (3D for proper matrix transformations)
+        [0.0, 0.5, 0.1],  # Top
+        [0.5, 0.0, 0.1],  # Right
+        [-0.5, 0.0, 0.1],  # Left
+        [-0.5, 0.0, 0.1],  # Left
+        [0.5, 0.0, 0.1],  # Right
+        [0.0, -0.5, 0.1],  # Bottom
+    ], dtype=np.float32).flatten()
+
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    # Create and configure VBO
+    diamond_vbo = vbo.VBO(vertices)
+    diamond_vbo.bind()
+
+    # Set vertex attribute pointer
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    diamond_vbo.unbind()
+
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(vao, diamond_vbo, None, len(vertices), shader_program, u_model, u_view, u_proj, u_color)
 
 
 def arrow_model() -> Model:
+    shader_program = create_shader_program(shader_path('arrow', 'arrow.vert'), shader_path('arrow', 'arrow.frag'))
+
     vertices = np.array([
         # Rect Triangle 1
         -0.04, 0.0, 0.0,
@@ -103,15 +162,17 @@ def arrow_model() -> Model:
     gl.glBindVertexArray(0)
     arrow_vbo.unbind()
 
-    return Model(arrow_vao, arrow_vbo, None, 9)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(arrow_vao, arrow_vbo, None, 9, shader_program, u_model, u_view, u_proj, u_color)
 
 
 def crosshair_model(thickness=0.075, inner=0.25, outer=1.25) -> Model:
-    """
-      - thickness: half‑width of each arm, in object‑space units
-      - inner:   the start‑offset of each arm from center
-      - outer:   the end‑offset of each arm from center
-    """
+    shader_program = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
+
     t = thickness
     i = inner
     o = outer
@@ -156,11 +217,18 @@ def crosshair_model(thickness=0.075, inner=0.25, outer=1.25) -> Model:
     gl.glBindVertexArray(0)
     cross_vbo.unbind()
 
-    # total vertices = 16
-    return Model(vao, cross_vbo, None, 16)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+    u_time = gl.glGetUniformLocation(shader_program, "time")
+
+    return Model(vao, cross_vbo, None, 16, shader_program, u_model, u_view, u_proj, u_color, u_time)
 
 
-def quad_model() -> Model:
+def ripple_model() -> Model:
+    shader_program = create_shader_program(shader_path('ripple', 'ripple.vert'), shader_path('ripple', 'ripple.frag'))
+
     verts = [
         [-1, -1, 0, 0, 0],
         [1, -1, 0, 1, 0],
@@ -183,4 +251,9 @@ def quad_model() -> Model:
     gl.glBindVertexArray(0)
     quad_vbo.unbind()
 
-    return Model(vao, quad_vbo, None, 4)
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_time = gl.glGetUniformLocation(shader_program, "time")
+
+    return Model(vao, quad_vbo, None, 4, shader_program, u_model, u_view, u_proj, None, u_time)

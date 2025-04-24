@@ -38,6 +38,10 @@ class CameraGrid:
 
     def draw(self, proj_mat, view_mat, color=(1.0, 1.0, 1.0), cell_size=0.05):
         gl.glUseProgram(self.shader_program)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         gl.glUniformMatrix4fv(self.loc_uProj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
         gl.glUniformMatrix4fv(self.loc_uView, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
         gl.glUniform3f(self.loc_uColor, *color)
@@ -45,6 +49,5 @@ class CameraGrid:
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
-        gl.glBindVertexArray(0)
 
-        gl.glUseProgram(0)
+        gl.glDisable(gl.GL_BLEND)

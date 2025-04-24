@@ -75,7 +75,3 @@ class LaneIndicator():
         # Bind the VAO and draw the rectangle.
         gl.glBindVertexArray(self.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, 4)
-
-        # Unbind VAO and the shader program.
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
