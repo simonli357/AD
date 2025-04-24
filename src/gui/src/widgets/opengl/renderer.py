@@ -179,5 +179,3 @@ class InstanceRenderer:
             self.vertex_count,
             self.instance_count
         )
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

@@ -287,7 +287,6 @@ class Speedometer():
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
         self.quad_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)
 
         # Draw the ticks.
         self.draw_ticks(proj_mat)
@@ -321,7 +320,6 @@ class Speedometer():
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             self.large_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
-            gl.glUseProgram(0)
 
         # Draw small ticks.
         if self.small_tick_vertices is not None and len(self.small_tick_vertices) > 0:
@@ -337,7 +335,6 @@ class Speedometer():
             gl.glDrawArrays(gl.GL_LINES, 0, num_vertices)
             self.small_tick_vbo.unbind()
             gl.glDisableVertexAttribArray(0)
-            gl.glUseProgram(0)
 
     def draw_circle(self, proj_mat):
         gl.glUseProgram(self.circle_shader_program)
@@ -354,7 +351,6 @@ class Speedometer():
         gl.glDrawArrays(gl.GL_LINE_LOOP, 0, self.num_segments)
         self.circle_vbo.unbind()
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)
 
     def draw_compass_needle(self, proj_mat, angle):
         gl.glUseProgram(self.compass_shader_program)
@@ -382,4 +378,3 @@ class Speedometer():
         self.needle_vbo.unbind()
 
         gl.glDisableVertexAttribArray(0)
-        gl.glUseProgram(0)

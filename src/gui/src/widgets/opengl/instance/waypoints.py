@@ -153,6 +153,3 @@ class WaypointsRenderer:
 
         # draw
         gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, 6, self.num_instances)
-
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

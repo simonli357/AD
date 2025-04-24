@@ -243,8 +243,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.diamond_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.diamond_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_car(self, x, y, yaw, color: NamedColor, scale, view_matrix, proj_matrix):
         car_model = None
@@ -280,8 +278,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
         obj_model = self.green_destination_model
@@ -308,8 +304,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(obj_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
         gl.glUseProgram(self.barca_shader)
@@ -331,8 +325,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.barca_track_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.barca_track_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_texture(self, mat, x, y, z, scale, view_matrix, proj_matrix):
         if mat is None:
@@ -360,9 +352,7 @@ class ShaderRenderer:
         # Draw
         gl.glBindVertexArray(mat.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
-        gl.glBindVertexArray(0)
         gl.glDisable(gl.GL_BLEND)
-        gl.glUseProgram(0)
 
     def draw_texture2D(self, x, y, icon, scale, proj_matrix):
         gl.glUseProgram(self.texture2D_shader)
@@ -387,9 +377,7 @@ class ShaderRenderer:
         # Draw
         gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
-        gl.glBindVertexArray(0)
         gl.glDisable(gl.GL_BLEND)
-        gl.glUseProgram(0)
 
     def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
         gl.glUseProgram(self.line_model.shader_program)
@@ -418,9 +406,7 @@ class ShaderRenderer:
         # Draw
         gl.glBindVertexArray(self.line_model.vao)
         gl.glDrawArrays(gl.GL_LINES, 0, 2)
-        gl.glBindVertexArray(0)
         self.line_model.vbo.unbind()
-        gl.glUseProgram(0)
 
     def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix, rot_barca=0):
         gl.glUseProgram(self.triangle_model.shader_program)
@@ -438,8 +424,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.triangle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.triangle_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix, z=0.5):
         gl.glUseProgram(self.circle_model.shader_program)
@@ -455,8 +439,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.circle_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_marker(self, x, y, color, scale, view_matrix, proj_matrix):
         # Create model matrix
@@ -477,8 +459,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.ripple_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
         gl.glUseProgram(self.crosshair_model.shader_program)
 
@@ -495,8 +475,6 @@ class ShaderRenderer:
             gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, i * 4, 4)
 
         gl.glDisable(gl.GL_BLEND)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_arrow_between(self, start, end, color, thickness, view_matrix, proj_matrix, z=3.0):
         x0, y0 = start
@@ -527,8 +505,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
     def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
         gl.glUseProgram(self.arrow_model.shader_program)
@@ -546,7 +522,6 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
-        gl.glBindVertexArray(0)
 
         # Draw red arrow (pointing along x) using the same global position and yaw, with extra -90° rotation
         model = glm.mat4(1.0)
@@ -559,8 +534,4 @@ class ShaderRenderer:
         model = glm.scale(model, glm.vec3(scale, scale, 1.0))
         gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
         gl.glUniform4f(self.arrow_model.u_color, *NamedColor.RED.value)
-
-        gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

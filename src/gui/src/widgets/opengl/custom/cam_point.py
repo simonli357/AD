@@ -87,7 +87,4 @@ class CameraPoint:
         # draw
         gl.glBindVertexArray(self.vao)
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo)
-        gl.glDrawElements(gl.GL_TRIANGLES, self.index_count,
-                          gl.GL_UNSIGNED_INT, None)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
+        gl.glDrawElements(gl.GL_TRIANGLES, self.index_count, gl.GL_UNSIGNED_INT, None)

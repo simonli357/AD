@@ -51,5 +51,3 @@ class CameraGrid:
         gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
 
         gl.glDisable(gl.GL_BLEND)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

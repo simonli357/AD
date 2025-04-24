@@ -124,5 +124,3 @@ class GTRenderer:
             gl.GL_TRIANGLES, 0, self.vertex_count,
             self.current_count
         )
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

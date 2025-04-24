@@ -98,6 +98,3 @@ class ModelInstanceRenderer:
 
         # Draw instances
         gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, self.vertex_count, self.num_instances)
-
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)

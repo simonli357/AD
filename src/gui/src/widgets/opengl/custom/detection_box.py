@@ -71,8 +71,6 @@ class DetectionBox:
         gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, 4)
 
         gl.glDisable(gl.GL_BLEND)
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
         # center your text in that quad:
         text_x = bg_x + bw * 0.5

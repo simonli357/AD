@@ -70,7 +70,6 @@ class ProgressBar:
         # Draw
         gl.glBindVertexArray(icon.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
-        gl.glBindVertexArray(0)
 
     def draw(self, screen_width, screen_height, x_norm, y_norm, width_norm, height_norm, fill_color, percentage, proj_mat, icon):
         # ——— 3) Denormalize and compute constants once ———
@@ -104,9 +103,6 @@ class ProgressBar:
         gl.glUniform1f(self.uFillFrac_loc, percentage)
         gl.glUniform4f(self.uColor_loc, *fill_color)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-
-        gl.glBindVertexArray(0)
-        gl.glUseProgram(0)
 
         # — draw icon + text on top —
         # 1) text string
