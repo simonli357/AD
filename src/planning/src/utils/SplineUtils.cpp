@@ -91,7 +91,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 			break;
 		}
 
-		int localSteps = std::max(1, static_cast<int>(std::ceil(effective_density)));
+		int localSteps = std::max(1, static_cast<int>(std::round(effective_density)));
 
 		// Interpolate within the segment (existing code remains unchanged)
 		for (int step = 0; step < localSteps; ++step) {
