@@ -167,20 +167,42 @@ class InstanceRenderer:
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, offset, c.nbytes, c)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
+    def remove_instance(self, index: int):
+        """Remove the instance at `index` and update GPU buffers."""
+        if index < 0 or index >= self.instance_count:
+            raise IndexError(f"instance index {index} out of range")
+
+        self.positions = np.delete(self.positions, index, axis=0)
+        if self.rotations is not None:
+            self.rotations = np.delete(self.rotations, index, axis=0)
+        if self.scales is not None:
+            self.scales = np.delete(self.scales, index, axis=0)
+        self.colors = np.delete(self.colors, index, axis=0)
+        self.mats = np.delete(self.mats, index, axis=0)
+
+        self.instance_count -= 1
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
+        color_bytes = self.colors.nbytes
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, color_bytes, self.colors)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        mats_bytes = self.mats.nbytes
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, mats_bytes, self.mats.tobytes())
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
     def add_instance(self, x, y, z, rot, scale, color):
         idx = self.instance_count
 
-        # append position
         self.positions = np.vstack([
             self.positions,
             np.array([x, y, z], dtype=np.float32)
         ])
 
-        # handle rotations
         if self.rotations is not None and rot is not None:
             self.rotations = np.append(self.rotations, rot)
 
-        # handle scales
         if isinstance(scale, (int, float)):
             if self.scales is None:
                 self.scales = np.array([scale], dtype=np.float32)
@@ -201,22 +223,18 @@ class InstanceRenderer:
         else:
             raise ValueError("scale must be a float or 3-tuple")
 
-        # append color
         c = np.array(color, dtype=np.float32)
         self.colors = np.vstack([self.colors, c])
 
-        # bump count and update mats array
         self.instance_count += 1
         self.mats = np.pad(self.mats, ((0, 1), (0, 0), (0, 0)), mode="constant", constant_values=0.0)
         self._update_instance_matrix(idx)
 
-        # upload just the new matrix
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         byte_off = idx * 16 * 4
         mb = self.mats[idx].tobytes()
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, byte_off, len(mb), mb)
 
-        # upload just the new color
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
         co = c.tobytes()
         col_off = idx * 4 * 4

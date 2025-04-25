@@ -174,6 +174,12 @@ class GraphEditor:
         node_id = self.instance_data.ids[index]
         self.arrow_instance_renderer.update_for_node(node_id, (x, y))
 
+    def fix_edges(self):
+        for index in range(len(self.instance_data.ids)):
+            node_id = self.instance_data.ids[index]
+            x, y, _ = self.instance_data.positions[index]
+            self.arrow_instance_renderer.update_for_node(node_id, (x, y))
+
     ##############
     # Events
     ##############
@@ -242,11 +248,7 @@ class GraphEditor:
             self.instance_data.ends.append((new_gl_x, new_gl_y))
 
         self.arrow_instance_renderer.reset(self.instance_data.starts, self.instance_data.ends, self.instance_data.edge_pairs)
-
-        for index in range(len(self.instance_data.ids)):
-            node_id = self.instance_data.ids[index]
-            x, y, _ = self.instance_data.positions[index]
-            self.arrow_instance_renderer.update_for_node(node_id, (x, y))
+        self.fix_edges()
 
     # Return false if we want parent behavior
     def mousePressEvent(self, event) -> bool:
@@ -287,5 +289,59 @@ class GraphEditor:
         self.update_instance(node_index, x, y, attr)
         self.translate_node(node_index, x, y)
 
-    def handleNodeFormDelete(self, node_index):
-        pass
+    def handleNodeFormDelete(self, node_index: int):
+        node_id = self.instance_data.ids[node_index]
+
+        prev_edges = [(u, v) for u, v in self.instance_data.edge_pairs if v == node_id]
+        next_edges = [(u, v) for u, v in self.instance_data.edge_pairs if u == node_id]
+        prev_ids = list({u for u, _ in prev_edges})
+        next_ids = list({v for _, v in next_edges})
+
+        to_remove = [
+            i for i, (u, v) in enumerate(self.instance_data.edge_pairs)
+            if u == node_id or v == node_id
+        ]
+        for i in sorted(to_remove, reverse=True):
+            self.instance_data.edge_pairs.pop(i)
+            self.instance_data.starts.pop(i)
+            self.instance_data.ends.pop(i)
+
+        for pu in prev_ids:
+            for nv in next_ids:
+                self.instance_data.edge_pairs.append((pu, nv))
+                # lookup GL positions
+                pi = self.instance_data.ids.index(pu)
+                ni = self.instance_data.ids.index(nv)
+                x0, y0 = self.instance_data.positions[pi][:2]
+                x1, y1 = self.instance_data.positions[ni][:2]
+                self.instance_data.starts.append((x0, y0))
+                self.instance_data.ends.append((x1, y1))
+
+        for lst in (
+            self.instance_data.ids,
+            self.instance_data.keys,
+            self.instance_data.positions,
+            self.instance_data.real_positions,
+            self.instance_data.attributes,
+            self.instance_data.colors,
+        ):
+            lst.pop(node_index)
+
+        self.node_instance_renderer.remove_instance(node_index)
+
+        self.arrow_instance_renderer.reset(
+            self.instance_data.starts,
+            self.instance_data.ends,
+            self.instance_data.edge_pairs
+        )
+
+        if self.prev_hovered == node_index:
+            self.prev_hovered = None
+        elif self.prev_hovered is not None and self.prev_hovered > node_index:
+            self.prev_hovered -= 1
+
+        if self._drag_index == node_index:
+            self._drag_index = None
+        elif self._drag_index is not None and self._drag_index > node_index:
+            self._drag_index -= 1
+        self.fix_edges()
