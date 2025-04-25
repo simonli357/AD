@@ -187,12 +187,20 @@ class ArrowInstanceRenderer:
 
     def reset(self, starts: list[tuple[float, float]], ends: list[tuple[float, float]], edge_pairs: list[tuple[int, int]]):
         """
-        Rebuild all per-instance data in place and re-upload via glBufferData/SubData.
+        Rebuild all per-instance data in place, including colors, and
+        re-upload via glBufferData/SubData.
         """
+
         self.starts = np.array(starts, dtype=np.float32)
         self.ends = np.array(ends, dtype=np.float32)
         self.edge_pairs = list(edge_pairs)
         self.instance_count = len(self.starts)
+
+        base_col = self.colors[0].copy()
+        self.colors = np.tile(base_col, (self.instance_count, 1)).astype(np.float32)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.colors.nbytes, self.colors, gl.GL_STATIC_DRAW)
 
         self.shaft_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
         self.tip_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
@@ -202,11 +210,8 @@ class ArrowInstanceRenderer:
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         size_bytes = max(self.shaft_mats.nbytes, self.tip_mats.nbytes)
         gl.glBufferData(gl.GL_ARRAY_BUFFER, size_bytes, None, gl.GL_DYNAMIC_DRAW)
-
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.shaft_mats.nbytes, self.shaft_mats.tobytes())
-
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, size_bytes - self.tip_mats.nbytes, self.tip_mats.nbytes, self.tip_mats.tobytes())
-
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
     def render(self, proj_mat, view_mat):

@@ -214,20 +214,39 @@ class GraphEditor:
 
         self.node_instance_renderer.add_instance(new_gl_x, new_gl_y, z, None, self.shapes.node_default_scale, new_color)
 
-        # splice edges in edge_pairs:
-        #  - remove old prev→next
-        #  - add prev→new, and new→next (if next exists)
+        # splice edges in instance_data—and keep starts/ends in sync:
         if next_id is not None:
+            # 1) remove the old prev→next edge and its start/end
             if (prev_id, next_id) in self.instance_data.edge_pairs:
-                self.instance_data.edge_pairs.remove((prev_id, next_id))
-            self.instance_data.edge_pairs.extend([
-                (prev_id, new_id),
-                (new_id, next_id)
-            ])
-        else:
+                idx = self.instance_data.edge_pairs.index((prev_id, next_id))
+                self.instance_data.edge_pairs.pop(idx)
+                self.instance_data.starts.pop(idx)
+                self.instance_data.ends.pop(idx)
+            # 2) add prev→new
             self.instance_data.edge_pairs.append((prev_id, new_id))
+            #   start at prev’s current GL pos, end at the new node
+            x0, y0 = self.instance_data.positions[prev_idx][:2]
+            self.instance_data.starts.append((x0, y0))
+            self.instance_data.ends.append((new_gl_x, new_gl_y))
+            # 3) add new→next
+            next_idx = self.instance_data.ids.index(next_id)
+            x1, y1 = self.instance_data.positions[next_idx][:2]
+            self.instance_data.edge_pairs.append((new_id, next_id))
+            self.instance_data.starts.append((new_gl_x, new_gl_y))
+            self.instance_data.ends.append((x1, y1))
+        else:
+            # only prev→new
+            self.instance_data.edge_pairs.append((prev_id, new_id))
+            x0, y0 = self.instance_data.positions[prev_idx][:2]
+            self.instance_data.starts.append((x0, y0))
+            self.instance_data.ends.append((new_gl_x, new_gl_y))
 
         self.arrow_instance_renderer.reset(self.instance_data.starts, self.instance_data.ends, self.instance_data.edge_pairs)
+
+        for index in range(len(self.instance_data.ids)):
+            node_id = self.instance_data.ids[index]
+            x, y, _ = self.instance_data.positions[index]
+            self.arrow_instance_renderer.update_for_node(node_id, (x, y))
 
     # Return false if we want parent behavior
     def mousePressEvent(self, event) -> bool:
