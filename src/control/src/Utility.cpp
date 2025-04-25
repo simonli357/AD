@@ -429,7 +429,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
-    // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << std::endl;
+    // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
