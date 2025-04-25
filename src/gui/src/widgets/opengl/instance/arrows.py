@@ -15,21 +15,65 @@ class ArrowInstanceRenderer:
         edge_pairs: list = None,
         shader_program=None,
     ):
+        # 1) per-instance data
+        self.starts = np.array(starts, dtype=np.float32)
+        self.ends = np.array(ends, dtype=np.float32)
+        self.edge_pairs = list(edge_pairs) if edge_pairs is not None else []
+        self.thickness = thickness
+        self.instance_count = len(self.starts)
+
+        # 2) base arrow mesh (shaft + tip)
         self.base_verts = np.array([
-            # Rect Triangle 1
+            # Shaft (two rectangles)
             -0.04, 0.0, 0.0,
-            -0.04, 0.8, 0.0,
-            0.04, 0.8, 0.0,
-            # Rect Triangle 2
+            -0.04, 1.0, 0.0,
+            0.04, 1.0, 0.0,
             0.04, 0.0, 0.0,
-            0.04, 0.8, 0.0,
+            0.04, 1.0, 0.0,
             -0.04, 0.0, 0.0,
-            # Arrow Triangle
-            -0.1, 0.8, 0.0,
-            0.1, 0.8, 0.0,
-            0, 1.0, 0.0
+            # Tip (triangle)
+            0.0, 0.2222, 0.0,
+            -0.1666, -0.1111, 0.0,
+            0.1666, -0.1111, 0.0
         ], dtype=np.float32)
-        # 1) shader
+
+        # Split into shaft and tip
+        shaft_vert_count = 6
+        tip_vert_count = 3
+        self.shaft_verts = self.base_verts[: shaft_vert_count * 3]
+        self.tip_verts = self.base_verts[shaft_vert_count * 3:]
+        self.vertex_count_shaft = shaft_vert_count
+        self.vertex_count_tip = tip_vert_count
+
+        # 3) compute instance matrices
+        self.shaft_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
+        self.tip_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
+        for i in range(self.instance_count):
+            x0, y0 = self.starts[i]
+            x1, y1 = self.ends[i]
+            dx, dy = x1 - x0, y1 - y0
+            length = np.hypot(dx, dy)
+            theta = np.arctan2(dy, dx) - np.pi / 2
+
+            arrow_height = (0.1666 + 0.25) * thickness
+
+            # Shaft matrix: scale Y by length
+            mat_sh = glm.mat4(1.0)
+            mat_sh = glm.translate(mat_sh, glm.vec3(x0, y0, 0.0))
+            mat_sh = glm.rotate(mat_sh, float(theta), glm.vec3(0, 0, 1))
+            mat_sh = glm.scale(mat_sh, glm.vec3(thickness, length - arrow_height, 1.0))
+            self.shaft_mats[i] = np.array(mat_sh.to_list(), dtype=np.float32)
+
+            # Tip matrix: translate to end of shaft and scale uniformly by thickness
+            mat_tp = glm.mat4(1.0)
+            mat_tp = glm.translate(mat_tp, glm.vec3(x0, y0, 0.0))
+            mat_tp = glm.rotate(mat_tp, float(theta), glm.vec3(0, 0, 1))
+            # model-tip base
+            mat_tp = glm.translate(mat_tp, glm.vec3(0.0, length - arrow_height, 0.0))
+            mat_tp = glm.scale(mat_tp, glm.vec3(thickness, thickness, 1.0))
+            self.tip_mats[i] = np.array(mat_tp.to_list(), dtype=np.float32)
+
+        # 4) shader
         if shader_program is not None:
             self.prog = shader_program
         else:
@@ -40,147 +84,117 @@ class ArrowInstanceRenderer:
         self.p_loc = gl.glGetUniformLocation(self.prog, "projection")
         self.v_loc = gl.glGetUniformLocation(self.prog, "view")
 
-        # 2) per-instance data
-        self.starts = np.array(starts, dtype=np.float32)
-        self.ends = np.array(ends, dtype=np.float32)
-        self.edge_pairs = list(edge_pairs) if edge_pairs is not None else []
-        self.thickness = thickness
-        N = len(self.starts)
-
-        # 3) colors
+        # 5) color buffer (shared)
         cols = np.array(color, dtype=np.float32)
         if cols.ndim == 1 and cols.size == 4:
-            self.colors = np.tile(cols, (N, 1))
-        elif cols.ndim == 2 and cols.shape[0] == N and cols.shape[1] == 4:
+            self.colors = np.tile(cols, (self.instance_count, 1))
+        elif cols.ndim == 2 and cols.shape == (self.instance_count, 4):
             self.colors = cols
         else:
             raise ValueError("color must be (4,) or (N,4)")
 
-        # 4) base arrow mesh
-        self.vertex_count = len(self.base_verts) // 3
+        # 6) buffers and VAOs
+        self.instance_vbo = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        max_bytes = max(self.shaft_mats.nbytes, self.tip_mats.nbytes)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, max_bytes, None, gl.GL_DYNAMIC_DRAW)
 
-        # 5) build all instance mats
-        self.mats = np.zeros((N, 4, 4), dtype=np.float32)
-        for i in range(N):
-            x0, y0 = self.starts[i]
-            x1, y1 = self.ends[i]
-            dx, dy = x1 - x0, y1 - y0
-            length = np.hypot(dx, dy)
-            # skip zero-length arrows
-            if length < 1e-6:
-                mat = glm.mat4(0.0)  # will effectively draw nothing
-            else:
-                theta = np.arctan2(dy, dx)
-                angle = theta - np.pi / 2
-
-                mat = glm.mat4(1.0)
-                mat = glm.translate(mat, glm.vec3(x0, y0, 0.0))
-                mat = glm.rotate(mat, float(angle), glm.vec3(0, 0, 1))
-                mat = glm.scale(mat, glm.vec3(thickness, length, 1.0))
-            self.mats[i] = np.array(mat.to_list(), dtype=np.float32)
-
-        # 6) build VAO + VBOs exactly like InstanceRenderer
-        self.vao = gl.glGenVertexArrays(1)
-        gl.glBindVertexArray(self.vao)
-
-        # base-vertex VBO
-        self.vertex_vbo = gl.glGenBuffers(1)
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vertex_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.base_verts.nbytes, self.base_verts, gl.GL_STATIC_DRAW)
-        gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, 0, None)
-
-        # color VBO (per-instance)
         self.color_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
         gl.glBufferData(gl.GL_ARRAY_BUFFER, self.colors.nbytes, self.colors, gl.GL_STATIC_DRAW)
+
+        # Shaft VAO
+        self.shaft_vao = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.shaft_vao)
+        self.shaft_vbo = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.shaft_vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.shaft_verts.nbytes, self.shaft_verts, gl.GL_STATIC_DRAW)
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, 0, None)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
         gl.glEnableVertexAttribArray(1)
         gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, False, 0, None)
         gl.glVertexAttribDivisor(1, 1)
-
-        # instance‐matrix VBO
-        self.instance_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.mats.nbytes, self.mats, gl.GL_DYNAMIC_DRAW)
-        stride = 16 * 4  # 4×4 floats × 4 bytes
+        stride = 16 * 4
         for col in range(4):
             loc = 2 + col
             offset = gl.ctypes.c_void_p(col * 16)
             gl.glEnableVertexAttribArray(loc)
             gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, stride, offset)
             gl.glVertexAttribDivisor(loc, 1)
-
-        # unbind
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
-        self.instance_count = N
+        # Tip VAO
+        self.tip_vao = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.tip_vao)
+        self.tip_vbo = gl.glGenBuffers(1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.tip_vbo)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.tip_verts.nbytes, self.tip_verts, gl.GL_STATIC_DRAW)
+        gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, 0, None)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.color_vbo)
+        gl.glEnableVertexAttribArray(1)
+        gl.glVertexAttribPointer(1, 4, gl.GL_FLOAT, False, 0, None)
+        gl.glVertexAttribDivisor(1, 1)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        for col in range(4):
+            loc = 2 + col
+            offset = gl.ctypes.c_void_p(col * 16)
+            gl.glEnableVertexAttribArray(loc)
+            gl.glVertexAttribPointer(loc, 4, gl.GL_FLOAT, False, stride, offset)
+            gl.glVertexAttribDivisor(loc, 1)
+        gl.glBindVertexArray(0)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
-    def _rebuild_matrix(self, i):
-        """Recompute mats[i] from self.starts[i], self.ends[i]."""
+    def _rebuild_matrix(self, i: int):
         x0, y0 = self.starts[i]
         x1, y1 = self.ends[i]
         dx, dy = x1 - x0, y1 - y0
         length = np.hypot(dx, dy)
-        if length < 1e-6:
-            mat = glm.mat4(0.0)
-        else:
-            theta = np.arctan2(dy, dx)
-            angle = theta - np.pi / 2
-            mat = glm.mat4(1.0)
-            mat = glm.translate(mat, glm.vec3(x0, y0, 0))
-            mat = glm.rotate(mat, float(angle), glm.vec3(0, 0, 1))
-            mat = glm.scale(mat, glm.vec3(self.thickness, length, 1.0))
-        self.mats[i] = np.array(mat.to_list(), dtype=np.float32)
+        theta = np.arctan2(dy, dx) - np.pi / 2
 
-    def update_for_node(self, node_id, new_gl_pos):
-        """
-        Called when one node moves: only adjust the arrows
-        whose ui==node_id or vi==node_id.
-        """
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        stride_bytes = 16 * 4  # 16 floats × 4 bytes
+        arrow_height = (0.1666 + 0.25) * self.thickness
 
+        # Shaft
+        mat_sh = glm.mat4(1.0)
+        mat_sh = glm.translate(mat_sh, glm.vec3(x0, y0, 0.0))
+        mat_sh = glm.rotate(mat_sh, float(theta), glm.vec3(0, 0, 1))
+        mat_sh = glm.scale(mat_sh, glm.vec3(self.thickness, length - arrow_height, 1.0))
+        self.shaft_mats[i] = np.array(mat_sh.to_list(), dtype=np.float32)
+
+        # Tip
+        mat_tp = glm.mat4(1.0)
+        mat_tp = glm.translate(mat_tp, glm.vec3(x0, y0, 0.0))
+        mat_tp = glm.rotate(mat_tp, float(theta), glm.vec3(0, 0, 1))
+        mat_tp = glm.translate(mat_tp, glm.vec3(0.0, length - arrow_height, 0.0))
+        mat_tp = glm.scale(mat_tp, glm.vec3(self.thickness, self.thickness, 1.0))
+        self.tip_mats[i] = np.array(mat_tp.to_list(), dtype=np.float32)
+
+    def update_for_node(self, node_id: int, new_gl_pos):
+        """Called when a node moves: updates the corresponding arrow instances."""
         for i, (ui, vi) in enumerate(self.edge_pairs):
             updated = False
-            # if this arrow starts on the moved node, update its start
             if ui == node_id:
                 self.starts[i] = (new_gl_pos[0], new_gl_pos[1])
                 updated = True
-            # if it ends on the moved node, update its end
             if vi == node_id:
                 self.ends[i] = (new_gl_pos[0], new_gl_pos[1])
                 updated = True
-
             if updated:
-                # rebuild that one matrix
+                # recompute both shaft and tip matrices for this instance
                 self._rebuild_matrix(i)
-                # push *only* its 64 bytes
-                offset = i * stride_bytes
-                # note: .tobytes() flattens the 4×4 float32 matrix
-                gl.glBufferSubData(
-                    gl.GL_ARRAY_BUFFER,
-                    offset,
-                    stride_bytes,
-                    self.mats[i].tobytes()
-                )
-
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
-
         gl.glUniformMatrix4fv(self.p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
         gl.glUniformMatrix4fv(self.v_loc, 1, gl.GL_FALSE, glm.value_ptr(view_mat))
-
-        # update instance matrices if you’ve changed starts/ends/thickness
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.mats.nbytes, self.mats)
-
-        gl.glBindVertexArray(self.vao)
-        gl.glDrawArraysInstanced(
-            gl.GL_TRIANGLES,
-            0,
-            self.vertex_count,
-            self.instance_count
-        )
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.shaft_mats.nbytes, self.shaft_mats.tobytes())
+        gl.glBindVertexArray(self.shaft_vao)
+        gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, self.vertex_count_shaft, self.instance_count)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.tip_mats.nbytes, self.tip_mats.tobytes())
+        gl.glBindVertexArray(self.tip_vao)
+        gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, self.vertex_count_tip, self.instance_count)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)

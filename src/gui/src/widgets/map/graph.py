@@ -23,7 +23,7 @@ class Shapes:
     def __init__(self):
         self.node_shader = create_shader_program(shader_path('node', 'node.vert'), shader_path('node', 'node.frag'))
         self.node_default_scale = 8.0
-        self.arrow_thickness = 20.0
+        self.arrow_thickness = 15.0
         self.node_base_vertices = np.array([
             # Positions (3D for proper matrix transformations)
             [0.0, 0.5, 0.1],  # Top
