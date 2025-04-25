@@ -134,6 +134,7 @@ class NodeFormWidget(QDialog):
         # Assign unique object names for styling
         ok_button.setObjectName("okButton")
         cancel_button.setObjectName("cancelButton")
+        cancel_button.setText("Delete")
 
         # Apply styles
         self.buttonBox.setStyleSheet("""
