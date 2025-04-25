@@ -24,7 +24,7 @@ Track::Track() {
 }
 
 void Track::read_graph_xml() {
-	// 0) Build a map from attr.name → key‑ID
+	// 0) Build a map from attr.name → key-ID
 	std::string path = ros::package::getPath("planning") + "/src/persistence/graph.graphml";
 	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
@@ -36,15 +36,17 @@ void Track::read_graph_xml() {
 		std::cerr << "[Track] Missing <graphml> root\n";
 		return;
 	}
+	// map attr.name (e.g. "x","y","attr","dist") → the GraphML key-ID (e.g. "d0","d1",…)
 	std::unordered_map<std::string, std::string> name2id;
 	for (auto *keyElem = graphml->FirstChildElement("key"); keyElem; keyElem = keyElem->NextSiblingElement("key")) {
 		const char *id = keyElem->Attribute("id");
 		const char *name = keyElem->Attribute("attr.name");
-		if (id && name)
+		if (id && name) {
 			name2id[name] = id;
+		}
 	}
 
-	// 1) Now re-open for node/edge parsing
+	// 1) Re-open to actually parse the <graph> subtree
 	tinyxml2::XMLDocument doc2;
 	if (doc2.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
 		std::cerr << "[Track] Failed to reload GraphML: " << path << "\n";
@@ -57,7 +59,6 @@ void Track::read_graph_xml() {
 	}
 
 	graph.clear();
-	// Map XML node‑ids ("n0","n1",…) to vertex_descriptors
 	std::unordered_map<std::string, Graph::vertex_descriptor> xml2vd;
 
 	// 2) Parse <node>
@@ -66,44 +67,35 @@ void Track::read_graph_xml() {
 		if (!xmlId)
 			continue;
 
-		// temporary holders
-		Track::Vertex tmp;
-		tmp.id = -1;
-		tmp.x = tmp.y = 0.0;
-		tmp.tangent_angle = tmp.normal_angle = tmp.curvature = tmp.vref = tmp.steer_ref = 0.0;
+		// strip leading 'n' and parse the integer ID
+		int rawId = std::stoi(xmlId + 1);
 
+		Track::Vertex tmp;
+		tmp.id = rawId;
+		tmp.x = 0.0;
+		tmp.y = 0.0;
+		tmp.tangent_angle = tmp.normal_angle = tmp.curvature = tmp.vref = tmp.steer_ref = 0.0;
 		int attr_raw = 0;
 
-		// fill them from <data key="…">
+		// pull out any <data key="…"> tags
 		for (auto *dataElem = nodeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
 			const char *key = dataElem->Attribute("key");
 			const char *txt = dataElem->GetText();
 			if (!key || !txt)
 				continue;
 
-			if (key == name2id["attr"])
-				attr_raw = std::stoi(txt);
-			else if (key == name2id["curv"])
-				tmp.curvature = std::stod(txt);
-			else if (key == name2id["id"])
-				tmp.id = std::stoi(txt);
-			else if (key == name2id["normal"])
-				tmp.normal_angle = std::stod(txt);
-			else if (key == name2id["steer"])
-				tmp.steer_ref = std::stod(txt);
-			else if (key == name2id["tangent"])
-				tmp.tangent_angle = std::stod(txt);
-			else if (key == name2id["vref"])
-				tmp.vref = std::stod(txt);
-			else if (key == name2id["x"])
+			if (key == name2id["x"]) {
 				tmp.x = std::stod(txt);
-			else if (key == name2id["y"])
+			} else if (key == name2id["y"]) {
 				tmp.y = std::stod(txt);
+			} else if (key == name2id["attr"]) {
+				attr_raw = std::stoi(txt);
+			}
+			// …and if you have other per-node keys, handle them here…
 		}
-
 		tmp.attribute = static_cast<ATTRIBUTE>(attr_raw);
 
-		// add to Boost graph
+		// add vertex to Boost graph
 		auto vd = boost::add_vertex(graph);
 		graph[vd] = tmp;
 		xml2vd[xmlId] = vd;
@@ -115,7 +107,8 @@ void Track::read_graph_xml() {
 		const char *tgt = edgeElem->Attribute("target");
 		if (!src || !tgt)
 			continue;
-		auto itS = xml2vd.find(src), itT = xml2vd.find(tgt);
+		auto itS = xml2vd.find(src);
+		auto itT = xml2vd.find(tgt);
 		if (itS == xml2vd.end() || itT == xml2vd.end())
 			continue;
 
@@ -123,8 +116,9 @@ void Track::read_graph_xml() {
 		for (auto *dataElem = edgeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
 			const char *key = dataElem->Attribute("key");
 			const char *txt = dataElem->GetText();
-			if (key == name2id["dist"] && txt)
+			if (key == name2id["dist"] && txt) {
 				dist = std::stod(txt);
+			}
 		}
 
 		auto e = boost::add_edge(itS->second, itT->second, graph).first;
