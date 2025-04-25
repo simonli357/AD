@@ -83,8 +83,18 @@ void Track::read_graph_xml() {
 
 			if (key == name2id["attr"])
 				attr_raw = std::stoi(txt);
+			else if (key == name2id["curv"])
+				tmp.curvature = std::stod(txt);
 			else if (key == name2id["id"])
 				tmp.id = std::stoi(txt);
+			else if (key == name2id["normal"])
+				tmp.normal_angle = std::stod(txt);
+			else if (key == name2id["steer"])
+				tmp.steer_ref = std::stod(txt);
+			else if (key == name2id["tangent"])
+				tmp.tangent_angle = std::stod(txt);
+			else if (key == name2id["vref"])
+				tmp.vref = std::stod(txt);
 			else if (key == name2id["x"])
 				tmp.x = std::stod(txt);
 			else if (key == name2id["y"])
