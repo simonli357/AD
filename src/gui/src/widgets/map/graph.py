@@ -149,12 +149,24 @@ class GraphEditor:
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def export(self, path):
-        for u, v, data in self.G.edges(data=True):
-            x1 = float(self.G.nodes[u]['x'])
-            y1 = float(self.G.nodes[u]['y'])
-            x2 = float(self.G.nodes[v]['x'])
-            y2 = float(self.G.nodes[v]['y'])
-            data['dist'] = np.hypot(x2 - x1, y2 - y1)
+        """
+        Apply all in-memory instance_data changes back to self.G and write GraphML.
+        """
+        self.G.clear()
+
+        id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
+
+        for node_id, node_key, (x_real, y_real), attr in zip(self.instance_data.ids, self.instance_data.keys, self.instance_data.real_positions, self.instance_data.attributes):
+            self.G.add_node(node_key, x=float(x_real), y=float(y_real), attr=int(attr))
+
+        for u_id, v_id in self.instance_data.edge_pairs:
+            u_key = id_to_key[u_id]
+            v_key = id_to_key[v_id]
+            ux, uy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == u_id)
+            vx, vy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == v_id)
+            dist = float(np.hypot(vx - ux, vy - uy))
+            self.G.add_edge(u_key, v_key, dist=dist)
+
         nx.write_graphml(self.G, path)
 
     def update_instance(self, index, x_real, y_real, attr):
