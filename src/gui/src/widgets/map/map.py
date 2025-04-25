@@ -638,6 +638,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # clear press marker
             self._press_pos = None
 
+    def mouseDoubleClickEvent(self, event):
+        if self.show_graph:
+            self.graph_editor.mouseDoubleClickEvent(event)
+
     def wheelEvent(self, event):
         # Get mouse position in normalized device coordinates
         mouse_pos = event.pos()

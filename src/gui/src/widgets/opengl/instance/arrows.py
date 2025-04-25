@@ -185,6 +185,30 @@ class ArrowInstanceRenderer:
                 # recompute both shaft and tip matrices for this instance
                 self._rebuild_matrix(i)
 
+    def reset(self, starts: list[tuple[float, float]], ends: list[tuple[float, float]], edge_pairs: list[tuple[int, int]]):
+        """
+        Rebuild all per-instance data in place and re-upload via glBufferData/SubData.
+        """
+        self.starts = np.array(starts, dtype=np.float32)
+        self.ends = np.array(ends, dtype=np.float32)
+        self.edge_pairs = list(edge_pairs)
+        self.instance_count = len(self.starts)
+
+        self.shaft_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
+        self.tip_mats = np.zeros((self.instance_count, 4, 4), dtype=np.float32)
+        for i in range(self.instance_count):
+            self._rebuild_matrix(i)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        size_bytes = max(self.shaft_mats.nbytes, self.tip_mats.nbytes)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, size_bytes, None, gl.GL_DYNAMIC_DRAW)
+
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.shaft_mats.nbytes, self.shaft_mats.tobytes())
+
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, size_bytes - self.tip_mats.nbytes, self.tip_mats.nbytes, self.tip_mats.tobytes())
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
         gl.glUniformMatrix4fv(self.p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))

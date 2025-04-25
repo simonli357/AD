@@ -178,6 +178,57 @@ class GraphEditor:
     # Events
     ##############
 
+    def mouseDoubleClickEvent(self, event):
+        # only handle left-button double-click when we have a hovered node
+        if event.button() != Qt.LeftButton or self.prev_hovered is None:
+            return super().mouseDoubleClickEvent(event)
+
+        prev_idx = self.prev_hovered
+        prev_id = self.instance_data.ids[prev_idx]
+
+        # find the “next” in our edge_pairs, if any
+        next_pair = next(((u, v) for u, v in self.instance_data.edge_pairs if u == prev_id), None)
+        next_id = next_pair[1] if next_pair is not None else None
+
+        # compute new node coords (real + GL)
+        epsilon = 0.5
+        x_real, y_real = self.instance_data.real_positions[prev_idx]
+        new_x_real = x_real + epsilon
+        new_y_real = y_real + epsilon
+        new_gl_x, new_gl_y = self.map_widget.get_gl_coords(new_x_real, new_y_real)
+        z = self.instance_data.positions[prev_idx][2]
+
+        # pick new ID/key, attribute, color
+        new_id = max(self.instance_data.ids) + 1
+        new_key = f"n{new_id}"
+        new_attr = self.instance_data.attributes[prev_idx]
+        new_color = self.ATTRIBUTES_COLORS[new_attr]
+
+        # append the new node to instance_data
+        self.instance_data.keys.append(new_key)
+        self.instance_data.ids.append(new_id)
+        self.instance_data.positions.append((new_gl_x, new_gl_y, z))
+        self.instance_data.real_positions.append((new_x_real, new_y_real))
+        self.instance_data.attributes.append(new_attr)
+        self.instance_data.colors.append(new_color)
+
+        self.node_instance_renderer.add_instance(new_gl_x, new_gl_y, z, None, self.shapes.node_default_scale, new_color)
+
+        # splice edges in edge_pairs:
+        #  - remove old prev→next
+        #  - add prev→new, and new→next (if next exists)
+        if next_id is not None:
+            if (prev_id, next_id) in self.instance_data.edge_pairs:
+                self.instance_data.edge_pairs.remove((prev_id, next_id))
+            self.instance_data.edge_pairs.extend([
+                (prev_id, new_id),
+                (new_id, next_id)
+            ])
+        else:
+            self.instance_data.edge_pairs.append((prev_id, new_id))
+
+        self.arrow_instance_renderer.reset(self.instance_data.starts, self.instance_data.ends, self.instance_data.edge_pairs)
+
     # Return false if we want parent behavior
     def mousePressEvent(self, event) -> bool:
         if event.button() == Qt.LeftButton and self.prev_hovered is not None:
