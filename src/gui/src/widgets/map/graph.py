@@ -157,7 +157,7 @@ class GraphEditor:
         id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
 
         for node_id, node_key, (x_real, y_real), attr in zip(self.instance_data.ids, self.instance_data.keys, self.instance_data.real_positions, self.instance_data.attributes):
-            self.G.add_node(node_key, x=float(x_real), y=float(y_real), attr=int(attr))
+            self.G.add_node(node_key, id=int(node_id), x=float(x_real), y=float(y_real), attr=int(attr))
 
         for u_id, v_id in self.instance_data.edge_pairs:
             u_key = id_to_key[u_id]
