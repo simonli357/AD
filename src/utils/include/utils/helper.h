@@ -84,7 +84,59 @@ namespace helper {
         return closest_index;
     }
 
-    template <typename EigenType> inline void saveToFile(const EigenType &data, const std::string &filename) {
+	inline bool get_min_object_index(const Eigen::Vector2d &estimated_sign_pose, const std::vector<std::vector<double>> &EMPIRICAL_POSES, int &o_index, double &o_min_error_sq, double threshold) {
+		int min_index = 0;
+		double min_error_sq = 1000;
+		// utils.debug("sign_based_relocalization(): estimated sign pose: (" + std::to_string(estimated_sign_pose[0]) + ", " + std::to_string(estimated_sign_pose[1]) + ")", 5);
+		for (std::size_t i = 0; i < EMPIRICAL_POSES.size(); ++i) {
+			double error_sq = std::pow(estimated_sign_pose[0] - EMPIRICAL_POSES[i][0], 2) + std::pow(estimated_sign_pose[1] - EMPIRICAL_POSES[i][1], 2);
+			// std::cout << "object pose: (" << EMPIRICAL_POSES[i][0] << ", " << EMPIRICAL_POSES[i][1] << ", " << EMPIRICAL_POSES[i][2] << "), error: " << std::sqrt(error_sq) << std::endl;
+			if (error_sq < min_error_sq) {
+				min_error_sq = error_sq;
+				min_index = static_cast<int>(i);
+			}
+		}
+		// std::cout << "closest object pose: (" << EMPIRICAL_POSES[min_index][0] << ", " << EMPIRICAL_POSES[min_index][1] << ", " << EMPIRICAL_POSES[min_index][2] << "), error: " << std::sqrt(min_error_sq)
+		// << std::endl;
+		if (min_error_sq > threshold * threshold) {
+			o_index = min_index;
+			o_min_error_sq = min_error_sq;
+			return false;
+		} else {
+			o_index = min_index;
+			o_min_error_sq = min_error_sq;
+			return true;
+		}
+	}
+
+    inline bool get_min_object_index(
+        const Eigen::Vector2d               &estimated_sign_pose,
+        const std::vector<Eigen::Vector2d>  &EMPIRICAL_POSES,
+        int                                 &o_index,
+        double                              &o_min_error_sq,
+        double                               threshold
+    ) {
+        // initialize to something large
+        int    min_index    = -1;
+        double min_error_sq = std::numeric_limits<double>::infinity();
+
+        for (std::size_t i = 0; i < EMPIRICAL_POSES.size(); ++i) {
+            double error_sq = (estimated_sign_pose - EMPIRICAL_POSES[i]).squaredNorm();
+            if (error_sq < min_error_sq) {
+                min_error_sq = error_sq;
+                min_index    = static_cast<int>(i);
+            }
+        }
+
+        // write outputs
+        o_index        = min_index;
+        o_min_error_sq = min_error_sq;
+
+        // return whether we're within threshold
+        return (min_error_sq <= threshold * threshold);
+    }
+
+	template <typename EigenType> inline void saveToFile(const EigenType &data, const std::string &filename) {
 		std::string dir = helper::getSourceDirectory();
 		std::string file_path = dir + "/" + filename;
 		std::ofstream file(file_path);

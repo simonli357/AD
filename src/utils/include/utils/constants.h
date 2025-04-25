@@ -284,8 +284,8 @@ namespace VehicleConstants {
         EKF
     };
     static constexpr std::array<double, 4> CAMERA_PARAMS = {
-        554.3826904296875, 
-        554.3826904296875, 
+        607.40564, 
+        607.40564, 
         320, 
         240
     };
@@ -295,8 +295,8 @@ namespace VehicleConstants {
         322.97223,  // cx
         244.39398   // cy
     };
-    static constexpr std::array<double, 6> REALSENSE_TF = {-0.089, -0.032, 0.24765, 0, 0.0, 0}; // x, y, z, roll, pitch, yaw
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.089, -0.032, 0.24765, 0, 0.0, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 
