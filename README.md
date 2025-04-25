@@ -18,6 +18,22 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 
 ---
 
+<h2>🎥 Demo Videos</h2>
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=bx6XyxSAWaU" target="_blank">
+    <img src="https://img.youtube.com/vi/bx6XyxSAWaU/0.jpg" alt="Demo Video 1" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    <p><em>BFMC 2025 Qualification Video</em></p>
+  </a>
+
+  <a href="https://www.youtube.com/watch?v=xjAYdCH-X1w" target="_blank">
+    <img src="https://img.youtube.com/vi/xjAYdCH-X1w/0.jpg" alt="Demo Video 2" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    <p><em>Software v2.2.2 Simulator Demo</em></p>
+  </a>
+</div>
+
+---
+
 ## 🏗️ Project Structure
 
 - **Embedded_Platform/** - Interfaces with STM32 for motor, servo, and sensor control.

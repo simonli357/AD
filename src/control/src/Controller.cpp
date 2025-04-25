@@ -615,7 +615,7 @@ public:
         int min_index = 0;
         double min_error_sq = 1000.0;
         if (thresh < 0) thresh = sign_localization_threshold;
-        if (utils.get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
+        if (helper::get_min_object_index(estimated_sign_pose, EMPIRICAL_POSES, min_index, min_error_sq, thresh)) {
             double yaw = utils.get_yaw();
             double sign_direction = EMPIRICAL_POSES[min_index][2];
             double yaw_error = helper::compare_yaw(sign_direction, yaw);
