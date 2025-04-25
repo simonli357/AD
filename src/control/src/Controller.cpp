@@ -341,7 +341,7 @@ public:
                     double error_sq = (target_sign_pose - static_object_gt_pose).squaredNorm();
                     if (error_sq < 0.01) {
                         if (known_static_object->cumulative_confidence < 2.0) {
-                            utils.debug("CHECK_INTERSECTION(): WARNING: sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), but cumulative confidence too low: " + helper::d2str(known_static_object->cumulative_confidence) + ", sign: " + OBJECT_NAMES[sign_flag] + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
+                            // utils.debug("CHECK_INTERSECTION(): WARNING: sign found for intersection at (" + helper::d2str(target_intersection.pose[0]) + ", " + helper::d2str(target_intersection.pose[1]) + "), but cumulative confidence too low: " + helper::d2str(known_static_object->cumulative_confidence) + ", sign: " + OBJECT_NAMES[sign_flag] + ", error: " + helper::d2str(std::sqrt(error_sq)), 2);
                             continue;
                         }
                         sign_flag = known_static_object->type;
@@ -376,14 +376,16 @@ public:
                 int next_idx = PathManager::intersection_indices[PathManager::intersection_index];
                 const auto& next_pose = GroundTruth::intersections_all[next_idx].pose;
     
-                utils.debug("CHECK_INTERSECTION(): SUCCESS: x_cur: (" +
+                utils.debug("CHECK_INTERSECTION(" + OBJECT_NAMES[sign_flag] +
+                            "): REACHED: x_cur: (" +
                             helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
                             "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
                             "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +
                             ", index: " + std::to_string(PathManager::intersection_index) +
                             ", next intersection: (" + helper::d2str(next_pose[0]) + ", " + helper::d2str(next_pose[1]) + ", " + helper::d2str(next_pose[2]) + ")", 2);
             } else {
-                utils.debug("CHECK_INTERSECTION(): SUCCESS: x_cur: (" +
+                utils.debug("CHECK_INTERSECTION(" + OBJECT_NAMES[sign_flag] +
+                            "): REACHED: x_cur: (" +
                             helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", " + helper::d2str(x_current[2]) +
                             "), intersection: (" + helper::d2str(next_intersection_pose[0]) + ", " + helper::d2str(next_intersection_pose[1]) +
                             "), distance: " + helper::d2str(std::sqrt(distance_to_next_sq)) +

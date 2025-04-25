@@ -386,12 +386,12 @@ class SignFastest {
                 if (finalDepth < 0)
                     continue;  // no valid depth remains after exclusion
                 
-                double expected_dist = distance_makes_sense(finalDepth, db.class_id, db.x1, db.y1, db.x2, db.y2);
-                if (!expected_dist) {
-                    ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f, x1: %d, y1: %d, x2: %d, y2: %d, id: %d",
-                            expected_dist, finalDepth, db.x1, db.y1, db.x2, db.y2, db.class_id);
-                    continue;
-                }
+                // bool expected_dist = distance_makes_sense(finalDepth, db.class_id, db.x1, db.y1, db.x2, db.y2);
+                // if (!expected_dist) {
+                //     ROS_WARN("Distance does not make sense, expected: %.3f, got: %.3f, x1: %d, y1: %d, x2: %d, y2: %d, id: %d",
+                //             expected_dist, finalDepth, db.x1, db.y1, db.x2, db.y2, db.class_id);
+                //     continue;
+                // }
                 // Populate the sign message.
                 sign_msg.data.push_back(db.x1);
                 sign_msg.data.push_back(db.y1);
@@ -590,17 +590,24 @@ class SignFastest {
 			if (validDepths.empty()) {
 				return -1;
 			}
-			// Compute median
-			std::sort(validDepths.begin(), validDepths.end());
-			double median = 0;
-			size_t n = validDepths.size();
-			if (n % 2 == 1) {
-				median = validDepths[n / 2];
-			} else {
-				median = 0.5 * (validDepths[n / 2 - 1] + validDepths[n / 2]);
-			}
-			// Mark the entire ROI in the occlusion mask as used.
-			maskROI.setTo(255);
-			return median;
+			size_t total = validDepths.size();
+            size_t cutoff = std::max<size_t>(1, total * 0.25);  // ensure at least one value
+            std::nth_element(validDepths.begin(), validDepths.begin() + cutoff, validDepths.end());
+
+            // Sort the closest 25% for median computation
+            std::vector<double> closest25(validDepths.begin(), validDepths.begin() + cutoff);
+            std::sort(closest25.begin(), closest25.end());
+
+            double median = 0;
+            size_t m = closest25.size();
+            if (m % 2 == 1) {
+                median = closest25[m / 2];
+            } else {
+                median = 0.5 * (closest25[m / 2 - 1] + closest25[m / 2]);
+            }
+
+            // Mark the entire ROI in the occlusion mask as used.
+            maskROI.setTo(255);
+            return median;
 		}
 };

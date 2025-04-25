@@ -350,8 +350,8 @@ public:
     bool is_same_object(double new_x, double new_y) const override {
         std::lock_guard<std::mutex> lock(mtx);
         double dt = (ros::Time::now() - last_detection_time).toSec();
-        double pred_x = x + speed * std::cos(yaw) * dt;
-        double pred_y = y + speed * std::sin(yaw) * dt;
+        double pred_x = x;// + speed * std::cos(yaw) * dt;
+        double pred_y = y;// + speed * std::sin(yaw) * dt;
         double distance = std::hypot(new_x - pred_x, new_y - pred_y);
         return distance <= OBJECT_TRACKING_PARAMS[static_cast<int>(type)].association_radius;
     }

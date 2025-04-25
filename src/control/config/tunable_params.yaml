@@ -52,8 +52,8 @@ sim:
   min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
-  cumulative_confidence_thresholds: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
-  recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5]
+  recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
   stop_duration: 1.5
 
   sign_localization_threshold: 0.537 #0.357
