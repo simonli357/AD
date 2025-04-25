@@ -191,7 +191,7 @@ class GraphEditor:
         next_id = next_pair[1] if next_pair is not None else None
 
         # compute new node coords (real + GL)
-        epsilon = 0.5
+        epsilon = 0.1
         x_real, y_real = self.instance_data.real_positions[prev_idx]
         new_x_real = x_real + epsilon
         new_y_real = y_real + epsilon
