@@ -57,7 +57,7 @@ inline std::vector<Intersection> intersections_all;
 inline std::vector<std::shared_ptr<Sign>> intersection_signs;
 // Standalone signs (ie. parking, highway entries/exits)
 inline std::vector<std::shared_ptr<Sign>> standalone_signs;
-
+inline std::vector<Eigen::Vector2d> PARKING_SPOTS;
 // === Utility Functions ===
 inline void clear_ground_truth() {
     intersections_all.clear();
@@ -155,6 +155,13 @@ inline void initialize_ground_truth() {
     }
     for (const auto& p : PARKING_SIGN_POSES2) {
         standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::PARK));
+    }
+
+    for(int i=0; i<5; i++) {
+        Eigen::Vector2d spot_right = {PARKING_SPOT_RIGHT[0] + i*PARKING_SPOT_LENGTH, PARKING_SPOT_RIGHT[1]};
+        Eigen::Vector2d spot_left = {PARKING_SPOT_LEFT[0] + i*PARKING_SPOT_LENGTH, PARKING_SPOT_LEFT[1]};
+        PARKING_SPOTS.push_back(spot_right);
+        PARKING_SPOTS.push_back(spot_left);
     }
 }
 

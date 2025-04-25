@@ -9,7 +9,7 @@
 #include "queries/GraphQueries.hpp"
 #include "std_srvs/SetBoolRequest.h"
 #include "Utility.hpp"
-#include "PathManager.hpp"
+#include "PathManager.h"
 #include "MPC.hpp"
 #include <signal.h>
 #include <fstream>
@@ -44,14 +44,6 @@ public:
             change_state(STATE::KEYBOARD_CONTROL);
         }
 
-        //initialize parking spots
-        for(int i=0; i<5; i++) {
-            Eigen::Vector2d spot_right = {PARKING_SPOT_RIGHT[0] + i*PARKING_SPOT_LENGTH, PARKING_SPOT_RIGHT[1]};
-            Eigen::Vector2d spot_left = {PARKING_SPOT_LEFT[0] + i*PARKING_SPOT_LENGTH, PARKING_SPOT_LEFT[1]};
-            PARKING_SPOTS.push_back(spot_right);
-            PARKING_SPOTS.push_back(spot_left);
-        }
-
         double rateVal = 1 / Tunable::T;
         rate = new ros::Rate(rateVal);
         std::cout << "rate: " << rateVal << std::endl;
@@ -71,7 +63,6 @@ public:
     bool wait_for_green_flag = false;
 
     Eigen::Vector3d x_current;
-    std::vector<Eigen::Vector2d> PARKING_SPOTS;
 
     std::array<double, 4> bbox = {0.0, 0.0, 0.0, 0.0};
     double detected_dist = 0;
@@ -332,6 +323,7 @@ public:
             return false;
         }
         auto& target_intersection = GroundTruth::intersections_all[PathManager::intersection_indices[PathManager::intersection_index]];
+        
         if (target_intersection.associated_sign) {
             sign_flag = target_intersection.associated_sign->type;
             if (sign_flag == OBJECT::NONE) {
@@ -355,14 +347,26 @@ public:
             std::cerr << "CHECK_INTERSECTION(): ERROR: no associated sign for intersection " << PathManager::intersection_indices[PathManager::intersection_index] << ", index: " << PathManager::intersection_index << std::endl;
             assert(false);
         }
+
         if (idx > PathManager::intersection_indices.size() || idx < 0) {
             utils.debug("CHECK_INTERSECTION(): FATAL ERROR: intersection index out of bounds, idx: " + std::to_string(idx) + ", size: " + std::to_string(PathManager::intersection_indices.size()), 2);
             stop_for(10*T);
             exit(1);
         }
+
+        // check by waypoint index. considered missed if current target exceed by 1.0meter
+        int target_state_ref_idx = PathManager::intersection_state_refs_indices[idx];
+        int current_target_idx = PathManager::target_waypoint_index;
+        if (current_target_idx >= target_state_ref_idx + static_cast<int>(PathManager::density * 1)) {
+            utils.debug("CHECK_INTERSECTION(): ERROR: INTERSECTION MISSED: target state ref index: " + std::to_string(target_state_ref_idx) + ", current target index: " + std::to_string(current_target_idx) +", incrementing idx to " + std::to_string(idx+1), 1);
+            PathManager::intersection_index++;
+            return false;
+        }
+
         int intersection_id = PathManager::intersection_indices[idx];
         const auto& next_intersection_pose = GroundTruth::intersections_all[intersection_id].pose;
         double distance_to_next_sq = (x_current.head(2) - next_intersection_pose.head(2)).squaredNorm();
+        
         if (distance_to_next_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
             double yaw = x_current[2];
             double yaw_error = helper::compare_yaw(next_intersection_pose[2], yaw);
@@ -1354,8 +1358,8 @@ void StateMachine::run() {
                     change_state(STATE::MOVING);
                 }
                 utils.debug("PARKING(): target spot: " + helper::d2str(target_spot), 2);
-                for(int i = 0; i<PARKING_SPOTS.size(); i++) {
-                    std::cout << "parking spot " << i << ": " << PARKING_SPOTS[i][0] << ", " << PARKING_SPOTS[i][1] << std::endl;
+                for(int i = 0; i<GroundTruth::PARKING_SPOTS.size(); i++) {
+                    std::cout << "parking spot " << i << ": " << GroundTruth::PARKING_SPOTS[i][0] << ", " << GroundTruth::PARKING_SPOTS[i][1] << std::endl;
                 }
                 while(1) {
                     pedestrian_detected();
@@ -1366,7 +1370,7 @@ void StateMachine::run() {
                     while(1) {
                         for (auto car: cars) {
                             Eigen::Vector2d world_pose = Eigen::Vector2d(car->x, car->y);
-                            const Eigen::Vector2d& spot = PARKING_SPOTS[target_spot];
+                            const Eigen::Vector2d& spot = GroundTruth::PARKING_SPOTS[target_spot];
                             double error_sq = (world_pose - spot).squaredNorm();
                             double error_threshold_sq = 0.04;
                             if (error_sq < error_threshold_sq) {
@@ -1383,7 +1387,7 @@ void StateMachine::run() {
                     if (changed) {
                         offset = base_offset + target_spot / 2 * PARKING_SPOT_LENGTH;
                         right_park = target_spot % 2 == 0;
-                        ROS_INFO("car in spot, changing to target spot %d at (%.3f, %.3f), right: %s", target_spot, PARKING_SPOTS[target_spot][0], PARKING_SPOTS[target_spot][1], right_park ? "true" : "false");
+                        ROS_INFO("car in spot, changing to target spot %d at (%.3f, %.3f), right: %s", target_spot, GroundTruth::PARKING_SPOTS[target_spot][0], GroundTruth::PARKING_SPOTS[target_spot][1], right_park ? "true" : "false");
                     }
                     double x, y, yaw;
                     utils.get_states(x, y, yaw);
@@ -1411,7 +1415,7 @@ void StateMachine::run() {
                 double orientation = helper::nearest_direction(utils.get_yaw());
                 double x, y, yaw;
                 utils.get_states(x, y, yaw);
-                double initial_y_error = y - (PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
+                double initial_y_error = y - (GroundTruth::PARKING_SPOTS[target_spot][1] + PARKING_SPOT_WIDTH * (right_park ? 1 : -1));
                 double initial_yaw_error = orientation - yaw;
                 initial_yaw_error = helper::yaw_mod(initial_yaw_error); // normalize to [-pi, pi]
                 // ROS_INFO("initial y error: %.3f, initial yaw error: %.3f", initial_y_error, initial_yaw_error);
@@ -1421,14 +1425,14 @@ void StateMachine::run() {
             }
             double x, y, yaw;
             utils.get_states(x, y, yaw);
-            double x_error = x - PARKING_SPOTS[target_spot][0];
+            double x_error = x - GroundTruth::PARKING_SPOTS[target_spot][0];
             if (std::abs(x_error) > 0.15) {
                 double orientation = helper::nearest_direction(utils.get_yaw());
                 ROS_INFO("parked but x offset too large: %.3f, adjusting... orientation: %.3f", x_error, orientation);
                 double x0, y0, yaw0;
                 utils.get_states(x0, y0, yaw0);
                 while(1) {
-                    x_error = x - PARKING_SPOTS[target_spot][0];
+                    x_error = x - GroundTruth::PARKING_SPOTS[target_spot][0];
                     pedestrian_detected();
                     check_emergency_stop();
                     utils.get_states(x, y, yaw);

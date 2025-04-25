@@ -64,6 +64,7 @@ inline Eigen::VectorXd state_attributes;
 inline Eigen::MatrixXd* state_refs_ptr = &state_refs;
 
 inline std::vector<int> intersection_indices;
+inline std::vector<int> intersection_state_refs_indices;
 inline int intersection_index = 0;
 
 enum ATTRIBUTE { NORMAL, CROSSWALK, INTERSECTION, ONEWAY, HIGHWAYLEFT, HIGHWAYRIGHT, ROUNDABOUT, STOPLINE, DOTTED, DOTTED_CROSSWALK };
@@ -96,6 +97,7 @@ inline bool find_intersections(Utility& utils) {
 
 	auto start = std::chrono::high_resolution_clock::now();
 	intersection_indices.clear();
+	intersection_state_refs_indices.clear();
 	intersection_index = 0;
 
 	if (state_refs.rows() == 0) {
@@ -167,6 +169,7 @@ inline bool find_intersections(Utility& utils) {
 
 				if (vec_to_intersection.dot(path_dir) > 0) {
 					intersection_indices.push_back(closest_idx);
+					intersection_state_refs_indices.push_back(current_idx);
 					current_idx += static_cast<int>(density * threshold * 0.9);
 					continue;
 				}
@@ -187,7 +190,7 @@ inline bool find_intersections(Utility& utils) {
 			if (intersections_all[intersection_indices[i]].associated_sign != nullptr) {
 				associated_sign_type = OBJECT_NAMES[intersections_all[intersection_indices[i]].associated_sign->type];
 			}
-			utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]) + ", associated sign: " + associated_sign_type, 1);
+			utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]) + ", associated sign: " + associated_sign_type + ", stateref index: " + std::to_string(intersection_state_refs_indices[i]), 1);
 		}
 		return true;
 	}

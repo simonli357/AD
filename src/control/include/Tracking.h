@@ -317,6 +317,9 @@ public:
         } else if (current_color == LightColor::RED) {
             type = OBJECT::REDLIGHT;
         }
+        if (cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
+            return;
+        }
         msg.data.push_back(static_cast<float>(type));
         msg.data.push_back(static_cast<float>(x));
         msg.data.push_back(static_cast<float>(y));
@@ -432,6 +435,22 @@ public:
             // yaw = kf->yaw();
             speed = kf->speed();
         }
+    }
+
+    void populate_msg(std_msgs::Float32MultiArray& msg) const override {
+        std::lock_guard<std::mutex> lock(mtx);
+        if (cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
+            return;
+        }
+        // std::cout << "cumulative_confidence: " << cumulative_confidence << ", thresh: " << Tunable::cumulative_confidence_thresholds[static_cast<int>(type)] << std::endl;
+        msg.data.push_back(static_cast<float>(type));
+        msg.data.push_back(static_cast<float>(x));
+        msg.data.push_back(static_cast<float>(y));
+        msg.data.push_back(static_cast<float>(yaw));
+        msg.data.push_back(static_cast<float>(speed));
+        msg.data.push_back(static_cast<float>(cumulative_confidence));
+        msg.data.push_back(static_cast<float>(z));
+        msg.data.push_back(static_cast<float>(id));
     }
 };
 
