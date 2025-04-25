@@ -20,7 +20,6 @@ class AttributeSpinBox(QWidget):
         super().__init__(parent)
 
         self.spin = CustomSpinBox(attributes, parent)
-
         self._attrs = attributes
 
         self.up = QToolButton(self)
@@ -61,11 +60,15 @@ class AttributeSpinBox(QWidget):
     def setValue(self, v: int):
         self.spin.setValue(v)
 
+    def getValue(self) -> int:
+        return self.spin.value()
+
 
 class NodeFormWidget(QDialog):
-    def __init__(self, on_accept, node_id, attr, node_color, x, y):
+    def __init__(self, on_accept, node_index, node_id, attr, node_color, x, y):
         super().__init__()
         self.on_accept = on_accept
+        self.node_index = node_index
         self.id = node_id
         self.attr = attr
         self.node_color = f"rgba({node_color[0] * 255}, {node_color[1] * 255}, {node_color[2] * 255}, 1.0)"
@@ -201,7 +204,7 @@ class NodeFormWidget(QDialog):
         self.y_coords.clear()
 
     def accept(self):
-        self.on_accept()
+        self.on_accept(self.node_index, float(self.x_coords.text()), float(self.y_coords.text()), self.attributes.getValue())
         self.clear_inputs()
         super().accept()
 

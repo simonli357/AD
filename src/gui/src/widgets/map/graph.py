@@ -157,6 +157,23 @@ class GraphEditor:
             data['dist'] = np.hypot(x2 - x1, y2 - y1)
         nx.write_graphml(self.G, path)
 
+    def update_instance(self, index, x_real, y_real, attr):
+        self.instance_data.real_positions[index] = (x_real, y_real)
+        self.instance_data.attributes[index] = attr
+        self.node_instance_renderer.color_instance(index, self.ATTRIBUTES_COLORS[attr])
+
+    def update_instance_pos(self, index, x, y, x_real, y_real):
+        z = self.instance_data.positions[index][2]
+        self.instance_data.positions[index] = (x, y, z)
+        self.instance_data.real_positions[index] = (x_real, y_real)
+
+    def translate_node(self, index, x_real, y_real):
+        x, y = self.map_widget.get_gl_coords(x_real, y_real)
+        self.update_instance_pos(index, x, y, x_real, y_real)
+        self.node_instance_renderer.translate_instance(index, x, y)
+        node_id = self.instance_data.ids[index]
+        self.arrow_instance_renderer.update_for_node(node_id, (x, y))
+
     ##############
     # Events
     ##############
@@ -169,6 +186,7 @@ class GraphEditor:
         if event.button() == Qt.RightButton and self.prev_hovered is not None:
             NodeFormWidget(
                 on_accept=self.handleNodeFormAccept,
+                node_index=self.prev_hovered,
                 node_id=self.instance_data.ids[self.prev_hovered],
                 attr=self.instance_data.attributes[self.prev_hovered],
                 node_color=self.instance_data.colors[self.prev_hovered],
@@ -182,20 +200,8 @@ class GraphEditor:
         if self._dragging:
             # map widget gives real‐world coords, then GL coords
             xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
-            x_gl, y_gl = self.map_widget.get_gl_coords(xw, yw)
-
-            # update your stored position
-            z = self.instance_data.positions[self._drag_index][2]
-            self.instance_data.positions[self._drag_index] = (x_gl, y_gl, z)
-
-            # tell the instancer to move it
-            self.node_instance_renderer.translate_instance(self._drag_index, x_gl, y_gl)
             self.node_instance_renderer.scale_instance(self._drag_index, self.shapes.node_default_scale * 1.5)
-            node_id = self.instance_data.ids[self._drag_index]
-            self.arrow_instance_renderer.update_for_node(
-                node_id,
-                (x_gl, y_gl)
-            )
+            self.translate_node(self._drag_index, xw, yw)
             return True
         return False
 
@@ -206,5 +212,6 @@ class GraphEditor:
             self._dragging = False
             self._drag_index = None
 
-    def handleNodeFormAccept(self):
-        pass
+    def handleNodeFormAccept(self, node_index, x, y, attr):
+        self.update_instance(node_index, x, y, attr)
+        self.translate_node(node_index, x, y)
