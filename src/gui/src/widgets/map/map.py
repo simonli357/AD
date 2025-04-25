@@ -624,7 +624,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def mouseReleaseEvent(self, event):
         if self.show_graph:
             if self._is_dragging:
-                self.graph_editor.mouseReleaseEventDragging(event)
+                pass
             elif not self._is_dragging:
                 self.graph_editor.mouseReleaseEventNonDrag(event)
             self._press_pos = None

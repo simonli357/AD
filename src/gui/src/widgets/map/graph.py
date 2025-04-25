@@ -3,6 +3,7 @@ from ..opengl.renderer import InstanceRenderer
 from ..opengl.utils import create_shader_program, shader_path
 from ..enums import OpenGLContextName
 from ..opengl.instance.arrows import ArrowInstanceRenderer
+from ..forms.node_form import NodeFormWidget
 from PyQt5.QtCore import Qt
 
 import numpy as np
@@ -14,9 +15,11 @@ class InstanceData:
         self.ids = []
         self.keys = []
         self.positions = []
+        self.real_positions = []
         self.starts = []
         self.ends = []
         self.edge_pairs = []
+        self.attributes = []
         self.colors = []
 
 
@@ -117,7 +120,9 @@ class GraphEditor:
             self.instance_data.keys.append(node_id)
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
+            self.instance_data.real_positions.append((x_real, y_real))
             self.instance_data.colors.append(self.ATTRIBUTES_COLORS[attr])
+            self.instance_data.attributes.append(attr)
 
         id2pos = {
             nid: pos
@@ -161,6 +166,15 @@ class GraphEditor:
         if event.button() == Qt.LeftButton and self.prev_hovered is not None:
             self._dragging = True
             self._drag_index = self.prev_hovered
+        if event.button() == Qt.RightButton and self.prev_hovered is not None:
+            NodeFormWidget(
+                on_accept=self.handleNodeFormAccept,
+                node_id=self.instance_data.ids[self.prev_hovered],
+                attr=self.instance_data.attributes[self.prev_hovered],
+                node_color=self.instance_data.colors[self.prev_hovered],
+                x=self.instance_data.real_positions[self.prev_hovered][0],
+                y=self.instance_data.real_positions[self.prev_hovered][1]
+            ).exec()
         return False
 
     # Return false if we want parent behavior
@@ -192,5 +206,5 @@ class GraphEditor:
             self._dragging = False
             self._drag_index = None
 
-    def mouseReleaseEventDragging(self, event):
+    def handleNodeFormAccept(self):
         pass
