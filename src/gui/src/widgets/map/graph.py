@@ -256,6 +256,7 @@ class GraphEditor:
         if event.button() == Qt.RightButton and self.prev_hovered is not None:
             NodeFormWidget(
                 on_accept=self.handleNodeFormAccept,
+                on_delete=self.handleNodeFormDelete,
                 node_index=self.prev_hovered,
                 node_id=self.instance_data.ids[self.prev_hovered],
                 attr=self.instance_data.attributes[self.prev_hovered],
@@ -285,3 +286,6 @@ class GraphEditor:
     def handleNodeFormAccept(self, node_index, x, y, attr):
         self.update_instance(node_index, x, y, attr)
         self.translate_node(node_index, x, y)
+
+    def handleNodeFormDelete(self, node_index):
+        pass

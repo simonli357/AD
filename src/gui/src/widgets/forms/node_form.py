@@ -65,9 +65,10 @@ class AttributeSpinBox(QWidget):
 
 
 class NodeFormWidget(QDialog):
-    def __init__(self, on_accept, node_index, node_id, attr, node_color, x, y):
+    def __init__(self, on_accept, on_delete, node_index, node_id, attr, node_color, x, y):
         super().__init__()
         self.on_accept = on_accept
+        self.on_delete = on_delete
         self.node_index = node_index
         self.id = node_id
         self.attr = attr
@@ -210,5 +211,6 @@ class NodeFormWidget(QDialog):
         super().accept()
 
     def reject(self):
+        self.on_delete(self.node_index)
         self.clear_inputs()
         super().reject()
