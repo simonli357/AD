@@ -322,13 +322,13 @@ inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index
 	double min_distance_sq = std::numeric_limits<double>::max();
 	int closest = -1;
 
-	static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
-
+	int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
 	if (min_index < 0)
 		min_index = std::min(last_waypoint_index, static_cast<int>(state_refs.rows()) - 1);
 	if (max_index < 0)
 		max_index = std::min(target_waypoint_index + limit, static_cast<int>(state_refs.rows()) - 1); // state_refs.rows() - 1;
 
+	// std::cout << "rdb circumference: " << rdb_circumference << ", v_ref: " << v_ref << ", T: " << T << ", limit: " << limit << ", target_waypoint_index: " << target_waypoint_index << ", min_index: " << min_index << ", max_index: " << max_index << ", stateref rows: " << state_refs.rows() << std::endl;
 	for (int i = max_index; i >= min_index; --i) {
 		double distance_sq = (state_refs.row(i).head(2).squaredNorm() - 2 * state_refs.row(i).head(2).dot(x_current.head(2)) + current_norm);
 
