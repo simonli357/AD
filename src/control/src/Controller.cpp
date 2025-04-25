@@ -150,9 +150,6 @@ public:
         if (initialized) return 1;
         // sleep 2 seconds to allow for initialization
         ros::Duration(2).sleep();
-        if(hasGps) {
-            if(!utils.reinitialize_states()) ROS_WARN("Failed to reinitialize");
-        }
         double x, y, yaw;
         x = EgoCar::get_x();
         y = EgoCar::get_y();
@@ -1663,18 +1660,18 @@ int main(int argc, char **argv) {
     Tracking::initialize_tracking();
 
     EgoCar::initialize(nh);
-    EgoCar::start_sensors_thread();
-    ros::Rate wait_rate(10);
-    while (ros::ok() && (!EgoCar::first_imu_received || !EgoCar::first_speed_received)) {
-        ROS_INFO_THROTTLE(1.0, "Waiting for IMU and speed data...");
-        wait_rate.sleep();
-    }
-    ROS_INFO("EgoCar is fully initialized.");
-    auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
-    double x0 = gps_msg->pose.pose.position.x;
-    double y0 = gps_msg->pose.pose.position.y;
-    EgoCar::initialize_prediction(x0, y0);
-    EgoCar::start_prediction_thread();
+    // EgoCar::start_sensors_thread();
+    // ros::Rate wait_rate(10);
+    // while (ros::ok() && (!EgoCar::first_imu_received || !EgoCar::first_speed_received)) {
+    //     ROS_INFO_THROTTLE(1.0, "Waiting for IMU and speed data...");
+    //     wait_rate.sleep();
+    // }
+    // ROS_INFO("EgoCar is fully initialized.");
+    // auto gps_msg = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(10.0));
+    // double x0 = gps_msg->pose.pose.position.x;
+    // double y0 = gps_msg->pose.pose.position.y;
+    // EgoCar::initialize_prediction(x0, y0);
+    // EgoCar::start_prediction_thread();
 
     StateMachine sm(nh, db);
 

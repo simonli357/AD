@@ -68,35 +68,35 @@ inline std::unique_ptr<std::thread> sensors_thread;
 inline std::unique_ptr<std::thread> prediction_thread;
 
 inline double raw_roll()   {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return roll;
 }
 inline double raw_pitch()  {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return pitch;
 }
 inline double raw_yaw()    {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return yaw;
 }
 inline double raw_speed()  {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return speed;
 }
 inline double get_x() {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return bkf ? bkf->getX() : odomX + x0;
 }
 inline double get_y() {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return bkf ? bkf->getY() : odomY + y0;
 }
 inline double get_yaw() {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return bkf ? bkf->getYaw() : yaw;
 }
 inline void update_states(Eigen::Vector3d& o_state) {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     if (bkf) {
         auto bkf_state = bkf->getState();
         o_state = bkf_state;
@@ -107,15 +107,15 @@ inline void update_states(Eigen::Vector3d& o_state) {
     }
 }
 inline double get_speed_command() {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return velocity_command;
 }
 inline double get_steer_command() {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     return steer_command;
 }
 inline void update_orientation(double r, double p, double yy) {
-    std::lock_guard<std::mutex> lock(state_mutex);
+    // std::lock_guard<std::mutex> lock(state_mutex);
     roll = r;
     pitch = p;
     yaw = yy;
@@ -137,7 +137,7 @@ inline void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 
 inline void encoder_callback(const utils::encoder& msg) {
     {
-        std::lock_guard<std::mutex> lock(state_mutex);
+        // std::lock_guard<std::mutex> lock(state_mutex);
         speed = msg.speed;
         // if (bkf) bkf->updateSpeed(speed, 0.01047);
         last_speed_time = std::chrono::steady_clock::now();
@@ -254,7 +254,7 @@ inline void odometry() {
     {
         rk4();
         {
-            std::lock_guard<std::mutex> lock(state_mutex);
+            // std::lock_guard<std::mutex> lock(state_mutex);
             odomX += dx;
             odomY += dy;
             height -= dheight;
@@ -277,14 +277,14 @@ inline int recalibrate_states(double x_offset, double y_offset) {
 }
 inline int set_states(double x, double y) {
     if (!bkf) {
-        std::lock_guard<std::mutex> lock(state_mutex);
+        // std::lock_guard<std::mutex> lock(state_mutex);
         x0 = x;
         y0 = y;
         odomX = 0;
         odomY = 0;
         return 0;
     } else {
-        std::lock_guard<std::mutex> lock(state_mutex);
+        // std::lock_guard<std::mutex> lock(state_mutex);
         bkf->updatePosition(x, y, 0.001, 0.001);
         return 1;
     }
@@ -374,8 +374,8 @@ inline void stop_prediction_thread() {
 
 inline void initialize(ros::NodeHandle& nh) {
     if (!Tunable::real) {
-        imu_subscriber     = nh.subscribe("car1/imu", 1, imu_callback);
-        encoder_subscriber = nh.subscribe("car1/encoder", 1, encoder_callback);
+        // imu_subscriber     = nh.subscribe("car1/imu", 1, imu_callback);
+        // encoder_subscriber = nh.subscribe("car1/encoder", 1, encoder_callback);
     } else {
         serial_port.reset();
         io_service.reset();

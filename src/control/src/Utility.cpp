@@ -100,6 +100,8 @@ void Utility::fetch_run_params() {
 
     this->x0 = std::any_cast<double>(runs_with_info[0][0]);
     this->y0 = std::any_cast<double>(runs_with_info[0][1]);
+    EgoCar::x0 = this->x0;
+    EgoCar::y0 = this->y0;
     this->yaw0 = std::any_cast<double>(runs_with_info[0][2]);
     pathName = std::any_cast<std::string>(runs_with_info[0][3]);
 }
@@ -246,7 +248,8 @@ void Utility::initialize() {
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
-    publish_odom();
+    // publish_odom();
+    EgoCar::odometry();
 }
 void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     // auto start = std::chrono::high_resolution_clock::now();
@@ -254,18 +257,6 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     static size_t length = 0;
     static std::string buffer; // Buffer to accumulate the received data
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
-
-    // Malo Debug Serial commands
-    // Append the received data to output.txt
-    // std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
-    // if (outFile.is_open()) {
-    //     outFile.write(data, length);
-    //     outFile.flush();
-    //     outFile.close();
-    // } else {
-    // std::cerr << "Unable to open output.txt" << std::endl;
-    // }
-    // End of Malo Serial Debug commands
 
     buffer.append(data, length);
     if (buffer.find("@7") == std::string::npos) {
@@ -365,8 +356,9 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
             static double accel_mag;
             {
                 // std::lock_guard<std::mutex> lock(general_mutex);
-                this->yaw = -yaw_deg * M_PI/180;
-                this->yaw = helper::yaw_mod(this->yaw);
+                // this->yaw = -yaw_deg * M_PI/180;
+                // this->yaw = helper::yaw_mod(this->yaw);
+                EgoCar::update_orientation(roll * M_PI / 180, pitch * M_PI / 180, yaw_deg * M_PI / 180);
             }
 
             static bool debug_imu = false;
@@ -579,6 +571,7 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     if (Tunable::real) yaw = yaw - initial_yaw;
     // yaw = yaw - initial_yaw + yaw0;
     yaw = helper::yaw_mod(yaw);
+    EgoCar::update_orientation(roll, pitch, yaw);
     // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
 }
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {

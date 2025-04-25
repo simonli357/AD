@@ -183,48 +183,6 @@ public:
     double get_yaw() {
         return yaw;
     }
-    int set_states(double x, double y) {
-        x0 = x;
-        y0 = y;
-        odomX = 0;
-        odomY = 0;
-        return 0;
-    }
-    int get_states(double &x_, double &y_, double &yaw_) {
-        // std::lock_guard<std::mutex> lock(general_mutex);
-        if (subModel) {
-            x_ = gps_x;
-            y_ = gps_y;
-        } else {
-            x_ = odomX + x0;
-            y_ = odomY + y0;
-        }
-        yaw_ = yaw;
-        return 0;
-    }
-    void update_states(Eigen::Vector3d& o_state) {
-        // std::lock_guard<std::mutex> lock(general_mutex);
-        if (subModel) {
-            o_state << gps_x, gps_y, yaw;
-        } else {
-            o_state << odomX + x0, odomY + y0, yaw;
-        }
-    }
-    int recalibrate_states(double x_offset, double y_offset) {
-        if(Tunable::ekf) {
-            if (hasGps) {
-                x0 += x_offset;
-                y0 += y_offset;
-            } else {
-                x0 += x_offset;
-                y0 += y_offset;
-            }
-        } else {
-            x0 += x_offset;
-            y0 += y_offset;
-        }
-        return 1;
-    }
     int get_mean_ekf(double &x_, double &y_, int n = 10) {
         auto ekf_states = Eigen::MatrixXd (2, n);
         for (int i = 0; i < n; i++) {
@@ -235,27 +193,6 @@ public:
         // take the average of the last n states
         x_ = ekf_states.row(0).mean();
         y_ = ekf_states.row(1).mean();
-        return 1;
-    }
-    int reinitialize_states() {
-        if(Tunable::ekf) {
-            std::cout << "waiting for ekf message" << std::endl;
-            ros::topic::waitForMessage<nav_msgs::Odometry>("/odometry/filtered");
-            std::cout << "received message from ekf" << std::endl;
-            double x, y;
-            get_mean_ekf(x, y);
-            x0 = x;
-            y0 = y;
-        } else if(subModel) {
-            std::cout << "waiting for model message" << std::endl;
-            ros::topic::waitForMessage<gazebo_msgs::ModelStates>("/gazebo/model_states");
-            std::cout << "received message from model" << std::endl;
-            x0 = gps_x;
-            y0 = gps_y;
-        } else {
-            x0 = odomX;
-            y0 = odomY;
-        }
         return 1;
     }
     void get_gps_states(double &x_, double &y_) {
