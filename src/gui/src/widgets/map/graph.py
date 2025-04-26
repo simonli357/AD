@@ -7,7 +7,6 @@ from ..forms.node_form import NodeFormWidget
 from PyQt5.QtCore import Qt
 
 import numpy as np
-import networkx as nx
 import xml.etree.ElementTree as ET
 
 
@@ -113,12 +112,13 @@ class GraphEditor:
     def update_instance_data(self):
         for node_id, data in self.G.nodes(data=True):
             int_id = int(node_id.lstrip('n'))
+            real_id = int(data.get('id', 0))
             x_real = float(data.get('x', 0))
             y_real = float(data.get('y', 0))
             attr = int(data.get('attr', 0))
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
-            self.instance_data.keys.append(node_id)
+            self.instance_data.keys.append(f"n{real_id}")
             self.instance_data.ids.append(int_id)
             self.instance_data.positions.append((x, y, z))
             self.instance_data.real_positions.append((x_real, y_real))
