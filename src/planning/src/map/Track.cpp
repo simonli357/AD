@@ -340,7 +340,7 @@ Track::Vertex Track::find_node(int id) {
 			return vertex;
 		}
 	}
-	std::cerr << "Node not found" << std::endl;
+	std::cerr << "Node: " << id << "not found" << std::endl;
 	exit(1);
 }
 
