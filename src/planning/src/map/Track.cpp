@@ -19,7 +19,6 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 Track::Track() {
 	/* read_graph_xml(); */
 	read_graph();
-	adjust_graph();
 	compute_edge_distances();
 }
 
@@ -155,6 +154,7 @@ void Track::read_graph() {
 
 	graph.clear();
 	std::unordered_map<int, Graph::vertex_descriptor> idToVertex;
+    bool modified = false;
 
 	// --- Parse nodes ---
 	for (auto *nodeElem = graphElem->FirstChildElement("node"); nodeElem; nodeElem = nodeElem->NextSiblingElement("node")) {
@@ -163,7 +163,13 @@ void Track::read_graph() {
 			continue;
 
 		// strip leading 'n'
-		int nodeId = (idStr[0] == 'n' || idStr[0] == 'N') ? std::stoi(idStr + 1) : std::stoi(idStr);
+		int nodeId = 0;
+        if (idStr[0] == 'n' || idStr[0] == 'N') {
+            nodeId = std::stoi(idStr + 1);
+            modified = true;
+        } else {
+            nodeId = std::stoi(idStr);
+        }
 
 		double xVal = 0.0, yVal = 0.0;
 		int attrVal = 0;
@@ -210,6 +216,10 @@ void Track::read_graph() {
 
 		boost::add_edge(sit->second, tit->second, graph);
 	}
+
+    if (!modified) {
+        adjust_graph();
+    }
 }
 
 void Track::adjust_graph() {
