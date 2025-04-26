@@ -64,6 +64,7 @@ inline Eigen::VectorXd state_attributes;
 inline Eigen::MatrixXd* state_refs_ptr = &state_refs;
 
 inline std::vector<int> intersection_indices;
+inline std::vector<int> intersection_state_refs_indices;
 inline int intersection_index = 0;
 
 enum ATTRIBUTE { NORMAL, CROSSWALK, INTERSECTION, ONEWAY, HIGHWAYLEFT, HIGHWAYRIGHT, ROUNDABOUT, STOPLINE, DOTTED, DOTTED_CROSSWALK };
@@ -96,6 +97,7 @@ inline bool find_intersections(Utility& utils) {
 
 	auto start = std::chrono::high_resolution_clock::now();
 	intersection_indices.clear();
+	intersection_state_refs_indices.clear();
 	intersection_index = 0;
 
 	if (state_refs.rows() == 0) {
@@ -167,6 +169,7 @@ inline bool find_intersections(Utility& utils) {
 
 				if (vec_to_intersection.dot(path_dir) > 0) {
 					intersection_indices.push_back(closest_idx);
+					intersection_state_refs_indices.push_back(current_idx);
 					current_idx += static_cast<int>(density * threshold * 0.9);
 					continue;
 				}
@@ -187,7 +190,7 @@ inline bool find_intersections(Utility& utils) {
 			if (intersections_all[intersection_indices[i]].associated_sign != nullptr) {
 				associated_sign_type = OBJECT_NAMES[intersections_all[intersection_indices[i]].associated_sign->type];
 			}
-			utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]) + ", associated sign: " + associated_sign_type, 1);
+			utils.debug(std::to_string(i) + ") [" + helper::d2str(inter[0]) + ", " + helper::d2str(inter[1]) + "], yaw: " + helper::d2str(inter[2]) + ", associated sign: " + associated_sign_type + ", stateref index: " + std::to_string(intersection_state_refs_indices[i]), 1);
 		}
 		return true;
 	}
@@ -322,13 +325,13 @@ inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index
 	double min_distance_sq = std::numeric_limits<double>::max();
 	int closest = -1;
 
-	static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
-
+	int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
 	if (min_index < 0)
 		min_index = std::min(last_waypoint_index, static_cast<int>(state_refs.rows()) - 1);
 	if (max_index < 0)
 		max_index = std::min(target_waypoint_index + limit, static_cast<int>(state_refs.rows()) - 1); // state_refs.rows() - 1;
 
+	// std::cout << "rdb circumference: " << rdb_circumference << ", v_ref: " << v_ref << ", T: " << T << ", limit: " << limit << ", target_waypoint_index: " << target_waypoint_index << ", min_index: " << min_index << ", max_index: " << max_index << ", stateref rows: " << state_refs.rows() << std::endl;
 	for (int i = max_index; i >= min_index; --i) {
 		double distance_sq = (state_refs.row(i).head(2).squaredNorm() - 2 * state_refs.row(i).head(2).dot(x_current.head(2)) + current_norm);
 

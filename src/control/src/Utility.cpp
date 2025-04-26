@@ -30,7 +30,7 @@
 #include <iostream>
 #include "Runs.h"
 #include "EgoCar.h"
-#include "PathManager.hpp"
+#include "PathManager.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -429,7 +429,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     object_detection_time = msg.header.stamp;
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
-    // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << std::endl;
+    // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
@@ -478,7 +478,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
 
-                if (get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
+                if (helper::get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 
@@ -504,6 +504,17 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                         //     std::to_string(object_yaw), 2);
                     } else {
                         // TODO: Check against known parking spots
+                        double min_error_sq = 1000.0;
+                        int min_index = 0;
+                        if(helper::get_min_object_index(world_states, GroundTruth::PARKING_SPOTS, min_index, min_error_sq, 0.15)) {
+                            // this means the detected object is a parked car. all parking spots are facing east
+                            object_yaw = 0.0;
+                            debug("Sign Callback(): new PARKED CAR detected at (" +
+                                std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                                "), closest parking spot: (" + std::to_string(GroundTruth::PARKING_SPOTS[min_index][0]) + ", " +
+                                std::to_string(GroundTruth::PARKING_SPOTS[min_index][1]) + "), object_yaw: " +
+                                std::to_string(object_yaw), 2);
+                        }
                     }
                 }
                 Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], object_yaw, confidence);

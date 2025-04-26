@@ -105,7 +105,7 @@ namespace Tunable {
       CHECK_PARAM("/steer_offset_minimum", steer_offset_minimum);
       CHECK_PARAM("/steer_offset_maximum", steer_offset_maximum);
       CHECK_PARAM(nodeName+"/subModel", subModel);
-      CHECK_PARAM("/rate", rateVal);
+      CHECK_PARAM(nodeName+"/rate", rateVal);
       CHECK_PARAM("/realsense_imu", realsense_imu);
   
       printf("LoadFromParams: emergency: %d, pubWaypoints: %d, kb: %d, dashboard: %d, gps: %d, lane: %d, ekf: %d, sign: %d, T: %.3f, N: %d, v_ref: %.3f, robot_name: %s, vref: %.3f, x0: %.3f, y0: %.3f, yaw0: %.3f, T_park: %.3f, real: %d, use_beta: %d, async: %d, use_tcp: %d, test: %d\n",
