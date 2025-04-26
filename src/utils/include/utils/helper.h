@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cmath>
 #include <Eigen/Dense>
+#include <fstream>
 
 namespace helper {
     inline std::string getSourceDirectory() {

@@ -34,7 +34,7 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
-    io(), serial(nullptr), it(nh), object_detection_time(ros::Time::now())
+    io(), serial(nullptr), object_detection_time(ros::Time::now())
 {
 
     std::cout << "Utility constructor" << std::endl;  
@@ -47,10 +47,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
 Utility::~Utility() {
     stop_car(); 
-    cameraThreadRunning = false;
-    if (cameraThread.joinable()) {
-            cameraThread.join();
-    }
 }
 
 void Utility::initialize_tcp_client() {
@@ -217,7 +213,7 @@ void Utility::initialize() {
             imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
         }
     }
-    if (!camera) {
+    if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         int horizon = 40;
         lane_waypoints = Eigen::MatrixXd(horizon, 3);
@@ -229,15 +225,10 @@ void Utility::initialize() {
 
     timerpid = ros::Time::now();
     if (Tunable::sign) {
-        if (camera) {
-            std::cout << "camera enabled in control node" << std::endl;
-            cameraNodeConstructor(nh);
-        } else {
-            sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-            std::cout << "waiting for sign message" << std::endl;
-            ros::topic::waitForMessage<utils::Sign>("/sign");
-            std::cout << "received message from sign" << std::endl;
-        }
+        sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+        std::cout << "waiting for sign message" << std::endl;
+        ros::topic::waitForMessage<utils::Sign>("/sign");
+        std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
