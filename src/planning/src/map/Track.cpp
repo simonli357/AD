@@ -17,10 +17,10 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
-	read_graph_xml();
-	/* read_graph(); */
-	/* adjust_graph(); */
-	/* compute_edge_distances(); */
+	/* read_graph_xml(); */
+	read_graph();
+	adjust_graph();
+	compute_edge_distances();
 }
 
 void Track::read_graph_xml() {
