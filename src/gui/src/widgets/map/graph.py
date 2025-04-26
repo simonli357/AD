@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 
 class InstanceData:
     def __init__(self):
+        self.idx = []
         self.ids = []
         self.keys = []
         self.positions = []
@@ -119,7 +120,8 @@ class GraphEditor:
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
             self.instance_data.keys.append(f"n{real_id}")
-            self.instance_data.ids.append(int_id)
+            self.instance_data.ids.append(real_id)
+            self.instance_data.idx.append(int_id)
             self.instance_data.positions.append((x, y, z))
             self.instance_data.real_positions.append((x_real, y_real))
             self.instance_data.colors.append(self.ATTRIBUTES_COLORS[attr])
@@ -127,7 +129,7 @@ class GraphEditor:
 
         id2pos = {
             nid: pos
-            for nid, pos in zip(self.instance_data.ids, self.instance_data.positions)
+            for nid, pos in zip(self.instance_data.idx, self.instance_data.positions)
         }
 
         for u, v in self.G.edges():
@@ -194,7 +196,7 @@ class GraphEditor:
 
         # 6) Emit edges in the exact order of instance_data.edge_pairs:
         #    use id_to_key to map your integer ids → the original key strings
-        id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
+        id_to_key = {i: k for i, k in zip(self.instance_data.idx, self.instance_data.keys)}
         for u_id, v_id in self.instance_data.edge_pairs:
             u_key = id_to_key[u_id]
             v_key = id_to_key[v_id]
@@ -237,12 +239,12 @@ class GraphEditor:
         x, y = self.map_widget.get_gl_coords(x_real, y_real)
         self.update_instance_pos(index, x, y, x_real, y_real)
         self.node_instance_renderer.translate_instance(index, x, y)
-        node_id = self.instance_data.ids[index]
+        node_id = self.instance_data.idx[index]
         self.arrow_instance_renderer.update_for_node(node_id, (x, y))
 
     def fix_edges(self):
-        for index in range(len(self.instance_data.ids)):
-            node_id = self.instance_data.ids[index]
+        for index in range(len(self.instance_data.idx)):
+            node_id = self.instance_data.idx[index]
             x, y, _ = self.instance_data.positions[index]
             self.arrow_instance_renderer.update_for_node(node_id, (x, y))
 
@@ -256,7 +258,7 @@ class GraphEditor:
             return super().mouseDoubleClickEvent(event)
 
         prev_idx = self.prev_hovered
-        prev_id = self.instance_data.ids[prev_idx]
+        prev_id = self.instance_data.idx[prev_idx]
 
         # find the “next” in our edge_pairs, if any
         next_pair = next(((u, v) for u, v in self.instance_data.edge_pairs if u == prev_id), None)
@@ -271,14 +273,16 @@ class GraphEditor:
         z = self.instance_data.positions[prev_idx][2]
 
         # pick new ID/key, attribute, color
-        new_id = max(self.instance_data.ids) + 1
-        new_key = f"n{new_id}"
+        new_id = max(self.instance_data.idx) + 1
+        k = max(self.instance_data.ids) + 1
+        new_key = f"n{k}"
         new_attr = self.instance_data.attributes[prev_idx]
         new_color = self.ATTRIBUTES_COLORS[new_attr]
 
         # append the new node to instance_data
         self.instance_data.keys.append(new_key)
-        self.instance_data.ids.append(new_id)
+        self.instance_data.ids.append(k)
+        self.instance_data.idx.append(new_id)
         self.instance_data.positions.append((new_gl_x, new_gl_y, z))
         self.instance_data.real_positions.append((new_x_real, new_y_real))
         self.instance_data.attributes.append(new_attr)
@@ -301,7 +305,7 @@ class GraphEditor:
             self.instance_data.starts.append((x0, y0))
             self.instance_data.ends.append((new_gl_x, new_gl_y))
             # 3) add new→next
-            next_idx = self.instance_data.ids.index(next_id)
+            next_idx = self.instance_data.idx.index(next_id)
             x1, y1 = self.instance_data.positions[next_idx][:2]
             self.instance_data.edge_pairs.append((new_id, next_id))
             self.instance_data.starts.append((new_gl_x, new_gl_y))
@@ -356,7 +360,7 @@ class GraphEditor:
         self.translate_node(node_index, x, y)
 
     def handleNodeFormDelete(self, node_index: int):
-        node_id = self.instance_data.ids[node_index]
+        node_id = self.instance_data.idx[node_index]
 
         prev_edges = [(u, v) for u, v in self.instance_data.edge_pairs if v == node_id]
         next_edges = [(u, v) for u, v in self.instance_data.edge_pairs if u == node_id]
@@ -376,8 +380,8 @@ class GraphEditor:
             for nv in next_ids:
                 self.instance_data.edge_pairs.append((pu, nv))
                 # lookup GL positions
-                pi = self.instance_data.ids.index(pu)
-                ni = self.instance_data.ids.index(nv)
+                pi = self.instance_data.idx.index(pu)
+                ni = self.instance_data.idx.index(nv)
                 x0, y0 = self.instance_data.positions[pi][:2]
                 x1, y1 = self.instance_data.positions[ni][:2]
                 self.instance_data.starts.append((x0, y0))
@@ -385,6 +389,7 @@ class GraphEditor:
 
         for lst in (
             self.instance_data.ids,
+            self.instance_data.idx,
             self.instance_data.keys,
             self.instance_data.positions,
             self.instance_data.real_positions,
