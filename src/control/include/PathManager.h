@@ -231,42 +231,101 @@ inline bool lane_detectable(int start_idx, int end_idx) {
 	return start_idx_detectable && end_idx_detectable;
 }
 
-inline void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
-  if (shift_right)
-		shift_distance *= -1;
+inline int change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
+	if (shift_right)
+		shift_distance *= -1.0;
 
-	// Total number of points
-	int total_points = end_index - start_index;
-	// int ramp_length = static_cast<int>(density * VehicleConstants::CAR_LENGTH / 2);
-	int ramp_length = static_cast<int>(density * 0.125);
-
-	// Define the start and end indices of the constant shift phase
-	int ramp_up_end = start_index + ramp_length;
-	int ramp_down_start = end_index - ramp_length;
-
-	// Iterate over each point from start_index to end_index
-	for (int i = start_index; i < end_index; i++) {
-		double current_shift = 0.0;
-
-		// Ramp up phase
-		if (i < ramp_up_end) {
-			// Adjust the progress calculation to start shifting immediately after start_index
-			double progress = static_cast<double>(i - start_index + 1) / ramp_length;
-			current_shift = shift_distance * progress;
-		}
-		// Constant shift phase
-		else if (i >= ramp_up_end && i < ramp_down_start) {
-			current_shift = shift_distance;
-		}
-		// Ramp down phase
-		else {
-			// Adjust progress calculation for a smoother transition to zero at the end
-			double progress = static_cast<double>(end_index - i) / ramp_length;
-			current_shift = shift_distance * progress;
-		}
-
-		state_refs.block(i, 0, 1, 2) += normals.block(i, 0, 1, 2) * current_shift;
+	// 1) extract original (x,y,yaw) and compute avg spacing
+	int total_pts = end_index - start_index;
+	std::vector<Eigen::Vector3d> orig(total_pts);
+	for (int i = 0; i < total_pts; ++i) {
+		orig[i] = state_refs.row(start_index + i);
 	}
+	double total_len = 0.0;
+	for (int i = 1; i < total_pts; ++i) {
+		total_len += (orig[i].head<2>() - orig[i - 1].head<2>()).norm();
+	}
+	double avg_spacing = total_len / (total_pts - 1);
+
+	// 2) shift each point along its normal (with ramp up/down)
+	int ramp_len = static_cast<int>(density * 0.125);
+	int ramp_up_end = ramp_len;
+	int ramp_down_start = total_pts - ramp_len;
+
+	std::vector<Eigen::Vector3d> shifted(total_pts);
+	for (int i = 0; i < total_pts; ++i) {
+		double t = 0.0;
+		if (i < ramp_up_end)
+			t = double(i + 1) / ramp_len;
+		else if (i < ramp_down_start)
+			t = 1.0;
+		else
+			t = double(total_pts - i) / ramp_len;
+
+		double this_shift = shift_distance * t;
+		Eigen::Vector2d n = normals.row(start_index + i);
+		Eigen::Vector2d p = orig[i].head<2>() + n * this_shift;
+		shifted[i] = Eigen::Vector3d(p.x(), p.y(), 0.0); // yaw zero for now
+	}
+
+	// 3) densify: for each consecutive pair, insert floor(gap/avg_spacing)-1 points
+	std::vector<Eigen::Vector3d> densified;
+	densified.reserve(int(total_len / avg_spacing) + total_pts);
+	auto lerp2 = [&](auto &A, auto &B, double u) { return A + u * (B - A); };
+
+	for (int i = 0; i + 1 < total_pts; ++i) {
+		const auto &P = shifted[i], &Q = shifted[i + 1];
+		densified.push_back(P);
+		double gap = (Q.head<2>() - P.head<2>()).norm();
+		int nins = std::max(0, int(std::round(gap / avg_spacing)) - 1);
+		for (int k = 1; k <= nins; ++k) {
+			double u = double(k) / (nins + 1);
+			Eigen::Vector2d mid = lerp2(P.head<2>(), Q.head<2>(), u);
+			densified.emplace_back(mid.x(), mid.y(), 0.0);
+		}
+	}
+	densified.push_back(shifted.back());
+
+	// 4) recompute yaws
+	densified[0].z() = state_refs(start_index, 2);
+
+	// now for each subsequent point, compute a raw heading, then
+	// adjust by ±2π so it's within ±π of the *previous* yaw:
+	for (int i = 1; i < (int)densified.size(); ++i) {
+			double raw = std::atan2(
+					densified[i].y() - densified[i-1].y(),
+					densified[i].x() - densified[i-1].x()
+			);
+			double prev = densified[i-1].z();
+			double d = raw - prev;
+			// wrap the delta into (–π,π]
+			if      (d >  M_PI) d -= 2.0 * M_PI;
+			else if (d <= -M_PI) d += 2.0 * M_PI;
+			densified[i].z() = prev + d;
+	}
+
+	// 5) splice into state_refs
+	int extra_pts = int(densified.size()) - total_pts;
+	int old_n = state_refs.rows();
+	int new_n = old_n + extra_pts;
+	Eigen::MatrixXd M(new_n, 3);
+
+	// copy before
+	if (start_index > 0)
+		M.block(0, 0, start_index, 3) = state_refs.block(0, 0, start_index, 3);
+
+	// copy densified
+	for (int i = 0; i < (int)densified.size(); ++i) {
+		M.row(start_index + i) = densified[i].transpose();
+	}
+
+	// copy after
+	int tail = old_n - end_index;
+	if (tail > 0)
+		M.block(start_index + densified.size(), 0, tail, 3) = state_refs.block(end_index, 0, tail, 3);
+
+	state_refs.swap(M);
+	return extra_pts;
 }
 
 inline int get_current_attribute() {
@@ -281,42 +340,27 @@ inline void get_current_waypoints(Eigen::MatrixXd& output) {
 }
 
 inline int find_closest_waypoint2(
-	const Eigen::Vector2d& pt,
-	double threshold = 0.1)
+  const Eigen::Vector2d& pt,
+  double threshold = 0.1)
 {
-	const int M = state_refs.rows();
-	if (M == 0) return -1;
+  const int M = state_refs.rows();
+  if (M == 0) return -1;
 
-	// clamp our search window
-	int min_index = 0;
-	int max_index = M - 1;
-	const int window_size = max_index - min_index + 1;
-	if (window_size <= 0) return -1;
+  const double thr2 = threshold * threshold;
+  int   bestIdx   = -1;
+  double bestDist2 = thr2;  // only accept < thr2
 
-	// 1) grab the x,y columns and slice out [min_index..max_index]
-	//    gives a (window_size x 2) matrix
-	auto xy_win = state_refs
-									.leftCols<2>()
-									.middleRows(min_index, window_size);
+  for (int i = 0; i < M; ++i) {
+    double dx    = state_refs(i, 0) - pt.x();
+    double dy    = state_refs(i, 1) - pt.y();
+    double dist2 = dx*dx + dy*dy;
 
-	// 2) subtract pt from every row (broadcast)
-	//    diff(i,0:1) = xy_win(i,0:1) - pt
-	Eigen::MatrixXd diff = xy_win.rowwise() - pt.transpose();
-
-	// 3) squared norms of each row -> VectorXd of length window_size
-	Eigen::VectorXd dist2 = diff.rowwise().squaredNorm();
-
-	// build an index‐vector [min_index, min_index+1, …, max_index]
-	Eigen::VectorXi idxs = Eigen::VectorXi::LinSpaced(window_size, min_index, max_index);
-
-	// mask: if dist2(i) < threshold^2, keep idxs(i), else -1
-	double thr2 = threshold * threshold;
-	Eigen::VectorXi valid = (dist2.array() < thr2)
-													 .select(idxs, Eigen::VectorXi::Constant(window_size, -1));
-
-	// the answer is the maximum entry of valid (or –1 if all were –1)
-	int best = valid.maxCoeff();
-	return best;
+    if (dist2 < bestDist2) {
+      bestDist2 = dist2;
+      bestIdx   = i;
+    }
+  }
+  return bestIdx;
 }
 
 inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index = -1, int max_index = -1) {
