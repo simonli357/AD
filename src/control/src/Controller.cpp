@@ -709,9 +709,9 @@ public:
             return 0;
         }
         utils.update_states(x_current);
-        double center = utils.center + pixel_center_offset;
-        if (center < 180 || center > 460) {
-            // utils.debug("LANE_RELOC(): FAILURE: center out of bounds: " + helper::d2str(center), 4);
+        double offset = utils.lane_center_offset;
+        if (std::abs(offset) > LANE_OFFSET / 2) {
+            // utils.debug("LANE_RELOC(): FAILURE: offset too large: " + helper::d2str(offset), 2);
             return 0;
         }
         double yaw = utils.get_yaw();
@@ -722,7 +722,6 @@ public:
             utils.debug("LANE_RELOC(): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(lane_localization_orientation_threshold), 2);
             return 0;
         }
-        double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
         int nearestDirectionIndex = helper::nearest_direction_index(yaw);
         const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
                                     (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :

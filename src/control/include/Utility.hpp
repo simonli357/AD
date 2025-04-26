@@ -38,6 +38,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Float32.h>
 #include <utils/Sign.h>
 
 using namespace VehicleConstants;
@@ -60,7 +61,7 @@ public:
     std_msgs::String debug_msg;
     ros::Rate* rate;
 
-    double l_r, l_f, odomRatio, maxspeed, center, image_center, p, d, last;
+    double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
     int stopline = -1;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
@@ -118,6 +119,7 @@ public:
 
     // subscribers
     ros::Subscriber lane_sub;
+    ros::Subscriber lane_center_offset_sub;
     ros::Subscriber sign_sub;
     ros::Subscriber waypoints_sub;
     std::vector<float> detected_objects;
@@ -143,6 +145,7 @@ public:
 
     // Callbacks
     void lane_callback(const utils::Lane2::ConstPtr& msg);
+    void lane_center_offset_callback(const std_msgs::Float32::ConstPtr& msg);
     void waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
     Eigen::MatrixXd lane_waypoints;
     void process_lane_data(const utils::Lane2& msg);

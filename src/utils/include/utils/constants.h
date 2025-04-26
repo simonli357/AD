@@ -39,6 +39,7 @@ namespace VehicleConstants {
     static constexpr double OVERTAKE_DIST = 2.0;
     static constexpr double LANE_OFFSET = 0.3935;
     static constexpr double INNER_LANE_OFFSET = 0.3465;
+    static constexpr double LANE_WHITE = 0.0235;
     static constexpr double MIN_DIST_TO_CAR = 0.3;
     // static constexpr double MAX_CAR_DIST = 3.0;
     static constexpr double MAX_CAR_DIST = 1.0;
