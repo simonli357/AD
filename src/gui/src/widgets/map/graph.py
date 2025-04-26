@@ -5,6 +5,8 @@ from ..enums import OpenGLContextName
 from ..opengl.instance.arrows import ArrowInstanceRenderer
 from ..forms.node_form import NodeFormWidget
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor
+from PyQt5.QtWidgets import QMenu
 
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -46,6 +48,11 @@ class GraphEditor:
         self.shapes = Shapes()
         self.shader_renderer = ShaderRenderer(OpenGLContextName.GRAPH)
         self.instance_data = InstanceData()
+
+        self.edge_mode = 0
+        self.edge_candidates = []
+        self.prev_edge_node_hovered = None
+
         self.node_instance_renderer = None
         self.arrow_instance_renderer = None
         self.prev_hovered = None
@@ -86,7 +93,97 @@ class GraphEditor:
         if self.arrow_instance_renderer is not None:
             self.arrow_instance_renderer.render(proj_mat, view_mat)
 
-        self.highlight_selected_instance(mouse_x, mouse_y)
+        if self.edge_mode == 1:
+            self.handle_edge_mode(mouse_x, mouse_y)
+            self.add_edge()
+        elif self.edge_mode == 2:
+            self.handle_edge_mode(mouse_x, mouse_y)
+            self.remove_edge()
+        else:
+            self.highlight_selected_instance(mouse_x, mouse_y)
+
+    def add_edge(self):
+        if len(self.edge_candidates) == 1:
+            self.node_instance_renderer.scale_instance(self.edge_candidates[0], self.shapes.node_default_scale * 1.5)
+        elif len(self.edge_candidates) == 2:
+            u_idx, v_idx = self.edge_candidates
+            self.node_instance_renderer.scale_instance(u_idx, self.shapes.node_default_scale)
+            u_id = self.instance_data.idx[u_idx]
+            v_id = self.instance_data.idx[v_idx]
+
+            if (u_id, v_id) in self.instance_data.edge_pairs:
+                self.edge_mode = 0
+                self.edge_candidates.clear()
+                return
+
+            x0, y0, _ = self.instance_data.positions[u_idx]
+            x1, y1, _ = self.instance_data.positions[v_idx]
+
+            self.instance_data.edge_pairs.append((u_id, v_id))
+            self.instance_data.starts.append((x0, y0))
+            self.instance_data.ends.append((x1, y1))
+
+            self.arrow_instance_renderer.reset(
+                self.instance_data.starts,
+                self.instance_data.ends,
+                self.instance_data.edge_pairs
+            )
+
+            self.edge_mode = False
+            self.edge_candidates.clear()
+            self.fix_edges()
+
+    def remove_edge(self):
+        if len(self.edge_candidates) == 1:
+            self.node_instance_renderer.scale_instance(self.edge_candidates[0], self.shapes.node_default_scale * 1.5)
+        elif len(self.edge_candidates) == 2:
+            u_idx, v_idx = self.edge_candidates
+            self.node_instance_renderer.scale_instance(u_idx, self.shapes.node_default_scale)
+            u_id = self.instance_data.idx[u_idx]
+            v_id = self.instance_data.idx[v_idx]
+            pair = (u_id, v_id)
+
+            if pair not in self.instance_data.edge_pairs:
+                self.edge_mode = 0
+                self.edge_candidates.clear()
+                return
+
+            ep_index = self.instance_data.edge_pairs.index(pair)
+            self.instance_data.edge_pairs.pop(ep_index)
+            self.instance_data.starts.pop(ep_index)
+            self.instance_data.ends.pop(ep_index)
+
+            self.arrow_instance_renderer.reset(
+                self.instance_data.starts,
+                self.instance_data.ends,
+                self.instance_data.edge_pairs
+            )
+
+            self.edge_mode = False
+            self.edge_candidates.clear()
+            self.fix_edges()
+
+    def handle_edge_mode(self, mouse_x, mouse_y):
+        if self.node_instance_renderer is None:
+            return
+
+        nearest = None
+        m_radius = 0.1
+        n_radius = 4.0
+
+        for i, pos in enumerate(self.instance_data.positions):
+            if self.is_near(mouse_x, mouse_y, pos[0], pos[1], m_radius, n_radius):
+                nearest = i
+                break
+
+        if nearest != self.prev_edge_node_hovered:
+            # restore previous
+            if self.prev_edge_node_hovered is not None:
+                self.node_instance_renderer.scale_instance(self.prev_edge_node_hovered, self.shapes.node_default_scale)
+            # grow selected
+            if nearest is not None:
+                self.node_instance_renderer.scale_instance(nearest, self.shapes.node_default_scale * 1.5)
+            self.prev_edge_node_hovered = nearest
 
     def highlight_selected_instance(self, mouse_x, mouse_y):
         if self.node_instance_renderer is None:
@@ -248,35 +345,28 @@ class GraphEditor:
             x, y, _ = self.instance_data.positions[index]
             self.arrow_instance_renderer.update_for_node(node_id, (x, y))
 
-    ##############
-    # Events
-    ##############
-
-    def mouseDoubleClickEvent(self, event):
-        # only handle left-button double-click when we have a hovered node
-        if event.button() != Qt.LeftButton or self.prev_hovered is None:
-            return super().mouseDoubleClickEvent(event)
-
-        prev_idx = self.prev_hovered
-        prev_id = self.instance_data.idx[prev_idx]
-
-        # find the “next” in our edge_pairs, if any
-        next_pair = next(((u, v) for u, v in self.instance_data.edge_pairs if u == prev_id), None)
-        next_id = next_pair[1] if next_pair is not None else None
-
-        # compute new node coords (real + GL)
+    def add_node(self, prev_idx=None, real_x=None, real_y=None):
+        # compute new node coords
         epsilon = 0.1
-        x_real, y_real = self.instance_data.real_positions[prev_idx]
-        new_x_real = x_real + epsilon
-        new_y_real = y_real + epsilon
-        new_gl_x, new_gl_y = self.map_widget.get_gl_coords(new_x_real, new_y_real)
-        z = self.instance_data.positions[prev_idx][2]
+        if prev_idx is not None:
+            x_real, y_real = self.instance_data.real_positions[prev_idx]
+            new_x_real = x_real + epsilon
+            new_y_real = y_real + epsilon
+            new_gl_x, new_gl_y = self.map_widget.get_gl_coords(new_x_real, new_y_real)
+            z = self.instance_data.positions[prev_idx][2]
+        else:
+            new_x_real, new_y_real = real_x, real_y
+            new_gl_x, new_gl_y = self.map_widget.get_gl_coords(real_x, real_y)
+            z = 0.1
 
         # pick new ID/key, attribute, color
         new_id = max(self.instance_data.idx) + 1
         k = max(self.instance_data.ids) + 1
         new_key = f"n{k}"
-        new_attr = self.instance_data.attributes[prev_idx]
+        if prev_idx is not None:
+            new_attr = self.instance_data.attributes[prev_idx]
+        else:
+            new_attr = 0
         new_color = self.ATTRIBUTES_COLORS[new_attr]
 
         # append the new node to instance_data
@@ -290,39 +380,59 @@ class GraphEditor:
 
         self.node_instance_renderer.add_instance(new_gl_x, new_gl_y, z, None, self.shapes.node_default_scale, new_color)
 
-        # splice edges in instance_data—and keep starts/ends in sync:
-        if next_id is not None:
-            # 1) remove the old prev→next edge and its start/end
-            if (prev_id, next_id) in self.instance_data.edge_pairs:
-                idx = self.instance_data.edge_pairs.index((prev_id, next_id))
-                self.instance_data.edge_pairs.pop(idx)
-                self.instance_data.starts.pop(idx)
-                self.instance_data.ends.pop(idx)
-            # 2) add prev→new
-            self.instance_data.edge_pairs.append((prev_id, new_id))
-            #   start at prev’s current GL pos, end at the new node
-            x0, y0 = self.instance_data.positions[prev_idx][:2]
-            self.instance_data.starts.append((x0, y0))
-            self.instance_data.ends.append((new_gl_x, new_gl_y))
-            # 3) add new→next
-            next_idx = self.instance_data.idx.index(next_id)
-            x1, y1 = self.instance_data.positions[next_idx][:2]
-            self.instance_data.edge_pairs.append((new_id, next_id))
-            self.instance_data.starts.append((new_gl_x, new_gl_y))
-            self.instance_data.ends.append((x1, y1))
-        else:
-            # only prev→new
-            self.instance_data.edge_pairs.append((prev_id, new_id))
-            x0, y0 = self.instance_data.positions[prev_idx][:2]
-            self.instance_data.starts.append((x0, y0))
-            self.instance_data.ends.append((new_gl_x, new_gl_y))
+        return new_id, new_gl_x, new_gl_y
 
-        self.arrow_instance_renderer.reset(self.instance_data.starts, self.instance_data.ends, self.instance_data.edge_pairs)
-        self.fix_edges()
+    ##############
+    # Events
+    ##############
+
+    def mouseDoubleClickEvent(self, event):
+        # only handle left-button double-click when we have a hovered node
+        if event.button() == Qt.LeftButton and self.prev_hovered is not None:
+            prev_idx = self.prev_hovered
+            prev_id = self.instance_data.idx[prev_idx]
+            # find the “next” in our edge_pairs, if any
+            next_pair = next(((u, v) for u, v in self.instance_data.edge_pairs if u == prev_id), None)
+            next_id = next_pair[1] if next_pair is not None else None
+
+            new_id, new_gl_x, new_gl_y = self.add_node(prev_idx)
+
+            # splice edges in instance_data—and keep starts/ends in sync:
+            if next_id is not None:
+                # 1) remove the old prev→next edge and its start/end
+                if (prev_id, next_id) in self.instance_data.edge_pairs:
+                    idx = self.instance_data.edge_pairs.index((prev_id, next_id))
+                    self.instance_data.edge_pairs.pop(idx)
+                    self.instance_data.starts.pop(idx)
+                    self.instance_data.ends.pop(idx)
+                # 2) add prev→new
+                self.instance_data.edge_pairs.append((prev_id, new_id))
+                #   start at prev’s current GL pos, end at the new node
+                x0, y0 = self.instance_data.positions[prev_idx][:2]
+                self.instance_data.starts.append((x0, y0))
+                self.instance_data.ends.append((new_gl_x, new_gl_y))
+                # 3) add new→next
+                next_idx = self.instance_data.idx.index(next_id)
+                x1, y1 = self.instance_data.positions[next_idx][:2]
+                self.instance_data.edge_pairs.append((new_id, next_id))
+                self.instance_data.starts.append((new_gl_x, new_gl_y))
+                self.instance_data.ends.append((x1, y1))
+            else:
+                # only prev→new
+                self.instance_data.edge_pairs.append((prev_id, new_id))
+                x0, y0 = self.instance_data.positions[prev_idx][:2]
+                self.instance_data.starts.append((x0, y0))
+                self.instance_data.ends.append((new_gl_x, new_gl_y))
+
+            self.arrow_instance_renderer.reset(self.instance_data.starts, self.instance_data.ends, self.instance_data.edge_pairs)
+            self.fix_edges()
 
     # Return false if we want parent behavior
     def mousePressEvent(self, event) -> bool:
-        if event.button() == Qt.LeftButton and self.prev_hovered is not None:
+        if event.button() == Qt.LeftButton and self.edge_mode and self.prev_edge_node_hovered is not None:
+            if self.prev_edge_node_hovered not in self.edge_candidates:
+                self.edge_candidates.append(self.prev_edge_node_hovered)
+        elif event.button() == Qt.LeftButton and self.prev_hovered is not None:
             self._dragging = True
             self._drag_index = self.prev_hovered
         if event.button() == Qt.RightButton and self.prev_hovered is not None:
@@ -336,6 +446,39 @@ class GraphEditor:
                 x=self.instance_data.real_positions[self.prev_hovered][0],
                 y=self.instance_data.real_positions[self.prev_hovered][1]
             ).exec()
+        elif event.button() == Qt.RightButton and self.prev_hovered is None:
+            menu = QMenu(self.map_widget)
+            action_0 = menu.addAction("Add Node")
+            action_1 = menu.addAction("Add Edge")
+            action_2 = menu.addAction("Remove Edge")
+            menu.setStyleSheet("""
+                QMenu {
+                    color: white;
+                    font-size: 16px;
+                    border: none;
+                    background-color: transparent;
+                }
+                QMenu::item {
+                    background-color: rgba(40, 40, 40, 0.5);
+                    margin: 1px;
+                    padding-left: 30px;
+                    padding-right: 30px;
+                    padding-top: 4px;
+                    padding-bottom: 4px;
+                    border-radius: 8px;
+                }
+                QMenu::item:selected {
+                    background-color: purple;
+                }
+            """)
+            chosen = menu.exec(QCursor.pos())
+            if chosen == action_0:
+                xw, yw = self.map_widget.get_real_world_coords(event.x(), event.y())
+                self.add_node(real_x=xw, real_y=yw)
+            elif chosen == action_1:
+                self.edge_mode = 1
+            elif chosen == action_2:
+                self.edge_mode = 2
         return False
 
     # Return false if we want parent behavior
