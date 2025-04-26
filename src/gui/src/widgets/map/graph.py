@@ -74,7 +74,7 @@ class GraphEditor:
             9: (0.5, 0.0, 0.5, 1.0),
         }
 
-    def draw(self, proj_mat, view_mat):
+    def draw(self, proj_mat, view_mat, ortho_proj_mat):
         self.proj_mat = proj_mat
         self.view_mat = view_mat
 
@@ -94,9 +94,11 @@ class GraphEditor:
             self.arrow_instance_renderer.render(proj_mat, view_mat)
 
         if self.edge_mode == 1:
+            self.shader_renderer.text_renderer.render_text("ADD EDGE MODE", mouse_pos.x(), mouse_pos.y() - 50, 1.0, (0, 1, 0), ortho_proj_mat)
             self.handle_edge_mode(mouse_x, mouse_y)
             self.add_edge()
         elif self.edge_mode == 2:
+            self.shader_renderer.text_renderer.render_text("REMOVE EDGE MODE", mouse_pos.x(), mouse_pos.y() - 50, 1.0, (1, 0, 0), ortho_proj_mat)
             self.handle_edge_mode(mouse_x, mouse_y)
             self.remove_edge()
         else:
@@ -447,6 +449,7 @@ class GraphEditor:
                 y=self.instance_data.real_positions[self.prev_hovered][1]
             ).exec()
         elif event.button() == Qt.RightButton and self.prev_hovered is None:
+            self.edge_mode = 0
             menu = QMenu(self.map_widget)
             action_0 = menu.addAction("Add Node")
             action_1 = menu.addAction("Add Edge")
