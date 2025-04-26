@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtWidgets
 
 
 class CustomSpinBox(QSpinBox):
-    def __init__(self, attributes: dict[int, str], parent=None):
+    def __init__(self, attributes, parent=None):
         super().__init__(parent)
         self._attrs = attributes
         self.setRange(0, max(attributes.keys()))
@@ -16,7 +16,7 @@ class CustomSpinBox(QSpinBox):
 
 
 class AttributeSpinBox(QWidget):
-    def __init__(self, attributes: dict[int, str], parent=None):
+    def __init__(self, attributes, parent=None):
         super().__init__(parent)
 
         self.spin = CustomSpinBox(attributes, parent)

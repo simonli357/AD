@@ -185,7 +185,7 @@ class ArrowInstanceRenderer:
                 # recompute both shaft and tip matrices for this instance
                 self._rebuild_matrix(i)
 
-    def reset(self, starts: list[tuple[float, float]], ends: list[tuple[float, float]], edge_pairs: list[tuple[int, int]]):
+    def reset(self, starts, ends, edge_pairs):
         """
         Rebuild all per-instance data in place, including colors, and
         re-upload via glBufferData/SubData.
