@@ -65,8 +65,11 @@ class IPMCamera {
 					cv::Mat R = Rs * (Rz * (Ry * Rx));
 	
 					// 3) build translation t = –R * C
-					cv::Mat C = (cv::Mat_<double>(3,1) << REALSENSE_TF_REAL[0],
-							REALSENSE_TF_REAL[1],
+					// cv::Mat C = (cv::Mat_<double>(3,1) << REALSENSE_TF_REAL[0],
+					// 		REALSENSE_TF_REAL[1],
+					// 		REALSENSE_TF_REAL[2]);
+					cv::Mat C = (cv::Mat_<double>(3,1) << 0,
+							0,
 							REALSENSE_TF_REAL[2]);
 					cv::Mat t = -R * C;
 	
@@ -115,22 +118,29 @@ class IPMCamera {
 							int((far_m-near_m) * pxPerM),   // now this is the horizontal span
 							int(width_m        * pxPerM)    // and this is the vertical span
 					);
+					_mapX.create(_outputSize, CV_32FC1);
+					_mapY.create(_outputSize, CV_32FC1);
+					
+					cv::Mat Hf = H;
+					for(int v = 0; v < _outputSize.height; ++v) {
+						for(int u = 0; u < _outputSize.width; ++u) {
+							// build a 3×1 double vector
+							cv::Mat dst = (cv::Mat_<double>(3,1) << double(u),
+																											double(v),
+																											1.0);
+							// forward map
+							cv::Mat src = Hf * dst;
+							double w = src.at<double>(2,0);
+							// now divide—w should be nonzero
+							_mapX.at<float>(v,u) = float(src.at<double>(0,0) / w);
+							_mapY.at<float>(v,u) = float(src.at<double>(1,0) / w);
+						}
+					}
 			}
 	
 			bool getIPM(const cv::Mat& in, cv::Mat& out) const {
-					// if you're doing undistort, call remap() here first...
-					// cv::remap(in, undist, _map1, _map2, cv::INTER_LINEAR);
-	
-					int flag = _useNearest
-											? cv::INTER_NEAREST
-											: cv::INTER_LINEAR;
-					cv::warpPerspective(
-							in,
-							out,
-							_ipmTransform,
-							_outputSize,
-							flag
-					);
+					int interp = _useNearest ? cv::INTER_NEAREST : cv::INTER_LINEAR;
+    			cv::remap(in, out, _mapX, _mapY, interp);
 					cv::rotate(out, out, cv::ROTATE_90_COUNTERCLOCKWISE);
 					return !out.empty();
 			}
@@ -139,6 +149,7 @@ class IPMCamera {
 			cv::Mat _ipmTransform;
 			cv::Size _outputSize;
 			bool     _useNearest;
+			cv::Mat _mapX, _mapY;
 };
 
 class LaneDetector {

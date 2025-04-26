@@ -1,6 +1,6 @@
 resolution: 300
-width_m: 0.75
-near_m: 0.45
+width_m: 0.73
+near_m: 0.56255 # relative to camera
 far_m: 2.0
 
 trapezoidal_width: 150
