@@ -16,136 +16,13 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <vector>
-#include "utils/constants.h"
 
 using namespace std::chrono;
 using namespace Eigen;
 
-class IPMCamera {
-	public:
-			IPMCamera(ros::NodeHandle& nh, bool useNearest = true)
-				: _useNearest(useNearest)
-			{
-
-					using namespace VehicleConstants;
-					// 1) build intrinsic K
-					double fx = CAMERA_PARAMS_REAL[0], fy = CAMERA_PARAMS_REAL[1],
-								 cx = CAMERA_PARAMS_REAL[2], cy = CAMERA_PARAMS_REAL[3];
-					cv::Mat K = (cv::Mat_<double>(3, 3) <<
-							fx,  0, cx,
-							 0, fy, cy,
-							 0,  0,  1);
-	
-					// 2) build rotation R from yaw/pitch/roll (in radians)
-					double yaw   = REALSENSE_TF_REAL[5];
-					double pitch = REALSENSE_TF_REAL[4];
-					double roll  = REALSENSE_TF_REAL[3];
-	
-					cv::Mat Rz = (cv::Mat_<double>(3,3) <<
-							std::cos(-yaw), -std::sin(-yaw), 0,
-							std::sin(-yaw),  std::cos(-yaw), 0,
-							0,               0,              1);
-	
-					cv::Mat Ry = (cv::Mat_<double>(3,3) <<
-							std::cos(-pitch), 0, std::sin(-pitch),
-							0,                1, 0,
-						 -std::sin(-pitch), 0, std::cos(-pitch));
-	
-					cv::Mat Rx = (cv::Mat_<double>(3,3) <<
-							1, 0,               0,
-							0, std::cos(-roll), -std::sin(-roll),
-							0, std::sin(-roll),  std::cos(-roll));
-	
-					// axis switch matrix (x = –y, y = –z, z = x)
-					cv::Mat Rs = (cv::Mat_<double>(3,3) <<
-							0, -1,  0,
-							0,  0, -1,
-							1,  0,  0);
-	
-					cv::Mat R = Rs * (Rz * (Ry * Rx));
-	
-					// 3) build translation t = –R * C
-					cv::Mat C = (cv::Mat_<double>(3,1) << REALSENSE_TF_REAL[0],
-							REALSENSE_TF_REAL[1],
-							REALSENSE_TF_REAL[2]);
-					cv::Mat t = -R * C;
-	
-					// 4) form [R|t] and projection P = K * [R|t]
-					cv::Mat Rt(3,4,CV_64F);
-					R.copyTo(Rt(cv::Rect(0,0,3,3)));
-					t .copyTo(Rt(cv::Rect(3,0,1,3)));
-					cv::Mat P = K * Rt;
-	
-					// 5) build your M matrix (4×3)
-					double resolution;
-					if (!nh.getParam("/resolution", resolution)) {
-							ROS_ERROR("Failed to get param '/resolution'");
-							exit(1);
-					}
-					double pxPerM = double(resolution);
-					double near_m = 0.3;
-          double far_m = 2.0;
-					double width_m = 2.0;
-					if (!nh.getParam("/far_m", far_m)) {
-							ROS_ERROR("Failed to get param '/far_m'");
-							exit(1);
-					}
-					if (!nh.getParam("/near_m", near_m)) {
-							ROS_ERROR("Failed to get param '/near_m'");
-							exit(1);
-					}
-					if (!nh.getParam("/width_m", width_m)) {
-							ROS_ERROR("Failed to get param '/width_m'");
-							exit(1);
-					}
-					double CONSTANT_SHIFT = 0.585;
-					cv::Mat M = (cv::Mat_<double>(4,3) <<
-							 1.0/pxPerM,         0.0, near_m,
-							 0.0,         -1.0/pxPerM,  width_m/2.0,
-							 0.0,                0.0,           0.0,
-							 0.0,                0.0,           1.0);
-	
-					// 6) compute the 3×3 homography H = P * M, then invert for IPM
-					cv::Mat H = P * M;
-					_ipmTransform = H.inv();
-	
-					// 7) store desired output size
-					double bev_length_m = far_m - near_m;
-					_outputSize = cv::Size(
-							int((far_m-near_m) * pxPerM),   // now this is the horizontal span
-							int(width_m        * pxPerM)    // and this is the vertical span
-					);
-			}
-	
-			bool getIPM(const cv::Mat& in, cv::Mat& out) const {
-					// if you're doing undistort, call remap() here first...
-					// cv::remap(in, undist, _map1, _map2, cv::INTER_LINEAR);
-	
-					int flag = _useNearest
-											? cv::INTER_NEAREST
-											: cv::INTER_LINEAR;
-					cv::warpPerspective(
-							in,
-							out,
-							_ipmTransform,
-							_outputSize,
-							flag
-					);
-					cv::rotate(out, out, cv::ROTATE_90_COUNTERCLOCKWISE);
-					return !out.empty();
-			}
-	
-	private:
-			cv::Mat _ipmTransform;
-			cv::Size _outputSize;
-			bool     _useNearest;
-};
-
 class LaneDetector {
   public:
-	LaneDetector(ros::NodeHandle &nh) : nh(nh), showflag(false), printflag(false),
-		ipm_camera(nh, true)
-	{
+	LaneDetector(ros::NodeHandle &nh) : nh(nh), showflag(false), printflag(false) {
 		lane_pub = nh.advertise<utils::Lane2>("/lane", 1);
 		waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/lane_waypoints", 1);
 		std::string nodeName = ros::this_node::getName();
@@ -222,8 +99,6 @@ class LaneDetector {
 	int trapezoidal_width = IMG_WIDTH;
 	int trapezoidal_height = 280;
 
-	IPMCamera ipm_camera;
-
 	ros::NodeHandle nh;
 	ros::Publisher lane_pub;
 	ros::Publisher waypoints_pub;
@@ -280,13 +155,11 @@ class LaneDetector {
 		auto start = high_resolution_clock::now();
 		if (newlane) {
 			preprocess(image, processed_image);
-			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return;
+			if (!getIPM(processed_image, ipm_processed)) return;
 			stopline_dist = find_stopline(ipm_processed);
 
-			cv::imshow("processed image", processed_image);
-			cv::imshow("processed ipm", ipm_processed);
+			cv::imshow("processed_image", processed_image);
 			cv::waitKey(1);
-			return;
 
 			const cv::Mat initial = (cv::Mat_<float>(4, 2) <<
 				0, IMG_HEIGHT,                                                 // Bottom-left

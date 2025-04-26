@@ -1,3 +1,8 @@
+resolution: 300
+width_m: 0.75
+near_m: 0.45
+far_m: 2.0
+
 trapezoidal_width: 150
 trapezoidal_height: 300
 window_min_pixels: 30
