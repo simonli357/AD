@@ -25,7 +25,7 @@ Track::Track() {
 
 void Track::read_graph_xml() {
 	// 0) Build a map from attr.name → key‑ID
-	std::string path = ros::package::getPath("planning") + "/src/persistence/graph_noright.graphml";
+	std::string path = ros::package::getPath("planning") + "/src/persistence/track.graphml";
 	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
 		std::cerr << "[Track] Failed to load GraphML for key scan: " << path << "\n";
