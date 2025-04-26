@@ -16,7 +16,7 @@ class SimulatorFormWidget(QDialog):
         self.load_cache()
         self.setup_ui()
         self.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: transparent;
             color: white;
             font-size: 16px;
         """)

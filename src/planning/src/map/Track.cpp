@@ -17,15 +17,14 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
-	read_graph_xml();
-	// read_graph();
-	// adjust_graph();
-	// compute_edge_distances();
+	/* read_graph_xml(); */
+	read_graph();
+	compute_edge_distances();
 }
 
 void Track::read_graph_xml() {
 	// 0) Build a map from attr.name → key‑ID
-	std::string path = ros::package::getPath("planning") + "/src/persistence/graph.graphml";
+	std::string path = ros::package::getPath("planning") + "/src/persistence/track.graphml";
 	tinyxml2::XMLDocument doc;
 	if (doc.LoadFile(path.c_str()) != tinyxml2::XML_SUCCESS) {
 		std::cerr << "[Track] Failed to load GraphML for key scan: " << path << "\n";
@@ -133,91 +132,94 @@ void Track::read_graph_xml() {
 }
 
 void Track::read_graph() {
-	package_path = ros::package::getPath("planning");
-	std::string graph_file = package_path + "/src/persistence/track.graphml";
+	const std::string package_path = ros::package::getPath("planning");
+	const std::string graph_file = package_path + "/src/persistence/track.graphml";
 
 	tinyxml2::XMLDocument doc;
-	tinyxml2::XMLError err = doc.LoadFile(graph_file.c_str());
-	if (err != tinyxml2::XML_SUCCESS) {
-		std::cerr << "Error opening/parsing file: " << graph_file << "\nTinyXML2 error code: " << err << std::endl;
+	if (doc.LoadFile(graph_file.c_str()) != tinyxml2::XML_SUCCESS) {
+		std::cerr << "[Track] Error loading GraphML: " << graph_file << "\n";
 		return;
 	}
 
 	tinyxml2::XMLElement *graphml = doc.FirstChildElement("graphml");
 	if (!graphml) {
-		std::cerr << "No <graphml> element found.\n";
+		std::cerr << "[Track] No <graphml> root\n";
 		return;
 	}
-
 	tinyxml2::XMLElement *graphElem = graphml->FirstChildElement("graph");
 	if (!graphElem) {
-		std::cerr << "No <graph> element found.\n";
+		std::cerr << "[Track] No <graph> element\n";
 		return;
 	}
 
+	graph.clear();
 	std::unordered_map<int, Graph::vertex_descriptor> idToVertex;
+    bool modified = false;
 
-	for (tinyxml2::XMLElement *nodeElem = graphElem->FirstChildElement("node"); nodeElem; nodeElem = nodeElem->NextSiblingElement("node")) {
-		const char *nodeIdStr = nodeElem->Attribute("id");
-		if (!nodeIdStr) {
-			std::cerr << "A <node> element has no id attribute.\n";
+	// --- Parse nodes ---
+	for (auto *nodeElem = graphElem->FirstChildElement("node"); nodeElem; nodeElem = nodeElem->NextSiblingElement("node")) {
+		const char *idStr = nodeElem->Attribute("id");
+		if (!idStr)
 			continue;
-		}
-		int nodeId = std::stoi(nodeIdStr);
 
-		double xVal = 0.0;
-		double yVal = 0.0;
+		// strip leading 'n'
+		int nodeId = 0;
+        if (idStr[0] == 'n' || idStr[0] == 'N') {
+            nodeId = std::stoi(idStr + 1);
+            modified = true;
+        } else {
+            nodeId = std::stoi(idStr);
+        }
+
+		double xVal = 0.0, yVal = 0.0;
 		int attrVal = 0;
 
-		for (tinyxml2::XMLElement *dataElem = nodeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
-			const char *keyAttr = dataElem->Attribute("key");
-			if (!keyAttr) {
+		for (auto *dataElem = nodeElem->FirstChildElement("data"); dataElem; dataElem = dataElem->NextSiblingElement("data")) {
+			const char *key = dataElem->Attribute("key");
+			const char *txt = dataElem->GetText();
+			if (!key || !txt)
 				continue;
-			}
-			const char *textValue = dataElem->GetText();
-			if (!textValue) {
-				continue;
-			}
 
-			if (std::strcmp(keyAttr, "d0") == 0) {
-				// e.g. <data key="d0">4.17</data>
-				xVal = std::stod(textValue);
-			} else if (std::strcmp(keyAttr, "d1") == 0) {
-				yVal = std::stod(textValue);
-			} else if (std::strcmp(keyAttr, "d2") == 0) {
-				// e.g. <data key="d2">7</data>
-				attrVal = std::stoi(textValue);
-			}
+			if (std::strcmp(key, "d0") == 0)
+				xVal = std::stod(txt);
+			else if (std::strcmp(key, "d1") == 0)
+				yVal = std::stod(txt);
+			else if (std::strcmp(key, "d2") == 0)
+				attrVal = std::stoi(txt);
 		}
 
-		Graph::vertex_descriptor v = boost::add_vertex(graph);
+		auto vd = boost::add_vertex(graph);
+		graph[vd].id = nodeId;
+		graph[vd].x = xVal;
+		graph[vd].y = yVal;
+		graph[vd].attribute = static_cast<ATTRIBUTE>(attrVal);
 
-		graph[v].id = nodeId;
-		graph[v].x = xVal;
-		graph[v].y = yVal;
-		graph[v].attribute = static_cast<ATTRIBUTE>(attrVal);
-
-		idToVertex[nodeId] = v;
+		idToVertex[nodeId] = vd;
 	}
 
-	for (tinyxml2::XMLElement *edgeElem = graphElem->FirstChildElement("edge"); edgeElem; edgeElem = edgeElem->NextSiblingElement("edge")) {
-		const char *sourceStr = edgeElem->Attribute("source");
-		const char *targetStr = edgeElem->Attribute("target");
-		if (!sourceStr || !targetStr) {
-			std::cerr << "Edge missing source= or target=.\n";
+	// --- Parse edges (only source/target, no extra properties) ---
+	for (auto *edgeElem = graphElem->FirstChildElement("edge"); edgeElem; edgeElem = edgeElem->NextSiblingElement("edge")) {
+		const char *srcStr = edgeElem->Attribute("source");
+		const char *tgtStr = edgeElem->Attribute("target");
+		if (!srcStr || !tgtStr)
 			continue;
-		}
-		int sourceId = std::stoi(sourceStr);
-		int targetId = std::stoi(targetStr);
 
-		auto sIt = idToVertex.find(sourceId);
-		auto tIt = idToVertex.find(targetId);
-		if (sIt == idToVertex.end() || tIt == idToVertex.end()) {
-			std::cerr << "Edge references unknown node: " << sourceId << " -> " << targetId << std::endl;
+		int srcId = (srcStr[0] == 'n' || srcStr[0] == 'N') ? std::stoi(srcStr + 1) : std::stoi(srcStr);
+		int tgtId = (tgtStr[0] == 'n' || tgtStr[0] == 'N') ? std::stoi(tgtStr + 1) : std::stoi(tgtStr);
+
+		auto sit = idToVertex.find(srcId);
+		auto tit = idToVertex.find(tgtId);
+		if (sit == idToVertex.end() || tit == idToVertex.end()) {
+			std::cerr << "[Track] Edge references unknown node: " << srcId << " -> " << tgtId << "\n";
 			continue;
 		}
-		boost::add_edge(sIt->second, tIt->second, graph);
+
+		boost::add_edge(sit->second, tit->second, graph);
 	}
+
+    if (!modified) {
+        adjust_graph();
+    }
 }
 
 void Track::adjust_graph() {
@@ -338,7 +340,7 @@ Track::Vertex Track::find_node(int id) {
 			return vertex;
 		}
 	}
-	std::cerr << "Node not found" << std::endl;
+	std::cerr << "Node: " << id << "not found" << std::endl;
 	exit(1);
 }
 
