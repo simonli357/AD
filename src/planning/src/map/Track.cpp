@@ -163,7 +163,12 @@ void Track::read_graph() {
 			std::cerr << "A <node> element has no id attribute.\n";
 			continue;
 		}
-		int nodeId = std::stoi(nodeIdStr);
+		int nodeId = 0;
+		if (nodeIdStr[0] == 'n') {
+			nodeId = std::stoi(std::string(nodeIdStr + 1));
+		} else {
+			nodeId = std::stoi(nodeIdStr);
+		}
 
 		double xVal = 0.0;
 		double yVal = 0.0;
