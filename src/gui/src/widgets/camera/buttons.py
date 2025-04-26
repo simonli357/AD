@@ -158,6 +158,7 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
+        self.main_window.buttons_overlay.handle_cam_lock_clicked()
         self.update_stop_button_style(self.start_btn, self.started)
 
     def call_start_service(self, start) -> None:
@@ -169,7 +170,6 @@ class ButtonsWidget(QtWidgets.QWidget):
             retries = 0
             while (retries < max_retries):
                 if self.server.utility_node_client.start_srv_msg:
-                    self.main_window.map_widget.cam_locked = True
                     return
                 retries += 1
                 time.sleep(0.1)
