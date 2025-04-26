@@ -19,7 +19,7 @@ class SSHFormWidget(QDialog):
         self.terminal_type = terminal_type
         self.setup_ui()
         self.setStyleSheet("""
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: transparent;
             color: white;
             font-size: 16px;
         """)

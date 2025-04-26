@@ -14,7 +14,7 @@ class CommentedTreeBuilder(ET.TreeBuilder):
 class ButtonsOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(350, 60)
+        self.setMinimumSize(380, 60)
         self.main_window = self.parent()
         self.runs = []
         self.read_from_cache()
@@ -88,10 +88,14 @@ class ButtonsOverlay(QWidget):
         self.measuring_btn = QPushButton("󰭍")
         self.measuring_btn.clicked.connect(self.handle_measuring_clicked)
 
+        self.cam_lock_btn = QPushButton("")
+        self.cam_lock_btn.clicked.connect(self.handle_cam_lock_clicked)
+
         self.wrapper.addWidget(self.run_label)
         self.wrapper.addWidget(self.change_run_btn)
         self.wrapper.addWidget(self.swap_map_btn)
         self.wrapper.addWidget(self.measuring_btn)
+        self.wrapper.addWidget(self.cam_lock_btn)
 
         self.menu = QMenu(self)
         self.menu.setStyleSheet("""
@@ -120,6 +124,7 @@ class ButtonsOverlay(QWidget):
             self.menu.addAction(path_name, lambda checked=False, r=run: self.on_action_triggered(r))
 
         self.update_button_style(self.measuring_btn, self.main_window.map_widget.measuring)
+        self.update_button_style(self.cam_lock_btn, self.main_window.map_widget.cam_locked)
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -159,6 +164,10 @@ class ButtonsOverlay(QWidget):
         else:
             self.main_window.map_widget.cursor_coords.clear()
         self.update_button_style(self.measuring_btn, self.main_window.map_widget.measuring)
+
+    def handle_cam_lock_clicked(self) -> None:
+        self.main_window.map_widget.cam_locked = not self.main_window.map_widget.cam_locked
+        self.update_button_style(self.cam_lock_btn, self.main_window.map_widget.cam_locked)
 
     def update_launch_params(self, x0, y0, yaw0, path):
         pass

@@ -36,6 +36,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.show_gt = True
         self.show_graph = False
         self.measuring = False
+        self.cam_locked = False
 
         self.sign_size = 20
 
@@ -170,7 +171,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.view_center = glm.vec2(0, 0)
 
         self.update_car_data()
-        if self.main_window.cam_buttons_widget.started:
+        if self.main_window.cam_buttons_widget.started and self.cam_locked:
             self.view_center = glm.vec2(*self.get_gl_coords(self.car_x, self.car_y))
 
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -204,8 +205,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_detected_objects()
             self.draw_path_nodes()
             self.draw_measurement_points()
-            self.draw_legend(self.width() / 2.7, self.height() / 3)
             self.update_mouse_pos()
+
+        self.draw_legend(self.width() / 2.7, self.height() / 3)
 
         self.update()
 
@@ -624,7 +626,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def mouseReleaseEvent(self, event):
         if self.show_graph:
             if self._is_dragging:
-                self.graph_editor.mouseReleaseEventDragging(event)
+                pass
             elif not self._is_dragging:
                 self.graph_editor.mouseReleaseEventNonDrag(event)
             self._press_pos = None
@@ -637,6 +639,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 self.handle_measurement_click(event)
             # clear press marker
             self._press_pos = None
+
+    def mouseDoubleClickEvent(self, event):
+        if self.show_graph:
+            self.graph_editor.mouseDoubleClickEvent(event)
 
     def wheelEvent(self, event):
         # Get mouse position in normalized device coordinates
