@@ -149,57 +149,24 @@ class GraphEditor:
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def export(self, path):
+        H = nx.DiGraph()
         id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
 
-        current_keys = set(self.G.nodes())
-        new_keys = set(self.instance_data.keys)
-
-        for key in current_keys - new_keys:
-            self.G.remove_node(key)
-
-        for node_id, node_key in zip(self.instance_data.ids, self.instance_data.keys):
-            if not self.G.has_node(node_key):
-                self.G.add_node(node_key)
-
-        for node_id, node_key, (x_real, y_real), attr in zip(
-                self.instance_data.ids,
-                self.instance_data.keys,
-                self.instance_data.real_positions,
-                self.instance_data.attributes):
-            node = self.G.nodes[node_key]
-            node['x'] = float(x_real)
-            node['y'] = float(y_real)
-            node['attr'] = int(attr)
-
-        current_edges = set(self.G.edges())
-        desired_edges = {
-            (id_to_key[u], id_to_key[v])
-            for u, v in self.instance_data.edge_pairs
-        }
-
-        for u, v in current_edges - desired_edges:
-            self.G.remove_edge(u, v)
+        for nid, (x_real, y_real), attr in zip(self.instance_data.ids, self.instance_data.real_positions, self.instance_data.attributes):
+            key = id_to_key[nid]
+            H.add_node(key, x=float(x_real), y=float(y_real), new_attribute=int(attr))
 
         for u_id, v_id in self.instance_data.edge_pairs:
-            u_key, v_key = id_to_key[u_id], id_to_key[v_id]
-            if not self.G.has_edge(u_key, v_key):
-                ux, uy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == u_id)
-                vx, vy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == v_id)
-                dist = float(np.hypot(vx - ux, vy - uy))
-                self.G.add_edge(u_key, v_key, dist=dist)
-            else:
-                # update dist on existing edge
-                ux, uy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == u_id)
-                vx, vy = next(rp for i, rp in zip(self.instance_data.ids, self.instance_data.real_positions) if i == v_id)
-                self.G[u_key][v_key]['dist'] = float(np.hypot(vx - ux, vy - uy))
+            u, v = id_to_key[u_id], id_to_key[v_id]
+            H.add_edge(u, v, dotted=True)
 
         nx.write_graphml(
-            self.G,
+            H,
             path,
             encoding='utf-8',
             prettyprint=True,
             infer_numeric_types=True,
-            named_key_ids=True
+            named_key_ids=False
         )
 
     def update_instance(self, index, x_real, y_real, attr):
