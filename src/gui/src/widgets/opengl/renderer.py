@@ -241,6 +241,10 @@ class InstanceRenderer:
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, col_off, len(co), co)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
+    def transform_all(self, positions, rotations, scales=None):
+        self.set_transformations(positions, rotations, scales)
+        self.set_model_matrices()
+
     def render(self, proj_mat, view_mat):
         gl.glUseProgram(self.prog)
         gl.glUniformMatrix4fv(self.p_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
