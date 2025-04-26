@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt
 
 import numpy as np
 import networkx as nx
+import xml.etree.ElementTree as ET
 
 
 class InstanceData:
@@ -149,25 +150,78 @@ class GraphEditor:
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
 
     def export(self, path):
-        H = nx.DiGraph()
-        id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
+        # 1) Register GraphML namespaces
+        ET.register_namespace('', "http://graphml.graphdrawing.org/xmlns")
+        ET.register_namespace('xsi', "http://www.w3.org/2001/XMLSchema-instance")
 
-        for nid, (x_real, y_real), attr in zip(self.instance_data.ids, self.instance_data.real_positions, self.instance_data.attributes):
-            key = id_to_key[nid]
-            H.add_node(key, x=float(x_real), y=float(y_real), new_attribute=int(attr))
-
-        for u_id, v_id in self.instance_data.edge_pairs:
-            u, v = id_to_key[u_id], id_to_key[v_id]
-            H.add_edge(u, v, dotted=True)
-
-        nx.write_graphml(
-            H,
-            path,
-            encoding='utf-8',
-            prettyprint=True,
-            infer_numeric_types=True,
-            named_key_ids=False
+        schema_loc = (
+            "http://graphml.graphdrawing.org/xmlns "
+            "http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"
         )
+        # 2) Root <graphml>
+        root = ET.Element(
+            'graphml',
+            {
+                'xmlns': "http://graphml.graphdrawing.org/xmlns",
+                'xmlns:xsi': "http://www.w3.org/2001/XMLSchema-instance",
+                'xsi:schemaLocation': schema_loc
+            }
+        )
+
+        # 3) Emit your <key> declarations in the original order
+        keys = [
+            ('d0', 'node', 'x', 'double'),
+            ('d1', 'node', 'y', 'double'),
+            ('d2', 'node', 'new_attribute', 'long'),
+            ('d3', 'edge', 'dotted', 'boolean'),
+        ]
+        for kid, f, name, typ in keys:
+            ET.SubElement(
+                root, 'key',
+                {'id': kid, 'for': f, 'attr.name': name, 'attr.type': typ}
+            )
+
+        # 4) The <graph> container
+        graph = ET.SubElement(root, 'graph', edgedefault='directed')
+        for key, (x_real, y_real), attr in zip(
+                self.instance_data.keys,
+                self.instance_data.real_positions,
+                self.instance_data.attributes):
+            node = ET.SubElement(graph, 'node', id=key)
+            ET.SubElement(node, 'data', key='d0').text = f"{x_real}"
+            ET.SubElement(node, 'data', key='d1').text = f"{y_real}"
+            ET.SubElement(node, 'data', key='d2').text = f"{attr}"
+
+        # 6) Emit edges in the exact order of instance_data.edge_pairs:
+        #    use id_to_key to map your integer ids → the original key strings
+        id_to_key = {i: k for i, k in zip(self.instance_data.ids, self.instance_data.keys)}
+        for u_id, v_id in self.instance_data.edge_pairs:
+            u_key = id_to_key[u_id]
+            v_key = id_to_key[v_id]
+            edge = ET.SubElement(graph, 'edge', source=u_key, target=v_key)
+            ET.SubElement(edge, 'data', key='d3').text = 'True'
+
+        # 7) Pretty-indent (Python 3.9+ or fallback)
+        try:
+            ET.indent(root, space="  ")
+        except AttributeError:
+            def _indent(e, level=0):
+                i = "\n" + level * "  "
+                if len(e):
+                    if not e.text or not e.text.strip():
+                        e.text = i + "  "
+                    for c in e:
+                        _indent(c, level + 1)
+                    if not e.tail or not e.tail.strip():
+                        e.tail = i
+                else:
+                    if level and (not e.tail or not e.tail.strip()):
+                        e.tail = i
+            _indent(root)
+
+        # 8) Write to disk
+        tree = ET.ElementTree(root)
+        tree.write(path, encoding='utf-8', xml_declaration=True)
 
     def update_instance(self, index, x_real, y_real, attr):
         self.instance_data.real_positions[index] = (x_real, y_real)
