@@ -30,7 +30,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 	for (int i = 0; i < n; ++i) {
 		switch (path[i].attribute) {
 		case Track::INTERSECTION:
-			weights[i] = 0.0;
+			weights[i] = 1.0;
 			break;
 		default:
 			break;
