@@ -474,7 +474,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 
-                    if (yaw_error < 35 * M_PI / 180) {
+                    if (yaw_error < 45 * M_PI / 180) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
                             world_states[0], world_states[1], yaw, confidence, relevant_signs[min_index]);
 

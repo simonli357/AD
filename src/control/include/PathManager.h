@@ -231,106 +231,130 @@ inline bool lane_detectable(int start_idx, int end_idx) {
 	return start_idx_detectable && end_idx_detectable;
 }
 
-inline int change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
-	if (shift_right)
-		shift_distance *= -1.0;
+inline int change_lane(int start_idx, int end_idx, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
+	if (shift_right) shift_distance *= -1.0;
 
-	// 1) extract original (x,y,yaw) and compute avg spacing
-	int total_pts = end_index - start_index;
-	std::vector<Eigen::Vector3d> orig(total_pts);
-	for (int i = 0; i < total_pts; ++i) {
-		orig[i] = state_refs.row(start_index + i);
-	}
-	double total_len = 0.0;
-	for (int i = 1; i < total_pts; ++i) {
-		total_len += (orig[i].head<2>() - orig[i - 1].head<2>()).norm();
-	}
-	double avg_spacing = total_len / (total_pts - 1);
+    // 1) Precompute for originals: positions, normals, ramp‐factors (t_i), and yaw
+    int N = end_idx - start_idx;
+    if (N < 2) return 0;
 
-	// 2) shift each point along its normal (with ramp up/down)
-	int ramp_len = static_cast<int>(density * 0.125);
-	int ramp_up_end = ramp_len;
-	int ramp_down_start = total_pts - ramp_len;
+    std::vector<Eigen::Vector2d>  orig_pos(N);
+    std::vector<Eigen::Vector2d>  orig_nrm(N);
+    std::vector<double>           ramp_t(N);
+    std::vector<double>           orig_yaw(N);
 
-	std::vector<Eigen::Vector3d> shifted(total_pts);
-	for (int i = 0; i < total_pts; ++i) {
-		double t = 0.0;
-		if (i < ramp_up_end)
-			t = double(i + 1) / ramp_len;
-		else if (i < ramp_down_start)
-			t = 1.0;
-		else
-			t = double(total_pts - i) / ramp_len;
+    int ramp_len       = static_cast<int>(density * 0.125);
+    int ramp_up_end    = ramp_len;
+    int ramp_down_start= N - ramp_len;
 
-		double this_shift = shift_distance * t;
-		Eigen::Vector2d n = normals.row(start_index + i);
-		Eigen::Vector2d p = orig[i].head<2>() + n * this_shift;
-		shifted[i] = Eigen::Vector3d(p.x(), p.y(), 0.0); // yaw zero for now
-	}
+    for (int i = 0; i < N; ++i) {
+        // original
+        auto row = state_refs.row(start_idx + i);
+        orig_pos[i] = row.head<2>();
+        orig_yaw[i] = row(2);
 
-	// 3) densify: for each consecutive pair, insert floor(gap/avg_spacing)-1 points
-	std::vector<Eigen::Vector3d> densified;
-	densified.reserve(int(total_len / avg_spacing) + total_pts);
-	auto lerp2 = [&](auto &A, auto &B, double u) { return A + u * (B - A); };
+        // normal at that original
+        orig_nrm[i].x() = -std::sin(orig_yaw[i]);
+        orig_nrm[i].y() =  std::cos(orig_yaw[i]);
 
-	for (int i = 0; i + 1 < total_pts; ++i) {
-		const auto &P = shifted[i], &Q = shifted[i + 1];
-		densified.push_back(P);
-		double gap = (Q.head<2>() - P.head<2>()).norm();
-		int nins = std::max(0, int(std::round(gap / avg_spacing)) - 1);
-		for (int k = 1; k <= nins; ++k) {
-			double u = double(k) / (nins + 1);
-			Eigen::Vector2d mid = lerp2(P.head<2>(), Q.head<2>(), u);
-			densified.emplace_back(mid.x(), mid.y(), 0.0);
+        // ramp factor t_i ∈ [0..1]
+        if      (i < ramp_up_end)     ramp_t[i] = double(i+1)/ramp_len;
+        else if (i < ramp_down_start) ramp_t[i] = 1.0;
+        else                          ramp_t[i] = double(N-i)/ramp_len;
+    }
+
+    // 2) Shift all originals in place
+    std::vector<Eigen::Vector3d> shifted;
+    shifted.reserve(N);
+    for (int i = 0; i < N; ++i) {
+        Eigen::Vector2d p = orig_pos[i]
+                         + orig_nrm[i] * (shift_distance * ramp_t[i]);
+        shifted.emplace_back(p.x(), p.y(), orig_yaw[i]);
+    }
+
+    // 3) Densify + fill gaps by interpolating pos, normal & ramp_t
+    //    so every new point is still shifted exactly perpendicular.
+    std::vector<Eigen::Vector3d> densified;
+    densified.reserve(N * 2);
+
+    auto lerp2 = [&](auto &A, auto &B, double u){ return A + u*(B-A); };
+
+    // compute average spacing from originals
+    double total_len = 0;
+    for (int i = 1; i < N; ++i)
+        total_len += (orig_pos[i] - orig_pos[i-1]).norm();
+    double avg_sp = total_len / (N-1);
+
+    for (int i = 0; i+1 < N; ++i) {
+        // always push the already‐shifted original point
+        densified.push_back(shifted[i]);
+
+        // how many to insert?
+        double gap = (shifted[i+1].head<2>() - shifted[i].head<2>()).norm();
+        int nins = std::max(0, int(std::round(gap/avg_sp)) - 1);
+
+        for (int k = 1; k <= nins; ++k) {
+            double u = double(k)/(nins+1);
+
+            // 3a) interpolate the centerline position
+            Eigen::Vector2d center = lerp2(orig_pos[i], orig_pos[i+1], u);
+
+            // 3b) interpolate & renormalize the normal
+            Eigen::Vector2d n_interp = (1-u)*orig_nrm[i] + u*orig_nrm[i+1];
+            n_interp.normalize();
+
+            // 3c) interpolate the ramp factor
+            double t_interp = (1-u)*ramp_t[i] + u*ramp_t[i+1];
+
+            // 3d) apply shift exactly perpendicular
+            Eigen::Vector2d p_mid = center + n_interp * (shift_distance * t_interp);
+
+            // 3e) yaw will be fixed later—set placeholder
+            densified.emplace_back(p_mid.x(), p_mid.y(), 0.0);
+        }
+    }
+    // finally push the last original
+    densified.push_back(shifted.back());
+
+    // 4) Recompute & unwrap yaws exactly as before:
+    densified[0].z() = shifted[0].z();
+    for (int i = 1; i < (int)densified.size(); ++i) {
+        double raw = std::atan2(
+            densified[i].y() - densified[i-1].y(),
+            densified[i].x() - densified[i-1].x()
+        );
+        double prev = densified[i-1].z();
+        double d = std::remainder(raw - prev, 2.0*M_PI);
+        densified[i].z() = prev + d;
+    }
+
+    // 5) Splice back into state_refs and return extra count
+    int extra = int(densified.size()) - N;
+    int old_n = state_refs.rows();
+    int new_n = old_n + extra;
+    Eigen::MatrixXd M(new_n, 3);
+
+    // copy before
+    if (start_idx > 0)
+        M.block(0,0,start_idx,3) = state_refs.block(0,0,start_idx,3);
+
+    // copy densified
+    for (int i = 0; i < (int)densified.size(); ++i)
+        M.row(start_idx + i) = densified[i].transpose();
+
+    // copy after
+    int tail = old_n - end_idx;
+    if (tail > 0)
+        M.block(start_idx + densified.size(),0,tail,3)
+         = state_refs.block(end_idx,0,tail,3);
+
+    state_refs.swap(M);
+		for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
+			// these are all intersections we haven’t reached yet,
+			// and by assumption theyre after the lane‐change window
+			intersection_state_refs_indices[k] += extra;
 		}
-	}
-	densified.push_back(shifted.back());
-
-	// 4) recompute yaws
-	densified[0].z() = state_refs(start_index, 2);
-
-	// now for each subsequent point, compute a raw heading, then
-	// adjust by ±2π so it's within ±π of the *previous* yaw:
-	for (int i = 1; i < (int)densified.size(); ++i) {
-			double raw = std::atan2(
-					densified[i].y() - densified[i-1].y(),
-					densified[i].x() - densified[i-1].x()
-			);
-			double prev = densified[i-1].z();
-			double d = raw - prev;
-			// wrap the delta into (–π,π]
-			while (d >  M_PI)  d -= 2.0 * M_PI;
-			while (d < -M_PI)  d += 2.0 * M_PI;
-			densified[i].z() = prev + d;
-	}
-
-	// 5) splice into state_refs
-	int extra_pts = int(densified.size()) - total_pts;
-	int old_n = state_refs.rows();
-	int new_n = old_n + extra_pts;
-	Eigen::MatrixXd M(new_n, 3);
-
-	// copy before
-	if (start_index > 0)
-		M.block(0, 0, start_index, 3) = state_refs.block(0, 0, start_index, 3);
-
-	// copy densified
-	for (int i = 0; i < (int)densified.size(); ++i) {
-		M.row(start_index + i) = densified[i].transpose();
-	}
-
-	// copy after
-	int tail = old_n - end_index;
-	if (tail > 0)
-		M.block(start_index + densified.size(), 0, tail, 3) = state_refs.block(end_index, 0, tail, 3);
-
-	state_refs.swap(M);
-	for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
-		// these are all intersections we haven’t reached yet,
-		// and by assumption theyre after the lane‐change window
-		intersection_state_refs_indices[k] += extra_pts;
-	}
-	return extra_pts;
+		return extra;
 }
 
 inline int get_current_attribute() {

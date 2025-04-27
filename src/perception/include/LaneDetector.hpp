@@ -590,23 +590,26 @@ class LaneDetector {
 			int height = static_cast<int>(ROI_FRACTION * H);
 			cv::Mat roi = binaryIPM(cv::Rect(0, y0, W, height));
 
-			cv::imshow("ROI", roi);
-			cv::waitKey(1);
+			
 
 			cv::Mat hist;
 			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);
 			extract_lanes(hist);
-			// debug print
-			for (int x : lane_indices) {
-					float rel = float(x) / float(W);
-					std::cout << "lane @ x=" << x
-										<< " (" << rel << " of width)\n";
-			}
+
+			// DEBUG
+			// for (int x : lane_indices) {
+			// 		float rel = float(x) / float(W);
+			// 		std::cout << "lane @ x=" << x
+			// 							<< " (" << rel << " of width)\n";
+			// }
+			// cv::imshow("ROI", roi);
+			// cv::waitKey(1);
+
 			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0) {
 					int diff = (lane_indices[1] - lane_indices[0]);
-					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.25 * LANE_WIDTH_PIXEL) {
+					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.15 * LANE_WIDTH_PIXEL) {
 							double offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
-							std::cout << "offset_from_center: " << offset_from_center << std::endl;
+							// std::cout << "offset_from_center: " << offset_from_center << std::endl;
 							return offset_from_center;
 					}
 			}
