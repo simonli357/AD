@@ -44,7 +44,6 @@ public:
         P_(2,2) = std_yaw * std_yaw;
     }
 
-    // Predict state using control inputs: steering_angle and speed
     inline void predict(double steering_angle, double speed, double dt) {
         if (dt <= 0) return;
 
@@ -99,7 +98,6 @@ public:
         P_ = F_ * P_ * F_.transpose() + Q_;
     }
 
-    // Position update (x, y)
     inline void updatePosition(double meas_x, double meas_y,
                                double std_dev_x, double std_dev_y) {
         Eigen::Vector2d z;
@@ -109,7 +107,6 @@ public:
         ekfUpdate(H_pos_, z, R_pos_);
     }
 
-    // Yaw update
     inline void updateYaw(double meas_yaw, double std_dev) {
         while (x_(2) - meas_yaw > M_PI)  meas_yaw += 2.0 * M_PI;
         while (x_(2) - meas_yaw < -M_PI) meas_yaw -= 2.0 * M_PI;
@@ -119,7 +116,6 @@ public:
         ekfUpdate(H_yaw_, z, R_yaw_);
     }
 
-    // getters
     inline double getX() const   { return x_(0); }
     inline double getY() const   { return x_(1); }
     inline double getYaw() const { return normalizeAngle(x_(2)); }
@@ -135,7 +131,7 @@ private:
     double l_r_;
     bool use_beta_;
 
-    // RK4 temporaries
+    // rk4 temporaries
     Eigen::Vector3d k1_, k2_, k3_, k4_;
     Eigen::Matrix3d F_, I3_;
 
@@ -151,7 +147,6 @@ private:
         return angle;
     }
 
-    // generic EKF update
     template<typename HType, typename ZType, typename RType>
     void ekfUpdate(const HType& H,
                    const ZType& z,

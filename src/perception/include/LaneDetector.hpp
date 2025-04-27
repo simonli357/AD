@@ -329,10 +329,10 @@ class LaneDetector {
 	}
 
 	double pixel_to_meter_y(double pixel) { 
-		return pixel * pixel_to_meter_y_slope + pixel_to_meter_y_intercept; 
+		return pixel * METER_PER_PIXEL_X;
 	}
 	double meter_to_pixel_y(double meter) { 
-		return meter * meter_to_pixel_y_slope + meter_to_pixel_y_intercept; 
+		return meter / METER_PER_PIXEL_X;
 	}
 	
 	double get_derivative(double y, const VectorXd &coeffs) {
@@ -477,7 +477,6 @@ class LaneDetector {
 		cv::cvtColor(inputImage, outputImage, cv::COLOR_BGR2GRAY); // Convert to grayscale
 		cv::GaussianBlur(outputImage, outputImage, cv::Size(5, 5), 0); // Apply Gaussian blur
 
-		// Apply adaptive thresholding
 		static bool first;
 		static int adaptive_threshold_block_size = 199;
 		static int adaptive_threshold_c = -20;
