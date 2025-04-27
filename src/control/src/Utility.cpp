@@ -34,7 +34,7 @@
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
-    io(), serial(nullptr), it(nh), object_detection_time(ros::Time::now())
+    io(), serial(nullptr), object_detection_time(ros::Time::now())
 {
 
     std::cout << "Utility constructor" << std::endl;  
@@ -47,10 +47,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
 Utility::~Utility() {
     stop_car(); 
-    cameraThreadRunning = false;
-    if (cameraThread.joinable()) {
-            cameraThread.join();
-    }
 }
 
 void Utility::initialize_tcp_client() {
@@ -217,8 +213,9 @@ void Utility::initialize() {
             imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
         }
     }
-    if (!camera) {
+    if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+        lane_center_offset_sub = nh.subscribe("/lane_center_offset", 3, &Utility::lane_center_offset_callback, this);
         int horizon = 40;
         lane_waypoints = Eigen::MatrixXd(horizon, 3);
         waypoints_sub = nh.subscribe("/lane_waypoints", 3, &Utility::waypoints_callback, this);
@@ -229,15 +226,10 @@ void Utility::initialize() {
 
     timerpid = ros::Time::now();
     if (Tunable::sign) {
-        if (camera) {
-            std::cout << "camera enabled in control node" << std::endl;
-            cameraNodeConstructor(nh);
-        } else {
-            sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-            std::cout << "waiting for sign message" << std::endl;
-            ros::topic::waitForMessage<utils::Sign>("/sign");
-            std::cout << "received message from sign" << std::endl;
-        }
+        sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+        std::cout << "waiting for sign message" << std::endl;
+        ros::topic::waitForMessage<utils::Sign>("/sign");
+        std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
@@ -482,7 +474,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 
-                    if (yaw_error < 35 * M_PI / 180) {
+                    if (yaw_error < 45 * M_PI / 180) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
                             world_states[0], world_states[1], yaw, confidence, relevant_signs[min_index]);
 
@@ -541,6 +533,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
 
 void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
     process_lane_data(*msg);
+}
+void Utility::lane_center_offset_callback(const std_msgs::Float32::ConstPtr& msg) {
+    lane_center_offset = msg->data;
 }
 void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
     if(msg->data.size() < lane_waypoints.size()/3) {

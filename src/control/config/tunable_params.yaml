@@ -38,7 +38,7 @@ real:
   pedestrian_count_thresh: 8
 
 sim:
-  lane_relocalize: false
+  lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false

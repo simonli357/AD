@@ -231,42 +231,130 @@ inline bool lane_detectable(int start_idx, int end_idx) {
 	return start_idx_detectable && end_idx_detectable;
 }
 
-inline void change_lane(int start_index, int end_index, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
-  if (shift_right)
-		shift_distance *= -1;
+inline int change_lane(int start_idx, int end_idx, bool shift_right = false, double shift_distance = 0.36 - 0.1) {
+	if (shift_right) shift_distance *= -1.0;
 
-	// Total number of points
-	int total_points = end_index - start_index;
-	// int ramp_length = static_cast<int>(density * VehicleConstants::CAR_LENGTH / 2);
-	int ramp_length = static_cast<int>(density * 0.125);
+    // 1) Precompute for originals: positions, normals, ramp‐factors (t_i), and yaw
+    int N = end_idx - start_idx;
+    if (N < 2) return 0;
 
-	// Define the start and end indices of the constant shift phase
-	int ramp_up_end = start_index + ramp_length;
-	int ramp_down_start = end_index - ramp_length;
+    std::vector<Eigen::Vector2d>  orig_pos(N);
+    std::vector<Eigen::Vector2d>  orig_nrm(N);
+    std::vector<double>           ramp_t(N);
+    std::vector<double>           orig_yaw(N);
 
-	// Iterate over each point from start_index to end_index
-	for (int i = start_index; i < end_index; i++) {
-		double current_shift = 0.0;
+    int ramp_len       = static_cast<int>(density * 0.125);
+    int ramp_up_end    = ramp_len;
+    int ramp_down_start= N - ramp_len;
 
-		// Ramp up phase
-		if (i < ramp_up_end) {
-			// Adjust the progress calculation to start shifting immediately after start_index
-			double progress = static_cast<double>(i - start_index + 1) / ramp_length;
-			current_shift = shift_distance * progress;
+    for (int i = 0; i < N; ++i) {
+        // original
+        auto row = state_refs.row(start_idx + i);
+        orig_pos[i] = row.head<2>();
+        orig_yaw[i] = row(2);
+
+        // normal at that original
+        orig_nrm[i].x() = -std::sin(orig_yaw[i]);
+        orig_nrm[i].y() =  std::cos(orig_yaw[i]);
+
+        // ramp factor t_i ∈ [0..1]
+        if      (i < ramp_up_end)     ramp_t[i] = double(i+1)/ramp_len;
+        else if (i < ramp_down_start) ramp_t[i] = 1.0;
+        else                          ramp_t[i] = double(N-i)/ramp_len;
+    }
+
+    // 2) Shift all originals in place
+    std::vector<Eigen::Vector3d> shifted;
+    shifted.reserve(N);
+    for (int i = 0; i < N; ++i) {
+        Eigen::Vector2d p = orig_pos[i]
+                         + orig_nrm[i] * (shift_distance * ramp_t[i]);
+        shifted.emplace_back(p.x(), p.y(), orig_yaw[i]);
+    }
+
+    // 3) Densify + fill gaps by interpolating pos, normal & ramp_t
+    //    so every new point is still shifted exactly perpendicular.
+    std::vector<Eigen::Vector3d> densified;
+    densified.reserve(N * 2);
+
+    auto lerp2 = [&](auto &A, auto &B, double u){ return A + u*(B-A); };
+
+    // compute average spacing from originals
+    double total_len = 0;
+    for (int i = 1; i < N; ++i)
+        total_len += (orig_pos[i] - orig_pos[i-1]).norm();
+    double avg_sp = total_len / (N-1);
+
+    for (int i = 0; i+1 < N; ++i) {
+        // always push the already‐shifted original point
+        densified.push_back(shifted[i]);
+
+        // how many to insert?
+        double gap = (shifted[i+1].head<2>() - shifted[i].head<2>()).norm();
+        int nins = std::max(0, int(std::round(gap/avg_sp)) - 1);
+
+        for (int k = 1; k <= nins; ++k) {
+            double u = double(k)/(nins+1);
+
+            // 3a) interpolate the centerline position
+            Eigen::Vector2d center = lerp2(orig_pos[i], orig_pos[i+1], u);
+
+            // 3b) interpolate & renormalize the normal
+            Eigen::Vector2d n_interp = (1-u)*orig_nrm[i] + u*orig_nrm[i+1];
+            n_interp.normalize();
+
+            // 3c) interpolate the ramp factor
+            double t_interp = (1-u)*ramp_t[i] + u*ramp_t[i+1];
+
+            // 3d) apply shift exactly perpendicular
+            Eigen::Vector2d p_mid = center + n_interp * (shift_distance * t_interp);
+
+            // 3e) yaw will be fixed later—set placeholder
+            densified.emplace_back(p_mid.x(), p_mid.y(), 0.0);
+        }
+    }
+    // finally push the last original
+    densified.push_back(shifted.back());
+
+    // 4) Recompute & unwrap yaws exactly as before:
+    densified[0].z() = shifted[0].z();
+    for (int i = 1; i < (int)densified.size(); ++i) {
+        double raw = std::atan2(
+            densified[i].y() - densified[i-1].y(),
+            densified[i].x() - densified[i-1].x()
+        );
+        double prev = densified[i-1].z();
+        double d = std::remainder(raw - prev, 2.0*M_PI);
+        densified[i].z() = prev + d;
+    }
+
+    // 5) Splice back into state_refs and return extra count
+    int extra = int(densified.size()) - N;
+    int old_n = state_refs.rows();
+    int new_n = old_n + extra;
+    Eigen::MatrixXd M(new_n, 3);
+
+    // copy before
+    if (start_idx > 0)
+        M.block(0,0,start_idx,3) = state_refs.block(0,0,start_idx,3);
+
+    // copy densified
+    for (int i = 0; i < (int)densified.size(); ++i)
+        M.row(start_idx + i) = densified[i].transpose();
+
+    // copy after
+    int tail = old_n - end_idx;
+    if (tail > 0)
+        M.block(start_idx + densified.size(),0,tail,3)
+         = state_refs.block(end_idx,0,tail,3);
+
+    state_refs.swap(M);
+		for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
+			// these are all intersections we haven’t reached yet,
+			// and by assumption theyre after the lane‐change window
+			intersection_state_refs_indices[k] += extra;
 		}
-		// Constant shift phase
-		else if (i >= ramp_up_end && i < ramp_down_start) {
-			current_shift = shift_distance;
-		}
-		// Ramp down phase
-		else {
-			// Adjust progress calculation for a smoother transition to zero at the end
-			double progress = static_cast<double>(end_index - i) / ramp_length;
-			current_shift = shift_distance * progress;
-		}
-
-		state_refs.block(i, 0, 1, 2) += normals.block(i, 0, 1, 2) * current_shift;
-	}
+		return extra;
 }
 
 inline int get_current_attribute() {
@@ -281,42 +369,27 @@ inline void get_current_waypoints(Eigen::MatrixXd& output) {
 }
 
 inline int find_closest_waypoint2(
-	const Eigen::Vector2d& pt,
-	double threshold = 0.1)
+  const Eigen::Vector2d& pt,
+  double threshold = 0.1)
 {
-	const int M = state_refs.rows();
-	if (M == 0) return -1;
+  const int M = state_refs.rows();
+  if (M == 0) return -1;
 
-	// clamp our search window
-	int min_index = 0;
-	int max_index = M - 1;
-	const int window_size = max_index - min_index + 1;
-	if (window_size <= 0) return -1;
+  const double thr2 = threshold * threshold;
+  int   bestIdx   = -1;
+  double bestDist2 = thr2;  // only accept < thr2
 
-	// 1) grab the x,y columns and slice out [min_index..max_index]
-	//    gives a (window_size x 2) matrix
-	auto xy_win = state_refs
-									.leftCols<2>()
-									.middleRows(min_index, window_size);
+  for (int i = 0; i < M; ++i) {
+    double dx    = state_refs(i, 0) - pt.x();
+    double dy    = state_refs(i, 1) - pt.y();
+    double dist2 = dx*dx + dy*dy;
 
-	// 2) subtract pt from every row (broadcast)
-	//    diff(i,0:1) = xy_win(i,0:1) - pt
-	Eigen::MatrixXd diff = xy_win.rowwise() - pt.transpose();
-
-	// 3) squared norms of each row -> VectorXd of length window_size
-	Eigen::VectorXd dist2 = diff.rowwise().squaredNorm();
-
-	// build an index‐vector [min_index, min_index+1, …, max_index]
-	Eigen::VectorXi idxs = Eigen::VectorXi::LinSpaced(window_size, min_index, max_index);
-
-	// mask: if dist2(i) < threshold^2, keep idxs(i), else -1
-	double thr2 = threshold * threshold;
-	Eigen::VectorXi valid = (dist2.array() < thr2)
-													 .select(idxs, Eigen::VectorXi::Constant(window_size, -1));
-
-	// the answer is the maximum entry of valid (or –1 if all were –1)
-	int best = valid.maxCoeff();
-	return best;
+    if (dist2 < bestDist2) {
+      bestDist2 = dist2;
+      bestIdx   = i;
+    }
+  }
+  return bestIdx;
 }
 
 inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index = -1, int max_index = -1) {

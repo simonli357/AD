@@ -3,7 +3,6 @@
 #include "OldLaneDetector.hpp"
 #include "stdafx.h"
 #include "utils/Lane2.h"
-#include "std_msgs/Float32.h"
 #include "utils/constants.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -17,150 +16,14 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/MultiArrayDimension.h>
 #include <vector>
-#include "utils/constants.h"
 
 using namespace std::chrono;
 using namespace Eigen;
 
-class IPMCamera {
-	public:
-			IPMCamera(ros::NodeHandle& nh, bool useNearest = true)
-				: _useNearest(useNearest)
-			{
-
-					using namespace VehicleConstants;
-					// 1) build intrinsic K
-					double fx = CAMERA_PARAMS_REAL[0], fy = CAMERA_PARAMS_REAL[1],
-								 cx = CAMERA_PARAMS_REAL[2], cy = CAMERA_PARAMS_REAL[3];
-					cv::Mat K = (cv::Mat_<double>(3, 3) <<
-							fx,  0, cx,
-							 0, fy, cy,
-							 0,  0,  1);
-	
-					// 2) build rotation R from yaw/pitch/roll (in radians)
-					double yaw   = REALSENSE_TF_REAL[5];
-					double pitch = REALSENSE_TF_REAL[4];
-					double roll  = REALSENSE_TF_REAL[3];
-	
-					cv::Mat Rz = (cv::Mat_<double>(3,3) <<
-							std::cos(-yaw), -std::sin(-yaw), 0,
-							std::sin(-yaw),  std::cos(-yaw), 0,
-							0,               0,              1);
-	
-					cv::Mat Ry = (cv::Mat_<double>(3,3) <<
-							std::cos(-pitch), 0, std::sin(-pitch),
-							0,                1, 0,
-						 -std::sin(-pitch), 0, std::cos(-pitch));
-	
-					cv::Mat Rx = (cv::Mat_<double>(3,3) <<
-							1, 0,               0,
-							0, std::cos(-roll), -std::sin(-roll),
-							0, std::sin(-roll),  std::cos(-roll));
-	
-					// axis switch matrix (x = –y, y = –z, z = x)
-					cv::Mat Rs = (cv::Mat_<double>(3,3) <<
-							0, -1,  0,
-							0,  0, -1,
-							1,  0,  0);
-	
-					cv::Mat R = Rs * (Rz * (Ry * Rx));
-	
-					// 3) build translation t = –R * C
-					cv::Mat C = (cv::Mat_<double>(3,1) << REALSENSE_TF_REAL[0],
-							REALSENSE_TF_REAL[1],
-							REALSENSE_TF_REAL[2]);
-					// cv::Mat C = (cv::Mat_<double>(3,1) << 0,
-					// 		0,
-					// 		REALSENSE_TF_REAL[2]);
-					cv::Mat t = -R * C;
-	
-					// 4) form [R|t] and projection P = K * [R|t]
-					cv::Mat Rt(3,4,CV_64F);
-					R.copyTo(Rt(cv::Rect(0,0,3,3)));
-					t.copyTo(Rt(cv::Rect(3,0,1,3)));
-					cv::Mat P = K * Rt;
-	
-					// 5) build your M matrix (4×3)
-					if (!nh.getParam("/resolution", resolution)) {
-							ROS_ERROR("Failed to get param '/resolution'");
-							exit(1);
-					}
-					double pxPerM = double(resolution);
-					if (!nh.getParam("/far_m", far_m)) {
-							ROS_ERROR("Failed to get param '/far_m'");
-							exit(1);
-					}
-					if (!nh.getParam("/near_m", near_m)) {
-							ROS_ERROR("Failed to get param '/near_m'");
-							exit(1);
-					}
-					if (!nh.getParam("/width_m", width_m)) {
-							ROS_ERROR("Failed to get param '/width_m'");
-							exit(1);
-					}
-					double CONSTANT_SHIFT = 0.585;
-					cv::Mat M = (cv::Mat_<double>(4,3) <<
-							 1.0/pxPerM,         0.0, near_m,
-							 0.0,         -1.0/pxPerM,  width_m/2.0,
-							 0.0,                0.0,           0.0,
-							 0.0,                0.0,           1.0);
-	
-					// 6) compute the 3×3 homography H = P * M, then invert for IPM
-					cv::Mat H = P * M;
-					_ipmTransform = H.inv();
-	
-					// 7) store desired output size
-					double bev_length_m = far_m - near_m;
-					_outputSize = cv::Size(
-							int((far_m-near_m) * pxPerM),   // now this is the horizontal span
-							int(width_m        * pxPerM)    // and this is the vertical span
-					);
-					_mapX.create(_outputSize, CV_32FC1);
-					_mapY.create(_outputSize, CV_32FC1);
-					
-					cv::Mat Hf = H;
-					for(int v = 0; v < _outputSize.height; ++v) {
-						for(int u = 0; u < _outputSize.width; ++u) {
-							// build a 3×1 double vector
-							cv::Mat dst = (cv::Mat_<double>(3,1) << double(u),
-																											double(v),
-																											1.0);
-							// forward map
-							cv::Mat src = Hf * dst;
-							double w = src.at<double>(2,0);
-							// now divide—w should be nonzero
-							_mapX.at<float>(v,u) = float(src.at<double>(0,0) / w);
-							_mapY.at<float>(v,u) = float(src.at<double>(1,0) / w);
-						}
-					}
-			}
-	
-			bool getIPM(const cv::Mat& in, cv::Mat& out) const {
-					int interp = _useNearest ? cv::INTER_NEAREST : cv::INTER_LINEAR;
-    			cv::remap(in, out, _mapX, _mapY, interp);
-					cv::rotate(out, out, cv::ROTATE_90_COUNTERCLOCKWISE);
-					return !out.empty();
-			}
-	
-			double resolution, near_m, far_m, width_m;
-	private:
-			cv::Mat _ipmTransform;
-			cv::Size _outputSize;
-			bool     _useNearest;
-			cv::Mat _mapX, _mapY;
-};
-
 class LaneDetector {
   public:
-	LaneDetector(ros::NodeHandle &nh) : nh(nh), showflag(false), printflag(false),
-		ipm_camera(nh, true)
-	{
-		IPM_WIDTH = ipm_camera.resolution * ipm_camera.width_m;
-		IPM_HEIGHT = ipm_camera.resolution * (ipm_camera.far_m - ipm_camera.near_m);
-		METER_PER_PIXEL_X = 1 / ipm_camera.resolution;
-		METER_PER_PIXEL_Y = 1 / ipm_camera.resolution;
+	LaneDetector(ros::NodeHandle &nh) : nh(nh), showflag(false), printflag(false) {
 		lane_pub = nh.advertise<utils::Lane2>("/lane", 1);
-		center_offset_pub = nh.advertise<std_msgs::Float32>("/lane_center_offset", 1);
 		waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/lane_waypoints", 1);
 		std::string nodeName = ros::this_node::getName();
 		nh.getParam(nodeName + "/showFlag", showflag);
@@ -173,19 +36,33 @@ class LaneDetector {
 			old_lane_detector = std::make_unique<OldLaneDetector>(showflag, printflag);
 		}
 
-		double window_margin_multiplier;
-		nh.getParam("window_margin_multiplier", window_margin_multiplier);
-		WINDOW_MARGIN = int(window_margin_multiplier * VehicleConstants::LANE_WHITE * ipm_camera.resolution);
+		nh.getParam("trapezoidal_width", trapezoidal_width);
+		nh.getParam("trapezoidal_height", trapezoidal_height);
+		nh.getParam("scale_factor", scale_factor);
+		nh.getParam("window_margin", WINDOW_MARGIN);
 		nh.getParam("window_min_pixels", WINDOW_MIN_PIXELS);
-		nh.getParam("window_height", window_height);
-		n_windows = int((ipm_camera.far_m - ipm_camera.near_m) / window_height);
+		nh.getParam("n_windows", n_windows);
+		nh.getParam("display_width_factor", display_width_factor);
 		nh.getParam("stopline_distance_threshold", stopline_distance_threshold);
 		nh.getParam("pixel_to_meter_y_slope", pixel_to_meter_y_slope);
 		nh.getParam("pixel_to_meter_y_intercept", pixel_to_meter_y_intercept);
 		meter_to_pixel_y_slope = 1 / pixel_to_meter_y_slope;
 		meter_to_pixel_y_intercept = -pixel_to_meter_y_intercept / pixel_to_meter_y_slope;
+		WINDOW_MARGIN *= scale_factor;
+		WINDOW_MIN_PIXELS *= scale_factor;
 		LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
-		LANE_WIDTH_PIXEL = LANE_WIDTH_PIXEL;
+		LANE_WIDTH_PIXEL_SCALED = LANE_WIDTH_PIXEL * scale_factor;
+		
+		const cv::Mat initial = (cv::Mat_<float>(4, 2) << 320 - trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height, 320 + trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height, 0, IMG_HEIGHT, IMG_WIDTH, IMG_HEIGHT);
+		const cv::Mat final = (cv::Mat_<float>(4, 2) << 0, 0, IMG_WIDTH, 0, 0, IMG_HEIGHT, IMG_WIDTH, IMG_HEIGHT);
+		transMatrix = cv::getPerspectiveTransform(initial, final);
+		invMatrix = cv::getPerspectiveTransform(final, initial);
+
+		const cv::Mat initial_scaled = (cv::Mat_<float>(4, 2) << (320 - trapezoidal_width / 2) * scale_factor, (IMG_HEIGHT - trapezoidal_height) * scale_factor, (320 + trapezoidal_width / 2) * scale_factor,
+										(IMG_HEIGHT - trapezoidal_height) * scale_factor, 0, IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, IMG_HEIGHT * scale_factor);
+		const cv::Mat final_scaled = (cv::Mat_<float>(4, 2) << 0, 0, IMG_WIDTH * scale_factor, 0, 0, IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, IMG_HEIGHT * scale_factor);
+		transMatrix_scaled = cv::getPerspectiveTransform(initial_scaled, final_scaled);
+		invMatrix_scaled = cv::getPerspectiveTransform(final_scaled, initial_scaled);
 
 		double fx = VehicleConstants::CAMERA_PARAMS[0];
 		double fy = VehicleConstants::CAMERA_PARAMS[1];
@@ -197,30 +74,33 @@ class LaneDetector {
 			cx = VehicleConstants::CAMERA_PARAMS_REAL[2];
 			cy = VehicleConstants::CAMERA_PARAMS_REAL[3];
 		}
+		const cv::Mat cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
+		const cv::Mat distCoeff = cv::Mat();
+		cv::initUndistortRectifyMap(cameraMatrix, distCoeff, cv::Mat(), cameraMatrix, cv::Size(IMG_WIDTH, IMG_HEIGHT), CV_16SC2, map1, map2);
 	}
 
 	enum LANES { NONE = 0, LEFT = 1, BOTH = 2, RIGHT = 3};
 	const double IMG_WIDTH = 640;
 	const double IMG_HEIGHT = 480;
-	double IPM_WIDTH = 640;
-	double IPM_HEIGHT = 480;
-	double METER_PER_PIXEL_X;
-	double METER_PER_PIXEL_Y;
+	const double METER_PER_PIXEL_X = (0.37 / 124) / (IMG_WIDTH/160);
+	// const double METER_PER_PIXEL_X = 0.37/(1034/2);
+	const double METER_PER_PIXEL_Y = 1.93 / 445;
+	double scale_factor = 0.4;
 	double LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
+	double LANE_WIDTH_PIXEL_SCALED = LANE_WIDTH_PIXEL * scale_factor;
 	int n_windows = 9;
-	double window_height = 0.2;
-	int WINDOW_MARGIN = 50;
-	int WINDOW_MIN_PIXELS = 50;
+	double display_width_factor = 0.25;
+	int WINDOW_MARGIN = 50 * scale_factor;
+	int WINDOW_MIN_PIXELS = 50 * scale_factor;
 	double pixel_to_meter_y_slope = 0.003138337;
 	double pixel_to_meter_y_intercept = 0.3778245;
 	double meter_to_pixel_y_slope = 1 / pixel_to_meter_y_slope;
 	double meter_to_pixel_y_intercept = -pixel_to_meter_y_intercept / pixel_to_meter_y_slope;
-
-	IPMCamera ipm_camera;
+	int trapezoidal_width = IMG_WIDTH;
+	int trapezoidal_height = 280;
 
 	ros::NodeHandle nh;
 	ros::Publisher lane_pub;
-	ros::Publisher center_offset_pub;
 	ros::Publisher waypoints_pub;
 	utils::Lane2 lane_msg;
 
@@ -229,10 +109,10 @@ class LaneDetector {
 	std::unique_ptr<OldLaneDetector> old_lane_detector;
 
 	// NEW LANE
-	cv::Mat processed_image = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
-	cv::Mat ipm_color = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC3);
-	cv::Mat ipm_processed = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
-	cv::Mat binary_image = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
+	cv::Mat processed_image = cv::Mat::zeros(IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, CV_8UC1);
+	cv::Mat ipm_color = cv::Mat::zeros(IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, CV_8UC3);
+	cv::Mat ipm_processed = cv::Mat::zeros(IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, CV_8UC1);
+	cv::Mat binary_image = cv::Mat::zeros(IMG_HEIGHT * scale_factor, IMG_WIDTH * scale_factor, CV_8UC1);
 
 	std_msgs::Float32MultiArray waypoints_msg;
 	std_msgs::MultiArrayDimension dimension;
@@ -248,6 +128,25 @@ class LaneDetector {
 	VectorXd right_fit = VectorXd(4);
 	cv::Mat histogram;
 
+	cv::Mat transMatrix, invMatrix, transMatrix_scaled, invMatrix_scaled;
+	cv::Mat map1, map2;
+
+	// NEW LANE
+	int getIPM(const cv::Mat &in, cv::Mat &output) {
+		static cv::Mat remapped;
+		cv::Mat input;
+		cv::resize(in, input, cv::Size(), scale_factor, scale_factor, cv::INTER_NEAREST);
+		cv::remap(input, remapped, map1, map2, cv::INTER_LINEAR);
+		cv::warpPerspective(remapped, output, transMatrix_scaled, input.size(), cv::INTER_LINEAR);
+		return !output.empty();
+	}
+	int getIPMFull(const cv::Mat &input, cv::Mat &output) {
+		static cv::Mat remapped;
+		cv::remap(input, remapped, map1, map2, cv::INTER_LINEAR);
+		cv::warpPerspective(remapped, output, transMatrix, input.size(), cv::INTER_LINEAR);
+		return !output.empty();
+	}
+
 	void publish_lane(const cv::Mat &image) {
 		if (image.empty()) {
 			ROS_WARN("empty image received in lane detector");
@@ -256,18 +155,30 @@ class LaneDetector {
 		auto start = high_resolution_clock::now();
 		if (newlane) {
 			preprocess(image, processed_image);
-			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return;
+			if (!getIPM(processed_image, ipm_processed)) return;
 			stopline_dist = find_stopline(ipm_processed);
 
-			// cv::imshow("processed image", processed_image);
-			// cv::imshow("processed ipm", ipm_processed);
-			// cv::waitKey(1);
-			// return;
+			cv::imshow("processed_image", processed_image);
+			cv::waitKey(1);
 
-			std_msgs::Float32 center_offset_msg;
-			center_offset_msg.data = find_lanes(ipm_processed);
-			center_offset_pub.publish(center_offset_msg);
-			return;
+			const cv::Mat initial = (cv::Mat_<float>(4, 2) <<
+				0, IMG_HEIGHT,                                                 // Bottom-left
+				IMG_WIDTH, IMG_HEIGHT,                                         // Bottom-right
+				320 + trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height,  // Top-right
+				320 - trapezoidal_width / 2, IMG_HEIGHT - trapezoidal_height); // Top-left
+			// Convert ROI to vector of cv::Point
+			std::vector<cv::Point> roi_pts;
+			for (int i = 0; i < initial.rows; ++i) {
+					roi_pts.emplace_back(cv::Point(initial.at<float>(i, 0), initial.at<float>(i, 1)));
+			}
+			// Draw the polygon outline
+			std::vector<std::vector<cv::Point>> pts = { roi_pts };
+			cv::polylines(image, pts, true, cv::Scalar(0, 0, 255), 2); // red lines
+			// Show the result
+			cv::imshow("ROI Lane", image);
+			cv::waitKey(1);
+
+			find_lanes(ipm_processed); // Get the center indices
 			if(!line_fit(ipm_processed)) return;
 
 			auto wpts = get_waypoints(left_fit, right_fit, 40, 0.032);
@@ -284,10 +195,9 @@ class LaneDetector {
 			// 		std::cout << "Distance between waypoint " << i / 3 << " and " << (i / 3 + 1)
 			// 							<< " = " << distance << " meters" << std::endl;
 			// }
-
-			// for (int i = 0; i < wpts.size(); i += 3) {
-			// 	std::cout << i/3 << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
-			// }
+			for (int i = 0; i < wpts.size(); i += 3) {
+				std::cout << i/3 << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
+			}
 
 			waypoints_msg.data.clear();
 			waypoints_msg.layout.dim.clear();
@@ -306,7 +216,7 @@ class LaneDetector {
 			lane_pub.publish(lane_msg);
 
 			if (showflag) {
-				if (!ipm_camera.getIPM(image, ipm_color))
+				if (!getIPMFull(image, ipm_color))
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
 				cv::imshow("Binary Image", gyu_img);
@@ -427,8 +337,6 @@ class LaneDetector {
 	}
 
 	double find_stopline(const cv::Mat& image) {
-			const int img_height = image.rows;
-			const int img_width = image.cols;
 			stopline_dist = -1;
 			double stop_loc = -1.0;
 			bool found = false;
@@ -439,7 +347,7 @@ class LaneDetector {
 			for (int i = 0; i < horistogram.rows; ++i) {
 			// for (int i = horistogram.rows-1; i > 0; --i) {
 					hist.push_back(static_cast<int>(horistogram.at<int>(0,i)/255));
-					if (hist[i] >= LANE_WIDTH_PIXEL * 0.753) {
+					if (hist[i] >= LANE_WIDTH_PIXEL_SCALED * 0.753) {
 							stop_loc = i;
 							found = true;
 							break;
@@ -449,8 +357,8 @@ class LaneDetector {
 					stopline_dist = -1;
 					return stopline_dist;
 			}
-			// stopline_dist = (img_height - stop_loc) * METER_PER_PIXEL_Y;
-			double pixel_value = (img_height - stop_loc);
+			// stopline_dist = (IMG_HEIGHT - stop_loc / scale_factor) * METER_PER_PIXEL_Y;
+			double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
 			stopline_dist = pixel_to_meter_y(pixel_value);
 			stopline_dist_to_front = stopline_dist;
 			if (real) {
@@ -468,6 +376,72 @@ class LaneDetector {
 			}
 			return stopline_dist;
 	}
+	// double find_stopline(const cv::Mat& image) {
+	// 		stopline_dist = -1;
+	// 		double stop_loc = -1.0;
+			
+	// 		int img_height = image.rows;
+
+	// 		// Define region of interest: ignore top 30% and bottom 10%
+	// 		// int roi_top = static_cast<int>(0.30 * img_height);
+	// 		// int roi_bottom = static_cast<int>(0.90 * img_height);
+	// 		// // Extract the relevant vertical region (ROI)
+	// 		// cv::Mat roi = image(cv::Range(roi_top, roi_bottom), cv::Range::all());
+
+	// 		// Compute vertical histogram (sum of each row)
+	// 		static cv::Mat histogram;
+	// 		// cv::reduce(roi, histogram, 1, cv::REDUCE_SUM, CV_32S);
+	// 		cv::reduce(image, histogram, 1, cv::REDUCE_SUM, CV_32S);
+
+	// 		// Convert histogram to 1D array
+	// 		std::vector<int> hist(histogram.rows);
+	// 		for (int i = 0; i < histogram.rows; ++i) {
+	// 				hist[i] = histogram.at<int>(i, 0) / 255;
+	// 		}
+
+	// 		// Smooth the histogram with a moving average filter
+	// 		const int window_size = 5;
+	// 		std::vector<int> smoothed(hist.size(), 0);
+	// 		for (int i = 0; i < hist.size(); ++i) {
+	// 				int sum = 0, count = 0;
+	// 				for (int j = -window_size / 2; j <= window_size / 2; ++j) {
+	// 						if (i + j >= 0 && i + j < hist.size()) {
+	// 								sum += hist[i + j];
+	// 								count++;
+	// 						}
+	// 				}
+	// 				smoothed[i] = sum / count;
+	// 		}
+
+	// 		// Compute adaptive threshold (mean + 1.5*std deviation)
+	// 		double mean = std::accumulate(smoothed.begin(), smoothed.end(), 0.0) / smoothed.size();
+	// 		double std_dev = 0.0;
+	// 		for (auto v : smoothed) std_dev += (v - mean) * (v - mean);
+	// 		std_dev = std::sqrt(std_dev / smoothed.size());
+
+	// 		double threshold = mean + std_dev * 1.5;  // More tolerant for varying conditions
+
+	// 		// Find strongest peak above threshold (most likely stop line location)
+	// 		int best_row = -1;
+	// 		int max_value = 0;
+	// 		for (int i = 0; i < smoothed.size(); ++i) {
+	// 				if (smoothed[i] > threshold && smoothed[i] > max_value) {
+	// 						max_value = smoothed[i];
+	// 						best_row = i;
+	// 				}
+	// 		}
+
+	// 		if (best_row != -1) {
+	// 				// stop_loc = roi_top + best_row;
+	// 				stop_loc = best_row;
+	// 				double pixel_value = (IMG_HEIGHT - stop_loc / scale_factor);
+	// 				stopline_dist = pixel_to_meter_y(pixel_value);
+	// 		} else {
+	// 				stopline_dist = -1; // No reliable stopline found
+	// 		}
+
+	// 		return stopline_dist;
+	// }
 
 	bool preprocess(const cv::Mat &inputImage, cv::Mat &outputImage) {
 		if (inputImage.empty()) {
@@ -526,97 +500,53 @@ class LaneDetector {
 	}
 
 	std::vector<int> lane_indices;
-	void extract_lanes(const cv::Mat& hist_data) {
-			lane_indices.clear();
-			if (hist_data.empty()) return;
-			// ─── tunable constants ─────────────────────────────────────────
-			constexpr int THRESH           = 1500;  // histogram‐sum threshold
-			constexpr int MIN_LANE_WIDTH   = 5;     // min run width in px
-			constexpr int CLUSTER_GAP      = 20;    // merge midpoints closer than this
-			// ────────────────────────────────────────────────────────────────
-			const int W = hist_data.cols;
-			bool inLane = false;
-			int start = 0;
-			// 1) find rising/falling edges, record midpoints
-			for (int x = 0; x < W; ++x) {
-					int v = hist_data.at<int>(0, x);
-					if (!inLane && v >= THRESH) {
-							inLane = true;
-							start  = x;
-					}
-					else if (inLane && v < THRESH) {
-							int end = x - 1;
-							inLane = false;
-							if (end - start + 1 >= MIN_LANE_WIDTH) {
-									lane_indices.push_back((start + end) / 2);
-							}
-					}
-			}
-			// if a lane runs right to the edge:
-			if (inLane) {
-					int end = W - 1;
-					if (end - start + 1 >= MIN_LANE_WIDTH) {
-							lane_indices.push_back((start + end) / 2);
-					}
-			}
-			// 2) merge any midpoints that are too close together
-			if (lane_indices.size() > 1) {
-					std::sort(lane_indices.begin(), lane_indices.end());
-					std::vector<int> merged;
-					int sum   = lane_indices[0];
-					int count = 1;
-					for (size_t i = 1; i < lane_indices.size(); ++i) {
-							if (lane_indices[i] - lane_indices[i-1] <= CLUSTER_GAP) {
-									sum   += lane_indices[i];
-									count += 1;
-							} else {
-									merged.push_back(sum / count);
-									sum   = lane_indices[i];
-									count = 1;
-							}
-					}
-					merged.push_back(sum / count);
-					lane_indices.swap(merged);
-			}
-	}
-	double find_lanes(const cv::Mat &binaryIPM) {
-			lane_indices.clear();
-			if (binaryIPM.empty()) return -1.0;
-			constexpr float ROI_FRACTION = 0.10f;  // 10% of image
-			constexpr float FRACTION_FROM_BOT = 0.06f;  // start from bottom + 3%
-			// ─────────────────────────────────────────────────────────────────
-			int H = binaryIPM.rows, W = binaryIPM.cols;
-			int y0 = static_cast<int>((1.0f - ROI_FRACTION - FRACTION_FROM_BOT) * H);
-			int height = static_cast<int>(ROI_FRACTION * H);
-			cv::Mat roi = binaryIPM(cv::Rect(0, y0, W, height));
+	void find_lanes(const cv::Mat &image) {
+		cv::reduce(image(cv::Range(IMG_WIDTH*200/640 * scale_factor, IMG_HEIGHT * scale_factor), cv::Range::all()) / 2, histogram, 0, cv::REDUCE_SUM, CV_32S);
 
-			
+		static std::vector<int> hist;
+		hist.clear();
+		for (int i = 0; i < histogram.cols; ++i) {
+			hist.push_back(histogram.at<int>(0, i));
+		}
 
-			cv::Mat hist;
-			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);
-			extract_lanes(hist);
+		double mean = std::accumulate(hist.begin(), hist.end(), 0.0) / hist.size();
 
-			// DEBUG
-			// for (int x : lane_indices) {
-			// 		float rel = float(x) / float(W);
-			// 		std::cout << "lane @ x=" << x
-			// 							<< " (" << rel << " of width)\n";
-			// }
-			// cv::imshow("ROI", roi);
-			// cv::waitKey(1);
+		double variance = 0.0;
+		for (int value : hist) {
+			variance += std::pow(value - mean, 2);
+		}
+		double stddev = std::sqrt(variance / hist.size());
 
-			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0) {
-					int diff = (lane_indices[1] - lane_indices[0]);
-					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.15 * LANE_WIDTH_PIXEL) {
-							double offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
-							// std::cout << "offset_from_center: " << offset_from_center << std::endl;
-							return offset_from_center;
-					}
+		int adaptive_threshold = static_cast<int>(mean + 0.5 * stddev);
+		std::vector<int> above_threshold;
+		for (int i = 0; i < hist.size(); ++i) {
+			if (hist[i] > adaptive_threshold) {
+				above_threshold.push_back(i);
 			}
-			return -1.0;
+		}
+
+		std::vector<std::vector<int>> consecutive_groups;
+		for (int i = 0; i < above_threshold.size();) {
+			int j = i;
+			while (j < above_threshold.size() && above_threshold[j] - above_threshold[i] == j - i) {
+				++j;
+			}
+			if (j - i >= 5) {
+				consecutive_groups.push_back(std::vector<int>(above_threshold.begin() + i, above_threshold.begin() + j));
+			}
+			i = j;
+		}
+
+		lane_indices.clear();
+		for (const auto &group : consecutive_groups) {
+			if (group.size() >= 5) {
+				int midpoint_index = group.front() + (group.back() - group.front()) / 2;
+				lane_indices.push_back(midpoint_index);
+			}
+		}
 	}
 
-	std::vector<int> find_closest_pair(const std::vector<int> &indices, int LANE_WIDTH_PIXEL) {
+	std::vector<int> find_closest_pair(const std::vector<int> &indices, int LANE_WIDTH_PIXEL_SCALED) {
 		int n = indices.size(); // size of input array
 
 		if (n < 2) { // check to see if at least two lane lines
@@ -630,7 +560,7 @@ class LaneDetector {
 
 		for (int i = 0; i < n - 1; ++i) { // iterate over different pairs
 			for (int j = i + 1; j < n; ++j) {
-				int current_diff = std::abs(std::abs(indices[i] - indices[j]) - LANE_WIDTH_PIXEL); // check for how close to optimal distance the current distance is
+				int current_diff = std::abs(std::abs(indices[i] - indices[j]) - LANE_WIDTH_PIXEL_SCALED); // check for how close to optimal distance the current distance is
 				if (current_diff < min_diff) {
 					min_diff = current_diff; // compare current pair difference with optimal difference
 					result_pair[0] = indices[i];
@@ -695,10 +625,9 @@ class LaneDetector {
 	}
 
 	bool line_fit(const cv::Mat &binary_warped) {
-		const int img_height = binary_warped.rows;
-		const int img_width = binary_warped.cols;
+		// Declare variables to be used
 		static int leftx_base = 0;
-		static int rightx_base = img_width;
+		static int rightx_base = IMG_WIDTH * scale_factor;
 		lane_to_fit = NONE;
 
 		int size_indices = lane_indices.size(); // Number of lanes detected
@@ -709,7 +638,7 @@ class LaneDetector {
 		}
 
 		if (size_indices == 1) {						  // If only one lane line is detected
-			if (lane_indices[0] < img_width/2) { // Check on which side of the car it is
+			if (lane_indices[0] < IMG_WIDTH/2 * scale_factor) { // Check on which side of the car it is
 				lane_to_fit = LEFT;						  // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 				leftx_base = lane_indices[0];
 				rightx_base = 0;
@@ -720,14 +649,14 @@ class LaneDetector {
 			}
 		} else {
 			if (size_indices > 2) { // If more than two lane lines are detected
-				std::vector<int> closest_pair = find_closest_pair(lane_indices, LANE_WIDTH_PIXEL);
+				std::vector<int> closest_pair = find_closest_pair(lane_indices, LANE_WIDTH_PIXEL_SCALED);
 				lane_indices[0] = closest_pair[0]; // Initialize the start of the lane line at bottom of the screen
 				lane_indices[1] = closest_pair[1];
 			}
 			int delta = std::abs(lane_indices[0] - lane_indices[1]); // Check to see if the two lane lines are close enough to be the same
-			if (delta < img_width/4) {
+			if (delta < IMG_WIDTH/4 * scale_factor) {
 				lane_indices[0] = 0.5 * (lane_indices[0] + lane_indices[1]);
-				if (lane_indices[0] < img_width/2) {
+				if (lane_indices[0] < IMG_WIDTH/2 * scale_factor) {
 					lane_to_fit = LEFT; // NOTE : 1-LEFT FIT, 2- BOTH FITS, 3 - RIGHT FIT
 					leftx_base = lane_indices[0];
 					rightx_base = 0;
@@ -745,19 +674,23 @@ class LaneDetector {
 
 		cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
 		int window_height = static_cast<int>(binary_warped.rows / n_windows); // Caclulate height of parsing windows
+		// Find nonzero pixel locations
 		static std::vector<cv::Point> nonzero;
 
-		cv::findNonZero(binary_warped, nonzero);
+		cv::findNonZero(binary_warped, nonzero); // Find nonzero values in OpenCV point format
 
+		// Separate x and y coordinates of nonzero pixels
 		std::vector<int> nonzeroy, nonzerox;
 		for (size_t i = 0; i < nonzero.size(); i += 2) { // Increment index by 2
 			nonzeroy.push_back(nonzero[i].y);
 			nonzerox.push_back(nonzero[i].x);
 		}
 
+		// Current positions to be updated for each window
 		int leftx_current = leftx_base;
 		int rightx_current = rightx_base;
 
+		// Create empty vectors to receive left and right lane pixel indices
 		std::vector<int> left_lane_inds;
 		std::vector<int> right_lane_inds;
 
@@ -771,6 +704,7 @@ class LaneDetector {
 			if (left_done && right_done) {
 				break;
 			}
+			// Identify window boundaries in y
 			int win_y_low = binary_warped.rows - (window + 1) * window_height;
 			int win_y_high = binary_warped.rows - window * window_height;
 
@@ -782,7 +716,7 @@ class LaneDetector {
 				// DISPLAY
 				cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low),
                   cv::Point(win_xleft_high, win_y_high),
-                  cv::Scalar(0, 255, 0), 2);
+                  cv::Scalar(0, 255, 0), 2);  // Green for left lane window
 
 				int sum_left = 0;
 				std::vector<int> good_left_inds;
@@ -795,7 +729,7 @@ class LaneDetector {
 
 				if (good_left_inds.size() > WINDOW_MIN_PIXELS) { // Recenter mean for the next bounding box
 					int mean_left = sum_left / good_left_inds.size();
-					if (mean_left - WINDOW_MARGIN/2 > img_width || mean_left + WINDOW_MARGIN/2 < 0) {
+					if (mean_left - WINDOW_MARGIN/2 > IMG_WIDTH * scale_factor || mean_left + WINDOW_MARGIN/2 < 0) {
 						// std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
 						left_done = true;
 					} else {
@@ -809,7 +743,7 @@ class LaneDetector {
 						if (window == 0) {
 							leftx_current = mean_left;
 						} else {
-							leftx_current = leftx_current + (delta_left * 1.5);
+							leftx_current = leftx_current + (delta_left * 2);
 						}
 					}
 				} else {
@@ -839,7 +773,7 @@ class LaneDetector {
 
 				if (good_right_inds.size() > WINDOW_MIN_PIXELS) { // Keep pixels within the boxes
 					int mean_right = sum_right / good_right_inds.size();
-					if (mean_right - WINDOW_MARGIN/2 > img_width || mean_right + WINDOW_MARGIN/2 < 0) {
+					if (mean_right - WINDOW_MARGIN/2 > IMG_WIDTH * scale_factor || mean_right + WINDOW_MARGIN/2 < 0) {
 						right_done = true;
 					} else {
 						num_right_windows++;
@@ -852,7 +786,7 @@ class LaneDetector {
 						if (window == 0) {
 							rightx_current = mean_right;
 						} else {
-							rightx_current = rightx_current + (delta_right * 1.5);
+							rightx_current = rightx_current + (delta_right * 2);
 						}
 					}
 				} else {
@@ -918,11 +852,14 @@ class LaneDetector {
 			y(i) = nonzeroy[idx];
 		}
 		polyfit(x, y, fit);
+		if (scale_factor != 1.0) {
+			scale_poly(fit, scale_factor);
+		}
+
 	}
 
 	cv::Mat viz3(const cv::Mat &binary_warped, const cv::Mat &non_warped, const std::vector<float> waypoints, bool IPM = true) {
-		const int img_height = binary_warped.rows;
-		const int img_width = binary_warped.cols;
+
 		// Generate y values for plotting
 		std::vector<double> ploty;
 		for (int i = 0; i < binary_warped.rows; ++i) {
@@ -957,21 +894,28 @@ class LaneDetector {
 
 		for (int i = 0; i < waypoints.size(); i += 3) {
 			int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
-			// int y = img_height - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
-			int y = img_height - static_cast<int>(meter_to_pixel_y(waypoints[i] - VehicleConstants::REALSENSE_TF[0]));
+			// int y = IMG_HEIGHT - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
+			int y = IMG_HEIGHT - static_cast<int>(meter_to_pixel_y(waypoints[i] - VehicleConstants::REALSENSE_TF[0]));
 			cv::circle(result, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
 		}
 
 		// // Draw stop line
 		if (stopline_dist > 0) {
-			double stopline_y = img_height - meter_to_pixel_y(stopline_dist);
-			cv::line(result, cv::Point(0, stopline_y), cv::Point(img_width, stopline_y), cv::Scalar(0, 255, 0), 5);
+			double stopline_y = IMG_HEIGHT - meter_to_pixel_y(stopline_dist);
+			cv::line(result, cv::Point(0, stopline_y), cv::Point(IMG_WIDTH, stopline_y), cv::Scalar(0, 255, 0), 5);
 		}
 		if (IPM) {
 			cv::addWeighted(result, 0.95, binary_warped, 0.3, 0, result);
 		}
 
-		cv::resize(result, result, cv::Size(img_width, img_height), 0, 0, cv::INTER_CUBIC);
+		if (!IPM) {
+			// Apply inverse perspective transform
+			cv::Mat result_ipm;
+			cv::warpPerspective(result, result_ipm, invMatrix, binary_warped.size(), cv::INTER_LINEAR);
+			cv::addWeighted(non_warped, 0.3, result_ipm, 0.95, 0, result);
+		}
+
+		cv::resize(result, result, cv::Size(IMG_WIDTH * display_width_factor, IMG_HEIGHT), 0, 0, cv::INTER_CUBIC);
 
 		if (stopline_dist > 0) {
 			cv::putText(result, "stop:" + std::to_string(stopline_dist) + " m", cv::Point(0, 48), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
