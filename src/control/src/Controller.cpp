@@ -739,6 +739,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
+                min_error *= 0.75; // TODO: check if this is needed
                 utils.recalibrate_states(0, min_error);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running y: " + helper::d2str(x_current[1]) + ", estimated running y: " + helper::d2str(LANE_CENTERS[min_index] - offset), 2);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
@@ -759,6 +760,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
+                min_error *= 0.75; // TODO: check if this is needed
                 utils.recalibrate_states(min_error, 0);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running x: " + helper::d2str(x_current[0]) + ", estimated running x: " + helper::d2str(LANE_CENTERS[min_index] + offset), 2);
@@ -1214,14 +1216,14 @@ void StateMachine::solve() {
     // if (!toggle) return;
     // std::cout << "last waypoint index: " << PathManager::last_waypoint_index << ", target waypoint index: " << PathManager::target_waypoint_index << std::endl;
     int success = PathManager::find_next_waypoint(PathManager::target_waypoint_index, x_current);
-    // if (true) {
-    //     std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    //     std::cout << "closest waypoint index: " << PathManager::closest_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::closest_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::closest_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::closest_waypoint_index, 2) << std::endl;
-    //     std::cout << "target waypoint index: " << PathManager::target_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::target_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::target_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::target_waypoint_index, 2) << std::endl;
-    //     for (int i = PathManager::target_waypoint_index; i < std::min(PathManager::target_waypoint_index + 6, static_cast<int>(PathManager::state_refs.rows())); i++) {
-    //         std::cout << "i: " << i << ", x: " << PathManager::state_refs(i, 0) << ", y: " << PathManager::state_refs(i, 1) << ", yaw: " << PathManager::state_refs(i, 2) << std::endl;
-    //     }
-    // }
+    if (PathManager::target_waypoint_index < PathManager::overtake_end_index) {
+        std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+        std::cout << "closest waypoint index: " << PathManager::closest_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::closest_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::closest_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::closest_waypoint_index, 2) << std::endl;
+        std::cout << "target waypoint index: " << PathManager::target_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::target_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::target_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::target_waypoint_index, 2) << std::endl;
+        for (int i = PathManager::target_waypoint_index; i < std::min(PathManager::target_waypoint_index + 6, static_cast<int>(PathManager::state_refs.rows())); i++) {
+            std::cout << "i: " << i << ", x: " << PathManager::state_refs(i, 0) << ", y: " << PathManager::state_refs(i, 1) << ", yaw: " << PathManager::state_refs(i, 2) << std::endl;
+        }
+    }
     int idx = PathManager::target_waypoint_index;
     if (idx > PathManager::state_refs.rows()-2) {
         idx = PathManager::state_refs.rows() - 2;

@@ -299,8 +299,8 @@ inline int change_lane(int start_index, int end_index, bool shift_right = false,
 			double prev = densified[i-1].z();
 			double d = raw - prev;
 			// wrap the delta into (–π,π]
-			if      (d >  M_PI) d -= 2.0 * M_PI;
-			else if (d <= -M_PI) d += 2.0 * M_PI;
+			while (d >  M_PI)  d -= 2.0 * M_PI;
+			while (d < -M_PI)  d += 2.0 * M_PI;
 			densified[i].z() = prev + d;
 	}
 
@@ -325,6 +325,11 @@ inline int change_lane(int start_index, int end_index, bool shift_right = false,
 		M.block(start_index + densified.size(), 0, tail, 3) = state_refs.block(end_index, 0, tail, 3);
 
 	state_refs.swap(M);
+	for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
+		// these are all intersections we haven’t reached yet,
+		// and by assumption theyre after the lane‐change window
+		intersection_state_refs_indices[k] += extra_pts;
+	}
 	return extra_pts;
 }
 

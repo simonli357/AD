@@ -5,7 +5,8 @@ far_m: 2.0
 
 window_min_pixels: 10
 window_margin_multiplier: 4
-n_windows: 9
+n_windows: 18
+window_height: 0.1
 pixel_to_meter_y_slope: 0.003138337
 pixel_to_meter_y_intercept: 0.3778245
 stopline_distance_threshold: 0.5 # distance to front of car
