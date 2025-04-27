@@ -182,12 +182,27 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
+    // --- 1) One‐time setup of our timestamp Timer
+    static Timer ts_timer;
+    static bool   ts_started = false;
+    if (!ts_started) {
+        ts_timer.start();
+        ts_started = true;
+    }
+
+    // --- 2) Grab our timestamp (µs since ts_timer.start())
+    uint32_t now_us = ts_timer.read_us();
+
+    // --- 3) Read your sensor values
     float angle = readAngleDegrees();
     float speed = readAngularSpeed();
-    float acc   = readAngularAcceleration();
-    printf("@AN:%.2f°\n", angle);
-    printf("@SP:%.2f°/s\n", speed);
-    // printf("PWM Acceleration: %.2f°/s²\n", acc);
+    // float acc   = readAngularAcceleration(); // if you need it later
+
+    // --- 4) Single printf with timestamp, angle, speed
+    printf("@TS:%lu us, AN:%.2f°, SP:%.2f°/s\n",
+           now_us,
+           angle,
+           speed);
 }
 
 } // namespace periodics
