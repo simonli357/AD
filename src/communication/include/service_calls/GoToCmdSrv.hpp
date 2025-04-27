@@ -12,8 +12,8 @@ using std_msgs::Float32MultiArray;
 class GoToCmdSrv : public Decoder<GoToCmdSrv>, public Encoder {
   public:
     GoToCmdSrv();
-	GoToCmdSrv(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &wp_attributes, Float32MultiArray &wp_normals, bool success);
-	GoToCmdSrv(std::vector<std::tuple<float, float>> coords);
+	GoToCmdSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success);
+	GoToCmdSrv(const std::vector<std::tuple<float, float>> &coords);
 	GoToCmdSrv(GoToCmdSrv &&) = default;
 	GoToCmdSrv(const GoToCmdSrv &) = default;
 	GoToCmdSrv &operator=(GoToCmdSrv &&) = delete;

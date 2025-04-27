@@ -55,7 +55,8 @@ class GlobalPlanner:
     def __init__(self):
         self.hw_safety_offset = 0.05
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
-        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        # self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
@@ -105,7 +106,7 @@ class GlobalPlanner:
                 wp_y.append(y)
         return np.array([wp_x, wp_y]), path_edges, wp_attributes
 
-    def find_optimal_sequence(self, start_node, max_distance=80.0):
+    def find_optimal_sequence(self, start_node, max_distance):
         """
         Attempts to find a route (sequence of nodes) that visits all destinations (plus the start)
         without exceeding max_distance. This method uses recursive backtracking to explore all 
@@ -208,18 +209,26 @@ if __name__ == "__main__":
     
     runs = {}
     
-    max_dist = 75.0  # maximum allowed distance in meters
-    
     for start in starting_points:
         start_str = str(start)
-        optimal_path, total_dist = planner.find_optimal_sequence(start_str, max_dist)
-        # Convert nodes to integers if needed (and remove the start node from the final output)
+        threshold = 100.0  # starting max distance
+        max_threshold = 150.0  # optional cap to avoid infinite loop
+
+        while threshold <= max_threshold:
+            optimal_path, total_dist = planner.find_optimal_sequence(start_str, threshold)
+
+            if set(planner.base_destinations).issubset(set(optimal_path)):
+                # All destinations included – full solution found
+                print(f"run{start}: distance={total_dist:.2f}m (threshold={threshold}), full solution found.")
+                break
+            else:
+                print(f"run{start}: distance={total_dist:.2f}m (threshold={threshold}), partial solution – retrying...")
+                threshold += 10.0
+
         optimal_path_ints = [int(node) for node in optimal_path]
         if optimal_path_ints and optimal_path_ints[0] == int(start):
             optimal_path_ints.pop(0)
         runs[f'run{start}'] = optimal_path_ints
-        print(f"run{start}: distance={total_dist:.2f}m, num_destinations={len(optimal_path)-1}")
-    
-    runs_path = os.path.join(current_dir, 'config/runs.yaml')
+    runs_path = os.path.join(current_dir, 'config/runs_noright.yaml')
     with open(runs_path, 'w') as f:
         yaml.dump(runs, f, default_flow_style=False)

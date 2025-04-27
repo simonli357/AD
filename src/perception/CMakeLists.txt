@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Release)
 # # Enable Link Time Optimization (LTO)
 # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
-# # Enable CUDA optimizations
+# # # Enable CUDA optimizations
 # set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 --use_fast_math -lineinfo")
 
 find_package(PkgConfig)
@@ -30,7 +30,6 @@ endif()
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/scripts/buildsystems/vcpkg.cmake)
 set(realsense2_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../vcpkg/installed/${VCPKG_TARGET_TRIPLET}/share/realsense2)
 
-
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   roscpp
@@ -42,6 +41,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   utils
   communication
+  alglib_pkg
 )
 
 find_package(CUDA REQUIRED)
@@ -65,7 +65,13 @@ find_package (Eigen3 REQUIRED )
 # For finding FindTensorRT.cmake
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
+if (DEFINED ENV{ncnn_DIR})
+  message("-- NCNN found")
+  set(ncnn_INC ${ncnn_INCLUDE})
+else()
+  set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
+  set(ncnn_INC "include/ncnn/include")
+endif()
 find_package(ncnn REQUIRED)
 if (${ncnn_FOUND})
   message("-- NCNN found.")
@@ -85,9 +91,13 @@ else()
     message("OpenCV not found")
 endif()
 
-# set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
-# set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
-# set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+if (DEFINED ENV{TRT_LIBPATH})
+  message(STATUS "Found TensorRT")
+else()
+  set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
+  set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
+  set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
+endif()
 
 include_directories(
   include
@@ -96,7 +106,6 @@ include_directories(
   ${TENSORRT_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
@@ -119,7 +128,6 @@ target_link_libraries(object_detection_lib PUBLIC
   nvparsers
   nvonnxparser
   realsense2::realsense2
-  alglib
   ${TENSORRT_LIB_DIR}
 )
 target_include_directories(object_detection_lib PUBLIC
@@ -129,11 +137,10 @@ target_include_directories(object_detection_lib PUBLIC
   ${TENSORRT_INCLUDE_DIR}                      
   ${ncnn_INCLUDE_DIR}                          
   ${CUDA_INCLUDE_DIRS} 
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src                        
 )
 
 catkin_package(
-  INCLUDE_DIRS include include/ncnn/include ${TENSORRT_INCLUDE_DIR}
+  INCLUDE_DIRS include ${ncnn_INC} ${TENSORRT_INCLUDE_DIR}
   CATKIN_DEPENDS
   geometry_msgs
   roscpp
@@ -146,6 +153,7 @@ catkin_package(
   sensor_msgs
   communication
   LIBRARIES object_detection_lib
+  alglib_pkg
   # CFG_EXTRAS perception-extras.cmake
 )
 # install(DIRECTORY include/
@@ -166,34 +174,31 @@ catkin_package(
 #   @ONLY
 # )
 
-file(GLOB_RECURSE ALGLIB_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/alglib-cpp/src/*.cpp)
-add_library(alglib SHARED ${ALGLIB_SOURCES})
+# add_executable(lane
+#   src/lane.cpp
+# )
+# target_link_libraries(lane
+#   ${catkin_LIBRARIES}
+# )
 
-add_executable(lane
-  src/lane.cpp
-)
-target_link_libraries(lane
-  ${catkin_LIBRARIES}
-)
+# add_executable(signFastest
+#   src/signFastest.cpp
+#   src/yolo-fastestv2.cpp
+# )
+# target_link_libraries(signFastest
+#   ${catkin_LIBRARIES}
+#   ncnn ${OpenCV_LIBS}
+#   communication
+# )
 
-add_executable(signFastest
-  src/signFastest.cpp
-  src/yolo-fastestv2.cpp
-)
-target_link_libraries(signFastest
-  ${catkin_LIBRARIES}
-  ncnn ${OpenCV_LIBS}
-  communication
-)
-
-add_executable(videoDetector
-  src/videoDetector.cpp
-  src/yolo-fastestv2.cpp
-)
-target_link_libraries(videoDetector
-  ${catkin_LIBRARIES}
-  ncnn ${OpenCV_LIBS}
-)
+# add_executable(videoDetector
+#   src/videoDetector.cpp
+#   src/yolo-fastestv2.cpp
+# )
+# target_link_libraries(videoDetector
+#   ${catkin_LIBRARIES}
+#   ncnn ${OpenCV_LIBS}
+# )
 
 add_executable(cameraNode
   src/cameraNode.cpp
@@ -210,37 +215,37 @@ target_link_libraries(cameraNode
   nvinfer
   nvparsers
   nvonnxparser
-  alglib
+  alglib_pkg
   ${Python3_LIBRARIES}
   communication
 )
-add_executable(rs
-  src/rs.cpp
-)
-target_link_libraries(rs
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  realsense2::realsense2
-)
-add_executable(testNode
-  src/testNode.cpp
-  src/yolo-fastestv2.cpp
-  src/engine.cpp
-  src/yolov8.cpp
-)
-target_link_libraries(testNode
-  ${catkin_LIBRARIES}
-  ncnn
-  ${OpenCV_LIBS}
-  realsense2::realsense2
-  ${CUDA_LIBRARIES}
-  nvinfer
-  nvparsers
-  nvonnxparser
-  alglib
-  ${Python3_LIBRARIES}
-  communication
-)
+# add_executable(rs
+#   src/rs.cpp
+# )
+# target_link_libraries(rs
+#   ${catkin_LIBRARIES}
+#   ${OpenCV_LIBS}
+#   realsense2::realsense2
+# )
+# add_executable(testNode
+#   src/testNode.cpp
+#   src/yolo-fastestv2.cpp
+#   src/engine.cpp
+#   src/yolov8.cpp
+# )
+# target_link_libraries(testNode
+#   ${catkin_LIBRARIES}
+#   ncnn
+#   ${OpenCV_LIBS}
+#   realsense2::realsense2
+#   ${CUDA_LIBRARIES}
+#   nvinfer
+#   nvparsers
+#   nvonnxparser
+#   alglib
+#   ${Python3_LIBRARIES}
+#   communication
+# )
 
 # configure_file(
 #   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in

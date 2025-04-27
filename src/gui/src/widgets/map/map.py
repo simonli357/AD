@@ -1,0 +1,740 @@
+from PyQt5 import QtWidgets, QtCore
+from std_srvs.srv import TriggerResponse
+from OpenGL import GL as gl
+from .graph import GraphEditor
+from ..opengl.shader import ShaderRenderer
+from ..opengl.instance.waypoints import WaypointsRenderer
+from ..opengl.instance.destinations import DestinationsRenderer
+from ..opengl.loaders import load_2D_texture
+from ..opengl.instance.path import PathRenderer
+from ..enums import MapData, NamedColor, OpenGLContextName
+
+import pandas as pd
+import os
+import time
+import numpy as np
+import glm
+
+
+class MapWidget(QtWidgets.QOpenGLWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.main_window = self.parent()
+        self.server = self.main_window.server
+        self.cursor_coords = []
+        self.click_history = []
+        self.cursor_x = 3.86
+        self.cursor_y = 3.62
+
+        self.show_mouse = True
+        self.show_signs = False
+        self.show_lanes = False
+        self.show_cars = False
+        self.show_destinations = True
+        self.show_path = True
+        self.show_nodes = False
+        self.show_gt = True
+        self.show_graph = False
+        self.measuring = False
+        self.cam_locked = False
+
+        self.sign_size = 20
+
+        self.road_msg_length = 8
+        self.road_msg_dict = {
+            'type': 0,
+            'x': 1,
+            'y': 2,
+            'orientation': 3,
+            'speed': 4,
+            'confidence': 5,
+            'z': 6,
+            'id': 7
+        }
+
+        self.detected_data = None
+        self.waypoints = None
+        self.numObj = 0
+        self.detected_objects = np.zeros(7)
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.assets_dir = os.path.join(current_dir, 'assets')
+        self.data = pd.read_csv(os.path.join(self.assets_dir, 'coordinates_with_context.csv'))
+
+        self.object_dict = {
+            0: "Oneway",
+            1: "Highway Entrance",
+            2: "Stopsign",
+            3: "Roundabout",
+            4: "Parking",
+            5: "Crosswalk",
+            6: "No Entry",
+            7: "Highway Exit",
+            8: "Priority",
+            9: "Light",
+            10: "Block",
+            11: "Pedestrian",
+            12: "Car",
+            13: "Green Light",
+            14: "Yellow Light",
+            15: "Red Light",
+            16: "Sign"
+        }
+        self.reverse_object_dict = {v: k for k, v in self.object_dict.items()}
+
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setMouseTracking(True)
+        self._press_pos = None
+        self._is_dragging = False
+        self.stop_drawing = False
+        self.current_mouse_pos = None
+        self.last_mouse_pos = None
+        self.show_mouse = True
+
+        self.view_center = glm.vec2(0, 0)
+        self.view_zoom = 1.0
+        self.drag_start = None
+        self.base_view_center = glm.vec2(self.view_center)
+
+        self.destinations = self.data[self.data['Type'] == 'Destination']
+        self.main_window.set_destinations(self.destinations)
+        self.next_destination = None
+        self.no_destinations = False
+
+        self.sign_images = []
+        self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_entrance.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roundabout.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'parking.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'crosswalk.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'noentry.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'highway_exit.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'priority.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'roadblock.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'pedestrian.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'car.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_green.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_yellow.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
+        self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
+
+    def get_key_from_value(self, value):
+        return self.reverse_object_dict.get(value, None)
+
+    def setup_destinations_renderer(self):
+        self.dest_positions = list(zip(
+            *self.get_gl_coords(self.destinations['X'], self.destinations['Y']),
+            self.destinations.get('Z', pd.Series(0.5, index=self.destinations.index))
+        ))
+        self.destinations_renderer = DestinationsRenderer(self.dest_positions, scales=8.0)
+
+    def initializeGL(self):
+        gl.glClearColor(0.0, 0.0, 0.0, 1.0)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glDepthFunc(gl.GL_LEQUAL)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glDisable(gl.GL_LINE_SMOOTH)    # Avoid anti-aliasing overhead
+        gl.glDisable(gl.GL_POLYGON_SMOOTH)
+        gl.glDisable(gl.GL_MULTISAMPLE)    # Disable MSAA if not used
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
+        gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
+
+        self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
+        self.ortho_view_mat = glm.mat4(1.0)
+
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
+
+        self.waypoints_renderer = WaypointsRenderer(track='bfmc')
+        self.setup_destinations_renderer()
+        self.shader_renderer = ShaderRenderer(ctx_name=OpenGLContextName.MAP)
+        self.graph_editor = GraphEditor(map_widget=self)
+
+        self.sign_models = []
+        for path in self.sign_images:
+            texture = load_2D_texture(path)
+            self.sign_models.append(texture)
+
+    def paintGL(self):
+        if self.stop_drawing:
+            return
+        if self.view_zoom == 1:
+            self.view_center = glm.vec2(0, 0)
+
+        self.update_car_data()
+        if self.main_window.cam_buttons_widget.started and self.cam_locked:
+            self.view_center = glm.vec2(*self.get_gl_coords(self.car_x, self.car_y))
+
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        self.view_mat = glm.lookAt(
+            glm.vec3(self.view_center.x, self.view_center.y, 1.0),
+            glm.vec3(self.view_center.x, self.view_center.y, 0.0),
+            glm.vec3(0.0, 1.0, 0.0)
+        )
+
+        self.shader_renderer.draw_texture(
+            mat=self.shader_renderer.bfmc_track_model,
+            x=-self.width() / 2,
+            y=-self.height() / 2,
+            z=0,
+            scale=(self.width(), self.height()),
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
+        )
+
+        if self.show_graph:
+            self.graph_editor.draw(self.proj_mat, self.view_mat, self.ortho_proj_mat)
+        else:
+            if self.show_path:
+                self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
+
+            self.find_next_destination()
+
+            self.draw_gt()
+            self.draw_markers()
+            self.draw_detected_objects()
+            self.draw_path_nodes()
+            self.draw_measurement_points()
+            self.update_mouse_pos()
+
+        self.draw_legend(self.width() / 2.7, self.height() / 3)
+
+        self.update()
+
+    def draw_measurement_points(self):
+        if len(self.click_history) > 0:
+            for x_real, y_real in self.click_history:
+                x, y = self.get_gl_coords(x_real, y_real)
+                self.shader_renderer.draw_circle(x, y, 1.0, NamedColor.GREEN.value, self.view_mat, self.proj_mat, z=5.0)
+        if len(self.click_history) == 1:
+            x, y = self.get_gl_coords(self.click_history[0][0], self.click_history[0][1])
+            x_mouse_real, y_mouse_real = self.get_real_world_coords(self.current_mouse_pos.x(), self.current_mouse_pos.y())
+            x_mouse, y_mouse = self.get_gl_coords(x_mouse_real, y_mouse_real)
+            self.shader_renderer.draw_line((x, y), (x_mouse, y_mouse), NamedColor.RED.value, self.view_mat, self.proj_mat)
+        if len(self.click_history) == 2:
+            p0, p1 = self.click_history
+            dx = p1[0] - p0[0]
+            dy = p1[1] - p0[1]
+            dist = np.hypot(dx, dy)
+            self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
+
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
+
+    def find_next_destination(self):
+        if not hasattr(self, 'car_x') or not hasattr(self, 'car_y'):
+            return
+        if self.main_window.state_refs_np is None or not hasattr(self, '_refs_xs') or not hasattr(self, '_refs_ys'):
+            return
+        if self.next_destination is not None and self.next_destination not in self.main_window.visited:
+            return
+        if self.no_destinations:
+            return
+
+        num_nodes = self._refs_len
+
+        dest_radius = 0.14
+        wp_radius = 0.02
+        skip = 5
+
+        start_idx = None
+        for i, (nx, ny) in enumerate(zip(self._refs_xs, self._refs_ys)):
+            if self.is_near(self.car_x, self.car_y, nx, ny, dest_radius, wp_radius):
+                start_idx = i
+                break
+
+        if start_idx is None or not (0 <= start_idx < num_nodes):
+            return
+
+        for offset in range(1, num_nodes + 1, skip):
+            idx = (start_idx + offset) % num_nodes
+            node_x, node_y = self._refs_xs[idx], self._refs_ys[idx]
+            for _, row in self.destinations.iterrows():
+                dest_x = row['X']
+                dest_y = row['Y']
+                if self.is_near(dest_x, dest_y, node_x, node_y, dest_radius, wp_radius):
+                    next_destination = (dest_x, dest_y)
+                    if next_destination not in self.main_window.visited:
+                        self.next_destination = (dest_x, dest_y)
+                        return
+        self.no_destinations = True
+        self.next_destination = None
+
+    def draw_gt(self):
+        if not self.show_gt:
+            return
+
+        if self.show_destinations:
+            self.destinations_renderer.render(self.proj_mat, self.view_mat)
+            for x, y in self.main_window.visited:
+                gl_x, gl_y = self.get_gl_coords(x, y)
+                self.shader_renderer.draw_circle(gl_x, gl_y, 8.0, (0.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+            if self.next_destination is not None:
+                gl_x, gl_y = self.get_gl_coords(*self.next_destination)
+                self.shader_renderer.draw_marker(gl_x, gl_y, (0.0, 1.0, 0.0, 1.0), 12.0, self.view_mat, self.proj_mat)
+
+        for index, row in self.data.iterrows():
+            entity_type, orientation = row['Type'], row['Orientation']
+
+            x, y = self.get_gl_coords(row['X'], row['Y'])
+
+            # orientation = 2 * np.pi - orientation
+            orientation = - orientation
+
+            if entity_type == 'Intersection':
+                if self.show_signs:
+                    # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
+                    continue
+            elif entity_type == 'Lane':
+                if self.show_lanes:
+                    self.draw_lane(x, y, orientation)
+            elif entity_type == 'Car':
+                if self.show_cars:
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
+            else:
+                if self.show_signs:
+                    sign_index = self.get_key_from_value(entity_type)
+                    if sign_index is not None:
+                        mat = self.sign_models[sign_index]
+                        self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
+
+    def draw_lane(self, x, y, orientation):
+        """Draw lane markings using OpenGL lines"""
+        # Normalize orientation within 0-2π
+        orientation %= 2 * np.pi
+        x_max, y_max = self.get_gl_coords(MapData.REAL_WORLD_WIDTH.value, MapData.REAL_WORLD_HEIGHT.value)
+
+        # Determine lane direction and color
+        if abs(orientation) < 0.1 or abs(orientation - 2 * np.pi) < 0.1:
+            # Horizontal lane (east-west)
+            color = (0.0, 1.0, 0.0, 1.0)  # Green
+            start = (x_max, y)
+            end = (-x_max, y)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - np.pi) < 0.1:
+            # Horizontal lane (west-east)
+            color = (1.0, 0.0, 0.0, 1.0)  # Red
+            start = (-x_max, y)
+            end = (x_max, y)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - np.pi / 2) < 0.1:
+            # Vertical lane (north-south)
+            color = (0.0, 0.0, 1.0, 1.0)  # Blue
+            start = (x, y_max)
+            end = (x, -y_max)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+        elif abs(orientation - 3 * np.pi / 2) < 0.1:
+            # Vertical lane (south-north)
+            color = (1.0, 1.0, 0.0, 1.0)  # Yellow
+            start = (x, y_max)
+            end = (x, -y_max)
+            self.shader_renderer.draw_line(start, end, color, self.view_mat, self.proj_mat)
+            return
+
+    def draw_legend(self, x, y):
+        if self.main_window.cam_buttons_widget.started:
+            return
+        if self.view_zoom != 1.0:
+            return
+
+        viewport = gl.glGetIntegerv(gl.GL_VIEWPORT)
+        screen_width = viewport[2]
+        screen_height = viewport[3]
+        x, y = 0.37 * screen_width, 0.35 * screen_height
+        height = 5
+
+        offset = 35
+        y_offset = 0
+        self.shader_renderer.draw_triangle(x, y, 0, np.radians(180), (24.0, 24.0), NamedColor.YELLOW.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("NORMAL", x + 62, y - height, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.GREEN.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("CROSSWALK", x + 80, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.RED.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("INTERSECTION", x + 88, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.ORANGE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("ONEWAY", x + 64, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.INDIGO.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY LEFT", x + 90, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.LIGHT_PINK.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("HIGHWAY RIGHT", x + 94, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        y_offset = 0
+        x_offset = 200
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.WHITE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("ROUNDABOUT", x + x_offset + 84, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.CYAN.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("STOPLINE", x + x_offset + 66, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.STEEL_BLUE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED", x + x_offset + 60, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+        self.shader_renderer.draw_triangle(x + x_offset, y + y_offset, 0, np.radians(180), (24.0, 24.0), NamedColor.PURPLE.value, self.ortho_view_mat, self.ortho_proj_mat)
+        self.shader_renderer.text_renderer.render_text("DOTTED CROSSWALK", x + x_offset + 116, y - height + y_offset, 1.0, (1, 1, 1), self.ortho_proj_mat)
+        y_offset += offset
+
+    def draw_markers(self):
+        for coord in self.cursor_coords:
+            x, y = self.get_gl_coords(coord[0], coord[1])
+            self.shader_renderer.draw_marker(x, y, (1, 0, 0, 1), 10.0, view_matrix=self.view_mat, proj_matrix=self.proj_mat)
+
+    def update_car_data(self):
+        if self.detected_data is None or len(self.detected_data) == 0:
+            return
+        self.car_x = self.detected_data[0, self.road_msg_dict['x']]
+        self.car_y = self.detected_data[0, self.road_msg_dict['y']]
+        self.car_yaw = self.detected_data[0, self.road_msg_dict['orientation']]
+        car_z = self.detected_data[0, self.road_msg_dict['z']]
+        car_speed = self.detected_data[0, self.road_msg_dict['speed']]
+        self.main_window.car_widget.set_car_data(self.car_yaw / np.pi * 180, car_speed, self.car_x, MapData.REAL_WORLD_HEIGHT.value - self.car_y, car_z)
+
+    def draw_detected_objects(self):
+        if self.detected_data is None or len(self.detected_data) == 0:
+            return
+        for i in range(len(self.detected_data)):
+            obj_type = self.detected_data[i, self.road_msg_dict['type']]
+            x_real = self.detected_data[i, self.road_msg_dict['x']]
+            y_real = self.detected_data[i, self.road_msg_dict['y']]
+            orientation = self.detected_data[i, self.road_msg_dict['orientation']]
+
+            # Convert map coordinates to pixel coordinates
+            x, y = self.get_gl_coords(x_real, y_real)
+            # orientation = 2 * np.pi - orientation
+
+            if self.object_dict[obj_type] == 'Car':
+                if i == 0:
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
+                else:
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
+            else:
+                texture = self.sign_models[int(obj_type)]
+                self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
+
+    def draw_path_nodes(self):
+        if self.waypoints is None or len(self.waypoints) < 2:
+            return
+
+        positions = []
+        rotations = []
+
+        x1, y1 = self.get_gl_coords(self.waypoints[0], self.waypoints[1])
+        angle = 0
+        for i in range(0, len(self.waypoints) - 1, 4):
+            if i + 3 > len(self.waypoints):
+                positions.append((x1, y1, 2.0))
+                rotations.append((angle, 0, 0, 1))
+            else:
+                x2, y2 = self.get_gl_coords(self.waypoints[i + 2], self.waypoints[i + 3])
+                dx = x2 - x1
+                dy = y2 - y1
+                angle = np.arctan2(dy, dx + (1e-5)) - np.pi / 2
+                self.shader_renderer.draw_triangle(x1, y1, 2.0, angle, (4, 4), (1.0, 1.0, 0.0, 1.0), self.view_mat, self.proj_mat)
+                positions.append((x1, y1, 2.0))
+                rotations.append((angle, 0, 0, 1))
+                x1, y1 = x2, y2
+
+        if hasattr(self, 'path_node_renderer'):
+            self.path_node_renderer.transform_all(positions=positions, rotations=rotations)
+        else:
+            self.path_node_renderer = PathRenderer(positions=positions, rotations=rotations)
+        self.path_node_renderer.render(self.proj_mat, self.view_mat)
+
+    def cleanup_gl_resources(self):
+        self.stop_drawing = True
+        try:
+            gl.glFlush()
+        except Exception:
+            pass
+
+    def update_mouse_pos(self):
+        if not self.show_mouse:
+            return
+        if self.current_mouse_pos is not None:
+            widget_width = self.width()
+            widget_height = self.height()
+            if widget_height == 0 or widget_width == 0:
+                return
+
+            # Get mouse position in widget coordinates
+            x_scene = self.current_mouse_pos.x()
+            y_scene = self.current_mouse_pos.y()
+
+            x_world, y_world = self.get_real_world_coords(x_scene, y_scene)
+
+            self.shader_renderer.text_renderer.render_text(f"X {x_world:.2f}   Y {y_world:.2f}", x_scene, y_scene - 30, 1.0, (0, 1, 0), self.ortho_proj_mat)
+
+    def get_real_world_coords(self, x_scene, y_scene):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert screen coordinates to NDC (Normalized Device Coordinates)
+        ndc_x = (2.0 * x_scene / widget_width) - 1.0
+        ndc_y = 1.0 - (2.0 * y_scene / widget_height)
+
+        # Compute half width and height in view space after zoom
+        hw = (widget_width / self.view_zoom) / 2.0
+        hh = (widget_height / self.view_zoom) / 2.0
+
+        # Apply inverse projection to get view space coordinates
+        x_view = ndc_x * hw
+        y_view = ndc_y * hh
+
+        # Apply inverse view matrix to get OpenGL world coordinates
+        world_x = x_view + self.view_center.x
+        world_y = y_view + self.view_center.y
+
+        # Convert OpenGL coordinates to real-world system
+        real_world_x = (world_x + (widget_width / 2)) * (MapData.REAL_WORLD_WIDTH.value / widget_width)
+        real_world_y = (world_y + (widget_height / 2)) * (MapData.REAL_WORLD_HEIGHT.value / widget_height)
+
+        return real_world_x, real_world_y
+
+    def get_gl_coords(self, real_x, real_y):
+        widget_width = self.width()
+        widget_height = self.height()
+        if widget_height == 0 or widget_width == 0:
+            return (0.0, 0.0)
+
+        # Convert real-world to OpenGL world coordinates
+        world_x = (real_x * widget_width / MapData.REAL_WORLD_WIDTH.value) - (widget_width / 2)
+        world_y = (real_y * widget_height / MapData.REAL_WORLD_HEIGHT.value) - (widget_height / 2)
+
+        return world_x, world_y
+
+    def update_waypoints(self):
+        if self.main_window.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
+            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, self.width(), self.height())
+            self._refs_xs = self.main_window.state_refs_np[0, :].copy()
+            self._refs_ys = self.main_window.state_refs_np[1, :].copy()
+            self._refs_len = self._refs_xs.shape[0]
+
+    def handle_measurement_click(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            if len(self.click_history) < 2:
+                x_world, y_world = self.get_real_world_coords(event.pos().x(), event.pos().y())
+                self.click_history.append((x_world, y_world))
+
+    def handle_marker_click(self, event):
+        xw, yw = self.get_real_world_coords(event.x(), event.y())
+        self.cursor_coords.append((xw, yw))
+        self.cursor_x, self.cursor_y = xw, yw
+
+    def __del__(self):
+        self.cleanup_gl_resources()
+
+    def deleteLater(self):
+        self.cleanup_gl_resources()
+        super().deleteLater()
+
+    ###############
+    # Events
+    ###############
+
+    def resizeGL(self, w, h):
+        gl.glViewport(0, 0, w, h)
+        self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
+        self.update_waypoints()
+        self.setup_destinations_renderer()
+
+    def mousePressEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mousePressEvent(event):
+                return
+
+        if event.button() == QtCore.Qt.LeftButton:
+            self._press_pos = event.pos()
+            self._is_dragging = False
+            self.drag_start = event.pos()
+            self.base_view_center = glm.vec2(self.view_center)
+            self.last_mouse_pos = event.pos()
+        if event.button() == QtCore.Qt.RightButton:
+            if self.measuring and len(self.click_history) > 0:
+                self.click_history.pop(0)
+            else:
+                self.cursor_coords.clear()
+
+    def mouseMoveEvent(self, event):
+        if self.show_graph:
+            if self.graph_editor.mouseMoveEvent(event):
+                return
+
+        self.current_mouse_pos = event.pos()
+        if event.buttons() & QtCore.Qt.LeftButton and self._press_pos is not None:
+            dist = (event.pos() - self._press_pos).manhattanLength()
+            if dist > QtWidgets.QApplication.startDragDistance():
+                self._is_dragging = True
+                if event.buttons() & QtCore.Qt.LeftButton and self.drag_start is not None:
+                    # Calculate delta movement
+                    delta = event.pos() - self.last_mouse_pos
+                    self.last_mouse_pos = event.pos()
+
+                    # Convert pixel delta to world coordinates
+                    zoom_factor = 1.0 / self.view_zoom
+                    half_width = self.width() * zoom_factor / 2
+                    half_height = self.height() * zoom_factor / 2
+
+                    # Calculate world units per pixel
+                    world_per_pixel_x = (2 * half_width) / self.width()
+                    world_per_pixel_y = (2 * half_height) / self.height()
+
+                    # Update view center
+                    self.view_center.x -= delta.x() * world_per_pixel_x
+                    self.view_center.y += delta.y() * world_per_pixel_y
+
+    def mouseReleaseEvent(self, event):
+        if self.show_graph:
+            if self._is_dragging:
+                pass
+            elif not self._is_dragging:
+                self.graph_editor.mouseReleaseEventNonDrag(event)
+            self._press_pos = None
+            return
+
+        if event.button() == QtCore.Qt.LeftButton:
+            if not self._is_dragging and not self.measuring:
+                self.handle_marker_click(event)
+            elif not self._is_dragging and self.measuring:
+                self.handle_measurement_click(event)
+            # clear press marker
+            self._press_pos = None
+
+    def mouseDoubleClickEvent(self, event):
+        if self.show_graph:
+            self.graph_editor.mouseDoubleClickEvent(event)
+
+    def wheelEvent(self, event):
+        # Get mouse position in normalized device coordinates
+        mouse_pos = event.pos()
+        mouse_x = 2.0 * mouse_pos.x() / self.width() - 1.0
+        mouse_y = 1.0 - 2.0 * mouse_pos.y() / self.height()
+
+        # Store pre-zoom values
+        old_zoom = self.view_zoom
+        zoom_factor = 1.15 if event.angleDelta().y() > 0 else 0.85
+        self.view_zoom *= zoom_factor
+
+        # Keep zoom within bounds
+        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
+
+        # Calculate new center to maintain mouse position
+        zoom_ratio = old_zoom / self.view_zoom
+        self.view_center += glm.vec2(
+            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+        )
+
+        # Update projection matrix
+        zoom_factor = 1.0 / self.view_zoom
+        half_width = self.width() * zoom_factor / 2
+        half_height = self.height() * zoom_factor / 2
+
+        self.proj_mat = glm.ortho(
+            -half_width, half_width,
+            -half_height, half_height,
+            -100.0, 100.0
+        )
+
+    ##################
+    # Callbacks
+    ##################
+
+    def update_params(self, req) -> None:
+        try:
+            max_retries = 50
+            retries = 0
+            params = self.server.utility_node_client.params
+            while (retries < max_retries):
+                if (len(params.state_refs) > 0 and len(params.attributes) > 0):
+                    self.main_window.state_refs_np = params.state_refs.popleft()
+                    self.main_window.attributes_np = params.attributes.popleft()
+                    print("state ref shape: ", self.main_window.state_refs_np.shape)
+                    # print first 3 rows
+                    print("state ref: ", self.main_window.state_refs_np.T[:, :3])
+                    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    path = os.path.join(path, 'saved')
+                    np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+                    print("saved state refs")
+                    return TriggerResponse(success=True, message="Parameters updated")
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to update params: timeout")
+            return TriggerResponse(success=False, message="Failed to update: timeout")
+        except Exception as e:
+            print(f"Failed to update parameters: {e}")
+            return TriggerResponse(success=False, message=f"Failed to update: {e}")
+
+    def road_objects_callback(self, road_object) -> None:
+        self.detected_data = np.array(road_object.data).reshape(-1, self.road_msg_length)
+
+    def waypoint_callback(self, waypoints) -> None:
+        self.waypoints = waypoints.data
+
+    def sign_callback(self, sign) -> None:
+        if sign.data:
+            self.numObj = len(sign.data) // 10
+            if self.numObj > 0:
+                self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
+        else:
+            self.numObj = 0
+
+    def call_waypoint_service(self, run):
+        try:
+            self.server.utility_node_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
+            max_retries = 50
+            retries = 0
+            res = self.server.utility_node_client.waypoints_srv_msg
+            while (retries < max_retries):
+                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
+                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
+                    print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
+                    self.main_window.buttons_overlay.set_run_name(run.path_name)
+                    self.main_window.reset_run_statistics()
+                    return
+                retries += 1
+                time.sleep(0.1)
+            print("Failed to send waypoints service call")
+        except Exception as e:
+            raise e

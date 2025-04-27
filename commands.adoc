@@ -3,6 +3,11 @@
 == webm to mp4
 ffmpeg -i ~/Downloads/screen-capture.webm ~/Downloads/output.mp4
 
+== disable screen inversion when connected to realsense
+```bash
+gsettings set org.gnome.settings-daemon.plugins.orientation active false
+```
+
 == simulator run
 - simulator:
 cd to the folder where the simulator is located

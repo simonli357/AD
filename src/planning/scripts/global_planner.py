@@ -8,10 +8,13 @@ import yaml
 ATTRIBUTES = ["normal", "crosswalk", "intersection", "oneway", "highwayLeft", "highwayRight", "roundabout", "stopline", "dotted", "dotted_crosswalk"]
 
 class GlobalPlanner:
-    def __init__(self):
+    def __init__(self, noright=False):
         self.hw_safety_offset = 0.05#0.1
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
-        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        if noright:
+            self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
+        else:
+            self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
@@ -173,10 +176,10 @@ class GlobalPlanner:
                     wp_y.append(y)
                 elif normalized_cross < -0.75:
                     # print(f"node {node} is a right turn, cross: {normalized_cross}, (x, y): ({self.pos[node][0]}, {self.pos[node][1]})")
-                    # x = prev_x + vec1[0] / mag1 * 0.0015#0.001
-                    # y = prev_y + vec1[1] / mag1 * 0.0015#0.001
-                    x = prev_x + vec1[0] / mag1 * 0.4#0.001
-                    y = prev_y + vec1[1] / mag1 * 0.4#0.001
+                    x = prev_x + vec1[0] / mag1 * 0.03#0.3#0.001
+                    y = prev_y + vec1[1] / mag1 * 0.03#0.3#0.001
+                    # x = prev_x + vec1[0] / mag1 * 0.4#0.001
+                    # y = prev_y + vec1[1] / mag1 * 0.4#0.001
                     # adjust with vec2
                     # x += vec2[0] / mag2 * 0.0005 #15
                     # y += vec2[1] / mag2 * 0.0005 #15
@@ -226,5 +229,5 @@ class GlobalPlanner:
 
 if __name__ == "__main__":
     planner = GlobalPlanner()
-    # planner.plan_path(56, 54)
-    planner.illustrate_path(56, 54)
+    planner.plan_path(44, 37)
+    # planner.illustrate_path(252, 287)

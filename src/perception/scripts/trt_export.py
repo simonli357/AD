@@ -4,10 +4,10 @@ import tensorrt as trt
 import onnx
 import lib.common as common
 import os
-pt_path = os.path.dirname(os.path.realpath(__file__)).replace("scripts", "models/trt/citycocov2lgtclab_20.pt")
+pt_path = os.path.dirname(os.path.realpath(__file__)).replace("scripts", "models/trt/jasmine.pt")
 model = YOLO(pt_path)  # initialize
 
-model.export(format='engine')  # export
+model.export(format='onnx')
 
 # Path to the ONNX model file
 # onnx_model_path = os.path.dirname(os.path.realpath(__file__)).replace("scripts", "models/yolov8n.onnx")

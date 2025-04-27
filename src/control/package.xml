@@ -80,7 +80,10 @@
   <exec_depend>message_runtime</exec_depend>
   <depend>utils</depend>
   <depend>perception</depend>
+  <depend>planning</depend>
   <depend>communication</depend>
+  <depend>alglib_pkg</depend>
+  <depend>persistence</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

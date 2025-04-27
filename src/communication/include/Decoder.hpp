@@ -24,7 +24,7 @@ template <typename T> class Decoder {
 	float float_from_bytes(std::vector<uint8_t> &bytes);
 	bool bool_from_bytes(std::vector<uint8_t> &bytes);
 
-	std_msgs::Float64MultiArray double_vector_to_arr(std::vector<double> &vec);
+	std_msgs::Float64MultiArray double_vector_to_arr(const std::vector<double> &vec);
 };
 
 template <typename T> std::vector<std::vector<uint8_t>> Decoder<T>::split(std::vector<uint8_t> &bytes) {
@@ -76,7 +76,7 @@ template <typename T> bool Decoder<T>::bool_from_bytes(std::vector<uint8_t> &byt
 	return b;
 }
 
-template <typename T> std_msgs::Float64MultiArray Decoder<T>::double_vector_to_arr(std::vector<double> &vec) {
+template <typename T> std_msgs::Float64MultiArray Decoder<T>::double_vector_to_arr(const std::vector<double> &vec) {
     std_msgs::Float64MultiArray msg;
     msg.data = vec;
     return msg;

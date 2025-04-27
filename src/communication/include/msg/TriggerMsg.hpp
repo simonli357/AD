@@ -12,7 +12,7 @@
 class TriggerMsg : public Decoder<TriggerMsg>, public Encoder {
   public:
 	TriggerMsg();
-	TriggerMsg(std_srvs::Trigger &trigger);
+	TriggerMsg(const std_srvs::Trigger &trigger);
 	TriggerMsg(std_srvs::TriggerResponse &response);
 	TriggerMsg(std_srvs::TriggerRequest &request, std_srvs::TriggerResponse &response);
 	TriggerMsg(TriggerMsg &&) = default;

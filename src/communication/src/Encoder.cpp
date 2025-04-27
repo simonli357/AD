@@ -33,6 +33,14 @@ std::vector<uint8_t> Encoder::serializeROSHeader(std_msgs::Header &header) {
 	return data;
 }
 
+std::vector<uint8_t> Encoder::serializePoseWithCovarianceStamped(geometry_msgs::PoseWithCovarianceStamped &pose) {
+	uint32_t length = ros::serialization::serializationLength(pose);
+	std::vector<uint8_t> data(length);
+	ros::serialization::OStream stream(data.data(), length);
+	ros::serialization::serialize(stream, pose);
+	return data;
+}
+
 std::vector<uint8_t> Encoder::serializeTriggerRequest(std_srvs::TriggerRequest &request) {
 	uint32_t length = ros::serialization::serializationLength(request);
 	std::vector<uint8_t> data(length);

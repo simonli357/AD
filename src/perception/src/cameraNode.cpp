@@ -30,6 +30,9 @@ class CameraNode {
 		nh.param(nodeName + "/rate", mainLoopRate, 50);
 		nh.param(nodeName + "/pubImage", pubImage, false);
 		nh.param(nodeName + "/thread", useRosTimer, false);
+		nh.param(nodeName + "/flip", flip, false);
+		nh.param(nodeName + "/send_depth", send_depth, false);
+		nh.param("quality", quality, 30);
 
 		if (!realsense) {
 			if (Sign.hasDepthImage) {
@@ -68,6 +71,7 @@ class CameraNode {
 
 			auto profiles = pipe.get_active_profile().get_streams();
 
+			bool found_profile = false;
 			for (auto &&p : profiles)
 			{
 					if (p.stream_type() == RS2_STREAM_COLOR)
@@ -79,9 +83,22 @@ class CameraNode {
 							double fy = intr.fy;
 							double cx = intr.ppx; // principal point x
 							double cy = intr.ppy; // principal point y
+							cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 
+																												0, fy, cy, 
+																												0, 0, 1);
+
+							distCoeffs = (cv::Mat_<double>(1,5) << intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+							cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, cv::Size(640, 480), CV_16SC2, map1, map2);
 							ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
-						  break;
+							ROS_INFO("distortion coefficients: %.2f, %.2f, %.2f, %.2f, %.2f", intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+						  found_profile = true;
+							break;
 					}
+			}
+
+			if (!found_profile) {
+				ROS_ERROR("FATAL ERROR: No color profile found");
+				exit(1);
 			}
 
 			std::cout.precision(4);
@@ -90,9 +107,6 @@ class CameraNode {
 				depth_pub = nh.advertise<sensor_msgs::Image>("/camera/depth/image_raw", 1);
 				std::cout << "pub created" << std::endl;
 			}
-			cameraThreadRunning = true;
-			cameraThread = std::thread(&CameraNode::cameraThreadFunc, this);
-			std::cout << "camera thread created" << std::endl;
 		}
 
 		if (!doLane) {
@@ -110,40 +124,43 @@ class CameraNode {
 		if (useRosTimer) {
 			if (doLane) {
 				ROS_INFO("starting lane timer");
-				laneTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::lane_timer_callback, this);
+				// laneTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::lane_timer_callback, this);
+				lane_thread = std::thread(&CameraNode::run_lane, this);
 			}
 			if (doSign) {
 				ROS_INFO("starting sign timer");
-				signTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::sign_timer_callback, this);
+				// signTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::sign_timer_callback, this);
+				sign_thread = std::thread(&CameraNode::run_sign, this);
 			}
-			// if (doLane) {
-			//     std::thread t1(&CameraNode::run_lane, this);
-			//     t1.detach();
-			// }
-			// if (doSign) {
-			//     std::thread t2(&CameraNode::run_sign, this);
-			//     t2.detach();
-			// }
 		}
 	}
 
 	~CameraNode() {
-			// Signal the camera thread to exit and join it
-			cameraThreadRunning = false;
-			if (cameraThread.joinable()) {
-					cameraThread.join();
+			if (lane_thread.joinable()) {
+					lane_thread.join();
+			}
+			if (sign_thread.joinable()) {
+					sign_thread.join();
 			}
 	}
 
 	void cameraNodeSpin() {
-			ros::Rate loopRate(mainLoopRate);
-			while (ros::ok()) {
-					ros::spinOnce();
-					if (!realsense && !useRosTimer) {
-							// If not using realsense or timers, 
-							// detection might happen in imageCallback.
-					}
-					loopRate.sleep();
+			if (realsense) {
+				ros::Rate cameraRate(30);
+				while (ros::ok()) {
+					get_frame();
+					cameraRate.sleep();
+				}
+			} else {
+				ros::Rate loopRate(mainLoopRate);
+				while (ros::ok()) {
+						ros::spinOnce();
+						if (!realsense && !useRosTimer) {
+								// If not using realsense or timers, 
+								// detection might happen in imageCallback.
+						}
+						loopRate.sleep();
+				}
 			}
 	}
 
@@ -160,20 +177,13 @@ class CameraNode {
 	cv_bridge::CvImagePtr cv_ptr_depth;
 	ros::Timer signTimer, laneTimer;
 
-	bool doLane, doSign, realsense, pubImage, useRosTimer;
+	bool doLane, doSign, realsense, pubImage, useRosTimer, flip, send_depth;
+	std::thread lane_thread, sign_thread;
 	int mainLoopRate;
+	int quality = 30;
 
 	// lock
-	std::thread cameraThread;
-	bool cameraThreadRunning;
 	std::mutex mutex;
-	void cameraThreadFunc() {
-			ros::Rate cameraRate(30);
-			while (ros::ok() && cameraThreadRunning) {
-				get_frame();
-				cameraRate.sleep();
-			}
-	}
 
 	// rs
 	ros::Publisher color_pub, depth_pub;
@@ -186,6 +196,9 @@ class CameraNode {
 	rs2::frame gyro_frame;
 	rs2::frame accel_frame;
 	std::unique_ptr<rs2::align> align_to_color;
+	cv::Mat cameraMatrix;
+	cv::Mat distCoeffs;
+	cv::Mat map1, map2;
 
 	void depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// mutex.lock();
@@ -198,9 +211,12 @@ class CameraNode {
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			depthImage = cv_ptr_depth->image.clone();
+			if (flip) {
+				cv::flip(depthImage, depthImage, -1);
+			}
 		}
-		if (Sign.tcp_client != nullptr) {
-        	// Sign.tcp_client->send_image_depth(*msg);
+		if (Sign.tcp_client != nullptr && send_depth) {
+        	Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// mutex.unlock();
 	}
@@ -222,9 +238,10 @@ class CameraNode {
 		} else {
 			std::lock_guard<std::mutex> lock(mutex);
       colorImage = cv_ptr->image.clone();
+			if (flip) cv::flip(colorImage, colorImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
-        	Sign.tcp_client->send_image_rgb(*msg);
+        	Sign.tcp_client->send_image_rgb(colorImage, quality);
 		}
 		// mutex.unlock();
 	}
@@ -232,25 +249,36 @@ class CameraNode {
 	void lane_timer_callback(const ros::TimerEvent &event) { run_lane_once(); }
 	void sign_timer_callback(const ros::TimerEvent &event) { run_sign_once(); }
 	void run_lane_once() {
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
+		cv::Mat img;
+		{
+				std::lock_guard<std::mutex> lock(mutex);
+				if (colorImage.empty()) {
+						ROS_WARN("colorImage is empty");
+						return;
+				}
+				img = colorImage.clone();
 		}
-		Lane.publish_lane(colorImage);
+		Lane.publish_lane(img);
 	}
 	void run_sign_once() {
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
+		cv::Mat color_img, depth_img;
+		{
+				std::lock_guard<std::mutex> lock(mutex);
+				if (colorImage.empty()) {
+						ROS_WARN("colorImage is empty");
+						return;
+				}
+				if (depthImage.empty()) {
+						ROS_WARN("depthImage is empty");
+						return;
+				}
+				color_img = colorImage.clone();
+				depth_img = depthImage.clone();
 		}
-		if (depthImage.empty()) {
-			ROS_WARN("depthImage is empty");
-			return;
-		}
-		Sign.publish_sign(colorImage, depthImage);
+		Sign.publish_sign(color_img, depth_img);
 	}
 	void run_lane() {
-		static ros::Rate lane_rate(50);
+		static ros::Rate lane_rate(30);
 		if (!doLane) {
 			return;
 		}
@@ -260,7 +288,7 @@ class CameraNode {
 		}
 	}
 	void run_sign() {
-		static ros::Rate sign_rate(50);
+		static ros::Rate sign_rate(30);
 		if (!doSign) {
 			return;
 		}
@@ -282,6 +310,10 @@ class CameraNode {
 		}
 		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
 		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
+		if (flip) {
+			cv::flip(colorImage, colorImage, -1);
+			cv::flip(depthImage, depthImage, -1);
+		}
 
 		if (!useRosTimer) {
 			if (doLane) {
@@ -291,13 +323,13 @@ class CameraNode {
 				run_sign_once();
 			}
 		}
+		if (Sign.tcp_client != nullptr) {
+			Sign.tcp_client->send_image_rgb(colorImage);
+			// Sign.tcp_client->send_image_depth(depthImage);
+		}
 		if (pubImage) {
 			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-			if (Sign.tcp_client != nullptr) {
-				Sign.tcp_client->send_image_rgb(*color_msg);
-				// Sign.tcp_client->send_image_depth(*depth_msg);
-			}
 			color_pub.publish(color_msg);
 			depth_pub.publish(depth_msg);
 		}

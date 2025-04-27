@@ -45,8 +45,8 @@
             -0.3578
         ],
         "lbx": [
-            -3.0,
-            -3.0
+            -1000.0,
+            -1000.0
         ],
         "lbx_0": [
             0.0,
@@ -78,8 +78,8 @@
             0.3578
         ],
         "ubx": [
-            25.0,
-            19.0
+            1000.0,
+            1000.0
         ],
         "ubx_0": [
             0.0,
@@ -167,7 +167,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.25,
+                0.375,
                 0.0
             ],
             [
@@ -177,7 +177,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.5
+                0.75
             ]
         ],
         "W_0": [
@@ -232,7 +232,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.25,
+                0.375,
                 0.0
             ],
             [
@@ -242,7 +242,7 @@
                 0.0,
                 0.0,
                 0.0,
-                0.5
+                0.75
             ]
         ],
         "W_e": [
@@ -386,8 +386,8 @@
         "dyn_disc_fun_jac_hess": null,
         "dyn_ext_fun_type": "casadi",
         "dyn_generic_source": null,
-        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachdgomijddgomijnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaa",
-        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachdgomijddgomijnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachafnihjogcbdianpdegpaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaa",
+        "f_expl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachjinjinjinjinjnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachbaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachhaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachekahndkahndkanpdegpaaaaaaaaaaaaaaacheaaaaaaaaaaaaaaa",
+        "f_impl_expr": "jhpnnagiieahaaaadaaaaaaaaaaaaaaaaaeghaaaaaaaaaaaaaaadaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaacaaaaaaaaaaaaaaadaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfadegdaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaabaaaaaaaghegoaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaadaaaaaaaahdhjgegcbaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachjinjinjinjinjnpdegpaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaafaaaaaaaegfgmgehbgegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfbdegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegnaaaaaaaaaaaaaaaegbaaaaaaaaaaaaaaachdaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegcaaaaaaaaaaaaaaaegpcaaaaaaaaaaaaaahaaaaaaaihpfegpgehpfcdegdaaaaaaaaaaaaaaaegeaaaaaaaaaaaaaaaegdaaaaaaaaaaaaaaachcaaaaaaaaaaaaaaaegoaaaaaaaaaaaaaaachiaaaaaaaaaaaaaaaegmcaaaaaaaaaaaaaachekahndkahndkanpdegpaaaaaaaaaaaaaaachfaaaaaaaaaaaaaaa",
         "gnsf": {
             "nontrivial_f_LO": 1,
             "purely_linear": 0

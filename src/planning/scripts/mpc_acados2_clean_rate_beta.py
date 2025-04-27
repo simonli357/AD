@@ -16,25 +16,35 @@ from acados_template import AcadosModel
 import time
 import yaml
 import argparse
+from pathlib import Path
 
 class Optimizer(object):
     def __init__(self, name = None, x0 = None):
-        self.configuration = '25beta'
+        self.configuration = '32beta'
         self.solver, self.integrator, self.T, self.N, self.t_horizon = self.create_solver()
 
         if name is None:
             name = 'run107'
-        self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
-        self.waypoints_x = self.path.waypoints_x
-        self.waypoints_y = self.path.waypoints_y
-        self.num_waypoints = self.path.num_waypoints
-        self.wp_normals = self.path.wp_normals
-        self.kappa = self.path.kappa
-        self.density = self.path.density
+        # self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
+        # self.num_waypoints = self.path.num_waypoints
+        # self.density = self.path.density
+        # self.state_refs = self.path.state_refs
+        # self.input_refs = self.path.input_refs
+        
         self.rdb_circumference = 3.95
-        self.state_refs = self.path.state_refs
-        np.savetxt('/home/slsecret/AD/src/planning/scripts/state_refs.txt', self.state_refs, fmt='%.3f')
-        self.input_refs = self.path.input_refs
+        
+        self.density = 1.0/0.1/0.32
+        current_dir = Path(__file__).resolve().parent
+        state_refs_txt_path = current_dir / 'state_refs.txt'
+        self.state_refs = np.loadtxt(state_refs_txt_path)
+        input_refs_txt_path = current_dir / 'input_refs.txt'
+        self.input_refs = np.loadtxt(input_refs_txt_path)
+        
+        self.num_waypoints = self.state_refs.shape[0]
+        print("ref state shape1: ", self.state_refs.shape, ", num waypoints: ", self.num_waypoints)
+        print("input state shape1: ", self.input_refs.shape)
+        
+        # np.savetxt('/home/slsecret/AD/src/planning/scripts/state_refs.txt', self.state_refs, fmt='%.3f')
         self.waypoints_x = self.state_refs[:,0]
         self.waypoints_y = self.state_refs[:,1]
 
@@ -343,7 +353,7 @@ class Optimizer(object):
             print("error when computing time")
         u_c = np.array(self.u_c).reshape(-1, 2)
 
-        print("average kappa: ", np.mean(self.kappa))
+        # print("average kappa: ", np.mean(self.kappa))
         average_speed = np.mean(u_c[:, 0])
         average_steer = np.mean(u_c[:, 1])
         
@@ -374,7 +384,7 @@ if __name__ == '__main__':
     argparser.add_argument('--save_path', action='store_true', help='save path')
     args = argparser.parse_args()
 
-    mpc = Optimizer('run136')
+    mpc = Optimizer('run132')
     
     mpc.target_waypoint_index = 0
     maxiter = 4000

@@ -1,0 +1,537 @@
+from OpenGL import GL as gl
+from concurrent.futures import ThreadPoolExecutor
+
+from .utils import asset_path, object_path, create_shader_program, shader_path
+from .loaders import load_mesh, load_map, load_2D_texture
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, ripple_model, diamond_model
+from .obj import load_obj, create_obj
+from ..enums import NamedColor, OpenGLContextName
+from .custom.progress_bar import ProgressBar
+from .custom.lane import LaneIndicator
+from .custom.detection_box import DetectionBox
+from .custom.speedometer import Speedometer
+from .custom.cam_grid import CameraGrid
+from .custom.cam_point import CameraPoint
+from .font import TextRenderer
+
+import glm
+import multiprocessing
+import numpy as np
+import time
+
+
+class ShaderRenderer:
+    def __init__(self, ctx_name):
+        self._start_time = time.perf_counter()
+        self.text_renderer = TextRenderer(16)
+        self.large_text_renderer = TextRenderer(48)
+        self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
+        self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
+        self.model_shader = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
+
+        self.tex_loc = gl.glGetUniformLocation(self.texture_shader, "texture1")
+        self.texture_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
+        self.texture_u_proj = gl.glGetUniformLocation(self.texture_shader, "projection")
+        self.texture_u_view = gl.glGetUniformLocation(self.texture_shader, "view")
+
+        self.tex2D_loc = gl.glGetUniformLocation(self.texture2D_shader, "texture1")
+        self.tex2D_u_model = gl.glGetUniformLocation(self.texture2D_shader, "model")
+        self.tex2D_u_proj = gl.glGetUniformLocation(self.texture2D_shader, "projection")
+
+        if ctx_name == OpenGLContextName.CAM:
+            self.load_cam_models()
+        elif ctx_name == OpenGLContextName.CAR:
+            self.load_car_models()
+        elif ctx_name == OpenGLContextName.MAP:
+            self.load_map_models()
+        elif ctx_name == OpenGLContextName.BARCA:
+            self.load_barca_models()
+        elif ctx_name == OpenGLContextName.GRAPH:
+            self.load_graph_models()
+        else:
+            print("Invalid context name")
+            exit(1)
+
+    def load_graph_models(self):
+        self.diamond_model = diamond_model()
+        self.arrow_model = arrow_model()
+
+    def load_cam_models(self):
+        self.box_shader = create_shader_program(shader_path('box', 'box.vert'), shader_path('box', 'box.frag'))
+        self.lane_shader = create_shader_program(shader_path('lane', 'lane.vert'), shader_path('lane', 'lane.frag'))
+        self.grid_shader = create_shader_program(shader_path('grid', 'grid.vert'), shader_path('grid', 'grid.frag'))
+        self.point_shader = create_shader_program(shader_path('sphere', 'sphere.vert'), shader_path('sphere', 'sphere.frag'))
+        self.line_shader = create_shader_program(shader_path('line', 'line.vert'), shader_path('line', 'line.frag'))
+
+        self.detection_box_model = DetectionBox(self.text_renderer, self.box_shader)
+        self.lane_model = LaneIndicator(self.text_renderer, self.lane_shader)
+        self.grid_model = CameraGrid(self.grid_shader)
+        self.point_model = CameraPoint(self.point_shader)
+        self.line_model = line_model()
+
+    def load_car_models(self):
+        self.bfmc_track_model = load_map(asset_path('track.png'))
+
+        model_load_tasks = [
+            # (object_path args, attribute name)
+            (('car', 'white'), 'white_car_model_data'),
+            (('car', 'red'), 'red_car_model_data'),
+            (('priority_sign', 'prio'), 'prio_sign_model_data'),
+            (('oneway_sign', 'oneway'), 'oneway_sign_model_data'),
+            (('stop_sign', 'stopsign'), 'stop_sign_model_data'),
+            (('highway_entrance_sign', 'highwayentrance'), 'highway_entrance_sign_model_data'),
+            (('highway_exit_sign', 'highwayexit'), 'highway_exit_sign_model_data'),
+            (('roundabout_sign', 'roundabout'), 'roundabout_sign_model_data'),
+            (('parking_sign', 'parking'), 'parking_sign_model_data'),
+            (('crosswalk_sign', 'crosswalk'), 'crosswalk_sign_model_data'),
+            (('noentry_sign', 'noentry'), 'noentry_sign_model_data'),
+            (('traffic_light', 'lights'), 'traffic_light_model_data'),
+            (('traffic_light', 'red'), 'red_light_model_data'),
+            (('traffic_light', 'yellow'), 'yellow_light_model_data'),
+            (('traffic_light', 'green'), 'green_light_model_data'),
+            (('pedestrian', 'pedestrian'), 'pedestrian_model_data'),
+            (('destination', 'destination'), 'destination_model_data'),
+            (('destination', 'green'), 'green_destination_model_data'),
+        ]
+
+        # Parallel loading of all obj models
+        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            futures = []
+            for args, attr_name in model_load_tasks:
+                futures.append((
+                    attr_name,
+                    executor.submit(
+                        lambda a: load_obj(*object_path(*a)),
+                        args
+                    )
+                ))
+
+            # Collect results as they complete
+            for attr_name, future in futures:
+                try:
+                    setattr(self, attr_name, future.result())
+                except Exception as e:
+                    print(f"Failed to load {attr_name}: {str(e)}")
+                    raise
+
+        self.white_car_model = create_obj(self.white_car_model_data, self.model_shader)
+        self.red_car_model = create_obj(self.red_car_model_data, self.model_shader)
+
+        self.prio_sign_model = create_obj(self.prio_sign_model_data, self.model_shader)
+        self.oneway_sign_model = create_obj(self.oneway_sign_model_data, self.model_shader)
+        self.stop_sign_model = create_obj(self.stop_sign_model_data, self.model_shader)
+        self.highway_entrance_sign_model = create_obj(self.highway_entrance_sign_model_data, self.model_shader)
+        self.highway_exit_sign_model = create_obj(self.highway_exit_sign_model_data, self.model_shader)
+        self.roundabout_sign_model = create_obj(self.roundabout_sign_model_data, self.model_shader)
+        self.parking_sign_model = create_obj(self.parking_sign_model_data, self.model_shader)
+        self.crosswalk_sign_model = create_obj(self.crosswalk_sign_model_data, self.model_shader)
+        self.noentry_sign_model = create_obj(self.noentry_sign_model_data, self.model_shader)
+        self.traffic_light_model = create_obj(self.traffic_light_model_data, self.model_shader)
+        self.red_light_model = create_obj(self.red_light_model_data, self.model_shader)
+        self.yellow_light_model = create_obj(self.yellow_light_model_data, self.model_shader)
+        self.green_light_model = create_obj(self.green_light_model_data, self.model_shader)
+        self.pedestrian_model = create_obj(self.pedestrian_model_data, self.model_shader)
+        self.destination_model = create_obj(self.destination_model_data, self.model_shader)
+        self.green_destination_model = create_obj(self.green_destination_model_data, self.model_shader)
+
+        self.triangle_model = triangle_model()
+
+        self.cpu_texture = load_2D_texture(asset_path('cpu.png'))
+        self.ram_texture = load_2D_texture(asset_path('ram.png'))
+        self.stack_texture = load_2D_texture(asset_path('stack.png'))
+        self.heap_texture = load_2D_texture(asset_path('heap.png'))
+        self.thermometer_texture = load_2D_texture(asset_path('thermometer.png'))
+
+        self.progress_bar_shader = create_shader_program(shader_path('progress_bar', 'progress_bar.vert'), shader_path('progress_bar', 'progress_bar.frag'))
+
+        self.speedometer_gauge_shader = create_shader_program(shader_path('speedometer', 'speedometer.vert'), shader_path('speedometer', 'speedometer.frag'))
+        self.speedometer_tick_shader = create_shader_program(shader_path('speedometer', 'tick.vert'), shader_path('speedometer', 'tick.frag'))
+        self.speedometer_circle_shader = create_shader_program(shader_path('speedometer', 'circle.vert'), shader_path('speedometer', 'circle.frag'))
+        self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
+
+        self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
+        self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
+
+    def load_map_models(self):
+        self.bfmc_track_model = load_map(asset_path('track.png'))
+
+        model_load_tasks = [
+            # (object_path args, attribute name)
+            (('car', 'white'), 'white_car_model_data'),
+            (('car', 'red'), 'red_car_model_data'),
+            (('car', 'orange'), 'orange_car_model_data'),
+        ]
+
+        # Parallel loading of all obj models
+        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            futures = []
+            for args, attr_name in model_load_tasks:
+                futures.append((
+                    attr_name,
+                    executor.submit(
+                        lambda a: load_obj(*object_path(*a)),
+                        args
+                    )
+                ))
+
+            # Collect results as they complete
+            for attr_name, future in futures:
+                try:
+                    setattr(self, attr_name, future.result())
+                except Exception as e:
+                    print(f"Failed to load {attr_name}: {str(e)}")
+                    raise
+
+        self.white_car_model = create_obj(self.white_car_model_data, self.model_shader)
+        self.red_car_model = create_obj(self.red_car_model_data, self.model_shader)
+        self.orange_car_model = create_obj(self.orange_car_model_data, self.model_shader)
+
+        self.line_model = line_model()
+        self.circle_model = circle_model()
+        self.crosshair_model = crosshair_model()
+        self.ripple_model = ripple_model()
+        self.triangle_model = triangle_model()
+        self.arrow_model = arrow_model()
+
+    def load_barca_models(self):
+        self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
+        self.barca_track_model = load_mesh(asset_path('track.obj'))
+
+        model_load_tasks = [
+            # (object_path args, attribute name)
+            (('car', 'white'), 'white_car_model_data'),
+        ]
+
+        # Parallel loading of all obj models
+        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            futures = []
+            for args, attr_name in model_load_tasks:
+                futures.append((
+                    attr_name,
+                    executor.submit(
+                        lambda a: load_obj(*object_path(*a)),
+                        args
+                    )
+                ))
+
+            # Collect results as they complete
+            for attr_name, future in futures:
+                try:
+                    setattr(self, attr_name, future.result())
+                except Exception as e:
+                    print(f"Failed to load {attr_name}: {str(e)}")
+                    raise
+
+        self.white_car_model = create_obj(self.white_car_model_data, self.model_shader)
+
+    ##################
+    # Draw Functions
+    ##################
+
+    def draw_diamond(self, x, y, z, color, scale, rot, view_matrix, proj_matrix):
+        gl.glUseProgram(self.diamond_model.shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        gl.glUniformMatrix4fv(self.diamond_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.diamond_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.diamond_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.diamond_model.u_color, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.diamond_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.diamond_model.vertex_count)
+
+    def draw_car(self, x, y, yaw, color: NamedColor, scale, view_matrix, proj_matrix):
+        car_model = None
+        if color == NamedColor.WHITE:
+            car_model = self.white_car_model
+        elif color == NamedColor.RED:
+            car_model = self.red_car_model
+        elif color == NamedColor.ORANGE:
+            car_model = self.orange_car_model
+        else:
+            return
+
+        shader_program = car_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.0))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        gl.glUniformMatrix4fv(car_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(car_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(car_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if car_model.texture is not None:
+            gl.glUniform1i(car_model.u_hasTex, 1)  # Set to true
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
+            gl.glUniform1i(car_model.u_tex, 0)
+        else:
+            gl.glUniform1i(car_model.u_hasTex, 0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        gl.glBindVertexArray(car_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
+
+    def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
+        obj_model = self.green_destination_model
+        shader_program = obj_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, -0.5))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        gl.glUniformMatrix4fv(obj_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(obj_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(obj_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        if obj_model.texture is not None:
+            gl.glUniform1i(obj_model.u_hasTex, 1)  # Set to true
+            gl.glActiveTexture(gl.GL_TEXTURE0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, obj_model.texture)
+            gl.glUniform1i(obj_model.u_tex, 0)
+        else:
+            gl.glUniform1i(obj_model.u_hasTex, 0)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+        gl.glBindVertexArray(obj_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, obj_model.mesh.vertex_count)
+
+    def draw_barca_track(self, x, y, z, yaw, scale, color: (float, float, float, float), view_matrix, proj_matrix):
+        gl.glUseProgram(self.barca_shader)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+
+        model_loc = gl.glGetUniformLocation(self.barca_shader, "model")
+        view_loc = gl.glGetUniformLocation(self.barca_shader, "view")
+        proj_loc = gl.glGetUniformLocation(self.barca_shader, "projection")
+        color_loc = gl.glGetUniformLocation(self.barca_shader, "color")
+
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(proj_loc, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(color_loc, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.barca_track_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.barca_track_model.vertex_count)
+
+    def draw_texture(self, mat, x, y, z, scale, view_matrix, proj_matrix):
+        if mat is None:
+            return
+
+        gl.glUseProgram(self.texture_shader)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        # Set matrices
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+
+        gl.glUniformMatrix4fv(self.texture_u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.texture_u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.texture_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        # Bind texture
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, mat.texture_id)
+        gl.glUniform1i(self.tex_loc, 0)
+
+        # Draw
+        gl.glBindVertexArray(mat.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glDisable(gl.GL_BLEND)
+
+    def draw_texture2D(self, x, y, icon, scale, proj_matrix):
+        gl.glUseProgram(self.texture2D_shader)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        # Set matrices
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        model = glm.rotate(model, np.radians(180), glm.vec3(0, 0, 1))
+
+        gl.glUniformMatrix4fv(self.tex2D_u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.tex2D_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+
+        # Bind texture
+        gl.glActiveTexture(gl.GL_TEXTURE0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, icon.texture_id)
+        gl.glUniform1i(self.tex2D_loc, 0)
+
+        # Draw
+        gl.glBindVertexArray(icon.vao)
+        gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
+        gl.glDisable(gl.GL_BLEND)
+
+    def draw_line(self, start, end, color, view_matrix, proj_matrix, z=10.0):
+        gl.glUseProgram(self.line_model.shader_program)
+
+        # Create proper vertex data with x,y coordinates
+        vertices = np.array([
+            [start[0], start[1], z],
+            [end[0], end[1], z]
+        ], dtype=np.float32).flatten()
+
+        # Update VBO data
+        self.line_model.vbo.bind()
+        gl.glBufferData(
+            gl.GL_ARRAY_BUFFER,
+            vertices.nbytes,
+            vertices,
+            gl.GL_DYNAMIC_DRAW
+        )
+
+        # Set matrices
+        gl.glUniformMatrix4fv(self.line_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.line_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        # Set color
+        gl.glUniform4fv(self.line_model.u_color, 1, color)
+
+        # Draw
+        gl.glBindVertexArray(self.line_model.vao)
+        gl.glDrawArrays(gl.GL_LINES, 0, 2)
+        self.line_model.vbo.unbind()
+
+    def draw_triangle(self, x, y, z, rot, scale, color, view_matrix, proj_matrix, rot_barca=0):
+        gl.glUseProgram(self.triangle_model.shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.rotate(model, glm.radians(rot_barca), glm.vec3(0, 0, 1))
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.rotate(model, rot, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(scale[0], scale[1], 1.0))
+
+        gl.glUniformMatrix4fv(self.triangle_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.triangle_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.triangle_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.triangle_model.u_color, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.triangle_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.triangle_model.vertex_count)
+
+    def draw_circle(self, x, y, scale, color, view_matrix, proj_matrix, z=0.5):
+        gl.glUseProgram(self.circle_model.shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, z))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        gl.glUniformMatrix4fv(self.circle_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.circle_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.circle_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.circle_model.u_color, color[0], color[1], color[2], color[3])
+
+        gl.glBindVertexArray(self.circle_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLE_FAN, 0, self.circle_model.vertex_count)
+
+    def draw_marker(self, x, y, color, scale, view_matrix, proj_matrix):
+        # Create model matrix
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 5.0))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        gl.glUseProgram(self.ripple_model.shader_program)
+
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+        # Set uniforms
+        gl.glUniformMatrix4fv(self.ripple_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.ripple_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.ripple_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform1f(self.ripple_model.u_time, time.perf_counter() - self._start_time)
+
+        gl.glBindVertexArray(self.ripple_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, 0, 4)
+
+        gl.glUseProgram(self.crosshair_model.shader_program)
+
+        # Set uniforms
+        gl.glUniformMatrix4fv(self.crosshair_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniformMatrix4fv(self.crosshair_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.crosshair_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4fv(self.crosshair_model.u_color, 1, color)
+        gl.glUniform1f(self.crosshair_model.u_time, time.perf_counter() - self._start_time)
+
+        # Draw cross
+        gl.glBindVertexArray(self.crosshair_model.vao)
+        for i in range(4):
+            gl.glDrawArrays(gl.GL_TRIANGLE_STRIP, i * 4, 4)
+
+        gl.glDisable(gl.GL_BLEND)
+
+    def draw_arrow_between(self, start, end, color, thickness, view_matrix, proj_matrix, z=3.0):
+        x0, y0 = start
+        x1, y1 = end
+
+        dx, dy = x1 - x0, y1 - y0
+        length = np.hypot(dx, dy)
+        if length < 1e-6:
+            return  # nothing visible
+
+        # Correct rotation:
+        theta = np.arctan2(dy, dx)
+        angle = theta - np.pi / 2
+
+        # build model matrix
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x0, y0, z))
+        model = glm.rotate(model, angle, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(thickness, length, 1.0))
+
+        # upload & draw (unchanged)
+        gl.glUseProgram(self.arrow_model.shader_program)
+
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.arrow_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.arrow_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.arrow_model.u_color, *color)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
+
+    def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
+        gl.glUseProgram(self.arrow_model.shader_program)
+
+        # Draw green arrow (pointing along y)
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 3.0))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.arrow_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.arrow_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.arrow_model.u_color, *NamedColor.GREEN.value)
+
+        gl.glBindVertexArray(self.arrow_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
+
+        # Draw red arrow (pointing along x) using the same global position and yaw, with extra -90° rotation
+        model = glm.mat4(1.0)
+        # Global transformation: translate and apply global yaw
+        model = glm.translate(model, glm.vec3(x, y, 3.0))
+        model = glm.rotate(model, yaw, glm.vec3(0, 0, 1))
+        # Local adjustment: rotate extra -90° so arrow points to x direction
+        model = glm.rotate(model, glm.radians(-90), glm.vec3(0, 0, 1))
+        # Apply scale last
+        model = glm.scale(model, glm.vec3(scale, scale, 1.0))
+        gl.glUniformMatrix4fv(self.arrow_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniform4f(self.arrow_model.u_color, *NamedColor.RED.value)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)

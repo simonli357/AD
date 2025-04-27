@@ -1,6 +1,7 @@
 <launch>
 
 <rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+<rosparam command="load" file="$(find perception)/config/lane_params.yaml" />
 <arg name="show" default="false"/>
 <arg name="print" default="false"/>
 <arg name="print_duration" default="false"/>
@@ -23,6 +24,10 @@
 <arg name="ip" default="127.0.0.1"/>
 <param name="ip" value="$(arg ip)"/>
 <arg name="use_emergency" default="false"/>
+<arg name="quality" default="90"/>
+<param name="quality" value="$(arg quality)"/>
+<arg name="flip" default="true"/>
+<arg name="send_depth" default="false"/>
 
 <node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true">
     <param name="/use_emergency" value="$(arg use_emergency)"/>
@@ -43,6 +48,8 @@
     <param name="/thread" value="$(arg thread)"/>
     <param name="/lane_rate" value="$(arg lane_rate)"/>
     <param name="/sign_rate" value="$(arg sign_rate)"/>
+    <param name="flip" value="$(arg flip)"/>
+    <param name="send_depth" value="$(arg send_depth)"/>
 </node>
 
 </launch>

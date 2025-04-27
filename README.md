@@ -18,6 +18,22 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 
 ---
 
+<h2>🎥 Demo Videos</h2>
+
+<div align="center">
+  <a href="https://youtu.be/gsYTIXkuHi8" target="_blank">
+    <img src="https://img.youtube.com/vi/bx6XyxSAWaU/0.jpg" alt="Demo Video 1" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    <p><em>BFMC 2025 Qualification Video</em></p>
+  </a>
+
+  <a href="https://www.youtube.com/watch?v=xjAYdCH-X1w" target="_blank">
+    <img src="https://img.youtube.com/vi/xjAYdCH-X1w/0.jpg" alt="Demo Video 2" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    <p><em>Software v2.2.2 Simulator Demo</em></p>
+  </a>
+</div>
+
+---
+
 ## 🏗️ Project Structure
 
 - **Embedded_Platform/** - Interfaces with STM32 for motor, servo, and sensor control.
@@ -67,6 +83,8 @@ This package contains firmware modified from Bosch’s provided code to interfac
   - **Start/stop controls**
   - **Path re-planning**
   - **Object toggling**
+  - **Ros node launching**
+  - **Real time object detection**
 ![MPC Preview](assets/gui.png)
 
 
@@ -148,31 +166,15 @@ This package contains firmware modified from Bosch’s provided code to interfac
 source devel/setup.bash
 roslaunch sim_pkg run132.launch
 ```
-
-#### Run Path Planner Server
-```bash
-rosrun planning path2.py
-```
-
-#### Run Camera Node
-```bash
-roslaunch control perception cameraNode.launch
-```
-
-#### Run Control Node
-```bash
-roslaunch control controller.launch v:=32 camera:=false
-```
-- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
-
-#### Start GUI
-```bash
-rosrun gui gui.py --use_tcp
-```
-Press **start** to follow the planned path. To change the path, **double-click on a destination** and press **goto**. 
+- rest is the same as real run.
 
 ### Real Vehicle Run
 
+#### Activate ROS master
+```bash
+roscore
+```
+
 #### Run Path Planner Server
 ```bash
 rosrun planning path2.py
@@ -180,19 +182,21 @@ rosrun planning path2.py
 
 #### Run Camera Node
 ```bash
-roslaunch control perception cameraNode.launch real:=true realsense:=true
+roslaunch perception cameraNode.launch real:=true realsense:=true ip:=10.121.105.18
 ```
+- replace 10.121.105.18 with the ip address of the computer running the gui
 
-#### Run Control Node + CameraNode
+#### Run Control Node
 ```bash
-roslaunch control controller.launch real:=true v:=32 camera:=false
+roslaunch control controller.launch real:=true v:=32 camera:=false ip:=10.121.105.18
 ```
-- replace {ip_address} by ip address of computer on which the gui is run
+- replace 10.121.105.18 by ip address of computer on which the gui is run
 - add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
+- supported speed modes: 25, 32
  
 #### Start GUI
 ```bash
-rosrun gui gui.py --use_tcp
+rosrun gui main.py
 ```
 - run this on another computer to see what the car is doing.
 

@@ -1,0 +1,111 @@
+ /bin/python3 /home/slsecret/AD/src/planning/scripts/find_optimal_path_r2.py
+Base destinations: ['201', '297', '184', '209', '125', '117', '112', '132', '136', '133', '173', '179', '182', '158']
+Found complete path with distance 78.19m
+run107: distance=78.19m (threshold=90.0), full solution found.
+Removing start node 112 from destinations
+Found complete path with distance 74.46m
+run112: distance=74.46m (threshold=90.0), full solution found.
+Removing start node 117 from destinations
+Found complete path with distance 77.43m
+run117: distance=77.43m (threshold=90.0), full solution found.
+Removing start node 125 from destinations
+Found complete path with distance 80.71m
+run125: distance=80.71m (threshold=90.0), full solution found.
+Found complete path with distance 77.50m
+run131: distance=77.50m (threshold=90.0), full solution found.
+Removing start node 132 from destinations
+Found complete path with distance 75.22m
+run132: distance=75.22m (threshold=90.0), full solution found.
+Removing start node 133 from destinations
+Found complete path with distance 75.22m
+run133: distance=75.22m (threshold=90.0), full solution found.
+Found complete path with distance 77.44m
+run134: distance=77.44m (threshold=90.0), full solution found.
+Removing start node 136 from destinations
+Found complete path with distance 75.79m
+run136: distance=75.79m (threshold=90.0), full solution found.
+Found complete path with distance 77.74m
+run139: distance=77.74m (threshold=90.0), full solution found.
+Found complete path with distance 81.88m
+run142: distance=81.88m (threshold=90.0), full solution found.
+Found complete path with distance 80.00m
+run145: distance=80.00m (threshold=90.0), full solution found.
+Found complete path with distance 80.35m
+run147: distance=80.35m (threshold=90.0), full solution found.
+Found complete path with distance 81.53m
+run148: distance=81.53m (threshold=90.0), full solution found.
+Found complete path with distance 82.61m
+run149: distance=82.61m (threshold=90.0), full solution found.
+Found complete path with distance 80.41m
+run150: distance=80.41m (threshold=90.0), full solution found.
+Found complete path with distance 79.44m
+run203: distance=79.44m (threshold=90.0), full solution found.
+Found complete path with distance 80.46m
+run214: distance=80.46m (threshold=90.0), full solution found.
+Found complete path with distance 82.86m
+run218: distance=82.86m (threshold=90.0), full solution found.
+Found complete path with distance 80.05m
+run221: distance=80.05m (threshold=90.0), full solution found.
+Removing start node 184 from destinations
+Found complete path with distance 78.57m
+run184: distance=78.57m (threshold=90.0), full solution found.
+Removing start node 209 from destinations
+Found complete path with distance 77.24m
+run209: distance=77.24m (threshold=90.0), full solution found.
+
+slsecret@slsecret-Alienware-x15-R2:~/AD$ /bin/python3 /home/slsecret/AD/src/planning/scripts/compute_runs_distance.py
+0215
+=== Run Distance Summary ===
+run107: Distance = 182.18 meters | Destinations = 23
+run112: Distance = 185.14 meters | Destinations = 23
+run117: Distance = 181.42 meters | Destinations = 23
+run125: Distance = 184.70 meters | Destinations = 22
+run131: Distance = 181.49 meters | Destinations = 23
+run132: Distance = 179.21 meters | Destinations = 22
+run133: Distance = 179.21 meters | Destinations = 22
+run134: Distance = 181.43 meters | Destinations = 23
+run136: Distance = 179.77 meters | Destinations = 22
+run139: Distance = 181.73 meters | Destinations = 23
+run142: Distance = 185.87 meters | Destinations = 23
+run145: Distance = 183.99 meters | Destinations = 23
+run147: Distance = 184.34 meters | Destinations = 23
+run148: Distance = 185.52 meters | Destinations = 23
+run149: Distance = 186.60 meters | Destinations = 23
+run150: Distance = 184.40 meters | Destinations = 23
+run203: Distance = 183.43 meters | Destinations = 23
+run214: Distance = 184.45 meters | Destinations = 23
+run218: Distance = 186.85 meters | Destinations = 23
+run221: Distance = 184.04 meters | Destinations = 23
+run184: Distance = 190.64 meters | Destinations = 22
+run209: Distance = 186.99 meters | Destinations = 22
+
+0412
+=== Summary ===
+Total Distance Across All Runs: 4043.38 meters
+slsecret@slsecret-Alienware-x15-R2:~/AD$ /bin/python3 /home/slsecret/AD/src/planning/scripts/compute_runs_distance.py
+=== Run Distance Summary ===
+run107: Distance = 182.18 meters | Destinations = 23
+run112: Distance = 178.45 meters | Destinations = 22
+run117: Distance = 181.42 meters | Destinations = 22
+run125: Distance = 184.70 meters | Destinations = 22
+run131: Distance = 181.49 meters | Destinations = 23
+run132: Distance = 179.21 meters | Destinations = 22
+run133: Distance = 179.21 meters | Destinations = 22
+run134: Distance = 181.43 meters | Destinations = 23
+run136: Distance = 179.77 meters | Destinations = 22
+run139: Distance = 181.73 meters | Destinations = 23
+run142: Distance = 185.87 meters | Destinations = 23
+run145: Distance = 183.99 meters | Destinations = 23
+run147: Distance = 184.34 meters | Destinations = 23
+run148: Distance = 185.52 meters | Destinations = 23
+run149: Distance = 186.60 meters | Destinations = 23
+run150: Distance = 184.40 meters | Destinations = 23
+run203: Distance = 183.43 meters | Destinations = 23
+run214: Distance = 184.45 meters | Destinations = 23
+run218: Distance = 186.85 meters | Destinations = 23
+run221: Distance = 184.04 meters | Destinations = 23
+run184: Distance = 182.56 meters | Destinations = 22
+run209: Distance = 181.23 meters | Destinations = 22
+
+=== Summary ===
+Total Distance Across All Runs: 4022.86 meters
