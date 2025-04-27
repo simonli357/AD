@@ -193,7 +193,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         )
 
         if self.show_graph:
-            self.graph_editor.draw(self.proj_mat, self.view_mat)
+            self.graph_editor.draw(self.proj_mat, self.view_mat, self.ortho_proj_mat)
         else:
             if self.show_path:
                 self.waypoints_renderer.draw(self.proj_mat, self.view_mat)

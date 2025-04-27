@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 from OpenGL import GL as gl
 from .hud import HudRenderer
 from .stats import HidableOverlay
-from ..enums import MapData, NamedColor, OpenGLContextName
+from ..enums import MapData, NamedColor, OpenGLContextName, RoadObjectsColor
 from ..opengl.shader import ShaderRenderer
 from ..opengl.instance.gt import GTRenderer
 from ..opengl.instance.model import ModelInstanceRenderer
@@ -221,6 +221,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             y_real = detected_data[i, road_msg_dict['y']]
             orientation = detected_data[i, road_msg_dict['orientation']]
             id = detected_data[i, road_msg_dict['id']]
+            confidence = detected_data[i, road_msg_dict['confidence']]
+            obj_name = object_dict[obj_type].upper()
+            label = "".join(obj_name.split())
 
             # Convert map coordinates to pixel coordinates
             x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
@@ -234,6 +237,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 self.road_objects_ids[object_dict[obj_type]].add(id)
+
+            self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}%", x, y, 8.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
         self.draw_road_objects()
 
     def draw_road_objects(self):
