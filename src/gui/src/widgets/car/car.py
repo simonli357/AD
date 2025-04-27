@@ -241,8 +241,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 self.road_objects_ids[object_dict[obj_type]].add(id)
 
-            if self.is_near(self.x_pos, self.y_pos, x_real, MapData.REAL_WORLD_HEIGHT.value - y_real, 4.0, 0.2):
-                self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}%", x, y, 10.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+            if self.is_near(self.x_pos, self.y_pos, x_real, MapData.REAL_WORLD_HEIGHT.value - y_real, 3.0, 0.2):
+                self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
 
         self.draw_road_objects()
 
