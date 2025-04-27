@@ -37,13 +37,11 @@ public:
         double yaw = x_(2);
         double v = x_(3);
 
-        // Nonlinear motion model
         x_(0) += v * dt * std::cos(yaw);  // x
         x_(1) += v * dt * std::sin(yaw);  // y
         // yaw remains constant
         // v remains constant
 
-        // Jacobian of motion model
         Matrix4d F = Matrix4d::Identity();
         F(0, 2) = -v * dt * std::sin(yaw);  // ∂x/∂yaw
         F(0, 3) = dt * std::cos(yaw);       // ∂x/∂v

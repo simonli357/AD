@@ -1,6 +1,6 @@
 # camera calibration matrix K
-fx: 554.3826904296875
-fy: 554.3826904296875
+fx: 607.40564
+fy: 607.40564
 px: 320
 py: 240
 
@@ -12,4 +12,4 @@ pitch:  0.0
 # vehicle coords of camera origin
 XCam: 0.0
 YCam: 0.0
-ZCam: 0.25
+ZCam: 0.2615
