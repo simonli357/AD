@@ -709,9 +709,9 @@ public:
             return 0;
         }
         utils.update_states(x_current);
-        double center = utils.center + pixel_center_offset;
-        if (center < 180 || center > 460) {
-            // utils.debug("LANE_RELOC(): FAILURE: center out of bounds: " + helper::d2str(center), 4);
+        double offset = utils.lane_center_offset;
+        if (std::abs(offset) > LANE_OFFSET / 2) {
+            // utils.debug("LANE_RELOC(): FAILURE: offset too large: " + helper::d2str(offset), 2);
             return 0;
         }
         double yaw = utils.get_yaw();
@@ -722,7 +722,6 @@ public:
             utils.debug("LANE_RELOC(): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(lane_localization_orientation_threshold), 2);
             return 0;
         }
-        double offset = (IMAGE_WIDTH/2 - center) / 80 * LANE_CENTER_TO_EDGE;
         int nearestDirectionIndex = helper::nearest_direction_index(yaw);
         const auto& LANE_CENTERS = (nearestDirectionIndex == 0) ? EAST_FACING_LANE_CENTERS :
                                     (nearestDirectionIndex == 1) ? NORTH_FACING_LANE_CENTERS :
@@ -740,6 +739,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
+                min_error *= 0.75; // TODO: check if this is needed
                 utils.recalibrate_states(0, min_error);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running y: " + helper::d2str(x_current[1]) + ", estimated running y: " + helper::d2str(LANE_CENTERS[min_index] - offset), 2);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
@@ -760,6 +760,7 @@ public:
                 }
             }
             if (std::abs(min_error) < LANE_OFFSET/2) {
+                min_error *= 0.75; // TODO: check if this is needed
                 utils.recalibrate_states(min_error, 0);
                 lane_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
                 utils.debug("LANE_RELOC(): SUCCESS: error: " + helper::d2str(min_error) + ", lane center: " + helper::d2str(LANE_CENTERS[min_index]) + ", offset: " + helper::d2str(offset) + ", nearest direction: " + helper::d2str(nearestDirectionIndex) + ", running x: " + helper::d2str(x_current[0]) + ", estimated running x: " + helper::d2str(LANE_CENTERS[min_index] + offset), 2);
@@ -988,7 +989,8 @@ public:
             // this end index is for a static car
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density * PathManager::overtake_end_index_scaler);
             utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_lat_dist) + "changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ")", 2);
-            PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
+            int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
+            PathManager::overtake_end_index += num_extra;
             return;
         } else {
             if (min_same_lane_dist < MAX_TAILING_DIST) {
@@ -1214,12 +1216,14 @@ void StateMachine::solve() {
     // if (!toggle) return;
     // std::cout << "last waypoint index: " << PathManager::last_waypoint_index << ", target waypoint index: " << PathManager::target_waypoint_index << std::endl;
     int success = PathManager::find_next_waypoint(PathManager::target_waypoint_index, x_current);
-    // std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
-    // std::cout << "closest waypoint index: " << PathManager::closest_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::closest_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::closest_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::closest_waypoint_index, 2) << std::endl;
-    // std::cout << "target waypoint index: " << PathManager::target_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::target_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::target_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::target_waypoint_index, 2) << std::endl;
-    // for (int i = PathManager::target_waypoint_index; i < std::min(PathManager::target_waypoint_index + 6, static_cast<int>(PathManager::state_refs.rows())); i++) {
-    //     std::cout << "i: " << i << ", x: " << PathManager::state_refs(i, 0) << ", y: " << PathManager::state_refs(i, 1) << ", yaw: " << PathManager::state_refs(i, 2) << std::endl;
-    // }
+    if (PathManager::target_waypoint_index < PathManager::overtake_end_index) {
+        std::cout << "current state: x: " << x_current(0) << ", y: " << x_current(1) << ", yaw: " << x_current(2) << std::endl;
+        std::cout << "closest waypoint index: " << PathManager::closest_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::closest_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::closest_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::closest_waypoint_index, 2) << std::endl;
+        std::cout << "target waypoint index: " << PathManager::target_waypoint_index << ", at x: " << PathManager::state_refs(PathManager::target_waypoint_index, 0) << ", y: " << PathManager::state_refs(PathManager::target_waypoint_index, 1) << ", yaw: " << PathManager::state_refs(PathManager::target_waypoint_index, 2) << std::endl;
+        for (int i = PathManager::target_waypoint_index; i < std::min(PathManager::target_waypoint_index + 6, static_cast<int>(PathManager::state_refs.rows())); i++) {
+            std::cout << "i: " << i << ", x: " << PathManager::state_refs(i, 0) << ", y: " << PathManager::state_refs(i, 1) << ", yaw: " << PathManager::state_refs(i, 2) << std::endl;
+        }
+    }
     int idx = PathManager::target_waypoint_index;
     if (idx > PathManager::state_refs.rows()-2) {
         idx = PathManager::state_refs.rows() - 2;

@@ -57,7 +57,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 camera_config_path = os.path.join(current_dir, "rs.yaml")
 with open(os.path.abspath(camera_config_path)) as stream:
     frontConfig = yaml.safe_load(stream)
-width_m = 0.5
+width_m = 1
 height_m = 2
 resolution = 200
 cc = True  # Choose nearest neighbor if true; otherwise linear
