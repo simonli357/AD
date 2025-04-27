@@ -209,6 +209,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         for id_set in self.road_objects_ids.values():
             id_set.clear()
 
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
+
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
@@ -238,7 +241,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 self.road_objects_ids[object_dict[obj_type]].add(id)
 
-            self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}%", x, y, 8.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+            if self.is_near(x, y, self.x_pos, self.y_pos, 5.0, 0.2):
+                self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}%", x, y, 8.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
         self.draw_road_objects()
 
     def draw_road_objects(self):
