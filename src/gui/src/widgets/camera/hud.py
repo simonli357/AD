@@ -5,7 +5,6 @@ from ..opengl.shader import ShaderRenderer
 
 import glm
 import numpy as np
-import math
 import time
 import threading
 

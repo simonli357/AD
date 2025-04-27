@@ -59,3 +59,22 @@ class NamedColor(Enum):
     LIGHT_PINK = (1.0, 0.71, 0.76, 1.0)
     STEEL_BLUE = (0.27, 0.51, 0.71, 1.0)
     PURPLE = (0.51, 0.0, 0.51, 1.0)
+
+
+class RoadObjectsColor(Enum):
+    ONEWAY = (1.0, 0.0, 1.0)    # magenta
+    HIGHWAYENTRANCE = (0.0, 0.5, 0.0)    # dark green
+    STOPSIGN = (1.0, 0.0, 0.0)    # red
+    ROUNDABOUT = (0.0, 1.0, 1.0)    # cyan
+    PARK = (0.0, 0.0, 1.0)    # blue
+    CROSSWALK = (1.0, 1.0, 0.0)    # yellow
+    NOENTRY = (0.0, 1.0, 0.0)    # lime
+    HIGHWAYEXIT = (1.0, 0.647, 0.0)    # orange
+    PRIORITY = (0.5, 0.5, 0.0)    # olive
+    LIGHTS = (0.0, 0.5, 0.5)    # teal
+    BLOCK = (0.5, 0.0, 0.0)    # maroon
+    PEDESTRIAN = (0.0, 0.0, 0.5)    # navy
+    CAR = (0.5, 0.0, 0.5)    # purple
+    GREENLIGHT = (0.0, 1.0, 0.0)    # bright green
+    YELLOWLIGHT = (1.0, 1.0, 0.0)    # yellow
+    REDLIGHT = (1.0, 0.0, 0.0)    # red
