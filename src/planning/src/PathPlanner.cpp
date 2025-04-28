@@ -75,9 +75,10 @@ void PathPlanner::precompute_path() {
 void PathPlanner::construct_path() {
 	std::vector<Vertex> general_path;
 	general_path.push_back(path[0]);
-	Vertex prev = path[0];
+    general_path.push_back(path[1]);
+	Vertex prev = path[1];
 	for (const auto &v : path) {
-		if (v.id == prev.id) {
+		if (v.id == prev.id || v.id == path[0].id) {
 			continue;
 		}
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);
