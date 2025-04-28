@@ -49,8 +49,8 @@ class Track {
 	double hw_safety_offset = 0.05;
 	std::string package_path;
 
-    void add_vertex(const Vertex &u, const Vertex &v);
-    void remove_vertex(const Vertex &u);
+	void add_vertex(const Vertex &u, const Vertex &v);
+	void remove_vertex(const Vertex &u);
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
 	Vertex find_node(int id);

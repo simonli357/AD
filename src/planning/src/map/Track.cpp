@@ -154,7 +154,7 @@ void Track::read_graph() {
 
 	graph.clear();
 	std::unordered_map<int, Graph::vertex_descriptor> idToVertex;
-    bool modified = false;
+	bool modified = false;
 
 	// --- Parse nodes ---
 	for (auto *nodeElem = graphElem->FirstChildElement("node"); nodeElem; nodeElem = nodeElem->NextSiblingElement("node")) {
@@ -164,12 +164,12 @@ void Track::read_graph() {
 
 		// strip leading 'n'
 		int nodeId = 0;
-        if (idStr[0] == 'n' || idStr[0] == 'N') {
-            nodeId = std::stoi(idStr + 1);
-            modified = true;
-        } else {
-            nodeId = std::stoi(idStr);
-        }
+		if (idStr[0] == 'n' || idStr[0] == 'N') {
+			nodeId = std::stoi(idStr + 1);
+			modified = true;
+		} else {
+			nodeId = std::stoi(idStr);
+		}
 
 		double xVal = 0.0, yVal = 0.0;
 		int attrVal = 0;
@@ -217,9 +217,9 @@ void Track::read_graph() {
 		boost::add_edge(sit->second, tit->second, graph);
 	}
 
-    if (!modified) {
-        adjust_graph();
-    }
+	if (!modified) {
+		adjust_graph();
+	}
 }
 
 void Track::adjust_graph() {
@@ -259,38 +259,30 @@ void Track::compute_edge_distances() {
 }
 
 void Track::add_vertex(const Track::Vertex &u, const Track::Vertex &v) {
-    using vd_t = Graph::vertex_descriptor;
-    vd_t u_desc = boost::add_vertex(graph);
-    graph[u_desc] = u;
-
-    auto id_map = build_to_vertex_map();
-    auto it = id_map.find(v.id);
-
-    if (it == id_map.end()) {
-        throw std::runtime_error(
-            "Track::add_vertex: no existing vertex with id " + 
-            std::to_string(v.id)
-        );
-    }
-    vd_t v_desc = it->second;
-    Edge e_prop;
-    e_prop.distance = sqrt_dist(graph[u_desc], graph[v_desc]);
-    boost::add_edge(u_desc, v_desc, e_prop, graph);
+	using vd_t = Graph::vertex_descriptor;
+	vd_t u_desc = boost::add_vertex(graph);
+	graph[u_desc] = u;
+	auto id_map = build_to_vertex_map();
+	auto it = id_map.find(v.id);
+	if (it == id_map.end()) {
+		throw std::runtime_error("Track::add_vertex: no existing vertex with id " + std::to_string(v.id));
+	}
+	vd_t v_desc = it->second;
+	Edge e_prop;
+	e_prop.distance = sqrt_dist(graph[u_desc], graph[v_desc]);
+	boost::add_edge(u_desc, v_desc, e_prop, graph);
 }
 
 void Track::remove_vertex(const Track::Vertex &u) {
-    using vd_t = Graph::vertex_descriptor;
-    auto id_map = build_to_vertex_map();
-    auto it = id_map.find(u.id);
-    if (it == id_map.end()) {
-        throw std::runtime_error(
-            "Track::remove_vertex: no vertex with id " + 
-            std::to_string(u.id)
-        );
-    }
-    vd_t u_desc = it->second;
-    boost::clear_vertex(u_desc, graph);
-    boost::remove_vertex(u_desc, graph);
+	using vd_t = Graph::vertex_descriptor;
+	auto id_map = build_to_vertex_map();
+	auto it = id_map.find(u.id);
+	if (it == id_map.end()) {
+		throw std::runtime_error("Track::remove_vertex: no vertex with id " + std::to_string(u.id));
+	}
+	vd_t u_desc = it->second;
+	boost::clear_vertex(u_desc, graph);
+	boost::remove_vertex(u_desc, graph);
 }
 
 std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_map() {
