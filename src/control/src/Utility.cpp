@@ -487,7 +487,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
             } else {
                 double object_yaw = ego_yaw;
                 if (type == OBJECT::CAR) {
-                    int closest_index = PathManager::find_closest_waypoint2(world_states, 0.15);
+                    int closest_index = PathManager::find_closest_waypoint2(world_states, 0.25);
                     if (closest_index >= 0) {
                         object_yaw = PathManager::state_refs(closest_index, 2);
                         // debug("Sign Callback()!!: new CAR detected at (" +
