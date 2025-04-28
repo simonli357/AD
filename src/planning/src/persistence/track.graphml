@@ -2531,19 +2531,14 @@
       <data key="d2">2</data>
       </node>
     <node id="n531">
-      <data key="d0">2.74375</data>
-      <data key="d1">3.86531</data>
+      <data key="d0">2.722625452347132</data>
+      <data key="d1">3.8466591096005196</data>
       <data key="d2">2</data>
       </node>
     <node id="n532">
       <data key="d0">2.49871</data>
       <data key="d1">3.86966</data>
       <data key="d2">2</data>
-      </node>
-    <node id="n533">
-      <data key="d0">2.73129</data>
-      <data key="d1">3.85661</data>
-      <data key="d2">0</data>
       </node>
     <node id="n534">
       <data key="d0">2.71883</data>
@@ -2606,8 +2601,8 @@
       <data key="d2">2</data>
       </node>
     <node id="n546">
-      <data key="d0">0.8010881223297821</data>
-      <data key="d1">9.635169861977866</data>
+      <data key="d0">0.801088</data>
+      <data key="d1">9.63517</data>
       <data key="d2">2</data>
       </node>
     <node id="n547">
@@ -2635,25 +2630,10 @@
       <data key="d1">3.29537</data>
       <data key="d2">0</data>
       </node>
-    <node id="n552">
-      <data key="d0">2.09216</data>
-      <data key="d1">10.7718</data>
-      <data key="d2">0</data>
-      </node>
-    <node id="n553">
-      <data key="d0">3.77926</data>
-      <data key="d1">5.77758</data>
-      <data key="d2">0</data>
-      </node>
     <node id="n554">
       <data key="d0">17.1122</data>
       <data key="d1">1.52473</data>
       <data key="d2">3</data>
-      </node>
-    <node id="n555">
-      <data key="d0">17.4113</data>
-      <data key="d1">1.29658</data>
-      <data key="d2">0</data>
       </node>
     <node id="n556">
       <data key="d0">4.93898</data>
@@ -2661,8 +2641,8 @@
       <data key="d2">2</data>
       </node>
     <node id="n557">
-      <data key="d0">0.7098172092539914</data>
-      <data key="d1">9.460619083197413</data>
+      <data key="d0">0.709817</data>
+      <data key="d1">9.46062</data>
       <data key="d2">2</data>
       </node>
     <edge source="n1" target="n150">
@@ -2912,6 +2892,9 @@
       <data key="d3">True</data>
       </edge>
     <edge source="n80" target="n85">
+      <data key="d3">True</data>
+      </edge>
+    <edge source="n80" target="n557">
       <data key="d3">True</data>
       </edge>
     <edge source="n85" target="n83">
@@ -4358,9 +4341,6 @@
       <data key="d3">True</data>
       </edge>
     <edge source="n556" target="n7">
-      <data key="d3">True</data>
-      </edge>
-    <edge source="n80" target="n557">
       <data key="d3">True</data>
       </edge>
     <edge source="n557" target="n546">
