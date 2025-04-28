@@ -10,11 +10,7 @@ ncnn_model: "sissi753-opt"
 # v8_model: "xenia"
 # v8_model: "lynn"
 v8_model: "jasmine"
-min_ground_distance: 429 #mm
-
-madgwick:
-  frequency: 100                 # IMU data frequency (adjust based on your sensor)
-  gain: 0.1                      # Filter gain, controls responsiveness (lower = smoother, higher = faster)
-  world_frame: enu               # Frame convention ('enu' or 'ned')
-  use_magnetic_field_msg: false  # Set to true if using magnetometer data
-  publish_tf: false 
+emergency_thresh: 450 #mm
+emergency_width: 0.4
+emergency_height: 0.5
+emergency_y: 0.0 # offset from bottom of image

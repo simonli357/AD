@@ -113,6 +113,9 @@ namespace VehicleConstants {
         GREENLIGHT, YELLOWLIGHT, REDLIGHT
     };
     const std::array<std::string, 17> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None" };
+    const std::array<double, 17> OBJECT_HEIGHTS = {
+        0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774,
+        0.1944, 0.125, 0.1, 0.1, 0.1944, 0.1944, 0.1944, 0.1};
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,
@@ -296,8 +299,8 @@ namespace VehicleConstants {
         322.97223,  // cx
         244.39398   // cy
     };
-    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0}; // x, y, z, roll, pitch, yaw
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255 - 0.0042, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255 - 0.0042, -0.032, 0.2615, 0, 3.75*M_PI/180.0, 0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
 }
 

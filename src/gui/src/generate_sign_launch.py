@@ -20,7 +20,7 @@ model_mapping = {
     "Highway Exit": "leave_highway_sign/model.sdf",
     "Oneway": "oneway_sign/model.sdf",
     "Car": "rcCar_assembly_obstacle/model.sdf",
-    "Light": "traffic_light/model.sdf"
+    "Light": "traffic_light/model.sdf",
 }
 
 def generate_launch_file(data):

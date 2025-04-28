@@ -23,11 +23,12 @@
 <param name="use_tcp" value="$(arg use_tcp)"/>
 <arg name="ip" default="127.0.0.1"/>
 <param name="ip" value="$(arg ip)"/>
-<arg name="use_emergency" default="false"/>
+<arg name="use_emergency" default="true"/>
 <arg name="quality" default="90"/>
 <param name="quality" value="$(arg quality)"/>
 <arg name="flip" default="true"/>
 <arg name="send_depth" default="false"/>
+<arg name="ground_dist" default="false"/>
 
 <node pkg="perception" name="$(anon cameraNode)" output="screen" type="cameraNode" required="true">
     <param name="/use_emergency" value="$(arg use_emergency)"/>
@@ -50,6 +51,7 @@
     <param name="/sign_rate" value="$(arg sign_rate)"/>
     <param name="flip" value="$(arg flip)"/>
     <param name="send_depth" value="$(arg send_depth)"/>
+    <param name="ground_dist" value="$(arg ground_dist)"/>
 </node>
 
 </launch>
