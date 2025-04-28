@@ -16,8 +16,13 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
-	Vertex start = track.find_closest_node(start_x, start_y);
-	path.push_back(start);
+    Vertex start;
+    start.x = start_x;
+    start.y = start_y;
+	Vertex first = track.find_closest_node(start_x, start_y);
+    track.add_vertex(start, first);
+    path.push_back(start);
+	path.push_back(first);
 	for (const auto &dest : destination_positions) {
 		double x = std::get<0>(dest);
 		double y = std::get<1>(dest);
@@ -25,6 +30,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 		path.push_back(node);
 	}
 	construct_path();
+    track.remove_vertex(start);
 }
 
 void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name) {
@@ -35,10 +41,16 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
-	Vertex start = track.find_closest_node(start_x, start_y);
-	path.push_back(start);
+    Vertex start;
+    start.x = start_x;
+    start.y = start_y;
+	Vertex first = track.find_closest_node(start_x, start_y);
+    track.add_vertex(start, first);
+    path.push_back(start);
+	path.push_back(first);
 	precompute_path();
 	construct_path();
+    track.remove_vertex(start);
 }
 
 void PathPlanner::precompute_path() {
