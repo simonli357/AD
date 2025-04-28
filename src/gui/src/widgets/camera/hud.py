@@ -305,8 +305,8 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
                 h, w = self.depth_arr.shape[:2]
                 if not (0 <= x < w and 0 <= y < h):
                     return
-                depth_val = self.depth_arr[y, x][0].item()
-                self.shader_renderer.text_renderer.render_text(f"DEPTH: {depth_val}", x, y - 30, 1.0, (1, 0, 0), self.hud_proj_mat)
+                depth_val = self.depth_arr[y, x][0].item() / 10.0
+                self.shader_renderer.text_renderer.render_text(f"DEPTH: {depth_val} CM", x, y - 30, 1.0, (1, 0, 0), self.hud_proj_mat)
 
     ################
     # Events
