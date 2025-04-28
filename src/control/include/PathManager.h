@@ -389,9 +389,9 @@ inline int find_closest_waypoint2(
       bestIdx   = i;
     }
   }
-	if (bestIdx < 0) {
-		std::cout << "WARNING: PathManager::find_closest_waypoint2(): car pose: " << pt.transpose() << ", min distance: " << std::sqrt(bestDist2) << ", bestIdx: " << bestIdx << std::endl;
-	}
+	// if (bestIdx < 0) {
+	// 	std::cout << "WARNING: PathManager::find_closest_waypoint2(): car pose: " << pt.transpose() << ", min distance: " << std::sqrt(bestDist2) << ", bestIdx: " << bestIdx << std::endl;
+	// }
   return bestIdx;
 }
 

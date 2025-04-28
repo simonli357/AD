@@ -244,26 +244,26 @@ class SignFastest {
             int totalValidPixels = cv::countNonZero(validMask);
         
             // Visualization
-            cv::Mat visualization;
-            cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U);
-            cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR);
-            for (int y = 0; y < depthROI.rows; ++y) {
-                for (int x = 0; x < depthROI.cols; ++x) {
-                    if (!validMask.at<uchar>(y, x)) {
-                        visualization.at<cv::Vec3b>(y + roiY, x + roiX) = cv::Vec3b(0, 0, 255); // Red
-                    }
-                }
-            }
-            cv::rectangle(visualization, roi, cv::Scalar(0, 255, 0), 2); // ROI in green
-            cv::circle(visualization, minLocGlobal, 5, cv::Scalar(0, 255, 255), -1); // Valid min point in yellow
-            std::ostringstream overlayText;
-            overlayText << "Valid Min: " << minVal << " mm, Valid Max: " << maxVal << " mm, "
-                        << "Below 120% Min: " << belowThresholdCount << ", Valid Pixels: " << totalValidPixels 
-                        << ", Emergency Threshold: " << emergency_thresh;
-            cv::putText(visualization, overlayText.str(), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 0), 2);
-            std::cout << overlayText.str() << std::endl;
-            cv::imshow("Depth Visualization", visualization);
-            cv::waitKey(1);
+            // cv::Mat visualization;
+            // cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U);
+            // cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR);
+            // for (int y = 0; y < depthROI.rows; ++y) {
+            //     for (int x = 0; x < depthROI.cols; ++x) {
+            //         if (!validMask.at<uchar>(y, x)) {
+            //             visualization.at<cv::Vec3b>(y + roiY, x + roiX) = cv::Vec3b(0, 0, 255); // Red
+            //         }
+            //     }
+            // }
+            // cv::rectangle(visualization, roi, cv::Scalar(0, 255, 0), 2); // ROI in green
+            // cv::circle(visualization, minLocGlobal, 5, cv::Scalar(0, 255, 255), -1); // Valid min point in yellow
+            // std::ostringstream overlayText;
+            // overlayText << "Valid Min: " << minVal << " mm, Valid Max: " << maxVal << " mm, "
+            //             << "Below 120% Min: " << belowThresholdCount << ", Valid Pixels: " << totalValidPixels 
+            //             << ", Emergency Threshold: " << emergency_thresh;
+            // cv::putText(visualization, overlayText.str(), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 0), 2);
+            // std::cout << overlayText.str() << std::endl;
+            // cv::imshow("Depth Visualization", visualization);
+            // cv::waitKey(1);
         
             if (minVal < emergency_thresh && belowThresholdCount > 0.05 * totalValidPixels) {
                 return true;

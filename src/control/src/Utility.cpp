@@ -426,7 +426,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
-        if(dist > 3.0 || dist < 0.6) continue;
+        if(dist > 4.0 || dist < 0.3) continue;
         auto type = static_cast<OBJECT>(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id]);
         double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
@@ -489,11 +489,11 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                 if (type == OBJECT::CAR) {
                     int closest_index = PathManager::find_closest_waypoint2(world_states, 0.25);
                     if (closest_index >= 0) {
-                        object_yaw = PathManager::state_refs(closest_index, 2);
-                        // debug("Sign Callback()!!: new CAR detected at (" +
-                        //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
-                        //     "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
-                        //     std::to_string(object_yaw), 2);
+                        object_yaw = PathManager::state_refs_original(closest_index, 2);
+                        debug("Sign Callback()!!: new CAR detected at (" +
+                            std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                            "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
+                            std::to_string(object_yaw), 2);
                     } else {
                         // TODO: Check against known parking spots
                         double min_error_sq = 1000.0;

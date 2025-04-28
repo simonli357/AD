@@ -587,22 +587,21 @@ class LaneDetector {
 			int H = binaryIPM.rows, W = binaryIPM.cols;
 			int y0 = static_cast<int>((1.0f - ROI_FRACTION - FRACTION_FROM_BOT) * H);
 			int height = static_cast<int>(ROI_FRACTION * H);
-			cv::Mat roi = binaryIPM(cv::Rect(0, y0, W, height));
-
-			
+			int width = static_cast<int>(0.9f * W);
+			cv::Mat roi = binaryIPM(cv::Rect(static_cast<int>((W-width)/2), y0, width, height));
 
 			cv::Mat hist;
 			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);
 			extract_lanes(hist);
 
 			// DEBUG
-			// for (int x : lane_indices) {
-			// 		float rel = float(x) / float(W);
-			// 		std::cout << "lane @ x=" << x
-			// 							<< " (" << rel << " of width)\n";
-			// }
-			// cv::imshow("ROI", roi);
-			// cv::waitKey(1);
+			for (int x : lane_indices) {
+					float rel = float(x) / float(W);
+					std::cout << "lane @ x=" << x
+										<< " (" << rel << " of width)\n";
+			}
+			cv::imshow("ROI", roi);
+			cv::waitKey(1);
 
 			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0) {
 					int diff = (lane_indices[1] - lane_indices[0]);
