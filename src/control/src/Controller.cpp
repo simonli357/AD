@@ -401,7 +401,9 @@ public:
                 mpc.reset_solver();
                 stop_for(stop_duration);
             } else if(sign_flag == OBJECT::NONE) {
-                utils.debug("intersection reached: WARNING: CASE NO SIGN, proceeding...", 2);
+                utils.debug("intersection reached: WARNING: CASE NO SIGN, stopping for safety...", 2);
+                mpc.reset_solver();
+                stop_for(stop_duration * 0.75);
             } else {
                 utils.debug("intersection reached: CASE " + OBJECT_NAMES[sign_flag] + ", proceeding...", 2);
             }
