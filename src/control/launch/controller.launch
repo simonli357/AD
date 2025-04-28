@@ -43,7 +43,7 @@
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
   <arg name="debug_level" default="2"/>
   <param name="debug_level" value="$(arg debug_level)"/>
-  <arg name="emergency" default="false"/>
+  <arg name="emergency" default="true"/>
   <param name="emergency" value="$(arg emergency)"/>
   <arg name="use_tcp" default="true"/>
   <param name="use_tcp" value="$(arg use_tcp)"/>

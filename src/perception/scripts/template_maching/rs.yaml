@@ -7,7 +7,7 @@ py: 240
 # rotation matrix R (in deg)
 roll:   0.0
 yaw:    0.0
-pitch:  0.0
+pitch:  3.57
 
 # vehicle coords of camera origin
 XCam: 0.0
