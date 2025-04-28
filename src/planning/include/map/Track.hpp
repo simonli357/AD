@@ -36,7 +36,7 @@ class Track {
 		double curvature = 0;
 		double vref = 0;
 		double steer_ref = 0;
-		ATTRIBUTE attribute;
+		ATTRIBUTE attribute = ATTRIBUTE::NORMAL;
 	};
 
 	struct Edge {
