@@ -243,7 +243,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
             if self.is_near(self.x_pos, self.y_pos, x_real, MapData.REAL_WORLD_HEIGHT.value - y_real, 3.0, 0.2):
                 if label == "CAR":
-                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 5.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 7.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
                 elif label == "LIGHT" or label == "GREENLIGHT" or label == "REDLIGHT" or label == "YELLOWLIGHT":
                     self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
                 else:
