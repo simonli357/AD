@@ -39,7 +39,8 @@ class PathVisualizer:
         full_path_x = []
         full_path_y = []
         
-        sequence = [str(node) for node in sequence]
+        # sequence = [str(node) for node in sequence]
+        print("Sequence:", sequence)
         
         for i in range(len(sequence)-1):
             start_node = sequence[i]
@@ -57,6 +58,7 @@ class PathVisualizer:
         plt.plot(full_path_x, full_path_y, 'b-', linewidth=1.5, alpha=0.8, label='Path')
         
         for order, node in enumerate(sequence, 1):
+            node = self.planner.format_node_id(node)
             if node in self.planner.pos:
                 x, y = self.planner.pos[node]
                 plt.plot(x, y, 'o', markersize=10, color='#FF4500', markeredgecolor='black')
@@ -65,6 +67,8 @@ class PathVisualizer:
                         fontsize=9, fontweight='bold',
                         color='white', 
                         bbox=dict(facecolor='black', alpha=0.7, boxstyle='round'))
+            else:
+                print(f"Node {node} not found in planner positions.")
         
         total_distance = self.planner.get_total_distance(sequence)
         plt.xlabel('X Position (meters)')
@@ -79,7 +83,8 @@ def main():
     visualizer = PathVisualizer()
     
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0225_modified.yaml')
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0412_modified.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0412_modified.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_noright_modified.yaml')
     runs = visualizer.load_runs(yaml_path)
     
     # custom_run = [56, 54] # Avram 10m
@@ -93,7 +98,7 @@ def main():
     # custom_run = [192, 200] # Unirii oneway 3m
     # visualizer.plot_run('custom_run', custom_run)
     # exit()
-    selected_run = 'run131'
+    selected_run = 'run149'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")

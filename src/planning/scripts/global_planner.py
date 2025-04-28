@@ -8,24 +8,28 @@ import yaml
 ATTRIBUTES = ["normal", "crosswalk", "intersection", "oneway", "highwayLeft", "highwayRight", "roundabout", "stopline", "dotted", "dotted_crosswalk"]
 
 class GlobalPlanner:
-    def __init__(self, noright=False):
+    def __init__(self, noright=True):
         self.hw_safety_offset = 0.05#0.1
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
         if noright:
             self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
+            self.G = nx.read_graphml(self.current_dir + '/../src/persistence/track.graphml')
         else:
             self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+            self.G = nx.read_graphml(self.current_dir + '/../src/persistence/track.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
             x = data.get('x', 0.0)  # Default value 0.0 if 'x' is missing
-            if 502 <= int(node) <= 521:
-                y = data.get('y', 0.0) + self.hw_safety_offset
-            elif 483 <= int(node) <= 502:
-                y = data.get('y', 0.0) - self.hw_safety_offset
-            else:
-                y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
-            self.pos[node] = (x, 13.786 - y)
+            # if 502 <= int(node) <= 521:
+            #     y = data.get('y', 0.0) + self.hw_safety_offset
+            # elif 483 <= int(node) <= 502:
+            #     y = data.get('y', 0.0) - self.hw_safety_offset
+            # else:
+            #     y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
+            y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
+            # self.pos[node] = (x, 13.786 - y)
+            self.pos[node] = (x, y)
             self.attribute[node] = data.get('new_attribute', 0)
         
         for u, v, data in self.G.edges(data=True):
@@ -48,10 +52,10 @@ class GlobalPlanner:
         for i in range(353, 363):
             self.undetectable_areas.append(i)
         
-        for node in self.G.nodes:
-            attribute = self.attribute.get(node, 0)
-            if ATTRIBUTES[attribute] == "roundabout" or ATTRIBUTES[attribute] == "intersection" or ATTRIBUTES[attribute] == "dotted_crosswalk":
-                self.undetectable_areas.append(int(node))
+        # for node in self.G.nodes:
+        #     attribute = self.attribute.get(node, 0)
+        #     if ATTRIBUTES[attribute] == "roundabout" or ATTRIBUTES[attribute] == "intersection" or ATTRIBUTES[attribute] == "dotted_crosswalk":
+        #         self.undetectable_areas.append(int(node))
         
         self.intersection_count = 0
         self.place_names = {
@@ -105,6 +109,8 @@ class GlobalPlanner:
         return np.array(self.pos[node])
     
     def get_distance(self, start, end):
+        start = self.format_node_id(start)
+        end = self.format_node_id(end)
         return nx.dijkstra_path_length(self.G, source=start, target=end, weight='weight')
     
     def get_total_distance(self, sequence):
@@ -115,13 +121,18 @@ class GlobalPlanner:
             total_distance += self.get_distance(start, end)
         return total_distance
     
+    def format_node_id(self, node):
+        """Format node id to match the graph's node IDs."""
+        if node in self.G.nodes:
+            return node  # Already good
+        node_str = f"n{int(node)}"  # convert to nXXX format
+        if node_str in self.G.nodes:
+            return node_str
+        raise ValueError(f"Node {node} not found in graph.")
     def plan_path(self, start, end):
-        if not isinstance(start, str):
-            start = str(start)
-        if not isinstance(end, str):
-            end = str(end)
-        # print("start: ", start, "end: ", end)
-        path = nx.dijkstra_path(self.G, source=start, target=end)
+        start = self.format_node_id(start)
+        end = self.format_node_id(end)
+        path = nx.dijkstra_path(self.G, source=start, target=end, weight='weight')
         path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
         print("path: ", path)
         wp_x = []
@@ -129,10 +140,11 @@ class GlobalPlanner:
         wp_attributes = []
         for node in path:
             attribute = self.attribute.get(node, 0)
-            if int(node) in self.undetectable_areas:
-                attribute += 100
-            wp_attributes.append(attribute)
-            if attribute != 2 and attribute != 102:  # intersection
+            # if int(node) in self.undetectable_areas:
+            #     attribute += 100
+            # wp_attributes.append(attribute)
+            # if attribute != 2 and attribute != 102:  # intersection
+            if True:
                 if node in self.pos:
                     x, y = self.pos[node]
                     wp_x.append(x)
@@ -204,9 +216,11 @@ class GlobalPlanner:
             if distance < closest_dist:
                 closest_dist = distance
                 closest_node = node
-        return closest_node
+        return closest_node  # returns string like 'n44'
 
     def illustrate_path(self, start, end):
+        start = self.format_node_id(start)
+        end = self.format_node_id(end)
         _, path_edges, _ = self.plan_path(start, end)
         img = mpimg.imread(self.current_dir + '/maps/Track.png')
         fig, ax = plt.subplots()
