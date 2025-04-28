@@ -17,6 +17,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
     Vertex start;
+    start.id = -2;
     start.x = start_x;
     start.y = start_y;
 	Vertex first = track.find_closest_node(start_x, start_y);
@@ -42,6 +43,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
     Vertex start;
+    start.id = -2;
     start.x = start_x;
     start.y = start_y;
 	Vertex first = track.find_closest_node(start_x, start_y);
