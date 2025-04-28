@@ -22,6 +22,7 @@ class UdpConnection:
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
+        self.depth_arr_buf = queue.Queue(maxsize=1)
         self.lane2_buf = queue.Queue(maxsize=1)
         self.road_object_buf = queue.Queue(maxsize=1)
         self.waypoint_buf = queue.Queue(maxsize=1)
@@ -76,14 +77,15 @@ class UdpConnection:
             raw = self._raw_depth.get()
             try:
                 np_array = np.frombuffer(raw, dtype=np.uint8)
-                cv_image = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                depth_normalized = cv2.normalize(cv_image, None, 50, 255, cv2.NORM_MINMAX)
+                depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
+                depth_normalized = cv2.normalize(depth, None, 50, 255, cv2.NORM_MINMAX)
                 depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
                 h, w, ch = depth_colored.shape
                 bytes_per_line = ch * w
                 qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
                 pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
+                self._try_put(self.depth_arr_buf, depth)
             except Exception as e:
                 print("depth_worker error:", e)
                 continue
@@ -129,6 +131,12 @@ class UdpConnection:
     def parse_depth_image(self):
         try:
             return self.depth_buf.get_nowait()
+        except queue.Empty:
+            return None
+
+    def parse_depth_arr(self):
+        try:
+            return self.depth_arr_buf.get_nowait()
         except queue.Empty:
             return None
 

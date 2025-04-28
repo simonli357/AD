@@ -29,6 +29,7 @@ class CommunicationHandler(QObject):
     params_signal = pyqtSignal(object, object)
     camera_frame_signal = pyqtSignal(QtGui.QPixmap)
     depth_frame_signal = pyqtSignal(QtGui.QPixmap)
+    depth_arr_signal = pyqtSignal(object)
     lane_signal = pyqtSignal(object)
     road_obj_signal = pyqtSignal(object)
     waypoint_signal = pyqtSignal(object)
@@ -93,6 +94,7 @@ class MainWindow(QMainWindow):
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
+        self.comm.depth_arr_signal.connect(self.cam_widget.hud.set_depth_arr)
         self.comm.lane_signal.connect(self.cam_widget.lane_callback)
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
@@ -221,8 +223,10 @@ class MainWindow(QMainWindow):
     def udp_callbacks(self) -> None:
         rgb_image = None
         depth_image = None
+        depth_arr = None
         if self.cam_widget.show_depth:
             depth_image = self.server.udp_connection.parse_depth_image()
+            depth_arr = self.server.udp_connection.parse_depth_arr()
         else:
             rgb_image = self.server.udp_connection.parse_rgb_image()
 
@@ -237,6 +241,8 @@ class MainWindow(QMainWindow):
             self.comm.camera_frame_signal.emit(rgb_image)
         if depth_image is not None:
             self.comm.depth_frame_signal.emit(depth_image)
+        if depth_arr is not None:
+            self.comm.depth_arr_signal.emit(depth_arr)
         if lane2 is not None:
             self.comm.lane_signal.emit(lane2)
         if road_obj is not None:
