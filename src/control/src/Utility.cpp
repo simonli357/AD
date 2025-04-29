@@ -490,10 +490,10 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                     int closest_index = PathManager::find_closest_waypoint2(world_states, 0.25);
                     if (closest_index >= 0) {
                         object_yaw = PathManager::state_refs_original(closest_index, 2);
-                        debug("Sign Callback()!!: new CAR detected at (" +
-                            std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
-                            "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
-                            std::to_string(object_yaw), 2);
+                        // debug("Sign Callback()!!: new CAR detected at (" +
+                        //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                        //     "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
+                        //     std::to_string(object_yaw), 2);
                     } else {
                         // TODO: Check against known parking spots
                         double min_error_sq = 1000.0;
