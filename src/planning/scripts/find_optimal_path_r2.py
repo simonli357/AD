@@ -203,7 +203,8 @@ if __name__ == "__main__":
     planner = GlobalPlanner()
     
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    starting_points_path = os.path.join(current_dir, 'config/starting_points.yaml')
+    # starting_points_path = os.path.join(current_dir, 'config/starting_points.yaml')
+    starting_points_path = os.path.join(current_dir, 'config/starting_points0429.yaml')
     with open(starting_points_path, 'r') as f:
         starting_points = yaml.safe_load(f)
     
@@ -229,6 +230,6 @@ if __name__ == "__main__":
         if optimal_path_ints and optimal_path_ints[0] == int(start):
             optimal_path_ints.pop(0)
         runs[f'run{start}'] = optimal_path_ints
-    runs_path = os.path.join(current_dir, 'config/runs_noright.yaml')
+    runs_path = os.path.join(current_dir, 'config/runs0429.yaml')
     with open(runs_path, 'w') as f:
         yaml.dump(runs, f, default_flow_style=False)

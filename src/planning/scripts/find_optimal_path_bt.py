@@ -55,7 +55,8 @@ class GlobalPlanner:
     def __init__(self):
         self.hw_safety_offset = 0.05
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
-        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        # self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):

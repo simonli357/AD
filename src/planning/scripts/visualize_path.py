@@ -39,8 +39,7 @@ class PathVisualizer:
         full_path_x = []
         full_path_y = []
         
-        # sequence = [str(node) for node in sequence]
-        print("Sequence:", sequence)
+        sequence = [str(node) for node in sequence]
         
         for i in range(len(sequence)-1):
             start_node = sequence[i]
@@ -66,8 +65,6 @@ class PathVisualizer:
                         fontsize=9, fontweight='bold',
                         color='white', 
                         bbox=dict(facecolor='black', alpha=0.7, boxstyle='round'))
-            else:
-                print(f"Node {node} not found in planner positions.")
         
         total_distance = self.planner.get_total_distance(sequence)
         plt.xlabel('X Position (meters)')
@@ -82,9 +79,8 @@ def main():
     visualizer = PathVisualizer()
     
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0225_modified.yaml')
-    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0412_modified.yaml')
-    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs_noright_modified.yaml')
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0429.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0215_modified.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0429_modified.yaml')
     runs = visualizer.load_runs(yaml_path)
     
     # custom_run = [56, 54] # Avram 10m
@@ -96,6 +92,10 @@ def main():
     # custom_run = [55, 332] # Highway north 6m
     # custom_run = [223, 290] # Parking + bus lane 23m
     # custom_run = [192, 200] # Unirii oneway 3m
+    # total = 101
+    # custom_run = [70, 179] # farthest1 13.77, base: 85.19, total 200.00
+    # custom_run = [122, 158] # farthest2 16.63, base 82.94, total 200.57
+    # custom_run = [13, 189] # farthest3 12.81, base: 82.48, total 196.29
     # visualizer.plot_run('custom_run', custom_run)
     # exit()
     selected_run = 'run189'
