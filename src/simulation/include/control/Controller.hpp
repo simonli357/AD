@@ -33,6 +33,7 @@ class Controller {
 	ros::NodeHandle &nh;
 	ros::ServiceClient &model_states_client;
 	ros::Publisher cmd_vel_pub;
+	ros::Subscriber localisation_sub;
 	std::string car_name;
 
 	std_msgs::String rot;
