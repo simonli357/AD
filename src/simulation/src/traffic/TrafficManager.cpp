@@ -15,10 +15,10 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
 	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
 	car4 = std::make_unique<Controller>(*this, nh, random_speed(), "car4");
-	car5 = std::make_unique<Controller>(*this, nh, random_speed(), "car5");
-	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
-	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
-	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
+	/* car5 = std::make_unique<Controller>(*this, nh, random_speed(), "car5"); */
+	/* car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6"); */
+	/* car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7"); */
+	/* car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8"); */
 }
 
 TrafficManager::~TrafficManager() {}
