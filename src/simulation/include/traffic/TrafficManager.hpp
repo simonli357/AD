@@ -5,6 +5,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <memory>
 #include <ros/node_handle.h>
+#include <ros/service_client.h>
 #include <ros/subscriber.h>
 #include <string>
 #include <tbb/concurrent_hash_map.h>
@@ -14,7 +15,7 @@ class Controller;
 
 class TrafficManager {
   public:
-	TrafficManager(ros::NodeHandle &nh);
+	TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client);
 	TrafficManager(TrafficManager &&) = delete;
 	TrafficManager(const TrafficManager &) = delete;
 	TrafficManager &operator=(TrafficManager &&) = delete;
@@ -28,7 +29,7 @@ class TrafficManager {
 	using ATTR = Track::ATTRIBUTE;
 
 	ros::NodeHandle &nh;
-	ros::Publisher teleport_pub;
+	ros::ServiceClient &client;
 	std::unique_ptr<PathPlanner> planner;
 
 	std::array<double, 4> spawn_area = {0, 0, 5.85, 7.50};

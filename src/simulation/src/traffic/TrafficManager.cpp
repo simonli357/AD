@@ -1,15 +1,15 @@
 #include "TrafficManager.hpp"
 #include "Controller.hpp"
 #include "PathPlanner.hpp"
+#include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <vector>
 
-TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
+TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
-    teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/car1/localisation/teleport", 1);
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
 	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
@@ -46,30 +46,28 @@ void TrafficManager::spawn_ego_car() {
 	std::uniform_int_distribution<size_t> distr(0, candidates.size() - 1);
 	VD chosen = candidates[distr(rng)];
 	const auto &wp = graph[chosen];
-    double yaw = 0.0;
-    auto [ei, eend] = out_edges(chosen, graph);
-    if (ei != eend) {
-        VD next = target(*ei, graph);
-        const auto &wp2 = graph[next];
-        yaw = std::atan2(wp2.y - wp.y, wp2.x - wp.x);
-    }
-    double card = std::round(yaw / (M_PI/2.0)) * (M_PI/2.0);
-    move_car_to("car1", wp.x, wp.y, card);
-    ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
+	double yaw = 0.0;
+	auto [ei, eend] = out_edges(chosen, graph);
+	if (ei != eend) {
+		VD next = target(*ei, graph);
+		const auto &wp2 = graph[next];
+		yaw = std::atan2(wp2.y - wp.y, wp2.x - wp.x);
+	}
+	double card = std::round(yaw / (M_PI / 2.0)) * (M_PI / 2.0);
+	move_car_to("car1", wp.x, wp.y, card);
+	ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
 }
 
 void TrafficManager::move_car_to(const std::string &car_name, double x, double y, double yaw) {
-	geometry_msgs::PoseStamped cmd;
-	cmd.header.stamp = ros::Time::now();
-	cmd.header.frame_id = "world";
-	cmd.pose.position.x = x;
-	cmd.pose.position.y = y;
-	cmd.pose.position.z = 0.1;
-	tf2::Quaternion q;
-	q.setRPY(0, 0, yaw);
-	cmd.pose.orientation = tf2::toMsg(q);
-	teleport_pub.publish(cmd);
-	set_car_position(car_name, x, y);
+	gazebo_msgs::SetModelState srv;
+	srv.request.model_state.model_name = car_name;
+	srv.request.model_state.pose.position.x = x;
+	srv.request.model_state.pose.position.y = y;
+	srv.request.model_state.pose.position.z = 0;
+	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
+	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
+	srv.request.model_state.reference_frame = "world";
+	client.call(srv);
 }
 
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
