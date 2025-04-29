@@ -10,6 +10,7 @@
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
+	spawn_ego_car();
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
 	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
@@ -18,7 +19,6 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
 	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
 	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
-	spawn_ego_car();
 }
 
 TrafficManager::~TrafficManager() {}
