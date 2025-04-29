@@ -10,7 +10,6 @@
 TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
     teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/car1/localisation/teleport", 1);
-	spawn_ego_car();
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
 	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
@@ -19,6 +18,7 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
 	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
 	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
 	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
+	spawn_ego_car();
 }
 
 TrafficManager::~TrafficManager() {}
@@ -55,6 +55,7 @@ void TrafficManager::spawn_ego_car() {
     }
     double card = std::round(yaw / (M_PI/2.0)) * (M_PI/2.0);
     move_car_to("car1", wp.x, wp.y, card);
+    ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
 }
 
 void TrafficManager::move_car_to(const std::string &car_name, double x, double y, double yaw) {
