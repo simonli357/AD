@@ -15,20 +15,21 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
 
 TrafficManager::~TrafficManager() {}
 
-void TrafficManager::set_car_position(std::string car_name, double x, double y) {
+void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
+	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::accessor a;
 	car_positions.insert(a, car_name);
 	a->second = {x, y};
 }
 
-bool TrafficManager::car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) {
+bool TrafficManager::car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const {
+	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, false);
 	for (auto it = car_positions.begin(); it != car_positions.end(); ++it) {
-		if (it->first == ego_car) {
+		if (it->first == ego_car)
 			continue;
-		}
-		double x = it->second.first;
-		double y = it->second.second;
-		if (pred(x, y)) {
+		double cx = it->second.first;
+		double cy = it->second.second;
+		if (pred(cx, cy)) {
 			return true;
 		}
 	}

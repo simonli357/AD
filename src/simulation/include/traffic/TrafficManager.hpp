@@ -4,13 +4,14 @@
 #include <ros/node_handle.h>
 #include <string>
 #include <tbb/concurrent_hash_map.h>
+#include <tbb/spin_rw_mutex.h>
 
 class Controller;
 
 class TrafficManager {
   public:
 	TrafficManager(ros::NodeHandle &nh);
-	TrafficManager(TrafficManager &&) = default;
+	TrafficManager(TrafficManager &&) = delete;
 	TrafficManager(const TrafficManager &) = delete;
 	TrafficManager &operator=(TrafficManager &&) = delete;
 	TrafficManager &operator=(const TrafficManager &) = delete;
@@ -27,7 +28,9 @@ class TrafficManager {
 	std::unique_ptr<Controller> car8;
 
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>> car_positions;
-	void set_car_position(std::string car_name, double x, double y);
-	bool car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred);
+	mutable tbb::spin_rw_mutex rw_mutex;
+
+	void set_car_position(const std::string &car_name, double x, double y);
+	bool car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const;
 	void stop_cars();
 };

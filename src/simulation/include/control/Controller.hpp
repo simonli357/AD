@@ -32,11 +32,12 @@ class Controller {
 
   private:
 	int N = 40;
-	double T = 0.1;
+    int factor = 4;
+	double T = 0.1 * factor;
 	bool alive = true;
 	double car_radius = 0.15;
 	double wp_radius = 0.02;
-    size_t lookahead_wpts = 15;
+	size_t lookahead_wpts = 15;
 
 	TrafficManager &traffic_manager;
 	ros::NodeHandle &nh;

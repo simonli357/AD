@@ -13,7 +13,7 @@
 
 Controller::Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
-	planner = std::make_unique<PathPlanner>(vref, N, T);
+	planner = std::make_unique<PathPlanner>(vref * factor, N, T);
 	setup();
 	plan_path();
 
