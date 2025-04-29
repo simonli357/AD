@@ -17,5 +17,6 @@ int main(int argc, char **argv) {
 	spinner.start();
 
     ros::waitForShutdown();
+    car2.stop();
 	return 0;
 }

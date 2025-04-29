@@ -1,4 +1,4 @@
 <launch>
-  <node pkg="simulation" type="traffic" name="$(anon traffic)" output="screen" launch-prefix="gdb --args"> 
+  <node pkg="simulation" type="traffic" name="$(anon traffic)" output="screen"> 
   </node>
 </launch>

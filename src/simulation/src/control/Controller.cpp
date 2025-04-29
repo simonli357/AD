@@ -1,13 +1,14 @@
 #include "Controller.hpp"
 #include "map/Track.hpp"
-#include "utils/localisation.h"
 #include <gazebo_msgs/SetModelState.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <memory>
 #include <ostream>
 #include <ros/node_handle.h>
 #include <ros/rate.h>
 #include <ros/service_client.h>
 #include <std_msgs/String.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <thread>
 
 Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &model_states_client, double vref, std::string car_name) : nh(nh), model_states_client(model_states_client), gen(rd()) {
@@ -16,14 +17,9 @@ Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &model_states_cli
 	setup();
 	plan_path();
 
-	VD start = path[0];
-	const auto &graph = planner->track.graph;
-	const Vertex &vp = graph[start];
-	double x0 = vp.x;
-	double y0 = vp.y;
-	double yaw0 = vp.tangent_angle;
+	Vertex start = path[0];
 
-	set_pose(x0, y0, yaw0);
+	set_pose(start.x, start.y, start.tangent_angle);
 	std::cout << car_name << " initialized." << std::endl;
 
 	main = std::thread(&Controller::run, this);
@@ -37,55 +33,22 @@ Controller::~Controller() {
 
 void Controller::run() {
 	ros::Rate rate(1.0 / T);
-	size_t idx = 0;
-	const double proximity_threshold = 0.1;
-
-	while (ros::ok()) {
-		if (!current_pose) {
-			rate.sleep();
-			continue;
-		}
+    size_t idx = 0;
+	while (ros::ok() && alive) {
 		if (path.empty()) {
 			rate.sleep();
 			continue;
 		}
-		double cx = current_pose->posA;
-		double cy = current_pose->posB;
-		double cyaw = current_pose->rotA;
-
-		VD target_v = path[idx];
-		const auto &graph = planner->track.graph;
-		const Vertex &vp = graph[target_v];
-		double tx = vp.x;
-		double ty = vp.y;
-
-		double dx = tx - cx;
-		double dy = ty - cy;
-		double dist = std::hypot(dx, dy);
-		double desired_yaw = std::atan2(dy, dx);
-		double yaw_error = std::atan2(std::sin(desired_yaw - cyaw), std::cos(desired_yaw - cyaw));
-
-		double speed = std::min(planner->vref, dist);
-
-		publish_cmd(yaw_error, speed);
-
-		if (dist < proximity_threshold) {
-			idx = (idx + 1) % path.size();
-		}
-
+		const Vertex &v = path[idx];
+		move_car_to(v.x, v.y, v.tangent_angle);
+		idx = (idx + 1) % path.size();
 		rate.sleep();
 	}
 }
 
-void Controller::setup() {
-	localisation_sub = nh.subscribe<utils::localisation>("/" + car_name + "/localisation", 1, &Controller::fetch_current_pose, this);
-	cmd_vel_pub = nh.advertise<std_msgs::String>("/" + car_name + "/command", 8);
-}
+void Controller::stop() { alive = false; }
 
-void Controller::fetch_current_pose(const Pose &msg) {
-	ROS_INFO("[%s] got localization x=%.2f y=%.2f yaw=%.3f", car_name.c_str(), msg->posA, msg->posB, msg->rotA);
-	current_pose = msg;
-}
+void Controller::setup() { teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/" + car_name + "/localisation/teleport", 1); }
 
 void Controller::plan_path() {
 	std::vector<VD> verts;
@@ -95,15 +58,24 @@ void Controller::plan_path() {
 	do {
 		VD start = verts[gen() % verts.size()];
 		find_random_cycle(planner->track.graph, start);
-	} while (path.size() < 150);
+	} while (destinations.size() < 150);
+	for (const auto &v : destinations) {
+		path.push_back(planner->track.graph[v]);
+	}
+	path = planner->spline_utils.interpolate_path(path, planner->density, planner->hw_density_factor, planner->cw_density_factor);
 }
 
-void Controller::publish_cmd(double angle, double speed) {
-	vel.data = "{\"action\":\"1\",\"speed\":" + std::to_string(speed) + "}";
-	rot.data = "{\"action\":\"2\",\"steerAngle\":" + std::to_string(angle) + "}";
-	cmd_vel_pub.publish(vel);
-	cmd_vel_pub.publish(rot);
-	ROS_INFO((car_name + "::publish_cmd — steerAngle: %.4f, speed: %.4f").c_str(), angle, speed);
+void Controller::move_car_to(double x, double y, double yaw) {
+	geometry_msgs::PoseStamped cmd;
+	cmd.header.stamp = ros::Time::now();
+	cmd.header.frame_id = "world";
+	cmd.pose.position.x = x;
+	cmd.pose.position.y = y;
+	cmd.pose.position.z = 0;
+	tf2::Quaternion q;
+	q.setRPY(0, 0, yaw);
+	cmd.pose.orientation = tf2::toMsg(q);
+	teleport_pub.publish(cmd);
 }
 
 void Controller::set_pose(double x, double y, double yaw) {
@@ -123,8 +95,8 @@ void Controller::find_random_cycle(Graph &graph, VD start) {
 	VD cur = start;
 
 	while (true) {
-		visited[cur] = path.size();
-		path.push_back(cur);
+		visited[cur] = destinations.size();
+		destinations.push_back(cur);
 
 		auto [out_i, out_end] = boost::out_edges(cur, graph);
 		if (out_i == out_end) {
