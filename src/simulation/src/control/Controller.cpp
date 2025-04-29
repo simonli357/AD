@@ -1,6 +1,5 @@
 #include "Controller.hpp"
 #include "map/Track.hpp"
-#include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
 #include <ostream>
@@ -45,9 +44,9 @@ void Controller::run() {
 		if (can_move_car(v.x, v.y, idx)) {
 			move_car_to(v.x, v.y, v.tangent_angle);
 		} else {
-            rate.sleep();
-            continue;
-        }
+			rate.sleep();
+			continue;
+		}
 		// If we are at a stopline, stop for 3 seconds
 		if (v.attribute == ATTR::STOPLINE && !stopped) {
 			ros::Duration(3.0).sleep();
