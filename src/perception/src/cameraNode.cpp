@@ -1,6 +1,6 @@
-#include "TcpClient.hpp"
 #include "LaneDetector.hpp"
 #include "SignFastest.hpp"
+#include "TcpClient.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "ros/ros.h"
@@ -72,28 +72,24 @@ class CameraNode {
 			auto profiles = pipe.get_active_profile().get_streams();
 
 			bool found_profile = false;
-			for (auto &&p : profiles)
-			{
-					if (p.stream_type() == RS2_STREAM_COLOR)
-					{
-							auto vid_profile = p.as<rs2::video_stream_profile>();
-							rs2_intrinsics intr = vid_profile.get_intrinsics();
+			for (auto &&p : profiles) {
+				if (p.stream_type() == RS2_STREAM_COLOR) {
+					auto vid_profile = p.as<rs2::video_stream_profile>();
+					rs2_intrinsics intr = vid_profile.get_intrinsics();
 
-							double fx = intr.fx;
-							double fy = intr.fy;
-							double cx = intr.ppx; // principal point x
-							double cy = intr.ppy; // principal point y
-							cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 
-																												0, fy, cy, 
-																												0, 0, 1);
+					double fx = intr.fx;
+					double fy = intr.fy;
+					double cx = intr.ppx; // principal point x
+					double cy = intr.ppy; // principal point y
+					cameraMatrix = (cv::Mat_<double>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
 
-							distCoeffs = (cv::Mat_<double>(1,5) << intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
-							cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, cv::Size(640, 480), CV_16SC2, map1, map2);
-							ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
-							ROS_INFO("distortion coefficients: %.2f, %.2f, %.2f, %.2f, %.2f", intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
-						  found_profile = true;
-							break;
-					}
+					distCoeffs = (cv::Mat_<double>(1, 5) << intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+					cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), cameraMatrix, cv::Size(640, 480), CV_16SC2, map1, map2);
+					ROS_INFO("camera intrinsics: fx=%.2f, fy=%.2f, cx=%.2f, cy=%.2f", fx, fy, cx, cy);
+					ROS_INFO("distortion coefficients: %.2f, %.2f, %.2f, %.2f, %.2f", intr.coeffs[0], intr.coeffs[1], intr.coeffs[2], intr.coeffs[3], intr.coeffs[4]);
+					found_profile = true;
+					break;
+				}
 			}
 
 			if (!found_profile) {
@@ -136,37 +132,37 @@ class CameraNode {
 	}
 
 	~CameraNode() {
-			if (lane_thread.joinable()) {
-					lane_thread.join();
-			}
-			if (sign_thread.joinable()) {
-					sign_thread.join();
-			}
+		if (lane_thread.joinable()) {
+			lane_thread.join();
+		}
+		if (sign_thread.joinable()) {
+			sign_thread.join();
+		}
 	}
 
 	void cameraNodeSpin() {
-			if (realsense) {
-				ros::Rate cameraRate(30);
-				while (ros::ok()) {
-					get_frame();
-					cameraRate.sleep();
-				}
-			} else {
-				ros::Rate loopRate(mainLoopRate);
-				while (ros::ok()) {
-						ros::spinOnce();
-						if (!realsense && !useRosTimer) {
-								// If not using realsense or timers, 
-								// detection might happen in imageCallback.
-						}
-						loopRate.sleep();
-				}
+		if (realsense) {
+			ros::Rate cameraRate(30);
+			while (ros::ok()) {
+				get_frame();
+				cameraRate.sleep();
 			}
+		} else {
+			ros::Rate loopRate(mainLoopRate);
+			while (ros::ok()) {
+				ros::spinOnce();
+				if (!realsense && !useRosTimer) {
+					// If not using realsense or timers,
+					// detection might happen in imageCallback.
+				}
+				loopRate.sleep();
+			}
+		}
 	}
 
 	SignFastest Sign;
 	LaneDetector Lane;
-    
+
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
 	image_transport::Subscriber rgb_sub;
@@ -216,7 +212,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr && send_depth) {
-        	Sign.tcp_client->send_image_depth(depthImage);
+			Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// mutex.unlock();
 	}
@@ -237,11 +233,12 @@ class CameraNode {
 			}
 		} else {
 			std::lock_guard<std::mutex> lock(mutex);
-      colorImage = cv_ptr->image.clone();
-			if (flip) cv::flip(colorImage, colorImage, -1);
+			colorImage = cv_ptr->image.clone();
+			if (flip)
+				cv::flip(colorImage, colorImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
-        	Sign.tcp_client->send_image_rgb(colorImage, quality);
+			Sign.tcp_client->send_image_rgb(colorImage, quality);
 		}
 		// mutex.unlock();
 	}
@@ -251,29 +248,29 @@ class CameraNode {
 	void run_lane_once() {
 		cv::Mat img;
 		{
-				std::lock_guard<std::mutex> lock(mutex);
-				if (colorImage.empty()) {
-						ROS_WARN("colorImage is empty");
-						return;
-				}
-				img = colorImage.clone();
+			std::lock_guard<std::mutex> lock(mutex);
+			if (colorImage.empty()) {
+				ROS_WARN("colorImage is empty");
+				return;
+			}
+			img = colorImage.clone();
 		}
 		Lane.publish_lane(img);
 	}
 	void run_sign_once() {
 		cv::Mat color_img, depth_img;
 		{
-				std::lock_guard<std::mutex> lock(mutex);
-				if (colorImage.empty()) {
-						ROS_WARN("colorImage is empty");
-						return;
-				}
-				if (depthImage.empty()) {
-						ROS_WARN("depthImage is empty");
-						return;
-				}
-				color_img = colorImage.clone();
-				depth_img = depthImage.clone();
+			std::lock_guard<std::mutex> lock(mutex);
+			if (colorImage.empty()) {
+				ROS_WARN("colorImage is empty");
+				return;
+			}
+			if (depthImage.empty()) {
+				ROS_WARN("depthImage is empty");
+				return;
+			}
+			color_img = colorImage.clone();
+			depth_img = depthImage.clone();
 		}
 		Sign.publish_sign(color_img, depth_img);
 	}
@@ -324,7 +321,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			/* Sign.tcp_client->send_image_rgb(colorImage); */
 			// Sign.tcp_client->send_image_depth(depthImage);
 		}
 		if (pubImage) {

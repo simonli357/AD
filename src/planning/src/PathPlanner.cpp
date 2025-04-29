@@ -1,10 +1,10 @@
 #include "PathPlanner.hpp"
+#include "utils/helper.h"
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
-#include "utils/helper.h"
 
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
-    this->T = 0.1;
+	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 }
 
@@ -16,8 +16,14 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
-	Vertex start = track.find_closest_node(start_x, start_y);
+	Vertex start;
+	start.id = -2;
+	start.x = start_x;
+	start.y = start_y;
+	Vertex first = track.find_closest_node(start_x, start_y);
+	track.add_vertex(start, first);
 	path.push_back(start);
+	path.push_back(first);
 	for (const auto &dest : destination_positions) {
 		double x = std::get<0>(dest);
 		double y = std::get<1>(dest);
@@ -25,6 +31,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 		path.push_back(node);
 	}
 	construct_path();
+	track.remove_vertex(start);
 }
 
 void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name) {
@@ -35,10 +42,17 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
-	Vertex start = track.find_closest_node(start_x, start_y);
+	Vertex start;
+	start.id = -2;
+	start.x = start_x;
+	start.y = start_y;
+	Vertex first = track.find_closest_node(start_x, start_y);
+	track.add_vertex(start, first);
 	path.push_back(start);
+	path.push_back(first);
 	precompute_path();
 	construct_path();
+	track.remove_vertex(start);
 }
 
 void PathPlanner::precompute_path() {
@@ -61,9 +75,10 @@ void PathPlanner::precompute_path() {
 void PathPlanner::construct_path() {
 	std::vector<Vertex> general_path;
 	general_path.push_back(path[0]);
-	Vertex prev = path[0];
+	general_path.push_back(path[1]);
+	Vertex prev = path[1];
 	for (const auto &v : path) {
-		if (v.id == prev.id) {
+		if (v.id == prev.id || v.id == path[0].id) {
 			continue;
 		}
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);
@@ -95,8 +110,8 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 		out_normals.data.push_back(std::cos(v.normal_angle));
 		out_normals.data.push_back(std::sin(v.normal_angle));
 	}
-    std::string path = helper::getSourceDirectory();
-    /* saveTxt(out_state_refs, path + "/state_refs.txt", 3); */
-    /* saveTxt(out_input_refs, path + "/input_refs.txt", 2); */
-    /* saveTxt(out_attributes, path + "/attributes.txt", 1); */
+	std::string path = helper::getSourceDirectory();
+	/* saveTxt(out_state_refs, path + "/state_refs.txt", 3); */
+	/* saveTxt(out_input_refs, path + "/input_refs.txt", 2); */
+	/* saveTxt(out_attributes, path + "/attributes.txt", 1); */
 }
