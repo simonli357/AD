@@ -68,6 +68,7 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
 	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
 	srv.request.model_state.reference_frame = "world";
 	client.call(srv);
+    set_car_position(car_name, x, y);
 }
 
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
