@@ -9,7 +9,7 @@
 #include <std_msgs/String.h>
 #include <thread>
 
-Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &client, double vref, std::string car_name) : nh(nh), client(client), gen(rd()) {
+Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &model_states_client, double vref, std::string car_name) : nh(nh), model_states_client(model_states_client), gen(rd()) {
 	this->car_name = car_name;
 	planner = std::make_unique<PathPlanner>(vref, N, T);
 	setup();
@@ -109,7 +109,7 @@ void Controller::set_pose(double x, double y, double yaw) {
 	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
 	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
 	srv.request.model_state.reference_frame = "world";
-	client.call(srv);
+	model_states_client.call(srv);
 }
 
 void Controller::find_random_cycle(Graph &graph, VD start) {

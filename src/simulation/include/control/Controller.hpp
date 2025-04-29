@@ -31,7 +31,7 @@ class Controller {
 	double T = 0.1;
 
 	ros::NodeHandle &nh;
-	ros::ServiceClient &client;
+	ros::ServiceClient &model_states_client;
 	ros::Publisher cmd_vel_pub;
 	std::string car_name;
 
