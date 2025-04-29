@@ -32,7 +32,7 @@ class Controller {
 
   private:
 	int N = 40;
-	double factor = 2.0;
+	double factor = 10.0;
 	double T = 0.1 * factor;
 	bool alive = true;
 	double car_radius = 0.15;
