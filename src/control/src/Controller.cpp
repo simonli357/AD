@@ -884,7 +884,7 @@ public:
         double car_speed_adj;
         for (auto& car : cars) {
             if (car->cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) {
-                std::cout << "CHECK_CAR(): car confidence too low: " + helper::d2str(car->cumulative_confidence) + ", threshold: " + helper::d2str(Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) << std::endl;
+                // std::cout << "CHECK_CAR(): car confidence too low: " + helper::d2str(car->cumulative_confidence) + ", threshold: " + helper::d2str(Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) << std::endl;
                 continue;
             }
             Eigen::Vector2d car_pose(car->x, car->y);
@@ -951,11 +951,11 @@ public:
             }
         }
         if (min_same_lane_dist > MAX_CAR_DIST) {
-            std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
+            // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
             return;
         }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
-            std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
+            // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
             return;
         }
         bool can_overtake = (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 

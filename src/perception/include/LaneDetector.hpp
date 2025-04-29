@@ -595,13 +595,13 @@ class LaneDetector {
 			extract_lanes(hist);
 
 			// DEBUG
-			for (int x : lane_indices) {
-					float rel = float(x) / float(W);
-					std::cout << "lane @ x=" << x
-										<< " (" << rel << " of width)\n";
-			}
-			cv::imshow("ROI", roi);
-			cv::waitKey(1);
+			// for (int x : lane_indices) {
+			// 		float rel = float(x) / float(W);
+			// 		std::cout << "lane @ x=" << x
+			// 							<< " (" << rel << " of width)\n";
+			// }
+			// cv::imshow("ROI", roi);
+			// cv::waitKey(1);
 
 			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0) {
 					int diff = (lane_indices[1] - lane_indices[0]);
