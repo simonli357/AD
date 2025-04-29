@@ -18,9 +18,7 @@ Controller::Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, dou
 
 	Vertex start = path[0];
 
-	move_car_to(start.x, start.y, start.tangent_angle);
 	std::cout << car_name << " initialized." << std::endl;
-
 	main = std::thread(&Controller::run, this);
 }
 
