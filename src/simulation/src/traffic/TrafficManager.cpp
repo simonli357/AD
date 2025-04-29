@@ -5,16 +5,23 @@
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<Controller>(*this, nh, 0.32, "car2");
-	car3 = std::make_unique<Controller>(*this, nh, 0.32, "car3");
-	car4 = std::make_unique<Controller>(*this, nh, 0.32, "car4");
-	car5 = std::make_unique<Controller>(*this, nh, 0.32, "car5");
-	car6 = std::make_unique<Controller>(*this, nh, 0.32, "car6");
-	car7 = std::make_unique<Controller>(*this, nh, 0.32, "car7");
-	car8 = std::make_unique<Controller>(*this, nh, 0.32, "car8");
+	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
+	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
+	car4 = std::make_unique<Controller>(*this, nh, random_speed(), "car4");
+	car5 = std::make_unique<Controller>(*this, nh, random_speed(), "car5");
+	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
+	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
+	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
 }
 
 TrafficManager::~TrafficManager() {}
+
+double TrafficManager::random_speed() {
+	// Return a random speed between 0.12 and 0.32
+	static std::mt19937 rng{std::random_device{}()};
+	static std::uniform_real_distribution<double> dist{0.12, 0.32};
+	return dist(rng);
+}
 
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
 	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
