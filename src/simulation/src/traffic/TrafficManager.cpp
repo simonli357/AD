@@ -5,12 +5,12 @@
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
 	car2 = std::make_unique<Controller>(*this, nh, 0.32, "car2");
-	/* car3 = std::make_unique<Controller>(*this, nh, 0.32, "car3"); */
-	/* car4 = std::make_unique<Controller>(*this, nh, 0.32, "car4"); */
-	/* car5 = std::make_unique<Controller>(*this, nh, 0.32, "car5"); */
-	/* car6 = std::make_unique<Controller>(*this, nh, 0.32, "car6"); */
-	/* car7 = std::make_unique<Controller>(*this, nh, 0.32, "car7"); */
-	/* car8 = std::make_unique<Controller>(*this, nh, 0.32, "car8"); */
+	car3 = std::make_unique<Controller>(*this, nh, 0.32, "car3");
+	car4 = std::make_unique<Controller>(*this, nh, 0.32, "car4");
+	car5 = std::make_unique<Controller>(*this, nh, 0.32, "car5");
+	car6 = std::make_unique<Controller>(*this, nh, 0.32, "car6");
+	car7 = std::make_unique<Controller>(*this, nh, 0.32, "car7");
+	car8 = std::make_unique<Controller>(*this, nh, 0.32, "car8");
 }
 
 TrafficManager::~TrafficManager() {}
@@ -37,10 +37,10 @@ bool TrafficManager::car_in_front(const std::string &ego_car, const std::functio
 
 void TrafficManager::stop_cars() {
 	car2->stop();
-	/* car3->stop(); */
-	/* car4->stop(); */
-	/* car5->stop(); */
-	/* car6->stop(); */
-	/* car7->stop(); */
-	/* car8->stop(); */
+	car3->stop();
+	car4->stop();
+	car5->stop();
+	car6->stop();
+	car7->stop();
+	car8->stop();
 }
