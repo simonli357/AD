@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PathPlanner.hpp"
+#include "TrafficManager.hpp"
 #include "utils/localisation.h"
 #include <memory>
 #include <random>
@@ -13,7 +14,7 @@
 
 class Controller {
   public:
-	Controller(ros::NodeHandle &nh, ros::ServiceClient &client, double vref, std::string car_name);
+	Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name);
 	Controller(Controller &&) = delete;
 	Controller(const Controller &) = delete;
 	Controller &operator=(Controller &&) = delete;
@@ -33,9 +34,12 @@ class Controller {
 	int N = 40;
 	double T = 0.1;
 	bool alive = true;
+	double car_radius = 0.15;
+	double wp_radius = 0.02;
+    size_t lookahead_wpts = 15;
 
+	TrafficManager &traffic_manager;
 	ros::NodeHandle &nh;
-	ros::ServiceClient &model_states_client;
 	ros::Publisher teleport_pub;
 	std::string car_name;
 
@@ -52,8 +56,7 @@ class Controller {
 	void setup();
 	void plan_path();
 	void move_car_to(double x, double y, double yaw);
-	void set_pose(double x, double y, double yaw);
 	void find_random_cycle(Graph &graph, VD start);
 	bool is_near(double x1, double y1, double x2, double y2, double rad1, double rad2);
-	bool can_move_car(double x, double y);
+	bool can_move_car(double x, double y, size_t idx);
 };

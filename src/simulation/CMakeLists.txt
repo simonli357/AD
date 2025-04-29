@@ -6,6 +6,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DEXT_DEP -fdiagnostics-show-option")
 find_package(PkgConfig)
 
+find_package(TBB REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   planning
@@ -32,19 +34,23 @@ catkin_package(
 include_directories(
   include
   include/control
+  include/traffic
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB CONTROL ${CMAKE_CURRENT_SOURCE_DIR}/src/control/*.cpp)
+file(GLOB TRAFFIC ${CMAKE_CURRENT_SOURCE_DIR}/src/traffic/*.cpp)
 add_library(${PROJECT_NAME}
   ${SOURCES}
   ${CONTROL}
+  ${TRAFFIC}
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   planning
+  TBB::tbb
 )
 
 add_executable(traffic

@@ -11,7 +11,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <thread>
 
-Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &model_states_client, double vref, std::string car_name) : nh(nh), model_states_client(model_states_client), gen(rd()) {
+Controller::Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
 	planner = std::make_unique<PathPlanner>(vref, N, T);
 	setup();
@@ -19,7 +19,7 @@ Controller::Controller(ros::NodeHandle &nh, ros::ServiceClient &model_states_cli
 
 	Vertex start = path[0];
 
-	set_pose(start.x, start.y, start.tangent_angle);
+	move_car_to(start.x, start.y, start.tangent_angle);
 	std::cout << car_name << " initialized." << std::endl;
 
 	main = std::thread(&Controller::run, this);
@@ -34,6 +34,7 @@ Controller::~Controller() {
 void Controller::run() {
 	ros::Rate rate(1.0 / T);
 	size_t idx = 0;
+    bool stopped = true;
 	while (ros::ok() && alive) {
 		if (path.empty()) {
 			rate.sleep();
@@ -41,15 +42,17 @@ void Controller::run() {
 		}
 		const Vertex &v = path[idx];
         // Collision detection. If there is an obstacle in front of us, do not move
-        if (can_move_car(v.x, v.y)) {
+        if (can_move_car(v.x, v.y, idx)) {
             move_car_to(v.x, v.y, v.tangent_angle);
         }
-
         // If we are at a stopline, stop for 3 seconds
-        if (v.attribute == ATTR::STOPLINE && path[(idx + 1) % path.size()].attribute != ATTR::STOPLINE) {
+        if (v.attribute == ATTR::STOPLINE && !stopped) {
             ros::Duration(3.0).sleep();
+            stopped = true;
         }
-
+        if (v.attribute != ATTR::STOPLINE && stopped) {
+            stopped = false;
+        }
 		idx = (idx + 1) % path.size();
 		rate.sleep();
 	}
@@ -66,8 +69,21 @@ bool Controller::is_near(double x1, double y1, double x2, double y2, double rad1
 	return (dx * dx + dy * dy) <= (rsum * rsum);
 }
 
-bool Controller::can_move_car(double x, double y) {
+bool Controller::can_move_car(double x, double y, size_t idx) {
+    if (path.empty()) return false;
+    for (size_t step = 1; step <= lookahead_wpts; ++step) {
+        size_t i = (idx + step) % path.size();
+        const auto &wp = path[i];
 
+        const auto pred = [this, &wp](double cx, double cy) {
+            return is_near(wp.x, wp.y, cx, cy, wp_radius, car_radius);
+        };
+
+        if (traffic_manager.car_in_front(car_name, pred)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void Controller::plan_path() {
@@ -96,18 +112,7 @@ void Controller::move_car_to(double x, double y, double yaw) {
 	q.setRPY(0, 0, yaw);
 	cmd.pose.orientation = tf2::toMsg(q);
 	teleport_pub.publish(cmd);
-}
-
-void Controller::set_pose(double x, double y, double yaw) {
-	gazebo_msgs::SetModelState srv;
-	srv.request.model_state.model_name = car_name;
-	srv.request.model_state.pose.position.x = x;
-	srv.request.model_state.pose.position.y = y;
-	srv.request.model_state.pose.position.z = 0;
-	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
-	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
-	srv.request.model_state.reference_frame = "world";
-	model_states_client.call(srv);
+    traffic_manager.set_car_position(car_name, x, y);
 }
 
 void Controller::find_random_cycle(Graph &graph, VD start) {
