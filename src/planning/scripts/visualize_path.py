@@ -58,7 +58,6 @@ class PathVisualizer:
         plt.plot(full_path_x, full_path_y, 'b-', linewidth=1.5, alpha=0.8, label='Path')
         
         for order, node in enumerate(sequence, 1):
-            node = self.planner.format_node_id(node)
             if node in self.planner.pos:
                 x, y = self.planner.pos[node]
                 plt.plot(x, y, 'o', markersize=10, color='#FF4500', markeredgecolor='black')
@@ -84,7 +83,8 @@ def main():
     
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0225_modified.yaml')
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0412_modified.yaml')
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_noright_modified.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs_noright_modified.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0429.yaml')
     runs = visualizer.load_runs(yaml_path)
     
     # custom_run = [56, 54] # Avram 10m
@@ -98,7 +98,7 @@ def main():
     # custom_run = [192, 200] # Unirii oneway 3m
     # visualizer.plot_run('custom_run', custom_run)
     # exit()
-    selected_run = 'run149'
+    selected_run = 'run189'
     
     if selected_run in runs:
         print(f"Visualizing {selected_run}...")
