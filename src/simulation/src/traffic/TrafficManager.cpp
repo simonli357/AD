@@ -64,7 +64,7 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
 	cmd.header.frame_id = "world";
 	cmd.pose.position.x = x;
 	cmd.pose.position.y = y;
-	cmd.pose.position.z = 0;
+	cmd.pose.position.z = 0.1;
 	tf2::Quaternion q;
 	q.setRPY(0, 0, yaw);
 	cmd.pose.orientation = tf2::toMsg(q);
