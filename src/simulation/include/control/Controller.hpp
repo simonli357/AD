@@ -32,7 +32,7 @@ class Controller {
 
   private:
 	int N = 40;
-    int factor = 4;
+    double factor = 0.5;
 	double T = 0.1 * factor;
 	bool alive = true;
 	double car_radius = 0.15;
@@ -57,7 +57,7 @@ class Controller {
 	void setup();
 	void plan_path();
 	void move_car_to(double x, double y, double yaw);
-	void find_random_cycle(Graph &graph, VD start);
+	void find_random_cycle(const Graph &graph, VD start);
 	bool is_near(double x1, double y1, double x2, double y2, double rad1, double rad2);
 	bool can_move_car(double x, double y, size_t idx);
 };
