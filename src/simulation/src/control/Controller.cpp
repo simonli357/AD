@@ -33,14 +33,23 @@ Controller::~Controller() {
 
 void Controller::run() {
 	ros::Rate rate(1.0 / T);
-    size_t idx = 0;
+	size_t idx = 0;
 	while (ros::ok() && alive) {
 		if (path.empty()) {
 			rate.sleep();
 			continue;
 		}
 		const Vertex &v = path[idx];
-		move_car_to(v.x, v.y, v.tangent_angle);
+        // Collision detection. If there is an obstacle in front of us, do not move
+        if (can_move_car(v.x, v.y)) {
+            move_car_to(v.x, v.y, v.tangent_angle);
+        }
+
+        // If we are at a stopline, stop for 3 seconds
+        if (v.attribute == ATTR::STOPLINE && path[(idx + 1) % path.size()].attribute != ATTR::STOPLINE) {
+            ros::Duration(3.0).sleep();
+        }
+
 		idx = (idx + 1) % path.size();
 		rate.sleep();
 	}
@@ -49,6 +58,17 @@ void Controller::run() {
 void Controller::stop() { alive = false; }
 
 void Controller::setup() { teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/" + car_name + "/localisation/teleport", 1); }
+
+bool Controller::is_near(double x1, double y1, double x2, double y2, double rad1, double rad2) {
+	double dx = x2 - x1;
+	double dy = y2 - y1;
+	double rsum = rad1 + rad2;
+	return (dx * dx + dy * dy) <= (rsum * rsum);
+}
+
+bool Controller::can_move_car(double x, double y) {
+
+}
 
 void Controller::plan_path() {
 	std::vector<VD> verts;

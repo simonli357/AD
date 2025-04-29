@@ -25,6 +25,7 @@ class Controller {
 	using Edge = PathPlanner::Edge;
 	using VD = boost::graph_traits<Graph>::vertex_descriptor;
 	using Pose = utils::localisationConstPtr;
+	using ATTR = Track::ATTRIBUTE;
 
 	void stop();
 
@@ -53,4 +54,6 @@ class Controller {
 	void move_car_to(double x, double y, double yaw);
 	void set_pose(double x, double y, double yaw);
 	void find_random_cycle(Graph &graph, VD start);
+	bool is_near(double x1, double y1, double x2, double y2, double rad1, double rad2);
+	bool can_move_car(double x, double y);
 };
