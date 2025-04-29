@@ -1,11 +1,13 @@
 import threading
 import struct
 import queue
+import numpy as np
+import cv2
 
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QByteArray
 
 
@@ -20,6 +22,7 @@ class UdpConnection:
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
+        self.depth_arr_buf = queue.Queue(maxsize=1)
         self.lane2_buf = queue.Queue(maxsize=1)
         self.road_object_buf = queue.Queue(maxsize=1)
         self.waypoint_buf = queue.Queue(maxsize=1)
@@ -66,18 +69,26 @@ class UdpConnection:
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
-            except Exception:
-                pass
+            except Exception as e:
+                print(e)
 
     def _depth_worker(self):
         while True:
             raw = self._raw_depth.get()
             try:
-                pix = QPixmap()
-                pix.loadFromData(QByteArray(raw))
+                np_array = np.frombuffer(raw, dtype=np.uint8)
+                depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
+                depth_normalized = cv2.normalize(depth, None, 50, 255, cv2.NORM_MINMAX)
+                depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
+                h, w, ch = depth_colored.shape
+                bytes_per_line = ch * w
+                qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
-            except Exception:
-                pass
+                self._try_put(self.depth_arr_buf, depth)
+            except Exception as e:
+                print("depth_worker error:", e)
+                continue
 
     def _other_worker(self):
         while True:
@@ -120,6 +131,12 @@ class UdpConnection:
     def parse_depth_image(self):
         try:
             return self.depth_buf.get_nowait()
+        except queue.Empty:
+            return None
+
+    def parse_depth_arr(self):
+        try:
+            return self.depth_arr_buf.get_nowait()
         except queue.Empty:
             return None
 

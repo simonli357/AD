@@ -349,6 +349,44 @@ inline int change_lane(int start_idx, int end_idx, bool shift_right = false, dou
          = state_refs.block(end_idx,0,tail,3);
 
     state_refs.swap(M);
+
+		// Eigen::MatrixXd normals_new(new_n, 2);
+    // if (start_idx > 0)
+    //     normals_new.block(0, 0, start_idx, 2) = normals.block(0, 0, start_idx, 2);
+    // for (int i = 0; i < (int)densified_nrm.size(); ++i)
+    //     normals_new.row(start_idx + i) = densified_nrm[i].transpose();
+    // int tail = old_n - end_idx;
+    // if (tail > 0)
+    //     normals_new.block(start_idx + densified_nrm.size(), 0, tail, 2)
+    //         = normals.block(end_idx, 0, tail, 2);
+    // normals.swap(normals_new);
+
+    Eigen::MatrixXd inputs_new(new_n, input_refs.cols());
+		if (start_idx > 0) {
+				inputs_new.block(0, 0, start_idx, input_refs.cols())
+						= input_refs.block(0, 0, start_idx, input_refs.cols());
+		}
+		for (int i = 0; i < (int)densified.size(); ++i) {
+				inputs_new.row(start_idx + i) = input_refs.row(start_idx);
+		}
+		tail = old_n - end_idx;
+		if (tail > 0) {
+				inputs_new.block(start_idx + densified.size(), 0, tail, input_refs.cols())
+						= input_refs.block(end_idx, 0, tail, input_refs.cols());
+		}
+		input_refs.swap(inputs_new);
+
+    Eigen::VectorXd attrs_new(new_n);
+    if (start_idx > 0)
+        attrs_new.segment(0, start_idx) = state_attributes.segment(0, start_idx);
+    for (int i = 0; i < (int)densified.size(); ++i) {
+        attrs_new[start_idx + i] = state_attributes[start_idx];
+    }
+    if (tail > 0)
+        attrs_new.segment(start_idx + densified.size(), tail)
+            = state_attributes.segment(end_idx, tail);
+    state_attributes.swap(attrs_new);
+
 		for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
 			// these are all intersections we haven’t reached yet,
 			// and by assumption theyre after the lane‐change window

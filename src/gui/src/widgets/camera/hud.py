@@ -14,8 +14,13 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         self.setAttribute(QtCore.Qt.WA_AlwaysStackOnTop, True)
+        self.setMouseTracking(True)
         self.cam_widget = cam_widget
         self.use_sim = True
+        self.show_mouse = True
+
+        self.current_mouse_pos = None
+        self.depth_arr = None
 
         self.click_history = []
 
@@ -50,6 +55,9 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.realsense_tf_real = None
 
         threading.Thread(target=self.fetch_camera_params, daemon=True).start()
+
+    def set_depth_arr(self, arr):
+        self.depth_arr = arr
 
     def fetch_camera_params(self):
         while self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:
@@ -155,6 +163,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.draw_lane_indicator()
         self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.1)
         self.draw_measurement_points()
+        self.update_mouse_pos()
 
         self.update()
 
@@ -279,6 +288,26 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         hit = orig + dir * t
         return hit
 
+    def update_mouse_pos(self):
+        if not self.show_mouse or not self.cam_widget.show_depth:
+            return
+        if self.current_mouse_pos is not None:
+            widget_width = self.width()
+            widget_height = self.height()
+            if widget_height == 0 or widget_width == 0:
+                return
+
+            # Get mouse position in widget coordinates
+            x = self.current_mouse_pos.x()
+            y = self.current_mouse_pos.y()
+
+            if self.depth_arr is not None:
+                h, w = self.depth_arr.shape[:2]
+                if not (0 <= x < w and 0 <= y < h):
+                    return
+                depth_val = self.depth_arr[y, x][0].item() / 10.0
+                self.shader_renderer.text_renderer.render_text(f"DEPTH: {depth_val} CM", x, y - 30, 1.0, (1, 0, 0), self.hud_proj_mat)
+
     ################
     # Events
     ################
@@ -287,6 +316,17 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         super().resizeGL(w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         self.upload_camera_params()
+
+    def enterEvent(self, event):
+        self.show_mouse = True
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.show_mouse = False
+        super().leaveEvent(event)
+
+    def mouseMoveEvent(self, event):
+        self.current_mouse_pos = event.pos()
 
     def mousePressEvent(self, event):
         w, h = self.width(), self.height()

@@ -36,7 +36,7 @@ class Track {
 		double curvature = 0;
 		double vref = 0;
 		double steer_ref = 0;
-		ATTRIBUTE attribute;
+		ATTRIBUTE attribute = ATTRIBUTE::NORMAL;
 	};
 
 	struct Edge {
@@ -49,6 +49,8 @@ class Track {
 	double hw_safety_offset = 0.05;
 	std::string package_path;
 
+	void add_vertex(const Vertex &u, const Vertex &v);
+	void remove_vertex(const Vertex &u);
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
 	Vertex find_node(int id);
