@@ -64,9 +64,7 @@ class Track {
   private:
 	std::unordered_map<int, Track::Graph::vertex_descriptor> build_to_vertex_map();
 
-	void read_graph_xml();
 	void read_graph();
-	void adjust_graph();
 	void compute_edge_distances();
 
 	friend std::istream &operator>>(std::istream &in, ATTRIBUTE &attr);

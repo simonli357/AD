@@ -285,10 +285,10 @@ class GraphEditor:
         # 4) The <graph> container
         graph = ET.SubElement(root, 'graph', edgedefault='directed')
         for key, (x_real, y_real), attr in zip(
-                self.instance_data.keys,
+                self.instance_data.ids,
                 self.instance_data.real_positions,
                 self.instance_data.attributes):
-            node = ET.SubElement(graph, 'node', id=key)
+            node = ET.SubElement(graph, 'node', id=str(key))
             ET.SubElement(node, 'data', key='d0').text = f"{x_real}"
             ET.SubElement(node, 'data', key='d1').text = f"{y_real}"
             ET.SubElement(node, 'data', key='d2').text = f"{attr}"
