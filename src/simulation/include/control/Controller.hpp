@@ -37,7 +37,7 @@ class Controller {
 	bool alive = true;
 	double car_radius = 0.15;
 	double wp_radius = 0.02;
-	size_t lookahead_wpts = 15;
+	size_t lookahead_wpts = 25;
 
 	TrafficManager &traffic_manager;
 	ros::NodeHandle &nh;
