@@ -44,7 +44,10 @@ void Controller::run() {
 		// Collision detection. If there is an obstacle in front of us, do not move
 		if (can_move_car(v.x, v.y, idx)) {
 			move_car_to(v.x, v.y, v.tangent_angle);
-		}
+		} else {
+            rate.sleep();
+            continue;
+        }
 		// If we are at a stopline, stop for 3 seconds
 		if (v.attribute == ATTR::STOPLINE && !stopped) {
 			ros::Duration(3.0).sleep();

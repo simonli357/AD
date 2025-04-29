@@ -4,6 +4,7 @@
 #include <string>
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh) : nh(nh) {
+	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Controller>(*this, nh, 0.32, "car2");
 	car3 = std::make_unique<Controller>(*this, nh, 0.32, "car3");
 	car4 = std::make_unique<Controller>(*this, nh, 0.32, "car4");
@@ -34,6 +35,12 @@ bool TrafficManager::car_in_front(const std::string &ego_car, const std::functio
 		}
 	}
 	return false;
+}
+
+void TrafficManager::ego_car_gps_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
+	double x = msg->pose.pose.position.x;
+	double y = msg->pose.pose.position.y;
+	set_car_position("car1", x, y);
 }
 
 void TrafficManager::stop_cars() {
