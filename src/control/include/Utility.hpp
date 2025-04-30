@@ -152,7 +152,7 @@ public:
     Eigen::MatrixXd lane_waypoints;
     void process_lane_data(const utils::Lane2& msg);
     void sign_callback(const utils::Sign::ConstPtr& msg);
-    void encoder_callback(const utils::Encoder::ConstPtr& msg);
+    void encoder_callback(const utils::encoder::ConstPtr& msg);
     void process_sign_data(const utils::Sign& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
@@ -364,7 +364,7 @@ public:
         vehicle_pos << x, y;
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
-        P_v[0] -= latency * velocity_command;
+        P_v[0] -= latency * encoder_speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
