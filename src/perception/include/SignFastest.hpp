@@ -202,10 +202,16 @@ class SignFastest {
             if (distance > expected_dist * 3 || distance < expected_dist * 1/3) return false;
             return true;
         }
-        bool detect_emergency_obstacle(const cv::Mat& depthImage) {
+        bool detect_emergency_obstacle(const cv::Mat& inputDepthImage) {
             if (!use_emergency) return false;
-            if (depthImage.empty() || depthImage.type() != CV_32FC1) {
-                std::cerr << "Invalid depth image!" << std::endl;
+            
+            cv::Mat depthImage;
+            if (inputDepthImage.type() == CV_32FC1) {
+                inputDepthImage.convertTo(depthImage, CV_16UC1);
+            } else if (inputDepthImage.type() == CV_16UC1) {
+                depthImage = inputDepthImage;
+            } else {
+                std::cerr << "Unsupported depth image type!" << std::endl;
                 return false;
             }
         
@@ -216,25 +222,21 @@ class SignFastest {
             cv::Rect roi(roiX, roiY, roiWidth, roiHeight);
             cv::Mat depthROI = depthImage(roi);
         
-            // Mask of valid depth (nonzero and finite)
             cv::Mat validMask = (depthROI > 0) & (depthROI < 10000); // 0 < depth < 10 meters (example)
         
-            // If no valid data
             if (cv::countNonZero(validMask) == 0) {
                 std::cerr << "No valid depth data in ROI!" << std::endl;
                 return false;
             }
         
-            // Only consider valid pixels for min/max
             double minVal, maxVal;
             cv::Point minLoc, maxLoc;
             cv::Mat cleanedROI = depthROI.clone(); // Make a COPY first
-            cleanedROI.setTo(std::numeric_limits<float>::max(), ~validMask);
+            cleanedROI.setTo(std::numeric_limits<uint16_t>::max(), ~validMask);
             cv::minMaxLoc(cleanedROI, &minVal, &maxVal, &minLoc, &maxLoc);
         
             cv::Point minLocGlobal(minLoc.x + roiX, minLoc.y + roiY);
         
-            // Threshold based on min depth
             float thresholdValue = static_cast<float>(std::max(minVal, 30.0)) * 1.2f;
             cv::Mat belowThresholdMask;
             cv::threshold(depthROI, belowThresholdMask, thresholdValue, 255, cv::THRESH_BINARY_INV);

@@ -321,7 +321,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr) {
-			/* Sign.tcp_client->send_image_rgb(colorImage); */
+			Sign.tcp_client->send_image_rgb(colorImage);
 			// Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// if (pubImage) {
