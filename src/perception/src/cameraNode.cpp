@@ -65,8 +65,8 @@ class CameraNode {
 
 			cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
 			cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
-			cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
-			cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
+			// cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
+			// cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
 			pipe.start(cfg);
 
 			auto profiles = pipe.get_active_profile().get_streams();
@@ -299,8 +299,8 @@ class CameraNode {
 		auto aligned_frames = align_to_color->process(data);
 		color_frame = aligned_frames.get_color_frame();
 		depth_frame = aligned_frames.get_depth_frame();
-		gyro_frame = data.first_or_default(RS2_STREAM_GYRO);
-		accel_frame = data.first_or_default(RS2_STREAM_ACCEL);
+		// gyro_frame = data.first_or_default(RS2_STREAM_GYRO);
+		// accel_frame = data.first_or_default(RS2_STREAM_ACCEL);
 		if (!color_frame || !depth_frame) {
 			ROS_WARN("No frame received");
 			return;
@@ -324,12 +324,12 @@ class CameraNode {
 			/* Sign.tcp_client->send_image_rgb(colorImage); */
 			// Sign.tcp_client->send_image_depth(depthImage);
 		}
-		if (pubImage) {
-			color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
-			depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-			color_pub.publish(color_msg);
-			depth_pub.publish(depth_msg);
-		}
+		// if (pubImage) {
+		// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
+		// 	depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
+		// 	color_pub.publish(color_msg);
+		// 	depth_pub.publish(depth_msg);
+		// }
 	}
 };
 
