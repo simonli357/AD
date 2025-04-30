@@ -73,31 +73,13 @@ void Utility::fetch_run_params() {
     }
     double x = msg_ptr->pose.pose.position.x;
     double y = msg_ptr->pose.pose.position.y;
-    double z = msg_ptr->pose.pose.position.z;
-
-    std::vector<std::array<std::any, 5>> runs_with_info;
     while(!imuInitialized) {
         ros::spinOnce();
     }
-    for (auto &run : Runs::runs) {
-        double dx = x - run.x;
-        double dy = y - run.y;
-        double dist = std::sqrt(dx*dx + dy*dy);
-        double yaw_diff = helper::compare_yaw(yaw, run.yaw);
-        // ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
-        if(yaw_diff < 40.0 / 180 * M_PI) {
-            runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
-        }
-    }
-    
-    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<std::any, 5>& a, const std::array<std::any, 5>& b) {
-        return std::any_cast<double>(a[4]) < std::any_cast<double>(b[4]);
-    });
-
-    this->x0 = std::any_cast<double>(runs_with_info[0][0]);
-    this->y0 = std::any_cast<double>(runs_with_info[0][1]);
-    this->yaw0 = std::any_cast<double>(runs_with_info[0][2]);
-    pathName = std::any_cast<std::string>(runs_with_info[0][3]);
+    this->x0 = x;
+    this->y0 = y;
+    this->yaw0 = yaw;
+    pathName = "run189";
 }
 
 void Utility::initialize() {
