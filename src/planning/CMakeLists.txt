@@ -38,8 +38,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
- INCLUDE_DIRS include
- CATKIN_DEPENDS message_runtime roslib alglib_pkg
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS message_runtime roslib alglib_pkg
 )
 
 include_directories(
@@ -60,13 +60,6 @@ target_link_libraries(${PROJECT_NAME}
   Boost::graph
   yaml-cpp
   alglib_pkg
-)
-
-add_executable(planner
-  src/Main.cpp
-)
-target_link_libraries(planner
-  ${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME}
