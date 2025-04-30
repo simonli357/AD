@@ -20,20 +20,22 @@ periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
 
 // Task for controlling the encoder
-periodics::CEncoder g_encoder(0.0001/g_baseTick, g_rpi, D2);
+periodics::CEncoder g_encoder(0.01/g_baseTick, g_baseTick, g_rpi, D2);
 
 //PIN for a motor speed in ms, inferior and superior limit
 drivers::CSpeedingMotor g_speedingDriver(0.1/g_baseTick,g_rpi,D3, g_encoder); //speed in cm/s
 
 //PIN for angle in servo degrees, inferior and superior limit
-drivers::CSteeringMotor g_steeringDriver(0.05 / g_baseTick, g_rpi, D4, g_imu, g_speedingDriver);
+drivers::CSteeringMotor g_steeringDriver(0.1 / g_baseTick, g_rpi, D4, g_imu, g_speedingDriver);
 
 // Task responsible for configuring the vehicle's speed and steering over a specified duration.
-drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
+// drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
 
 // Create the motion controller, which controls the robot states and the robot moves based on the transmitted command over the serial interface. 
 brain::CRobotStateMachine g_robotstatemachine(0.1/g_baseTick, g_rpi, g_steeringDriver, g_speedingDriver);
 
+//Create task for the serial printer, which sends the telemetry data over the serial interface.
+periodics::CSerialPrinter g_serialPrinter(0.1/g_baseTick, g_rpi);
 
 // Map for redirecting messages with the key and the callback functions. If the message key equals to one of the enumerated keys, than it will be applied the paired callback function.
 drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
@@ -64,10 +66,11 @@ utils::CTask* g_taskList[] = {
     // &g_totalvoltage,
     &g_imu,
     &g_robotstatemachine,
-    &g_velocityControlDuration,
+    // &g_velocityControlDuration,
     &g_serialMonitor,
     &g_steeringDriver,
-    &g_encoder
+    &g_encoder,
+    &g_serialPrinter,
 }; 
 
 // Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 

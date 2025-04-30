@@ -7,6 +7,7 @@
 #include "PwmIn.h"
 #include <cmath>
 #include <algorithm>
+#include <ring_buffer.hpp>
 
 namespace periodics {
 
@@ -14,11 +15,13 @@ class CEncoder : public utils::CTask {
 public:
     /**
      * @brief Constructor for PWM-based AS5048A encoder.
-     * @param f_period Task period in milliseconds
-     * @param f_serial Serial interface for debugging
-     * @param pwm_pin PWM input pin
+     * @param f_periodTicks Task period in ticks
+     * @param g_baseTick    Base tick duration in seconds
+     * @param f_serial      Serial interface for debugging
+     * @param pwm_pin       PWM input pin
      */
-    CEncoder(uint32_t f_period,
+    CEncoder(uint32_t f_periodTicks,
+             float g_baseTick,
              UnbufferedSerial& f_serial,
              PinName pwm_pin);
 
@@ -41,15 +44,14 @@ public:
     static constexpr float  HAMPEL_MINTH  = 0.5f;    // minimum absolute threshold [deg]
 
     float  _hampelBuf[HAMPEL_WINDOW] = {0};
-    size_t _hampelIdx              = 0;
-    size_t _hampelCount            = 0;
+    size_t _hampelIdx               = 0;
+    size_t _hampelCount             = 0;
 
     /** @return turn count */
     int getTurnCount();
 
     /** @return linear speed (m/s) */
     float getLinearSpeed();
-
 
     /** @return linear acceleration (m/s²) */
     float getLinearAcceleration();
@@ -59,10 +61,10 @@ private:
 
     PwmIn               m_pwm;                ///< PWM input
     UnbufferedSerial&   m_serial;             ///< Serial for debug
-    uint32_t            m_period;             ///< Task period (ms)
-    float               m_dt;                 ///< dt = m_period/1000
+    uint32_t            m_periodTicks;        ///< Task period in ticks
+    float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative
-    float               m_prevSpeed{0.0f};   ///< last speed for filtered derivative
+    float               m_prevSpeed{0.0f};   ///< last speed for derivative
 
     // Biquad structure for 2nd-order Butterworth
     struct Biquad {
@@ -80,13 +82,16 @@ private:
     float applyHysteresis(float angle);
     float applySpeedHysteresis(float speed);
 
-    // IIR filter state
-    float _fs;        ///< sampling frequency (Hz)
-    float _hys;       ///< hysteresis half-width (°)
-    float _speedHys;     ///< speed hysteresis half-width (deg/s)
+    float _fs;         ///< sampling frequency (Hz)
+    float _hys;        ///< hysteresis half-width (°)
+    float _speedHys;   ///< speed hysteresis half-width (deg/s)
     Biquad _sinF, _cosF;
     float  _lastAngle{0.0f};
-    float _lastSpeed{0.0f};
+    float  _lastSpeed{0.0f};
+    float  REPORT_INTERVAL_SEC = 0.1f;  ///< speed report interval (s)
+    float  sumDelta{0.0f};             ///< sum of deltas for speed
+    float  lastT{0.0f};                ///< last time for speed report
+    float  lastPublishedSpeed{0.0f};   ///< last published speed
 };
 
 } // namespace periodics

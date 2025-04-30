@@ -666,123 +666,78 @@ namespace periodics{
     void CImu::BNO055_delay_msek(u32 msek)
     {
         /*Here you can write your own delay routine*/
-        ThisThread::sleep_for(chrono::milliseconds(msek));
+        // ThisThread::sleep_for(chrono::milliseconds(msek));
     }
 
-    /** 
-    * \brief  Periodically retrieves and processes IMU sensor values.
-    * 
-    * This method is invoked periodically and handles:
-    * 1. Reading Euler angles (roll, pitch, yaw) from the BNO055 sensor.
-    * 2. Reading linear acceleration values in the x, y, and z axes from the sensor.
-    * 3. Based on the linear acceleration, it updates the current velocity of the device.
-    * 4. If the device appears to be stationary (based on x and y acceleration thresholds), 
-    *    a counter is incremented. If the device remains stationary for a certain duration 
-    *    (15 cycles in this case), the velocity is reset.
-    * 5. Formats and sends the acquired data over a serial connection.
-    * 
-    * \note If there are any issues reading from the BNO055 sensor, the method will exit early without sending data.
-    */
-
-    void CImu::_run()
-    {
-        if(!m_isActive) return;
-        char buffer[256];
-        s32 comres = BNO055_SUCCESS;
-
-        float converted_euler_h_deg = BNO055_INIT_VALUE;
-        float converted_euler_p_deg = BNO055_INIT_VALUE;
-        float converted_euler_r_deg = BNO055_INIT_VALUE;
-
-        comres += bno055_convert_float_euler_h_deg(&converted_euler_h_deg);
-        converted_euler_h_deg -= init_euler_h_deg;
-
-        comres += bno055_convert_float_euler_p_deg(&converted_euler_p_deg);
-
-        comres += bno055_convert_float_euler_r_deg(&converted_euler_r_deg);
-
-        float converted_gyro_rps_x = BNO055_INIT_VALUE;
-        float converted_gyro_rps_y = BNO055_INIT_VALUE;
-        float converted_gyro_rps_z = BNO055_INIT_VALUE;
-
-        comres += bno055_convert_float_gyro_x_rps(&converted_gyro_rps_x);
-        comres += bno055_convert_float_gyro_y_rps(&converted_gyro_rps_y);
-        comres += bno055_convert_float_gyro_z_rps(&converted_gyro_rps_z);
-
-        float converted_linear_accelX = BNO055_INIT_VALUE;
-        float converted_linear_accelY = BNO055_INIT_VALUE;
-        float converted_linear_accelZ = BNO055_INIT_VALUE;
-
-        comres += bno055_convert_float_linear_accel_x_msq(&converted_linear_accelX);
-
-        comres += bno055_convert_float_linear_accel_y_msq(&converted_linear_accelY);
-
-        comres += bno055_convert_float_linear_accel_z_msq(&converted_linear_accelZ);
-
-        if(converted_linear_accelX <= 0.09 && converted_linear_accelY <= 0.09)
-        {
-            converted_linear_accelX = 0.0;
-            converted_linear_accelY = 0.0;
-            m_velocityX += 0.0 * 0.1; // Δt = f_period * g_baseTick
-            m_velocityY += 0.0 * 0.1;
-            m_velocityZ += converted_linear_accelZ * 0.1;
-            m_velocityStationaryCounter += 1;
-            if (m_velocityStationaryCounter == 15)
-            {
-                m_velocityX = 0.0;
-                m_velocityY = 0.0;
-                m_velocityZ = 0.0;
+    void CImu::_run() {
+        if (!m_isActive) return;
+    
+        // 1) One-time timer setup
+        static Timer execTimer;
+        static bool timerStarted = false;
+        if (!timerStarted) {
+            execTimer.start();
+            timerStarted = true;
+        }
+        // Grab a single timestamp for both logic & msg
+        uint32_t ts_us = execTimer.read_us();
+    
+        // 2) Sensor reads + immediate error check
+        s32 res;
+        float yaw, pitch, roll;
+        float ax, ay, az;
+        float gx, gy, gz;
+    
+        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
+            return;  // abort on any error
+        }
+    
+        // 3) Normalize yaw into [0,360)
+        yaw -= init_euler_h_deg;
+        if (yaw < 0.0f)   yaw += 360.0f;
+        if (yaw >= 360.0f) yaw -= 360.0f;
+    
+        // 4) Velocity integration
+        constexpr float dt = /* e.g. */ 0.1f;  // replace with member dt = ticks * g_baseTick
+        if (fabsf(ax) <= 0.09f && fabsf(ay) <= 0.09f) {
+            // stationary in x/y
+            m_velocityStationaryCounter++;
+            if (m_velocityStationaryCounter >= 15) {
+                m_velocityX = m_velocityY = m_velocityZ = 0.0f;
                 m_velocityStationaryCounter = 0;
             }
-            
-        }
-        else{
-            m_velocityX += converted_linear_accelX * 0.1; // Δt = f_period * g_baseTick
-            m_velocityY += converted_linear_accelY * 0.1;
-            m_velocityZ += converted_linear_accelZ * 0.1;
+        } else {
             m_velocityStationaryCounter = 0;
+            m_velocityX += ax * dt;
+            m_velocityY += ay * dt;
+            m_velocityZ += az * dt;
         }
-
-        if(comres != BNO055_SUCCESS)
-        {
-            return;
-        }
-
-        // Keep values betweeen 0 and 360 degrees
-        if(converted_euler_h_deg > 360.0f) converted_euler_h_deg -= 360.0f;
-        if(converted_euler_h_deg < 0.0f) converted_euler_h_deg += 360.0f;
-
-        // snprintf(buffer, sizeof(buffer), "@7:%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
-        //     converted_euler_r_deg, converted_euler_p_deg, converted_euler_h_deg, converted_linear_accelX, converted_linear_accelY, converted_linear_accelZ, converted_gyro_rps_x, converted_gyro_rps_y, converted_gyro_rps_z);
-        // m_serial.write(buffer,strlen(buffer));
-        
-    }
-
-    /**
-     * FUNCTION ADDED BY MALO
-     * @brief returns the current YAW measured by the IMU
-     * Return value of 500 means there was an error
-     */
-    float CImu::getYaw()
-    {
-        if(!m_isActive) return 500;
-        s32 comres = BNO055_SUCCESS;
-
-        float converted_euler_h_deg = BNO055_INIT_VALUE;
-
-        comres += bno055_convert_float_euler_h_deg(&converted_euler_h_deg);
-        converted_euler_h_deg -= init_euler_h_deg;
-
-        if(comres != BNO055_SUCCESS)
-        {
-            return 500;
-        }
-
-        // Keep values betweeen 0 and 360 degrees
-        if(converted_euler_h_deg > 360.0f) converted_euler_h_deg -= 360.0f;
-        if(converted_euler_h_deg < 0.0f) converted_euler_h_deg += 360.0f;
-
-        return converted_euler_h_deg;
+    
+        // 5) Package into TelemetryMsg and enqueue
+        TelemetryMsg msg;
+        msg.type = PacketType::Imu;
+        msg.ts_us = ts_us;
+    
+        // scale and pack into fixed-point (see our earlier definitions)
+        msg.data.imu.yaw_h       = static_cast<int16_t>(yaw   * 100.0f);
+        msg.data.imu.pitch_h     = static_cast<int16_t>(pitch * 100.0f);
+        msg.data.imu.roll_h      = static_cast<int16_t>(roll  * 100.0f);
+        msg.data.imu.ax_mg       = static_cast<int16_t>(ax    * 1000.0f);
+        msg.data.imu.ay_mg       = static_cast<int16_t>(ay    * 1000.0f);
+        msg.data.imu.az_mg       = static_cast<int16_t>(az    * 1000.0f);
+        msg.data.imu.gx_mrs      = static_cast<int16_t>(gx    * 1000.0f);
+        msg.data.imu.gy_mrs      = static_cast<int16_t>(gy    * 1000.0f);
+        msg.data.imu.gz_mrs      = static_cast<int16_t>(gz    * 1000.0f);
+    
+        rb_push(msg);
     }
 
 }; // namespace periodics
