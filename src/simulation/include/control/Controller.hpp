@@ -34,6 +34,7 @@ class Controller {
 	int N = 40;
 	double factor = 1.0;
 	double T = 0.1 * factor;
+	double gazebo_z = 0.032940;
 	bool alive = true;
 	double car_radius = 0.15;
 	double wp_radius = 0.02;

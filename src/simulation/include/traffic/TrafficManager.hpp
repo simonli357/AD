@@ -31,6 +31,7 @@ class TrafficManager {
 	ros::NodeHandle &nh;
 	ros::ServiceClient &client;
 	std::unique_ptr<PathPlanner> planner;
+	double gazebo_z = 0.032940;
 
 	std::array<double, 4> spawn_area = {0, 0, 5.85, 7.50};
 

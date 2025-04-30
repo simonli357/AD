@@ -119,7 +119,7 @@ void Controller::move_car_to(double x, double y, double yaw) {
 	cmd.header.frame_id = "world";
 	cmd.pose.position.x = x;
 	cmd.pose.position.y = y;
-	cmd.pose.position.z = 0;
+	cmd.pose.position.z = gazebo_z;
 	tf2::Quaternion q;
 	q.setRPY(0, 0, yaw);
 	cmd.pose.orientation = tf2::toMsg(q);
