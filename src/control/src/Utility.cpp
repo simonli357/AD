@@ -234,7 +234,12 @@ void Utility::initialize() {
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
 
+    encoder_sub = nh.subscribe("/car1_encoder", 3, &Utility::encoder_callback, this);
     timerodom = ros::Time::now();
+}
+
+void Utility::encoder_callback(const utils::Encoder::ConstPtr& msg) {
+    encoder_speed = msg->speed;
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
