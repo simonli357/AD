@@ -40,6 +40,7 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Float32.h>
 #include <utils/Sign.h>
+#include <utils/encoder.h>
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -63,7 +64,7 @@ public:
 
     double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
     int stopline = -1;
-    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
+    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, encoder_speed, x_speed, y_speed;
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x0 = -1, y0 = -1, yaw0 = 0;
@@ -121,6 +122,7 @@ public:
     ros::Subscriber lane_sub;
     ros::Subscriber lane_center_offset_sub;
     ros::Subscriber sign_sub;
+    ros::Subscriber encoder_sub;
     ros::Subscriber waypoints_sub;
     std::vector<float> detected_objects;
     ros::Subscriber model_sub;
@@ -150,6 +152,7 @@ public:
     Eigen::MatrixXd lane_waypoints;
     void process_lane_data(const utils::Lane2& msg);
     void sign_callback(const utils::Sign::ConstPtr& msg);
+    void encoder_callback(const utils::encoder::ConstPtr& msg);
     void process_sign_data(const utils::Sign& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
@@ -361,7 +364,7 @@ public:
         vehicle_pos << x, y;
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
-        P_v[0] -= latency * velocity_command;
+        P_v[0] -= latency * encoder_speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;

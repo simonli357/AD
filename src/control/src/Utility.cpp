@@ -216,7 +216,12 @@ void Utility::initialize() {
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
 
+    encoder_sub = nh.subscribe("/car1/encoder", 3, &Utility::encoder_callback, this);
     timerodom = ros::Time::now();
+}
+
+void Utility::encoder_callback(const utils::encoder::ConstPtr& msg) {
+    encoder_speed = msg->speed;
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
@@ -404,7 +409,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
-    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, encoder_speed, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
@@ -646,7 +651,7 @@ void Utility::publish_odom() {
         yaw = fmod(yaw, 2 * M_PI);
 
         // update_states_rk4(velocity, steer_command);
-        update_states_rk4(velocity_command, steer_command);
+        update_states_rk4(encoder_speed, steer_command);
         {
             // std::lock_guard<std::mutex> lock(general_mutex);
             odomX += dx;
