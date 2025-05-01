@@ -8,6 +8,7 @@ class TerminalType(Enum):
     CAM = 4
     PATH = 5
     ROSCORE = 6
+    TRAFFIC = 7
 
 
 class OpenGLContextName(Enum):

@@ -63,7 +63,7 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
 	srv.request.model_state.model_name = car_name;
 	srv.request.model_state.pose.position.x = x;
 	srv.request.model_state.pose.position.y = y;
-	srv.request.model_state.pose.position.z = 0;
+	srv.request.model_state.pose.position.z = gazebo_z;
 	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
 	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
 	srv.request.model_state.reference_frame = "world";
