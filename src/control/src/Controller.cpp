@@ -950,7 +950,9 @@ public:
                 }
             }
         }
-        if (min_same_lane_dist > MAX_CAR_DIST) {
+        double max_car_dist = MAX_CAR_DIST;
+        if (on_highway) max_car_dist *= 1.25;
+        if (min_same_lane_dist > max_car_dist) {
             // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
             return;
         }
@@ -966,8 +968,10 @@ public:
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
         }
+        double min_dist_to_car = Tunable::min_dist_to_car;
+        if (on_highway) min_dist_to_car *= 1.5;
         // double static_distance = CAR_LENGTH * 2 + Tunable::min_dist_to_car * 2;
-        double static_distance = CAR_LENGTH * 1 + Tunable::min_dist_to_car * 2;
+        double static_distance = CAR_LENGTH * 1 + min_dist_to_car * 2;
         double ego_speed = 0.32;
         if (on_highway) ego_speed *= 1.33;
         car_speed = 0;
@@ -986,8 +990,6 @@ public:
         utils.debug("CHECK_CAR(): min_same_lane_dist: " + helper::d2str(min_same_lane_dist) + ", min_adj_lane_dist: " + helper::d2str(min_adj_lane_dist) + ", min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_adj_lane_lat_dist: " + helper::d2str(min_adj_lane_lat_dist) + ", relative_speed: " + helper::d2str(relative_speed) + ", static_distance: " + helper::d2str(static_distance) + ", total_distance: " + helper::d2str(total_distance) + ", ego_speed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed), 2);
         if (can_overtake) {
             stop_for(1.0);
-            double min_dist_to_car = Tunable::min_dist_to_car;
-            if (on_highway) min_dist_to_car *= 1.5;
             double start_dist = std::max(min_same_lane_dist - CAR_LENGTH, min_dist_to_car) - Tunable::min_dist_to_car;
             utils.update_states(x_current);
             closest_idx = PathManager::find_closest_waypoint(x_current);
