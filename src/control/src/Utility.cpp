@@ -19,7 +19,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
 #include <tf2/utils.h>
-#include <thread>
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -29,7 +28,6 @@
 #include <robot_localization/SetPose.h>
 #include <iostream>
 #include "Runs.h"
-#include "EgoCar.h"
 #include "PathManager.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
@@ -66,20 +64,32 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
-    boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-    msg_ptr = nullptr;
-    while (!msg_ptr) {
+    const size_t sample_count = 15;
+    double sum_x = 0.0, sum_y = 0.0;
+
+    for (size_t i = 0; i < sample_count; ++i) {
+        boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
         msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
+        if (!msg_ptr) {
+            ROS_WARN("GPS sample %zu timed out, retrying...", i+1);
+            --i;
+            continue;
+        }
+        sum_x += msg_ptr->pose.pose.position.x;
+        sum_y += msg_ptr->pose.pose.position.y;
     }
-    double x = msg_ptr->pose.pose.position.x;
-    double y = msg_ptr->pose.pose.position.y;
-    while(!imuInitialized) {
+
+    double avg_x = sum_x / static_cast<double>(sample_count);
+    double avg_y = sum_y / static_cast<double>(sample_count);
+
+    while (!imuInitialized) {
         ros::spinOnce();
     }
-    this->x0 = x;
-    this->y0 = y;
-    this->yaw0 = yaw;
-    pathName = "run189";
+
+    this->x0    = avg_x;
+    this->y0    = avg_y;
+    this->yaw0  = yaw;
+    pathName    = "run189";
 }
 
 void Utility::initialize() {
