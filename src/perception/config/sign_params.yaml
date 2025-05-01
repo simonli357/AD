@@ -9,7 +9,8 @@ ncnn_model: "sissi753-opt"
 # v8_model: "xinyi"
 # v8_model: "xenia"
 # v8_model: "lynn"
-v8_model: "jasmine"
+# v8_model: "jasmine"
+v8_model: "rebecca"
 emergency_thresh: 450 #mm
 emergency_width: 0.5
 emergency_height: 0.5
