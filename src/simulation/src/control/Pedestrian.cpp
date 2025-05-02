@@ -3,6 +3,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <random>
 #include <cmath>
+#include <thread>
 
 Pedestrian::Pedestrian(TrafficManager &traffic_manager, ros::NodeHandle &nh, std::string name) : traffic_manager(traffic_manager), nh(nh) {
 	this->pedestrian_name = name;
