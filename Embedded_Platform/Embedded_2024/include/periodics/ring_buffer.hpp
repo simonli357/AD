@@ -23,26 +23,19 @@ struct TelemetryMsg {
     uint32_t   ts_us;  ///< 4 bytes: timestamp in microseconds
     union {
         struct {
-            int16_t angle_hundredths;
+            int32_t angle_hundredths;
             int32_t speed_hundredths;  ///< deg/s × 100
         } encoder;
         struct {
-            int16_t yaw_h;    ///< deg × 100
-            int16_t pitch_h;  ///< deg × 100
-            int16_t roll_h;   ///< deg × 100
-            int16_t ax_mg;    ///< g × 1000
-            int16_t ay_mg;    ///< g × 1000
-            int16_t az_mg;    ///< g × 1000
-            int16_t gx_mrs;   ///< rad/s × 1000
-            int16_t gy_mrs;   ///< rad/s × 1000
-            int16_t gz_mrs;   ///< rad/s × 1000
+            int32_t yaw_h;    ///< deg × 100
+            int32_t pitch_h;  ///< deg × 100
         } imu;
     } data;
 };
 #pragma pack(pop)
 
 // Buffer size (must be a power of two for mask wrapping)
-static constexpr std::size_t RB_SIZE = 2056;
+static constexpr std::size_t RB_SIZE = 2048;
 
 /**
  * @brief Push a telemetry message into the ring buffer.

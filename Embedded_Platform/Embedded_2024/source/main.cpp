@@ -5,7 +5,7 @@
 const float g_baseTick = 0.0001; // seconds
 
 // Serial interface with the another device(like single board computer). It's an built-in class of mbed based on the UART communication, the inputs have to be transmitter and receiver pins. 
-UnbufferedSerial g_rpi(USBTX, USBRX, 115200);
+UnbufferedSerial g_rpi(USBTX, USBRX, 460800); // baud rate 460800
 
 // It's a task for blinking periodically the built-in led on the Nucleo board, signaling the code is uploaded on the nucleo.
 periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
@@ -14,7 +14,7 @@ periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 // periodics::CInstantConsumption g_instantconsumption(0.2 / g_baseTick, A2, g_rpi);
 
 // // It's a task for sending periodically the battery voltage, so to notice when discharging
-// periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
+periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
 
 // It's a task for sending periodically the IMU values
 periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
@@ -63,7 +63,7 @@ drivers::CSerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 utils::CTask* g_taskList[] = {
     &g_blinker,
     // &g_instantconsumption,
-    // &g_totalvoltage,
+    &g_totalvoltage,
     &g_imu,
     &g_robotstatemachine,
     // &g_velocityControlDuration,

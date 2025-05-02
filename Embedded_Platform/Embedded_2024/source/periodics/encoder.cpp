@@ -238,15 +238,15 @@ void CEncoder::_run() {
     // ————— 2) Read the filtered angle every tick
     float angleDeg = readAngleDegrees();
     float speedDeg = readAngularSpeed();
-    printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
+    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 
     // ————— 4) Package angle+speed into a TelemetryMsg and push
     {
         TelemetryMsg msg;
         msg.type   = PacketType::Encoder;
         msg.ts_us  = execTimer.read_us();
-        msg.data.encoder.angle_hundredths = static_cast<int16_t>(angleDeg);
-        msg.data.encoder.speed_hundredths = static_cast<int32_t>(speedDeg);
+        msg.data.encoder.angle_hundredths = static_cast<int32_t>(angleDeg * 100.0f);
+        msg.data.encoder.speed_hundredths = static_cast<int32_t>(speedDeg * 100.0f);
         rb_push(msg);
     }
 

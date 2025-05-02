@@ -59,7 +59,7 @@ namespace periodics{
         if(!m_isActive) return;
         char buffer[256];
         float l_rps = m_pin.read_u16()/7358.54;
-        snprintf(buffer, sizeof(buffer), "@5:%.1f;;\r\n", l_rps);
+        printf(buffer, sizeof(buffer), "@5:%.1f;;\r\n", l_rps);
         m_serial.write(buffer,strlen(buffer));
     }
 
