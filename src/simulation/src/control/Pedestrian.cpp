@@ -38,7 +38,8 @@ void Pedestrian::run() {
 		// Calculate pedestrian position.
 		double pedestrian_x = u.x + dist_from_car * std::cos(yaw);
 		double pedestrian_y = u.y + dist_from_car * std::sin(yaw);
-		move_pedestrian_to(pedestrian_x, pedestrian_y, yaw);
+        Vertex p = traffic_manager.planner->track.find_closest_node(pedestrian_x, pedestrian_y);
+		move_pedestrian_to(p.x, p.y, yaw);
 		ros::Duration(8.0).sleep();
 		hide_pedestrian();
 		double delay = delay_dist(rng);
