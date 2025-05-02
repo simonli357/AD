@@ -70,7 +70,7 @@ void SWLoadMsg::refresh() {
 	get_temperature();
 	get_heap_usage();
 	get_stack_usage();
-	cores_usage_length = ros::serialization::serializationLength(cores_usage);
+	cores_usage_length = ros::serialization::serializationLength(cores_usage.value());
 	ram_usage_length = sizeof(ram_usage);
 	temperature_length = sizeof(temperature);
 	heap_usage_length = sizeof(heap_usage);
