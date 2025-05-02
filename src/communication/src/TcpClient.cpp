@@ -358,7 +358,6 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
 	};
 	add_stream_task(std::move(fn));
-	run_sent = true;
 }
 
 // ------------------- //
