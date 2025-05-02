@@ -204,6 +204,7 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
+    int swload_counter = 0;
 	while (alive) {
 		if (!stream_tasks.empty() && tcp_can_send) {
 			std::any stream_task;
@@ -224,7 +225,10 @@ void TcpClient::send_data() {
 		if (!run_sent && send_run_callback) {
 			send_run_callback();
 		}
-		send_swload();
+        if (++swload_counter >= 5) {
+            send_swload();
+            swload_counter = 0;
+        }
 		std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
 }
