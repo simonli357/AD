@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SWLoadMsg.hpp"
+#include "msg/SWLoadMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
