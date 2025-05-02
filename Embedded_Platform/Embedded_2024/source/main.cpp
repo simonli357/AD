@@ -53,7 +53,7 @@ static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
 static Thread imuThread    (osPriorityNormal, 2048, nullptr, "imu");
 static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
 static Thread serialMonThread(osPriorityNormal,2048,nullptr,"serialMon");
-static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
+// static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
 void blinkerTask() {
     while (true) {
         g_blinker.run();
@@ -74,18 +74,18 @@ void encoderTask() {
 }
 void serialMonitorTask() {
     while (true) {
-        // g_serialMonitor.timerCallback();
-        // g_serialMonitor.run();
-        g_serialMonitor.poll();
+        g_serialMonitor.timerCallback();
+        g_serialMonitor.run();
+        // g_serialMonitor.poll();
         ThisThread::sleep_for(10ms);
     }
 }
-void stateMachineTask() {
-    while (true) {
-        g_robotstatemachine.run();
-        ThisThread::sleep_for(100ms);
-    }
-}
+// void stateMachineTask() {
+//     while (true) {
+//         g_robotstatemachine.run();
+//         ThisThread::sleep_for(100ms);
+//     }
+// }
 void startupMessage() {
     g_rpi.write("\r\n\r\n", 4);
     g_rpi.write("#################\r\n", 19);
@@ -106,6 +106,6 @@ int main()
     imuThread.start(imuTask);
     encoderThread.start(encoderTask);
     serialMonThread.start(serialMonitorTask);
-    stateMachineThread.start(stateMachineTask);
+    // stateMachineThread.start(stateMachineTask);
     ThisThread::sleep_for(osWaitForever);
 }
