@@ -17,7 +17,7 @@
 const float g_baseTick = 0.0001f; // seconds
 
 // Serial interface with the another device(like single board computer). It's an built-in class of mbed based on the UART communication, the inputs have to be transmitter and receiver pins. 
-UnbufferedSerial g_rpi(USBTX, USBRX, 115200);
+UnbufferedSerial g_rpi(USBTX, USBRX, 460800);
 
 periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 // periodics::CInstantConsumption g_instantconsumption(0.2 / g_baseTick, A2, g_rpi);
@@ -47,8 +47,6 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
     {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)}
 };
-
-// Create the serial monitor object, which decodes, redirects the messages and transmits the responses.
 drivers::CSerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
 static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
@@ -76,7 +74,9 @@ void encoderTask() {
 }
 void serialMonitorTask() {
     while (true) {
-        g_serialMonitor.run();
+        // g_serialMonitor.timerCallback();
+        // g_serialMonitor.run();
+        g_serialMonitor.poll();
         ThisThread::sleep_for(10ms);
     }
 }
@@ -92,44 +92,6 @@ void startupMessage() {
     g_rpi.write("#   I'm alive   #\r\n", 19);
     g_rpi.write("#################\r\n", 19);
     g_rpi.write("\r\n", 2);
-}
-
-utils::CTask* g_taskList[] = {
-    &g_blinker,
-    &g_imu,
-    &g_robotstatemachine,
-    &g_serialMonitor,
-    &g_encoder,
-}; 
-
-utils::CTaskManager g_taskManager(g_taskList, sizeof(g_taskList)/sizeof(utils::CTask*), g_baseTick);
-
-/**
- * @brief Setup function for initializing some objects and transmitting a startup message through the serial. 
- * 
- * @return uint32_t Error level codes error's type.
- */
-uint32_t setup()
-{
-    g_rpi.write("\r\n\r\n", 4);
-    g_rpi.write("#################\r\n", 19);
-    g_rpi.write("#               #\r\n", 19);
-    g_rpi.write("#   I'm alive   #\r\n", 19);
-    g_rpi.write("#               #\r\n", 19);
-    g_rpi.write("#################\r\n", 19);
-    g_rpi.write("\r\n", 2);
-    return 0;    
-}
-
-/**
- * @brief Loop function has aim to apply repeatedly task
- * 
- * @return uint32_t Error level codes error's type.
- */
-uint32_t loop()
-{
-    g_taskManager.mainCallback();
-    return 0;
 }
 
 /**
