@@ -470,13 +470,12 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-    SWLoadMsg msg;
-    std_msgs::Float64MultiArray cores_usage = msg.get_cores_usage();
-    float ram_usage = msg.get_ram_usage();
-    float temp = msg.get_temperature();
-    float heap = msg.get_heap_usage();
-    float stack = msg.get_stack_usage();
-    std::vector<uint8_t> bytes = SWLoadMsg(cores_usage, ram_usage, temp, heap, stack).serialize(udp_data_types[7]);
+    std_msgs::Float64MultiArray cores_usage = swload->get_cores_usage();
+    swload->get_ram_usage();
+    swload->get_temperature();
+    swload->get_heap_usage();
+    swload->get_stack_usage();
+    std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
     std::vector<uint8_t> segment(MAX_DGRAM, 0);
     std::memcpy(segment.data(), bytes.data(), bytes.size());
     sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));

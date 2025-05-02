@@ -11,7 +11,6 @@
 #include <regex>
 #include <sstream>
 #include <sys/resource.h>
-#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -89,7 +88,7 @@ std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 	return core_usages;
 }
 
-std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
+void SWLoadMsg::get_cores_usage() {
 	auto curr_stats = read_proc_stat();
 
 	std::vector<double> utilizations;
@@ -119,10 +118,10 @@ std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
 
 	std_msgs::Float64MultiArray result;
 	result.data = std::move(utilizations);
-	return result;
+    cores_usage = result;
 }
 
-float SWLoadMsg::get_ram_usage() {
+void SWLoadMsg::get_ram_usage() {
 	std::ifstream meminfo("/proc/meminfo");
 	std::string line;
 	long mem_total = 0;
@@ -139,13 +138,13 @@ float SWLoadMsg::get_ram_usage() {
 	}
 
 	if (mem_total <= 0 || mem_available < 0) {
-		return -1.0f; // Error value
+		return;
 	}
-
-	return static_cast<float>(mem_total - mem_available) / mem_total;
+    
+    ram_usage = static_cast<float>(mem_total - mem_available) / mem_total;
 }
 
-float SWLoadMsg::get_temperature() {
+void SWLoadMsg::get_temperature() {
 	// Check all hwmon devices
 	const std::string hwmon_dir = "/sys/class/hwmon";
 	for (const auto &entry : std::filesystem::directory_iterator(hwmon_dir)) {
@@ -172,7 +171,8 @@ float SWLoadMsg::get_temperature() {
 			try {
 				long temp_millic;
 				temp_file >> temp_millic;
-				return temp_millic / 1000.0f;
+				temperature = temp_millic / 1000.0f;
+                return;
 			} catch (...) {
 				continue;
 			}
@@ -191,15 +191,16 @@ float SWLoadMsg::get_temperature() {
 				std::ifstream temp_file(entry.path().string() + "/temp");
 				long temp_millic;
 				temp_file >> temp_millic;
-				return temp_millic / 1000.0f;
+                temperature = temp_millic / 1000.0f;
+                return;
 			}
 		}
 	}
 
-	return -1.0f; // No valid sensor found
+	temperature = -1.0f; // No valid sensor found
 }
 
-float SWLoadMsg::get_heap_usage() {
+void SWLoadMsg::get_heap_usage() {
 	// Get process memory stats from /proc/self/status
 	std::ifstream status_file("/proc/self/status");
 	std::string line;
@@ -220,12 +221,14 @@ float SWLoadMsg::get_heap_usage() {
 	vmhwm *= 1024;
 	vmsize *= 1024;
 
-	if (vmsize == 0)
-		return 0.0f;
-	return static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
+	if (vmsize == 0) {
+		heap_usage = 0.0f;
+        return;
+    }
+    heap_usage = static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
 }
 
-float SWLoadMsg::get_stack_usage() {
+void SWLoadMsg::get_stack_usage() {
 	// Get stack size limit
 	struct rlimit stack_limits;
 	getrlimit(RLIMIT_STACK, &stack_limits);
@@ -234,13 +237,13 @@ float SWLoadMsg::get_stack_usage() {
 	// Get current stack pointer (RSP for x86_64)
 	void *stack_ptr;
 
-#if defined(__x86_64__) || defined(__i386__)
-	asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
-#elif defined(__aarch64__)
-	asm volatile("mov %0, sp" : "=r"(stack_ptr));
-#else
-#error "Unsupported architecture"
-#endif
+    #if defined(__x86_64__) || defined(__i386__)
+        asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
+    #elif defined(__aarch64__)
+        asm volatile("mov %0, sp" : "=r"(stack_ptr));
+    #else
+    #error "Unsupported architecture"
+    #endif
 
 	// Get thread's stack base and size (corrected for downward-growing stacks)
 	pthread_attr_t attr;
@@ -256,5 +259,5 @@ float SWLoadMsg::get_stack_usage() {
 	// Used bytes = distance from current SP to stack high address
 	uintptr_t used_bytes = (uintptr_t)stack_high - (uintptr_t)stack_ptr;
 
-	return static_cast<float>(used_bytes) / actual_stack_size;
+	stack_usage = static_cast<float>(used_bytes) / actual_stack_size;
 }

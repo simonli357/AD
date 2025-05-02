@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SWLoadMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
@@ -10,6 +11,7 @@
 #include <any>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
 #include <sensor_msgs/Image.h>
@@ -90,6 +92,7 @@ class TcpClient {
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
+	std::unique_ptr<SWLoadMsg> swload = std::make_unique<SWLoadMsg>();
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;

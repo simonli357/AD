@@ -31,11 +31,11 @@ class SWLoadMsg : public Encoder {
 	std::unordered_map<int, CoreUsage> prev_stats_;
 	bool first_core_query_ = true;
 
-	std_msgs::Float64MultiArray get_cores_usage();
-	float get_ram_usage();
-	float get_temperature();
-	float get_heap_usage();
-	float get_stack_usage();
+	void get_cores_usage();
+	void get_ram_usage();
+	void get_temperature();
+	void get_heap_usage();
+	void get_stack_usage();
 
   private:
 	const size_t bytes_length = 4;
