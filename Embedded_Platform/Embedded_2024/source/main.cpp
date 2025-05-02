@@ -12,7 +12,7 @@ periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
 // periodics::CInstantConsumption g_instantconsumption(0.2 / g_baseTick, A2, g_rpi);
 
 // // task for sending periodically the battery voltage, so to notice when discharging
-// periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
+periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
 
 // task for sending periodically the IMU values
 periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
@@ -41,7 +41,7 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     // {"2",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSTEERcommand)},
     // {"3",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBRAKEcommand)},
     // {"4",mbed::callback(&g_motorCalibration,&periodics::CTotalVoltage::SpeedMotorCalibration)},
-    // {"5",mbed::callback(&g_totalvoltage,&periodics::CTotalVoltage::TotalPublisherCommand)},
+    {"5",mbed::callback(&g_totalvoltage,&periodics::CTotalVoltage::TotalPublisherCommand)},
     // {"6",mbed::callback(&g_instantconsumption,&periodics::CInstantConsumption ::InstantPublisherCommand)},
     {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
     // {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},

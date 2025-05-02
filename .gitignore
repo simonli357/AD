@@ -13,6 +13,7 @@ rf4/
 testParkCar/
 train640/
 datasets_bb/
+Embedded_Platform/Embedded_2024/mbed-os
 
 vcpkg/
 devel/
