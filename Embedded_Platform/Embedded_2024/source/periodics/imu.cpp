@@ -688,19 +688,8 @@ namespace periodics{
         float ax, ay, az;
         float gx, gy, gz;
         
-        if (bno055_get_float_euler_hpr_deg(&yaw, &pitch, &roll) != BNO055_SUCCESS) return;
-        if ((res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
-            return;  // abort on any error
-        }
-        // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+        // if (bno055_get_float_euler_hpr_deg(&yaw, &pitch, &roll) != BNO055_SUCCESS) return;
+        // if ((res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
@@ -708,6 +697,17 @@ namespace periodics{
         //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
+        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
+            return;  // abort on any error
+        }
         // if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
