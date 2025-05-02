@@ -225,7 +225,7 @@ void TcpClient::send_data() {
 		if (!run_sent && send_run_callback) {
 			send_run_callback();
 		}
-        if (++swload_counter >= 5) {
+        if (++swload_counter >= 20) {
             send_swload();
             swload_counter = 0;
         }
