@@ -6,6 +6,8 @@ static constexpr uint8_t SOF = 0xAA;
 
 namespace periodics {
 
+    #pragma pack(push,1)
+
     struct CombinedMsg {
         int16_t angle_hundredths;       // last encoder angle
         int32_t avg_speed_hundredths;   // average of all speeds
@@ -15,13 +17,16 @@ namespace periodics {
         int16_t gx_mrs, gy_mrs, gz_mrs;
     };
 
+    #pragma pack(pop)
+    static_assert(sizeof(CombinedMsg) == 24, "CombinedMsg must be 24 bytes");
+
     void CSerialPrinter::_run() {
         TelemetryMsg msg;
     
         // accumulators
-        int64_t sumSpeed = 0;
+        int32_t sumSpeed = 0;
         uint32_t countSpeed = 0;
-        int32_t lastAngle = 0;
+        int16_t lastAngle = 0;
         bool gotImu = false;
         decltype(msg.data.imu) lastImu = {};
     
@@ -70,11 +75,20 @@ namespace periodics {
         memcpy(crcBuf+2, &cmb, sizeof(cmb));
         uint16_t crc = computeCRC16(crcBuf, sizeof(crcBuf));
         uint8_t crcBytes[2] = { uint8_t(crc & 0xFF), uint8_t(crc >> 8) };
-        int16_t raw_h = cmb.avg_speed_hundredths;
+        int32_t raw_h = cmb.avg_speed_hundredths;
+        
+        // Debug print
         printf("[DBG] raw_h = %d  (bytes = 0x%04X)\n",
-                raw_h,
-                static_cast<uint16_t>(raw_h) & 0xFFFF);
-    
+            raw_h,
+            static_cast<uint32_t>(raw_h) & 0xFFFF);
+        printf("speed/PL = %d (bytes = 0x%04X)\n",
+                cmb.avg_speed_hundredths,
+                static_cast<uint32_t>(cmb.avg_speed_hundredths) & 0xFFFF);
+        printf("angle/PL = %d (bytes = 0x%04X)\n",
+                cmb.angle_hundredths,
+                static_cast<uint32_t>(cmb.angle_hundredths) & 0xFFFF);
+
+        printf("[PRT] Combined payload length = %u bytes\n", sizeof(cmb));
         m_serial.write(reinterpret_cast<const char*>(header), 3);
         m_serial.write(reinterpret_cast<const char*>(&cmb), sizeof(cmb));
         m_serial.write(reinterpret_cast<const char*>(crcBytes), 2);
