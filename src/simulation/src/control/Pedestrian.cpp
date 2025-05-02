@@ -17,9 +17,9 @@ Pedestrian::~Pedestrian() {
 }
 
 void Pedestrian::run() {
-	double dist_from_car = 1.0;
+	double dist_from_car = 2.0;
 	std::mt19937 rng(std::random_device{}());
-	std::uniform_real_distribution<> delay_dist(10.0, 15.0);
+	std::uniform_real_distribution<> delay_dist(10.0, 20.0);
 	while (ros::ok() && alive) {
 		double ego_x;
 		double ego_y;
