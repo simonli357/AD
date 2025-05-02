@@ -53,58 +53,51 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
     {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)}
 };
-
-// Create the serial monitor object, which decodes, redirects the messages and transmits the responses.
 drivers::CSerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
-// List of the task, each task will be applied their own periodicity, defined by the initializing the objects.
-utils::CTask* g_taskList[] = {
-    &g_blinker,
-    // &g_instantconsumption,
-    // &g_totalvoltage,
-    &g_imu,
-    &g_robotstatemachine,
-    // &g_velocityControlDuration,
-    &g_serialMonitor,
-    // &g_steeringDriver,
-    &g_encoder,
-    // &g_serialPrinter,
-}; 
-
-// Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 
-utils::CTaskManager g_taskManager(g_taskList, sizeof(g_taskList)/sizeof(utils::CTask*), g_baseTick);
-
-/**
- * @brief Setup function for initializing some objects and transmitting a startup message through the serial. 
- * 
- * @return uint32_t Error level codes error's type.
- */
-uint32_t setup()
-{
-    // g_rpi.format(
-    //     /* bits */ 8,
-    //     /* parity */ SerialBase::None,
-    //     /* stop bit */ 1
-    // );
+static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
+static Thread imuThread    (osPriorityNormal, 2048, nullptr, "imu");
+static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
+static Thread serialMonThread(osPriorityNormal,2048,nullptr,"serialMon");
+static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
+void blinkerTask() {
+    while (true) {
+        g_blinker.run();
+        ThisThread::sleep_for(500ms);
+    }
+}
+void imuTask() {
+    while (true) {
+        g_imu.run();
+        ThisThread::sleep_for(100ms);
+    }
+}
+void encoderTask() {
+    while (true) {
+        g_encoder.run();
+        ThisThread::sleep_for(10ms);
+    }
+}
+void serialMonitorTask() {
+    while (true) {
+        // g_serialMonitor.timerCallback();
+        // g_serialMonitor.run();
+        g_serialMonitor.poll();
+        ThisThread::sleep_for(10ms);
+    }
+}
+void stateMachineTask() {
+    while (true) {
+        g_robotstatemachine.run();
+        ThisThread::sleep_for(100ms);
+    }
+}
+void startupMessage() {
     g_rpi.write("\r\n\r\n", 4);
     g_rpi.write("#################\r\n", 19);
-    g_rpi.write("#               #\r\n", 19);
     g_rpi.write("#   I'm alive   #\r\n", 19);
-    g_rpi.write("#               #\r\n", 19);
     g_rpi.write("#################\r\n", 19);
     g_rpi.write("\r\n", 2);
-    return 0;    
-}
-
-/**
- * @brief Loop function has aim to apply repeatedly task
- * 
- * @return uint32_t Error level codes error's type.
- */
-uint32_t loop()
-{
-    g_taskManager.mainCallback();
-    return 0;
 }
 
 /**

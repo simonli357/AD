@@ -66,6 +66,7 @@ namespace drivers
         public:
             typedef mbed::Callback<void(char const *, char *)> FCallback;
             typedef std::map<string,FCallback> CSerialSubscriberMap;
+            void poll() { _run(); }
 
             CSerialMonitor(
                 UnbufferedSerial& f_serialPort,

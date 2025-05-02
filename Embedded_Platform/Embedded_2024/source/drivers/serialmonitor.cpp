@@ -121,6 +121,7 @@ namespace drivers{
                             {
                                 char l_resp[256]; // Initial response message
                                 l_pair->second(l_msg,l_resp); // Call the attached function with this parameters.
+                                printf("Seiralmonitor: Received command ID: %s, data: %s\n", l_msgID, l_msg);
                                 char formattedResp[256];
                                 if (strlen(l_resp) == 0)
                                 {
