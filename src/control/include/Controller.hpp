@@ -85,11 +85,8 @@ public:
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                std_srvs::SetBool::Request req;
-                std_srvs::SetBool::Response res;
-                req.data = started;
-                start_bool_callback(req, res);
-                utils.tcp_client->send_start_srv(true);
+                start_bool_callback(started);
+                utils.tcp_client->send_start_srv(started);
             }
         );
 
@@ -168,19 +165,15 @@ public:
         }
         return 1;
     }
-    bool start_bool_callback(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
+    bool start_bool_callback(bool started) {
         static int history = -1;
-        if (req.data && (state == STATE::INIT || state == STATE::DONE)) {
+        if (started && (state == STATE::INIT || state == STATE::DONE)) {
             initialize();
             start();
-            res.success = true;
-            res.message = "Started";
         } else {
             history = state;
             stop_for(10*T);
             change_state(STATE::INIT);
-            res.success = true;
-            res.message = "Stopped";
             stop_for(10*T);
         }
         return true;
