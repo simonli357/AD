@@ -775,7 +775,7 @@ namespace periodics{
         sum_exec   += elapsed_us;
         count_exec += 1;
     
-        constexpr uint32_t AVG_N = 200;
+        constexpr uint32_t AVG_N = 50;
 
         if (count_exec >= AVG_N) {
             uint32_t avg_exec     = sum_exec / AVG_N;

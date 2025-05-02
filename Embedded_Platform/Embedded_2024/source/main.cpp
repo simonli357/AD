@@ -61,14 +61,14 @@ drivers::CSerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 utils::CTask* g_taskList[] = {
     &g_blinker,
     // &g_instantconsumption,
-    &g_totalvoltage,
+    // &g_totalvoltage,
     &g_imu,
     &g_robotstatemachine,
     // &g_velocityControlDuration,
     &g_serialMonitor,
-    &g_steeringDriver,
+    // &g_steeringDriver,
     &g_encoder,
-    &g_serialPrinter,
+    // &g_serialPrinter,
 }; 
 
 // Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 

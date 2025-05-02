@@ -238,7 +238,13 @@ void CEncoder::_run() {
     // ————— 2) Read the filtered angle every tick
     float angleDeg = readAngleDegrees();
     float speedDeg = readAngularSpeed();
-    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
+
+    // Print every 10 executions
+    static int executionCount = 0;
+    executionCount++;
+    if (executionCount % 10 == 0) {
+        printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
+    }
 
     // ————— 4) Package angle+speed into a TelemetryMsg and push
     {

@@ -29,6 +29,13 @@ struct TelemetryMsg {
         struct {
             int32_t yaw_h;    ///< deg × 100
             int32_t pitch_h;  ///< deg × 100
+            int32_t roll_h;   ///< deg × 100
+            int32_t ax_mg;    ///< mg × 1000
+            int32_t ay_mg;    ///< mg × 1000
+            int32_t az_mg;    ///< mg × 1000
+            int32_t gx_mrs;   ///< mrs × 1000
+            int32_t gy_mrs;   ///< mrs × 1000
+            int32_t gz_mrs;   ///< mrs × 1000
         } imu;
     } data;
 };
