@@ -3903,15 +3903,16 @@ BNO055_RETURN_FUNCTION_TYPE bno055_convert_float_euler_h_deg(float *euler_h_f)
     BNO055_RETURN_FUNCTION_TYPE com_rslt = BNO055_ERROR;
     s16 reg_euler_h_s16 = BNO055_INIT_VALUE;
     float data_f = BNO055_INIT_VALUE;
-    u8 euler_unit_u8 = BNO055_INIT_VALUE;
+    // u8 euler_unit_u8 = BNO055_INIT_VALUE;
 
     /* Read the current Euler unit and set the
      * unit as degree if the unit is in radians */
-    com_rslt = bno055_get_euler_unit(&euler_unit_u8);
-    if (euler_unit_u8 != BNO055_EULER_UNIT_DEG)
-    {
-        com_rslt += bno055_set_euler_unit(BNO055_EULER_UNIT_DEG);
-    }
+    // com_rslt = bno055_get_euler_unit(&euler_unit_u8);
+    com_rslt = BNO055_SUCCESS;
+    // if (euler_unit_u8 != BNO055_EULER_UNIT_DEG)
+    // {
+    //     com_rslt += bno055_set_euler_unit(BNO055_EULER_UNIT_DEG);
+    // }
     if (com_rslt == BNO055_SUCCESS)
     {
         /* Read Euler raw h data*/
@@ -4096,15 +4097,16 @@ BNO055_RETURN_FUNCTION_TYPE bno055_convert_float_euler_p_deg(float *euler_p_f)
     BNO055_RETURN_FUNCTION_TYPE com_rslt = BNO055_ERROR;
     s16 reg_euler_p_f = BNO055_INIT_VALUE;
     float data_f = BNO055_INIT_VALUE;
-    u8 euler_unit_u8 = BNO055_INIT_VALUE;
+    // u8 euler_unit_u8 = BNO055_INIT_VALUE;
 
     /* Read the current Euler unit and set the
      * unit as degree if the unit is in radians */
-    com_rslt = bno055_get_euler_unit(&euler_unit_u8);
-    if (euler_unit_u8 != BNO055_EULER_UNIT_DEG)
-    {
-        com_rslt += bno055_set_euler_unit(BNO055_EULER_UNIT_DEG);
-    }
+    // com_rslt = bno055_get_euler_unit(&euler_unit_u8);
+    com_rslt = BNO055_SUCCESS;
+    // if (euler_unit_u8 != BNO055_EULER_UNIT_DEG)
+    // {
+    //     com_rslt += bno055_set_euler_unit(BNO055_EULER_UNIT_DEG);
+    // }
     if (com_rslt == BNO055_SUCCESS)
     {
         /* Read Euler raw p data*/

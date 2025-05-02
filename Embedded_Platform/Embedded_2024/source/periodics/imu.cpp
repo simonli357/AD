@@ -689,8 +689,10 @@ namespace periodics{
         // float ax, ay, az;
         // float gx, gy, gz;
     
-        // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS) {
+                return;
+            }
         //     (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
@@ -700,7 +702,7 @@ namespace periodics{
         //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
-        if (bno055_read_euler_h_p(&yaw, &pitch) != BNO055_SUCCESS) return;
+        // if (bno055_read_euler_h_p(&yaw, &pitch) != BNO055_SUCCESS) return;
     
         // 3) Normalize yaw into [0,360)
         yaw -= init_euler_h_deg;
