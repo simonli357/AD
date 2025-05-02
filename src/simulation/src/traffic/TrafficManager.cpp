@@ -1,5 +1,5 @@
 #include "TrafficManager.hpp"
-#include "Controller.hpp"
+#include "Car.hpp"
 #include "PathPlanner.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -12,13 +12,13 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
 	spawn_ego_car();
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
-	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
-	car4 = std::make_unique<Controller>(*this, nh, random_speed(), "car4");
-	car5 = std::make_unique<Controller>(*this, nh, random_speed(), "car5");
-	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
-	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
-	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
+	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car2");
+	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car3");
+	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car4");
+	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car5");
+	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car6");
+	car7 = std::make_unique<Car>(*this, nh, random_speed(), "car7");
+	car8 = std::make_unique<Car>(*this, nh, random_speed(), "car8");
 }
 
 TrafficManager::~TrafficManager() {}
