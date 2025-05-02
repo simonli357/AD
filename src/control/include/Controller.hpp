@@ -2,6 +2,7 @@
 #include <thread>
 #include <map>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <mutex>
 #include <chrono>
@@ -53,6 +54,49 @@ public:
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
+        
+        // set callbacks for tcp client
+        utils.tcp_client->set_send_run_callback(
+            [this]() {
+                utils.fetch_run_params();
+                utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
+            }
+        );
+
+        utils.tcp_client->set_go_to_cmd_callback(
+            [this](const std::vector<std::tuple<float, float>> &coords) {
+                utils::goto_command::Response res;
+                goto_multiple_command_callback(coords, res);
+                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+            }
+        );
+
+        utils.tcp_client->set_set_states_callback(
+            [this](double x, double y) {
+                utils::set_states::Request req;
+                utils::set_states::Response res;
+                req.x = x;
+                req.y = y;
+                set_states_callback(req, res);
+                utils.tcp_client->send_set_states_srv(true);
+            }
+        );
+
+        utils.tcp_client->set_start_callback(
+            [this](bool started) {
+                std_srvs::SetBool::Request req;
+                std_srvs::SetBool::Response res;
+                req.data = started;
+                start_bool_callback(req, res);
+                utils.tcp_client->send_start_srv(started);
+            }
+        );
+
+        utils.tcp_client->set_waypoints_callback(
+            [this](double x0, double y0, double yaw0) {
+                PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+            }
+        );
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -85,53 +129,6 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
 
-    void receive_services() {
-        while(true) {
-            if (utils.tcp_client == nullptr) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-                continue;
-            }
-            if (utils.tcp_client->tcp_can_send && !utils.tcp_client->run_sent) {
-                utils.fetch_run_params();
-                utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
-            }
-            if (utils.tcp_client->get_go_to_cmd_srv_msgs().size() > 0) {
-                std::vector<std::tuple<float, float>> coords = utils.tcp_client->get_go_to_cmd_srv_msgs().front()->coords;
-                utils::goto_command::Response res;
-                goto_multiple_command_callback(coords, res);
-                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
-                utils.tcp_client->get_go_to_cmd_srv_msgs().pop();
-            }
-            if (utils.tcp_client->get_set_states_srv_msgs().size() > 0) {
-                double x = utils.tcp_client->get_set_states_srv_msgs().front()->x;
-                double y = utils.tcp_client->get_set_states_srv_msgs().front()->y;
-                utils::set_states::Request req;
-                utils::set_states::Response res;
-                req.x = x;
-                req.y = y;
-                set_states_callback(req, res);
-                utils.tcp_client->send_set_states_srv(true);
-                utils.tcp_client->get_set_states_srv_msgs().pop();
-            }
-            if(utils.tcp_client->get_start_srv_msgs().size() > 0) {
-                std_srvs::SetBool::Request req;
-                std_srvs::SetBool::Response res;
-                req.data = utils.tcp_client->get_start_srv_msgs().front();
-                start_bool_callback(req, res);
-                utils.tcp_client->send_start_srv(true);
-                utils.tcp_client->get_start_srv_msgs().pop();
-            }
-            if(utils.tcp_client->get_waypoints_srv_msgs().size() > 0) {
-                double x0 = utils.tcp_client->get_waypoints_srv_msgs().front()->x0;
-                double y0 = utils.tcp_client->get_waypoints_srv_msgs().front()->y0;
-                double yaw0 = utils.tcp_client->get_waypoints_srv_msgs().front()->yaw0;
-                PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
-                utils.tcp_client->get_waypoints_srv_msgs().pop();
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        }
-    
-    }
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
@@ -1172,7 +1169,7 @@ public:
         return true;
     }
 
-    bool goto_multiple_command_callback(std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
+    bool goto_multiple_command_callback(const std::vector<std::tuple<float, float>> &coords, utils::goto_command::Response &res) {
         utils.update_states(x_current);
         if (!PathManager::call_go_to_multiple_service(x_current[0], x_current[1], x_current[2], coords)) {
             res.success = false;

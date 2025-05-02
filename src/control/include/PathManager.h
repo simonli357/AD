@@ -7,7 +7,6 @@
 #include "utils/helper.h"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_srvs/TriggerResponse.h"
-#include "utils/Point2D.h"
 #include "utils/constants.h"
 #include "utils/go_to.h"
 #include "utils/go_to_multiple.h"
@@ -17,7 +16,6 @@
 #include <cmath>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
-#include <thread>
 #include <vector>
 #include <string>
 #include <atomic>
@@ -84,7 +82,7 @@ inline void init(ros::NodeHandle& nh_, double T_, int N_, double v_ref_, const s
     go_to_client           = nh->serviceClient<utils::go_to>       ("/go_to");
     go_to_multiple_client  = nh->serviceClient<utils::go_to_multiple>("/go_to_multiple");
     trigger_client         = nh->serviceClient<std_srvs::Trigger>  ("/notify_params_updated");
-		path_manager_initialized = true;
+    path_manager_initialized = true;
 }
 
 inline void init(ros::NodeHandle& nh_) {
@@ -538,39 +536,34 @@ inline bool set_params(const std::shared_ptr<TcpClient>& tcp_client) {
 	nh->setParam("/state_refs", state_refs_v);
 	std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
 	nh->setParam("/state_attributes", state_attributes_v);
+
 	std_srvs::Trigger trigger_srv;
+    std::promise<std_srvs::TriggerResponse> prom;
+    std::future<std_srvs::TriggerResponse> fut = prom.get_future();
+
+    tcp_client->set_trigger_response_callback(
+        [&prom](const std_srvs::TriggerResponse &resp) {
+            prom.set_value(resp);
+        }
+    );
 
 	tcp_client->send_trigger(trigger_srv);
 	tcp_client->send_params(state_refs_v, state_attributes_v);
 
-	bool success = false;
-	size_t retries = 50;
-	size_t try_count = 0;
-	std::optional<std_srvs::TriggerResponse> response;
+    auto status = fut.wait_for(std::chrono::milliseconds(5000));
+    if (status != std::future_status::ready) {
+        ROS_ERROR("Timed out waiting for Python node notification.");
+        return false;
+    }
 
-	while (try_count < retries) {
-		if (tcp_client->get_trigger_msgs().size() > 0) {
-			response = tcp_client->get_trigger_msgs().front()->response;
-			tcp_client->get_trigger_msgs().pop();
-			success = true;
-			std::cout << "ROS node set params notification ack = success." << std::endl;
-			break;
-		}
-		try_count++;
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-
-	if (success) {
-		if (response.value().success) {
-			ROS_INFO("Python node notified successfully.");
-		} else {
-			ROS_WARN("Python node notification failed: %s", trigger_srv.response.message.c_str());
-		}
-	} else {
-		ROS_ERROR("Failed to call the notification service.");
-	}
-
-	return true;
+    std_srvs::TriggerResponse resp = fut.get();
+    if (resp.success) {
+        ROS_INFO("Python node notified successfully.");
+        return true;
+    } else {
+        ROS_WARN("Python node notification failed: %s", resp.message.c_str());
+        return false;
+    }
 }
 
 inline bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient>& tcp_client) {
@@ -643,7 +636,7 @@ inline bool call_go_to_service(double x, double y, double yaw, double dest_x, do
 	}
 }
 
-inline bool call_go_to_multiple_service(double x, double y, double yaw, std::vector<std::tuple<float, float>>& destinations) {
+inline bool call_go_to_multiple_service(double x, double y, double yaw, const std::vector<std::tuple<float, float>>& destinations) {
 	std_msgs::Float32MultiArray state_refs_in;
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;

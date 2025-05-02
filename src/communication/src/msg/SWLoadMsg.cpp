@@ -90,42 +90,36 @@ std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 }
 
 std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
-	hwloc_topology_t topology;
-	hwloc_topology_init(&topology);
-	hwloc_topology_load(topology);
-
-	// Get core count and OS indices
-	int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-	int cores = hwloc_get_nbobjs_by_depth(topology, depth);
-
-	// First measurement
-	auto prev_stats = read_proc_stat();
-	std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	auto curr_stats = read_proc_stat();
 
 	std::vector<double> utilizations;
-	for (int i = 0; i < cores; i++) {
-		hwloc_obj_t core = hwloc_get_obj_by_depth(topology, depth, i);
-		int os_index = core->os_index;
-
-		if (prev_stats.count(os_index) && curr_stats.count(os_index)) {
-			auto &prev = prev_stats[os_index];
-			auto &curr = curr_stats[os_index];
-
-			unsigned long long total_diff = curr.total - prev.total;
-			unsigned long long idle_diff = curr.idle - prev.idle;
-
-			if (total_diff > 0) {
-				double utilization = 1.0 * (total_diff - idle_diff) / total_diff;
-				utilizations.push_back(utilization);
+	if (first_core_query_) {
+		first_core_query_ = false;
+		prev_stats_ = curr_stats;
+		utilizations.resize(curr_stats.size(), 0.0);
+	} else {
+		for (auto &[core_id, curr] : curr_stats) {
+			auto it = prev_stats_.find(core_id);
+			if (it == prev_stats_.end()) {
+				utilizations.push_back(0.0);
+				continue;
 			}
+			auto &prev = it->second;
+			uint64_t total_diff = curr.total - prev.total;
+			uint64_t idle_diff = curr.idle - prev.idle;
+
+			double usage = 0.0;
+			if (total_diff > 0) {
+				usage = double(total_diff - idle_diff) / double(total_diff);
+			}
+			utilizations.push_back(usage);
 		}
+		prev_stats_ = std::move(curr_stats);
 	}
 
-	hwloc_topology_destroy(topology);
-	std_msgs::Float64MultiArray results;
-	results.data = utilizations;
-	return results;
+	std_msgs::Float64MultiArray result;
+	result.data = std::move(utilizations);
+	return result;
 }
 
 float SWLoadMsg::get_ram_usage() {

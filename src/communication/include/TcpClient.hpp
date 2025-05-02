@@ -1,10 +1,7 @@
 #pragma once
 
-#include "msg/ParamsMsg.hpp"
-#include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
-#include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
@@ -15,11 +12,11 @@
 #include <functional>
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
-#include <queue>
 #include <sensor_msgs/Image.h>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 using sensor_msgs::Image;
@@ -40,15 +37,6 @@ class TcpClient {
 	bool run_sent = false;
 	// Methods
 	void initialize();
-	// Storage
-	std::queue<std::string> &get_strings();
-	std::queue<std::unique_ptr<TriggerMsg>> &get_trigger_msgs();
-	std::queue<std::unique_ptr<ParamsMsg>> &get_params_msgs();
-	std::queue<std::unique_ptr<GoToSrv>> &get_go_to_srv_msgs();
-	std::queue<std::unique_ptr<GoToCmdSrv>> &get_go_to_cmd_srv_msgs();
-	std::queue<std::unique_ptr<SetStatesSrv>> &get_set_states_srv_msgs();
-	std::queue<std::unique_ptr<WaypointsSrv>> &get_waypoints_srv_msgs();
-	std::queue<bool> &get_start_srv_msgs();
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
@@ -73,6 +61,14 @@ class TcpClient {
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
 
+	// Callbacks
+	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
+	void set_trigger_response_callback(std::function<void(const std_srvs::TriggerResponse &)> cb) { trigger_response_callback = cb; }
+	void set_go_to_cmd_callback(std::function<void(const std::vector<std::tuple<float, float>> &)> cb) { go_to_cmd_callback = cb; }
+	void set_set_states_callback(std::function<void(double, double)> cb) { set_states_callback = cb; }
+	void set_start_callback(std::function<void(bool)> cb) { start_callback = cb; }
+	void set_waypoints_callback(std::function<void(double, double, double)> cb) { waypoints_callback = cb; }
+
   private:
 	// Fields
 	const uint16_t tcp_port = 49153;
@@ -91,22 +87,12 @@ class TcpClient {
 	int udp_socket;
 	std::thread receiver;
 	std::thread sender;
-	std::thread perfmon;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
-	// Storage
-	std::queue<std::string> strings;
-	std::queue<std::unique_ptr<TriggerMsg>> trigger_msgs;
-	std::queue<std::unique_ptr<ParamsMsg>> params_msgs;
-	std::queue<std::unique_ptr<GoToSrv>> go_to_srv_msgs;
-	std::queue<std::unique_ptr<GoToCmdSrv>> go_to_cmd_srv_msgs;
-	std::queue<std::unique_ptr<SetStatesSrv>> set_states_srv_msgs;
-	std::queue<std::unique_ptr<WaypointsSrv>> waypoints_srv_msgs;
-	std::queue<bool> start_srv_msgs;
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -118,11 +104,16 @@ class TcpClient {
 	void send_data();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
+	// Callbacks
+	std::function<void(const std_srvs::TriggerResponse &)> trigger_response_callback;
+	std::function<void(const std::vector<std::tuple<float, float>> &)> go_to_cmd_callback;
+	std::function<void(double, double)> set_states_callback;
+	std::function<void(bool)> start_callback;
+	std::function<void(double, double, double)> waypoints_callback;
+	std::function<void()> send_run_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
-	void parse_params_msg(std::vector<uint8_t> &bytes);
-	void parse_go_to_srv(std::vector<uint8_t> &bytes);
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);
 	void parse_waypoints_srv(std::vector<uint8_t> &bytes);
