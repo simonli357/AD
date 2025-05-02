@@ -175,6 +175,7 @@ float CEncoder::readAngularSpeed() {
     float alpha = tau_speed / (tau_speed + dt);
     speedIIR   = alpha * speedIIR + (1.0f - alpha) * speed;
     speed      = speedIIR;
+    speed = applyHampel(speed);
     // speed = clamp(speed, -MAX_PHYS, +MAX_PHYS);
     speed = applySpeedHysteresis(speed);
 
