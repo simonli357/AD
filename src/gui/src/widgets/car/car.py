@@ -245,7 +245,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 if label == "CAR":
                     speed = detected_data[i, road_msg_dict['speed']]
                     self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
-                    self.shader_renderer.text_renderer.render_text3D(f"SPEED: {speed:.2f}", x, y, 8, self.width(), self.height(), (0.6, 0.2, 1.0), self.proj_mat, self.view_mat)
+                    self.shader_renderer.text_renderer.render_text3D(f"SPEED: {speed:.2f}", x, y, 7.5, self.width(), self.height(), (0.6, 0.2, 1.0), self.proj_mat, self.view_mat)
                 elif label == "LIGHT" or label == "GREENLIGHT" or label == "REDLIGHT" or label == "YELLOWLIGHT":
                     self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
                 else:
