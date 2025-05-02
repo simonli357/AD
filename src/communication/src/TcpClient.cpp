@@ -221,6 +221,9 @@ void TcpClient::send_data() {
 			}
 			continue;
 		}
+        if (!run_sent && send_run_callback) {
+            send_run_callback();
+        }
         send_swload();
 		std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
@@ -491,12 +494,8 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		return;
 	}
 	if (decoded_string == "refresh_run") {
-        if (!send_run_callback) {
-            return;
-        }
 		run_sent = false;
 		std::cout << "Resending Run Parameters to GUI" << std::endl;
-        send_run_callback();
 		return;
 	}
 }
