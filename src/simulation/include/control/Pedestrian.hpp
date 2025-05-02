@@ -2,6 +2,7 @@
 #include "TrafficManager.hpp"
 #include <ros/node_handle.h>
 #include <string>
+#include <thread>
 
 class Pedestrian {
   public:
