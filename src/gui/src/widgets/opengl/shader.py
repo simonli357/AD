@@ -23,6 +23,7 @@ import time
 class ShaderRenderer:
     def __init__(self, ctx_name):
         self._start_time = time.perf_counter()
+        self.tiny_text_renderer = TextRenderer(12)
         self.text_renderer = TextRenderer(16)
         self.large_text_renderer = TextRenderer(48)
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
