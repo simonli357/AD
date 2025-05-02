@@ -2700,6 +2700,7 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_euler_p(s16 *euler_p_s16);
  */
 BNO055_RETURN_FUNCTION_TYPE bno055_read_euler_hrp(struct bno055_euler_t *euler);
 BNO055_RETURN_FUNCTION_TYPE bno055_get_euler_hrp(float *euler_h, float *euler_r, float *euler_p);
+BNO055_RETURN_FUNCTION_TYPE bno055_get_float_euler_hpr_deg(float *euler_h_f, float *euler_p_f, float *euler_r_f);
 
 /**************************************************/
 /**\name QUATERNION DATA READ FUNCTIONS */
