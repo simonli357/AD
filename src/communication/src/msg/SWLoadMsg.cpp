@@ -64,6 +64,20 @@ std::vector<uint8_t> SWLoadMsg::get_data() {
 	return data;
 }
 
+void SWLoadMsg::refresh() {
+	get_cores_usage();
+	get_ram_usage();
+	get_temperature();
+	get_heap_usage();
+	get_stack_usage();
+	cores_usage_length = ros::serialization::serializationLength(cores_usage);
+	ram_usage_length = sizeof(ram_usage);
+	temperature_length = sizeof(temperature);
+	heap_usage_length = sizeof(heap_usage);
+	stack_usage_length = sizeof(stack_usage);
+	data_length = cores_usage_length + ram_usage_length + temperature_length + heap_usage_length + stack_usage_length;
+}
+
 std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 	std::ifstream stat_file("/proc/stat");
 	std::string line;

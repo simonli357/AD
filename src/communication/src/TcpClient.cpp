@@ -32,7 +32,7 @@
 #include <vector>
 
 TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
-    swload = std::make_unique<SWLoadMsg>();
+	swload = std::make_unique<SWLoadMsg>();
 	create_udp_socket();
 	set_udp_data_types();
 	if (use_tcp) {
@@ -221,10 +221,10 @@ void TcpClient::send_data() {
 			}
 			continue;
 		}
-        if (!run_sent && send_run_callback) {
-            send_run_callback();
-        }
-        send_swload();
+		if (!run_sent && send_run_callback) {
+			send_run_callback();
+		}
+		send_swload();
 		std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
 }
@@ -470,15 +470,11 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-    swload->get_cores_usage();
-    swload->get_ram_usage();
-    swload->get_temperature();
-    swload->get_heap_usage();
-    swload->get_stack_usage();
-    std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
-    std::vector<uint8_t> segment(MAX_DGRAM, 0);
-    std::memcpy(segment.data(), bytes.data(), bytes.size());
-    sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	swload->refresh();
+	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
+	std::vector<uint8_t> segment(MAX_DGRAM, 0);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
@@ -516,29 +512,29 @@ void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
-    if (!set_states_callback) {
-        return;
-    }
-    auto msg = SetStatesSrv().deserialize(bytes); 
-    set_states_callback(msg->x, msg->y);
+	if (!set_states_callback) {
+		return;
+	}
+	auto msg = SetStatesSrv().deserialize(bytes);
+	set_states_callback(msg->x, msg->y);
 }
 
-void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) { 
-    if (!waypoints_callback) {
-        return;
-    }
-    auto msg = WaypointsSrv().deserialize(bytes); 
-    waypoints_callback(msg->x0, msg->y0, msg->yaw0);
+void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
+	if (!waypoints_callback) {
+		return;
+	}
+	auto msg = WaypointsSrv().deserialize(bytes);
+	waypoints_callback(msg->x0, msg->y0, msg->yaw0);
 }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
-    if (!start_callback) {
-        return;
-    }
+	if (!start_callback) {
+		return;
+	}
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "start") {
-        start_callback(true);
+		start_callback(true);
 	} else if (decoded_string == "stop") {
-        start_callback(false);
+		start_callback(false);
 	}
 }
