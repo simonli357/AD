@@ -1,41 +1,35 @@
-#include <main.hpp>
+#include <mbed.h>
+#include <periodics/blinker.hpp>
+#include <periodics/imu.hpp>
+// #include <drivers/bno055_c.hpp>
+#include <periodics/instantconsumption.hpp>
+#include <periodics/totalvoltage.hpp>
+#include <drivers/velocitycontrolduration.hpp>
+#include <drivers/serialmonitor.hpp>
+#include <brain/robotstatemachine.hpp>
+#include <utils/taskmanager.hpp>
+#include <utils/task.hpp>
+#include <drivers/steeringmotor.hpp>
+#include <periodics/encoder.hpp>
+#include <periodics/serialPrinter.hpp>
+#include "rtos.h"
 
-const float g_baseTick = 0.0001; // seconds
+const float g_baseTick = 0.0001f; // seconds
 
 // Serial interface with the another device(like single board computer). It's an built-in class of mbed based on the UART communication, the inputs have to be transmitter and receiver pins. 
 UnbufferedSerial g_rpi(USBTX, USBRX, 115200);
 
-// task for blinking periodically the built-in led on the Nucleo board, signaling the code is uploaded on the nucleo.
 periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
-
-// // task for sending periodically the instant current consumption of the battery
 // periodics::CInstantConsumption g_instantconsumption(0.2 / g_baseTick, A2, g_rpi);
-
-// // task for sending periodically the battery voltage, so to notice when discharging
 periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
-
-// task for sending periodically the IMU values
 periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
-
-// Task for controlling the encoder
 periodics::CEncoder g_encoder(0.01/g_baseTick, g_baseTick, g_rpi, D2);
-
-//PIN for a motor speed in ms, inferior and superior limit
 drivers::CSpeedingMotor g_speedingDriver(0.1/g_baseTick,g_rpi,D3, g_encoder); //speed in cm/s
-
-//PIN for angle in servo degrees, inferior and superior limit
 drivers::CSteeringMotor g_steeringDriver(0.1 / g_baseTick, g_rpi, D4, g_imu, g_speedingDriver);
-
-// Task responsible for configuring the vehicle's speed and steering over a specified duration.
 // drivers::CVelocityControlDuration g_velocityControlDuration(0.1/g_baseTick, g_steeringDriver, g_speedingDriver);
-
-// Create the motion controller, which controls the robot states and the robot moves based on the transmitted command over the serial interface. 
 brain::CRobotStateMachine g_robotstatemachine(0.1/g_baseTick, g_rpi, g_steeringDriver, g_speedingDriver);
+// periodics::CSerialPrinter g_serialPrinter(0.1/g_baseTick, g_rpi);
 
-//Create task for the serial printer, which sends the telemetry data over the serial interface.
-periodics::CSerialPrinter g_serialPrinter(0.1/g_baseTick, g_rpi);
-
-// Map for redirecting messages with the key and the callback functions. If the message key equals to one of the enumerated keys, than it will be applied the paired callback function.
 drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
     // {"1",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSPEEDcommand)},
     // {"2",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSTEERcommand)},
@@ -57,21 +51,57 @@ drivers::CSerialMonitor::CSerialSubscriberMap g_serialMonitorSubscribers = {
 // Create the serial monitor object, which decodes, redirects the messages and transmits the responses.
 drivers::CSerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
-// List of the task, each task will be applied their own periodicity, defined by the initializing the objects.
+static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
+static Thread imuThread    (osPriorityNormal, 2048, nullptr, "imu");
+static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
+static Thread serialMonThread(osPriorityNormal,2048,nullptr,"serialMon");
+static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
+void blinkerTask() {
+    while (true) {
+        g_blinker.run();
+        ThisThread::sleep_for(500ms);
+    }
+}
+void imuTask() {
+    while (true) {
+        g_imu.run();
+        ThisThread::sleep_for(100ms);
+    }
+}
+void encoderTask() {
+    while (true) {
+        g_encoder.run();
+        ThisThread::sleep_for(10ms);
+    }
+}
+void serialMonitorTask() {
+    while (true) {
+        g_serialMonitor.run();
+        ThisThread::sleep_for(10ms);
+    }
+}
+void stateMachineTask() {
+    while (true) {
+        g_robotstatemachine.run();
+        ThisThread::sleep_for(100ms);
+    }
+}
+void startupMessage() {
+    g_rpi.write("\r\n\r\n", 4);
+    g_rpi.write("#################\r\n", 19);
+    g_rpi.write("#   I'm alive   #\r\n", 19);
+    g_rpi.write("#################\r\n", 19);
+    g_rpi.write("\r\n", 2);
+}
+
 utils::CTask* g_taskList[] = {
     &g_blinker,
-    // &g_instantconsumption,
-    // &g_totalvoltage,
     &g_imu,
     &g_robotstatemachine,
-    // &g_velocityControlDuration,
     &g_serialMonitor,
-    &g_steeringDriver,
     &g_encoder,
-    &g_serialPrinter,
 }; 
 
-// Create the task manager, which applies periodically the tasks, miming a parallelism. It needs the list of task and the time base in seconds. 
 utils::CTaskManager g_taskManager(g_taskList, sizeof(g_taskList)/sizeof(utils::CTask*), g_baseTick);
 
 /**
@@ -81,11 +111,6 @@ utils::CTaskManager g_taskManager(g_taskList, sizeof(g_taskList)/sizeof(utils::C
  */
 uint32_t setup()
 {
-    // g_rpi.format(
-    //     /* bits */ 8,
-    //     /* parity */ SerialBase::None,
-    //     /* stop bit */ 1
-    // );
     g_rpi.write("\r\n\r\n", 4);
     g_rpi.write("#################\r\n", 19);
     g_rpi.write("#               #\r\n", 19);
@@ -114,11 +139,11 @@ uint32_t loop()
  */
 int main() 
 {
-    uint32_t  l_errorLevel = setup(); 
-    while(!l_errorLevel) 
-    {
-        l_errorLevel = loop();
-    }
-    // g_rpi.write("exiting with code: %ld",l_errorLevel, 1);
-    return l_errorLevel;
+    startupMessage();
+    blinkerThread.start(blinkerTask);
+    imuThread.start(imuTask);
+    encoderThread.start(encoderTask);
+    serialMonThread.start(serialMonitorTask);
+    stateMachineThread.start(stateMachineTask);
+    ThisThread::sleep_for(osWaitForever);
 }
