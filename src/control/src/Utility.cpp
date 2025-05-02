@@ -19,7 +19,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
 #include <tf2/utils.h>
-#include <thread>
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -29,7 +28,6 @@
 #include <robot_localization/SetPose.h>
 #include <iostream>
 #include "Runs.h"
-#include "EgoCar.h"
 #include "PathManager.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
@@ -66,20 +64,42 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
-    boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-    msg_ptr = nullptr;
-    while (!msg_ptr) {
-        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
+    const size_t sample_count = 15;
+    std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
+    samples.reserve(sample_count);
+
+    auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+        if (samples.size() < sample_count) {
+            samples.push_back(msg);
+        }
+    };
+
+    ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
+
+    ros::Rate rate(100);
+    while (ros::ok() && samples.size() < sample_count) {
+        ros::spinOnce();
+        rate.sleep();
     }
-    double x = msg_ptr->pose.pose.position.x;
-    double y = msg_ptr->pose.pose.position.y;
-    while(!imuInitialized) {
+
+    sub.shutdown();
+
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& m : samples) {
+        sum_x += m->pose.pose.position.x;
+        sum_y += m->pose.pose.position.y;
+    }
+    double avg_x = sum_x / static_cast<double>(samples.size());
+    double avg_y = sum_y / static_cast<double>(samples.size());
+
+    while (!imuInitialized) {
         ros::spinOnce();
     }
-    this->x0 = x;
-    this->y0 = y;
+
+    this->x0   = avg_x;
+    this->y0   = avg_y;
     this->yaw0 = yaw;
-    pathName = "run189";
+    pathName    = "run189";
 }
 
 void Utility::initialize() {

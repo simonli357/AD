@@ -40,6 +40,7 @@
 #include <drivers/BNO055.hpp>
 /* Header file for the task manager library, which  applies periodically the fun function of it's children*/
 #include <utils/task.hpp>
+#include "ring_buffer.hpp"  // TelemetryMsg, PacketType, rb_push
 
 namespace periodics
 {
@@ -69,7 +70,7 @@ namespace periodics
             /* Serial callback implementation */
             void ImuPublisherCommand(char const * a, char * b);
             // YAW retrieval method
-            virtual float getYaw();
+            // virtual float getYaw();
             
         private:
             /*I2C init routine */
