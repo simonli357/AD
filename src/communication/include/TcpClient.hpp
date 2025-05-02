@@ -92,7 +92,7 @@ class TcpClient {
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
-	std::unique_ptr<SWLoadMsg> swload = std::make_unique<SWLoadMsg>();
+	std::unique_ptr<SWLoadMsg> swload;
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;

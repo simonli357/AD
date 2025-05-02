@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <hwloc.h>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
@@ -31,6 +32,7 @@
 #include <vector>
 
 TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
+    swload = std::make_unique<SWLoadMsg>();
 	create_udp_socket();
 	set_udp_data_types();
 	if (use_tcp) {
