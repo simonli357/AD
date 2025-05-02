@@ -100,6 +100,7 @@ void Utility::fetch_run_params() {
     this->y0   = avg_y;
     this->yaw0 = yaw;
     pathName    = "run189";
+    debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
 
 void Utility::initialize() {
@@ -238,6 +239,7 @@ void Utility::initialize() {
 
     encoder_sub = nh.subscribe("/car1/encoder", 3, &Utility::encoder_callback, this);
     timerodom = ros::Time::now();
+    debug("Utility::initialize(): successful.", 1);
 }
 
 void Utility::encoder_callback(const utils::encoder::ConstPtr& msg) {

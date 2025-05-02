@@ -61,6 +61,8 @@ namespace periodics{
         float l_rps = m_pin.read_u16()/7358.54;
         snprintf(buffer, sizeof(buffer), "@5:%.1f;;\r\n", l_rps);
         m_serial.write(buffer,strlen(buffer));
+        // debug
+        printf("CTotalVoltage::_run: voltage = %.1f\r\n", l_rps);
     }
 
 }; // namespace periodics
