@@ -50,7 +50,6 @@ public:
         std::cout << "rate: " << rateVal << std::endl;
         goto_command_server = nh.advertiseService("/goto_command", &StateMachine::goto_command_callback, this);
         set_states_server = nh.advertiseService("/set_states", &StateMachine::set_states_callback, this);
-        start_trigger = nh.advertiseService("/start_bool", &StateMachine::start_bool_callback, this);
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
@@ -179,7 +178,6 @@ public:
         return true;
         
     }
-    ros::ServiceServer start_trigger;
     void solve();
     void publish_commands();
     void update_mpc_states();
