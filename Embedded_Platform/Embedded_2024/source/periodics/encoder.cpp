@@ -293,7 +293,7 @@ void CEncoder::_run() {
         sum_interval_us  = 0;
         count_interval   = 0;
     }
-    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
+    printf("[Encoder Run] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 }
 
 } // namespace periodics

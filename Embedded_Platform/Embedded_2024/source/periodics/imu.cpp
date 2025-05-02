@@ -750,47 +750,7 @@ namespace periodics{
         // msg.data.imu.gz_mrs      = static_cast<int16_t>(gz    * 1000.0f);
     
         rb_push(msg);
-
-        printf("[IMU] Yaw: %6.2f, Pitch: %7.2f\n",
-               yaw, pitch);
-
-        // ————— 5) Mark end of execution and accumulate for average print
-        uint32_t end_us     = execTimer.read_us();
-        uint32_t elapsed_us = end_us - ts_us;
-    
-        static uint64_t sum_exec   = 0;
-        static uint32_t count_exec = 0;
-        static uint64_t sum_interval_us = 0;
-        static uint32_t count_interval  = 0;
-        static uint32_t prevStart_us    = 0;
-    
-        // Accumulate period statistics (unchanged)
-        if (prevStart_us != 0) {
-            uint32_t delta_start = ts_us - prevStart_us;
-            sum_interval_us += delta_start;
-            count_interval++;
-        }
-        prevStart_us = ts_us;
-    
-        sum_exec   += elapsed_us;
-        count_exec += 1;
-    
-        constexpr uint32_t AVG_N = 50;
-
-        if (count_exec >= AVG_N) {
-            uint32_t avg_exec     = sum_exec / AVG_N;
-            uint32_t avg_interval = (count_interval > 0)
-                                      ? static_cast<uint32_t>(sum_interval_us / count_interval)
-                                      : 0;
-    
-            printf("\n[IMU] avg exec = %u µs, avg period = %u µs over %u runs\n",
-                   avg_exec, avg_interval, AVG_N);
-    
-            sum_exec         = 0;
-            count_exec       = 0;
-            sum_interval_us  = 0;
-            count_interval   = 0;
-        }
+        printf("[Imu Run] yaw: %.2f\n", yaw);
     }
 
 }; // namespace periodics
