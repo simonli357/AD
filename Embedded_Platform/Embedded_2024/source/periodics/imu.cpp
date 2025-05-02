@@ -743,8 +743,8 @@ namespace periodics{
     
         rb_push(msg);
 
-        // printf("[IMU] Yaw: %6.2f\n",
-        //        yaw);
+        printf("[IMU] Yaw: %6.2f, Pitch: %7.2f\n",
+               yaw, pitch);
 
         // ————— 5) Mark end of execution and accumulate for average print
         uint32_t end_us     = execTimer.read_us();
