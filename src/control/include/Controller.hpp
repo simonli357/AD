@@ -89,7 +89,7 @@ public:
                 std_srvs::SetBool::Response res;
                 req.data = started;
                 start_bool_callback(req, res);
-                utils.tcp_client->send_start_srv(started);
+                utils.tcp_client->send_start_srv(true);
             }
         );
 
