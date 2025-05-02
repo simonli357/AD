@@ -67,12 +67,10 @@ namespace drivers
             typedef mbed::Callback<void(char const *, char *)> FCallback;
             typedef std::map<string,FCallback> CSerialSubscriberMap;
 
-            /* Constructor */
             CSerialMonitor(
                 UnbufferedSerial& f_serialPort,
                 CSerialSubscriberMap f_serialSubscriberMap
             );
-            /* Destructor */
             ~CSerialMonitor();
         private:
             /* Rx callback actions */
@@ -94,8 +92,8 @@ namespace drivers
             array<char,256>::iterator m_parseIt;
             /** @brief Serial subscriber */
             CSerialSubscriberMap m_serialSubscriberMap;
-    }; // class CSerialMonitor
+    };
 
-}; // namespace drivers
+};
 
-#endif // SERIAL_MONITOR_HPP
+#endif
