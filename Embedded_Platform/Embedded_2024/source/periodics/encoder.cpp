@@ -246,7 +246,7 @@ void CEncoder::_run() {
         msg.type   = PacketType::Encoder;
         msg.ts_us  = execTimer.read_us();
         msg.data.encoder.angle_hundredths = static_cast<int16_t>(angleDeg);
-        msg.data.encoder.speed_hundredths = static_cast<int16_t>(speedDeg);
+        msg.data.encoder.speed_hundredths = static_cast<int32_t>(speedDeg);
         rb_push(msg);
     }
 
