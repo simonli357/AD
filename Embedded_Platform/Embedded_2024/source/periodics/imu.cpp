@@ -697,20 +697,20 @@ namespace periodics{
         //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
-        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
-            return;  // abort on any error
-        }
-        // if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
+        // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
+        if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
+            return;  // abort on any error
+        }
     
         // 3) Normalize yaw into [0,360)
         yaw -= init_euler_h_deg;
@@ -718,20 +718,20 @@ namespace periodics{
         if (yaw >= 360.0f) yaw -= 360.0f;
     
         // 4) Velocity integration
-        constexpr float dt = /* e.g. */ 0.1f;  // replace with member dt = ticks * g_baseTick
-        if (fabsf(ax) <= 0.09f && fabsf(ay) <= 0.09f) {
-            // stationary in x/y
-            m_velocityStationaryCounter++;
-            if (m_velocityStationaryCounter >= 15) {
-                m_velocityX = m_velocityY = m_velocityZ = 0.0f;
-                m_velocityStationaryCounter = 0;
-            }
-        } else {
-            m_velocityStationaryCounter = 0;
-            m_velocityX += ax * dt;
-            m_velocityY += ay * dt;
-            m_velocityZ += az * dt;
-        }
+        // constexpr float dt = /* e.g. */ 0.1f;  // replace with member dt = ticks * g_baseTick
+        // if (fabsf(ax) <= 0.09f && fabsf(ay) <= 0.09f) {
+        //     // stationary in x/y
+        //     m_velocityStationaryCounter++;
+        //     if (m_velocityStationaryCounter >= 15) {
+        //         m_velocityX = m_velocityY = m_velocityZ = 0.0f;
+        //         m_velocityStationaryCounter = 0;
+        //     }
+        // } else {
+        //     m_velocityStationaryCounter = 0;
+        //     m_velocityX += ax * dt;
+        //     m_velocityY += ay * dt;
+        //     m_velocityZ += az * dt;
+        // }
     
         // 5) Package into TelemetryMsg and enqueue
         TelemetryMsg msg;
@@ -741,13 +741,13 @@ namespace periodics{
         // scale and pack into fixed-point (see our earlier definitions)
         msg.data.imu.yaw_h       = static_cast<int16_t>(yaw   * 100.0f);
         msg.data.imu.pitch_h     = static_cast<int16_t>(pitch * 100.0f);
-        msg.data.imu.roll_h      = static_cast<int16_t>(roll  * 100.0f);
-        msg.data.imu.ax_mg       = static_cast<int16_t>(ax    * 1000.0f);
-        msg.data.imu.ay_mg       = static_cast<int16_t>(ay    * 1000.0f);
-        msg.data.imu.az_mg       = static_cast<int16_t>(az    * 1000.0f);
-        msg.data.imu.gx_mrs      = static_cast<int16_t>(gx    * 1000.0f);
-        msg.data.imu.gy_mrs      = static_cast<int16_t>(gy    * 1000.0f);
-        msg.data.imu.gz_mrs      = static_cast<int16_t>(gz    * 1000.0f);
+        // msg.data.imu.roll_h      = static_cast<int16_t>(roll  * 100.0f);
+        // msg.data.imu.ax_mg       = static_cast<int16_t>(ax    * 1000.0f);
+        // msg.data.imu.ay_mg       = static_cast<int16_t>(ay    * 1000.0f);
+        // msg.data.imu.az_mg       = static_cast<int16_t>(az    * 1000.0f);
+        // msg.data.imu.gx_mrs      = static_cast<int16_t>(gx    * 1000.0f);
+        // msg.data.imu.gy_mrs      = static_cast<int16_t>(gy    * 1000.0f);
+        // msg.data.imu.gz_mrs      = static_cast<int16_t>(gz    * 1000.0f);
     
         rb_push(msg);
     }
