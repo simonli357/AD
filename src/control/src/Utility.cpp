@@ -65,30 +65,40 @@ void Utility::initialize_tcp_client() {
 
 void Utility::fetch_run_params() {
     const size_t sample_count = 15;
-    double sum_x = 0.0, sum_y = 0.0;
+    std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
+    samples.reserve(sample_count);
 
-    for (size_t i = 0; i < sample_count; ++i) {
-        boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
-        if (!msg_ptr) {
-            ROS_WARN("GPS sample %zu timed out, retrying...", i+1);
-            --i;
-            continue;
+    auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+        if (samples.size() < sample_count) {
+            samples.push_back(msg);
         }
-        sum_x += msg_ptr->pose.pose.position.x;
-        sum_y += msg_ptr->pose.pose.position.y;
+    };
+
+    ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
+
+    ros::Rate rate(100);
+    while (ros::ok() && samples.size() < sample_count) {
+        ros::spinOnce();
+        rate.sleep();
     }
 
-    double avg_x = sum_x / static_cast<double>(sample_count);
-    double avg_y = sum_y / static_cast<double>(sample_count);
+    sub.shutdown();
+
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& m : samples) {
+        sum_x += m->pose.pose.position.x;
+        sum_y += m->pose.pose.position.y;
+    }
+    double avg_x = sum_x / static_cast<double>(samples.size());
+    double avg_y = sum_y / static_cast<double>(samples.size());
 
     while (!imuInitialized) {
         ros::spinOnce();
     }
 
-    this->x0    = avg_x;
-    this->y0    = avg_y;
-    this->yaw0  = yaw;
+    this->x0   = avg_x;
+    this->y0   = avg_y;
+    this->yaw0 = yaw;
     pathName    = "run189";
 }
 
