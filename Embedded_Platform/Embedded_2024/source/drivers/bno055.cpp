@@ -1741,6 +1741,22 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_euler_p(s16 *euler_p_s16)
     return com_rslt;
 }
 
+BNO055_RETURN_FUNCTION_TYPE bno055_get_euler_hrp(float *h, float *r, float *p)
+{
+    BNO055_RETURN_FUNCTION_TYPE com_rslt = BNO055_ERROR;
+    struct bno055_euler_t euler;
+
+    com_rslt = bno055_read_euler_hrp(&euler);
+    if (com_rslt == BNO055_SUCCESS)
+    {
+        *h = (float)euler.h / 16.0f;
+        *r = (float)euler.r / 16.0f;
+        *p = (float)euler.p / 16.0f;
+    }
+
+    return com_rslt;
+}
+
 /*!
  *  @brief This API reads Euler data hrp values
  *  from register 0x1A to 0x1F it is a six byte data
