@@ -3286,20 +3286,6 @@ BNO055_RETURN_FUNCTION_TYPE bno055_convert_float_gyro_xyz_rps(struct bno055_gyro
 /********************************************************************/
 
 /*!
- *  @brief  Read both Euler heading (h) and pitch (p) in one burst read
- *          and convert to degrees.
- *
- *  @param  euler_h_deg  Pointer to store heading in degrees.
- *  @param  euler_p_deg  Pointer to store pitch in degrees.
- *
- *  @return Result of bus communication
- *  @retval BNO055_SUCCESS (0) on success
- *  @retval BNO055_ERROR   (1) on error
- */
-BNO055_RETURN_FUNCTION_TYPE bno055_read_euler_h_p(float *euler_h_deg,
-    float *euler_p_deg);
-    
-/*!
  *  @brief This API is used to convert the Euler h raw data
  *  to degree output as float
  *
