@@ -231,7 +231,7 @@ namespace drivers{
     };
 
     void CSteeringMotor::setYaw(){
-        imu_yaw = m_imu.getYaw();
+        // imu_yaw = m_imu.getYaw();
     };
 
     void CSteeringMotor::setPID(float f_proportional, float f_integral, float f_derivative){

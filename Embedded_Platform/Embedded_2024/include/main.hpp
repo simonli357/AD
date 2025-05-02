@@ -53,3 +53,5 @@
 #include <drivers/steeringmotor.hpp>
 // Header file for the encoder functionality
 #include <periodics/encoder.hpp>
+//Header file for printing the serial data
+#include <periodics/serialPrinter.hpp>
