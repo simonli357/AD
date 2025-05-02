@@ -470,7 +470,7 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-    std_msgs::Float64MultiArray cores_usage = swload->get_cores_usage();
+    swload->get_cores_usage();
     swload->get_ram_usage();
     swload->get_temperature();
     swload->get_heap_usage();
