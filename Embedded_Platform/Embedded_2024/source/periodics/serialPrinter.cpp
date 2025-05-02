@@ -91,9 +91,9 @@ namespace periodics {
         //         static_cast<uint32_t>(cmb.angle_hundredths) & 0xFFFF);
 
         // printf("[PRT] Combined payload length = %u bytes\n", sizeof(cmb));
-        m_serial.write(reinterpret_cast<const char*>(header), 3);
-        m_serial.write(reinterpret_cast<const char*>(&cmb), sizeof(cmb));
-        m_serial.write(reinterpret_cast<const char*>(crcBytes), 2);
+        // m_serial.write(reinterpret_cast<const char*>(header), 3);
+        // m_serial.write(reinterpret_cast<const char*>(&cmb), sizeof(cmb));
+        // m_serial.write(reinterpret_cast<const char*>(crcBytes), 2);
 
         // ————— 5) Mark end of execution and accumulate for average print
         uint32_t end_us     = execTimer.read_us();
