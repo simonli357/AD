@@ -19,7 +19,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2/impl/utils.h>
 #include <tf2/utils.h>
-#include <thread>
 #include <vector>
 #include <array>
 #include <eigen3/Eigen/Dense>
@@ -29,7 +28,6 @@
 #include <robot_localization/SetPose.h>
 #include <iostream>
 #include "Runs.h"
-#include "EgoCar.h"
 #include "PathManager.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
@@ -66,38 +64,43 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
-    boost::shared_ptr<const geometry_msgs::PoseWithCovarianceStamped> msg_ptr;
-    msg_ptr = nullptr;
-    while (!msg_ptr) {
-        msg_ptr = ros::topic::waitForMessage<geometry_msgs::PoseWithCovarianceStamped>("/gps", nh, ros::Duration(5));
-    }
-    double x = msg_ptr->pose.pose.position.x;
-    double y = msg_ptr->pose.pose.position.y;
-    double z = msg_ptr->pose.pose.position.z;
+    const size_t sample_count = 15;
+    std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
+    samples.reserve(sample_count);
 
-    std::vector<std::array<std::any, 5>> runs_with_info;
-    while(!imuInitialized) {
+    auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+        if (samples.size() < sample_count) {
+            samples.push_back(msg);
+        }
+    };
+
+    ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
+
+    ros::Rate rate(100);
+    while (ros::ok() && samples.size() < sample_count) {
+        ros::spinOnce();
+        rate.sleep();
+    }
+
+    sub.shutdown();
+
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& m : samples) {
+        sum_x += m->pose.pose.position.x;
+        sum_y += m->pose.pose.position.y;
+    }
+    double avg_x = sum_x / static_cast<double>(samples.size());
+    double avg_y = sum_y / static_cast<double>(samples.size());
+
+    while (!imuInitialized) {
         ros::spinOnce();
     }
-    for (auto &run : Runs::runs) {
-        double dx = x - run.x;
-        double dy = y - run.y;
-        double dist = std::sqrt(dx*dx + dy*dy);
-        double yaw_diff = helper::compare_yaw(yaw, run.yaw);
-        // ROS_INFO("%.3f, %.3f, %.3f", yaw_diff, run.yaw, yaw);
-        if(yaw_diff < 40.0 / 180 * M_PI) {
-            runs_with_info.push_back({run.x, run.y, run.yaw, run.path, dist});
-        }
-    }
-    
-    std::sort(runs_with_info.begin(), runs_with_info.end(), [](const std::array<std::any, 5>& a, const std::array<std::any, 5>& b) {
-        return std::any_cast<double>(a[4]) < std::any_cast<double>(b[4]);
-    });
 
-    this->x0 = std::any_cast<double>(runs_with_info[0][0]);
-    this->y0 = std::any_cast<double>(runs_with_info[0][1]);
-    this->yaw0 = std::any_cast<double>(runs_with_info[0][2]);
-    pathName = std::any_cast<std::string>(runs_with_info[0][3]);
+    this->x0   = avg_x;
+    this->y0   = avg_y;
+    this->yaw0 = yaw;
+    pathName    = "run189";
+    debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
 
 void Utility::initialize() {
@@ -234,7 +237,13 @@ void Utility::initialize() {
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
 
+    encoder_sub = nh.subscribe("/car1/encoder", 3, &Utility::encoder_callback, this);
     timerodom = ros::Time::now();
+    debug("Utility::initialize(): successful.", 1);
+}
+
+void Utility::encoder_callback(const utils::encoder::ConstPtr& msg) {
+    encoder_speed = msg->speed;
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
@@ -422,11 +431,11 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
-    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, encoder_speed, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
-        if(dist > 3.0 || dist < 0.6) continue;
+        if(dist > 4.0 || dist < 0.3) continue;
         auto type = static_cast<OBJECT>(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id]);
         double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
         bool found_same = false;
@@ -487,9 +496,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
             } else {
                 double object_yaw = ego_yaw;
                 if (type == OBJECT::CAR) {
-                    int closest_index = PathManager::find_closest_waypoint2(world_states, 0.15);
+                    int closest_index = PathManager::find_closest_waypoint2(world_states, 0.25);
                     if (closest_index >= 0) {
-                        object_yaw = PathManager::state_refs(closest_index, 2);
+                        object_yaw = PathManager::state_refs_original(closest_index, 2);
                         // debug("Sign Callback()!!: new CAR detected at (" +
                         //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
                         //     "), closest waypoint: " + std::to_string(closest_index) + ", object_yaw: " +
@@ -664,7 +673,7 @@ void Utility::publish_odom() {
         yaw = fmod(yaw, 2 * M_PI);
 
         // update_states_rk4(velocity, steer_command);
-        update_states_rk4(velocity_command, steer_command);
+        update_states_rk4(encoder_speed, steer_command);
         {
             // std::lock_guard<std::mutex> lock(general_mutex);
             odomX += dx;

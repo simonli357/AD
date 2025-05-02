@@ -54,7 +54,7 @@ inline ros::ServiceClient go_to_client;
 inline ros::ServiceClient go_to_multiple_client;
 inline ros::ServiceClient trigger_client;
 
-inline Eigen::MatrixXd state_refs;
+inline Eigen::MatrixXd state_refs, state_refs_original;
 inline Eigen::MatrixXd input_refs;
 inline Eigen::MatrixXd normals;
 inline Eigen::MatrixXd left_turn_states;
@@ -349,6 +349,44 @@ inline int change_lane(int start_idx, int end_idx, bool shift_right = false, dou
          = state_refs.block(end_idx,0,tail,3);
 
     state_refs.swap(M);
+
+		// Eigen::MatrixXd normals_new(new_n, 2);
+    // if (start_idx > 0)
+    //     normals_new.block(0, 0, start_idx, 2) = normals.block(0, 0, start_idx, 2);
+    // for (int i = 0; i < (int)densified_nrm.size(); ++i)
+    //     normals_new.row(start_idx + i) = densified_nrm[i].transpose();
+    // int tail = old_n - end_idx;
+    // if (tail > 0)
+    //     normals_new.block(start_idx + densified_nrm.size(), 0, tail, 2)
+    //         = normals.block(end_idx, 0, tail, 2);
+    // normals.swap(normals_new);
+
+    Eigen::MatrixXd inputs_new(new_n, input_refs.cols());
+		if (start_idx > 0) {
+				inputs_new.block(0, 0, start_idx, input_refs.cols())
+						= input_refs.block(0, 0, start_idx, input_refs.cols());
+		}
+		for (int i = 0; i < (int)densified.size(); ++i) {
+				inputs_new.row(start_idx + i) = input_refs.row(start_idx);
+		}
+		tail = old_n - end_idx;
+		if (tail > 0) {
+				inputs_new.block(start_idx + densified.size(), 0, tail, input_refs.cols())
+						= input_refs.block(end_idx, 0, tail, input_refs.cols());
+		}
+		input_refs.swap(inputs_new);
+
+    Eigen::VectorXd attrs_new(new_n);
+    if (start_idx > 0)
+        attrs_new.segment(0, start_idx) = state_attributes.segment(0, start_idx);
+    for (int i = 0; i < (int)densified.size(); ++i) {
+        attrs_new[start_idx + i] = state_attributes[start_idx];
+    }
+    if (tail > 0)
+        attrs_new.segment(start_idx + densified.size(), tail)
+            = state_attributes.segment(end_idx, tail);
+    state_attributes.swap(attrs_new);
+
 		for (size_t k = intersection_index; k < intersection_state_refs_indices.size(); ++k) {
 			// these are all intersections we haven’t reached yet,
 			// and by assumption theyre after the lane‐change window
@@ -372,7 +410,7 @@ inline int find_closest_waypoint2(
   const Eigen::Vector2d& pt,
   double threshold = 0.1)
 {
-  const int M = state_refs.rows();
+  const int M = state_refs_original.rows();
   if (M == 0) return -1;
 
   const double thr2 = threshold * threshold;
@@ -380,8 +418,8 @@ inline int find_closest_waypoint2(
   double bestDist2 = thr2;  // only accept < thr2
 
   for (int i = 0; i < M; ++i) {
-    double dx    = state_refs(i, 0) - pt.x();
-    double dy    = state_refs(i, 1) - pt.y();
+    double dx    = state_refs_original(i, 0) - pt.x();
+    double dy    = state_refs_original(i, 1) - pt.y();
     double dist2 = dx*dx + dy*dy;
 
     if (dist2 < bestDist2) {
@@ -389,6 +427,9 @@ inline int find_closest_waypoint2(
       bestIdx   = i;
     }
   }
+	// if (bestIdx < 0) {
+	// 	std::cout << "WARNING: PathManager::find_closest_waypoint2(): car pose: " << pt.transpose() << ", min distance: " << std::sqrt(bestDist2) << ", bestIdx: " << bestIdx << std::endl;
+	// }
   return bestIdx;
 }
 
@@ -547,6 +588,7 @@ inline bool call_waypoint_service(double x, double y, double yaw, const std::sha
 	int N = state_refs_v.size() / 3;
 	state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
 	remove_large_yaw_jump();
+	state_refs_original = state_refs;
 	input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
 	state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
 	normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
@@ -585,6 +627,7 @@ inline bool call_go_to_service(double x, double y, double yaw, double dest_x, do
 		int N = state_refs_v.size() / 3;
 		state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
 		remove_large_yaw_jump();
+		state_refs_original = state_refs;
 		input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
 		state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
 		normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
@@ -616,6 +659,7 @@ inline bool call_go_to_multiple_service(double x, double y, double yaw, std::vec
 	int N = state_refs_v.size() / 3;
 	state_refs = Eigen::Map<Eigen::MatrixXd>(state_refs_v.data(), 3, N).transpose();
 	remove_large_yaw_jump();
+	state_refs_original = state_refs;
 	input_refs = Eigen::Map<Eigen::MatrixXd>(input_refs_v.data(), 2, N).transpose();
 	state_attributes = Eigen::Map<Eigen::VectorXd>(wp_attributes_v.data(), N);
 	normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();

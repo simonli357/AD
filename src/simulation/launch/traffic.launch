@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="simulation" type="traffic" name="$(anon traffic)" output="screen"> 
+  </node>
+</launch>

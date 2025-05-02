@@ -8,23 +8,26 @@ import yaml
 ATTRIBUTES = ["normal", "crosswalk", "intersection", "oneway", "highwayLeft", "highwayRight", "roundabout", "stopline", "dotted", "dotted_crosswalk"]
 
 class GlobalPlanner:
-    def __init__(self, noright=False):
+    def __init__(self, noright=True):
         self.hw_safety_offset = 0.05#0.1
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
         if noright:
             self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
+            # self.G = nx.read_graphml(self.current_dir + '/../src/persistence/track.graphml')
         else:
             self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+            self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
             x = data.get('x', 0.0)  # Default value 0.0 if 'x' is missing
-            if 502 <= int(node) <= 521:
-                y = data.get('y', 0.0) + self.hw_safety_offset
-            elif 483 <= int(node) <= 502:
-                y = data.get('y', 0.0) - self.hw_safety_offset
-            else:
-                y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
+            # if 502 <= int(node) <= 521:
+            #     y = data.get('y', 0.0) + self.hw_safety_offset
+            # elif 483 <= int(node) <= 502:
+            #     y = data.get('y', 0.0) - self.hw_safety_offset
+            # else:
+            #     y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
+            y = data.get('y', 0.0)  # Default value 0.0 if 'y' is missing
             self.pos[node] = (x, 13.786 - y)
             self.attribute[node] = data.get('new_attribute', 0)
         

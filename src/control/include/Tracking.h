@@ -84,7 +84,7 @@ public:
     }
 
     virtual ~RoadObject() {
-        OBJECT_COUNT.fetch_sub(1);
+        /* OBJECT_COUNT.fetch_sub(1); */
     }
 
     virtual bool is_same_object(double new_x, double new_y) const {

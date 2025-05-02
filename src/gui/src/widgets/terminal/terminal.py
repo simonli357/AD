@@ -40,6 +40,9 @@ class TerminalWidget(QtWidgets.QWidget):
         # Roscore
         self.roscore_display = None
         self.roscore_process = None
+        # Traffic
+        self.traffic_display = None
+        self.traffic_process = None
         self.setup_ui()
         self.connect_signals()
         self.setStyleSheet("""
@@ -66,6 +69,8 @@ class TerminalWidget(QtWidgets.QWidget):
             self.halt_process(self.roscore_process, True)
         if self.sim_process is not None:
             self.halt_process(self.sim_process, True)
+        if self.traffic_process is not None:
+            self.halt_process(self.traffic_process, True)
 
     def setup_ui(self) -> None:
         buttons = QWidget()
@@ -73,14 +78,16 @@ class TerminalWidget(QtWidgets.QWidget):
         self.button_wrapper.setContentsMargins(0, 0, 0, 0)
         self.buttons = deque()
         self.debug_btn = QtWidgets.QPushButton(' debug')
-        self.sim_btn = QtWidgets.QPushButton('󰘨 simulator')
-        self.controller_btn = QtWidgets.QPushButton('󱡸 controller')
-        self.cam_btn = QtWidgets.QPushButton('  camera')
+        self.sim_btn = QtWidgets.QPushButton('󰘨 sim')
+        self.controller_btn = QtWidgets.QPushButton('󱡸 control')
+        self.cam_btn = QtWidgets.QPushButton('  cam')
         self.path_planner_btn = QtWidgets.QPushButton('  planner')
+        self.traffic_btn = QtWidgets.QPushButton('󱠪 traffic')
         self.roscore_btn = QtWidgets.QPushButton(' roscore')
         self.buttons.append(self.debug_btn)
         self.buttons.append(self.roscore_btn)
         self.buttons.append(self.sim_btn)
+        self.buttons.append(self.traffic_btn)
         self.buttons.append(self.path_planner_btn)
         self.buttons.append(self.cam_btn)
         self.buttons.append(self.controller_btn)
@@ -191,6 +198,7 @@ class TerminalWidget(QtWidgets.QWidget):
         self.cam_btn.clicked.connect(self.handle_cam_btn_click)
         self.path_planner_btn.clicked.connect(self.handle_path_planner_btn_click)
         self.roscore_btn.clicked.connect(self.handle_roscore_btn_click)
+        self.traffic_btn.clicked.connect(self.handle_traffic_btn_click)
 
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
@@ -225,12 +233,14 @@ class TerminalWidget(QtWidgets.QWidget):
         self.activate_button(self.cam_btn, TerminalType.CAM in self.terminals)
         self.activate_button(self.path_planner_btn, TerminalType.PATH in self.terminals)
         self.activate_button(self.roscore_btn, TerminalType.ROSCORE in self.terminals)
+        self.activate_button(self.traffic_btn, TerminalType.TRAFFIC in self.terminals)
         self.update_button_style(self.debug_btn, current_terminal_type == TerminalType.DEBUG)
         self.update_button_style(self.sim_btn, current_terminal_type == TerminalType.SIM)
         self.update_button_style(self.controller_btn, current_terminal_type == TerminalType.CONTROL)
         self.update_button_style(self.cam_btn, current_terminal_type == TerminalType.CAM)
         self.update_button_style(self.path_planner_btn, current_terminal_type == TerminalType.PATH)
         self.update_button_style(self.roscore_btn, current_terminal_type == TerminalType.ROSCORE)
+        self.update_button_style(self.traffic_btn, current_terminal_type == TerminalType.TRAFFIC)
 
     def find_widget_index(self, term_type):
         if term_type not in self.terminals:
@@ -274,6 +284,8 @@ class TerminalWidget(QtWidgets.QWidget):
             self.halt_process(self.path_process)
         elif current_terminal_type == TerminalType.ROSCORE:
             self.halt_process(self.roscore_process)
+        elif current_terminal_type == TerminalType.TRAFFIC:
+            self.halt_process(self.traffic_process)
 
     def halt_process(self, process, show_loading=False):
         if process and process.state() == QProcess.Running:
@@ -301,6 +313,8 @@ class TerminalWidget(QtWidgets.QWidget):
             self.stop_path_process()
         elif current_terminal_type == TerminalType.ROSCORE:
             self.stop_roscore_process()
+        elif current_terminal_type == TerminalType.TRAFFIC:
+            self.stop_traffic_process()
 
     ################
     # Compile
@@ -552,6 +566,58 @@ class TerminalWidget(QtWidgets.QWidget):
             self.kill_process(self.path_process, self.path_display, TerminalType.PATH)
             self.path_process = None
             self.path_display = None
+
+    ################
+    # Traffic
+    ################
+
+    def handle_traffic_btn_click(self):
+        current_terminal_type = self.get_current_terminal_type()
+        if current_terminal_type == TerminalType.TRAFFIC:
+            return
+        if self.traffic_display is None:
+            modal = SSHFormWidget(TerminalType.TRAFFIC)
+            modal.exec()
+            cmd = modal.get_cmd()
+            if cmd is None:
+                return
+            self.create_traffic_display()
+            self.set_terminal(TerminalType.TRAFFIC)
+            self.start_traffic_process(cmd)
+        else:
+            self.set_terminal(TerminalType.TRAFFIC)
+
+    def create_traffic_display(self):
+        self.traffic_display = QtWidgets.QTextEdit()
+        self.traffic_display.setReadOnly(True)
+        self.stacked_widget.addWidget(self.traffic_display)
+
+    def read_traffic_output(self):
+        stdout = self.traffic_process.readAllStandardOutput().data().decode()
+        if stdout:
+            self.traffic_display.append(stdout.strip())
+
+    def read_traffic_err_output(self):
+        stderr = self.traffic_process.readAllStandardError().data().decode()
+        if stderr:
+            self.traffic_display.append(stderr.strip())
+
+    def start_traffic_process(self, cmd):
+        self.traffic_process = QProcess(self)
+        self.traffic_process.readyReadStandardOutput.connect(self.read_traffic_output)
+        self.traffic_process.readyReadStandardError.connect(self.read_traffic_err_output)
+        self.traffic_process.start('bash', ['-c', cmd])
+
+    def stop_traffic_process(self):
+        if hasattr(self, 'traffic_process') and self.traffic_process:
+            try:
+                self.traffic_process.readyReadStandardOutput.disconnect()
+                self.traffic_process.readyReadStandardError.disconnect()
+            except Exception as e:
+                print(e)
+            self.kill_process(self.traffic_process, self.traffic_display, TerminalType.TRAFFIC)
+            self.traffic_process = None
+            self.traffic_display = None
 
     ################
     # Roscore

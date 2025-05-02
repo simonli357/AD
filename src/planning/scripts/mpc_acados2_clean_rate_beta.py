@@ -16,7 +16,6 @@ from acados_template import AcadosModel
 import time
 import yaml
 import argparse
-from pathlib import Path
 
 class Optimizer(object):
     def __init__(self, name = None, x0 = None):
@@ -25,24 +24,24 @@ class Optimizer(object):
 
         if name is None:
             name = 'run107'
-        # self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
-        # self.num_waypoints = self.path.num_waypoints
-        # self.density = self.path.density
-        # self.state_refs = self.path.state_refs
-        # self.input_refs = self.path.input_refs
+        self.path = Path(v_ref = self.v_ref, N = self.N, T = self.T, name=name, x0=x0)
+        self.num_waypoints = self.path.num_waypoints
+        self.density = self.path.density
+        self.state_refs = self.path.state_refs
+        self.input_refs = self.path.input_refs
         
         self.rdb_circumference = 3.95
         
         self.density = 1.0/0.1/0.32
-        current_dir = Path(__file__).resolve().parent
-        state_refs_txt_path = current_dir / 'state_refs.txt'
-        self.state_refs = np.loadtxt(state_refs_txt_path)
-        input_refs_txt_path = current_dir / 'input_refs.txt'
-        self.input_refs = np.loadtxt(input_refs_txt_path)
+        # current_dir = Path(__file__).resolve().parent
+        # state_refs_txt_path = current_dir / 'state_refs.txt'
+        # self.state_refs = np.loadtxt(state_refs_txt_path)
+        # input_refs_txt_path = current_dir / 'input_refs.txt'
+        # self.input_refs = np.loadtxt(input_refs_txt_path)
         
-        self.num_waypoints = self.state_refs.shape[0]
-        print("ref state shape1: ", self.state_refs.shape, ", num waypoints: ", self.num_waypoints)
-        print("input state shape1: ", self.input_refs.shape)
+        # self.num_waypoints = self.state_refs.shape[0]
+        # print("ref state shape1: ", self.state_refs.shape, ", num waypoints: ", self.num_waypoints)
+        # print("input state shape1: ", self.input_refs.shape)
         
         # np.savetxt('/home/slsecret/AD/src/planning/scripts/state_refs.txt', self.state_refs, fmt='%.3f')
         self.waypoints_x = self.state_refs[:,0]

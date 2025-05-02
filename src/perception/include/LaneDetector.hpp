@@ -329,10 +329,10 @@ class LaneDetector {
 	}
 
 	double pixel_to_meter_y(double pixel) { 
-		return pixel * pixel_to_meter_y_slope + pixel_to_meter_y_intercept; 
+		return pixel * METER_PER_PIXEL_X;
 	}
 	double meter_to_pixel_y(double meter) { 
-		return meter * meter_to_pixel_y_slope + meter_to_pixel_y_intercept; 
+		return meter / METER_PER_PIXEL_X;
 	}
 	
 	double get_derivative(double y, const VectorXd &coeffs) {
@@ -477,7 +477,6 @@ class LaneDetector {
 		cv::cvtColor(inputImage, outputImage, cv::COLOR_BGR2GRAY); // Convert to grayscale
 		cv::GaussianBlur(outputImage, outputImage, cv::Size(5, 5), 0); // Apply Gaussian blur
 
-		// Apply adaptive thresholding
 		static bool first;
 		static int adaptive_threshold_block_size = 199;
 		static int adaptive_threshold_c = -20;
@@ -588,9 +587,8 @@ class LaneDetector {
 			int H = binaryIPM.rows, W = binaryIPM.cols;
 			int y0 = static_cast<int>((1.0f - ROI_FRACTION - FRACTION_FROM_BOT) * H);
 			int height = static_cast<int>(ROI_FRACTION * H);
-			cv::Mat roi = binaryIPM(cv::Rect(0, y0, W, height));
-
-			
+			int width = static_cast<int>(0.9f * W);
+			cv::Mat roi = binaryIPM(cv::Rect(static_cast<int>((W-width)/2), y0, width, height));
 
 			cv::Mat hist;
 			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);

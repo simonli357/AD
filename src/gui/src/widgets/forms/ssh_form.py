@@ -38,6 +38,9 @@ class SSHFormWidget(QDialog):
         elif self.terminal_type == TerminalType.ROSCORE:
             self.config = os.path.join(self.data_dir, 'roscore.yaml')
             title = QLabel(' roscore')
+        elif self.terminal_type == TerminalType.TRAFFIC:
+            self.config = os.path.join(self.data_dir, 'traffic.yaml')
+            title = QLabel('󱠪 traffic')
 
         title.setAlignment(QtCore.Qt.AlignCenter)
         title.setStyleSheet("""
@@ -277,6 +280,8 @@ class SSHFormWidget(QDialog):
             remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && rosrun planning {args}"\''
         elif self.terminal_type == TerminalType.ROSCORE:
             remote_command = '\'exec bash -c "roscore"\''
+        else:
+            self.cmd = 'echo "invalid params"'
         self.cmd = f'{ssh} "{bash} {remote_command}"'
 
     def set_local_cmd(self):
@@ -306,8 +311,12 @@ class SSHFormWidget(QDialog):
             command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
             command = f'{src_ros} && cd {catkin_ws} && {src_devel} && rosrun planning {args}'
+        elif self.terminal_type == TerminalType.TRAFFIC:
+            command = f'{src_ros} && cd {catkin_ws} && {src_devel} && roslaunch simulation traffic.launch {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
             command = 'roscore'
+        else:
+            self.cmd = 'echo "invalid params"'
         self.cmd = f'{bash} "{command}"'
 
     def clear_inputs(self):

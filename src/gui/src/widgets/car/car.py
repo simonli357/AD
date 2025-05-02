@@ -209,6 +209,9 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         for id_set in self.road_objects_ids.values():
             id_set.clear()
 
+    def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
+        return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
+
     def draw_detected_objects(self, detected_data, road_msg_dict, object_dict):
         if detected_data is None or len(detected_data) == 0:
             return
@@ -238,7 +241,16 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 self.road_objects_ids[object_dict[obj_type]].add(id)
 
-            self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}%", x, y, 8.0, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+            if self.is_near(self.x_pos, self.y_pos, x_real, MapData.REAL_WORLD_HEIGHT.value - y_real, 3.0, 0.2):
+                if label == "CAR":
+                    speed = detected_data[i, road_msg_dict['speed']]
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                    self.shader_renderer.tiny_text_renderer.render_text3D(f"{speed * 100:.2f} cm/s", x, y, 7, self.width(), self.height(), (0.6, 0.2, 1.0), self.proj_mat, self.view_mat)
+                elif label == "LIGHT" or label == "GREENLIGHT" or label == "REDLIGHT" or label == "YELLOWLIGHT":
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                else:
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+
         self.draw_road_objects()
 
     def draw_road_objects(self):
