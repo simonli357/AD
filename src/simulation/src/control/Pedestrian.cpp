@@ -36,9 +36,9 @@ void Pedestrian::run() {
 		double dy = v.y - u.y;
 		double yaw = atan2(dy, dx);
 		double normal = yaw + M_PI_2;
-		// Calculate pedestrian position. yaw is normal angle to car yaw.
-		double pedestrian_x = u.x + dist_from_car * std::cos(normal);
-		double pedestrian_y = u.y + dist_from_car * std::sin(normal);
+		// Calculate pedestrian position.
+		double pedestrian_x = u.x + dist_from_car * std::cos(yaw);
+		double pedestrian_y = u.y + dist_from_car * std::sin(yaw);
 		move_pedestrian_to(pedestrian_x, pedestrian_y, normal);
 		ros::Duration(8.0).sleep();
 		hide_pedestrian();
