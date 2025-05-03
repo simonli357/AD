@@ -43,7 +43,7 @@ namespace brain{
      */
     CRobotStateMachine::CRobotStateMachine(
             uint32_t                      f_period,
-            UnbufferedSerial&             f_serialPort,
+            BufferedSerial&             f_serialPort,
             drivers::ISteeringCommand&    f_steeringControl,
             drivers::ISpeedingCommand&    f_speedingControl
         ) 
@@ -91,6 +91,7 @@ namespace brain{
      */
     void CRobotStateMachine::serialCallbackPWMcommand(char const * a, char * b)
     {
+        printf("PWM command: %s\n", a);
         float l_speed;
         float l_angle;
         uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);

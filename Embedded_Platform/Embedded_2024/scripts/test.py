@@ -13,14 +13,15 @@ def read_from_port(ser):
             print(f"[Error reading] {e}")
             break
 
-def send_commands(ser, velocity, angle, rate_hz=10):
+def send_commands(ser, velocity, angle, use_pid=True, rate_hz=10):
     """Continuously send formatted commands at the specified rate."""
     interval = 1.0 / rate_hz
+    number = "10"
     while True:
-        msg = f"{velocity:.2f}:{angle:.2f};;\r\n"
+        formatted = f"#{number}:{velocity * 100:.2f}:{angle:.2f};;\r\n"
         try:
-            ser.write(msg.encode('utf-8'))
-            print(f"[Sent] {msg.strip()}")
+            ser.write(formatted.encode('utf-8'))
+            print(f"[Sent] {formatted.strip()}")
         except Exception as e:
             print(f"[Error writing] {e}")
             break
@@ -42,8 +43,8 @@ def main():
     reader_thread = threading.Thread(target=read_from_port, args=(ser,), daemon=True)
     reader_thread.start()
 
-    # Start the sender loop (velocity = 0, angle = 0)
-    send_commands(ser, velocity=0.0, angle=0.0)
+    # Start the sender loop (velocity = 0.0, angle = 0.0, use_pid = True)
+    send_commands(ser, velocity=0.0, angle=0.0, use_pid=True)
 
 if __name__ == "__main__":
     main()

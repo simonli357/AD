@@ -17,7 +17,7 @@ namespace periodics
             CTotalVoltage(
                 uint32_t f_period,
                 mbed::AnalogIn f_pin, 
-                UnbufferedSerial& f_serial
+                BufferedSerial& f_serial
             );
             /* Destructor */
             ~CTotalVoltage();
@@ -29,7 +29,7 @@ namespace periodics
             /* ADC input pin for instand consume */
             mbed::AnalogIn      m_pin;  
             /* @brief Serial communication obj.  */
-            UnbufferedSerial&          m_serial;
+            BufferedSerial&          m_serial;
             /** @brief Active flag  */
             bool                m_isActive;
 

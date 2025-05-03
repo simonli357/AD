@@ -16,7 +16,7 @@ namespace drivers{
 
     CSpeedingMotor::CSpeedingMotor(
             uint32_t f_period,
-            UnbufferedSerial&  f_serialPort,
+            BufferedSerial&  f_serialPort,
             PinName f_pwm_pin, 
             periodics::CEncoder& f_encoder
         )
