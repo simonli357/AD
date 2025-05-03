@@ -184,7 +184,7 @@ float CEncoder::readAngularSpeed() {
     sumDelta = 0.0f;
     lastT    = now;
     lastPublishedSpeed = speed;
-    printf("\n[Encoder] speed = %.2f°/s\n", speed);
+    printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", ang, speed);
 
     return speed;
 }
@@ -205,15 +205,28 @@ float CEncoder::readAngularAcceleration() {
     return filtAcc;
 }
 
-int CEncoder::getTurnCount() {
+float CEncoder::getTotalDisplacementDegrees() {
     float current = readAngleDegrees();
     static float prev = current;
-    static int count = 0;
+    static float total = 0.0f;
+
+    // Compute raw difference
     float delta = current - prev;
-    if (delta < -180.0f) count++;
-    else if (delta > 180.0f) count--;
+
+    // Correct for wrap-around
+    if (delta < -180.0f) {
+        delta += 360.0f;
+    } else if (delta > 180.0f) {
+        delta -= 360.0f;
+    }
+
+    // Accumulate
+    total += delta;
     prev = current;
-    return count;
+
+    printf("[Encoder] Total displacement = %.2f°\n", total);
+
+    return total;
 }
 
 float CEncoder::getLinearSpeed() {
@@ -240,6 +253,8 @@ void CEncoder::_run() {
     // ————— 2) Read the filtered angle every tick
     float angleDeg = readAngleDegrees();
     float speedDeg = readAngularSpeed();
+    float displacementDeg = getTotalDisplacementDegrees(); 
+    
     // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 
     // ————— 4) Package angle+speed into a TelemetryMsg and push
