@@ -12,14 +12,14 @@
 #include <thread>
 #include <vector>
 
-class Controller {
+class Car {
   public:
-	Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name);
-	Controller(Controller &&) = delete;
-	Controller(const Controller &) = delete;
-	Controller &operator=(Controller &&) = delete;
-	Controller &operator=(const Controller &) = delete;
-	~Controller();
+	Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name);
+	Car(Car &&) = delete;
+	Car(const Car &) = delete;
+	Car &operator=(Car &&) = delete;
+	Car &operator=(const Car &) = delete;
+	~Car();
 
 	using Graph = PathPlanner::Graph;
 	using Vertex = PathPlanner::Vertex;

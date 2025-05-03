@@ -51,6 +51,7 @@ class Track {
 
 	void add_vertex(const Vertex &u, const Vertex &v);
 	void remove_vertex(const Vertex &u);
+    Vertex find_first_neighbor(const Vertex &u);
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
 	Vertex find_node(int id);
