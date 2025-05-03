@@ -1,4 +1,4 @@
-#include "Controller.hpp"
+#include "Car.hpp"
 #include "map/Track.hpp"
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
@@ -10,7 +10,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <thread>
 
-Controller::Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
+Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
 	planner = std::make_unique<PathPlanner>(vref * factor, N, T);
 	setup();
@@ -19,16 +19,16 @@ Controller::Controller(TrafficManager &traffic_manager, ros::NodeHandle &nh, dou
 	Vertex start = path[0];
 
 	std::cout << car_name << " initialized." << std::endl;
-	main = std::thread(&Controller::run, this);
+	main = std::thread(&Car::run, this);
 }
 
-Controller::~Controller() {
+Car::~Car() {
 	if (main.joinable()) {
 		main.join();
 	}
 }
 
-void Controller::run() {
+void Car::run() {
 	ros::Rate rate(1.0 / T);
 	size_t idx = 0;
 	bool stopped = true;
@@ -58,18 +58,18 @@ void Controller::run() {
 	}
 }
 
-void Controller::stop() { alive = false; }
+void Car::stop() { alive = false; }
 
-void Controller::setup() { teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/" + car_name + "/localisation/teleport", 1); }
+void Car::setup() { teleport_pub = nh.advertise<geometry_msgs::PoseStamped>("/" + car_name + "/localisation/teleport", 1); }
 
-bool Controller::is_near(double x1, double y1, double x2, double y2, double rad1, double rad2) {
+bool Car::is_near(double x1, double y1, double x2, double y2, double rad1, double rad2) {
 	double dx = x2 - x1;
 	double dy = y2 - y1;
 	double rsum = rad1 + rad2;
 	return (dx * dx + dy * dy) <= (rsum * rsum);
 }
 
-bool Controller::can_move_car(double x, double y, size_t idx) {
+bool Car::can_move_car(double x, double y, size_t idx) {
 	if (path.empty())
 		return false;
 	for (size_t step = 1; step <= lookahead_wpts; ++step) {
@@ -85,7 +85,7 @@ bool Controller::can_move_car(double x, double y, size_t idx) {
 	return true;
 }
 
-void Controller::plan_path() {
+void Car::plan_path() {
 	destinations.clear();
 	path.clear();
 	std::vector<VD> verts;
@@ -113,7 +113,7 @@ void Controller::plan_path() {
 	path = planner->spline_utils.interpolate_path(general_path, planner->density, planner->hw_density_factor, planner->cw_density_factor);
 }
 
-void Controller::move_car_to(double x, double y, double yaw) {
+void Car::move_car_to(double x, double y, double yaw) {
 	geometry_msgs::PoseStamped cmd;
 	cmd.header.stamp = ros::Time::now();
 	cmd.header.frame_id = "world";
@@ -127,7 +127,7 @@ void Controller::move_car_to(double x, double y, double yaw) {
 	traffic_manager.set_car_position(car_name, x, y);
 }
 
-void Controller::find_random_cycle(const Graph &graph, VD start) {
+void Car::find_random_cycle(const Graph &graph, VD start) {
 	std::vector<VD> temp;
 	std::unordered_map<VD, size_t> visited;
 

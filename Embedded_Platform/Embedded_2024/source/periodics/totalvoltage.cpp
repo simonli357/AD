@@ -11,7 +11,7 @@ namespace periodics{
     CTotalVoltage::CTotalVoltage(
             uint32_t f_period, 
             mbed::AnalogIn f_pin, 
-            UnbufferedSerial& f_serial) 
+            BufferedSerial& f_serial) 
         : utils::CTask(f_period)
         , m_pin(f_pin)
         , m_serial(f_serial)

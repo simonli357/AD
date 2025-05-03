@@ -26,7 +26,7 @@ namespace periodics
             /* Construnctor */
             CImu(
                 uint32_t    f_period, 
-                UnbufferedSerial& f_serial,
+                BufferedSerial& f_serial,
                 PinName SDA,
                 PinName SCL
             );
@@ -72,7 +72,7 @@ namespace periodics
             bool            m_isActive;
 
             /* @brief Serial communication obj.  */
-            UnbufferedSerial&      m_serial;
+            BufferedSerial&      m_serial;
 
             float m_velocityX;
             float m_velocityY;

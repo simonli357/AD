@@ -52,5 +52,5 @@ class TrafficClient {
 	std::string create_vehicle_pos(double x, double y);
 	std::string create_vehicle_rot(double yaw);
 	std::string create_vehicle_speed(double speed);
-	std::string create_encountered_obstacle(const std::string &type, double x, double y);
+	std::string create_encountered_obstacle(int type, double x, double y);
 };

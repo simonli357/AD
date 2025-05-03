@@ -11,7 +11,6 @@
 #include <regex>
 #include <sstream>
 #include <sys/resource.h>
-#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -65,6 +64,20 @@ std::vector<uint8_t> SWLoadMsg::get_data() {
 	return data;
 }
 
+void SWLoadMsg::refresh() {
+	get_cores_usage();
+	get_ram_usage();
+	get_temperature();
+	get_heap_usage();
+	get_stack_usage();
+	cores_usage_length = ros::serialization::serializationLength(cores_usage.value());
+	ram_usage_length = sizeof(ram_usage);
+	temperature_length = sizeof(temperature);
+	heap_usage_length = sizeof(heap_usage);
+	stack_usage_length = sizeof(stack_usage);
+	data_length = cores_usage_length + ram_usage_length + temperature_length + heap_usage_length + stack_usage_length;
+}
+
 std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 	std::ifstream stat_file("/proc/stat");
 	std::string line;
@@ -89,46 +102,40 @@ std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 	return core_usages;
 }
 
-std_msgs::Float64MultiArray SWLoadMsg::get_cores_usage() {
-	hwloc_topology_t topology;
-	hwloc_topology_init(&topology);
-	hwloc_topology_load(topology);
-
-	// Get core count and OS indices
-	int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-	int cores = hwloc_get_nbobjs_by_depth(topology, depth);
-
-	// First measurement
-	auto prev_stats = read_proc_stat();
-	std::this_thread::sleep_for(std::chrono::milliseconds(250));
+void SWLoadMsg::get_cores_usage() {
 	auto curr_stats = read_proc_stat();
 
 	std::vector<double> utilizations;
-	for (int i = 0; i < cores; i++) {
-		hwloc_obj_t core = hwloc_get_obj_by_depth(topology, depth, i);
-		int os_index = core->os_index;
-
-		if (prev_stats.count(os_index) && curr_stats.count(os_index)) {
-			auto &prev = prev_stats[os_index];
-			auto &curr = curr_stats[os_index];
-
-			unsigned long long total_diff = curr.total - prev.total;
-			unsigned long long idle_diff = curr.idle - prev.idle;
-
-			if (total_diff > 0) {
-				double utilization = 1.0 * (total_diff - idle_diff) / total_diff;
-				utilizations.push_back(utilization);
+	if (first_core_query_) {
+		first_core_query_ = false;
+		prev_stats_ = curr_stats;
+		utilizations.resize(curr_stats.size(), 0.0);
+	} else {
+		for (auto &[core_id, curr] : curr_stats) {
+			auto it = prev_stats_.find(core_id);
+			if (it == prev_stats_.end()) {
+				utilizations.push_back(0.0);
+				continue;
 			}
+			auto &prev = it->second;
+			uint64_t total_diff = curr.total - prev.total;
+			uint64_t idle_diff = curr.idle - prev.idle;
+
+			double usage = 0.0;
+			if (total_diff > 0) {
+				usage = double(total_diff - idle_diff) / double(total_diff);
+			}
+			utilizations.push_back(usage);
 		}
+		prev_stats_ = std::move(curr_stats);
 	}
 
-	hwloc_topology_destroy(topology);
-	std_msgs::Float64MultiArray results;
-	results.data = utilizations;
-	return results;
+	std_msgs::Float64MultiArray result;
+	result.data = std::move(utilizations);
+    cores_usage = result;
 }
 
-float SWLoadMsg::get_ram_usage() {
+void SWLoadMsg::get_ram_usage() {
 	std::ifstream meminfo("/proc/meminfo");
 	std::string line;
 	long mem_total = 0;
@@ -145,13 +152,13 @@ float SWLoadMsg::get_ram_usage() {
 	}
 
 	if (mem_total <= 0 || mem_available < 0) {
-		return -1.0f; // Error value
+		return;
 	}
-
-	return static_cast<float>(mem_total - mem_available) / mem_total;
+    
+    ram_usage = static_cast<float>(mem_total - mem_available) / mem_total;
 }
 
-float SWLoadMsg::get_temperature() {
+void SWLoadMsg::get_temperature() {
 	// Check all hwmon devices
 	const std::string hwmon_dir = "/sys/class/hwmon";
 	for (const auto &entry : std::filesystem::directory_iterator(hwmon_dir)) {
@@ -178,7 +185,8 @@ float SWLoadMsg::get_temperature() {
 			try {
 				long temp_millic;
 				temp_file >> temp_millic;
-				return temp_millic / 1000.0f;
+				temperature = temp_millic / 1000.0f;
+                return;
 			} catch (...) {
 				continue;
 			}
@@ -197,15 +205,16 @@ float SWLoadMsg::get_temperature() {
 				std::ifstream temp_file(entry.path().string() + "/temp");
 				long temp_millic;
 				temp_file >> temp_millic;
-				return temp_millic / 1000.0f;
+                temperature = temp_millic / 1000.0f;
+                return;
 			}
 		}
 	}
 
-	return -1.0f; // No valid sensor found
+	temperature = -1.0f; // No valid sensor found
 }
 
-float SWLoadMsg::get_heap_usage() {
+void SWLoadMsg::get_heap_usage() {
 	// Get process memory stats from /proc/self/status
 	std::ifstream status_file("/proc/self/status");
 	std::string line;
@@ -226,12 +235,14 @@ float SWLoadMsg::get_heap_usage() {
 	vmhwm *= 1024;
 	vmsize *= 1024;
 
-	if (vmsize == 0)
-		return 0.0f;
-	return static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
+	if (vmsize == 0) {
+		heap_usage = 0.0f;
+        return;
+    }
+    heap_usage = static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
 }
 
-float SWLoadMsg::get_stack_usage() {
+void SWLoadMsg::get_stack_usage() {
 	// Get stack size limit
 	struct rlimit stack_limits;
 	getrlimit(RLIMIT_STACK, &stack_limits);
@@ -240,13 +251,13 @@ float SWLoadMsg::get_stack_usage() {
 	// Get current stack pointer (RSP for x86_64)
 	void *stack_ptr;
 
-#if defined(__x86_64__) || defined(__i386__)
-	asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
-#elif defined(__aarch64__)
-	asm volatile("mov %0, sp" : "=r"(stack_ptr));
-#else
-#error "Unsupported architecture"
-#endif
+    #if defined(__x86_64__) || defined(__i386__)
+        asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
+    #elif defined(__aarch64__)
+        asm volatile("mov %0, sp" : "=r"(stack_ptr));
+    #else
+    #error "Unsupported architecture"
+    #endif
 
 	// Get thread's stack base and size (corrected for downward-growing stacks)
 	pthread_attr_t attr;
@@ -262,5 +273,5 @@ float SWLoadMsg::get_stack_usage() {
 	// Used bytes = distance from current SP to stack high address
 	uintptr_t used_bytes = (uintptr_t)stack_high - (uintptr_t)stack_ptr;
 
-	return static_cast<float>(used_bytes) / actual_stack_size;
+	stack_usage = static_cast<float>(used_bytes) / actual_stack_size;
 }

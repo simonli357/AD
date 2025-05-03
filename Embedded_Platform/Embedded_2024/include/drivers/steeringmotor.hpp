@@ -53,7 +53,7 @@ namespace drivers
             /* Constructor */
             CSteeringMotor(
                 uint32_t f_period,
-                UnbufferedSerial&             f_serialPort,
+                BufferedSerial&             f_serialPort,
                 PinName f_pwm_pin,
                 periodics::CImu& f_imu,
                 drivers::CSpeedingMotor& f_speeding
@@ -98,7 +98,7 @@ namespace drivers
             float newDutyCycle;
 
             /* reference to Serial object */
-            UnbufferedSerial&   m_serialPort;
+            BufferedSerial&   m_serialPort;
 
             const float stepValues[2] = {0.0008594, 0.000951570};
             const float zeroDefaultValues[2] = {0.07714891, 0.07672070};

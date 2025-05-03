@@ -43,7 +43,7 @@ namespace brain{
      */
     CRobotStateMachine::CRobotStateMachine(
             uint32_t                      f_period,
-            UnbufferedSerial&             f_serialPort,
+            BufferedSerial&             f_serialPort,
             drivers::ISteeringCommand&    f_steeringControl,
             drivers::ISpeedingCommand&    f_speedingControl
         ) 

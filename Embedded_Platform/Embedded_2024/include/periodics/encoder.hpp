@@ -22,7 +22,7 @@ public:
      */
     CEncoder(uint32_t f_periodTicks,
              float g_baseTick,
-             UnbufferedSerial& f_serial,
+             BufferedSerial& f_serial,
              PinName pwm_pin);
 
     ~CEncoder();
@@ -60,7 +60,7 @@ private:
     virtual void _run() override;
 
     PwmIn               m_pwm;                ///< PWM input
-    UnbufferedSerial&   m_serial;             ///< Serial for debug
+    BufferedSerial&   m_serial;             ///< Serial for debug
     uint32_t            m_periodTicks;        ///< Task period in ticks
     float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative

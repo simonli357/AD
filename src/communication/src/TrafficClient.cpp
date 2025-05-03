@@ -106,45 +106,46 @@ void TrafficClient::send_car_id() {
 	send(tcp_socket, chars.data(), chars.size(), 0);
 }
 
+// https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
 void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
-	static auto road_obj_to_str = [](OBJECT &obj) -> std::string {
+	static auto road_obj_to_int = [](OBJECT &obj) -> int {
 		switch (obj) {
 		case OBJECT::BLOCK:
-			return "BLOCK";
+			return 13;
 		case OBJECT::CAR:
-			return "CAR";
+			return -1;
 		case OBJECT::CROSSWALK:
-			return "CROSSWALK";
+			return 4;
 		case OBJECT::GREENLIGHT:
-			return "GREENLIGHT";
+			return 14;
 		case OBJECT::HIGHWAYENTRANCE:
-			return "HIGHWAYENTRANCE";
+			return 5;
 		case OBJECT::HIGHWAYEXIT:
-			return "HIGHWAYEXIT";
+			return 6;
 		case OBJECT::LIGHTS:
-			return "LIGHTS";
+			return 14;
 		case OBJECT::NOENTRY:
-			return "NOENTRY";
+			return 9;
 		case OBJECT::NONE:
-			return "NONE";
+			return -1;
 		case OBJECT::ONEWAY:
-			return "ONEWAY";
+			return 8;
 		case OBJECT::PARK:
-			return "PARK";
+			return 3;
 		case OBJECT::PEDESTRIAN:
-			return "PEDESTRIAN";
+			return 12;
 		case OBJECT::PRIORITY:
-			return "PRIORITY";
+			return 2;
 		case OBJECT::REDLIGHT:
-			return "REDLIGHT";
+			return 14;
 		case OBJECT::ROUNDABOUT:
-			return "ROUNDABOUT";
+			return 7;
 		case OBJECT::STOPSIGN:
-			return "STOPSIGN";
+			return 1;
 		case OBJECT::YELLOWLIGHT:
-			return "YELLOWLIGHT";
+			return 14;
 		default:
-			return "UNKNOWN";
+			return -1;
 		}
 	};
     auto fn = [this, road_object]() {
@@ -154,7 +155,7 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
         std::string objcts = "";
 		for (size_t i = 7; i < road_object.data.size(); i += 7) {
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
-			objcts += create_encountered_obstacle(road_obj_to_str(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
+			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
 		}
         std::string msg = v_pos + v_rot + v_speed + objcts;
         send(tcp_socket, msg.data(), msg.size(), 0);
@@ -177,7 +178,7 @@ std::string TrafficClient::create_vehicle_speed(double speed) {
 	return msg.dump();
 }
 
-std::string TrafficClient::create_encountered_obstacle(const std::string &type, double x, double y) {
+std::string TrafficClient::create_encountered_obstacle(int type, double x, double y) {
 	json msg = {{"reqORinfo", "info"}, {"type", "historyData"}, {"value1", type}, {"value2", x}, {"value3", y}};
     return msg.dump();
 }
