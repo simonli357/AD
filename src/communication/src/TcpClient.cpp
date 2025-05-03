@@ -72,11 +72,40 @@ void TcpClient::create_tcp_socket() {
 
 void TcpClient::create_udp_socket() {
 	udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	udp_address.sin_family = AF_INET;
-	udp_address.sin_port = htons(udp_port);
-	inet_pton(AF_INET, multicast_address.c_str(), &udp_address.sin_addr);
+
+	int on = 1;
+	if (setsockopt(udp_socket, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) {
+		perror("SO_REUSEADDR");
+	}
+
+    #ifdef SO_REUSEPORT
+	if (setsockopt(udp_socket, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on)) < 0) {
+		perror("SO_REUSEPORT");
+	}
+    #endif
+
+	unsigned char ttl = 1;
+	if (setsockopt(udp_socket, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl)) < 0) {
+		perror("IP_MULTICAST_TTL");
+	}
+
+	struct in_addr localInterface;
+	if (inet_pton(AF_INET, "YOUR_LOCAL_IP", &localInterface) != 1) {
+		perror("inet_pton for localInterface");
+	} else {
+		if (setsockopt(udp_socket, IPPROTO_IP, IP_MULTICAST_IF, &localInterface, sizeof(localInterface)) < 0) {
+			perror("IP_MULTICAST_IF");
+		}
+	}
+
 	int flags = fcntl(udp_socket, F_GETFL, 0);
 	fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
+
+	udp_address.sin_family = AF_INET;
+	udp_address.sin_port = htons(udp_port);
+	if (inet_pton(AF_INET, multicast_address.c_str(), &udp_address.sin_addr) != 1) {
+		perror("inet_pton for multicast_address");
+	}
 }
 
 void TcpClient::set_tcp_data_types() {
@@ -204,7 +233,7 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
-    int swload_counter = 0;
+	int swload_counter = 0;
 	while (alive) {
 		if (!stream_tasks.empty() && tcp_can_send) {
 			std::any stream_task;
@@ -225,10 +254,10 @@ void TcpClient::send_data() {
 		if (!run_sent && send_run_callback) {
 			send_run_callback();
 		}
-        if (++swload_counter >= 20) {
-            send_swload();
-            swload_counter = 0;
-        }
+		if (++swload_counter >= 20) {
+			send_swload();
+			swload_counter = 0;
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
 }

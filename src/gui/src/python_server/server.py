@@ -26,11 +26,17 @@ class Server:
         self.listener = None
 
     def initialize(self):
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        probe.connect((self.host_ip, self.udp_port))
+        iface_ip = probe.getsockname()[0]
+        probe.close()
+        print(f"[INFO] using interface {iface_ip} to join multicast")
+
         self.udp_socket.bind(('', self.udp_port))
         mreq = struct.pack(
             "4s4s",
             socket.inet_aton(self.multicast_address),
-            socket.inet_aton("0.0.0.0")
+            socket.inet_aton(iface_ip)
         )
         self.udp_socket.setsockopt(
             socket.IPPROTO_IP,
