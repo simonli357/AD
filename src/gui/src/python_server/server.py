@@ -8,7 +8,7 @@ from python_server.udp_connection import UdpConnection
 
 
 class Server:
-    def __init__(self, main_window, host=True, host_ip="127.0.0.1"):
+    def __init__(self, main_window, host=True, host_ip="0.0.0.0"):
         self.main_window = main_window
         self.is_host = host
         self.host_ip = host_ip
@@ -17,7 +17,7 @@ class Server:
         self.multicast_address = "239.1.2.3"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.utility_node_client = TcpConnection(self)
         self.dashboard_client = None
@@ -26,17 +26,17 @@ class Server:
         self.listener = None
 
     def initialize(self):
+        self.udp_socket.bind(('', self.udp_port))
         mreq = struct.pack(
             "4s4s",
             socket.inet_aton(self.multicast_address),
-            socket.inet_aton(self.host_ip)
+            socket.inet_aton("0.0.0.0")
         )
         self.udp_socket.setsockopt(
             socket.IPPROTO_IP,
             socket.IP_ADD_MEMBERSHIP,
             mreq
         )
-        self.udp_socket.bind(('', self.udp_port))
 
         if self.is_host:
             self.tcp_socket.bind(('0.0.0.0', self.tcp_port))

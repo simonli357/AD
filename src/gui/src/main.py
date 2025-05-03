@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
         self.wp_updated = False
         if args.host_ip is None:
             "Running dashboard as host"
-            self.server = Server(main_window=self, host=True, host_ip=args.host_ip)
+            self.server = Server(main_window=self, host=True)
         else:
             "Running dashboard as spectator"
             self.server = Server(main_window=self, host=False, host_ip=args.host_ip)
