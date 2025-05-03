@@ -111,7 +111,7 @@ void Utility::initialize() {
     if (true) {
         try {
             serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
+            serial->set_option(boost::asio::serial_port_base::baud_rate(460800));
             debug("Utility constructor: Serial port opened successfully.", 1);
         }
         catch (const boost::system::system_error &e) {

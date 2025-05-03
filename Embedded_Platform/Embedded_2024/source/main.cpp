@@ -69,15 +69,15 @@ void imuTask() {
 void encoderTask() {
     while (true) {
         g_encoder.run();
-        ThisThread::sleep_for(10ms);
+        ThisThread::sleep_for(100ms);
     }
 }
 void serialMonitorTask() {
     while (true) {
-        g_serialMonitor.timerCallback();
+        // g_serialMonitor.timerCallback();
         g_serialMonitor.run();
         // g_serialMonitor.poll();
-        ThisThread::sleep_for(10ms);
+        ThisThread::sleep_for(100ms);
     }
 }
 // void stateMachineTask() {

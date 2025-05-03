@@ -224,6 +224,7 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
+    printf("[Encoder Run]\n");
     // ————— One-time Timer setup
     static Timer execTimer;
     static bool timerStarted = false;
@@ -286,7 +287,6 @@ void CEncoder::_run() {
         sum_interval_us  = 0;
         count_interval   = 0;
     }
-    printf("[Encoder Run] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 }
 
 } // namespace periodics

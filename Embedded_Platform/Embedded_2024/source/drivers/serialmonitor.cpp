@@ -66,9 +66,9 @@ namespace drivers{
      */
     void CSerialMonitor::_run()
     {
-        printf("[SeiralMonitor run] \n");
         if ((!m_RxBuffer.isEmpty()))
         {
+            printf("[SeiralMonitor run] got data\n");
             char l_c = m_RxBuffer.pop(); // Read the next character from buffer
             if ('#' == l_c) // Message starting special character
             {
@@ -79,10 +79,12 @@ namespace drivers{
             }
             if (m_parseIt != m_parseBuffer.end())
             {
+                printf("[SeiralMonitor run] data received: %c\n", l_c);
                 if (l_c == '\n') // Message ending character
                 {
                     if ((';' == m_parseIt[-3]) && (';' == m_parseIt[-2]) && ('\r' == m_parseIt[-1])) // Check the message ending
                     {
+                        printf("[SeiralMonitor run] got well formatted data: %s\n", m_parseBuffer.data());
                         // char l_msgID[2];
                         // char l_msg[256];
 

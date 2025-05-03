@@ -670,6 +670,7 @@ namespace periodics{
     }
 
     void CImu::_run() {
+        printf("[Imu Run] \n");
         if (!m_isActive) return;
     
         // 1) One-time timer setup
@@ -750,7 +751,6 @@ namespace periodics{
         // msg.data.imu.gz_mrs      = static_cast<int16_t>(gz    * 1000.0f);
     
         rb_push(msg);
-        printf("[Imu Run] yaw: %.2f\n", yaw);
     }
 
 }; // namespace periodics
