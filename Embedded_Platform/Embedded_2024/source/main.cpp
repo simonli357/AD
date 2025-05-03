@@ -48,6 +48,7 @@ drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
 static Thread imuThread    (osPriorityNormal, 2048, nullptr, "imu");
 static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
+static Thread totalVoltageThread(osPriorityNormal, 2048, nullptr, "totalVoltage");
 // static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
 void blinkerTask() {
     while (true) {
@@ -67,7 +68,12 @@ void encoderTask() {
         ThisThread::sleep_for(100ms);
     }
 }
-
+void totalVoltageTask() {
+    while (true) {
+        g_totalvoltage.run();
+        ThisThread::sleep_for(100ms);
+    }
+}
 // void stateMachineTask() {
 //     while (true) {
 //         g_robotstatemachine.run();
@@ -93,6 +99,7 @@ int main()
     blinkerThread.start(blinkerTask);
     imuThread.start(imuTask);
     encoderThread.start(encoderTask);
+    totalVoltageThread.start(totalVoltageTask);
     g_serialMonitor.start(10ms);
     ThisThread::sleep_for(osWaitForever);
 }
