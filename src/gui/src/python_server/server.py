@@ -1,28 +1,56 @@
 import socket
 import struct
 import threading
+import time
+
 from python_server.tcp_connection import TcpConnection
 from python_server.udp_connection import UdpConnection
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, host=True, host_ip="127.0.0.1"):
+        self.is_host = host
+        self.host_ip = host_ip
         self.tcp_port = 49153
         self.udp_port = 49154
+        self.multicast_address = "239.1.2.3"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.utility_node_client = TcpConnection()
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.utility_node_client = TcpConnection(self)
+        self.dashboard_client = TcpConnection(self)
         self.udp_connection = UdpConnection(self.udp_socket)
         self.alive = True
         self.listener = None
 
     def initialize(self):
         self.udp_socket.bind(('0.0.0.0', self.udp_port))
-        self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
-        self.tcp_socket.listen(2)
-        listener = threading.Thread(target=self.listen, daemon=True)
-        listener.start()
+        mreq = struct.pack(
+            "4s4s",
+            socket.inet_aton(self.multicast_address),
+            socket.inet_aton("0.0.0.0")
+        )
+        self.udp_socket.setsockopt(
+            socket.IPPROTO_IP,
+            socket.IP_ADD_MEMBERSHIP,
+            mreq
+        )
+        if self.is_host:
+            self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
+            self.tcp_socket.listen(2)
+            listener = threading.Thread(target=self.listen, daemon=True)
+            listener.start()
+        else:
+            print("Connecting to host dashboard")
+            while True:
+                try:
+                    self.tcp_socket.connect((self.host_ip, self.tcp_port))
+                    break
+                except OSError:
+                    time.sleep(0.5)
+            print("Succesfully connected to host dashboard")
+            self.utility_node_client = TcpConnection(self, self.tcp_socket, is_host=self.is_host)
 
     def listen(self):
         while self.alive:
@@ -48,4 +76,7 @@ class Server:
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
             print("Utility Client connected")
-            self.utility_node_client = TcpConnection(client_socket)
+            self.utility_node_client = TcpConnection(self, client_socket, is_host=self.is_host)
+        if client_type == "dashboard_client":
+            print("Dashboard Client Connected")
+            self.dashboard_client = TcpConnection(self, client_socket, is_host=self.is_host)

@@ -15,6 +15,7 @@
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
 #include <sensor_msgs/Image.h>
+#include <string>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
 #include <thread>
@@ -76,6 +77,7 @@ class TcpClient {
 	const uint16_t tcp_port = 49153;
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
+	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
 	const size_t buffer_size = 4096;
 	const size_t header_size = 5;

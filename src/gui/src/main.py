@@ -5,6 +5,7 @@ import os
 import time
 import threading
 import signal
+import argparse
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -286,12 +287,32 @@ class MainWindow(QMainWindow):
         sys.exit(0)
 
 
+def parse_args():
+    p = argparse.ArgumentParser(description="BFMC Dashboard")
+    p.add_argument(
+        "-ip", "--host-ip",
+        nargs="?",          # allow 0 or 1 arguments
+        const="127.0.0.1",  # value when "-ip" is given with no following string
+        default=None,       # value when "-ip" is omitted entirely
+        help="the host IP address (if no IP is provided, use 127.0.0.1)"
+    )
+    return p.parse_args()
+
+
 if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
+    args = parse_args()
+
     app = QApplication(sys.argv)
-    server = Server()
+    if args.host_ip is None:
+        "Running dashboard as host"
+        server = Server(host=True, host_ip=args.host_ip)
+    else:
+        "Running dashboard as spectator"
+        server = Server(host=False, host_ip=args.host_ip)
+
     server.initialize()
 
     window = MainWindow(server)
