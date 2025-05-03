@@ -33,11 +33,6 @@ int main(int argc, char **argv) {
     globalStateMachinePtr = &sm;
     signal(SIGINT, signalHandler);
     
-    std::thread services_thread;
-    if(use_tcp) {
-        services_thread = std::thread(&StateMachine::receive_services, &sm);
-    } 
-
     std::thread callback_thread;
     std::unique_ptr<ros::AsyncSpinner> spinner;
     if (async) {
@@ -51,9 +46,6 @@ int main(int argc, char **argv) {
     
     sm.run();
 
-    if (services_thread.joinable()) {
-        services_thread.join();
-    }
     ros::waitForShutdown();
     if (callback_thread.joinable()) {
         callback_thread.join();

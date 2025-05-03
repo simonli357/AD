@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.udp_callbacks)
-        self.udp_timer.start(int(CameraParams.FPS_60.value * 1000))
+        self.udp_timer.start(int(CameraParams.FPS_30.value * 1000))
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.tcp_callbacks)

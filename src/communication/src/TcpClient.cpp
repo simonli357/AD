@@ -2,7 +2,6 @@
 #include "msg/Lane2Msg.hpp"
 #include "msg/ParamsMsg.hpp"
 #include "msg/RunMsg.hpp"
-#include "msg/SWLoadMsg.hpp"
 #include "msg/TriggerMsg.hpp"
 #include "ros/serialization.h"
 #include "service_calls/GoToCmdSrv.hpp"
@@ -10,7 +9,6 @@
 #include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
-#include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Header.h"
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
@@ -23,15 +21,18 @@
 #include <fcntl.h>
 #include <hwloc.h>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
 #include <ros/ros.h>
 #include <sys/socket.h>
 #include <thread>
+#include <utility>
 #include <vector>
 
 TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
+	swload = std::make_unique<SWLoadMsg>();
 	create_udp_socket();
 	set_udp_data_types();
 	if (use_tcp) {
@@ -39,7 +40,6 @@ TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::str
 		set_tcp_data_actions();
 		receiver = std::thread(&TcpClient::initialize, this);
 		sender = std::thread(&TcpClient::send_data, this);
-		perfmon = std::thread(&TcpClient::send_swload, this);
 	}
 }
 
@@ -54,9 +54,6 @@ TcpClient::~TcpClient() {
 	}
 	if (sender.joinable()) {
 		sender.join();
-	}
-	if (perfmon.joinable()) {
-		perfmon.join();
 	}
 }
 
@@ -109,7 +106,6 @@ void TcpClient::set_udp_data_types() {
 void TcpClient::set_tcp_data_actions() {
 	tcp_data_actions[tcp_data_types[0]] = &TcpClient::parse_string;			// std::string
 	tcp_data_actions[tcp_data_types[1]] = &TcpClient::parse_trigger_msg;	// Trigger
-	tcp_data_actions[tcp_data_types[3]] = &TcpClient::parse_go_to_srv;		// GoToSrv
 	tcp_data_actions[tcp_data_types[4]] = &TcpClient::parse_go_to_cmd_srv;	// GoToCmdSrc
 	tcp_data_actions[tcp_data_types[5]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
 	tcp_data_actions[tcp_data_types[6]] = &TcpClient::parse_waypoints_srv;	// SetStatesSrv
@@ -203,11 +199,12 @@ void TcpClient::listen() {
 			connected = false;
 		}
 	}
-    run_sent = false;
+	run_sent = false;
 	tcp_can_send = false;
 }
 
 void TcpClient::send_data() {
+    int swload_counter = 0;
 	while (alive) {
 		if (!stream_tasks.empty() && tcp_can_send) {
 			std::any stream_task;
@@ -225,26 +222,20 @@ void TcpClient::send_data() {
 			}
 			continue;
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		if (!run_sent && send_run_callback) {
+			send_run_callback();
+		}
+        if (++swload_counter >= 20) {
+            send_swload();
+            swload_counter = 0;
+        }
+		std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
 }
 
 template <typename Callable> void TcpClient::add_stream_task(Callable &&lambda) { stream_tasks.push(std::function<void()>(std::forward<Callable>(lambda))); }
 
 template <typename Callable> void TcpClient::add_dgram_task(Callable &&lambda) { dgram_tasks.push(std::function<void()>(std::forward<Callable>(lambda))); }
-
-// ------------------- //
-// Data Storage
-// ------------------- //
-
-std::queue<std::string> &TcpClient::get_strings() { return strings; }
-std::queue<std::unique_ptr<TriggerMsg>> &TcpClient::get_trigger_msgs() { return trigger_msgs; }
-std::queue<std::unique_ptr<ParamsMsg>> &TcpClient::get_params_msgs() { return params_msgs; }
-std::queue<std::unique_ptr<GoToSrv>> &TcpClient::get_go_to_srv_msgs() { return go_to_srv_msgs; }
-std::queue<std::unique_ptr<GoToCmdSrv>> &TcpClient::get_go_to_cmd_srv_msgs() { return go_to_cmd_srv_msgs; }
-std::queue<std::unique_ptr<SetStatesSrv>> &TcpClient::get_set_states_srv_msgs() { return set_states_srv_msgs; }
-std::queue<std::unique_ptr<WaypointsSrv>> &TcpClient::get_waypoints_srv_msgs() { return waypoints_srv_msgs; }
-std::queue<bool> &TcpClient::get_start_srv_msgs() { return start_srv_msgs; }
 
 // ------------------- //
 // TCP Encoding
@@ -374,7 +365,6 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
 	};
 	add_stream_task(std::move(fn));
-    run_sent = true;
 }
 
 // ------------------- //
@@ -386,7 +376,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
 		bool stopline = lane.stopline;
-        float stopline_dist = lane.stopline_dist;
+		float stopline_dist = lane.stopline_dist;
 		bool crosswalk = lane.crosswalk;
 		std::vector<uint8_t> bytes = Lane2Msg(header, center, stopline, stopline_dist, crosswalk, false).serialize(udp_data_types[0]);
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
@@ -436,12 +426,11 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 	ros::serialization::serialize(stream, array);
 
 	std::vector<uint8_t> bytes(MAX_DGRAM, 0);
-	std::memcpy(bytes.data(), &length, message_size);  // message_size = sizeof(uint32_t)
-	bytes[4] = udp_data_types[3];  // Data type marker
+	std::memcpy(bytes.data(), &length, message_size); // message_size = sizeof(uint32_t)
+	bytes[4] = udp_data_types[3];					  // Data type marker
 	std::memcpy(bytes.data() + header_size, arr.data(), length);
 
-	sendto(udp_socket, bytes.data(), header_size + length, 0,
-				 (struct sockaddr *)&udp_address, sizeof(udp_address));
+	sendto(udp_socket, bytes.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img, int quality) {
@@ -485,23 +474,11 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-	while (alive) {
-		SWLoadMsg msg;
-		std_msgs::Float64MultiArray cores_usage = msg.get_cores_usage();
-		float ram_usage = msg.get_ram_usage();
-		float temp = msg.get_temperature();
-		float heap = msg.get_heap_usage();
-		float stack = msg.get_stack_usage();
-		/* std::cout << "No cores: " << cores_usage.data.size() << std::endl; */
-		/* std::cout << "RAM: " << ram_usage << std::endl; */
-		/* std::cout << "Temp: " << temp << std::endl; */
-		/* std::cout << "Heap use: " << heap << std::endl; */
-		/* std::cout << "Stack use: " << stack << std::endl; */
-		std::vector<uint8_t> bytes = SWLoadMsg(cores_usage, ram_usage, temp, heap, stack).serialize(udp_data_types[7]);
-		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), bytes.data(), bytes.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-	}
+	swload->refresh();
+	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
+	std::vector<uint8_t> segment(MAX_DGRAM, 0);
+	std::memcpy(segment.data(), bytes.data(), bytes.size());
+	sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
@@ -515,31 +492,53 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}
-    if (decoded_string == "refresh_run") {
-        run_sent = false;
-        std::cout << "Resending Run Parameters to GUI" << std::endl;
-        return;
-    }
-	strings.push(decoded_string);
+	if (decoded_string == "refresh_run") {
+		run_sent = false;
+		std::cout << "Resending Run Parameters to GUI" << std::endl;
+		return;
+	}
 }
 
-void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) { trigger_msgs.push(TriggerMsg().deserialize(bytes)); }
+void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
+	if (!trigger_response_callback) {
+		return;
+	}
+	auto msg = TriggerMsg().deserialize(bytes);
+	trigger_response_callback(*msg->response);
+}
 
-void TcpClient::parse_params_msg(std::vector<uint8_t> &bytes) { params_msgs.push(ParamsMsg().deserialize(bytes)); }
+void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
+	if (!go_to_cmd_callback) {
+		return;
+	}
+	auto msg = GoToCmdSrv().deserialize(bytes);
+	go_to_cmd_callback(msg->coords);
+}
 
-void TcpClient::parse_go_to_srv(std::vector<uint8_t> &bytes) { go_to_srv_msgs.push(GoToSrv().deserialize(bytes)); }
+void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
+	if (!set_states_callback) {
+		return;
+	}
+	auto msg = SetStatesSrv().deserialize(bytes);
+	set_states_callback(msg->x, msg->y);
+}
 
-void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) { go_to_cmd_srv_msgs.push(GoToCmdSrv().deserialize(bytes)); }
-
-void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) { set_states_srv_msgs.push(SetStatesSrv().deserialize(bytes)); }
-
-void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) { waypoints_srv_msgs.push(WaypointsSrv().deserialize(bytes)); }
+void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
+	if (!waypoints_callback) {
+		return;
+	}
+	auto msg = WaypointsSrv().deserialize(bytes);
+	waypoints_callback(msg->x0, msg->y0, msg->yaw0);
+}
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
+	if (!start_callback) {
+		return;
+	}
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "start") {
-		start_srv_msgs.push(true);
+		start_callback(true);
 	} else if (decoded_string == "stop") {
-		start_srv_msgs.push(false);
+		start_callback(false);
 	}
 }

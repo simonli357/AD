@@ -10,7 +10,7 @@
 
 class SWLoadMsg : public Encoder {
   public:
-    SWLoadMsg();
+	SWLoadMsg();
 	SWLoadMsg(std_msgs::Float64MultiArray &cores_usage, float ram_usage, float temperature, float heap_usage, float stack_usage);
 	SWLoadMsg(SWLoadMsg &&) = default;
 	SWLoadMsg(const SWLoadMsg &) = default;
@@ -18,24 +18,28 @@ class SWLoadMsg : public Encoder {
 	SWLoadMsg &operator=(const SWLoadMsg &) = delete;
 	~SWLoadMsg() = default;
 
-    std::optional<std_msgs::Float64MultiArray> cores_usage;
+	std::optional<std_msgs::Float64MultiArray> cores_usage;
 	float ram_usage;
 	float temperature;
 	float heap_usage;
 	float stack_usage;
 
 	struct CoreUsage {
-		unsigned long long total;
-		unsigned long long idle;
+		uint64_t total;
+		uint64_t idle;
 	};
+	std::unordered_map<int, CoreUsage> prev_stats_;
+	bool first_core_query_ = true;
 
-	std_msgs::Float64MultiArray get_cores_usage();
-    float get_ram_usage();
-    float get_temperature();
-    float get_heap_usage();
-    float get_stack_usage();
+	void refresh();
 
   private:
+	void get_cores_usage();
+	void get_ram_usage();
+	void get_temperature();
+	void get_heap_usage();
+	void get_stack_usage();
+
 	const size_t bytes_length = 4;
 	const size_t num_elements = 5;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
