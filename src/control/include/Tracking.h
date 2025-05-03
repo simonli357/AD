@@ -380,7 +380,7 @@ public:
             double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
         
             double alpha = new_conf / (confidence + new_conf);
-            double est_speed = (alpha * inst_speed + (1 - alpha) * avg_speed);
+            double est_speed = avg_speed;
             speed = (1 - alpha) * speed + alpha * est_speed;
         
             // Yaw estimation from displacement
