@@ -1741,6 +1741,22 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_euler_p(s16 *euler_p_s16)
     return com_rslt;
 }
 
+BNO055_RETURN_FUNCTION_TYPE bno055_get_euler_hrp(float *h, float *r, float *p)
+{
+    BNO055_RETURN_FUNCTION_TYPE com_rslt = BNO055_ERROR;
+    struct bno055_euler_t euler;
+
+    com_rslt = bno055_read_euler_hrp(&euler);
+    if (com_rslt == BNO055_SUCCESS)
+    {
+        *h = (float)euler.h / 16.0f;
+        *r = (float)euler.r / 16.0f;
+        *p = (float)euler.p / 16.0f;
+    }
+
+    return com_rslt;
+}
+
 /*!
  *  @brief This API reads Euler data hrp values
  *  from register 0x1A to 0x1F it is a six byte data
@@ -4158,6 +4174,37 @@ BNO055_RETURN_FUNCTION_TYPE bno055_convert_float_euler_p_rad(float *euler_p_f)
     return com_rslt;
 }
 
+BNO055_RETURN_FUNCTION_TYPE bno055_get_float_euler_hpr_deg(float *euler_h_f, float *euler_p_f, float *euler_r_f)
+{
+    BNO055_RETURN_FUNCTION_TYPE com_rslt = BNO055_ERROR;
+    struct bno055_euler_float_t euler_hpr = { BNO055_INIT_VALUE, BNO055_INIT_VALUE, BNO055_INIT_VALUE };
+
+    /* Read the Euler hrp data in degree*/
+    com_rslt = bno055_convert_float_euler_hpr_deg(&euler_hpr);
+    if (com_rslt == BNO055_SUCCESS)
+    {
+        *euler_h_f = euler_hpr.h;
+        *euler_p_f = euler_hpr.p;
+        *euler_r_f = euler_hpr.r;
+    }
+    else
+    {
+        com_rslt = BNO055_ERROR;
+    }
+
+    return com_rslt;
+}
+/*!
+ *  @brief This API is used to convert the Euler hrp raw data
+ *  to radians output as float
+ *
+ *  @param euler_h_f : The float value of Euler h radians
+ *
+ *  @return results of bus communication function
+ *  @retval 0 -> BNO055_SUCCESS
+ *  @retval 1 -> BNO055_ERROR
+ *
+ */
 /*!
  *  @brief This API is used to convert the Euler hrp raw data
  *  to degree output as float

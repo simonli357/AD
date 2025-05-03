@@ -17,13 +17,13 @@ public:
      * @param periodTicks  Number of g_baseTick ticks between runs
      * @param serial       UART interface for output
      */
-    CSerialPrinter(uint32_t periodTicks, UnbufferedSerial& serial)
+    CSerialPrinter(uint32_t periodTicks, BufferedSerial& serial)
         : utils::CTask(periodTicks), m_serial(serial) {}
 
     void _run() override;
 
 private:
-    UnbufferedSerial& m_serial;
+    BufferedSerial& m_serial;
 
     // Compute CRC-16-CCITT (poly 0x1021) over data
     uint16_t computeCRC16(const uint8_t* data, size_t len) {

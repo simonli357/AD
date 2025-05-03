@@ -1,99 +1,48 @@
-/**
- * Copyright (c) 2019, Bosch Engineering Center Cluj and BFMC organizers
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
-
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
-
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
-
- * 3. Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived from
- *    this software without specific prior written permission.
-
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
-*/
-
-/* Inclusion guard */
 #ifndef SERIAL_MONITOR_HPP
 #define SERIAL_MONITOR_HPP
 
-/* The mbed library */
-#include <mbed.h>
-/* Header file for the task manager library, which  applies periodically the fun function of it's children*/
-#include <utils/taskmanager.hpp>
-/* Header file for the queue manager library*/
-#include <utils/queue.hpp>
-
+#include "mbed.h"
+#include "rtos.h"
 #include <map>
-#include <array>
 #include <string>
-#include <functional>
+#include <array>
 
+namespace drivers {
+    using Callback = mbed::Callback<void(const char*, char*)>;
+    using SerialSubscriberMap = std::map<std::string, Callback>;
 
-namespace drivers
-{
-   /**
-    * @brief Class Serial Monitor
-    * 
-    * It aims to decode the messages received from the other device and redirectionate to other functions the content of message. 
-    * For decode it has a predefined structure with a header (key) part and a content part. The key has to be four character, the content is defined by user.
-    * The message received has to start with the '#' special character, the responses have the same key and start with "@" character. The special characters 
-    * notice the direction of the message. Examples of messages:
-    * 
-    *   "#KEY1:MESSAGECONTENT;;\r\n"
-    * 
-    *   "@KEY1:RESPONSECONTANT;;\r\n"
-    * 
-    * The key differs for each functionalities, so for each callback function.
-    */
-    class CSerialMonitor : public utils::CTask
-    {
-        public:
-            typedef mbed::Callback<void(char const *, char *)> FCallback;
-            typedef std::map<string,FCallback> CSerialSubscriberMap;
+    /**
+     * @brief Threaded Serial Monitor for RTOS with debug tracing
+     *
+     * Reads incoming bytes, frames commands of the form:
+     *    #KEY:PAYLOAD;;\r\n
+     * and dispatches to registered callbacks.  Responses are sent
+     * as: @KEY:RESPONSE;;\r\n
+     */
+    class SerialMonitor {
+    public:
+        SerialMonitor(BufferedSerial& serial, const SerialSubscriberMap& callbacks);
+        ~SerialMonitor();
 
-            CSerialMonitor(
-                UnbufferedSerial& f_serialPort,
-                CSerialSubscriberMap f_serialSubscriberMap
-            );
-            ~CSerialMonitor();
-        private:
-            /* Rx callback actions */
-            void serialRxCallback();
-            /* Tx callback actions */
-            void serialTxCallback();
-            /* Run method */
-            virtual void _run();
+        /** Start RTOS thread */
+        void start(std::chrono::milliseconds sleepDuration);
+        /** Stop and join thread */
+        void stop();
 
-            /** @brief Serial communication port */
-            UnbufferedSerial& m_serialPort;
-            /** @brief Rx buffer */
-            utils::CQueue<char,255> m_RxBuffer;
-            /** @brief Tx buffer */
-            utils::CQueue<char,255> m_TxBuffer;
-            /** @brief Data buffer */
-            array<char,256> m_parseBuffer;
-            /** @brief Parse iterator */
-            array<char,256>::iterator m_parseIt;
-            /** @brief Serial subscriber */
-            CSerialSubscriberMap m_serialSubscriberMap;
+    private:
+        void readerThreadFn();
+        void processFrame();
+
+        BufferedSerial&    serial_;             ///< UART interface
+        SerialSubscriberMap  callbacks_;          ///< key->callback map
+        rtos::Thread         thread_;             ///< background reader thread
+        rtos::Mutex          txMutex_;            ///< protect serial writes
+        std::array<char,256> frameBuf_{};         ///< frame assembly buffer
+        size_t               bufIndex_ = 0;       ///< current frame index
+        bool                 inFrame_ = false;    ///< assembling a frame?
+        bool                 running_ = false;    ///< thread control
+        std::chrono::milliseconds sleepDuration_{10};
     };
+}; // namespace drivers
 
-};
-
-#endif
+#endif // SERIAL_MONITOR_HPP

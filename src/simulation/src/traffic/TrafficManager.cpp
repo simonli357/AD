@@ -1,5 +1,6 @@
 #include "TrafficManager.hpp"
-#include "Controller.hpp"
+#include "Car.hpp"
+#include "Pedestrian.hpp"
 #include "PathPlanner.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -12,13 +13,16 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
 	spawn_ego_car();
 	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<Controller>(*this, nh, random_speed(), "car2");
-	car3 = std::make_unique<Controller>(*this, nh, random_speed(), "car3");
-	car4 = std::make_unique<Controller>(*this, nh, random_speed(), "car4");
-	car5 = std::make_unique<Controller>(*this, nh, random_speed(), "car5");
-	car6 = std::make_unique<Controller>(*this, nh, random_speed(), "car6");
-	car7 = std::make_unique<Controller>(*this, nh, random_speed(), "car7");
-	car8 = std::make_unique<Controller>(*this, nh, random_speed(), "car8");
+	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car_008");
+	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car_019");
+	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car_046");
+	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car_144");
+	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car_beetle");
+	car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus");
+	car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel");
+	car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo");
+	car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo");
+    pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
 }
 
 TrafficManager::~TrafficManager() {}
@@ -71,6 +75,19 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
     set_car_position(car_name, x, y);
 }
 
+void TrafficManager::get_car_position(const std::string &car_name, double &out_x, double &out_y) {
+    tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, /*write=*/false);
+    tbb::concurrent_hash_map<std::string, std::pair<double, double>>::const_accessor a;
+    if (car_positions.find(a, car_name)) {
+        out_x = a->second.first;
+        out_y = a->second.second;
+    } else {
+        out_x = 0.0;
+        out_y = 0.0;
+        ROS_WARN("TrafficManager: no position found for '%s'", car_name.c_str());
+    }
+}
+
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
 	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::accessor a;
@@ -106,4 +123,6 @@ void TrafficManager::stop_cars() {
 	car6->stop();
 	car7->stop();
 	car8->stop();
+    car9->stop();
+    car10->stop();
 }

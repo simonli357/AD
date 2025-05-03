@@ -11,7 +11,8 @@
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/spin_rw_mutex.h>
 
-class Controller;
+class Car;
+class Pedestrian;
 
 class TrafficManager {
   public:
@@ -36,18 +37,24 @@ class TrafficManager {
 	std::array<double, 4> spawn_area = {0, 0, 5.85, 7.50};
 
 	ros::Subscriber car1;
-	std::unique_ptr<Controller> car2;
-	std::unique_ptr<Controller> car3;
-	std::unique_ptr<Controller> car4;
-	std::unique_ptr<Controller> car5;
-	std::unique_ptr<Controller> car6;
-	std::unique_ptr<Controller> car7;
-	std::unique_ptr<Controller> car8;
+
+	std::unique_ptr<Car> car2;
+	std::unique_ptr<Car> car3;
+	std::unique_ptr<Car> car4;
+	std::unique_ptr<Car> car5;
+	std::unique_ptr<Car> car6;
+	std::unique_ptr<Car> car7;
+	std::unique_ptr<Car> car8;
+	std::unique_ptr<Car> car9;
+	std::unique_ptr<Car> car10;
+
+	std::unique_ptr<Pedestrian> pedestrian;
 
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>> car_positions;
 	mutable tbb::spin_rw_mutex rw_mutex;
 
 	void set_car_position(const std::string &car_name, double x, double y);
+	void get_car_position(const std::string &car_name, double &out_x, double &out_y);
 	bool car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const;
 	void stop_cars();
 	double random_speed();

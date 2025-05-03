@@ -73,9 +73,9 @@ namespace utils{
      */
     void CTask::run()
     {
-        if (m_triggered)
+        if (true)
         {
-            m_triggered = false;
+            // m_triggered = false;
             _run();
         }
     }// namespace CTask

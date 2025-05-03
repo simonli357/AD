@@ -19,7 +19,7 @@ namespace brain
             /* Constructor */
             CRobotStateMachine(
                 uint32_t                      f_period, 
-                UnbufferedSerial&             f_serialPort, 
+                BufferedSerial&             f_serialPort, 
                 drivers::ISteeringCommand&    f_steeringControl,
                 drivers::ISpeedingCommand&    f_speedingControl
             );
@@ -38,7 +38,7 @@ namespace brain
             /* Contains the state machine, which control the lower level drivers (motor and steering) based the current state. */
             virtual void _run();
             /* reference to Serial object */
-            UnbufferedSerial&                    m_serialPort;
+            BufferedSerial&                    m_serialPort;
             /* Steering wheel control interface */
             drivers::ISteeringCommand&    m_steeringControl;
             /* Steering wheel control interface */

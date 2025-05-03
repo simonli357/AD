@@ -9,6 +9,8 @@
 #include <ros/package.h>
 #include <tinyxml2.h>
 
+using Vertex = Track::Vertex;
+
 std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 	int temp;
 	in >> temp;
@@ -17,7 +19,6 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
-	/* read_graph_xml(); */
 	read_graph();
 	compute_edge_distances();
 }
@@ -123,7 +124,7 @@ void Track::compute_edge_distances() {
 	}
 }
 
-void Track::add_vertex(const Track::Vertex &u, const Track::Vertex &v) {
+void Track::add_vertex(const Vertex &u, const Vertex &v) {
 	using vd_t = Graph::vertex_descriptor;
 	vd_t u_desc = boost::add_vertex(graph);
 	graph[u_desc] = u;
@@ -138,7 +139,7 @@ void Track::add_vertex(const Track::Vertex &u, const Track::Vertex &v) {
 	boost::add_edge(u_desc, v_desc, e_prop, graph);
 }
 
-void Track::remove_vertex(const Track::Vertex &u) {
+void Track::remove_vertex(const Vertex &u) {
 	using vd_t = Graph::vertex_descriptor;
 	auto id_map = build_to_vertex_map();
 	auto it = id_map.find(u.id);
@@ -150,6 +151,21 @@ void Track::remove_vertex(const Track::Vertex &u) {
 	boost::remove_vertex(u_desc, graph);
 }
 
+Vertex Track::find_first_neighbor(const Vertex &u) {
+    auto id_map = build_to_vertex_map();
+    auto it = id_map.find(u.id);
+    if (it == id_map.end()) {
+        throw std::runtime_error("Track::find_neighbor: no vertex with id " + std::to_string(u.id));
+    }
+    auto u_desc = it->second;
+    auto [ei, ei_end] = boost::out_edges(u_desc, graph);
+    if (ei == ei_end) {
+        return u;
+    }
+    auto neighbor_desc = boost::target(*ei, graph);
+    return graph[neighbor_desc];
+}
+
 std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_map() {
 	std::unordered_map<int, Graph::vertex_descriptor> idMap;
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
@@ -159,7 +175,7 @@ std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_
 	return idMap;
 }
 
-std::vector<Track::Vertex> Track::dikstra(int src, int tgt) {
+std::vector<Vertex> Track::dikstra(int src, int tgt) {
 	auto idMap = build_to_vertex_map();
 
 	auto sIt = idMap.find(src);
@@ -209,7 +225,7 @@ std::vector<Track::Vertex> Track::dikstra(int src, int tgt) {
 	return path;
 }
 
-Track::Vertex Track::find_closest_node(double pos_x, double pos_y) {
+Vertex Track::find_closest_node(double pos_x, double pos_y) {
 	double best_dist = std::numeric_limits<double>::max();
 	Vertex best_node;
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
@@ -224,7 +240,7 @@ Track::Vertex Track::find_closest_node(double pos_x, double pos_y) {
 	return best_node;
 }
 
-Track::Vertex Track::find_node(int id) {
+Vertex Track::find_node(int id) {
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
