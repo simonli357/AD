@@ -639,7 +639,7 @@ namespace periodics{
     }
 
     void CImu::_run() {
-        // printf("[Imu Run] \n");
+        printf("[Imu Run] \n");
         if (!m_isActive) return;
     
         // 1) One-time timer setup

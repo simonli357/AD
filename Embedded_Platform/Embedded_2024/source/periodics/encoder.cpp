@@ -183,7 +183,7 @@ float CEncoder::readAngularSpeed() {
     sumDelta = 0.0f;
     lastT    = now;
     lastPublishedSpeed = speed;
-    // printf("\n[Encoder] speed = %.2f°/s\n", speed);
+    printf("\n[Encoder] speed = %.2f°/s\n", speed);
 
     return speed;
 }
