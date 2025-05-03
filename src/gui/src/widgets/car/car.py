@@ -34,7 +34,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.visited = set()
 
         self.road_objects_ids = {
-            'Car': set(),
             'Oneway': set(),
             'Stopsign': set(),
             'Highway Entrance': set(),
@@ -111,7 +110,6 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.update_destinations()
 
         self.renderers = {
-            'Car': GTRenderer(self.shader_renderer.red_car_model, 'Car'),
             'Oneway': GTRenderer(self.shader_renderer.oneway_sign_model, 'Oneway'),
             'Stopsign': GTRenderer(self.shader_renderer.stop_sign_model, 'Stopsign'),
             'Highway Entrance': GTRenderer(self.shader_renderer.highway_entrance_sign_model, 'Highway Entrance'),
@@ -235,8 +233,15 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if object_dict[obj_type] == 'Car' and i == 0:
                 continue
             elif object_dict[obj_type] == 'Car':
-                self.renderers['Car'].add_or_update_instance(id, x, y, orientation, (0.8, 0.8, 0.8))
-                self.road_objects_ids['Car'].add(id)
+                self.shader_renderer.draw_car(
+                    x=x,
+                    y=y,
+                    yaw=np.radians(self.yaw),
+                    scale=0.8,
+                    color=NamedColor.RED,
+                    view_matrix=self.view_mat,
+                    proj_matrix=self.proj_mat
+                )
             else:
                 self.renderers[object_dict[obj_type]].add_or_update_instance(id, x, y, orientation, (32.0, 32.0, 32.0), extra_rot=True)
                 self.road_objects_ids[object_dict[obj_type]].add(id)
