@@ -77,23 +77,23 @@ void SerialMonitor::readerThreadFn() {
 void SerialMonitor::processFrame() {
     // printf("[SerialMonitor] Processing frame: %s\n", frameBuf_.data()); // frameBuf_ now contains e.g., "#13:0.00:0.00\0;;\r\n..."
 
-    char keyBuf[3] = {0}; // Key limited to 2 chars + null
-    char msg1[256] = {0}; // Adapt size as needed
-    char msg2[256] = {0}; // Adapt size as needed
+    char keyBuf[3]  = {0};
+    char msg1[256]  = {0};
+    char msg2[256]  = {0};
 
     int parts = std::sscanf(frameBuf_.data(), "#%2[^:]:%255[^:]:%255[^\0]", keyBuf, msg1, msg2);
 
     std::string key(keyBuf);
-    std::string payload;
+    static char payloadBuf[512];
 
     if (parts == 3) {
-        payload = std::string(msg1) + ":" + msg2;
+        std::snprintf(payloadBuf, sizeof payloadBuf, "%s:%s", msg1, msg2);
         // printf("[SerialMonitor] Parsed 3 parts: key='%s', msg1='%s', msg2='%s'\n", key.c_str(), msg1, msg2);
     } else if (parts == 2) {
-        payload = msg1;
+        std::snprintf(payloadBuf, sizeof payloadBuf, "%s", msg1);
         // printf("[SerialMonitor] Parsed 2 parts: key='%s', msg1='%s'\n", key.c_str(), msg1);
      } else if (parts == 1) {
-        payload = ""; // No payload
+        payloadBuf[0] = '\0';
         // printf("[SerialMonitor] Parsed 1 part: key='%s'\n", key.c_str());
     }
      else {
@@ -103,11 +103,12 @@ void SerialMonitor::processFrame() {
 
     // printf("[SerialMonitor] Final parsed key='%s', payload='%s'\n", key.c_str(), payload.c_str());
 
-    auto it = callbacks_.find(key);
+    auto it = callbacks_.find(keyBuf);
     if (it != callbacks_.end()) {
         // printf("[SerialMonitor] Dispatching callback for '%s'\n", key.c_str());
-        static char response[256] = {0};
-        it->second(payload.c_str(), response); // Call the registered callback
+        static char response[256];
+        response[0] = '\0';
+        it->second(payloadBuf, response);
         // printf("[SerialMonitor] Callback response: '%s'\n", response);
         // if (response[0] != '\0') { // Check if response is not empty
         //     char out[300] = {0}; // Ensure output buffer is adequate
