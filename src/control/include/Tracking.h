@@ -396,13 +396,13 @@ public:
                 double yaw_inst = std::atan2(dy_inst, dx_inst);
                 double yaw_avg = std::atan2(dy_avg, dx_avg);
         
-                double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
-                double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
+                double sin_blend = std::sin(yaw_avg);
+                double cos_blend = std::cos(yaw_avg);
                 double yaw_new = std::atan2(sin_blend, cos_blend);
-                yaw = (1 - alpha) * yaw + alpha * yaw_new;
+                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
             } else if (valid_avg) {
                 double yaw_new = std::atan2(dy_avg, dx_avg);
-                yaw = (1 - alpha) * yaw + alpha * yaw_new;
+                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
             }
         
             // Position update (EMA)
