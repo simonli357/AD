@@ -86,7 +86,7 @@ class TcpConnection:
                 # Process the data
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
-                    if self.is_host:
+                    if self.is_host and self.server.dashboard_client is not None:
                         self.server.dashboard_client.data_actions[message_type](data)
             except Exception as e:
                 print(e)
@@ -97,7 +97,7 @@ class TcpConnection:
     ###################
 
     def send_string(self, string):
-        data = str.encode('utf-8')
+        data = string.encode('utf-8')
         length = struct.pack('<I', len(string))
         bytes = length + self.types[0] + data
         self.socket.sendall(bytes)

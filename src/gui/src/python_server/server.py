@@ -19,7 +19,7 @@ class Server:
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.utility_node_client = TcpConnection(self)
-        self.dashboard_client = TcpConnection(self)
+        self.dashboard_client = None
         self.udp_connection = UdpConnection(self.udp_socket)
         self.alive = True
         self.listener = None
@@ -77,6 +77,6 @@ class Server:
         if client_type == "utility_node_client":
             print("Utility Client connected")
             self.utility_node_client = TcpConnection(self, client_socket, is_host=self.is_host)
-        if client_type == "dashboard_client":
+        elif client_type == "dashboard_client":
             print("Dashboard Client Connected")
             self.dashboard_client = TcpConnection(self, client_socket, is_host=self.is_host)
