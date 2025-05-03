@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
+        self.wp_updated = False
         if args.host_ip is None:
             "Running dashboard as host"
             self.server = Server(main_window=self, host=True, host_ip=args.host_ip)
@@ -231,6 +232,9 @@ class MainWindow(QMainWindow):
                 self.state_refs_np = self.server.utility_node_client.state_refs_np
             if self.attributes_np is None and hasattr(self.server.utility_node_client, "attributes_np"):
                 self.attributes_np = self.server.utility_node_client.attributes_np
+            if self.state_refs_np is not None and self.attributes_np is not None and not self.wp_updated:
+                self.map_widget.update_waypoints()
+                self.wp_updated = True
 
     def udp_callbacks(self) -> None:
         rgb_image = None
