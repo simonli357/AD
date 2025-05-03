@@ -8,7 +8,8 @@ from python_server.udp_connection import UdpConnection
 
 
 class Server:
-    def __init__(self, host=True, host_ip="127.0.0.1"):
+    def __init__(self, main_window, host=True, host_ip="127.0.0.1"):
+        self.main_window = main_window
         self.is_host = host
         self.host_ip = host_ip
         self.tcp_port = 49153
@@ -80,3 +81,8 @@ class Server:
         elif client_type == "dashboard_client":
             print("Dashboard Client Connected")
             self.dashboard_client = TcpConnection(self, client_socket, is_host=self.is_host)
+            while (self.main_window is None or self.main_window.attributes_np is None or self.main_window.state_refs_np is None):
+                time.sleep(0.5)
+            print("Sending map")
+            self.dashboard_client.send_state_refs(self.main_window.state_refs_np)
+            self.dashboard_client.send_attributes(self.main_window.attributes_np)

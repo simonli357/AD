@@ -1,7 +1,10 @@
 import threading
 import struct
+import numpy as np
+import io
 
 from collections import OrderedDict, deque
+from std_msgs.msg import Float32MultiArray, MultiArrayDimension
 from std_msgs.msg import String
 from python_server.service_calls.go_to_srv import GoToSrv
 from python_server.service_calls.go_to_cmd_srv import GoToCmdSrv
@@ -31,6 +34,8 @@ class TcpConnection:
                 b'\x08': self.parse_start_srv,
                 b'\x09': self.parse_params,
                 b'\x0a': self.parse_run,
+                b'\x0b': self.parse_state_refs,
+                b'\x0c': self.parse_attributes,
             })
             self.types = list(self.data_actions.keys())
             self.strings = deque()
@@ -129,6 +134,48 @@ class TcpConnection:
         bytes = length + self.types[7] + data
         self.socket.sendall(bytes)
 
+    def send_state_refs(self, arr):
+        arr = np.asarray(arr, dtype=np.float32)
+
+        msg = Float32MultiArray()
+        msg.data = arr.flatten().tolist()
+        msg.layout.dim = []
+        msg.layout.data_offset = 0
+        for i, size in enumerate(arr.shape):
+            dim = MultiArrayDimension()
+            dim.label = f"dim{i}"
+            dim.size = size
+            dim.stride = int(np.prod(arr.shape[i:]))
+            msg.layout.dim.append(dim)
+
+        buf = io.BytesIO()
+        msg.serialize(buf)                # exactly like your Float64 example
+        payload = buf.getvalue()          # raw bytes of the serialized message
+
+        packet = struct.pack('<I', len(payload)) + b'\x0b' + payload
+        self.socket.sendall(packet)
+
+    def send_attributes(self, arr):
+        arr = np.asarray(arr, dtype=np.float32)
+
+        msg = Float32MultiArray()
+        msg.data = arr.flatten().tolist()
+        msg.layout.dim = []
+        msg.layout.data_offset = 0
+        for i, size in enumerate(arr.shape):
+            dim = MultiArrayDimension()
+            dim.label = f"dim{i}"
+            dim.size = size
+            dim.stride = int(np.prod(arr.shape[i:]))
+            msg.layout.dim.append(dim)
+
+        buf = io.BytesIO()
+        msg.serialize(buf)
+        payload = buf.getvalue()
+
+        packet = struct.pack('<I', len(payload)) + b'\x0c' + payload
+        self.socket.sendall(packet)
+
     ###################
     # Decode
     ###################
@@ -189,3 +236,15 @@ class TcpConnection:
             self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
         except Exception as e:
             print(e)
+
+    def parse_state_refs(self, payload: bytes):
+        msg = Float32MultiArray().deserialize(payload)
+        arr = np.array(msg.data, dtype=np.float32)
+        shape = [dim.size for dim in msg.layout.dim]
+        self.state_refs_np = arr.reshape(shape)
+
+    def parse_attributes(self, payload: bytes):
+        msg = Float32MultiArray().deserialize(payload)
+        arr = np.array(msg.data, dtype=np.float32)
+        shape = [dim.size for dim in msg.layout.dim]
+        self.attributes_np = arr.reshape(shape)

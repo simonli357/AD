@@ -58,11 +58,18 @@ class MapContainer(QtWidgets.QStackedWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, server):
+    def __init__(self, args):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
-        self.server = server
+        if args.host_ip is None:
+            "Running dashboard as host"
+            self.server = Server(main_window=self, host=True, host_ip=args.host_ip)
+        else:
+            "Running dashboard as spectator"
+            self.server = Server(main_window=self, host=False, host_ip=args.host_ip)
+        self.server.initialize()
+
         self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
@@ -220,6 +227,10 @@ class MainWindow(QMainWindow):
             if self.server.utility_node_client.run_msg:
                 run = self.server.utility_node_client.run_msg.popleft()
                 self.comm.run_signal.emit(run)
+            if self.state_refs_np is None and hasattr(self.server.utility_node_client, "state_refs_np"):
+                self.state_refs_np = self.server.utility_node_client.state_refs_np
+            if self.attributes_np is None and hasattr(self.server.utility_node_client, "attributes_np"):
+                self.attributes_np = self.server.utility_node_client.attributes_np
 
     def udp_callbacks(self) -> None:
         rgb_image = None
@@ -306,16 +317,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     app = QApplication(sys.argv)
-    if args.host_ip is None:
-        "Running dashboard as host"
-        server = Server(host=True, host_ip=args.host_ip)
-    else:
-        "Running dashboard as spectator"
-        server = Server(host=False, host_ip=args.host_ip)
-
-    server.initialize()
-
-    window = MainWindow(server)
+    window = MainWindow(args)
     window.show()
 
     app.exec()
