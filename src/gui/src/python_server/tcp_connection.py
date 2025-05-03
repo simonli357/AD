@@ -103,37 +103,31 @@ class TcpConnection:
         self.socket.sendall(bytes)
 
     def send_trigger(self, request, response):
-        if self.is_host:
-            bytes = self.triggers.encode(request, response)
-            self.socket.sendall(bytes)
+        bytes = self.triggers.encode(request, response)
+        self.socket.sendall(bytes)
 
     def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
-        if self.is_host:
-            bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
-            self.socket.sendall(bytes)
+        bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
+        self.socket.sendall(bytes)
 
     def send_go_to_cmd_srv(self, cursor_coords):
-        if self.is_host:
-            bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
-            self.socket.sendall(bytes)
+        bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
+        self.socket.sendall(bytes)
 
     def send_set_states_srv(self, x, y):
-        if self.is_host:
-            bytes = self.set_states_srv_msg.encode(x, y)
-            self.socket.sendall(bytes)
+        bytes = self.set_states_srv_msg.encode(x, y)
+        self.socket.sendall(bytes)
 
     def send_waypoints_srv(self, vrefName, pathName, x0, y0, yaw0):
-        if self.is_host:
-            bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
-            self.socket.sendall(bytes)
+        bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
+        self.socket.sendall(bytes)
 
     def send_start_srv(self, start):
-        if self.is_host:
-            str = "start" if start else "stop"
-            data = str.encode('utf-8')
-            length = struct.pack('<I', len(str))
-            bytes = length + self.types[7] + data
-            self.socket.sendall(bytes)
+        str = "start" if start else "stop"
+        data = str.encode('utf-8')
+        length = struct.pack('<I', len(str))
+        bytes = length + self.types[7] + data
+        self.socket.sendall(bytes)
 
     ###################
     # Decode
