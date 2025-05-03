@@ -149,8 +149,8 @@ class TcpConnection:
             msg.layout.dim.append(dim)
 
         buf = io.BytesIO()
-        msg.serialize(buf)                # exactly like your Float64 example
-        payload = buf.getvalue()          # raw bytes of the serialized message
+        msg.serialize(buf)
+        payload = buf.getvalue()
 
         packet = struct.pack('<I', len(payload)) + b'\x0b' + payload
         self.socket.sendall(packet)
