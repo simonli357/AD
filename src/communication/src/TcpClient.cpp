@@ -60,6 +60,38 @@ TcpClient::~TcpClient() {
 // ------------------- //
 // Utility Methods
 // ------------------- //
+in_addr_t TcpClient::pick_local_interface(const std::string &target_ip, uint16_t target_port) {
+	int sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		perror("socket");
+		return INADDR_ANY;
+	}
+
+	sockaddr_in remote{};
+	remote.sin_family = AF_INET;
+	remote.sin_port = htons(target_port);
+	if (inet_pton(AF_INET, target_ip.c_str(), &remote.sin_addr) != 1) {
+		perror("inet_pton");
+		close(sock);
+		return INADDR_ANY;
+	}
+	if (connect(sock, (sockaddr *)&remote, sizeof(remote)) < 0) {
+		perror("connect");
+		close(sock);
+		return INADDR_ANY;
+	}
+
+	sockaddr_in local{};
+	socklen_t len = sizeof(local);
+	if (getsockname(sock, (sockaddr *)&local, &len) < 0) {
+		perror("getsockname");
+		close(sock);
+		return INADDR_ANY;
+	}
+
+	close(sock);
+	return local.sin_addr.s_addr;
+}
 
 void TcpClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -89,11 +121,11 @@ void TcpClient::create_udp_socket() {
 		perror("IP_MULTICAST_TTL");
 	}
 
-	struct in_addr localInterface;
-	if (inet_pton(AF_INET, "YOUR_LOCAL_IP", &localInterface) != 1) {
-		perror("inet_pton for localInterface");
+	in_addr_t ifaddr = pick_local_interface(multicast_address, udp_port);
+	if (ifaddr == INADDR_ANY) {
+		std::cerr << "Warning: could not auto‑detect local interface, falling back to INADDR_ANY\n";
 	} else {
-		if (setsockopt(udp_socket, IPPROTO_IP, IP_MULTICAST_IF, &localInterface, sizeof(localInterface)) < 0) {
+		if (setsockopt(udp_socket, IPPROTO_IP, IP_MULTICAST_IF, &ifaddr, sizeof(ifaddr)) < 0) {
 			perror("IP_MULTICAST_IF");
 		}
 	}

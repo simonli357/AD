@@ -99,6 +99,7 @@ class TcpClient {
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
 	// Utility Methods
+	in_addr_t pick_local_interface(const std::string &target_ip, uint16_t target_port);
 	void create_tcp_socket();
 	void create_udp_socket();
 	void set_tcp_data_types();
