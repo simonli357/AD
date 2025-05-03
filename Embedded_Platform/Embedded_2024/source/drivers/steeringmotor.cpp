@@ -22,7 +22,7 @@ namespace drivers{
 
     CSteeringMotor::CSteeringMotor(
             uint32_t f_period,
-            UnbufferedSerial&  f_serialPort,
+            BufferedSerial&  f_serialPort,
             PinName f_pwm_pin, 
             periodics::CImu& f_imu,
             drivers::CSpeedingMotor& f_speedingControl

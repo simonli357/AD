@@ -1,174 +1,127 @@
-#include <drivers/serialmonitor.hpp>
+#include "serialmonitor.hpp"
+#include <cstdio>
 
-namespace drivers{
+namespace drivers {
 
-    /** @brief  CSerialMonitor class constructor
-     *
-     *
-     *  @param f_serialPort               reference to serial object
-     *  @param f_serialSubscriberMap      map with the key and the callback functions
-     */
-    CSerialMonitor::CSerialMonitor(
-            UnbufferedSerial& f_serialPort,
-            CSerialSubscriberMap f_serialSubscriberMap)
-        :utils::CTask(0)
-        , m_serialPort(f_serialPort)
-        , m_RxBuffer()
-        , m_TxBuffer()
-        , m_parseBuffer()
-        , m_parseIt(m_parseBuffer.begin())
-        , m_serialSubscriberMap(f_serialSubscriberMap) 
-        {
-            m_serialPort.attach(mbed::callback(this,&CSerialMonitor::serialRxCallback), SerialBase::RxIrq); 
-            // m_serialPort.attach(mbed::callback(this,&CSerialMonitor::serialTxCallback), SerialBase::TxIrq); 
-        }
+SerialMonitor::SerialMonitor(BufferedSerial& serial, const SerialSubscriberMap& callbacks)
+    : serial_(serial), callbacks_(callbacks), thread_(osPriorityNormal, 2048, nullptr, "SerMon")
+{
+    // printf("[SerialMonitor] Initialized\n");
+}
 
-    /** @brief  CSerialMonitor class destructor
-     */
-    CSerialMonitor::~CSerialMonitor()
-    {
-    };
+SerialMonitor::~SerialMonitor() {
+    stop();
+    // printf("[SerialMonitor] Stopped and destroyed\n");
+}
 
-    /** @brief  Rx callback actions
-     *  
-     */
-    void CSerialMonitor::serialRxCallback()
-    {
-        __disable_irq();
-        while ((m_serialPort.readable()) && (!m_RxBuffer.isFull())) {
-            char buf;
-            m_serialPort.read(&buf, 1);
-            m_RxBuffer.push(buf);
-        }
-        __enable_irq();
-        return;
-    }
+void SerialMonitor::start(std::chrono::milliseconds sleepDuration) {
+    sleepDuration_ = sleepDuration;
+    running_ = true;
+    thread_.start(callback(this, &SerialMonitor::readerThreadFn));
+    // printf("[SerialMonitor] Thread started\n");
+}
 
-    /** @brief  Tx callback actions
-     *  
-     */
-    void CSerialMonitor::serialTxCallback()
-    {
-        __disable_irq();
-        while ((m_serialPort.writeable()) && (!m_TxBuffer.isEmpty())) {
-            // m_serialPort.write(m_TxBuffer.pop(), 1);
-            m_serialPort.write("a", 1);
-        }
-        __enable_irq();
-        return;
-    }
+void SerialMonitor::stop() {
+    running_ = false;
+    thread_.join();
+    // printf("[SerialMonitor] Thread joined\n");
+}
 
-    /** @brief  Monitoring function
-     * 
-     * It has role to monitor the received messaged, it applies periodically the read buffer content and decodes the message if present. 
-     * Each validated message is redirected to the callback function corresponding to the message itself. The callback function requires two input as pointers,
-     *  one for message's content and one for response's content. After the applying the callback function, it will send the response to the other device.
-     */
-    void CSerialMonitor::_run()
-    {
-        if ((!m_RxBuffer.isEmpty()))
-        {
-            printf("[SeiralMonitor run] got data\n");
-            char l_c = m_RxBuffer.pop(); // Read the next character from buffer
-            if ('#' == l_c) // Message starting special character
-            {
-                m_parseIt = m_parseBuffer.begin();
-                m_parseIt[0] = l_c;
-                m_parseIt++;
-                return;
-            }
-            if (m_parseIt != m_parseBuffer.end())
-            {
-                printf("[SeiralMonitor run] data received: %c\n", l_c);
-                if (l_c == '\n') // Message ending character
-                {
-                    if ((';' == m_parseIt[-3]) && (';' == m_parseIt[-2]) && ('\r' == m_parseIt[-1])) // Check the message ending
-                    {
-                        printf("[SeiralMonitor run] got well formatted data: %s\n", m_parseBuffer.data());
-                        // char l_msgID[2];
-                        // char l_msg[256];
+void SerialMonitor::readerThreadFn() {
+    // printf("[SerialMonitor] Reader thread running\n");
 
-                        // uint32_t res = sscanf(m_parseBuffer.data(),"#%1s:%s;;",l_msgID,l_msg); //Parse the message to key and content
-                        // if (res == 2) // Check the parsing
-                        // {
-                        //     auto l_pair = m_serialSubscriberMap.find(l_msgID); // Search the key and gets the callback function pair
-                        //     if (l_pair != m_serialSubscriberMap.end()) // Check the existence of key 
-                        //     {
-                        //         char l_resp[256]; // Initial response message
-                        //         l_pair->second(l_msg,l_resp); // Call the attached function with this parameters.
-                        //         char formattedResp[256];
-                        //         if (strlen(l_resp) == 0)
-                        //         {
-                        //             snprintf(formattedResp, sizeof(formattedResp), "%s", "no response given");
-                        //         }
-                        //         else
-                        //         {
-                        //             snprintf(formattedResp, sizeof(formattedResp), "@%s:%s;;\r\n", l_msgID, l_resp);
-                        //         }
-                        //         m_serialPort.write(formattedResp,strlen(formattedResp)); // Create the response message
-                                
-                        //         // m_serialPort.write("@%s:%s\r\n",l_msgID,l_resp); // Create the response message
-                        //     }
-                        // }
-                        // m_parseIt = m_parseBuffer.begin(); //Go to begining of parse buffer.
-                        
-                        char l_msgID[2];
-                        char l_msg[256];
-                        char l_msg2[256];
+    char tempBuf[32];  // Temporary buffer to read multiple bytes at once
 
-                        uint32_t res = sscanf(m_parseBuffer.data(), "#%4[^:]:%255[^:]:%255[^;];;", l_msgID, l_msg, l_msg2);
-                        if (res != 3) {
-                            res = sscanf(m_parseBuffer.data(), "#%4[^:]:%255[^;];;", l_msgID, l_msg);
-                            auto l_pair = m_serialSubscriberMap.find(l_msgID); // Search the key and gets the callback function pair
-                            if (l_pair != m_serialSubscriberMap.end()) // Check the existence of key 
-                            {
-                                char l_resp[256]; // Initial response message
-                                l_pair->second(l_msg,l_resp); // Call the attached function with this parameters.
-                                printf("Seiralmonitor: Received command ID: %s, data: %s\n", l_msgID, l_msg);
-                                char formattedResp[256];
-                                if (strlen(l_resp) == 0)
-                                {
-                                    snprintf(formattedResp, sizeof(formattedResp), "%s", "no response given");
-                                }
-                                else
-                                {
-                                    snprintf(formattedResp, sizeof(formattedResp), "@%s:%s;;\r\n", l_msgID, l_resp);
-                                }
-                                m_serialPort.write(formattedResp,strlen(formattedResp)); // Create the response message
-                                
-                                // m_serialPort.write("@%s:%s\r\n",l_msgID,l_resp); // Create the response message
-                            }
+    while (running_) {
+        ssize_t n = serial_.read(tempBuf, sizeof(tempBuf));
+        if (n > 0) {
+            for (ssize_t i = 0; i < n; ++i) {
+                char c = tempBuf[i];
+
+                if (c == '#' && !inFrame_) {
+                    inFrame_ = true;
+                    bufIndex_ = 0;
+                    frameBuf_[bufIndex_] = c;
+                    continue;
+                }
+
+                if (inFrame_) {
+                    if (bufIndex_ < (frameBuf_.size() - 5)) { // reserve for ";;\r\n" and '\0'
+                        frameBuf_[++bufIndex_] = c;
+                        if (bufIndex_ >= 3 &&
+                            frameBuf_[bufIndex_]   == '\n' &&
+                            frameBuf_[bufIndex_-1] == '\r' &&
+                            frameBuf_[bufIndex_-2] == ';'  &&
+                            frameBuf_[bufIndex_-3] == ';') 
+                        {
+                            frameBuf_[bufIndex_-3] = '\0';
+                            // printf("[SerialMonitor] Complete frame: %s\n", frameBuf_.data());
+                            processFrame();
+                            inFrame_ = false;
+                            bufIndex_ = 0;
                         }
-                        else {
-                            auto l_pair = m_serialSubscriberMap.find(l_msgID); // Search the key and gets the callback function pair
-                            if (l_pair != m_serialSubscriberMap.end()) // Check the existence of key 
-                            {
-                                char l_resp[256]; // Initial response message
-                                char msg[512];
-                                sprintf(msg, "%s:%s", l_msg, l_msg2);
-                                l_pair->second(msg,l_resp); // Call the attached function with this parameters.
-                                char formattedResp[256];
-                                if (strlen(l_resp) == 0)
-                                {
-                                    snprintf(formattedResp, sizeof(formattedResp), "%s", "no response given");
-                                }
-                                else
-                                {
-                                    snprintf(formattedResp, sizeof(formattedResp), "@%s:%s;;\r\n", l_msgID, l_resp);
-                                }
-                                m_serialPort.write(formattedResp,strlen(formattedResp)); // Create the response message
-                                
-                                // m_serialPort.write("@%s:%s\r\n",l_msgID,l_resp); // Create the response message
-                            }
-                        }
-                        m_parseIt = m_parseBuffer.begin(); //Go to begining of parse buffer.
+                    } else {
+                        // printf("[SerialMonitor] Buffer overflow\n");
+                        inFrame_ = false;
+                        bufIndex_ = 0;
                     }
                 }
-                m_parseIt[0] = l_c;
-                m_parseIt++;
-                return;
             }
         }
+        ThisThread::sleep_for(sleepDuration_);
     }
 
-};
+    // printf("[SerialMonitor] Reader thread exiting\n");
+}
+
+void SerialMonitor::processFrame() {
+    // printf("[SerialMonitor] Processing frame: %s\n", frameBuf_.data()); // frameBuf_ now contains e.g., "#13:0.00:0.00\0;;\r\n..."
+
+    char keyBuf[3] = {0}; // Key limited to 2 chars + null
+    char msg1[256] = {0}; // Adapt size as needed
+    char msg2[256] = {0}; // Adapt size as needed
+
+    int parts = std::sscanf(frameBuf_.data(), "#%2[^:]:%255[^:]:%255[^\0]", keyBuf, msg1, msg2);
+
+    std::string key(keyBuf);
+    std::string payload;
+
+    if (parts == 3) {
+        payload = std::string(msg1) + ":" + msg2;
+        // printf("[SerialMonitor] Parsed 3 parts: key='%s', msg1='%s', msg2='%s'\n", key.c_str(), msg1, msg2);
+    } else if (parts == 2) {
+        payload = msg1;
+        // printf("[SerialMonitor] Parsed 2 parts: key='%s', msg1='%s'\n", key.c_str(), msg1);
+     } else if (parts == 1) {
+        payload = ""; // No payload
+        // printf("[SerialMonitor] Parsed 1 part: key='%s'\n", key.c_str());
+    }
+     else {
+        // printf("[SerialMonitor] Parse error (sscanf returned %d parts)\n", parts);
+        return; // Exit processing if parse failed
+    }
+
+    // printf("[SerialMonitor] Final parsed key='%s', payload='%s'\n", key.c_str(), payload.c_str());
+
+    auto it = callbacks_.find(key);
+    if (it != callbacks_.end()) {
+        // printf("[SerialMonitor] Dispatching callback for '%s'\n", key.c_str());
+        static char response[256] = {0};
+        it->second(payload.c_str(), response); // Call the registered callback
+        // printf("[SerialMonitor] Callback response: '%s'\n", response);
+        // if (response[0] != '\0') { // Check if response is not empty
+        //     char out[300] = {0}; // Ensure output buffer is adequate
+        //     std::sn// printf(out, sizeof(out), "@%s:%s;;\r\n", keyBuf, response);
+        //     // printf("[SerialMonitor] Sending response: %s", out); // Log includes newline from format
+        //     txMutex_.lock();
+        //     serial_.write(out, strlen(out));
+        //     txMutex_.unlock();
+        // } else {
+        //      // printf("[SerialMonitor] Callback for '%s' provided no response to send.\n", key.c_str());
+        // }
+    } else {
+        // printf("[SerialMonitor] No callback registered for key '%s'\n", key.c_str());
+    }
+}
+
+}

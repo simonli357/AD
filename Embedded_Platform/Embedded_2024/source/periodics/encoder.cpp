@@ -15,7 +15,7 @@ namespace periodics {
 
 CEncoder::CEncoder(uint32_t f_periodTicks,
                 float g_baseTick,
-                UnbufferedSerial& f_serial,
+                BufferedSerial& f_serial,
                 PinName pwm_pin)
     : utils::CTask(f_periodTicks),
       m_pwm(pwm_pin),
@@ -224,7 +224,7 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    printf("[Encoder Run]\n");
+    // printf("[Encoder Run]\n");
     // ————— One-time Timer setup
     static Timer execTimer;
     static bool timerStarted = false;
@@ -239,7 +239,7 @@ void CEncoder::_run() {
     // ————— 2) Read the filtered angle every tick
     float angleDeg = readAngleDegrees();
     float speedDeg = readAngularSpeed();
-    printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
+    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 
     // ————— 4) Package angle+speed into a TelemetryMsg and push
     {
@@ -279,8 +279,8 @@ void CEncoder::_run() {
                                   ? static_cast<uint32_t>(sum_interval_us / count_interval)
                                   : 0;
 
-        printf("\n[Encoder] avg exec = %u µs, avg period = %u µs over %u runs\n",
-               avg_exec, avg_interval, AVG_N);
+        // printf("\n[Encoder] avg exec = %u µs, avg period = %u µs over %u runs\n",
+        //        avg_exec, avg_interval, AVG_N);
 
         sum_exec         = 0;
         count_exec       = 0;
