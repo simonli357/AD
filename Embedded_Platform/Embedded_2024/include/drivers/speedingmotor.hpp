@@ -46,7 +46,7 @@ namespace drivers
             /* Constructor */
             CSpeedingMotor(
                 uint32_t f_period,
-                UnbufferedSerial&  f_serialPort,
+                BufferedSerial&  f_serialPort,
                 PinName     f_pwm_pin,
                 periodics::CEncoder& f_encoder
             );
@@ -63,7 +63,7 @@ namespace drivers
             /** @brief PWM output pin */
             PwmOut m_pwm_pin;
             /* reference to Serial object */
-            UnbufferedSerial&   m_serialPort;
+            BufferedSerial&   m_serialPort;
             /* Encoder class reference */
             periodics::CEncoder& m_encoder;
             /** @brief 0 default */

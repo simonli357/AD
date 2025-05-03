@@ -8,7 +8,7 @@ namespace drivers {
  *  @param f_serialSubscriberMap map with the key and the callback functions
  */
 CSerialMonitor::CSerialMonitor(
-        UnbufferedSerial& f_serialPort,
+        BufferedSerial& f_serialPort,
         CSerialSubscriberMap f_serialSubscriberMap)
     : utils::CTask(0)
     , m_serialPort(f_serialPort)
