@@ -398,11 +398,11 @@ public:
         
                 double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
                 double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
-                yaw = std::atan2(sin_blend, cos_blend);
-            } else if (valid_inst) {
-                yaw = std::atan2(dy_inst, dx_inst);
+                double yaw_new = std::atan2(sin_blend, cos_blend);
+                yaw = (1 - alpha) * yaw + alpha * yaw_new;
             } else if (valid_avg) {
-                yaw = std::atan2(dy_avg, dx_avg);
+                double yaw_new = std::atan2(dy_avg, dx_avg);
+                yaw = (1 - alpha) * yaw + alpha * yaw_new;
             }
         
             // Position update (EMA)

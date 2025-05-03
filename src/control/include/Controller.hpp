@@ -831,8 +831,9 @@ public:
 
     void check_car() {
         int closest_idx = PathManager::closest_waypoint_index;
-        double safety_dist = 0.3; // meters
-        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) return;
+        double safety_dist = 0.75; // meters
+        bool can_overtake = true;
+        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) can_overtake = false;
         auto cars = Tracking::get_road_cars();
         if (cars.size() == 0) return;
         double min_adj_lane_dist = 1000.;
@@ -949,7 +950,7 @@ public:
             // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
             return;
         }
-        bool can_overtake = (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
+        can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
