@@ -66,7 +66,7 @@ namespace drivers{
      */
     void CSerialMonitor::_run()
     {
-        printf("[SeiralMonitor run] \n");
+        // printf("[SeiralMonitor run] \n");
         if ((!m_RxBuffer.isEmpty()))
         {
             char l_c = m_RxBuffer.pop(); // Read the next character from buffer
