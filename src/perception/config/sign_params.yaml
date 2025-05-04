@@ -3,14 +3,14 @@ confidence_thresholds: [0.7, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.6
 max_distance_thresholds: [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 1.5, 3.0, 5.0, 3.0, 3.0, 3.0]
 # counter_thresholds: [2,3,3,3,3,3,3,3,3,3,3,2,1, 1, 1, 1]
 counter_thresholds: [1,1,1,1,1,1,1,1,1,1,1,1,1, 1, 1, 1]
+median_thresholds: [0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.5, 0.25, 0.25, 0.25]
 ncnn_model: "sissi753-opt"
 # v8_model: "citycocov2lgtclab_20"
 # v8_model: "xinya"
-# v8_model: "xinyi"
 # v8_model: "xenia"
 # v8_model: "lynn"
 # v8_model: "jasmine"
-v8_model: "rebecca"
+v8_model: "xinyi357"
 emergency_thresh: 450 #mm
 emergency_width: 0.5
 emergency_height: 0.5
