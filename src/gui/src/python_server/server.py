@@ -77,7 +77,7 @@ class Server:
         if client_type == "dashboard_client":
             key = client_socket.getpeername()[0]
             print(f"Dashboard Client Connected with IP: {key}")
-            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host)
+            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=False)
             listener = threading.Thread(target=self.dashboard_listener, args=(client_socket,), daemon=True)
             listener.start()
 
