@@ -166,10 +166,28 @@ class ButtonsWidget(QtWidgets.QWidget):
             if self.server.tcp_client.socket is None:
                 return
             self.server.tcp_client.send_start_srv(not self.started)
-            max_retries = 50
+            max_retries = 500
             retries = 0
             while (retries < max_retries):
                 if self.server.tcp_client.start_srv_msg:
+                    if not self.started:
+                        print("Starting")
+                        self.main_window.reset_run_statistics()
+                        self.started = True
+                        if self.start_time is None:
+                            self.start_time = time.time()
+                        else:
+                            self.start_time = time.time() - self.accumulated_centiseconds / 100
+                        self.time_timer.start(25)
+                    else:
+                        print("Stopping")
+                        self.started = False
+                        if self.start_time is not None:
+                            elapsed = time.time() - self.start_time
+                            self.accumulated_centiseconds += int(elapsed * 100)
+                            self.start_time = None
+                        self.time_timer.stop()
+                    self.toggle_start_icon()
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -205,24 +223,6 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def handle_start_click(self) -> None:
         self.call_start_service(not self.started)
-        if not self.started:
-            print("Starting")
-            self.main_window.reset_run_statistics()
-            self.started = True
-            if self.start_time is None:
-                self.start_time = time.time()
-            else:
-                self.start_time = time.time() - self.accumulated_centiseconds / 100
-            self.time_timer.start(25)
-        else:
-            print("Stopping")
-            self.started = False
-            if self.start_time is not None:
-                elapsed = time.time() - self.start_time
-                self.accumulated_centiseconds += int(elapsed * 100)
-                self.start_time = None
-            self.time_timer.stop()
-        self.toggle_start_icon()
 
     def handle_stop_click(self) -> None:
         self.time_timer.stop()
