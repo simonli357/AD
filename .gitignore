@@ -3,6 +3,7 @@
 
 .cache/
 src/perception/models/trt/*.engine
+src/perception/models/
 src/perception/include/ncnn
 src/control/scripts/__pycache__
 src/planning/scripts/__pycache__

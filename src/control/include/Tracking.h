@@ -375,37 +375,28 @@ public:
             double dt1 = (current_time - last_detection_time).toSec();
             double dt2 = (current_time - first_detection_time).toSec();
         
-            // Estimate speed
-            double inst_speed = (dt1 > 0) ? std::hypot(new_x - x, new_y - y) / dt1 : speed;
-            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
+            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : speed;
         
             double alpha = new_conf / (confidence + new_conf);
             double est_speed = avg_speed;
             speed = (1 - alpha) * speed + alpha * est_speed;
-        
-            // Yaw estimation from displacement
-            double dx_inst = new_x - x;
-            double dy_inst = new_y - y;
+            if (speed < 0.04) {
+                speed = 0;
+            }
             double dx_avg = new_x - first_x;
             double dy_avg = new_y - first_y;
         
-            bool valid_inst = std::hypot(dx_inst, dy_inst) > 1e-4;
             bool valid_avg = std::hypot(dx_avg, dy_avg) > 1e-4;
         
-            if (valid_inst && valid_avg) {
-                double yaw_inst = std::atan2(dy_inst, dx_inst);
+            if (valid_avg && speed > 0.04) {
                 double yaw_avg = std::atan2(dy_avg, dx_avg);
         
                 double sin_blend = std::sin(yaw_avg);
                 double cos_blend = std::cos(yaw_avg);
                 double yaw_new = std::atan2(sin_blend, cos_blend);
                 this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
-            } else if (valid_avg) {
-                double yaw_new = std::atan2(dy_avg, dx_avg);
-                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
             }
         
-            // Position update (EMA)
             x = (1 - alpha) * x + alpha * new_x;
             y = (1 - alpha) * y + alpha * new_y;
         }

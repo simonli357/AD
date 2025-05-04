@@ -16,8 +16,8 @@ public:
         
         // decrease to trust initial guess more
         P_(0, 0) = P_(1, 1) = 1.0;
-        P_(2, 2) = 1000.0; // yaw uncertainty
-        P_(3, 3) = 1.0;   // speed uncertainty
+        P_(2, 2) = 0.1; // yaw uncertainty
+        P_(3, 3) = 0.5;   // speed uncertainty
 
         // decrease to trust predictions more
         Q_.setZero();
