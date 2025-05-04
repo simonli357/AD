@@ -1,5 +1,5 @@
 class_names: ["oneway", "highwayentrance", "stopsign", "roundabout", "park", "crosswalk", "noentry", "highwayexit", "priority", "lights", "block", "pedestrian", "car", "green light", "yellow light", "red light"]
-confidence_thresholds: [0.7, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.55, 0.65, 0.65, 0.65]
+confidence_thresholds: [0.7, 0.6, 0.7, 0.7, 0.7, 0.7, 0.7, 0.65, 0.65, 0.65, 0.65, 0.7, 0.7, 0.65, 0.65, 0.65]
 max_distance_thresholds: [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 1.5, 3.0, 5.0, 3.0, 3.0, 3.0]
 # counter_thresholds: [2,3,3,3,3,3,3,3,3,3,3,2,1, 1, 1, 1]
 counter_thresholds: [1,1,1,1,1,1,1,1,1,1,1,1,1, 1, 1, 1]

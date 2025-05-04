@@ -16,7 +16,7 @@ def read_from_port(ser):
 def send_commands(ser, velocity, angle, use_pid=True, rate_hz=10):
     """Continuously send formatted commands at the specified rate."""
     interval = 1.0 / rate_hz
-    number = "10"
+    number = "11"
     while True:
         formatted = f"#{number}:{velocity * 100:.2f}:{angle:.2f};;\r\n"
         try:
@@ -27,6 +27,26 @@ def send_commands(ser, velocity, angle, use_pid=True, rate_hz=10):
             break
         time.sleep(interval)
 
+def send_commands2(ser, velocity, use_pid=True, rate_hz=10):
+    """Continuously send formatted commands at the specified rate with cycling steering angle."""
+    interval = 1.0 / rate_hz
+    number = "11" if use_pid else "13"
+
+    angles = [0, 20, -20]
+    index = 0
+
+    while True:
+        angle = angles[index]
+        formatted = f"#{number}:{velocity * 100:.2f}:{angle:.2f};;\r\n"
+        try:
+            ser.write(formatted.encode('utf-8'))
+            print(f"[Sent] {formatted.strip()}")
+        except Exception as e:
+            print(f"[Error writing] {e}")
+            break
+
+        index = (index + 1) % len(angles)
+        time.sleep(interval)
 def main():
     port = "/dev/ttyACM0"  # Change as needed
     baud = 460800
@@ -39,12 +59,10 @@ def main():
 
     print(f"Opened {port} at {baud} baud.")
 
-    # Start the reader thread
     reader_thread = threading.Thread(target=read_from_port, args=(ser,), daemon=True)
     reader_thread.start()
 
-    # Start the sender loop (velocity = 0.0, angle = 0.0, use_pid = True)
-    send_commands(ser, velocity=0.0, angle=0.0, use_pid=True)
+    send_commands(ser, velocity=0.0, angle=-0.0, use_pid=True)
 
 if __name__ == "__main__":
     main()

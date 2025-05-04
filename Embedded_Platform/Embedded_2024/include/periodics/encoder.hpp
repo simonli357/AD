@@ -48,7 +48,7 @@ public:
     size_t _hampelCount             = 0;
 
     /** @return turn count */
-    int getTurnCount();
+    float getTotalDisplacementDegrees();
 
     /** @return linear speed (m/s) */
     float getLinearSpeed();
