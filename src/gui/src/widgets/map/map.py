@@ -125,15 +125,12 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.sign_images.append(os.path.join(self.assets_dir, 'trafficlight_red.png'))
         self.sign_images.append(os.path.join(self.assets_dir, 'stopsign2.png'))
 
-        run_fetcher = threading.Thread(target=self.fetch_run, daemon=True)
-        run_fetcher.start()
-
     def fetch_run(self):
         while self.main_window.state_refs_np is None and self.main_window.attributes_np is None:
             if self.main_window.server.tcp_client is None:
                 continue
-            time.sleep(3.0)
             self.main_window.server.tcp_client.refresh_run()
+            time.sleep(5.0)
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
@@ -178,6 +175,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         for path in self.sign_images:
             texture = load_2D_texture(path)
             self.sign_models.append(texture)
+
+        run_fetcher = threading.Thread(target=self.fetch_run, daemon=True)
+        run_fetcher.start()
 
     def paintGL(self):
         if self.stop_drawing:
