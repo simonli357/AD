@@ -537,29 +537,20 @@ inline bool set_params(const std::shared_ptr<TcpClient>& tcp_client) {
 	std::vector<double> state_attributes_v(state_attributes.data(), state_attributes.data() + state_attributes.size());
 	nh->setParam("/state_attributes", state_attributes_v);
 
-    auto prom = std::make_shared<std::promise<std_srvs::TriggerResponse>>();
-    auto fut = prom->get_future();
-
     tcp_client->set_trigger_response_callback(
-        [prom](const std_srvs::TriggerResponse &resp) {
-            prom->set_value(resp);
+        [](const std_srvs::TriggerResponse &resp) {
+            if (resp.success) {
+                ROS_INFO("Python node notified successfully.");
+            } else {
+                ROS_WARN("Python node notification failed: %s", resp.message.c_str());
+            }
         }
     );
 
 	std_srvs::Trigger trigger_srv;
 	tcp_client->send_trigger(trigger_srv);
 	tcp_client->send_params(state_refs_v, state_attributes_v);
-
-    std_srvs::TriggerResponse resp = fut.get();
-    if (resp.success) {
-        ROS_INFO("Python node notified successfully.");
-        tcp_client->set_trigger_response_callback({});
-        return true;
-    } else {
-        ROS_WARN("Python node notification failed: %s", resp.message.c_str());
-        tcp_client->set_trigger_response_callback({});
-        return false;
-    }
+    return true;
 }
 
 inline bool call_waypoint_service(double x, double y, double yaw, const std::shared_ptr<TcpClient>& tcp_client) {
