@@ -406,16 +406,19 @@ inline void get_current_waypoints(Eigen::MatrixXd& output) {
 
 inline int find_closest_waypoint2(
   const Eigen::Vector2d& pt,
-  double threshold = 0.1)
+  double threshold = 0.1, int start_idx = -1, int end_idx = -1)
 {
-  const int M = state_refs_original.rows();
-  if (M == 0) return -1;
+	if (start_idx < 0) start_idx = 0;
+	if (end_idx < 0)   end_idx = state_refs_original.rows() - 1;
+	end_idx = std::min(end_idx, static_cast<int>(state_refs_original.rows() - 1));
+	start_idx = std::max(start_idx, 0);
+	if (start_idx > end_idx) return -1;
 
   const double thr2 = threshold * threshold;
   int   bestIdx   = -1;
   double bestDist2 = thr2;  // only accept < thr2
 
-  for (int i = 0; i < M; ++i) {
+	for (int i = start_idx; i <= end_idx; ++i) {
     double dx    = state_refs_original(i, 0) - pt.x();
     double dy    = state_refs_original(i, 1) - pt.y();
     double dist2 = dx*dx + dy*dy;
@@ -425,9 +428,6 @@ inline int find_closest_waypoint2(
       bestIdx   = i;
     }
   }
-	// if (bestIdx < 0) {
-	// 	std::cout << "WARNING: PathManager::find_closest_waypoint2(): car pose: " << pt.transpose() << ", min distance: " << std::sqrt(bestDist2) << ", bestIdx: " << bestIdx << std::endl;
-	// }
   return bestIdx;
 }
 

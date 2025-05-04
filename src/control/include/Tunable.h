@@ -51,7 +51,8 @@ namespace Tunable {
     inline bool intersection_relocalize = false;
     inline bool has_light = false;
 
-    inline int pedestrian_count_thresh = 8;
+    inline double pedestrian_distance = 0.5;
+    inline double pedestrian_threshold = 0.4;
 
     inline double sign_lon_offset;
     inline double sign_lon_offset_slope;
@@ -139,7 +140,8 @@ namespace Tunable {
       CHECK_PARAM(mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
       CHECK_PARAM(mode + "/min_dist_to_car", min_dist_to_car);
       CHECK_PARAM(mode + "/min_tailing_dist", min_tailing_dist);
-      CHECK_PARAM(mode + "/pedestrian_count_thresh", pedestrian_count_thresh);
+      CHECK_PARAM(mode + "/pedestrian_distance", pedestrian_distance);
+      CHECK_PARAM(mode + "/pedestrian_threshold", pedestrian_threshold);
       CHECK_PARAM(mode + "/sign_lon_offset", sign_lon_offset);
       CHECK_PARAM(mode + "/sign_lon_offset_slope", sign_lon_offset_slope);
       CHECK_PARAM(mode + "/sign_lat_offset", sign_lat_offset);

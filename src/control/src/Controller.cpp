@@ -196,7 +196,6 @@ public:
             utils.publish_cmd_vel(0.0, 0.0);
             rate->sleep();
         }
-        // TODO: reset path manager idx
     }
     int parking_maneuver_hardcode(bool right=true, bool exit=false, double rate_val=20, double initial_y_error = 0, double initial_yaw_error = 0) {
         // rate_val = 1/mpc.T;
@@ -546,39 +545,54 @@ public:
             utils.debug("check_emergency_stop(): emergency stop released", 1);
         }
     }
-    void pedestrian_detected() {
-        int pedestrian_count = 0;
-        bool detected;
-        if (Tunable::real) {
-            detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
-        } else {
-            // detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0 || utils.object_index(OBJECT::HIGHWAYEXIT) >= 0;
-            detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
-        }
-        if (detected) {
-            mpc.reset_solver();
-            while (true) {
-                if (Tunable::real) {
-                    detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
-                } else {
-                    detected = utils.object_index(OBJECT::PEDESTRIAN) >= 0;
+    void pedestrian_detected2() {
+        int closest_idx = PathManager::closest_waypoint_index;
+        int num_index = static_cast<int>(Tunable::pedestrian_distance * PathManager::density);
+        bool pedestrian_previously_detected = false;
+        while (true) {
+            auto pedestrians = Tracking::get_road_pedestrians();
+            if (pedestrians.empty()) {
+                if (pedestrian_previously_detected) {
+                    utils.debug("pedestrian_detected2(): All pedestrians disappeared.", 2);
+                    pedestrian_previously_detected = false;
                 }
-                if (detected) {
-                    double dist;
-                    if (Tunable::real) dist = utils.object_distance(utils.object_index(OBJECT::HIGHWAYEXIT));
-                    else dist = utils.object_distance(utils.object_index(OBJECT::PEDESTRIAN));
-                    utils.debug("pedestrian_detected(): girl detected at a distance of: " + helper::d2str(dist), 2);
-                    stop_for(stop_duration);
-                } else {
-                    pedestrian_count ++;
-                    utils.debug("pedestrian_detected(): pedestrian sem: " + helper::d2str(pedestrian_count)+ " out of " + helper::d2str(pedestrian_count_thresh), 2);
-                    stop_for(stop_duration/15);
-                }
-                if (pedestrian_count > pedestrian_count_thresh) break;
+                break;
             }
-            rate->sleep();
+            bool detected = false;
+            for (const auto& pedestrian : pedestrians) {
+                if (pedestrian->type != OBJECT::PEDESTRIAN) continue;
+    
+                if (pedestrian->cumulative_confidence < 
+                    Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::PEDESTRIAN)]) {
+                    continue;
+                }
+    
+                Eigen::Vector2d pedestrian_pose(pedestrian->x, pedestrian->y);
+                int pedestrian_idx = PathManager::find_closest_waypoint2(
+                    pedestrian_pose, Tunable::pedestrian_threshold, closest_idx, closest_idx + num_index);
+    
+                if (pedestrian_idx >= 0) {
+                    detected = true;
+                    break;
+                }
+            }
+    
+            if (detected) {
+                if (!pedestrian_previously_detected) {
+                    utils.debug("pedestrian_detected2(): Detected nearby pedestrian — stopping.", 2);
+                    pedestrian_previously_detected = true;
+                }
+                stop_for(stop_duration / 5);
+            } else {
+                if (pedestrian_previously_detected) {
+                    utils.debug("pedestrian_detected2(): No more nearby pedestrians — resuming.", 2);
+                    pedestrian_previously_detected = false;
+                }
+                break;
+            }
         }
     }
+
     bool sign_based_relocalization2(std::shared_ptr<Tracking::KnownStaticObject>& object, double thresh = -1.0) {
         if (thresh < 0) thresh = sign_localization_threshold;
         double error_sq = std::pow(object->x - object->gt_pose[0], 2) + std::pow(object->y - object->gt_pose[1], 2);
@@ -822,6 +836,8 @@ public:
         if(pubWaypoints) {
             publish_waypoints();
         }
+        utils.update_states(x_current);
+        PathManager::find_closest_waypoint(x_current);
         double yaw_error = orientation - utils.get_yaw();
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
@@ -1276,7 +1292,7 @@ void StateMachine::run() {
     while (ros::ok()) {
         utils.update_states(x_current);
         if (Tunable::sign) {
-            pedestrian_detected();
+            pedestrian_detected2();
             check_emergency_stop();
         }
         if (state == STATE::MOVING) {
@@ -1368,7 +1384,7 @@ void StateMachine::run() {
                     std::cout << "parking spot " << i << ": " << GroundTruth::PARKING_SPOTS[i][0] << ", " << GroundTruth::PARKING_SPOTS[i][1] << std::endl;
                 }
                 while(1) {
-                    pedestrian_detected();
+                    pedestrian_detected2();
                     check_emergency_stop();
                     auto cars = Tracking::get_road_cars();
                     bool changed = false;
@@ -1439,7 +1455,7 @@ void StateMachine::run() {
                 utils.get_states(x0, y0, yaw0);
                 while(1) {
                     x_error = x - GroundTruth::PARKING_SPOTS[target_spot][0];
-                    pedestrian_detected();
+                    pedestrian_detected2();
                     check_emergency_stop();
                     utils.get_states(x, y, yaw);
                     double norm_sq = std::pow(x - x0, 2) + std::pow(y - y0, 2);

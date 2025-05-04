@@ -37,7 +37,7 @@ static const std::array<TrackingParams, 17> OBJECT_TRACKING_PARAMS = {{
     {MIN_SIGN_DIST, 0.0, 3600},    // PRIORITY
     {MIN_SIGN_DIST, 0.0, 3600},    // LIGHTS
     {MIN_SIGN_DIST, 0.0, 3600},    // BLOCK
-    {0.075, 0.2, 5},    // PEDESTRIAN
+    {0.075, 0.2, 2.5},    // PEDESTRIAN
     {CAR_WIDTH, 0.5, 5},    // CAR
     {MIN_SIGN_DIST, 0.0, 10},    // GREENLIGHT
     {MIN_SIGN_DIST, 0.0, 10},    // YELLOWLIGHT
