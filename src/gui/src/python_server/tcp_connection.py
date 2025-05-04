@@ -95,7 +95,7 @@ class TcpConnection:
     ###################
 
     def send_string(self, string):
-        data = str.encode('utf-8')
+        data = string.encode('utf-8')
         length = struct.pack('<I', len(string))
         bytes = length + self.types[0] + data
         self.socket.sendall(bytes)
