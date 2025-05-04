@@ -214,7 +214,7 @@ class MainWindow(QMainWindow):
         self.map_widget.no_destinations = False
 
     def tcp_callbacks(self) -> None:
-        if self.server.tcp_client.socket is not None:
+        if self.server.tcp_client is not None:
             if self.server.tcp_client.messages:
                 msg = self.server.tcp_client.messages.popleft()
                 self.comm.message_signal.emit(msg.data)

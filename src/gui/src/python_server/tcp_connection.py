@@ -13,43 +13,43 @@ from python_server.msg.run_msg import RunMsg
 
 
 class TcpConnection:
-    def __init__(self, server, client_socket=None, is_host=True):
+    def __init__(self, client_socket, on_packet, is_host=True):
         self.socket = client_socket
         self.alive = True
         self.is_host = is_host
-        self.server = server
-        if client_socket is not None:
-            self.socket.settimeout(None)
-            self.data_actions = OrderedDict({
-                b'\x01': self.parse_string,
-                b'\x02': self.parse_trigger,
-                b'\x03': self.parse_message,
-                b'\x04': self.parse_go_to_srv,
-                b'\x05': self.parse_go_to_cmd_srv,
-                b'\x06': self.parse_set_states_srv,
-                b'\x07': self.parse_waypoints_srv,
-                b'\x08': self.parse_start_srv,
-                b'\x09': self.parse_params,
-                b'\x0a': self.parse_run,
-            })
-            self.types = list(self.data_actions.keys())
-            self.strings = deque()
-            self.triggers = TriggerMsg(b'\x02')
-            self.messages = deque()
-            self.run_msg = deque()
-            self.graph_msg = deque()
-            self.go_to_srv_msg = GoToSrv(b'\x04')
-            self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
-            self.set_states_srv_msg = SetStatesSrv(b'\x06')
-            self.waypoints_srv_msg = WaypointsSrv(b'\x07')
-            self.start_srv_msg = False
-            self.params = ParamsMsg(b'\x09')
-            self.receiver = threading.Thread(target=self.receive, daemon=True)
-            self.receiver.start()
-            if is_host:
-                self.send_string("ack")
-            else:
-                self.send_string("dashboard_client")
+        self.on_packet = on_packet
+        self.socket.settimeout(None)
+        self.data_actions = OrderedDict({
+            b'\x01': self.parse_string,
+            b'\x02': self.parse_trigger,
+            b'\x03': self.parse_message,
+            b'\x04': self.parse_go_to_srv,
+            b'\x05': self.parse_go_to_cmd_srv,
+            b'\x06': self.parse_set_states_srv,
+            b'\x07': self.parse_waypoints_srv,
+            b'\x08': self.parse_start_srv,
+            b'\x09': self.parse_params,
+            b'\x0a': self.parse_run,
+        })
+        self.types = list(self.data_actions.keys())
+        self.strings = deque()
+        self.triggers = TriggerMsg(b'\x02')
+        self.messages = deque()
+        self.run_msg = deque()
+        self.graph_msg = deque()
+        self.go_to_srv_msg = GoToSrv(b'\x04')
+        self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
+        self.set_states_srv_msg = SetStatesSrv(b'\x06')
+        self.waypoints_srv_msg = WaypointsSrv(b'\x07')
+        self.start_srv_msg = False
+        self.params = ParamsMsg(b'\x09')
+        self.receiver = threading.Thread(target=self.receive, daemon=True)
+        self.receiver.start()
+        if is_host:
+            self.send_string("ack")
+        else:
+            self.send_string("dashboard_client")
+            self.send_string("ack")
 
     def recvall(self, length):
         data = b""
@@ -83,6 +83,11 @@ class TcpConnection:
                 message_type = header[message_size:header_size]
                 # Receive the data based on the length from the header
                 data = self.recvall(length)
+                packet = header + data
+                if self.on_packet:
+                    self.on_packet(self, packet)
+                if not self.is_host:
+                    continue
                 # Process the data
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
