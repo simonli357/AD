@@ -23,7 +23,6 @@ class Server:
         self.udp_connection = None
         self.alive = True
         self.listener = None
-        self._lock = threading.Lock()
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
@@ -78,40 +77,24 @@ class Server:
             key = client_socket.getpeername()[0]
             print(f"Dashboard Client Connected with IP: {key}")
             self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
-            listener = threading.Thread(target=self.dashboard_listener, args=(client_socket,), daemon=True)
-            listener.start()
-
-    def dashboard_listener(self, socket):
-        header_size = 5
-        message_size = 4
-
-        while True:
-            header_size = 5
-            message_size = 4
-            while True:
-                while True:
-                    header = socket.recv(header_size)
-                    if len(header) < header_size:
-                        continue
-                    break
-                length = struct.unpack('<I', header[:message_size])[0]
-                data = socket.recv(length)
-                packet = header + data
-                self.tcp_client.socket.sendall(packet)
 
     def on_packet(self, source, packet):
-        with self._lock:
-            if source.is_host:
-                dead = []
-                for key, db in self.dashboard_clients.items():
-                    try:
-                        db.socket.sendall(packet)
-                    except OSError:
-                        dead.append(key)
-                for key in dead:
-                    self.dashboard_clients.pop(key, None)
-            elif not source.is_host and source.is_dashboard:
+        if source.is_host:
+            dead = []
+            for key, db in self.dashboard_clients.items():
                 try:
-                    source.socket.sendall(packet)
+                    db.socket.sendall(packet)
                 except OSError:
-                    pass
+                    dead.append(key)
+            for key in dead:
+                self.dashboard_clients.pop(key, None)
+        elif not source.is_host and source.is_dashboard:
+            try:
+                source.socket.sendall(packet)
+            except Exception as e:
+                print(e)
+        else:
+            try:
+                self.tcp_client.socket.sendall(packet)
+            except Exception as e:
+                print(e)

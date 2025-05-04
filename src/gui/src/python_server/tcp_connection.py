@@ -87,6 +87,8 @@ class TcpConnection:
                 packet = header + data
                 if self.on_packet:
                     self.on_packet(self, packet)
+                if self.is_dashboard and self.is_host:
+                    continue
                 # Process the data
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)
