@@ -504,8 +504,8 @@ void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
 	if (!trigger_response_callback) {
 		return;
 	}
-	auto msg = TriggerMsg().deserialize(bytes);
-	trigger_response_callback(*msg->response);
+	auto response = TriggerMsg().deserialize(bytes)->response.value();
+	trigger_response_callback(response);
 }
 
 void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
