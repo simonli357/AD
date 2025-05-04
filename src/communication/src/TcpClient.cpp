@@ -199,7 +199,6 @@ void TcpClient::listen() {
 			connected = false;
 		}
 	}
-	run_sent = false;
 	tcp_can_send = false;
 }
 
@@ -221,9 +220,6 @@ void TcpClient::send_data() {
 				task();
 			}
 			continue;
-		}
-		if (!run_sent && send_run_callback) {
-			send_run_callback();
 		}
         if (++swload_counter >= 20) {
             send_swload();
@@ -490,10 +486,15 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	if (decoded_string == "ack") {
 		tcp_can_send = true;
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
+        if (send_run_callback) {
+            send_run_callback();
+        }
 		return;
 	}
 	if (decoded_string == "refresh_run") {
-		run_sent = false;
+        if (send_run_callback) {
+            send_run_callback();
+        }
 		std::cout << "Resending Run Parameters to GUI" << std::endl;
 		return;
 	}

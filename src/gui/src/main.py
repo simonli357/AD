@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
         if args.host_ip is None:
-            self.server = Server(host=True, host_ip=args.host_ip)
+            self.server = Server(host=True)
         else:
             self.server = Server(host=False, host_ip=args.host_ip)
         self.server.initialize()

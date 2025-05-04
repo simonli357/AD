@@ -37,7 +37,6 @@ class TcpClient {
 	~TcpClient();
 	// Fields
 	bool tcp_can_send = false;
-	bool run_sent = false;
 	// Methods
 	void initialize();
 	// Encode

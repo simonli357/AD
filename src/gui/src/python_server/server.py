@@ -32,7 +32,7 @@ class Server:
         self.udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
         if self.is_host:
-            self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
+            self.tcp_socket.bind(('', self.tcp_port))
             self.tcp_socket.listen(2)
             listener = threading.Thread(target=self.listen, daemon=True)
             listener.start()
