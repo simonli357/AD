@@ -20,8 +20,7 @@ real:
   sign_cooldown: 3.0
   cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-  stop_duration: 2.25
-
+  stop_duration: 1.5
   sign_localization_threshold: 0.537 #0.357
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.9
@@ -37,7 +36,8 @@ real:
   constant_distance_to_intersection_at_detection: 0.3725
   NORMAL_SPEED: 0.20
   odom_rate: 50
-  pedestrian_count_thresh: 8
+  pedestrian_distance: 0.75
+  pedestrian_threshold: 0.35
 
 sim:
   lane_relocalize: true
@@ -59,7 +59,6 @@ sim:
   cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 15, 2.5, 2.5, 2.5]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
   stop_duration: 1.5
-
   sign_localization_threshold: 0.537 #0.357
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.1
@@ -75,4 +74,5 @@ sim:
   constant_distance_to_intersection_at_detection: 0.3725
   NORMAL_SPEED: 0.23
   odom_rate: 50
-  pedestrian_count_thresh: 8
+  pedestrian_distance: 0.75
+  pedestrian_threshold: 0.35

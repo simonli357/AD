@@ -37,7 +37,7 @@ static const std::array<TrackingParams, 17> OBJECT_TRACKING_PARAMS = {{
     {MIN_SIGN_DIST, 0.0, 3600},    // PRIORITY
     {MIN_SIGN_DIST, 0.0, 3600},    // LIGHTS
     {MIN_SIGN_DIST, 0.0, 3600},    // BLOCK
-    {0.075, 0.2, 5},    // PEDESTRIAN
+    {0.075, 0.2, 2.5},    // PEDESTRIAN
     {CAR_WIDTH, 0.5, 5},    // CAR
     {MIN_SIGN_DIST, 0.0, 10},    // GREENLIGHT
     {MIN_SIGN_DIST, 0.0, 10},    // YELLOWLIGHT
@@ -380,7 +380,7 @@ public:
             double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
         
             double alpha = new_conf / (confidence + new_conf);
-            double est_speed = (alpha * inst_speed + (1 - alpha) * avg_speed);
+            double est_speed = avg_speed;
             speed = (1 - alpha) * speed + alpha * est_speed;
         
             // Yaw estimation from displacement
@@ -396,13 +396,13 @@ public:
                 double yaw_inst = std::atan2(dy_inst, dx_inst);
                 double yaw_avg = std::atan2(dy_avg, dx_avg);
         
-                double sin_blend = (1 - alpha) * std::sin(yaw_avg) + alpha * std::sin(yaw_inst);
-                double cos_blend = (1 - alpha) * std::cos(yaw_avg) + alpha * std::cos(yaw_inst);
-                yaw = std::atan2(sin_blend, cos_blend);
-            } else if (valid_inst) {
-                yaw = std::atan2(dy_inst, dx_inst);
+                double sin_blend = std::sin(yaw_avg);
+                double cos_blend = std::cos(yaw_avg);
+                double yaw_new = std::atan2(sin_blend, cos_blend);
+                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
             } else if (valid_avg) {
-                yaw = std::atan2(dy_avg, dx_avg);
+                double yaw_new = std::atan2(dy_avg, dx_avg);
+                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
             }
         
             // Position update (EMA)
