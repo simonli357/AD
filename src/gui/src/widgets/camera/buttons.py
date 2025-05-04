@@ -22,7 +22,6 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.time_timer.timeout.connect(self.update_stopwatch)
         self.setup_ui()
         self.connect_signals()
-        self.main_window.server.tcp_client.on_start = self.on_start
 
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)

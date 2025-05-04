@@ -97,6 +97,14 @@ class MainWindow(QMainWindow):
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
 
+        print("Waiting for TCP client")
+        while (self.server.tcp_client is None):
+            time.sleep(0.2)
+            continue
+        print("TCP client connected!")
+
+        self.server.tcp_client.on_start = self.cam_buttons_widget.on_start
+
         self.comm.message_signal.connect(self.terminal_widget.add_message)
         self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
