@@ -58,11 +58,15 @@ class MapContainer(QtWidgets.QStackedWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, server):
+    def __init__(self, args):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
-        self.server = server
+        if args.host_ip is None:
+            self.server = Server(host=True, host_ip=args.host_ip)
+        else:
+            self.server = Server(host=False, host_ip=args.host_ip)
+        self.server.initialize()
         self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
@@ -304,18 +308,9 @@ if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     args = parse_args()
-
     app = QApplication(sys.argv)
-    if args.host_ip is None:
-        "Running dashboard as host"
-        server = Server(host=True, host_ip=args.host_ip)
-    else:
-        "Running dashboard as spectator"
-        server = Server(host=False, host_ip=args.host_ip)
 
-    server.initialize()
-
-    window = MainWindow(server)
+    window = MainWindow(args)
     window.show()
 
     app.exec()
