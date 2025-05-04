@@ -6,8 +6,6 @@ from collections import deque
 import time
 import numpy as np
 
-frame_count = 0
-
 
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -24,6 +22,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.time_timer.timeout.connect(self.update_stopwatch)
         self.setup_ui()
         self.connect_signals()
+        self.main_window.server.tcp_client.on_start = self.on_start
 
     def setup_ui(self) -> None:
         self.window().setAttribute(QtCore.Qt.WA_AlwaysShowToolTips, True)
@@ -161,6 +160,26 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.main_window.buttons_overlay.handle_cam_lock_clicked()
         self.update_stop_button_style(self.start_btn, self.started)
 
+    def on_start(self):
+        if not self.started:
+            print("Starting")
+            self.main_window.reset_run_statistics()
+            self.started = True
+            if self.start_time is None:
+                self.start_time = time.time()
+            else:
+                self.start_time = time.time() - self.accumulated_centiseconds / 100
+            self.time_timer.start(25)
+        else:
+            print("Stopping")
+            self.started = False
+            if self.start_time is not None:
+                elapsed = time.time() - self.start_time
+                self.accumulated_centiseconds += int(elapsed * 100)
+                self.start_time = None
+            self.time_timer.stop()
+        self.toggle_start_icon()
+
     def call_start_service(self, start) -> None:
         try:
             if self.server.tcp_client.socket is None:
@@ -170,24 +189,7 @@ class ButtonsWidget(QtWidgets.QWidget):
             retries = 0
             while (retries < max_retries):
                 if self.server.tcp_client.start_srv_msg:
-                    if not self.started:
-                        print("Starting")
-                        self.main_window.reset_run_statistics()
-                        self.started = True
-                        if self.start_time is None:
-                            self.start_time = time.time()
-                        else:
-                            self.start_time = time.time() - self.accumulated_centiseconds / 100
-                        self.time_timer.start(25)
-                    else:
-                        print("Stopping")
-                        self.started = False
-                        if self.start_time is not None:
-                            elapsed = time.time() - self.start_time
-                            self.accumulated_centiseconds += int(elapsed * 100)
-                            self.start_time = None
-                        self.time_timer.stop()
-                    self.toggle_start_icon()
+                    self.on_start()
                     return
                 retries += 1
                 time.sleep(0.1)

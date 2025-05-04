@@ -19,6 +19,7 @@ class TcpConnection:
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.on_packet = on_packet
+        self.on_start = None
         self.socket.settimeout(None)
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
@@ -188,6 +189,8 @@ class TcpConnection:
     def parse_start_srv(self, bytes):
         try:
             self.start_srv_msg = bytes == b'\x01'
+            if self.is_dashboard and not self.is_host and self.on_start is not None:
+                self.on_start()
         except Exception as e:
             print(e)
 
