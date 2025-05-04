@@ -79,7 +79,7 @@ class Server:
             self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def on_packet(self, source, packet):
-        if source.is_host:
+        if source.is_host and not source.is_dashboard:
             dead = []
             for key, db in self.dashboard_clients.items():
                 try:
