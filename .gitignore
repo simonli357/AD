@@ -3,7 +3,6 @@
 
 .cache/
 src/perception/models/trt/*.engine
-src/perception/models/
 src/perception/include/ncnn
 src/control/scripts/__pycache__
 src/planning/scripts/__pycache__
@@ -15,7 +14,6 @@ testParkCar/
 train640/
 datasets_bb/
 Embedded_Platform/Embedded_2024/mbed-os
-src/perception/models
 
 vcpkg/
 devel/
