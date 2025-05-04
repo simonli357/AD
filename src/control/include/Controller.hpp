@@ -59,7 +59,6 @@ public:
             [this]() {
                 utils.fetch_run_params();
                 utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
-                utils.tcp_client->run_sent = true;
             }
         );
 
