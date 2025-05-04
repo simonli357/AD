@@ -25,17 +25,12 @@ class Server:
         self.listener = None
 
     def initialize(self):
-        mreq = struct.pack(
-            "4s4s",
-            socket.inet_aton(self.multicast_address),
-            socket.inet_aton("0.0.0.0")
-        )
-        self.udp_socket.setsockopt(
-            socket.IPPROTO_IP,
-            socket.IP_ADD_MEMBERSHIP,
-            mreq
-        )
-        self.udp_socket.bind(('0.0.0.0', self.udp_port))
+        self.udp_socket.bind(('', self.udp_port))
+        grp_bin = socket.inet_aton(self.multicast_address)
+        iface_bin = socket.inet_aton('0.0.0.0')
+        mreq = grp_bin + iface_bin
+        self.udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+
         if self.is_host:
             self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
             self.tcp_socket.listen(2)
