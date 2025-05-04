@@ -64,8 +64,10 @@ class MainWindow(QMainWindow):
         self.alive = True
         if args.host_ip is None:
             self.server = Server(host=True)
+            self.is_host = True
         else:
             self.server = Server(host=False, host_ip=args.host_ip)
+            self.is_host = False
         self.server.initialize()
         self.database = Database()
         self.comm = CommunicationHandler()

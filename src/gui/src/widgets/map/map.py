@@ -101,6 +101,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.next_destination = None
         self.no_destinations = False
 
+        self.car_x = 11.75
+        self.car_y = 2.05
+        self.car_yaw = 0
+
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
         self.sign_images.append(os.path.join(self.assets_dir, 'highway_entrance.png'))
@@ -197,6 +201,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         else:
             if self.show_path:
                 self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
+
+            car_x, car_y = self.get_gl_coords(self.car_x, self.car_y)
+            self.shader_renderer.draw_car(car_x, car_y, self.car_yaw, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
+            self.shader_renderer.draw_axis2D(car_x, car_y, self.car_yaw, 25.0, self.view_mat, self.proj_mat)
 
             self.find_next_destination()
 
@@ -420,7 +428,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self):
         if self.detected_data is None or len(self.detected_data) == 0:
             return
-        for i in range(len(self.detected_data)):
+        for i in range(1, len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]
             y_real = self.detected_data[i, self.road_msg_dict['y']]
@@ -431,12 +439,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # orientation = 2 * np.pi - orientation
 
             if self.object_dict[obj_type] == 'Car':
-                if i == 0:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
-                else:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
