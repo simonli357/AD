@@ -553,7 +553,7 @@ inline bool set_params(const std::shared_ptr<TcpClient>& tcp_client) {
 	tcp_client->send_trigger(trigger_srv);
 	tcp_client->send_params(state_refs_v, state_attributes_v);
 
-    auto status = fut.wait_for(std::chrono::milliseconds(5000));
+    auto status = fut.wait_for(std::chrono::milliseconds(10000));
     if (status != std::future_status::ready) {
         ROS_ERROR("Timed out waiting for Python node notification.");
         tcp_client->set_trigger_response_callback({});
