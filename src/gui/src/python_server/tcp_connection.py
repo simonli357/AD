@@ -1,5 +1,6 @@
 import threading
 import struct
+import time
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
@@ -48,10 +49,12 @@ class TcpConnection:
         self.receiver.start()
         if is_host:
             self.send_string("ack")
+            time.sleep(5.0)
             self.send_string("refresh_run")
         else:
             self.send_string("dashboard_client")
             self.send_string("ack")
+            time.sleep(5.0)
             self.send_string("refresh_run")
 
     def recvall(self, length):
