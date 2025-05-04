@@ -130,7 +130,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             if self.main_window.server.tcp_client is None:
                 continue
             self.main_window.server.tcp_client.refresh_run()
-            time.sleep(5.0)
+            time.sleep(4.0)
 
     def get_key_from_value(self, value):
         return self.reverse_object_dict.get(value, None)
