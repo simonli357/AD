@@ -13,10 +13,11 @@ from python_server.msg.run_msg import RunMsg
 
 
 class TcpConnection:
-    def __init__(self, client_socket, on_packet, is_host=True):
+    def __init__(self, client_socket, on_packet, is_host=True, dashboard=False):
         self.socket = client_socket
         self.alive = True
         self.is_host = is_host
+        self.is_dashboard = dashboard
         self.on_packet = on_packet
         self.socket.settimeout(None)
         self.data_actions = OrderedDict({
@@ -86,8 +87,6 @@ class TcpConnection:
                 packet = header + data
                 if self.on_packet:
                     self.on_packet(self, packet)
-                if not self.is_host:
-                    continue
                 # Process the data
                 if message_type in self.data_actions:
                     self.data_actions[message_type](data)

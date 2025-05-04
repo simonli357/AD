@@ -47,7 +47,7 @@ class Server:
                 except OSError:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
-            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host)
+            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def listen(self):
         while self.alive:
@@ -77,7 +77,7 @@ class Server:
         if client_type == "dashboard_client":
             key = client_socket.getpeername()[0]
             print(f"Dashboard Client Connected with IP: {key}")
-            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=False)
+            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
             listener = threading.Thread(target=self.dashboard_listener, args=(client_socket,), daemon=True)
             listener.start()
 
@@ -110,7 +110,7 @@ class Server:
                         dead.append(key)
                 for key in dead:
                     self.dashboard_clients.pop(key, None)
-            else:
+            elif not source.is_host and source.is_dashboard:
                 try:
                     source.socket.sendall(packet)
                 except OSError:
