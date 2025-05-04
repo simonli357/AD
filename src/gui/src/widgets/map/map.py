@@ -130,9 +130,9 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def fetch_run(self):
         while self.main_window.state_refs_np is None and self.main_window.attributes_np is None:
-            time.sleep(3.0)
             if self.main_window.server.tcp_client is None:
                 continue
+            time.sleep(3.0)
             self.main_window.server.tcp_client.refresh_run()
 
     def get_key_from_value(self, value):
