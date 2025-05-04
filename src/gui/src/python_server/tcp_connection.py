@@ -48,9 +48,11 @@ class TcpConnection:
         self.receiver.start()
         if is_host:
             self.send_string("ack")
+            self.send_string("refresh_run")
         else:
             self.send_string("dashboard_client")
             self.send_string("ack")
+            self.send_string("refresh_run")
 
     def recvall(self, length):
         data = b""
