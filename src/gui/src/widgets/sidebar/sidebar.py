@@ -182,20 +182,20 @@ class SidebarWidget(QtWidgets.QWidget):
 
     def handle_fetch_run_btn_click(self) -> None:
         try:
-            self.main_window.server.utility_node_client.send_string('refresh_run')
+            self.main_window.server.tcp_client.send_string('refresh_run')
         except Exception:
             pass
 
     def call_set_states_service(self, x=-200.0, y=-200.0):
         print("set states service called")
         try:
-            if self.server.utility_node_client.socket is None:
+            if self.server.tcp_client.socket is None:
                 return
-            self.server.utility_node_client.send_set_states_srv(x, y)
+            self.server.tcp_client.send_set_states_srv(x, y)
             max_retries = 50
             retries = 0
             while (retries < max_retries):
-                if self.server.utility_node_client.set_states_srv_msg.success:
+                if self.server.tcp_client.set_states_srv_msg.success:
                     print("Successful set_states service call")
                     self.main_window.reset_run_statistics()
                     return

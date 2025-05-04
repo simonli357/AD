@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
 
     def handle_params_update(self, req, res):
         response = self.map_widget.update_params(req)
-        self.server.utility_node_client.send_trigger(TriggerRequest(), response)
+        self.server.tcp_client.send_trigger(TriggerRequest(), response)
 
     def handle_sign_update(self, sign):
         self.map_widget.sign_callback(sign)
@@ -214,15 +214,15 @@ class MainWindow(QMainWindow):
         self.map_widget.no_destinations = False
 
     def tcp_callbacks(self) -> None:
-        if self.server.utility_node_client.socket is not None:
-            if self.server.utility_node_client.messages:
-                msg = self.server.utility_node_client.messages.popleft()
+        if self.server.tcp_client.socket is not None:
+            if self.server.tcp_client.messages:
+                msg = self.server.tcp_client.messages.popleft()
                 self.comm.message_signal.emit(msg.data)
-            if self.server.utility_node_client.triggers.msgs:
-                req, res = self.server.utility_node_client.triggers.msgs.popleft()
+            if self.server.tcp_client.triggers.msgs:
+                req, res = self.server.tcp_client.triggers.msgs.popleft()
                 self.comm.params_signal.emit(req, res)
-            if self.server.utility_node_client.run_msg:
-                run = self.server.utility_node_client.run_msg.popleft()
+            if self.server.tcp_client.run_msg:
+                run = self.server.tcp_client.run_msg.popleft()
                 self.comm.run_signal.emit(run)
 
     def udp_callbacks(self) -> None:

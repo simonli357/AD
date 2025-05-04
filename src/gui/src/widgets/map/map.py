@@ -684,7 +684,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         try:
             max_retries = 50
             retries = 0
-            params = self.server.utility_node_client.params
+            params = self.server.tcp_client.params
             while (retries < max_retries):
                 if (len(params.state_refs) > 0 and len(params.attributes) > 0):
                     self.main_window.state_refs_np = params.state_refs.popleft()
@@ -721,10 +721,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def call_waypoint_service(self, run):
         try:
-            self.server.utility_node_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
+            self.server.tcp_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
             max_retries = 50
             retries = 0
-            res = self.server.utility_node_client.waypoints_srv_msg
+            res = self.server.tcp_client.waypoints_srv_msg
             while (retries < max_retries):
                 if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
                     self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T

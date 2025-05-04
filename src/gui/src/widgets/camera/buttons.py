@@ -163,13 +163,13 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def call_start_service(self, start) -> None:
         try:
-            if self.server.utility_node_client.socket is None:
+            if self.server.tcp_client.socket is None:
                 return
-            self.server.utility_node_client.send_start_srv(not self.started)
+            self.server.tcp_client.send_start_srv(not self.started)
             max_retries = 50
             retries = 0
             while (retries < max_retries):
-                if self.server.utility_node_client.start_srv_msg:
+                if self.server.tcp_client.start_srv_msg:
                     return
                 retries += 1
                 time.sleep(0.1)
@@ -179,16 +179,16 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def call_goto_service(self, cursor_coords):
         try:
-            if self.server.utility_node_client.socket is None:
+            if self.server.tcp_client.socket is None:
                 return
             if len(cursor_coords) == 0:
                 print("Invalid path, must contain at least 1 destination")
                 return
             else:
-                self.server.utility_node_client.send_go_to_cmd_srv(cursor_coords)
+                self.server.tcp_client.send_go_to_cmd_srv(cursor_coords)
             max_retries = 50
             retries = 0
-            res = self.server.utility_node_client.go_to_cmd_srv_msg
+            res = self.server.tcp_client.go_to_cmd_srv_msg
             while (retries < max_retries):
                 if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
                     self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)

@@ -18,8 +18,8 @@ class Server:
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.utility_node_client = TcpConnection(self)
-        self.dashboard_client = TcpConnection(self)
+        self.tcp_client = TcpConnection(self)
+        self.dashboard_clients = set()
         self.udp_connection = UdpConnection(self.udp_socket)
         self.alive = True
         self.listener = None
@@ -45,7 +45,7 @@ class Server:
                 except OSError:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
-            self.utility_node_client = TcpConnection(self, self.tcp_socket, is_host=self.is_host)
+            self.tcp_client = TcpConnection(self, self.tcp_socket, is_host=self.is_host)
 
     def listen(self):
         while self.alive:
@@ -71,7 +71,7 @@ class Server:
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
             print("Utility Client connected")
-            self.utility_node_client = TcpConnection(self, client_socket, is_host=self.is_host)
+            self.tcp_client = TcpConnection(self, client_socket, is_host=self.is_host)
         if client_type == "dashboard_client":
             print("Dashboard Client Connected")
             self.dashboard_client = TcpConnection(self, client_socket, is_host=self.is_host)
