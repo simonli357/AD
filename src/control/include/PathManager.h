@@ -539,26 +539,16 @@ inline bool set_params(const std::shared_ptr<TcpClient>& tcp_client) {
 
     auto prom = std::make_shared<std::promise<std_srvs::TriggerResponse>>();
     auto fut = prom->get_future();
-    auto once = std::make_shared<std::once_flag>();
 
     tcp_client->set_trigger_response_callback(
-        [prom, once](const std_srvs::TriggerResponse &resp) {
-            std::call_once(*once, [prom,&resp]() {
-                prom->set_value(resp);
-            });
+        [prom](const std_srvs::TriggerResponse &resp) {
+            prom->set_value(resp);
         }
     );
 
 	std_srvs::Trigger trigger_srv;
 	tcp_client->send_trigger(trigger_srv);
 	tcp_client->send_params(state_refs_v, state_attributes_v);
-
-    auto status = fut.wait_for(std::chrono::milliseconds(10000));
-    if (status != std::future_status::ready) {
-        ROS_ERROR("Timed out waiting for Python node notification.");
-        tcp_client->set_trigger_response_callback({});
-        return false;
-    }
 
     std_srvs::TriggerResponse resp = fut.get();
     if (resp.success) {
