@@ -88,12 +88,7 @@ class Server:
                     dead.append(key)
             for key in dead:
                 self.dashboard_clients.pop(key, None)
-        elif not source.is_host and source.is_dashboard:
-            try:
-                source.socket.sendall(packet)
-            except Exception as e:
-                print(e)
-        else:
+        elif source.is_host and source.is_dashboard:
             try:
                 self.tcp_client.socket.sendall(packet)
             except Exception as e:
