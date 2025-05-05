@@ -661,7 +661,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.view_zoom *= zoom_factor
 
         # Keep zoom within bounds
-        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
+        self.view_zoom = max(1.0, min(20.0, self.view_zoom))
 
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom

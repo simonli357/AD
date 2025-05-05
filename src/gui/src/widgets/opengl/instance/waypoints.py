@@ -90,7 +90,7 @@ class WaypointsRenderer:
 
         N = min(state_refs_np.shape[1], self.max_instances)
         scale = 2.0
-        lane_width = 0.38
+        lane_width = 0.37
         instance_idx = 0
 
         for i in range(N):
