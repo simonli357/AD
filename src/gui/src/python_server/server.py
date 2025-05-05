@@ -25,14 +25,16 @@ class Server:
         self.alive = True
         self.listener = None
 
-    def _get_local_ip_for_iface(iface: str) -> str:
+    def _get_local_ip_for_iface(self) -> str:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        packed = fcntl.ioctl(
-            s.fileno(),
-            0x8915,  # SIOCGIFADDR
-            struct.pack('256s', iface[:15].encode('utf-8'))
-        )
-        return socket.inet_ntoa(packed[20:24])
+        try:
+            s.connect((self.multicast_address, self.udp_port))
+            local_ip = s.getsockname()[0]
+        except Exception:
+            local_ip = '0.0.0.0'
+        finally:
+            s.close()
+        return local_ip
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
