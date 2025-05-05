@@ -10,9 +10,7 @@ from ..opengl.instance.path import PathRenderer
 from ..enums import MapData, NamedColor, OpenGLContextName
 
 import pandas as pd
-import threading
 import os
-import time
 import numpy as np
 import glm
 
