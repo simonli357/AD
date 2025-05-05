@@ -496,9 +496,10 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		return;
 	}
 	if (decoded_string == "refresh_run") {
-        if (send_run_callback) {
-            send_run_callback();
+        while (!send_run_callback) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
+        send_run_callback();
 		std::cout << "Resending Run Parameters to GUI" << std::endl;
 		return;
 	}

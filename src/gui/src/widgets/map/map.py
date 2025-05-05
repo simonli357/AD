@@ -167,8 +167,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             texture = load_2D_texture(path)
             self.sign_models.append(texture)
 
-        self.main_window.server.tcp_client.refresh_run()
-
     def paintGL(self):
         if self.stop_drawing:
             return

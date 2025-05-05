@@ -101,19 +101,8 @@ class MainWindow(QMainWindow):
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
 
-        print("Waiting for TCP client")
-        while (self.server.tcp_client is None):
-            time.sleep(0.2)
-            continue
-        print("TCP client connected!")
-
-        self.server.tcp_client.on_start = self.comm.start_signal.emit
-        self.server.tcp_client.on_message = self.comm.message_signal.emit
-        self.server.tcp_client.on_run = self.comm.run_signal.emit
-        self.server.tcp_client.on_goto = self.comm.goto_signal.emit
-        self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
-        self.server.tcp_client.on_params = self.comm.params_signal.emit
-        self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
+        self.cbs = threading.Thread(target=self.set_callbacks, daemon=True)
+        self.cbs.start()
 
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
@@ -182,6 +171,21 @@ class MainWindow(QMainWindow):
 
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
         self.cam_thread.start()
+
+    def set_callbacks(self) -> None:
+        print("Waiting for TCP client")
+        while (self.server.tcp_client is None):
+            time.sleep(0.2)
+            continue
+        print("TCP client connected!")
+        self.server.tcp_client.on_start = self.comm.start_signal.emit
+        self.server.tcp_client.on_message = self.comm.message_signal.emit
+        self.server.tcp_client.on_run = self.comm.run_signal.emit
+        self.server.tcp_client.on_goto = self.comm.goto_signal.emit
+        self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
+        self.server.tcp_client.on_params = self.comm.params_signal.emit
+        self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
+        self.server.tcp_client.refresh_run()
 
     def toggle_map(self) -> None:
         self.show_barca = not self.show_barca
