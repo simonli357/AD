@@ -65,7 +65,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 	alglib::spline1dfitpenalizedw(t_arr, y_arr, w_arr, n, smooth_factor, info_y, spline_y, rep_y);
 
 	std::vector<Vertex> result;
-	const int INTEGRATION_STEPS = 16;
+	const int INTEGRATION_STEPS = 64;
 
 	// 4) Helper lambda: approximate ∫|r'(t)| dt via composite trapezoid rule
 	auto arcLengthSegment = [&](double ta, double tb) {

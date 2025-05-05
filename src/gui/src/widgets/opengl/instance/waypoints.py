@@ -153,12 +153,12 @@ class WaypointsRenderer:
         gl.glBufferSubData(
             gl.GL_ARRAY_BUFFER,
             0,
-            self.instance_array[:N * 3].nbytes,
-            self.instance_array[:N * 3]
+            self.instance_array[:instance_idx].nbytes,
+            self.instance_array[:instance_idx]
         )
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
-        self.num_instances = N * 3
+        self.num_instances = instance_idx
 
     def draw(self, projection, view):
         if self.num_instances == 0:
