@@ -184,11 +184,33 @@ float CEncoder::readAngularSpeed() {
     lastT    = now;
     lastPublishedSpeed = speed;
     // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", ang, speed);
+
+    // char out[128];
+    //     int n = std::snprintf(out, sizeof(out),
+    //                           "@7:%.1f;%.1f;%.1f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
+    //                           roll, pitch, yaw,
+    //                           ax,   ay,    az,
+    //                           gx,   gy,    gz);
+    //     if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
+    //     // if (true) {
+    //         core_util_critical_section_enter();
+    //         m_serial.write(out, n);
+    //         core_util_critical_section_exit();
+    //     }
+
     char buf[64];
-    int len = snprintf(buf, sizeof(buf),
-                    "[Encoder] angle = %.2f°, speed = %.2f°/s\n",
-                    ang, speed);
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] angle = %.2f°, speed = %.2f°/s\n",
+    //                 ang, speed);
     // m_serial.write(buf, len);
+    int n = std::snprintf(buf, sizeof(buf),
+                    "@5:%.1f;%.1f;;\r\n",
+                    ang, speed);
+    if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf)) {
+        core_util_critical_section_enter();
+        m_serial.write(buf, n);
+        core_util_critical_section_exit();
+    }
 
     return speed;
 }

@@ -260,7 +260,9 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
 
     buffer.append(data, length);
-    if (buffer.find("@7") != std::string::npos) {
+    if (buffer.find("@5") != std::string::npos) { // encoder
+
+    } else if (buffer.find("@7") != std::string::npos) { // imu
         size_t end_pos = buffer.find('\n');
         if (end_pos != std::string::npos) {
             std::string line = buffer.substr(0, end_pos); // Extract the line
@@ -360,35 +362,10 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                 if (debug_imu) {
                     printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
                 }
-
-                // Convert Euler angles to quaternion
-                tf2::Quaternion q;
-                q.setRPY(roll*M_PI/180, pitch*M_PI/180, yaw_deg*M_PI/180);
-                imu_msg.orientation.x = q.x();
-                imu_msg.orientation.y = q.y();
-                imu_msg.orientation.z = q.z();
-                imu_msg.orientation.w = q.w();
-
-                // Set linear acceleration
-                imu_msg.linear_acceleration.x = accelx;
-                imu_msg.linear_acceleration.y = accely;
-                imu_msg.linear_acceleration.z = accelz;
-
-                imu_msg.angular_velocity.x = gyrox*2*M_PI;
-                imu_msg.angular_velocity.y = gyroy*2*M_PI;
-                imu_msg.angular_velocity.z = gyroz*2*M_PI;
-                if (!imuInitialized) {
-                    imuInitialized = true;
-                    std::cout << "imu initialized" << std::endl;
-                }
-                imu_pub.publish(imu_msg); // Publish the IMU message
                 // auto end = std::chrono::high_resolution_clock::now();
                 // std::chrono::duration<double> elapsed = end - start;
                 // ROS_INFO("imu_pub_timer_callback time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
             } 
-            // else {
-            //     ROS_INFO("line.find(@7) == std::string::npos");
-            // }
         } 
     }
 }
