@@ -14,25 +14,17 @@
 #include <periodics/serialPrinter.hpp>
 #include "rtos.h"
 
-const float g_baseTick = 0.0001f; // seconds
+BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
-BufferedSerial g_rpi(USBTX, USBRX, 460800);
-
-periodics::CBlinker g_blinker(0.5 / g_baseTick, LED1);
-periodics::CTotalVoltage g_totalvoltage(3.0 / g_baseTick, A1, g_rpi);
-periodics::CImu g_imu(0.1/ g_baseTick, g_rpi, I2C_SDA, I2C_SCL);
-periodics::CEncoder g_encoder(0.01/g_baseTick, g_baseTick, g_rpi, D2);
-drivers::CSpeedingMotor g_speedingDriver(0.1/g_baseTick,g_rpi,D3, g_encoder); //speed in cm/s
-drivers::CSteeringMotor g_steeringDriver(0.1 / g_baseTick, g_rpi, D4, g_imu, g_speedingDriver);
-brain::CRobotStateMachine g_robotstatemachine(0.1/g_baseTick, g_rpi, g_steeringDriver, g_speedingDriver);
+periodics::CBlinker g_blinker(1, LED1);
+periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
+periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
+periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
+drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,D3, g_encoder); //speed in cm/s
+drivers::CSteeringMotor g_steeringDriver(1, g_rpi, D4, g_imu, g_speedingDriver);
+brain::CRobotStateMachine g_robotstatemachine(1, g_rpi, g_steeringDriver, g_speedingDriver);
 
 drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
-    // {"1",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSPEEDcommand)},
-    // {"2",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSTEERcommand)},
-    // {"3",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBRAKEcommand)},
-    // {"4",mbed::callback(&g_motorCalibration,&periodics::CTotalVoltage::SpeedMotorCalibration)},
-    // {"5",mbed::callback(&g_totalvoltage,&periodics::CTotalVoltage::TotalPublisherCommand)},
-    // {"6",mbed::callback(&g_instantconsumption,&periodics::CInstantConsumption ::InstantPublisherCommand)},
     {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
     // {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},
     // {"8",mbed::callback(&g_complexMoves, &drivers::CComplexMoves::serialCallbackComplexMovesCommand)},
@@ -46,7 +38,7 @@ drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
 drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
 static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
-static Thread imuThread    (osPriorityNormal, 2048, nullptr, "imu");
+static Thread imuThread    (osPriorityHigh, 2048, nullptr, "imu");
 static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
 static Thread totalVoltageThread(osPriorityNormal, 2048, nullptr, "totalVoltage");
 // static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
@@ -65,7 +57,7 @@ void imuTask() {
 void encoderTask() {
     while (true) {
         g_encoder.run();
-        ThisThread::sleep_for(100ms);
+        ThisThread::sleep_for(1ms);
     }
 }
 void totalVoltageTask() {
@@ -74,12 +66,7 @@ void totalVoltageTask() {
         ThisThread::sleep_for(100ms);
     }
 }
-// void stateMachineTask() {
-//     while (true) {
-//         g_robotstatemachine.run();
-//         ThisThread::sleep_for(100ms);
-//     }
-// }
+
 void startupMessage() {
     g_rpi.write("\r\n\r\n", 4);
     g_rpi.write("#################\r\n", 19);
@@ -88,11 +75,6 @@ void startupMessage() {
     g_rpi.write("\r\n", 2);
 }
 
-/**
- * @brief Main function applies the setup function and the loop function periodically. It runs automatically after the board started.
- * 
- * @return int Error level codes error's type.  
- */
 int main() 
 {
     startupMessage();

@@ -75,30 +75,33 @@ void Utility::fetch_run_params() {
     };
 
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
-
+    ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
-    while (ros::ok() && samples.size() < sample_count) {
-        ros::spinOnce();
-        rate.sleep();
-    }
+    // std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
+    // while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
+    //     ros::spinOnce();
+    //     rate.sleep();
+    // }
 
-    sub.shutdown();
+    // sub.shutdown();
 
-    double sum_x = 0.0, sum_y = 0.0;
-    for (const auto& m : samples) {
-        sum_x += m->pose.pose.position.x;
-        sum_y += m->pose.pose.position.y;
-    }
-    double avg_x = sum_x / static_cast<double>(samples.size());
-    double avg_y = sum_y / static_cast<double>(samples.size());
+    // double sum_x = 0.0, sum_y = 0.0;
+    // for (const auto& m : samples) {
+    //     sum_x += m->pose.pose.position.x;
+    //     sum_y += m->pose.pose.position.y;
+    // }
+    // double avg_x = sum_x / static_cast<double>(samples.size());
+    // double avg_y = sum_y / static_cast<double>(samples.size());
 
-    while (!imuInitialized) {
-        ros::spinOnce();
-    }
+    // std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
+    // while (!imuInitialized) {
+    //     ros::spinOnce();
+    // }
+    // std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
-    this->x0   = avg_x;
-    this->y0   = avg_y;
-    this->yaw0 = yaw;
+    // this->x0   = avg_x;
+    // this->y0   = avg_y;
+    // this->yaw0 = yaw;
     pathName    = "run189";
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
@@ -111,7 +114,7 @@ void Utility::initialize() {
     if (true) {
         try {
             serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-            serial->set_option(boost::asio::serial_port_base::baud_rate(460800));
+            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
             debug("Utility constructor: Serial port opened successfully.", 1);
         }
         catch (const boost::system::system_error &e) {

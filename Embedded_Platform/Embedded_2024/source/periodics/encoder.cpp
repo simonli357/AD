@@ -23,7 +23,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_periodTicks(f_periodTicks)
 {
     // 1) convert ticks → seconds
-    m_dt = m_periodTicks * g_baseTick;    // e.g. 1 * 0.0001 = 0.0001 s
+    m_dt = 0.001f;
 
     // 2) sampling rate
     _fs  = 1.0f / m_dt;                   // e.g. 1/0.0001 = 10 000 Hz
@@ -171,7 +171,7 @@ float CEncoder::readAngularSpeed() {
 
     // 4) optional filtering / hysteresis
     static float speedIIR = 0.0f;
-    constexpr float tau_speed = 0.2f;       // time-constant in seconds
+    constexpr float tau_speed = 0.025f;       // time-constant in seconds
     float alpha = tau_speed / (tau_speed + dt);
     speedIIR   = alpha * speedIIR + (1.0f - alpha) * speed;
     speed      = speedIIR;
@@ -180,11 +180,15 @@ float CEncoder::readAngularSpeed() {
     speed = applySpeedHysteresis(speed);
 
     // 5) reset for next interval
-    // printf("[Time] = %.2f s, delta = %.2f°\n", dt, sumDelta);
     sumDelta = 0.0f;
     lastT    = now;
     lastPublishedSpeed = speed;
-    printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", ang, speed);
+    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", ang, speed);
+    char buf[64];
+    int len = snprintf(buf, sizeof(buf),
+                    "[Encoder] angle = %.2f°, speed = %.2f°/s\n",
+                    ang, speed);
+    // m_serial.write(buf, len);
 
     return speed;
 }
@@ -220,11 +224,8 @@ float CEncoder::getTotalDisplacementDegrees() {
         delta -= 360.0f;
     }
 
-    // Accumulate
     total += delta;
     prev = current;
-
-    printf("[Encoder] Total displacement = %.2f°\n", total);
 
     return total;
 }

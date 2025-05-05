@@ -10,7 +10,7 @@ import pyqtgraph as pg
 
 # ────────────────────────────────────────────────────────────────────────────────
 SERIAL_PORT = '/dev/ttyACM0'
-BAUD_RATE   = 460800
+BAUD_RATE   = 115200
 TIMEOUT     = 0.1   # seconds
 
 # ASCII format:
