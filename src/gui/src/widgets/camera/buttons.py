@@ -178,6 +178,7 @@ class ButtonsWidget(QtWidgets.QWidget):
                 self.start_time = None
             self.time_timer.stop()
         self.toggle_start_icon()
+        self.start_btn.setDisabled(False)
 
     def on_goto(self, res):
         self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
@@ -187,6 +188,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.main_window.reset_run_statistics()
 
     def call_start_service(self, start) -> None:
+        self.start_btn.setDisabled(True)
         try:
             if self.server.tcp_client.socket is None:
                 return
