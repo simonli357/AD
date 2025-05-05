@@ -1,5 +1,4 @@
 #include "utils/PathUtils.hpp"
-#include <iostream>
 
 void PathUtils::normalize_yaw(std::vector<Vertex> &path, double max_yaw_change) {
 	static auto normalize_angle = [](double a) {

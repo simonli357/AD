@@ -7,7 +7,7 @@ import math
 
 
 class WaypointsRenderer:
-    def __init__(self, track, max_instances=8000):
+    def __init__(self, track, max_instances=20000):
         self.track = track
         self.num_instances = 0
         self.max_instances = max_instances
@@ -86,6 +86,7 @@ class WaypointsRenderer:
             7: (0.0, 1.0, 1.0),
             8: (0.4, 0.5, 0.7),
             9: (0.5, 0.0, 0.5),
+            10: (0.0, 0.0, 1.0)
         }
 
         # compile shaders
@@ -107,7 +108,9 @@ class WaypointsRenderer:
 
         N = min(state_refs_np.shape[1], self.max_instances)
         scale = 2.0
+        lane_width = 0.38
 
+        instance_idx = 0
         for i in range(N):
             # position
             xw, yw = state_refs_np[0, i], state_refs_np[1, i]
@@ -128,17 +131,34 @@ class WaypointsRenderer:
             r, g, b = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
             self.instance_array[i, 4:8] = (r, g, b, 1.0)
 
+            instance_idx += 1
+
+            # lane edges
+            theta = state_refs_np[2, i]
+            nx, ny = -np.sin(theta), np.cos(theta)
+            dx, dy = (lane_width / 2) * nx, (lane_width / 2) * ny
+            for sign in [+1, -1]:
+                x_lane = xw + sign * dx
+                y_lane = yw + sign * dy
+                gx_lane, gy_lane = self.get_gl_coords(x_lane, y_lane, widget_width, widget_height)
+                self.instance_array[instance_idx, 0:2] = (gx_lane, gy_lane)
+                self.instance_array[instance_idx, 2] = 0.0
+                self.instance_array[instance_idx, 3] = scale
+                r, g, b = self.ATTRIBUTES.get(10, (0.0, 0.0, 1.0))
+                self.instance_array[instance_idx, 4:8] = (r, g, b, 1.0)
+                instance_idx += 1
+
         # upload only the used slice
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
         gl.glBufferSubData(
             gl.GL_ARRAY_BUFFER,
             0,
-            self.instance_array[:N].nbytes,
-            self.instance_array[:N]
+            self.instance_array[:N * 3].nbytes,
+            self.instance_array[:N * 3]
         )
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
-        self.num_instances = N
+        self.num_instances = N * 3
 
     def draw(self, projection, view):
         if self.num_instances == 0:
