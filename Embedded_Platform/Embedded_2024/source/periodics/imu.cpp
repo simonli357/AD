@@ -639,9 +639,9 @@ namespace periodics{
     }
 
     void CImu::_run() {
-        printf("[Imu Run] start \n");
+        // printf("[Imu Run] start \n");
         if (!m_isActive) return;
-        printf("[Imu Run] is active \n");
+        // printf("[Imu Run] is active \n");
     
         static Timer execTimer;
         static bool timerStarted = false;
@@ -668,7 +668,7 @@ namespace periodics{
             (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
             return;
         }
-        printf("[Imu Run] got data \n");
+        // printf("[Imu Run] got data \n");
         // if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
         //     return;  // abort on any error
         // }
@@ -682,18 +682,18 @@ namespace periodics{
                roll, pitch, yaw,
                ax,   ay,    az,
                gx,   gy,    gz);
-        // char out[128];
-        // int n = std::snprintf(out, sizeof(out),
-        //                       "@7:%.1f;%.1f;%.1f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
-        //                       roll, pitch, yaw,
-        //                       ax,   ay,    az,
-        //                       gx,   gy,    gz);
-        // if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
+        char out[128];
+        int n = std::snprintf(out, sizeof(out),
+                              "@7:%.1f;%.1f;%.1f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
+                              roll, pitch, yaw,
+                              ax,   ay,    az,
+                              gx,   gy,    gz);
+        if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
         // if (true) {
-        //     // core_util_critical_section_enter();
-        //     m_serial.write(out, n);
-        //     // core_util_critical_section_exit();
-        // }
+            core_util_critical_section_enter();
+            m_serial.write(out, n);
+            core_util_critical_section_exit();
+        }
     }
 
 }; // namespace periodics

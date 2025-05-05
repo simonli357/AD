@@ -260,144 +260,137 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
 
     buffer.append(data, length);
-    if (buffer.find("@7") == std::string::npos) {
-        // ROS_WARN("cant find @7");
-        return;
-    }
+    if (buffer.find("@7") != std::string::npos) {
+        size_t end_pos = buffer.find('\n');
+        if (end_pos != std::string::npos) {
+            std::string line = buffer.substr(0, end_pos); // Extract the line
+            buffer.erase(0, end_pos + 1); // Remove the processed part from the buffer
 
-    // Find the end of line
-    size_t end_pos = buffer.find('\n');
-    if (end_pos != std::string::npos) {
-        std::string line = buffer.substr(0, end_pos); // Extract the line
-        buffer.erase(0, end_pos + 1); // Remove the processed part from the buffer
+            if (line.find("@7") != std::string::npos) {
+                // sensor_msgs::Imu imu_msg;
+                imu_msg.header.stamp = ros::Time::now();
+                imu_msg.header.frame_id = "imu0";
 
-        if (line.find("@7") != std::string::npos) {
-            // sensor_msgs::Imu imu_msg;
-            imu_msg.header.stamp = ros::Time::now();
-            imu_msg.header.frame_id = "imu0";
-
-            // Extract prefix and ignore '@' and ':' characters
-            std::string prefix;
-            size_t pos = line.find(':');
-            if (pos != std::string::npos && pos + 1 < line.length()) {
-                prefix = line.substr(pos + 1);
-            } else {
-                std::cerr << "Error: Failed to extract prefix from the string." << std::endl;
-                return;
-            }
-
-            // Extract substrings between ';' characters
-            std::string roll_str, pitch_str, yaw_str, accelx_str, accely_str, accelz_str, gyrox_str, gyroy_str, gyroz_str;
-            size_t end_pos = pos;
-            pos++;
-            for (int i = 0; i < 9; ++i) {
-                end_pos = line.find(';', pos);
-                if (end_pos != std::string::npos) {
-                    switch (i) {
-                        case 0:
-                            roll_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 1:
-                            pitch_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 2:
-                            yaw_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 3:
-                            accelx_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 4:
-                            accely_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 5:
-                            accelz_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 6:
-                            gyrox_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 7:
-                            gyroy_str = line.substr(pos, end_pos - pos);
-                            break;
-                        case 8:
-                            gyroz_str = line.substr(pos, end_pos - pos);
-                            break;
-                    }
-                    pos = end_pos + 1;
+                // Extract prefix and ignore '@' and ':' characters
+                std::string prefix;
+                size_t pos = line.find(':');
+                if (pos != std::string::npos && pos + 1 < line.length()) {
+                    prefix = line.substr(pos + 1);
                 } else {
-                    std::cerr << "Error: Failed to find delimiter in the string." << std::endl;
+                    std::cerr << "Error: Failed to extract prefix from the string." << std::endl;
                     return;
                 }
-            }
 
-            // Convert substrings to floating-point numbers
-            static double roll;
-            static double pitch;
-            static double yaw_deg;
-            static double accelx;
-            static double accely;
-            static double accelz;
-            static double gyrox;
-            static double gyroy;
-            static double gyroz;
-            try {
-                roll = stod(roll_str);
-                pitch = stod(pitch_str);
-                yaw_deg = stod(yaw_str);
-                accelx = stod(accely_str);
-                accely = stod(accelx_str);
-                accelz = stod(accelz_str);
-                gyrox = stod(gyrox_str);
-                gyroy = stod(gyroy_str);
-                gyroz = stod(gyroz_str);
-            } catch (const std::invalid_argument& e) {
-                std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
-                return;
-            }
+                // Extract substrings between ';' characters
+                std::string roll_str, pitch_str, yaw_str, accelx_str, accely_str, accelz_str, gyrox_str, gyroy_str, gyroz_str;
+                size_t end_pos = pos;
+                pos++;
+                for (int i = 0; i < 9; ++i) {
+                    end_pos = line.find(';', pos);
+                    if (end_pos != std::string::npos) {
+                        switch (i) {
+                            case 0:
+                                roll_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 1:
+                                pitch_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 2:
+                                yaw_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 3:
+                                accelx_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 4:
+                                accely_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 5:
+                                accelz_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 6:
+                                gyrox_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 7:
+                                gyroy_str = line.substr(pos, end_pos - pos);
+                                break;
+                            case 8:
+                                gyroz_str = line.substr(pos, end_pos - pos);
+                                break;
+                        }
+                        pos = end_pos + 1;
+                    } else {
+                        std::cerr << "Error: Failed to find delimiter in the string." << std::endl;
+                        return;
+                    }
+                }
 
-            static double accel_mag;
-            {
-                // std::lock_guard<std::mutex> lock(general_mutex);
-                this->yaw = -yaw_deg * M_PI/180;
-                this->yaw = helper::yaw_mod(this->yaw);
-            }
+                // Convert substrings to floating-point numbers
+                static double roll;
+                static double pitch;
+                static double yaw_deg;
+                static double accelx;
+                static double accely;
+                static double accelz;
+                static double gyrox;
+                static double gyroy;
+                static double gyroz;
+                try {
+                    roll = stod(roll_str);
+                    pitch = stod(pitch_str);
+                    yaw_deg = stod(yaw_str);
+                    accelx = stod(accely_str);
+                    accely = stod(accelx_str);
+                    accelz = stod(accelz_str);
+                    gyrox = stod(gyrox_str);
+                    gyroy = stod(gyroy_str);
+                    gyroz = stod(gyroz_str);
+                } catch (const std::invalid_argument& e) {
+                    std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
+                    return;
+                }
 
-            static bool debug_imu = false;
-            if (debug_imu) {
-                printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
-            }
+                static double accel_mag;
+                {
+                    // std::lock_guard<std::mutex> lock(general_mutex);
+                    this->yaw = -yaw_deg * M_PI/180;
+                    this->yaw = helper::yaw_mod(this->yaw);
+                }
 
-            // Convert Euler angles to quaternion
-            tf2::Quaternion q;
-            q.setRPY(roll*M_PI/180, pitch*M_PI/180, yaw_deg*M_PI/180);
-            imu_msg.orientation.x = q.x();
-            imu_msg.orientation.y = q.y();
-            imu_msg.orientation.z = q.z();
-            imu_msg.orientation.w = q.w();
+                static bool debug_imu = false;
+                if (debug_imu) {
+                    printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
+                }
 
-            // Set linear acceleration
-            imu_msg.linear_acceleration.x = accelx;
-            imu_msg.linear_acceleration.y = accely;
-            imu_msg.linear_acceleration.z = accelz;
+                // Convert Euler angles to quaternion
+                tf2::Quaternion q;
+                q.setRPY(roll*M_PI/180, pitch*M_PI/180, yaw_deg*M_PI/180);
+                imu_msg.orientation.x = q.x();
+                imu_msg.orientation.y = q.y();
+                imu_msg.orientation.z = q.z();
+                imu_msg.orientation.w = q.w();
 
-            imu_msg.angular_velocity.x = gyrox*2*M_PI;
-            imu_msg.angular_velocity.y = gyroy*2*M_PI;
-            imu_msg.angular_velocity.z = gyroz*2*M_PI;
-            if (!imuInitialized) {
-                imuInitialized = true;
-                std::cout << "imu initialized" << std::endl;
-            }
-            imu_pub.publish(imu_msg); // Publish the IMU message
-            // auto end = std::chrono::high_resolution_clock::now();
-            // std::chrono::duration<double> elapsed = end - start;
-            // ROS_INFO("imu_pub_timer_callback time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+                // Set linear acceleration
+                imu_msg.linear_acceleration.x = accelx;
+                imu_msg.linear_acceleration.y = accely;
+                imu_msg.linear_acceleration.z = accelz;
+
+                imu_msg.angular_velocity.x = gyrox*2*M_PI;
+                imu_msg.angular_velocity.y = gyroy*2*M_PI;
+                imu_msg.angular_velocity.z = gyroz*2*M_PI;
+                if (!imuInitialized) {
+                    imuInitialized = true;
+                    std::cout << "imu initialized" << std::endl;
+                }
+                imu_pub.publish(imu_msg); // Publish the IMU message
+                // auto end = std::chrono::high_resolution_clock::now();
+                // std::chrono::duration<double> elapsed = end - start;
+                // ROS_INFO("imu_pub_timer_callback time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+            } 
+            // else {
+            //     ROS_INFO("line.find(@7) == std::string::npos");
+            // }
         } 
-        // else {
-        //     ROS_INFO("line.find(@7) == std::string::npos");
-        // }
-    } 
-    // else {
-    //     ROS_WARN("end_pos == std::string::npos");
-    // }
+    }
 }
 void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
