@@ -496,7 +496,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 		return;
 	}
 	if (decoded_string == "refresh_run") {
-        while (!send_run_callback && !tcp_can_send) {
+        while (!send_run_callback || !tcp_can_send) {
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
         send_run_callback();
