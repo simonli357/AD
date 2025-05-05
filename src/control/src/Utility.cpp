@@ -112,6 +112,8 @@ void Utility::initialize() {
         try {
             serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
             serial->set_option(boost::asio::serial_port_base::baud_rate(460800));
+            start_async_read();
+            std::thread([this]{ io.run(); }).detach();
             debug("Utility constructor: Serial port opened successfully.", 1);
         }
         catch (const boost::system::system_error &e) {
@@ -248,6 +250,51 @@ void Utility::encoder_callback(const utils::encoder::ConstPtr& msg) {
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
     publish_odom();
+}
+
+void Utility::start_async_read()
+{
+    serial->async_read_some(
+        boost::asio::buffer(rxBuf.data() + rxLen,
+                            rxBuf.size() - rxLen),
+        [this](const boost::system::error_code& ec,
+               std::size_t n) { handle_rx(ec, n); });
+}
+void Utility::handle_rx(const boost::system::error_code& ec,
+    std::size_t n)
+{
+    if (ec) {                                // port closed / error
+        ROS_ERROR_STREAM("serial error: " << ec.message());
+        return;
+    }
+    rxLen += n;                              // we got n new bytes
+    scan_frames();                           // extract complete frames
+    start_async_read();                      // arm next read
+}
+void Utility::scan_frames()
+{
+    const char *start = nullptr;
+    for (std::size_t i = 0; i + 3 < rxLen; ++i) {
+        if (!start) {
+            if (rxBuf[i] == '@' && rxBuf[i+1] == '7' && rxBuf[i+2] == ':')
+                start = rxBuf.data() + i + 3;
+        } else if (rxBuf[i]==';' && rxBuf[i+1]==';'
+                   && rxBuf[i+2]=='\r' && rxBuf[i+3]=='\n') {
+
+            const char *frame = start;
+            std::size_t len   = (rxBuf.data()+i) - start;
+            parse_and_publish(frame, len);
+
+            // remove consumed bytes
+            std::size_t consumed = i + 4;    // thru \n
+            std::memmove(rxBuf.data(),
+                         rxBuf.data() + consumed,
+                         rxLen - consumed);
+            rxLen -= consumed;
+            start = nullptr;
+            i     = static_cast<std::size_t>(-1); // restart loop
+        }
+    }
 }
 void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     // auto start = std::chrono::high_resolution_clock::now();

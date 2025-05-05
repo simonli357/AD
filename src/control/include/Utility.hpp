@@ -180,8 +180,20 @@ public:
     double get_steering_angle(double offset=-20);
     double get_current_orientation();
     std::array<double, 3> get_real_states() const;
+
+    void start_async_read();
+    void handle_rx(const boost::system::error_code& ec,
+                   std::size_t n);
+    void scan_frames();                      // frame parser
+    void parse_and_publish(const char* p, std::size_t len);
+
+    static constexpr std::size_t CAP = 512;
+    std::array<char, CAP>  rxBuf{};
+    std::size_t            rxLen{0};
+
     boost::asio::io_service io;
-    std::unique_ptr<boost::asio::serial_port> serial;
+    std::shared_ptr<boost::asio::serial_port> serial = nullptr;
+
     double get_yaw() {
         return yaw;
     }
