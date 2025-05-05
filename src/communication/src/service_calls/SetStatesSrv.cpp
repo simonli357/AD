@@ -4,20 +4,16 @@
 #include <netinet/in.h>
 #include <vector>
 
-SetStatesSrv::SetStatesSrv() {}
-
-SetStatesSrv::SetStatesSrv(bool success) : success(success) {
+void SetStatesSrv::encode(bool success) {
+    this->success = success;
 	success_length = sizeof(success);
 	data_length = success_length;
 }
 
-SetStatesSrv::SetStatesSrv(float x, float y) : x(x), y(y) {}
-
-std::unique_ptr<SetStatesSrv> SetStatesSrv::deserialize(std::vector<uint8_t> &bytes) {
+void SetStatesSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);
-	float x = float_from_bytes(datatypes[0]);
-	float y = float_from_bytes(datatypes[1]);
-	return std::make_unique<SetStatesSrv>(x, y);
+	x = float_from_bytes(datatypes[0]);
+	y = float_from_bytes(datatypes[1]);
 }
 
 uint32_t SetStatesSrv::compute_lengths_length() { return lengths_length; }

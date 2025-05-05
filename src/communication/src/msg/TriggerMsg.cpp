@@ -3,27 +3,23 @@
 #include "std_srvs/Trigger.h"
 #include "std_srvs/TriggerRequest.h"
 #include <cstdint>
-#include <memory>
+#include <utility>
 
-TriggerMsg::TriggerMsg() {}
-
-TriggerMsg::TriggerMsg(const std_srvs::Trigger &trigger) : trigger(trigger), request(trigger.request), response(trigger.response) {
-	request_length = ros::serialization::serializationLength(request.value());
-    response_length = ros::serialization::serializationLength(response.value());
+void TriggerMsg::encode(const std_srvs::Trigger &trigger) {
+    request = trigger.request;
+    response = trigger.response;
+	request_length = ros::serialization::serializationLength(request);
+    response_length = ros::serialization::serializationLength(response);
 	data_length = request_length + response_length;
 }
 
-TriggerMsg::TriggerMsg(std_srvs::TriggerResponse &response) : response(response) {}
-
-TriggerMsg::TriggerMsg(std_srvs::TriggerRequest &request, std_srvs::TriggerResponse &response) : request(request), response(response) {}
-
-std::unique_ptr<TriggerMsg> TriggerMsg::deserialize(std::vector<uint8_t> &bytes) {
+void TriggerMsg::deserialize(std::vector<uint8_t> &bytes) {
     std::vector<std::vector<uint8_t>> datatypes = split(bytes);
     if (datatypes.size() == 1) {
         ros::serialization::IStream response_stream(datatypes[0].data(), datatypes[0].size());
         std_srvs::TriggerResponse response;
         ros::serialization::deserialize(response_stream, response);
-        return std::make_unique<TriggerMsg>(response);
+        this->response = std::move(response);
     }
     ros::serialization::IStream request_stream(datatypes[0].data(), datatypes[0].size());
     ros::serialization::IStream response_stream(datatypes[1].data(), datatypes[1].size());
@@ -33,7 +29,8 @@ std::unique_ptr<TriggerMsg> TriggerMsg::deserialize(std::vector<uint8_t> &bytes)
     ros::serialization::deserialize(request_stream, request);
     ros::serialization::deserialize(response_stream, response);
 
-    return std::make_unique<TriggerMsg>(request, response);
+    this->request = std::move(request);
+    this->response = std::move(response);
 }
 
 uint32_t TriggerMsg::compute_lengths_length() { return lengths_length; }
@@ -51,8 +48,8 @@ std::vector<uint8_t> TriggerMsg::get_lengths() {
 std::vector<uint8_t> TriggerMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> request_data = serializeTriggerRequest(request.value());
-	std::vector<uint8_t> response_data = serializeTriggerResponse(response.value());
+	std::vector<uint8_t> request_data = serializeTriggerRequest(request);
+	std::vector<uint8_t> response_data = serializeTriggerResponse(response);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), request_data.data(), request_length);

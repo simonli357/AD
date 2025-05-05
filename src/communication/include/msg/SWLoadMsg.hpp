@@ -10,8 +10,7 @@
 
 class SWLoadMsg : public Encoder {
   public:
-	SWLoadMsg();
-	SWLoadMsg(std_msgs::Float64MultiArray &cores_usage, float ram_usage, float temperature, float heap_usage, float stack_usage);
+	SWLoadMsg() = default;
 	SWLoadMsg(SWLoadMsg &&) = default;
 	SWLoadMsg(const SWLoadMsg &) = default;
 	SWLoadMsg &operator=(SWLoadMsg &&) = delete;
@@ -34,6 +33,7 @@ class SWLoadMsg : public Encoder {
 	void refresh();
 
   private:
+	void encode();
 	void get_cores_usage();
 	void get_ram_usage();
 	void get_temperature();

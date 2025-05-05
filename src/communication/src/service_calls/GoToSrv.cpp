@@ -8,10 +8,11 @@
 
 using std_msgs::Float32MultiArray;
 
-GoToSrv::GoToSrv() {}
-
-GoToSrv::GoToSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals)
-	: state_refs(state_refs), input_refs(input_refs), wp_attributes(wp_attributes), wp_normals(wp_normals) {
+void GoToSrv::encode(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals) {
+    this->state_refs = std::move(state_refs);
+    this->input_refs = std::move(input_refs);
+    this->wp_attributes = std::move(wp_attributes);
+    this->wp_normals = std::move(wp_normals);
 	state_refs_length = ros::serialization::serializationLength(state_refs);
 	input_refs_length = ros::serialization::serializationLength(input_refs);
 	wp_attributes_length = ros::serialization::serializationLength(wp_attributes);
@@ -19,18 +20,15 @@ GoToSrv::GoToSrv(const Float32MultiArray &state_refs, const Float32MultiArray &i
 	data_length = state_refs_length + input_refs_length + wp_attributes_length + wp_normals_length;
 }
 
-GoToSrv::GoToSrv(const std::string &vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y)
-	: vrefName(vrefName), x0(x0), y0(y0), yaw0(yaw0), dest_x(dest_x), dest_y(dest_y) {}
-
-std::unique_ptr<GoToSrv> GoToSrv::deserialize(std::vector<uint8_t> &bytes) {
+void GoToSrv::deserialize(std::vector<uint8_t> &bytes) {
 	std::vector<std::vector<uint8_t>> datatypes = split(bytes);
 	std::string vrefName(datatypes[0].begin(), datatypes[0].end());
-	float x0 = float_from_bytes(datatypes[1]);
-	float y0 = float_from_bytes(datatypes[2]);
-	float yaw0 = float_from_bytes(datatypes[3]);
-	float dest_x = float_from_bytes(datatypes[4]);
-	float dest_y = float_from_bytes(datatypes[5]);
-	return std::make_unique<GoToSrv>(vrefName, x0, y0, yaw0, dest_x, dest_y);
+    this->vrefName = vrefName;
+	x0 = float_from_bytes(datatypes[1]);
+	y0 = float_from_bytes(datatypes[2]);
+	yaw0 = float_from_bytes(datatypes[3]);
+	dest_x = float_from_bytes(datatypes[4]);
+	dest_y = float_from_bytes(datatypes[5]);
 }
 
 uint32_t GoToSrv::compute_lengths_length() { return lengths_length; }

@@ -14,16 +14,13 @@
 #include <unistd.h>
 #include <vector>
 
-SWLoadMsg::SWLoadMsg() {}
-
-SWLoadMsg::SWLoadMsg(std_msgs::Float64MultiArray &cores_usage, float ram_usage, float temperature, float heap_usage, float stack_usage)
-	: cores_usage(cores_usage), ram_usage(ram_usage), temperature(temperature), heap_usage(heap_usage), stack_usage(stack_usage) {
-	cores_usage_length = ros::serialization::serializationLength(cores_usage);
-	ram_usage_length = sizeof(ram_usage);
-	temperature_length = sizeof(temperature);
-	heap_usage_length = sizeof(heap_usage);
-	stack_usage_length = sizeof(stack_usage);
-	data_length = cores_usage_length + ram_usage_length + temperature_length + heap_usage_length + stack_usage_length;
+void SWLoadMsg::refresh() {
+	get_cores_usage();
+	get_ram_usage();
+	get_temperature();
+	get_heap_usage();
+	get_stack_usage();
+	encode();
 }
 
 uint32_t SWLoadMsg::compute_lengths_length() { return lengths_length; }
@@ -64,20 +61,6 @@ std::vector<uint8_t> SWLoadMsg::get_data() {
 	return data;
 }
 
-void SWLoadMsg::refresh() {
-	get_cores_usage();
-	get_ram_usage();
-	get_temperature();
-	get_heap_usage();
-	get_stack_usage();
-	cores_usage_length = ros::serialization::serializationLength(cores_usage.value());
-	ram_usage_length = sizeof(ram_usage);
-	temperature_length = sizeof(temperature);
-	heap_usage_length = sizeof(heap_usage);
-	stack_usage_length = sizeof(stack_usage);
-	data_length = cores_usage_length + ram_usage_length + temperature_length + heap_usage_length + stack_usage_length;
-}
-
 std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 	std::ifstream stat_file("/proc/stat");
 	std::string line;
@@ -100,6 +83,15 @@ std::unordered_map<int, SWLoadMsg::CoreUsage> SWLoadMsg::read_proc_stat() {
 		}
 	}
 	return core_usages;
+}
+
+void SWLoadMsg::encode() {
+	cores_usage_length = ros::serialization::serializationLength(cores_usage);
+	ram_usage_length = sizeof(ram_usage);
+	temperature_length = sizeof(temperature);
+	heap_usage_length = sizeof(heap_usage);
+	stack_usage_length = sizeof(stack_usage);
+	data_length = cores_usage_length + ram_usage_length + temperature_length + heap_usage_length + stack_usage_length;
 }
 
 void SWLoadMsg::get_cores_usage() {
@@ -132,7 +124,7 @@ void SWLoadMsg::get_cores_usage() {
 
 	std_msgs::Float64MultiArray result;
 	result.data = std::move(utilizations);
-    cores_usage = result;
+	cores_usage = result;
 }
 
 void SWLoadMsg::get_ram_usage() {
@@ -154,8 +146,8 @@ void SWLoadMsg::get_ram_usage() {
 	if (mem_total <= 0 || mem_available < 0) {
 		return;
 	}
-    
-    ram_usage = static_cast<float>(mem_total - mem_available) / mem_total;
+
+	ram_usage = static_cast<float>(mem_total - mem_available) / mem_total;
 }
 
 void SWLoadMsg::get_temperature() {
@@ -186,7 +178,7 @@ void SWLoadMsg::get_temperature() {
 				long temp_millic;
 				temp_file >> temp_millic;
 				temperature = temp_millic / 1000.0f;
-                return;
+				return;
 			} catch (...) {
 				continue;
 			}
@@ -205,8 +197,8 @@ void SWLoadMsg::get_temperature() {
 				std::ifstream temp_file(entry.path().string() + "/temp");
 				long temp_millic;
 				temp_file >> temp_millic;
-                temperature = temp_millic / 1000.0f;
-                return;
+				temperature = temp_millic / 1000.0f;
+				return;
 			}
 		}
 	}
@@ -237,9 +229,9 @@ void SWLoadMsg::get_heap_usage() {
 
 	if (vmsize == 0) {
 		heap_usage = 0.0f;
-        return;
-    }
-    heap_usage = static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
+		return;
+	}
+	heap_usage = static_cast<float>(vmhwm) / vmsize; // Physical usage vs. virtual allocation
 }
 
 void SWLoadMsg::get_stack_usage() {
@@ -251,13 +243,13 @@ void SWLoadMsg::get_stack_usage() {
 	// Get current stack pointer (RSP for x86_64)
 	void *stack_ptr;
 
-    #if defined(__x86_64__) || defined(__i386__)
-        asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
-    #elif defined(__aarch64__)
-        asm volatile("mov %0, sp" : "=r"(stack_ptr));
-    #else
-    #error "Unsupported architecture"
-    #endif
+#if defined(__x86_64__) || defined(__i386__)
+	asm volatile("mov %%rsp, %0" : "=r"(stack_ptr));
+#elif defined(__aarch64__)
+	asm volatile("mov %0, sp" : "=r"(stack_ptr));
+#else
+#error "Unsupported architecture"
+#endif
 
 	// Get thread's stack base and size (corrected for downward-growing stacks)
 	pthread_attr_t attr;

@@ -1,8 +1,13 @@
 #pragma once
 
+#include "msg/Lane2Msg.hpp"
+#include "msg/ParamsMsg.hpp"
+#include "msg/RunMsg.hpp"
 #include "msg/SWLoadMsg.hpp"
+#include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
+#include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
@@ -93,7 +98,17 @@ class TcpClient {
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
+	// Messages
 	std::unique_ptr<SWLoadMsg> swload;
+	std::unique_ptr<Lane2Msg> lane2_msg;
+	std::unique_ptr<ParamsMsg> params_msg;
+	std::unique_ptr<RunMsg> run_msg;
+	std::unique_ptr<TriggerMsg> trigger_msg;
+	// Service calls
+	std::unique_ptr<GoToCmdSrv> goto_cmd_srv;
+	std::unique_ptr<GoToSrv> goto_srv;
+	std::unique_ptr<WaypointsSrv> waypoints_srv;
+	std::unique_ptr<SetStatesSrv> set_states_srv;
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;

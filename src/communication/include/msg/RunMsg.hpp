@@ -5,8 +5,7 @@
 
 class RunMsg : public Encoder {
   public:
-	RunMsg();
-	RunMsg(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
+	RunMsg() = default;
 	RunMsg(RunMsg &&) = default;
 	RunMsg(const RunMsg &) = default;
 	RunMsg &operator=(RunMsg &&) = delete;
@@ -19,9 +18,11 @@ class RunMsg : public Encoder {
 	float y_init;
 	float yaw_init;
 
+	void encode(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
+
   private:
 	const size_t num_elements = 5;
-    const size_t bytes_length = 4;
+	const size_t bytes_length = 4;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;
 	uint32_t v_ref_length;
