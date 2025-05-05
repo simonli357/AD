@@ -20,6 +20,7 @@ void TriggerMsg::deserialize(std::vector<uint8_t> &bytes) {
         std_srvs::TriggerResponse response;
         ros::serialization::deserialize(response_stream, response);
         this->response = std::move(response);
+        return;
     }
     ros::serialization::IStream request_stream(datatypes[0].data(), datatypes[0].size());
     ros::serialization::IStream response_stream(datatypes[1].data(), datatypes[1].size());
