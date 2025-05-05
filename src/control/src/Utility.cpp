@@ -256,18 +256,6 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
     static std::string buffer; // Buffer to accumulate the received data
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
 
-    // Malo Debug Serial commands
-    // Append the received data to output.txt
-    // std::ofstream outFile("/home/scandy/PID_testing/output.txt", std::ios::app);
-    // if (outFile.is_open()) {
-    //     outFile.write(data, length);
-    //     outFile.flush();
-    //     outFile.close();
-    // } else {
-    // std::cerr << "Unable to open output.txt" << std::endl;
-    // }
-    // End of Malo Serial Debug commands
-
     buffer.append(data, length);
     if (buffer.find("@7") == std::string::npos) {
         // ROS_WARN("cant find @7");
@@ -510,18 +498,18 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                         if(helper::get_min_object_index(world_states, GroundTruth::PARKING_SPOTS, min_index, min_error_sq, 0.15)) {
                             // this means the detected object is a parked car. all parking spots are facing east
                             object_yaw = 0.0;
-                            debug("Sign Callback(): new PARKED CAR detected at (" +
-                                std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
-                                "), closest parking spot: (" + std::to_string(GroundTruth::PARKING_SPOTS[min_index][0]) + ", " +
-                                std::to_string(GroundTruth::PARKING_SPOTS[min_index][1]) + "), object_yaw: " +
-                                std::to_string(object_yaw), 2);
+                            // debug("Sign Callback(): new PARKED CAR detected at (" +
+                            //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                            //     "), closest parking spot: (" + std::to_string(GroundTruth::PARKING_SPOTS[min_index][0]) + ", " +
+                            //     std::to_string(GroundTruth::PARKING_SPOTS[min_index][1]) + "), object_yaw: " +
+                            //     std::to_string(object_yaw), 2);
                         }
                     }
                 }
                 Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], object_yaw, confidence);
-                debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
-                    std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
-                    "), road_objects size: " + std::to_string(road_objects->size()), 2);
+                // debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
+                //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
+                //     "), road_objects size: " + std::to_string(road_objects->size()), 2);
             }
         }
     }

@@ -3,22 +3,22 @@ real:
   sign_relocalize: true
   intersection_relocalize: false
   has_light: false
-  use_kf: true
+  use_kf: false
   # sign_lon_offset: -0.01
   sign_lon_offset: -0.0
   # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: 0.015
   sign_lat_offset: 0.0
-  change_lane_offset_scaler: 1.3
-  min_dist_to_car: 0.2 # min distance from ego car front to other car back
+  change_lane_offset_scaler: 1.2
+  min_dist_to_car: 0.3 # min distance from ego car front to other car back
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
   max_light_dist: 0.75
   max_sign_dist: 1.5
   min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
-  cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5]
+  cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 18, 2.5, 2.5, 2.5]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   stop_duration: 1.5
   sign_localization_threshold: 0.537 #0.357
@@ -48,7 +48,7 @@ sim:
   sign_lon_offset: 0.0
   sign_lon_offset_slope: 0.0
   sign_lat_offset: 0.0
-  change_lane_offset_scaler: 1.3
+  change_lane_offset_scaler: 1.2
   min_dist_to_car: 0.2 # min distance from ego car front to other car back
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
   max_light_dist: 0.75
@@ -56,7 +56,7 @@ sim:
   min_sign_dist: 0.3
   highway_cooldown: 3.0
   sign_cooldown: 3.0
-  cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 15, 2.5, 2.5, 2.5]
+  cumulative_confidence_thresholds: [3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 3.5, 2.5, 2.5, 2.5, 2.5, 2.5, 18, 2.5, 2.5, 2.5]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
   stop_duration: 1.5
   sign_localization_threshold: 0.537 #0.357
