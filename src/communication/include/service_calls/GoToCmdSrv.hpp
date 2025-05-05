@@ -4,7 +4,6 @@
 #include "Encoder.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
-#include <optional>
 #include <tuple>
 
 using std_msgs::Float32MultiArray;

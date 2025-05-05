@@ -12,6 +12,7 @@
 #include <sstream>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 void SWLoadMsg::refresh() {
@@ -41,7 +42,7 @@ std::vector<uint8_t> SWLoadMsg::get_lengths() {
 std::vector<uint8_t> SWLoadMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> cores_usage_data = serializeFloat64MultiArray(cores_usage.value());
+	std::vector<uint8_t> cores_usage_data = serializeFloat64MultiArray(cores_usage);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), cores_usage_data.data(), cores_usage_length);
@@ -124,7 +125,7 @@ void SWLoadMsg::get_cores_usage() {
 
 	std_msgs::Float64MultiArray result;
 	result.data = std::move(utilizations);
-	cores_usage = result;
+	cores_usage = std::move(result);
 }
 
 void SWLoadMsg::get_ram_usage() {

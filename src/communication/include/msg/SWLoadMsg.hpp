@@ -4,7 +4,6 @@
 #include "std_msgs/Float64MultiArray.h"
 #include <cstdint>
 #include <hwloc.h>
-#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -17,7 +16,7 @@ class SWLoadMsg : public Encoder {
 	SWLoadMsg &operator=(const SWLoadMsg &) = delete;
 	~SWLoadMsg() = default;
 
-	std::optional<std_msgs::Float64MultiArray> cores_usage;
+	std_msgs::Float64MultiArray cores_usage;
 	float ram_usage;
 	float temperature;
 	float heap_usage;

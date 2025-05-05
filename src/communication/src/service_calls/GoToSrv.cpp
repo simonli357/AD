@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <cstring>
 #include <netinet/in.h>
-#include <optional>
 #include <vector>
 
 using std_msgs::Float32MultiArray;
@@ -48,10 +47,10 @@ std::vector<uint8_t> GoToSrv::get_lengths() {
 std::vector<uint8_t> GoToSrv::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> state_refs_data = serializeFloat32MultiArray(state_refs.value());
-	std::vector<uint8_t> input_refs_data = serializeFloat32MultiArray(input_refs.value());
-	std::vector<uint8_t> wp_attributes_data = serializeFloat32MultiArray(wp_attributes.value());
-	std::vector<uint8_t> wp_normals_data = serializeFloat32MultiArray(wp_normals.value());
+	std::vector<uint8_t> state_refs_data = serializeFloat32MultiArray(state_refs);
+	std::vector<uint8_t> input_refs_data = serializeFloat32MultiArray(input_refs);
+	std::vector<uint8_t> wp_attributes_data = serializeFloat32MultiArray(wp_attributes);
+	std::vector<uint8_t> wp_normals_data = serializeFloat32MultiArray(wp_normals);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), state_refs_data.data(), state_refs_length);

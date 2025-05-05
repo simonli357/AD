@@ -4,7 +4,6 @@
 #include "Encoder.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
-#include <optional>
 
 using std_msgs::Float32MultiArray;
 
@@ -25,10 +24,10 @@ class WaypointsSrv : public Decoder<WaypointsSrv>, public Encoder {
 	float yaw0;
 
 	// Response
-	std::optional<Float32MultiArray> state_refs;
-	std::optional<Float32MultiArray> input_refs;
-	std::optional<Float32MultiArray> wp_attributes;
-	std::optional<Float32MultiArray> wp_normals;
+	Float32MultiArray state_refs;
+	Float32MultiArray input_refs;
+	Float32MultiArray wp_attributes;
+	Float32MultiArray wp_normals;
 
 	void encode(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void deserialize(std::vector<uint8_t> &bytes) override;

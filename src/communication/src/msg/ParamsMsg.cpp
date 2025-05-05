@@ -8,8 +8,8 @@ void ParamsMsg::encode(const std::vector<double> &state_refs, const std::vector<
     this->attributes = std::move(attributes);
     state_refs_arr = double_vector_to_arr(state_refs);
     attributes_arr = double_vector_to_arr(attributes);
-	state_refs_length = ros::serialization::serializationLength(state_refs_arr.value());
-	attributes_length = ros::serialization::serializationLength(attributes_arr.value());
+	state_refs_length = ros::serialization::serializationLength(state_refs_arr);
+	attributes_length = ros::serialization::serializationLength(attributes_arr);
 	data_length = state_refs_length + attributes_length;
 }
 
@@ -28,8 +28,8 @@ std::vector<uint8_t> ParamsMsg::get_lengths() {
 std::vector<uint8_t> ParamsMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> state_refs_data = serializeFloat64MultiArray(state_refs_arr.value());
-	std::vector<uint8_t> attributes_data = serializeFloat64MultiArray(attributes_arr.value());
+	std::vector<uint8_t> state_refs_data = serializeFloat64MultiArray(state_refs_arr);
+	std::vector<uint8_t> attributes_data = serializeFloat64MultiArray(attributes_arr);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), state_refs_data.data(), state_refs_length);
