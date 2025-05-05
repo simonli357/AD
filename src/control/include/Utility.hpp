@@ -29,7 +29,7 @@
 #include "Tracking.h"
 #include "Tunable.h"
 #include <algorithm>
-
+#include <deque>
 #include "ros/ros.h"
 #include "sensor_msgs/image_encodings.h"
 #include "std_msgs/Header.h"
@@ -65,6 +65,35 @@ public:
     double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
     int stopline = -1;
     double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, encoder_speed, x_speed, y_speed;
+    std::deque<double> velocity_command_queue; 
+    void add_velocity_command(double new_command) {
+        velocity_command_queue.push_back(new_command);
+        if (velocity_command_queue.size() > 5) {
+            velocity_command_queue.pop_front();  // Remove oldest
+        }
+    }
+    void filter_encoder() {
+        if (velocity_command_queue.size() < 5) {
+            return;  // Not enough data to filter
+        }
+        // calculate the difference between encoder_speed and every element in the queue.
+        // if minimum different smaller than 0.1, don't do anything, else set encoder_speed to velocity_command
+        double min_diff = std::abs(encoder_speed - velocity_command_queue[0]);
+        for (size_t i = 1; i < velocity_command_queue.size(); ++i) {
+            double diff = std::abs(encoder_speed - velocity_command_queue[i]);
+            if (diff < min_diff) {
+                min_diff = diff;
+            }
+        }
+        if (min_diff > 0.1) {
+            printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
+            encoder_speed = velocity_command;
+        }
+        // if encoder speed is less than 0.03, set it to 0
+        if (std::abs(encoder_speed) < 0.03) {
+            encoder_speed = 0.0;
+        }
+    }
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double initial_yaw = 0;
     double x0 = -1, y0 = -1, yaw0 = 0;

@@ -65,6 +65,7 @@ private:
     float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative
     float               m_prevSpeed{0.0f};   ///< last speed for derivative
+    float               DEGREE_PER_CM{-146.0f}; ///< degrees per cm
 
     // Biquad structure for 2nd-order Butterworth
     struct Biquad {

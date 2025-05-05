@@ -107,6 +107,9 @@ void Utility::fetch_run_params() {
 }
 
 void Utility::initialize() {
+    for (int i = 0; i < 5; ++i) {
+        add_velocity_command(0.0);
+    }
     // tunables
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
@@ -253,15 +256,61 @@ void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
     publish_odom();
 }
 void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
-    // auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
     static char data[256]; // Buffer to store data
     static size_t length = 0;
     static std::string buffer; // Buffer to accumulate the received data
     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
 
     buffer.append(data, length);
-    if (buffer.find("@5") != std::string::npos) { // encoder
-
+    if (buffer.find("@5") != std::string::npos) {            // ── encoder ──
+        size_t end_pos = buffer.find('\n');               
+        if (end_pos != std::string::npos) {
+            std::string line = buffer.substr(0, end_pos);   
+            buffer.erase(0, end_pos + 1);                   
+            if (line.find("@5") != std::string::npos) {     
+                size_t pos = line.find(':');
+                if (pos == std::string::npos || pos + 1 >= line.length()) {
+                    std::cerr << "Encoder‑parse error: no ':' delimiter\n";
+                    return;
+                }
+                ++pos;                                        // move past ':'
+    
+                size_t semi = line.find(';', pos);
+                if (semi == std::string::npos) {
+                    std::cerr << "Encoder‑parse error: no ';' after ang\n";
+                    return;
+                }
+                // const std::string ang_str = line.substr(pos, semi - pos);
+                pos = semi + 1;
+    
+                semi = line.find(';', pos);                  // second ';' ends the speed field
+                if (semi == std::string::npos) {
+                    std::cerr << "Encoder‑parse error: no ';' after speed\n";
+                    return;
+                }
+                const std::string speed_str = line.substr(pos, semi - pos);
+    
+                double speed_cm_s;
+                try {
+                    speed_cm_s = std::stod(speed_str);
+                    encoder_speed = speed_cm_s * 0.01; // convert to m/s
+                    filter_encoder();
+                } catch (const std::invalid_argument&) {
+                    // std::cerr << "Encoder‑parse error: bad speed value\n";
+                    return;
+                }
+    
+                static bool debug_enc = false;
+                if (debug_enc) {
+                    printf("encoder speed: %.2f cm/s\n", speed_cm_s);
+                }
+                // auto end = std::chrono::high_resolution_clock::now();
+                // std::chrono::duration<double> elapsed = end - start;
+                // ROS_INFO("imu_pub_timer_callback ENC time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+            }
+        }
+        return;
     } else if (buffer.find("@7") != std::string::npos) { // imu
         size_t end_pos = buffer.find('\n');
         if (end_pos != std::string::npos) {
@@ -292,7 +341,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                     if (end_pos != std::string::npos) {
                         switch (i) {
                             case 0:
-                                roll_str = line.substr(pos, end_pos - pos);
+                                // roll_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 1:
                                 pitch_str = line.substr(pos, end_pos - pos);
@@ -301,22 +350,22 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                                 yaw_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 3:
-                                accelx_str = line.substr(pos, end_pos - pos);
+                                // accelx_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 4:
-                                accely_str = line.substr(pos, end_pos - pos);
+                                // accely_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 5:
-                                accelz_str = line.substr(pos, end_pos - pos);
+                                // accelz_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 6:
-                                gyrox_str = line.substr(pos, end_pos - pos);
+                                // gyrox_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 7:
-                                gyroy_str = line.substr(pos, end_pos - pos);
+                                // gyroy_str = line.substr(pos, end_pos - pos);
                                 break;
                             case 8:
-                                gyroz_str = line.substr(pos, end_pos - pos);
+                                // gyroz_str = line.substr(pos, end_pos - pos);
                                 break;
                         }
                         pos = end_pos + 1;
@@ -327,31 +376,30 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                 }
 
                 // Convert substrings to floating-point numbers
-                static double roll;
+                // static double roll;
                 static double pitch;
                 static double yaw_deg;
-                static double accelx;
-                static double accely;
-                static double accelz;
-                static double gyrox;
-                static double gyroy;
-                static double gyroz;
+                // static double accelx;
+                // static double accely;
+                // static double accelz;
+                // static double gyrox;
+                // static double gyroy;
+                // static double gyroz;
                 try {
-                    roll = stod(roll_str);
+                    // roll = stod(roll_str);
                     pitch = stod(pitch_str);
                     yaw_deg = stod(yaw_str);
-                    accelx = stod(accely_str);
-                    accely = stod(accelx_str);
-                    accelz = stod(accelz_str);
-                    gyrox = stod(gyrox_str);
-                    gyroy = stod(gyroy_str);
-                    gyroz = stod(gyroz_str);
+                    // accelx = stod(accely_str);
+                    // accely = stod(accelx_str);
+                    // accelz = stod(accelz_str);
+                    // gyrox = stod(gyrox_str);
+                    // gyroy = stod(gyroy_str);
+                    // gyroz = stod(gyroz_str);
                 } catch (const std::invalid_argument& e) {
                     std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
                     return;
                 }
 
-                static double accel_mag;
                 {
                     // std::lock_guard<std::mutex> lock(general_mutex);
                     this->yaw = -yaw_deg * M_PI/180;
@@ -360,14 +408,15 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
 
                 static bool debug_imu = false;
                 if (debug_imu) {
-                    printf("roll: %.2f, pitch: %.2f, yaw: %.2f, accelx: %.2f, accely: %.2f, accelz: %.2f, gyrox: %.2f, gyroy: %.2f, gyroz: %.2f\n", roll, pitch, yaw_deg, accelx, accely, accelz, gyrox, gyroy, gyroz);
+                    printf("pitch: %.2f, yaw: %.2f\n", pitch, yaw_deg);
                 }
                 // auto end = std::chrono::high_resolution_clock::now();
                 // std::chrono::duration<double> elapsed = end - start;
-                // ROS_INFO("imu_pub_timer_callback time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+                // ROS_INFO("imu_pub_timer_callback IMU time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
             } 
         } 
     }
+    
 }
 void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
@@ -838,6 +887,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     {
         steer_command = steering_angle;
         velocity_command = velocity;
+        add_velocity_command(velocity_command);
     }
     // apply offset correction
     if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
