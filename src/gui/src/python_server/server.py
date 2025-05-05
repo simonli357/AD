@@ -2,7 +2,6 @@ import socket
 import struct
 import threading
 import time
-import fcntl
 
 from python_server.tcp_connection import TcpConnection
 from python_server.udp_connection import UdpConnection
@@ -15,47 +14,30 @@ class Server:
         self.tcp_port = 49153
         self.udp_port = 49154
         self.multicast_address = "239.1.2.3"
+        self.interface_ip = "0.0.0.0"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.tcp_client = None
         self.dashboard_clients = {}
         self.udp_connection = None
         self.alive = True
         self.listener = None
 
-    def _get_local_ip_for_iface(self) -> str:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        try:
-            s.connect((self.multicast_address, self.udp_port))
-            local_ip = s.getsockname()[0]
-        except Exception:
-            local_ip = '0.0.0.0'
-        finally:
-            s.close()
-        return local_ip
-
     def initialize(self):
-        self.udp_socket.bind(('', self.udp_port))
-        # Standart IN_ADDR_ANY join
-        grp_bin = socket.inet_aton(self.multicast_address)
-        iface_bin = socket.inet_aton(self._get_local_ip_for_iface())
-        mreq = grp_bin + iface_bin
-        self.udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-        # IGMPv3
-        try:
-            # pack (group, source, interface) as three 4‑byte addrs
-            ssm_req = grp_bin + socket.inet_aton(self.host_ip) + iface_bin
-            self.udp_socket.setsockopt(
-                socket.IPPROTO_IP,
-                socket.IP_ADD_SOURCE_MEMBERSHIP,
-                ssm_req
-            )
-        except AttributeError:
-            pass
-        except OSError as e:
-            print("SSM join failed:", e)
+        self.udp_socket.bind((self.interface_ip, self.udp_port))
+        mreq = struct.pack(
+            '4s4s',
+            socket.inet_aton(self.multicast_address),
+            socket.inet_aton(self.interface_ip)
+        )
+        self.udp_socket.setsockopt(
+            socket.IPPROTO_IP,
+            socket.IP_ADD_MEMBERSHIP,
+            mreq
+        )
 
         self.udp_connection = UdpConnection(self.udp_socket)
 
