@@ -81,6 +81,13 @@ class Server:
         if client_type == "dashboard_client":
             key = client_socket.getpeername()[0]
             print(f"Dashboard Client Connected with IP: {key}")
+            if key in self.dashboard_clients:
+                old_client = self.dashboard_clients[key]
+                old_client.alive = False
+                try:
+                    old_client.socket.close()
+                except Exception:
+                    pass
             self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def on_packet(self, source, packet):
