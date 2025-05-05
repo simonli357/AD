@@ -79,3 +79,5 @@ template <typename T> bool Decoder<T>::bool_from_bytes(const std::vector<uint8_t
 	std::memcpy(&b, bytes.data(), sizeof(b));
 	return b;
 }
+
+template <typename T> void Decoder<T>::deserialize(std::vector<uint8_t> &bytes) {}
