@@ -87,8 +87,8 @@ void PathPlanner::construct_path() {
 	}
 	/* path_utils.distance_filter(general_path, distance_threshold, hw_density_factor, cw_density_factor); */
 	condensed_path = spline_utils.interpolate_path(general_path, density, hw_density_factor, cw_density_factor);
-	path_utils.normalize_yaw(condensed_path, yaw_threshold);
-	path_utils.smooth_yaw(condensed_path);
+	/* path_utils.normalize_yaw(condensed_path, yaw_threshold); */
+	/* path_utils.smooth_yaw(condensed_path); */
 	path_utils.compute_speeds(condensed_path, vref, density, hw_density_factor, cw_density_factor);
 }
 
