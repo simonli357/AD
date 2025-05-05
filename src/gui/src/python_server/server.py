@@ -14,7 +14,6 @@ class Server:
         self.tcp_port = 49153
         self.udp_port = 49154
         self.multicast_address = "239.1.2.3"
-        self.interface_ip = "0.0.0.0"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -27,12 +26,9 @@ class Server:
         self.listener = None
 
     def initialize(self):
-        self.udp_socket.bind((self.interface_ip, self.udp_port))
-        mreq = struct.pack(
-            '4s4s',
-            socket.inet_aton(self.multicast_address),
-            socket.inet_aton(self.interface_ip)
-        )
+        self.udp_socket.bind(('', self.udp_port))
+        group = socket.inet_aton(self.multicast_address)
+        mreq = struct.pack('4sL', group, socket.INADDR_ANY)
         self.udp_socket.setsockopt(
             socket.IPPROTO_IP,
             socket.IP_ADD_MEMBERSHIP,
