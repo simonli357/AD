@@ -179,20 +179,18 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.time_timer.stop()
         self.toggle_start_icon()
 
+    def on_goto(self, res):
+        self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+        self.main_window.attributes_np = np.array(res.wp_attributes.data)
+        print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
+        self.main_window.buttons_overlay.set_run_name('run-custom')
+        self.main_window.reset_run_statistics()
+
     def call_start_service(self, start) -> None:
         try:
             if self.server.tcp_client.socket is None:
                 return
             self.server.tcp_client.send_start_srv(not self.started)
-            max_retries = 500
-            retries = 0
-            while (retries < max_retries):
-                if self.server.tcp_client.start_srv_msg:
-                    self.on_start()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to start/stop")
         except Exception as e:
             print(e)
 
@@ -205,20 +203,6 @@ class ButtonsWidget(QtWidgets.QWidget):
                 return
             else:
                 self.server.tcp_client.send_go_to_cmd_srv(cursor_coords)
-            max_retries = 50
-            retries = 0
-            res = self.server.tcp_client.go_to_cmd_srv_msg
-            while (retries < max_retries):
-                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
-                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
-                    print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.buttons_overlay.set_run_name('run-custom')
-                    self.main_window.reset_run_statistics()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to send go to cmd")
         except Exception as e:
             print(e)
 

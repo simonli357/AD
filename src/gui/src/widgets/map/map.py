@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-from std_srvs.srv import TriggerResponse
+from std_srvs.srv import TriggerResponse, TriggerRequest
 from OpenGL import GL as gl
 from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
@@ -695,30 +695,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     # Callbacks
     ##################
 
-    def update_params(self, req) -> None:
-        try:
-            max_retries = 50
-            retries = 0
-            params = self.server.tcp_client.params
-            while (retries < max_retries):
-                if (len(params.state_refs) > 0 and len(params.attributes) > 0):
-                    self.main_window.state_refs_np = params.state_refs.popleft()
-                    self.main_window.attributes_np = params.attributes.popleft()
-                    print("state ref shape: ", self.main_window.state_refs_np.shape)
-                    # print first 3 rows
-                    print("state ref: ", self.main_window.state_refs_np.T[:, :3])
-                    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                    path = os.path.join(path, 'saved')
-                    np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
-                    print("saved state refs")
-                    return TriggerResponse(success=True, message="Parameters updated")
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to update params: timeout")
-            return TriggerResponse(success=False, message="Failed to update: timeout")
-        except Exception as e:
-            print(f"Failed to update parameters: {e}")
-            return TriggerResponse(success=False, message=f"Failed to update: {e}")
+    def on_params(self, params):
+        self.main_window.state_refs_np = params.state_refs
+        self.main_window.attributes_np = params.attributes
+        print("state ref shape: ", self.main_window.state_refs_np.shape)
+        # print first 3 rows
+        print("state ref: ", self.main_window.state_refs_np.T[:, :3])
+        path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(path, 'saved')
+        np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+        print("saved state refs")
+        self.main_window.server.tcp_client.send_trigger(TriggerRequest(), TriggerResponse(success=True, message="Parameters updated"))
 
     def road_objects_callback(self, road_object) -> None:
         self.detected_data = np.array(road_object.data).reshape(-1, self.road_msg_length)
@@ -734,22 +721,15 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         else:
             self.numObj = 0
 
+    def on_waypoint(self, res):
+        self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+        self.main_window.attributes_np = np.array(res.wp_attributes.data)
+        print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
+        self.main_window.reset_run_statistics()
+
     def call_waypoint_service(self, run):
         try:
+            self.main_window.buttons_overlay.set_run_name(run.path_name)
             self.server.tcp_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
-            max_retries = 50
-            retries = 0
-            res = self.server.tcp_client.waypoints_srv_msg
-            while (retries < max_retries):
-                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
-                    print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.buttons_overlay.set_run_name(run.path_name)
-                    self.main_window.reset_run_statistics()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to send waypoints service call")
         except Exception as e:
             raise e

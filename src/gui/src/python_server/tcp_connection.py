@@ -1,5 +1,6 @@
 import threading
 import struct
+import time
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
@@ -18,9 +19,17 @@ class TcpConnection:
         self.alive = True
         self.is_host = is_host
         self.is_dashboard = dashboard
+        self.socket.settimeout(None)
+
         self.on_packet = on_packet
         self.on_start = None
-        self.socket.settimeout(None)
+        self.on_message = None
+        self.on_run = None
+        self.on_goto = None
+        self.on_set_states = None
+        self.on_waypoint = None
+        self.on_params = None
+
         self.data_actions = OrderedDict({
             b'\x01': self.parse_string,
             b'\x02': self.parse_trigger,
@@ -36,8 +45,8 @@ class TcpConnection:
         self.types = list(self.data_actions.keys())
         self.strings = deque()
         self.triggers = TriggerMsg(b'\x02')
-        self.messages = deque()
-        self.run_msg = deque()
+        self.message = String()
+        self.run_msg = RunMsg(b'\x0a')
         self.graph_msg = deque()
         self.go_to_srv_msg = GoToSrv(b'\x04')
         self.go_to_cmd_srv_msg = GoToCmdSrv(b'\x05')
@@ -147,55 +156,75 @@ class TcpConnection:
     def parse_trigger(self, bytes):
         try:
             self.triggers.decode(bytes)
+            req, res = self.triggers.msgs
         except Exception as e:
             print(e)
-
-    def parse_params(self, bytes):
-        try:
-            self.params.decode(bytes)
-        except Exception as e:
-            raise e
 
     def parse_message(self, bytes):
         try:
-            self.messages.append(String().deserialize(bytes))
+            self.message.deserialize(bytes)
+            while self.on_message is None:
+                time.sleep(0.2)
+            self.on_message(self.message.data)
         except Exception as e:
             print(e)
 
-    def parse_go_to_srv(self, bytes):
+    def parse_run(self, bytes):
         try:
-            self.go_to_srv_msg.decode(bytes)
+            self.run_msg.decode(bytes)
+            while self.on_run is None:
+                time.sleep(0.2)
+            self.on_run(self.run_msg)
         except Exception as e:
             print(e)
 
     def parse_go_to_cmd_srv(self, bytes):
         try:
             self.go_to_cmd_srv_msg.decode(bytes)
+            while self.on_goto is None:
+                time.sleep(0.2)
+            self.on_goto(self.go_to_cmd_srv_msg)
         except Exception as e:
             print(e)
 
     def parse_set_states_srv(self, bytes):
         try:
             self.set_states_srv_msg.decode(bytes)
+            while self.on_set_states is None:
+                time.sleep(0.2)
+            self.on_set_states(self.set_states_srv_msg.success)
         except Exception as e:
             print(e)
 
     def parse_waypoints_srv(self, bytes):
         try:
             self.waypoints_srv_msg.decode(bytes)
+            while self.on_waypoint is None:
+                time.sleep(0.2)
+            self.on_waypoint(self.waypoints_srv_msg)
         except Exception as e:
             print(e)
 
     def parse_start_srv(self, bytes):
         try:
             self.start_srv_msg = bytes == b'\x01'
-            if self.is_dashboard and not self.is_host and self.on_start is not None:
-                self.on_start()
+            while self.on_start is None:
+                time.sleep(0.2)
+            self.on_start()
         except Exception as e:
             print(e)
 
-    def parse_run(self, bytes):
+    def parse_params(self, bytes):
         try:
-            self.run_msg.append(RunMsg(b'\x0a').decode(bytes))
+            self.params.decode(bytes)
+            while self.on_params is None:
+                time.sleep(0.2)
+            self.on_params(self.params)
+        except Exception as e:
+            print(e)
+
+    def parse_go_to_srv(self, bytes):
+        try:
+            self.go_to_srv_msg.decode(bytes)
         except Exception as e:
             print(e)

@@ -186,21 +186,14 @@ class SidebarWidget(QtWidgets.QWidget):
         except Exception:
             pass
 
+    def on_set_states(self, success):
+        self.main_window.reset_run_statistics()
+
     def call_set_states_service(self, x=-200.0, y=-200.0):
         print("set states service called")
         try:
             if self.server.tcp_client.socket is None:
                 return
             self.server.tcp_client.send_set_states_srv(x, y)
-            max_retries = 50
-            retries = 0
-            while (retries < max_retries):
-                if self.server.tcp_client.set_states_srv_msg.success:
-                    print("Successful set_states service call")
-                    self.main_window.reset_run_statistics()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to set states")
         except Exception as e:
             print(e)

@@ -3,7 +3,6 @@ from python_server import encoder
 import io
 import struct
 from std_srvs.srv import TriggerRequest, TriggerResponse
-from collections import deque
 
 
 class TriggerMsg:
@@ -11,7 +10,7 @@ class TriggerMsg:
         self.bytes_length = 4
         self.num_elements = 0
         self.data_type = data_type
-        self.msgs = deque()
+        self.msgs = None
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
@@ -22,7 +21,7 @@ class TriggerMsg:
         if len(splits) == 2:
             request.deserialize(splits[0])
             response.deserialize(splits[1])
-        self.msgs.append((request, response))
+        self.msgs = (request, response)
 
     def encode(self, request, response):
         self.num_elements = 0

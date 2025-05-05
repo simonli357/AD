@@ -22,12 +22,17 @@ from widgets.barca.barca import BarcaWidget
 from widgets.car.car import CarWidget
 from widgets.terminal.terminal import TerminalWidget
 from widgets.enums import CameraParams
-from std_srvs.srv import TriggerRequest
 
 
 class CommunicationHandler(QObject):
+    start_signal = pyqtSignal()
     message_signal = pyqtSignal(str)
-    params_signal = pyqtSignal(object, object)
+    waypoints_signal = pyqtSignal(object)
+    params_signal = pyqtSignal(object)
+    run_signal = pyqtSignal(object)
+    goto_signal = pyqtSignal(object)
+    set_states_signal = pyqtSignal(object)
+
     camera_frame_signal = pyqtSignal(QtGui.QPixmap)
     depth_frame_signal = pyqtSignal(QtGui.QPixmap)
     depth_arr_signal = pyqtSignal(object)
@@ -35,7 +40,6 @@ class CommunicationHandler(QObject):
     road_obj_signal = pyqtSignal(object)
     waypoint_signal = pyqtSignal(object)
     sign_signal = pyqtSignal(object)
-    run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
 
@@ -103,10 +107,14 @@ class MainWindow(QMainWindow):
             continue
         print("TCP client connected!")
 
-        self.server.tcp_client.on_start = self.cam_buttons_widget.on_start
+        self.server.tcp_client.on_start = self.comm.start_signal.emit
+        self.server.tcp_client.on_message = self.comm.message_signal.emit
+        self.server.tcp_client.on_run = self.comm.run_signal.emit
+        self.server.tcp_client.on_goto = self.comm.goto_signal.emit
+        self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
+        self.server.tcp_client.on_params = self.comm.params_signal.emit
+        self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
 
-        self.comm.message_signal.connect(self.terminal_widget.add_message)
-        self.comm.params_signal.connect(self.handle_params_update)
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.depth_arr_signal.connect(self.cam_widget.hud.set_depth_arr)
@@ -114,9 +122,16 @@ class MainWindow(QMainWindow):
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
-        self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+
+        self.comm.start_signal.connect(self.cam_buttons_widget.on_start)
+        self.comm.message_signal.connect(self.terminal_widget.add_message)
+        self.comm.waypoints_signal.connect(self.map_widget.on_waypoint)
+        self.comm.params_signal.connect(self.map_widget.on_params)
+        self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
+        self.comm.goto_signal.connect(self.cam_buttons_widget.on_goto)
+        self.comm.set_states_signal.connect(self.sidebar_widget.on_set_states)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -155,15 +170,11 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
 
-        self.terminal_widget.add_message("AD IDE INITIALIZED")
+        self.terminal_widget.add_message("BFMC DASHBOARD INITIALIZED")
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.udp_callbacks)
         self.udp_timer.start(int(CameraParams.FPS_30.value * 1000))
-
-        self.udp_timer = QTimer(self)
-        self.udp_timer.timeout.connect(self.tcp_callbacks)
-        self.udp_timer.start(int(CameraParams.FPS_5.value * 1000))
 
         self.cam_timer = QTimer(self)
         self.cam_timer.timeout.connect(self.cam_record_callback)
@@ -202,10 +213,6 @@ class MainWindow(QMainWindow):
         nerd_font = QFont(font_family, 10)
         QApplication.setFont(nerd_font)
 
-    def handle_params_update(self, req, res):
-        response = self.map_widget.update_params(req)
-        self.server.tcp_client.send_trigger(TriggerRequest(), response)
-
     def handle_sign_update(self, sign):
         self.map_widget.sign_callback(sign)
         self.cam_widget.sign_callback(sign)
@@ -222,18 +229,6 @@ class MainWindow(QMainWindow):
         self.map_widget.update_waypoints()
         self.map_widget.next_destination = None
         self.map_widget.no_destinations = False
-
-    def tcp_callbacks(self) -> None:
-        if self.server.tcp_client is not None:
-            if self.server.tcp_client.messages:
-                msg = self.server.tcp_client.messages.popleft()
-                self.comm.message_signal.emit(msg.data)
-            if self.server.tcp_client.triggers.msgs:
-                req, res = self.server.tcp_client.triggers.msgs.popleft()
-                self.comm.params_signal.emit(req, res)
-            if self.server.tcp_client.run_msg:
-                run = self.server.tcp_client.run_msg.popleft()
-                self.comm.run_signal.emit(run)
 
     def udp_callbacks(self) -> None:
         rgb_image = None
