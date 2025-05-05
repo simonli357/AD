@@ -2,6 +2,7 @@ import socket
 import struct
 import threading
 import time
+import fcntl
 
 from python_server.tcp_connection import TcpConnection
 from python_server.udp_connection import UdpConnection
@@ -24,10 +25,19 @@ class Server:
         self.alive = True
         self.listener = None
 
+    def _get_local_ip_for_iface(iface: str) -> str:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        packed = fcntl.ioctl(
+            s.fileno(),
+            0x8915,  # SIOCGIFADDR
+            struct.pack('256s', iface[:15].encode('utf-8'))
+        )
+        return socket.inet_ntoa(packed[20:24])
+
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
         grp_bin = socket.inet_aton(self.multicast_address)
-        iface_bin = socket.inet_aton('0.0.0.0')
+        iface_bin = socket.inet_aton(self._get_local_ip_for_iface())
         mreq = grp_bin + iface_bin
         self.udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         self.udp_connection = UdpConnection(self.udp_socket)
