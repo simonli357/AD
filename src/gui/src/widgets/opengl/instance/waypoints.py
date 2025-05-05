@@ -14,6 +14,8 @@ class WaypointsRenderer:
 
         # ——— 1) VAO + base geometry ———
         self.vao = gl.glGenVertexArrays(1)
+        gl.glBindVertexArray(self.vao)
+
         self.base_vertices = np.array([
             [0.0, 0.5, 0.1],
             [0.5, 0.0, 0.1],
@@ -22,59 +24,36 @@ class WaypointsRenderer:
             [0.5, 0.0, 0.1],
             [0.0, -0.5, 0.1],
         ], dtype=np.float32).flatten()
-        self.base_vbo = gl.glGenBuffers(1)
 
-        gl.glBindVertexArray(self.vao)
+        self.base_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.base_vbo)
-        gl.glBufferData(
-            gl.GL_ARRAY_BUFFER,
-            self.base_vertices.nbytes,
-            self.base_vertices,
-            gl.GL_STATIC_DRAW
-        )
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.base_vertices.nbytes, self.base_vertices, gl.GL_STATIC_DRAW)
+
         gl.glEnableVertexAttribArray(0)
         gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
 
-        # ——— 2) Instance buffer: 8 floats per instance ———
-        # layout: [ pos.x, pos.y, angle, scale, r, g, b, a ]
-        self.instance_array = np.zeros((self.max_instances, 8), dtype=np.float32)
+        # ——— 2) Instance buffer: [pos.x, pos.y, angle, scale, r, g, b, a] ———
+        self.instance_data = np.zeros((self.max_instances, 8), dtype=np.float32)
         self.instance_vbo = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        # allocate once (no data yet)
-        gl.glBufferData(
-            gl.GL_ARRAY_BUFFER,
-            self.instance_array.nbytes,
-            None,
-            gl.GL_DYNAMIC_DRAW
-        )
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, self.instance_data.nbytes, None, gl.GL_DYNAMIC_DRAW)
 
-        stride = 8 * 4  # bytes
+        stride = 8 * 4  # 8 floats per instance
 
-        # iPos (vec2)
-        gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(0))
-        gl.glVertexAttribDivisor(1, 1)
+        # Define instanced attributes
+        offsets = [0, 2 * 4, 3 * 4, 4 * 4]  # byte offsets for pos, angle, scale, color
+        sizes = [2, 1, 1, 4]  # vec2, float, float, vec4
 
-        # iAngle (float)
-        gl.glEnableVertexAttribArray(2)
-        gl.glVertexAttribPointer(2, 1, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(2 * 4))
-        gl.glVertexAttribDivisor(2, 1)
+        for i, (offset, size) in enumerate(zip(offsets, sizes), start=1):
+            gl.glEnableVertexAttribArray(i)
+            gl.glVertexAttribPointer(i, size, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(offset))
+            gl.glVertexAttribDivisor(i, 1)
 
-        # iScale (float)
-        gl.glEnableVertexAttribArray(3)
-        gl.glVertexAttribPointer(3, 1, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(3 * 4))
-        gl.glVertexAttribDivisor(3, 1)
-
-        # iColor (vec4)
-        gl.glEnableVertexAttribArray(4)
-        gl.glVertexAttribPointer(4, 4, gl.GL_FLOAT, gl.GL_FALSE, stride, gl.ctypes.c_void_p(4 * 4))
-        gl.glVertexAttribDivisor(4, 1)
-
-        # unbind
+        # Clean up
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
-        # attribute → color map
+        # Attribute to color map
         self.ATTRIBUTES = {
             0: (1.0, 1.0, 0.0),
             1: (0.0, 1.0, 0.0),
@@ -89,8 +68,11 @@ class WaypointsRenderer:
             10: (0.0, 0.0, 1.0)
         }
 
-        # compile shaders
-        self.shader_program = create_shader_program(shader_path('diamonds', 'diamonds.vert'), shader_path('diamonds', 'diamonds.frag'))
+        # Compile shaders
+        self.shader_program = create_shader_program(
+            shader_path('diamonds', 'diamonds.vert'),
+            shader_path('diamonds', 'diamonds.frag')
+        )
         self.loc_p = gl.glGetUniformLocation(self.shader_program, "projection")
         self.loc_v = gl.glGetUniformLocation(self.shader_program, "view")
 
@@ -109,56 +91,32 @@ class WaypointsRenderer:
         N = min(state_refs_np.shape[1], self.max_instances)
         scale = 2.0
         lane_width = 0.38
-
         instance_idx = 0
+
         for i in range(N):
-            # position
+            # Center point
             xw, yw = state_refs_np[0, i], state_refs_np[1, i]
             gx, gy = self.get_gl_coords(xw, yw, widget_width, widget_height)
-            self.instance_array[i, 0:2] = (gx, gy)
-
-            # rotation
-            angle = 0.0
-            if self.track == 'barca':
-                angle = math.radians(90.0)
-            self.instance_array[i, 2] = angle
-
-            # scale
-            self.instance_array[i, 3] = scale
-
-            # color
+            angle = math.radians(90.0) if self.track == 'barca' else 0.0
             attr = int(attributes_np[i]) % 10
-            r, g, b = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
-            self.instance_array[i, 4:8] = (r, g, b, 1.0)
-
+            color = self.ATTRIBUTES.get(attr, (1.0, 1.0, 0.0))
+            self.instance_data[instance_idx] = [gx, gy, angle, scale, *color, 1.0]
             instance_idx += 1
 
-            # lane edges
+            # Lane edges
             theta = state_refs_np[2, i]
             nx, ny = -np.sin(theta), np.cos(theta)
             dx, dy = (lane_width / 2) * nx, (lane_width / 2) * ny
             for sign in [+1, -1]:
-                x_lane = xw + sign * dx
-                y_lane = yw + sign * dy
-                gx_lane, gy_lane = self.get_gl_coords(x_lane, y_lane, widget_width, widget_height)
-                self.instance_array[instance_idx, 0:2] = (gx_lane, gy_lane)
-                self.instance_array[instance_idx, 2] = 0.0
-                self.instance_array[instance_idx, 3] = scale
-                r, g, b = self.ATTRIBUTES.get(10, (0.0, 0.0, 1.0))
-                self.instance_array[instance_idx, 4:8] = (r, g, b, 1.0)
+                gx_lane, gy_lane = self.get_gl_coords(xw + sign * dx, yw + sign * dy, widget_width, widget_height)
+                self.instance_data[instance_idx] = [gx_lane, gy_lane, 0.0, scale, *self.ATTRIBUTES[10], 1.0]
                 instance_idx += 1
 
-        # upload only the used slice
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
-        gl.glBufferSubData(
-            gl.GL_ARRAY_BUFFER,
-            0,
-            self.instance_array[:instance_idx].nbytes,
-            self.instance_array[:instance_idx]
-        )
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
-
         self.num_instances = instance_idx
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.instance_vbo)
+        gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.instance_data[:instance_idx].nbytes, self.instance_data[:instance_idx])
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
     def draw(self, projection, view):
         if self.num_instances == 0:
@@ -167,9 +125,10 @@ class WaypointsRenderer:
         gl.glUseProgram(self.shader_program)
         gl.glBindVertexArray(self.vao)
 
-        # uniforms
         gl.glUniformMatrix4fv(self.loc_p, 1, gl.GL_FALSE, glm.value_ptr(projection))
         gl.glUniformMatrix4fv(self.loc_v, 1, gl.GL_FALSE, glm.value_ptr(view))
 
-        # draw
         gl.glDrawArraysInstanced(gl.GL_TRIANGLES, 0, 6, self.num_instances)
+
+        gl.glBindVertexArray(0)
+        gl.glUseProgram(0)
