@@ -38,10 +38,25 @@ class Server:
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
+        # Standart IN_ADDR_ANY join
         grp_bin = socket.inet_aton(self.multicast_address)
         iface_bin = socket.inet_aton(self._get_local_ip_for_iface())
         mreq = grp_bin + iface_bin
         self.udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+        # IGMPv3
+        try:
+            # pack (group, source, interface) as three 4‑byte addrs
+            ssm_req = grp_bin + socket.inet_aton(self.host_ip) + iface_bin
+            self.udp_socket.setsockopt(
+                socket.IPPROTO_IP,
+                socket.IP_ADD_SOURCE_MEMBERSHIP,
+                ssm_req
+            )
+        except AttributeError:
+            pass
+        except OSError as e:
+            print("SSM join failed:", e)
+
         self.udp_connection = UdpConnection(self.udp_socket)
 
         if self.is_host:
