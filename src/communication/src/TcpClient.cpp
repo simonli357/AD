@@ -64,6 +64,8 @@ void TcpClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
 	tcp_address.sin_family = AF_INET;
 	tcp_address.sin_port = htons(tcp_port);
+    setsockopt(tcp_socket, SOL_SOCKET, SO_SNDBUF, &buffer_size, sizeof(buffer_size));
+    setsockopt(tcp_socket, SOL_SOCKET, SO_RCVBUF, &buffer_size, sizeof(buffer_size));
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
 	int flags = fcntl(tcp_socket, F_GETFL, 0);
 	fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);

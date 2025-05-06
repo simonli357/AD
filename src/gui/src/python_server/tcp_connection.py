@@ -1,6 +1,7 @@
 import threading
 import struct
 import time
+import socket
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
@@ -20,6 +21,10 @@ class TcpConnection:
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
+
+        size = 65536
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, size)
 
         self.on_packet = on_packet
         self.on_start = None
