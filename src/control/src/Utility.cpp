@@ -68,7 +68,7 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
-    if (!Tunable::useGps) {
+    if (!Tunable::hasGps) {
         debug("GPS not found, skipping", 1);
         return;
     }
