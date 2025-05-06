@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include <netinet/in.h>
+#include <oneapi/tbb/concurrent_queue.h>
 #include <opencv2/core/mat.hpp>
 #include <sensor_msgs/Image.h>
 #include <string>
@@ -44,12 +45,13 @@ class TcpClient {
 	bool tcp_can_send = false;
 	// Methods
 	void run();
+    void set_image_quality(int quality) { rgb_img_quality = quality; }
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(const cv::Mat &img, int quality = 30);
+	void send_image_rgb(const cv::Mat &img);
 	void send_current_rgb_image();
 	void send_image_depth(const cv::Mat &img);
 	void send_current_depth_image();
@@ -87,6 +89,7 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	int swload_counter = 0;
+	int rgb_img_quality = 30;
 	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
@@ -112,6 +115,8 @@ class TcpClient {
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
+	tbb::concurrent_queue<cv::Mat> rgb_images;
+	tbb::concurrent_queue<cv::Mat> depth_images;
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -121,6 +126,8 @@ class TcpClient {
 	void poll_connection();
 	void listen();
 	void send_data();
+	void parse_rgb_image();
+	void parse_depth_image();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Callbacks

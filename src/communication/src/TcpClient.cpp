@@ -207,6 +207,7 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
+    parse_rgb_image();
     if (!stream_tasks.empty() && tcp_can_send) {
         std::any stream_task;
         if (stream_tasks.try_pop(stream_task)) {
@@ -431,18 +432,27 @@ void TcpClient::send_sign(const std::vector<float> &data) {
     sendto(udp_socket, bytes.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
-void TcpClient::send_image_rgb(const cv::Mat &img, int quality) {
-	std::vector<uchar> image;
-	cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, quality});
-	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	if (total_segments == 1) {
-		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), &length, message_size);
-		segment[4] = udp_data_types[4];
-		std::memcpy(segment.data() + header_size, &image[0], image.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-	}
+void TcpClient::parse_rgb_image() {
+    if (rgb_images.empty()) {
+        return;
+    }
+    cv::Mat img;
+    rgb_images.try_pop(img);
+    std::vector<uchar> image;
+    cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
+    uint32_t length = image.size();
+    uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
+    if (total_segments == 1) {
+        std::vector<uint8_t> segment(MAX_DGRAM, 0);
+        std::memcpy(segment.data(), &length, message_size);
+        segment[4] = udp_data_types[4];
+        std::memcpy(segment.data() + header_size, &image[0], image.size());
+        sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+    }
+}
+
+void TcpClient::send_image_rgb(const cv::Mat &img) {
+    rgb_images.push(std::move(img));
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {

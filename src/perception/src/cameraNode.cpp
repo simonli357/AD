@@ -34,6 +34,8 @@ class CameraNode {
 		nh.param(nodeName + "/send_depth", send_depth, false);
 		nh.param("quality", quality, 30);
 
+		Sign.tcp_client->set_image_quality(quality);
+
 		if (!realsense) {
 			if (Sign.hasDepthImage) {
 				std::string topic;
