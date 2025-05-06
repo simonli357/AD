@@ -208,6 +208,7 @@ void TcpClient::listen() {
 
 void TcpClient::send_data() {
     parse_rgb_image();
+    parse_depth_image();
     if (!stream_tasks.empty() && tcp_can_send) {
         std::any stream_task;
         if (stream_tasks.try_pop(stream_task)) {
@@ -418,9 +419,12 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	add_dgram_task(std::move(fn));
 }
 
-void TcpClient::send_sign(const std::vector<float> &data) {
+void TcpClient::parse_sign() {
+    if (signs.empty()) {
+        return;
+    }
     std_msgs::Float32MultiArray array;
-    array.data = data;
+    signs.try_pop(array.data);
     uint32_t length = ros::serialization::serializationLength(array);
     std::vector<uint8_t> arr(length);
     ros::serialization::OStream stream(arr.data(), length);
@@ -430,6 +434,10 @@ void TcpClient::send_sign(const std::vector<float> &data) {
     bytes[4] = udp_data_types[3];					  // Data type marker
     std::memcpy(bytes.data() + header_size, arr.data(), length);
     sendto(udp_socket, bytes.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_sign(const std::vector<float> &data) {
+    signs.push(std::move(data));
 }
 
 void TcpClient::parse_rgb_image() {
@@ -455,7 +463,12 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
     rgb_images.push(std::move(img));
 }
 
-void TcpClient::send_image_depth(const cv::Mat &img) {
+void TcpClient::parse_depth_image() {
+    if (depth_images.empty()) {
+        return;
+    }
+    cv::Mat img;
+    depth_images.try_pop(img);
 	std::vector<uchar> image;
 	cv::imencode(".hdr", img, image);
 	uint32_t length = image.size();
@@ -467,6 +480,10 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 		std::memcpy(segment.data() + header_size, &image[0], image.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
+}
+
+void TcpClient::send_image_depth(const cv::Mat &img) {
+    depth_images.push(std::move(img));
 }
 
 void TcpClient::send_steer(float steer) {

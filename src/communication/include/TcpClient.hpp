@@ -45,7 +45,7 @@ class TcpClient {
 	bool tcp_can_send = false;
 	// Methods
 	void run();
-    void set_image_quality(int quality) { rgb_img_quality = quality; }
+	void set_image_quality(int quality) { rgb_img_quality = quality; }
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
@@ -117,6 +117,7 @@ class TcpClient {
 	tbb::concurrent_queue<std::any> dgram_tasks;
 	tbb::concurrent_queue<cv::Mat> rgb_images;
 	tbb::concurrent_queue<cv::Mat> depth_images;
+	tbb::concurrent_queue<std::vector<float>> signs;
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -128,6 +129,7 @@ class TcpClient {
 	void send_data();
 	void parse_rgb_image();
 	void parse_depth_image();
+	void parse_sign();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Callbacks
