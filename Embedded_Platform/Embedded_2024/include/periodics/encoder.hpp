@@ -65,6 +65,7 @@ private:
     float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative
     float               m_prevSpeed{0.0f};   ///< last speed for derivative
+    float               DEGREE_PER_CM{-146.0f}; ///< degrees per cm
 
     // Biquad structure for 2nd-order Butterworth
     struct Biquad {
@@ -88,7 +89,7 @@ private:
     Biquad _sinF, _cosF;
     float  _lastAngle{0.0f};
     float  _lastSpeed{0.0f};
-    float  REPORT_INTERVAL_SEC = 0.1f;  ///< speed report interval (s)
+    float  REPORT_INTERVAL_SEC = 0.02f;  ///< speed report interval (s)
     float  sumDelta{0.0f};             ///< sum of deltas for speed
     float  lastT{0.0f};                ///< last time for speed report
     float  lastPublishedSpeed{0.0f};   ///< last published speed

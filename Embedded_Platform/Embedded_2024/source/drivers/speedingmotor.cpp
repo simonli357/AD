@@ -103,6 +103,10 @@ namespace drivers{
         m_currentSpeed = f_speed;
         // printf("Speed has been set: %f\n", m_currentSpeed);
         // printf("Duty Cycle has been set: %f\n", m_currentDutyCycle);
+        // printf("[ACK] speed_set = %.2f\n", f_speed);
+        char buf[48];
+        snprintf(buf, sizeof(buf), "[ACK] speed_set = %.2f\n", f_speed);
+        m_serialPort.write(buf, strlen(buf));
     }
 
     /** @brief  It converts speed reference to duty cycle for pwm signal. 

@@ -4,7 +4,7 @@ import tensorrt as trt
 import onnx
 import lib.common as common
 import os
-pt_path = os.path.dirname(os.path.realpath(__file__)).replace("scripts", "models/trt/rebecca.pt")
+pt_path = os.path.dirname(os.path.realpath(__file__)).replace("scripts", "models/trt/xinyi.pt")
 model = YOLO(pt_path)  # initialize
 
 model.export(format='onnx')

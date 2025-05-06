@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+"""Constant‑speed encoder test — **delay + steady‑state noise** (cm/s)
+
+Adds automatic delay/rise‑time estimation back in.
+
+What this script now does
+=========================
+1. Sends a fixed linear speed command (cm/s, negative conversion handled by
+   `CM_TO_DEG = -146`).
+2. Logs encoder speed, converts to cm/s.
+3. **Delay estimation**: first time the measured speed enters a ±10 % band
+   around the command **and stays there for ≥ 0.5 s**.
+4. All stats (mean, σ, min/max deviation) are computed **after that delay**.
+5. Plot shows:
+     * Measured trace (blue)
+     * Commanded speed (red dotted)
+     * Mean after delay (green dashed)
+     * ±1 σ shaded band
+     * Purple vertical line marking delay
+     * Embedded text box with delay + stats.
+6. Optional CSV logging unchanged.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+import re
+import csv
+from pathlib import Path
+
+import serial
+
+# ────────────────────────────────────────────────────────────────────────────────
+# ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+
+MOTOR_ID = 13
+CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
+BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
+HOLD_S   = 0.5      # must remain inside band for this long to count as settled
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
+    return f"#{MOTOR_ID}:{speed_cm_s:.2f}:{angle_deg:.2f};;\r\n".encode()
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[list[float], list[float]]:
+    ser = serial.Serial(port, baudrate=baud, timeout=0.1)
+    time.sleep(0.1)
+
+    t0 = time.time()
+    next_send = 0.0
+    last_angle = 0.0
+
+    times: list[float] = []
+    speeds_cm: list[float] = []
+
+    print(f"Running {duration}s at {speed_cm_s:.2f} cm/s …")
+    try:
+        while True:
+            now = time.time()
+            elapsed = now - t0
+            if elapsed >= duration:
+                break
+
+            if elapsed >= next_send:
+                ser.write(build_cmd(speed_cm_s, last_angle))
+                next_send += 0.1
+
+            while ser.in_waiting:
+                line = ser.readline().decode("utf-8", errors="ignore").strip()
+                m = ENC_PATTERN.match(line)
+                if not m:
+                    continue
+                # angle = float(m.group(1))
+                # speed_deg_s = float(m.group(2))
+                # last_angle = angle
+                # speeds_cm.append(speed_deg_s / CM_TO_DEG)
+                angle = float(m.group(1))
+                speed_cm = float(m.group(2))
+                last_angle = angle
+                speeds_cm.append(speed_cm)
+                times.append(elapsed)
+
+            if int(elapsed) % 1 == 0:
+                sys.stdout.write(f"\r{elapsed:4.1f}s / {duration:.1f}s")
+                sys.stdout.flush()
+    finally:
+        ser.close()
+    print()
+    return times, speeds_cm
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def estimate_delay(times: list[float], speeds: list[float], cmd_speed: float, tol: float = BAND_TOL, hold: float = HOLD_S) -> float:
+    """Return first time |speed - cmd| ≤ tol·|cmd| for ≥ hold seconds."""
+    import numpy as np
+
+    t = np.array(times)
+    v = np.array(speeds)
+    if t.size == 0:
+        return 0.0
+
+    in_band = np.abs(v - cmd_speed) <= tol * abs(cmd_speed)
+    if not in_band.any():
+        return t[-1]
+
+    idx = np.where(in_band)[0]
+    segments = np.split(idx, np.where(np.diff(idx) != 1)[0] + 1)
+    for seg in segments:
+        if t[seg[-1]] - t[seg[0]] >= hold:
+            return t[seg[0]]
+    return t[-1]
+
+
+def compute_stats(times: list[float], speeds: list[float], start_time: float) -> dict:
+    import numpy as np
+
+    t = np.array(times)
+    s = np.array(speeds)
+    mask = t >= start_time
+    if not mask.any():
+        return {k: float("nan") for k in ("mean", "std", "min_dev", "max_dev")}
+    s_seg = s[mask]
+    mean = float(s_seg.mean())
+    resid = s_seg - mean
+    return {
+        "mean": mean,
+        "std": float(resid.std(ddof=1)),
+        "min_dev": float(resid.min()),
+        "max_dev": float(resid.max()),
+    }
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def save_csv(times: list[float], speeds: list[float], path: Path) -> None:
+    with open(path, "w", newline="") as f:
+        csv.writer(f).writerows(zip(["time_s", "enc_speed_cm_s"], []))
+        csv.writer(f).writerows(zip(times, speeds))
+    print(f"CSV saved ➜ {path}")
+
+
+def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: float, stats: dict, path: Path) -> None:
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("matplotlib not installed; skipping plot.")
+        return
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(times, speeds, label="Measured (cm/s)", color="blue")
+    plt.axhline(cmd_speed, color="red", linestyle=":", label=f"Cmd {cmd_speed:.1f} cm/s")
+    plt.axvline(delay, color="purple", linestyle="-.", label=f"Delay {delay:.2f}s")
+    plt.axhline(stats["mean"], color="green", linestyle="--", label=f"Mean after delay {stats['mean']:.2f}")
+    plt.fill_between(times, stats["mean"] - stats["std"], stats["mean"] + stats["std"], color="green", alpha=0.25, label=f"±1σ {stats['std']:.2f}")
+
+    txt = (
+        f"Delay: {delay:.2f} s\n"
+        f"Mean: {stats['mean']:.2f} cm/s\n"
+        f"σ noise: {stats['std']:.2f} cm/s\n"
+        f"Min dev: {stats['min_dev']:.2f} cm/s\n"
+        f"Max dev: {stats['max_dev']:.2f} cm/s"
+    )
+    plt.gca().text(0.02, 0.97, txt, transform=plt.gca().transAxes, va="top",
+                   bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"))
+
+    plt.xlabel("Time [s]")
+    plt.ylabel("Speed [cm/s]")
+    plt.title("Encoder response (cm/s)")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(path, dpi=150)
+    print(f"Plot saved ➜ {path}")
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
+    ap.add_argument("--cmd", type=float, default=32, help="Commanded speed [cm/s]")
+    ap.add_argument("--dur", type=float, default=10, help="Duration [s]")
+    ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
+    ap.add_argument("--port", default="/dev/ttyACM0")
+    ap.add_argument("--baud", type=int, default=115200)
+    args = ap.parse_args()
+
+    times, speeds = run_test(args.port, args.baud, args.cmd, args.dur)
+    if len(speeds) < 3:
+        print("Insufficient samples.")
+        return
+
+    delay = estimate_delay(times, speeds, args.cmd)
+    stats = compute_stats(times, speeds, delay)
+
+    print(f"Delay to ±10 % band   : {delay:.3f} s")
+    print(f"Mean encoder speed    : {stats['mean']:.3f} cm/s")
+    print(f"Noise σ               : {stats['std']:.3f} cm/s")
+    print(f"Min deviation         : {stats['min_dev']:.3f} cm/s")
+    print(f"Max deviation         : {stats['max_dev']:.3f} cm/s")
+
+    if args.csv:
+        save_csv(times, speeds, args.csv)
+
+    script_dir = Path(__file__).parent
+    save_plot(times, speeds, args.cmd, delay, stats, script_dir / "encoder_noise_plot.png")
+
+    # stop motor
+    ser = serial.Serial(args.port, baudrate=args.baud, timeout=0.1)
+    ser.write(build_cmd(0.0, 0.0))
+    ser.close()
+
+
+if __name__ == "__main__":
+    main()

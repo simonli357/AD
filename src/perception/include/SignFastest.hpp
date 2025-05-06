@@ -55,17 +55,22 @@ class SignFastest {
             }
 
             nh.param("class_names", class_names, std::vector<std::string>());
-            if(!nh.param("confidence_thresholds", confidence_thresholds, std::vector<float>(13))) {
+            if(!nh.param("confidence_thresholds", confidence_thresholds, std::vector<float>(16))) {
                 ROS_WARN("Failed to get 'confidence_thresholds' parameter.");
             } else {
                 std::cout << "loaded confidence_thresholds size: " << confidence_thresholds.size() << std::endl;
             }
-            if (!nh.param("max_distance_thresholds", distance_thresholds, std::vector<float>(13))) {
+            if (!nh.param("max_distance_thresholds", distance_thresholds, std::vector<float>(16))) {
                 ROS_WARN("Failed to get 'max_distance_thresholds' parameter.");
             } else {
                 std::cout << "loaded distance_thresholds size: " << distance_thresholds.size() << std::endl;
             }
-            if (!nh.param("counter_thresholds", counter_thresholds, std::vector<int>(13))) {
+            if (!nh.param("median_thresholds", median_thresholds, std::vector<float>(16))) {
+                ROS_WARN("Failed to get 'median_thresholds' parameter.");
+            } else {
+                std::cout << "loaded median_thresholds size: " << median_thresholds.size() << std::endl;
+            }
+            if (!nh.param("counter_thresholds", counter_thresholds, std::vector<int>(16))) {
                 ROS_WARN("Failed to get 'counter_thresholds' parameter.");
             } else {
                 std::cout << "loaded counter_thresholds size: " << counter_thresholds.size() << std::endl;
@@ -166,6 +171,7 @@ class SignFastest {
         std::vector<float> confidence_thresholds;
         std::vector<float> distance_thresholds;
         std::vector<int> counter_thresholds;
+        std::vector<float> median_thresholds;
         std::vector<std::string> class_names;
         std::vector<int> sign_counter;
 
@@ -402,7 +408,7 @@ class SignFastest {
                 // Compute refined (final) depth excluding overlapping regions.
                 double finalDepth = computeMedianDepthExcludingOverlap(depthImage,
                                                                        db.x1, db.y1, db.x2, db.y2,
-                                                                       occlusionMask) / 1000.0;
+                                                                       occlusionMask, db.class_id) / 1000.0;
                 // cv::Mat result = image.clone();
                 // result.setTo(cv::Scalar(0, 0, 255), occlusionMask == 255);
                 // cv::imshow("Masked Image", result);
@@ -581,7 +587,7 @@ class SignFastest {
         }
 
 		double computeMedianDepthExcludingOverlap(const cv::Mat &depthImage, int bbox_x1, int bbox_y1, 
-                                                int bbox_x2, int bbox_y2, cv::Mat &occlusionMask) {
+                                                int bbox_x2, int bbox_y2, cv::Mat &occlusionMask, int type) {
 			// Clamp bounding box coordinates to the depth image dimensions.
 			int x1 = std::max(0, bbox_x1);
 			int y1 = std::max(0, bbox_y1);
@@ -619,7 +625,8 @@ class SignFastest {
 				return -1;
 			}
 			size_t total = validDepths.size();
-            size_t cutoff = std::max<size_t>(1, total * 0.25);  // ensure at least one value
+            // size_t cutoff = std::max<size_t>(1, total * 0.25);
+            size_t cutoff = std::max<size_t>(1, total * median_thresholds[type]);
             std::nth_element(validDepths.begin(), validDepths.begin() + cutoff, validDepths.end());
 
             // Sort the closest 25% for median computation

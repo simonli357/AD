@@ -64,6 +64,7 @@ public:
     double z = 0.0;
     double confidence;
     double cumulative_confidence = 0;
+    double cumulative_confidence_threshold = 2.0;
     int detection_count = 0;
     double speed = 0;
 
@@ -74,7 +75,8 @@ public:
     static constexpr size_t HISTORY_SIZE = 5;
 
     RoadObject(OBJECT type, double x, double y, double yaw, double confidence)
-        : id(OBJECT_COUNT.fetch_add(1)), type(type), x(x), y(y), yaw(yaw), confidence(confidence), speed(0) {
+        : id(OBJECT_COUNT.fetch_add(1)), type(type), x(x), y(y), yaw(yaw), confidence(confidence),
+         speed(0), cumulative_confidence_threshold(Tunable::cumulative_confidence_thresholds[static_cast<int>(type)]) {
         name = OBJECT_NAMES[type];
         detection_count = 1;
         cumulative_confidence = confidence;
@@ -333,7 +335,7 @@ public:
 
 class DynamicObject : public RoadObject {
 public:
-    double first_x, first_y;
+    double first_x, first_y, first_yaw;
     ros::Time first_detection_time;
     ros::Time last_prediction_time;
     std::unique_ptr<KalmanFilter> kf;
@@ -341,7 +343,7 @@ public:
 
     DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
         : RoadObject(type, x, y, yaw, confidence),
-            first_x(x), first_y(y), first_detection_time(ros::Time::now()), use_kf(Tunable::use_kf),
+            first_x(x), first_y(y), first_yaw(yaw), first_detection_time(ros::Time::now()), use_kf(Tunable::use_kf),
           kf(std::make_unique<KalmanFilter>(x, y, yaw, 0.0)), last_prediction_time(ros::Time::now())  
     {
         if (type != OBJECT::CAR && type != OBJECT::PEDESTRIAN) {
@@ -375,47 +377,47 @@ public:
             double dt1 = (current_time - last_detection_time).toSec();
             double dt2 = (current_time - first_detection_time).toSec();
         
-            // Estimate speed
-            double inst_speed = (dt1 > 0) ? std::hypot(new_x - x, new_y - y) / dt1 : speed;
-            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : inst_speed;
+            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : speed;
         
             double alpha = new_conf / (confidence + new_conf);
             double est_speed = avg_speed;
             speed = (1 - alpha) * speed + alpha * est_speed;
-        
-            // Yaw estimation from displacement
-            double dx_inst = new_x - x;
-            double dy_inst = new_y - y;
+            if (speed < 0.04) {
+                speed = 0;
+            }
             double dx_avg = new_x - first_x;
             double dy_avg = new_y - first_y;
         
-            bool valid_inst = std::hypot(dx_inst, dy_inst) > 1e-4;
             bool valid_avg = std::hypot(dx_avg, dy_avg) > 1e-4;
-        
-            if (valid_inst && valid_avg) {
-                double yaw_inst = std::atan2(dy_inst, dx_inst);
-                double yaw_avg = std::atan2(dy_avg, dx_avg);
-        
-                double sin_blend = std::sin(yaw_avg);
-                double cos_blend = std::cos(yaw_avg);
-                double yaw_new = std::atan2(sin_blend, cos_blend);
-                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
-            } else if (valid_avg) {
-                double yaw_new = std::atan2(dy_avg, dx_avg);
-                this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
+            
+            if (valid_avg) {
+                if (speed > 0.04 && cumulative_confidence > cumulative_confidence_threshold && (last_detection_time - first_detection_time).toSec() > 1.0) {
+                    double yaw_avg = std::atan2(dy_avg, dx_avg);
+            
+                    double sin_blend = std::sin(yaw_avg);
+                    double cos_blend = std::cos(yaw_avg);
+                    double yaw_new = std::atan2(sin_blend, cos_blend);
+                    this->yaw = (1 - alpha) * this->yaw + alpha * yaw_new;
+                } else {
+                    this->yaw = first_yaw;
+                }
             }
         
-            // Position update (EMA)
             x = (1 - alpha) * x + alpha * new_x;
             y = (1 - alpha) * y + alpha * new_y;
         }
         double alpha = new_conf / (confidence + new_conf);
         confidence = (1 - alpha) * confidence + alpha * new_conf;
         cumulative_confidence += new_conf;
-        cumulative_confidence += new_conf;
+        // std::cout << "new_conf: " << new_conf << ", cum conf: " << cumulative_confidence << std::endl;
         detection_count++;
     
         last_detection_time = ros::Time::now();
+        if (last_detection_time - first_detection_time > ros::Duration(4.0)) {
+            first_x = x;
+            first_y = y;
+            first_detection_time = last_detection_time;
+        }
     
         lifetime = std::min(lifetime + (0.2 * new_conf), OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime);
     
