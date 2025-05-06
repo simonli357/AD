@@ -331,7 +331,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glViewport(0, 0, w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
 
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        aspect = w / h if h != 0 else 1.0
         self.proj_mat = glm.perspective(
             glm.radians(45.0),
             aspect,

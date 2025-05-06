@@ -144,12 +144,12 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
-        self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
+        self.ortho_proj_mat = glm.ortho(0.0, MapData.SCREEN_W.value, MapData.SCREEN_H.value, 0.0, -1.0, 1.0)
         self.ortho_view_mat = glm.mat4(1.0)
 
         zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
+        half_width = MapData.SCREEN_W.value * zoom_factor / 2
+        half_height = MapData.SCREEN_H.value * zoom_factor / 2
 
         self.proj_mat = glm.ortho(
             -half_width, half_width,
@@ -187,10 +187,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
-            x=-self.width() / 2,
-            y=-self.height() / 2,
+            x=-MapData.SCREEN_W.value / 2,
+            y=-MapData.SCREEN_H.value / 2,
             z=0,
-            scale=(self.width(), self.height()),
+            scale=(MapData.SCREEN_W.value, MapData.SCREEN_H.value),
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
@@ -214,7 +214,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_measurement_points()
             self.update_mouse_pos()
 
-        self.draw_legend(self.width() / 2.7, self.height() / 3)
+        self.draw_legend(MapData.SCREEN_W.value / 2.7, MapData.SCREEN_H.value / 3)
 
         self.update()
 
@@ -234,7 +234,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             dy = p1[1] - p0[1]
             dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
-            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * MapData.SCREEN_W.value, 0.5 * MapData.SCREEN_H.value, 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
 
     def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
@@ -485,8 +485,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if not self.show_mouse:
             return
         if self.current_mouse_pos is not None:
-            widget_width = self.width()
-            widget_height = self.height()
+            widget_width = MapData.SCREEN_W.value
+            widget_height = MapData.SCREEN_H.value
             if widget_height == 0 or widget_width == 0:
                 return
 
@@ -499,14 +499,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.text_renderer.render_text(f"X {x_world:.2f}   Y {y_world:.2f}", x_scene, y_scene - 30, 1.0, (0, 1, 0), self.ortho_proj_mat)
 
     def get_real_world_coords(self, x_scene, y_scene):
-        widget_width = self.width()
-        widget_height = self.height()
+        widget_width = MapData.SCREEN_W.value
+        widget_height = MapData.SCREEN_H.value
         if widget_height == 0 or widget_width == 0:
             return (0.0, 0.0)
 
         # Convert screen coordinates to NDC (Normalized Device Coordinates)
-        ndc_x = (2.0 * x_scene / widget_width) - 1.0
-        ndc_y = 1.0 - (2.0 * y_scene / widget_height)
+        ndc_x = (2.0 * x_scene / self.width()) - 1.0
+        ndc_y = 1.0 - (2.0 * y_scene / self.height())
 
         # Compute half width and height in view space after zoom
         hw = (widget_width / self.view_zoom) / 2.0
@@ -527,8 +527,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         return real_world_x, real_world_y
 
     def get_gl_coords(self, real_x, real_y):
-        widget_width = self.width()
-        widget_height = self.height()
+        widget_width = MapData.SCREEN_W.value
+        widget_height = MapData.SCREEN_H.value
         if widget_height == 0 or widget_width == 0:
             return (0.0, 0.0)
 
@@ -540,7 +540,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def update_waypoints(self):
         if self.main_window.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
-            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, self.width(), self.height())
+            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, MapData.SCREEN_W.value, MapData.SCREEN_H.value)
             self._refs_xs = self.main_window.state_refs_np[0, :].copy()
             self._refs_ys = self.main_window.state_refs_np[1, :].copy()
             self._refs_len = self._refs_xs.shape[0]
@@ -571,8 +571,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
         zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
+        half_width = MapData.SCREEN_W.value * zoom_factor / 2
+        half_height = MapData.SCREEN_H.value * zoom_factor / 2
         self.proj_mat = glm.ortho(
             -half_width, half_width,
             -half_height, half_height,
@@ -615,12 +615,12 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
                     # Convert pixel delta to world coordinates
                     zoom_factor = 1.0 / self.view_zoom
-                    half_width = self.width() * zoom_factor / 2
-                    half_height = self.height() * zoom_factor / 2
+                    half_width = MapData.SCREEN_W.value * zoom_factor / 2
+                    half_height = MapData.SCREEN_H.value * zoom_factor / 2
 
                     # Calculate world units per pixel
-                    world_per_pixel_x = (2 * half_width) / self.width()
-                    world_per_pixel_y = (2 * half_height) / self.height()
+                    world_per_pixel_x = (2 * half_width) / MapData.SCREEN_W.value
+                    world_per_pixel_y = (2 * half_height) / MapData.SCREEN_H.value
 
                     # Update view center
                     self.view_center.x -= delta.x() * world_per_pixel_x
@@ -650,8 +650,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def wheelEvent(self, event):
         # Get mouse position in normalized device coordinates
         mouse_pos = event.pos()
-        mouse_x = 2.0 * mouse_pos.x() / self.width() - 1.0
-        mouse_y = 1.0 - 2.0 * mouse_pos.y() / self.height()
+        mouse_x = 2.0 * mouse_pos.x() / MapData.SCREEN_W.value - 1.0
+        mouse_y = 1.0 - 2.0 * mouse_pos.y() / MapData.SCREEN_H.value
 
         # Store pre-zoom values
         old_zoom = self.view_zoom
@@ -664,14 +664,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom
         self.view_center += glm.vec2(
-            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
-            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+            mouse_x * (MapData.SCREEN_W.value / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (MapData.SCREEN_H.value / 2) * (1 - zoom_ratio) / old_zoom
         )
 
         # Update projection matrix
         zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
+        half_width = MapData.SCREEN_W.value * zoom_factor / 2
+        half_height = MapData.SCREEN_H.value * zoom_factor / 2
 
         self.proj_mat = glm.ortho(
             -half_width, half_width,
