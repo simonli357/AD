@@ -74,7 +74,7 @@ class TcpConnection:
         data = b""
         try:
             while len(data) < length:
-                chunk = self.socket.recv(min(65536, length - len(data)))
+                chunk = self.socket.recv(min(2048, length - len(data)))
                 if not chunk:
                     raise ConnectionError("Connection lost")
                 data += chunk
