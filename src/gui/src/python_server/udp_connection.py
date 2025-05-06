@@ -48,7 +48,8 @@ class UdpConnection:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
                 if len(seg) < 5:
                     continue
-                self.broadcast(seg)
+                if self.server.is_host:
+                    self.broadcast(seg)
                 typ = seg[4]
                 payload = seg[5:]
                 if typ == 5:       # RGB frame
