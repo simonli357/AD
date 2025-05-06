@@ -22,6 +22,7 @@ class Server:
         self.udp_connection = None
         self.alive = True
         self.listener = None
+        self.packet_lock = threading.Lock()
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
@@ -81,17 +82,15 @@ class Server:
             self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def on_packet(self, source, packet):
-        if source.is_host and not source.is_dashboard:
-            dead = []
-            for key, db in self.dashboard_clients.items():
+        with self.packet_lock:
+            if source.is_host and not source.is_dashboard:
+                for key, db in self.dashboard_clients.items():
+                    try:
+                        db.socket.sendall(packet)
+                    except OSError:
+                        pass
+            elif source.is_host and source.is_dashboard:
                 try:
-                    db.socket.sendall(packet)
-                except OSError:
-                    dead.append(key)
-            for key in dead:
-                self.dashboard_clients.pop(key, None)
-        elif source.is_host and source.is_dashboard:
-            try:
-                self.tcp_client.socket.sendall(packet)
-            except Exception as e:
-                print(e)
+                    self.tcp_client.socket.sendall(packet)
+                except Exception as e:
+                    print(e)
