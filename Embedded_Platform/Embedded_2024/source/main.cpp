@@ -51,7 +51,7 @@ void blinkerTask() {
 void imuTask() {
     while (true) {
         g_imu.run();
-        ThisThread::sleep_for(100ms);
+        ThisThread::sleep_for(50ms);
     }
 }
 void encoderTask() {
@@ -81,7 +81,7 @@ int main()
     blinkerThread.start(blinkerTask);
     imuThread.start(imuTask);
     encoderThread.start(encoderTask);
-    totalVoltageThread.start(totalVoltageTask);
-    g_serialMonitor.start(10ms);
+    // totalVoltageThread.start(totalVoltageTask);
+    g_serialMonitor.start(5ms);
     ThisThread::sleep_for(osWaitForever);
 }
