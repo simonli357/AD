@@ -563,7 +563,7 @@ void Utility::process_lane_data(const utils::Lane2& msg) {
         center = msg.center;
         stopline = msg.stopline;
     }
-    tcp_client->send_lane2(std::move(msg));
+    tcp_client->send_lane2(msg);
 }
 void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);
