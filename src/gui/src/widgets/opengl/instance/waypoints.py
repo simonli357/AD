@@ -65,7 +65,7 @@ class WaypointsRenderer:
             7: (0.0, 1.0, 1.0),
             8: (0.4, 0.5, 0.7),
             9: (0.5, 0.0, 0.5),
-            10: (0.0, 0.0, 1.0)
+            10: (0.0, 0.25, 0.9)
         }
 
         # Compile shaders
@@ -90,7 +90,6 @@ class WaypointsRenderer:
 
         N = min(state_refs_np.shape[1], self.max_instances)
         scale = 2.0
-        lane_scale = 1.0
         lane_width = 0.37
         instance_idx = 0
 
@@ -110,7 +109,7 @@ class WaypointsRenderer:
             dx, dy = (lane_width / 2) * nx, (lane_width / 2) * ny
             for sign in [+1, -1]:
                 gx_lane, gy_lane = self.get_gl_coords(xw + sign * dx, yw + sign * dy, widget_width, widget_height)
-                self.instance_data[instance_idx] = [gx_lane, gy_lane, 0.0, lane_scale, *self.ATTRIBUTES[10], 1.0]
+                self.instance_data[instance_idx] = [gx_lane, gy_lane, 0.0, scale, *self.ATTRIBUTES[10], 1.0]
                 instance_idx += 1
 
         self.num_instances = instance_idx
