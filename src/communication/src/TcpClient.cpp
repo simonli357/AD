@@ -207,7 +207,6 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
-    parse_sign();
     if (!stream_tasks.empty() && tcp_can_send) {
         std::any stream_task;
         if (stream_tasks.try_pop(stream_task)) {
@@ -372,7 +371,7 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 // UDP Encoding
 // ------------------- //
 
-void TcpClient::send_lane2(const utils::Lane2 &lane) {
+void TcpClient::send_lane2(utils::Lane2 &&lane) {
 	auto fn = [this, lane]() {
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
@@ -418,12 +417,9 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	add_dgram_task(std::move(fn));
 }
 
-void TcpClient::parse_sign() {
-    if (signs.empty()) {
-        return;
-    }
+void TcpClient::send_sign(std::vector<float> &&data) {
     std_msgs::Float32MultiArray array;
-    signs.try_pop(array.data);
+    array.data = data;
     uint32_t length = ros::serialization::serializationLength(array);
     std::vector<uint8_t> arr(length);
     ros::serialization::OStream stream(arr.data(), length);
@@ -433,10 +429,6 @@ void TcpClient::parse_sign() {
     bytes[4] = udp_data_types[3];					  // Data type marker
     std::memcpy(bytes.data() + header_size, arr.data(), length);
     sendto(udp_socket, bytes.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-}
-
-void TcpClient::send_sign(const std::vector<float> &data) {
-    signs.push(std::move(data));
 }
 
 void TcpClient::send_image_rgb(cv::Mat &&img) {

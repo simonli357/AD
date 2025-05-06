@@ -558,12 +558,12 @@ void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& ms
     }
 }
 void Utility::process_lane_data(const utils::Lane2& msg) {
-    tcp_client->send_lane2(msg);
     {
         // std::lock_guard<std::mutex> lock(general_mutex);
         center = msg.center;
         stopline = msg.stopline;
     }
+    tcp_client->send_lane2(std::move(msg));
 }
 void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);

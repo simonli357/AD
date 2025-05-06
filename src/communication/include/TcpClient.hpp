@@ -49,12 +49,12 @@ class TcpClient {
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
-	void send_lane2(const utils::Lane2 &lane);
+	void send_lane2(utils::Lane2 &&lane);
 	void send_image_rgb(cv::Mat &&img);
 	void send_image_depth(cv::Mat &&img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(const std::vector<float> &data);
+	void send_sign(std::vector<float> &&data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);
@@ -112,9 +112,6 @@ class TcpClient {
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
-	tbb::concurrent_queue<cv::Mat> rgb_images;
-	tbb::concurrent_queue<cv::Mat> depth_images;
-	tbb::concurrent_queue<std::vector<float>> signs;
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -124,7 +121,6 @@ class TcpClient {
 	void poll_connection();
 	void listen();
 	void send_data();
-	void parse_sign();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Callbacks
