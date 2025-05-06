@@ -65,6 +65,15 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
+    while (!imuInitialized) {
+        ros::spinOnce();
+    }
+
+    if (!Tunable::hasGps) {
+        debug("GPS not found, skipping", 1);
+        return;
+    }
+
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
     samples.reserve(sample_count);
@@ -74,11 +83,6 @@ void Utility::fetch_run_params() {
             samples.push_back(msg);
         }
     };
-
-    if (!Tunable::hasGps) {
-        debug("GPS not found, skipping", 1);
-        return;
-    }
 
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
     ros::Time start_time = ros::Time::now();
@@ -100,9 +104,6 @@ void Utility::fetch_run_params() {
     double avg_y = sum_y / static_cast<double>(samples.size());
 
     std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
-    while (!imuInitialized) {
-        ros::spinOnce();
-    }
     std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
     this->x0   = avg_x;
