@@ -76,12 +76,11 @@ class TcpConnection:
             while len(data) < length:
                 chunk = self.socket.recv(min(self.buf_size, length - len(data)))
                 if not chunk:
-                    raise ConnectionError("Connection lost")
+                    return None
                 data += chunk
             return data
-        except Exception as e:
-            print(e)
-            return data
+        except Exception:
+            return None
 
     def receive(self):
         header_size = 5
@@ -102,6 +101,8 @@ class TcpConnection:
                 message_type = header[message_size:header_size]
                 # Receive the data based on the length from the header
                 data = self.recvall(length)
+                if data is None:
+                    continue
                 packet = header + data
                 if self.on_packet:
                     self.on_packet(self, packet)
