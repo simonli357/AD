@@ -26,7 +26,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 45.0
+        self.cam_dist = 35.0
         self.cam_height = self.cam_dist
         self.forward_offset = 5.0
         self.fov = 45.0
