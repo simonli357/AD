@@ -277,173 +277,208 @@ void Utility::handle_rx(const boost::system::error_code& ec,
     scan_frames();                           // extract complete frames
     start_async_read();                      // arm next read
 }
+void Utility::parse_and_publish(char id, const char *p, std::size_t len) {
+	if (id == '5') { // ───── encoder frame ─────
+		double speed_cm;
+		if (!fast_atof(p, p + len, speed_cm))
+			return;
+
+		encoder_speed = 0.01 * speed_cm; // cm/s → m/s
+		filter_encoder();
+		return;
+	}
+
+	if (id == '7') { // ───── IMU frame ─────
+		const char *delim = static_cast<const char *>(memchr(p, ';', len));
+		if (!delim)
+			return; // need pitch ; yaw
+
+		double pitch, yaw_deg;
+		if (!fast_atof(p, delim, pitch))
+			return;
+		if (!fast_atof(delim + 1, p + len, yaw_deg))
+			return;
+
+		{
+			this->yaw = helper::yaw_mod(-yaw_deg * M_PI / 180.0);
+		}
+	}
+}
 void Utility::scan_frames()
 {
-    const char *start = nullptr;
+    const char* start = nullptr;
+    char        id    = 0;                     // '5' or '7'
+
     for (std::size_t i = 0; i + 3 < rxLen; ++i) {
-        if (!start) {
-            if (rxBuf[i] == '@' && rxBuf[i+1] == '7' && rxBuf[i+2] == ':')
-                start = rxBuf.data() + i + 3;
-        } else if (rxBuf[i]==';' && rxBuf[i+1]==';'
-                   && rxBuf[i+2]=='\r' && rxBuf[i+3]=='\n') {
 
-            const char *frame = start;
-            std::size_t len   = (rxBuf.data()+i) - start;
-            parse_and_publish(frame, len);
-
-            // remove consumed bytes
-            std::size_t consumed = i + 4;    // thru \n
-            std::memmove(rxBuf.data(),
-                         rxBuf.data() + consumed,
-                         rxLen - consumed);
-            rxLen -= consumed;
-            start = nullptr;
-            i     = static_cast<std::size_t>(-1); // restart loop
-        }
-    }
-}
-void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
-    auto start = std::chrono::high_resolution_clock::now();
-    static char data[256]; // Buffer to store data
-    static size_t length = 0;
-    static std::string buffer; // Buffer to accumulate the received data
-    length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
-
-    buffer.append(data, length);
-    if (buffer.find("@5") != std::string::npos) {            // ── encoder ──
-        size_t end_pos = buffer.find('\n');               
-        if (end_pos != std::string::npos) {
-            std::string line = buffer.substr(0, end_pos);   
-            buffer.erase(0, end_pos + 1);                   
-            if (line.find("@5") != std::string::npos) {     
-                size_t pos = line.find(':');
-                if (pos == std::string::npos || pos + 1 >= line.length()) {
-                    std::cerr << "Encoder‑parse error: no ':' delimiter\n";
-                    return;
-                }
-                ++pos;                                        // move past ':'
-    
-                size_t semi = line.find(';', pos);
-                if (semi == std::string::npos) {
-                    std::cerr << "Encoder‑parse error: no ';' after ang\n";
-                    return;
-                }
-                // const std::string ang_str = line.substr(pos, semi - pos);
-                pos = semi + 1;
-    
-                semi = line.find(';', pos);                  // second ';' ends the speed field
-                if (semi == std::string::npos) {
-                    std::cerr << "Encoder‑parse error: no ';' after speed\n";
-                    return;
-                }
-                const std::string speed_str = line.substr(pos, semi - pos);
-    
-                double speed_cm_s;
-                try {
-                    speed_cm_s = std::stod(speed_str);
-                    encoder_speed = speed_cm_s * 0.01; // convert to m/s
-                    filter_encoder();
-                } catch (const std::invalid_argument&) {
-                    // std::cerr << "Encoder‑parse error: bad speed value\n";
-                    return;
-                }
-    
-                static bool debug_enc = false;
-                if (debug_enc) {
-                    printf("encoder speed: %.2f cm/s\n", speed_cm_s);
-                }
-                // auto end = std::chrono::high_resolution_clock::now();
-                // std::chrono::duration<double> elapsed = end - start;
-                // ROS_INFO("imu_pub_timer_callback ENC time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+        if (!start) {                          // look for "@5:" or "@7:"
+            if (rxBuf[i] == '@' &&
+               (rxBuf[i+1] == '5' || rxBuf[i+1] == '7') &&
+                rxBuf[i+2] == ':')
+            {
+                id    = rxBuf[i+1];
+                start = rxBuf.data() + i + 3;  // payload starts after ':'
             }
         }
-        return;
-    } else if (buffer.find("@7") != std::string::npos) { // imu
-        size_t end_pos = buffer.find('\n');
-        if (end_pos != std::string::npos) {
-            std::string line = buffer.substr(0, end_pos); // Extract the line
-            buffer.erase(0, end_pos + 1); // Remove the processed part from the buffer
+        else if (rxBuf[i]==';' && rxBuf[i+1]==';' &&
+                 rxBuf[i+2]=='\r' && rxBuf[i+3]=='\n')
+        {
+            std::size_t len = (rxBuf.data()+i) - start;   // payload length
+            parse_and_publish(id, start, len);            // ← ID passed in
 
-            if (line.find("@7") != std::string::npos) {
-                // sensor_msgs::Imu imu_msg;
-                imu_msg.header.stamp = ros::Time::now();
-                imu_msg.header.frame_id = "imu0";
-
-                // Extract prefix and ignore '@' and ':' characters
-                std::string prefix;
-                size_t pos = line.find(':');
-                if (pos != std::string::npos && pos + 1 < line.length()) {
-                    prefix = line.substr(pos + 1);
-                } else {
-                    std::cerr << "Error: Failed to extract prefix from the string." << std::endl;
-                    return;
-                }
-
-                // Extract substrings between ';' characters
-                std::string pitch_str, yaw_str;
-                size_t end_pos = pos;
-                pos++;
-                for (int i = 0; i < 2; ++i) {
-                    end_pos = line.find(';', pos);
-                    if (end_pos != std::string::npos) {
-                        switch (i) {
-                            case 0:
-                                pitch_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 1:
-                                yaw_str = line.substr(pos, end_pos - pos);
-                                break;
-                        }
-                        pos = end_pos + 1;
-                    } else {
-                        std::cerr << "Error: Failed to find delimiter in the string." << std::endl;
-                        return;
-                    }
-                }
-
-                // Convert substrings to floating-point numbers
-                // static double roll;
-                static double pitch;
-                static double yaw_deg;
-                // static double accelx;
-                // static double accely;
-                // static double accelz;
-                // static double gyrox;
-                // static double gyroy;
-                // static double gyroz;
-                try {
-                    // roll = stod(roll_str);
-                    pitch = stod(pitch_str);
-                    yaw_deg = stod(yaw_str);
-                    // accelx = stod(accely_str);
-                    // accely = stod(accelx_str);
-                    // accelz = stod(accelz_str);
-                    // gyrox = stod(gyrox_str);
-                    // gyroy = stod(gyroy_str);
-                    // gyroz = stod(gyroz_str);
-                } catch (const std::invalid_argument& e) {
-                    std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
-                    return;
-                }
-
-                {
-                    // std::lock_guard<std::mutex> lock(general_mutex);
-                    this->yaw = -yaw_deg * M_PI/180;
-                    this->yaw = helper::yaw_mod(this->yaw);
-                }
-
-                static bool debug_imu = false;
-                if (debug_imu) {
-                    printf("pitch: %.2f, yaw: %.2f\n", pitch, yaw_deg);
-                }
-                // auto end = std::chrono::high_resolution_clock::now();
-                // std::chrono::duration<double> elapsed = end - start;
-                // ROS_INFO("imu_pub_timer_callback IMU time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
-            } 
-        } 
+            // shift the leftover bytes down
+            std::size_t used = i + 4;
+            std::memmove(rxBuf.data(),
+                         rxBuf.data() + used,
+                         rxLen - used);
+            rxLen -= used;
+            start = nullptr;
+            i     = static_cast<std::size_t>(-1);         // restart scan
+        }
     }
-    
 }
+// void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
+//     auto start = std::chrono::high_resolution_clock::now();
+//     static char data[256]; // Buffer to store data
+//     static size_t length = 0;
+//     static std::string buffer; // Buffer to accumulate the received data
+//     length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
+
+//     buffer.append(data, length);
+//     if (buffer.find("@5") != std::string::npos) {            // ── encoder ──
+//         size_t end_pos = buffer.find('\n');               
+//         if (end_pos != std::string::npos) {
+//             std::string line = buffer.substr(0, end_pos);   
+//             buffer.erase(0, end_pos + 1);                   
+//             if (line.find("@5") != std::string::npos) {     
+//                 size_t pos = line.find(':');
+//                 if (pos == std::string::npos || pos + 1 >= line.length()) {
+//                     std::cerr << "Encoder‑parse error: no ':' delimiter\n";
+//                     return;
+//                 }
+//                 ++pos;                                        // move past ':'
+    
+//                 size_t semi = line.find(';', pos);
+//                 if (semi == std::string::npos) {
+//                     std::cerr << "Encoder‑parse error: no ';' after ang\n";
+//                     return;
+//                 }
+//                 // const std::string ang_str = line.substr(pos, semi - pos);
+//                 pos = semi + 1;
+    
+//                 semi = line.find(';', pos);                  // second ';' ends the speed field
+//                 if (semi == std::string::npos) {
+//                     std::cerr << "Encoder‑parse error: no ';' after speed\n";
+//                     return;
+//                 }
+//                 const std::string speed_str = line.substr(pos, semi - pos);
+    
+//                 double speed_cm_s;
+//                 try {
+//                     speed_cm_s = std::stod(speed_str);
+//                     encoder_speed = speed_cm_s * 0.01; // convert to m/s
+//                     filter_encoder();
+//                 } catch (const std::invalid_argument&) {
+//                     // std::cerr << "Encoder‑parse error: bad speed value\n";
+//                     return;
+//                 }
+    
+//                 static bool debug_enc = false;
+//                 if (debug_enc) {
+//                     printf("encoder speed: %.2f cm/s\n", speed_cm_s);
+//                 }
+//                 // auto end = std::chrono::high_resolution_clock::now();
+//                 // std::chrono::duration<double> elapsed = end - start;
+//                 // ROS_INFO("imu_pub_timer_callback ENC time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+//             }
+//         }
+//         return;
+//     } else if (buffer.find("@7") != std::string::npos) { // imu
+//         size_t end_pos = buffer.find('\n');
+//         if (end_pos != std::string::npos) {
+//             std::string line = buffer.substr(0, end_pos); // Extract the line
+//             buffer.erase(0, end_pos + 1); // Remove the processed part from the buffer
+
+//             if (line.find("@7") != std::string::npos) {
+//                 // sensor_msgs::Imu imu_msg;
+//                 imu_msg.header.stamp = ros::Time::now();
+//                 imu_msg.header.frame_id = "imu0";
+
+//                 // Extract prefix and ignore '@' and ':' characters
+//                 std::string prefix;
+//                 size_t pos = line.find(':');
+//                 if (pos != std::string::npos && pos + 1 < line.length()) {
+//                     prefix = line.substr(pos + 1);
+//                 } else {
+//                     std::cerr << "Error: Failed to extract prefix from the string." << std::endl;
+//                     return;
+//                 }
+
+//                 // Extract substrings between ';' characters
+//                 std::string pitch_str, yaw_str;
+//                 size_t end_pos = pos;
+//                 pos++;
+//                 for (int i = 0; i < 2; ++i) {
+//                     end_pos = line.find(';', pos);
+//                     if (end_pos != std::string::npos) {
+//                         switch (i) {
+//                             case 0:
+//                                 pitch_str = line.substr(pos, end_pos - pos);
+//                                 break;
+//                             case 1:
+//                                 yaw_str = line.substr(pos, end_pos - pos);
+//                                 break;
+//                         }
+//                         pos = end_pos + 1;
+//                     } else {
+//                         std::cerr << "Error: Failed to find delimiter in the string." << std::endl;
+//                         return;
+//                     }
+//                 }
+
+//                 // Convert substrings to floating-point numbers
+//                 // static double roll;
+//                 static double pitch;
+//                 static double yaw_deg;
+//                 // static double accelx;
+//                 // static double accely;
+//                 // static double accelz;
+//                 // static double gyrox;
+//                 // static double gyroy;
+//                 // static double gyroz;
+//                 try {
+//                     // roll = stod(roll_str);
+//                     pitch = stod(pitch_str);
+//                     yaw_deg = stod(yaw_str);
+//                     // accelx = stod(accely_str);
+//                     // accely = stod(accelx_str);
+//                     // accelz = stod(accelz_str);
+//                     // gyrox = stod(gyrox_str);
+//                     // gyroy = stod(gyroy_str);
+//                     // gyroz = stod(gyroz_str);
+//                 } catch (const std::invalid_argument& e) {
+//                     std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
+//                     return;
+//                 }
+
+//                 {
+//                     // std::lock_guard<std::mutex> lock(general_mutex);
+//                     this->yaw = -yaw_deg * M_PI/180;
+//                     this->yaw = helper::yaw_mod(this->yaw);
+//                 }
+
+//                 static bool debug_imu = false;
+//                 if (debug_imu) {
+//                     printf("pitch: %.2f, yaw: %.2f\n", pitch, yaw_deg);
+//                 }
+//                 // auto end = std::chrono::high_resolution_clock::now();
+//                 // std::chrono::duration<double> elapsed = end - start;
+//                 // ROS_INFO("imu_pub_timer_callback IMU time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
+//             } 
+//         } 
+//     }
+    
+// }
 void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
 }
