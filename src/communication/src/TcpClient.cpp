@@ -418,7 +418,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_sign(std::vector<float> &&data) {
 	std_msgs::Float32MultiArray array;
-	array.data = data;
+	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> arr(length);
 	ros::serialization::OStream stream(arr.data(), length);
