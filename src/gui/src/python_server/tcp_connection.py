@@ -22,9 +22,9 @@ class TcpConnection:
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
 
-        size = 2097152
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, size)
-        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, size)
+        self.buf_size = 2097152
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buf_size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buf_size)
 
         self.on_packet = on_packet
         self.on_start = None
@@ -74,7 +74,7 @@ class TcpConnection:
         data = b""
         try:
             while len(data) < length:
-                chunk = self.socket.recv(min(2048, length - len(data)))
+                chunk = self.socket.recv(min(self.buf_size, length - len(data)))
                 if not chunk:
                     raise ConnectionError("Connection lost")
                 data += chunk
