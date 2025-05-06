@@ -476,10 +476,10 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
                             world_states[0], world_states[1], yaw, confidence, relevant_signs[min_index]);
 
-                        debug("Sign Callback(): new " + sign_name + " (known static object) detected at (" +
-                            std::to_string(relevant_signs[min_index][0]) + ", " +
-                            std::to_string(relevant_signs[min_index][1]) + "), known static objects size: " +
-                            std::to_string(Tracking::road_known_static_objects.size()), 2);
+                        // debug("Sign Callback(): new " + sign_name + " (known static object) detected at (" +
+                            // std::to_string(relevant_signs[min_index][0]) + ", " +
+                            // std::to_string(relevant_signs[min_index][1]) + "), known static objects size: " +
+                            // std::to_string(Tracking::road_known_static_objects.size()), 2);
                     }
                 }
             } else {
