@@ -209,6 +209,7 @@ void TcpClient::listen() {
 void TcpClient::send_data() {
     parse_rgb_image();
     parse_depth_image();
+    parse_sign();
     if (!stream_tasks.empty() && tcp_can_send) {
         std::any stream_task;
         if (stream_tasks.try_pop(stream_task)) {

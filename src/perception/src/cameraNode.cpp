@@ -240,7 +240,7 @@ class CameraNode {
 				cv::flip(colorImage, colorImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage, quality);
+			Sign.tcp_client->send_image_rgb(colorImage);
 		}
 		// mutex.unlock();
 	}
