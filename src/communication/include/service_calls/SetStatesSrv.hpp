@@ -6,9 +6,7 @@
 
 class SetStatesSrv : public Decoder<SetStatesSrv>, public Encoder {
   public:
-	SetStatesSrv();
-	SetStatesSrv(bool success);
-	SetStatesSrv(float x, float y);
+	SetStatesSrv() = default;
 	SetStatesSrv(SetStatesSrv &&) = default;
 	SetStatesSrv(const SetStatesSrv &) = default;
 	SetStatesSrv &operator=(SetStatesSrv &&) = delete;
@@ -22,7 +20,8 @@ class SetStatesSrv : public Decoder<SetStatesSrv>, public Encoder {
 	// Response
 	bool success;
 
-	std::unique_ptr<SetStatesSrv> deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(bool success);
+	void deserialize(std::vector<uint8_t> &bytes) override;
 
   private:
 	const size_t num_elements = 1;

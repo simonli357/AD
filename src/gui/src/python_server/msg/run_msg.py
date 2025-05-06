@@ -15,10 +15,8 @@ class RunMsg:
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
-        run_msg = RunMsg(self.data_type)
-        run_msg.vref_name = struct.unpack('f', splits[0])[0]
-        run_msg.path_name = splits[1].decode('utf-8')
-        run_msg.x_init = struct.unpack('f', splits[2])[0]
-        run_msg.y_init = struct.unpack('f', splits[3])[0]
-        run_msg.yaw_init = struct.unpack('f', splits[4])[0]
-        return run_msg
+        self.vref_name = struct.unpack('f', splits[0])[0]
+        self.path_name = splits[1].decode('utf-8')
+        self.x_init = struct.unpack('f', splits[2])[0]
+        self.y_init = struct.unpack('f', splits[3])[0]
+        self.yaw_init = struct.unpack('f', splits[4])[0]

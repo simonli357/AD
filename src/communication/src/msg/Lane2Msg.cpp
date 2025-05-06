@@ -2,9 +2,15 @@
 #include "ros/serialization.h"
 #include "std_msgs/Header.h"
 #include <cstdint>
+#include <utility>
 
-Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted)
-	: header(header), center(center), stopline(stopline), stopline_dist(stopline_dist), crosswalk(crosswalk), dotted(dotted) {
+void Lane2Msg::encode(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted) {
+    this->header = std::move(header);
+    this->center = center;
+    this->stopline = stopline;
+    this->stopline_dist = stopline_dist;
+    this->crosswalk = crosswalk;
+    this->dotted = dotted;
 	header_length = ros::serialization::serializationLength(header);
 	center_length = sizeof(center);
 	stopline_length = sizeof(stopline);
@@ -12,22 +18,6 @@ Lane2Msg::Lane2Msg(std_msgs::Header &header, float center, bool stopline, float 
 	crosswalk_length = sizeof(crosswalk);
 	dotted_length = sizeof(dotted);
 	data_length = header_length + center_length + stopline_length + stopline_dist_length + crosswalk_length + dotted_length;
-}
-
-std::unique_ptr<Lane2Msg> Lane2Msg::deserialize(std::vector<uint8_t> &bytes) {
-    std::vector<std::vector<uint8_t>> datatypes = split(bytes);
-    ros::serialization::IStream stream(datatypes[0].data(), datatypes[0].size());
-    
-    std_msgs::Header header_msg;
-    ros::serialization::deserialize(stream, header_msg);
-
-    float center = float_from_bytes(datatypes[1]);
-    bool stopline = bool_from_bytes(datatypes[2]);
-    float stopline_dist = float_from_bytes(datatypes[3]);
-    bool crosswalk = bool_from_bytes(datatypes[4]);
-    bool dotted = bool_from_bytes(datatypes[5]);
-    
-    return std::make_unique<Lane2Msg>(header_msg, center, stopline, stopline_dist, crosswalk, dotted);
 }
 
 uint32_t Lane2Msg::compute_lengths_length() { return lengths_length; }

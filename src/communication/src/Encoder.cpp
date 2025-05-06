@@ -83,6 +83,12 @@ std::vector<uint8_t> Encoder::serialize(uint8_t data_type) {
 	return full_message;
 }
 
+std_msgs::Float64MultiArray Encoder::double_vector_to_arr(const std::vector<double> &vec) {
+	std_msgs::Float64MultiArray msg;
+	msg.data = vec;
+	return msg;
+}
+
 uint32_t Encoder::compute_lengths_length() { return 0; }
 
 uint32_t Encoder::compute_data_length() { return 0; }

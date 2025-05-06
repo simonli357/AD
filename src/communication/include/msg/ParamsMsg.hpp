@@ -1,31 +1,28 @@
 #pragma once
 
-#include "Decoder.hpp"
 #include "Encoder.hpp"
-#include "std_msgs/Float64MultiArray.h"
 #include <cstdint>
-#include <optional>
 #include <vector>
 
-class ParamsMsg : public Decoder<ParamsMsg>, public Encoder {
+class ParamsMsg : public Encoder {
   public:
-	ParamsMsg();
-	ParamsMsg(const std::vector<double> &state_refs, const std::vector<double> &attributes);
+	ParamsMsg() = default;
 	ParamsMsg(ParamsMsg &&) = default;
 	ParamsMsg(const ParamsMsg &) = default;
 	ParamsMsg &operator=(ParamsMsg &&) = delete;
 	ParamsMsg &operator=(const ParamsMsg &) = delete;
 	~ParamsMsg() = default;
 
-	std::optional<std::vector<double>> state_refs;
-	std::optional<std::vector<double>> attributes;
+	std::vector<double> state_refs;
+	std::vector<double> attributes;
 
-	std::unique_ptr<ParamsMsg> deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(const std::vector<double> &state_refs, const std::vector<double> &attributes);
 
   private:
+	const size_t bytes_length = 4;
 	const size_t num_elements = 2;
-	std::optional<std_msgs::Float64MultiArray> state_refs_arr;
-	std::optional<std_msgs::Float64MultiArray> attributes_arr;
+	std_msgs::Float64MultiArray state_refs_arr;
+	std_msgs::Float64MultiArray attributes_arr;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;
 	uint32_t state_refs_length;

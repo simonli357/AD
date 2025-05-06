@@ -59,7 +59,6 @@ public:
             [this]() {
                 utils.fetch_run_params();
                 utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
-                utils.tcp_client->run_sent = true;
             }
         );
 
@@ -849,7 +848,7 @@ public:
         int closest_idx = PathManager::closest_waypoint_index;
         double safety_dist = 0.75; // meters
         bool can_overtake = true;
-        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) can_overtake = false;
+        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) return;
         auto cars = Tracking::get_road_cars();
         if (cars.size() == 0) return;
         double min_adj_lane_dist = 1000.;

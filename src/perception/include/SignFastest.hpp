@@ -307,7 +307,7 @@ class SignFastest {
                 }
                 if (publish) {
                     pub.publish(sign_msg);
-                    if (tcp_client != nullptr) tcp_client->send_sign(sign_msg.data);
+                    if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
                 }
                 if (print) ROS_INFO("Emergency obstacle detected");
                 return;
@@ -455,7 +455,7 @@ class SignFastest {
                     ROS_WARN("Sign message size is not a multiple of %d", NUM_VALUES_PER_OBJECT);
                 }
                 pub.publish(sign_msg);
-                if (tcp_client != nullptr) tcp_client->send_sign(sign_msg.data);
+                if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
             }
 
             if(printDuration) {

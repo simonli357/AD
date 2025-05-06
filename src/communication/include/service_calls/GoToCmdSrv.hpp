@@ -4,16 +4,13 @@
 #include "Encoder.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
-#include <optional>
 #include <tuple>
 
 using std_msgs::Float32MultiArray;
 
 class GoToCmdSrv : public Decoder<GoToCmdSrv>, public Encoder {
   public:
-    GoToCmdSrv();
-	GoToCmdSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success);
-	GoToCmdSrv(const std::vector<std::tuple<float, float>> &coords);
+	GoToCmdSrv() = default;
 	GoToCmdSrv(GoToCmdSrv &&) = default;
 	GoToCmdSrv(const GoToCmdSrv &) = default;
 	GoToCmdSrv &operator=(GoToCmdSrv &&) = delete;
@@ -21,16 +18,17 @@ class GoToCmdSrv : public Decoder<GoToCmdSrv>, public Encoder {
 	~GoToCmdSrv() = default;
 
 	// Request
-    std::vector<std::tuple<float, float>> coords;
+	std::vector<std::tuple<float, float>> coords;
 
 	// Response
-	std::optional<Float32MultiArray> state_refs;
-	std::optional<Float32MultiArray> input_refs;
-	std::optional<Float32MultiArray> wp_attributes;
-	std::optional<Float32MultiArray> wp_normals;
+	Float32MultiArray state_refs;
+	Float32MultiArray input_refs;
+	Float32MultiArray wp_attributes;
+	Float32MultiArray wp_normals;
 	bool success;
 
-	std::unique_ptr<GoToCmdSrv> deserialize(std::vector<uint8_t> &bytes) override;
+	void deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success);
 
   private:
 	const size_t num_elements = 5;

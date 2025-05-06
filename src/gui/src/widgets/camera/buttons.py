@@ -6,8 +6,6 @@ from collections import deque
 import time
 import numpy as np
 
-frame_count = 0
-
 
 class ButtonsWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -161,50 +159,7 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.main_window.buttons_overlay.handle_cam_lock_clicked()
         self.update_stop_button_style(self.start_btn, self.started)
 
-    def call_start_service(self, start) -> None:
-        try:
-            if self.server.utility_node_client.socket is None:
-                return
-            self.server.utility_node_client.send_start_srv(not self.started)
-            max_retries = 50
-            retries = 0
-            while (retries < max_retries):
-                if self.server.utility_node_client.start_srv_msg:
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to start/stop")
-        except Exception as e:
-            print(e)
-
-    def call_goto_service(self, cursor_coords):
-        try:
-            if self.server.utility_node_client.socket is None:
-                return
-            if len(cursor_coords) == 0:
-                print("Invalid path, must contain at least 1 destination")
-                return
-            else:
-                self.server.utility_node_client.send_go_to_cmd_srv(cursor_coords)
-            max_retries = 50
-            retries = 0
-            res = self.server.utility_node_client.go_to_cmd_srv_msg
-            while (retries < max_retries):
-                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
-                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
-                    print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.buttons_overlay.set_run_name('run-custom')
-                    self.main_window.reset_run_statistics()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to send go to cmd")
-        except Exception as e:
-            print(e)
-
-    def handle_start_click(self) -> None:
-        self.call_start_service(not self.started)
+    def on_start(self):
         if not self.started:
             print("Starting")
             self.main_window.reset_run_statistics()
@@ -223,6 +178,38 @@ class ButtonsWidget(QtWidgets.QWidget):
                 self.start_time = None
             self.time_timer.stop()
         self.toggle_start_icon()
+        self.start_btn.setDisabled(False)
+
+    def on_goto(self, res):
+        self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(3, -1)
+        self.main_window.attributes_np = np.array(res.wp_attributes.data)
+        print("Goto_command service call successful. shape: ", self.main_window.state_refs_np.shape)
+        self.main_window.buttons_overlay.set_run_name('run-custom')
+        self.main_window.reset_run_statistics()
+
+    def call_start_service(self, start) -> None:
+        self.start_btn.setDisabled(True)
+        try:
+            if self.server.tcp_client.socket is None:
+                return
+            self.server.tcp_client.send_start_srv(not self.started)
+        except Exception as e:
+            print(e)
+
+    def call_goto_service(self, cursor_coords):
+        try:
+            if self.server.tcp_client.socket is None:
+                return
+            if len(cursor_coords) == 0:
+                print("Invalid path, must contain at least 1 destination")
+                return
+            else:
+                self.server.tcp_client.send_go_to_cmd_srv(cursor_coords)
+        except Exception as e:
+            print(e)
+
+    def handle_start_click(self) -> None:
+        self.call_start_service(not self.started)
 
     def handle_stop_click(self) -> None:
         self.time_timer.stop()

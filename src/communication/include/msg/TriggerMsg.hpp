@@ -6,26 +6,22 @@
 #include "std_srvs/TriggerRequest.h"
 #include "std_srvs/TriggerResponse.h"
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 class TriggerMsg : public Decoder<TriggerMsg>, public Encoder {
   public:
-	TriggerMsg();
-	TriggerMsg(const std_srvs::Trigger &trigger);
-	TriggerMsg(std_srvs::TriggerResponse &response);
-	TriggerMsg(std_srvs::TriggerRequest &request, std_srvs::TriggerResponse &response);
+	TriggerMsg() = default;
 	TriggerMsg(TriggerMsg &&) = default;
 	TriggerMsg(const TriggerMsg &) = default;
 	TriggerMsg &operator=(TriggerMsg &&) = delete;
 	TriggerMsg &operator=(const TriggerMsg &) = delete;
 	~TriggerMsg() = default;
 
-	std::optional<std_srvs::Trigger> trigger;
-	std::optional<std_srvs::TriggerRequest> request;
-	std::optional<std_srvs::TriggerResponse> response;
+	std_srvs::TriggerRequest request;
+	std_srvs::TriggerResponse response;
 
-	std::unique_ptr<TriggerMsg> deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(const std_srvs::Trigger &trigger);
+	void deserialize(std::vector<uint8_t> &bytes) override;
 
   private:
 	const size_t num_elements = 2;

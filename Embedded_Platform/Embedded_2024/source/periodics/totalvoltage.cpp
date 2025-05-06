@@ -62,7 +62,7 @@ namespace periodics{
         // printf(buffer, sizeof(buffer), "@5:%.1f;;\r\n", l_rps);
         // m_serial.write(buffer,strlen(buffer));
         // debug
-        printf("CTotalVoltage::_run: voltage = %.4f\r\n", l_rps);
+        // printf("CTotalVoltage::_run: voltage = %.4f\r\n", l_rps);
     }
 
 }; // namespace periodics

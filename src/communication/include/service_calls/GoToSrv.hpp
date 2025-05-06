@@ -4,15 +4,12 @@
 #include "Encoder.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
-#include <optional>
 
 using std_msgs::Float32MultiArray;
 
 class GoToSrv : public Decoder<GoToSrv>, public Encoder {
   public:
-    GoToSrv();
-	GoToSrv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
-	GoToSrv(const std::string &vrefName, float x0, float y0, float yaw0, float dest_x, float dest_y);
+	GoToSrv() = default;
 	GoToSrv(GoToSrv &&) = default;
 	GoToSrv(const GoToSrv &) = default;
 	GoToSrv &operator=(GoToSrv &&) = delete;
@@ -28,12 +25,13 @@ class GoToSrv : public Decoder<GoToSrv>, public Encoder {
 	float dest_y;
 
 	// Response
-	std::optional<Float32MultiArray> state_refs;
-	std::optional<Float32MultiArray> input_refs;
-	std::optional<Float32MultiArray> wp_attributes;
-	std::optional<Float32MultiArray> wp_normals;
+	Float32MultiArray state_refs;
+	Float32MultiArray input_refs;
+	Float32MultiArray wp_attributes;
+	Float32MultiArray wp_normals;
 
-	std::unique_ptr<GoToSrv> deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
+	void deserialize(std::vector<uint8_t> &bytes) override;
 
   private:
 	const size_t num_elements = 4;
