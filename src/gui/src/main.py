@@ -225,9 +225,9 @@ class MainWindow(QMainWindow):
         self.destinations = destinations
 
     def reset_run_statistics(self):
+        self.visited.clear()
         self.car_widget.run_statistics.dist_traveled = 0
         self.car_widget.run_statistics.set_distance_traveled()
-        self.car_widget.run_statistics.visited.clear()
         self.car_widget.run_statistics.set_dest_visited_num(0)
         self.car_widget.run_statistics.set_total_path_distance()
         self.map_widget.update_waypoints()
