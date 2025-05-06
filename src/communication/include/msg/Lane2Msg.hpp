@@ -1,30 +1,31 @@
 #pragma once
 
-#include "Decoder.hpp"
 #include "Encoder.hpp"
 #include "std_msgs/Header.h"
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
-class Lane2Msg : public Decoder<Lane2Msg>, public Encoder {
+class Lane2Msg : public Encoder {
   public:
-	Lane2Msg(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted);
+	Lane2Msg() = default;
 	Lane2Msg(Lane2Msg &&) = default;
 	Lane2Msg(const Lane2Msg &) = default;
 	Lane2Msg &operator=(Lane2Msg &&) = delete;
 	Lane2Msg &operator=(const Lane2Msg &) = delete;
 	~Lane2Msg() = default;
 
-	std_msgs::Header &header;
+	std_msgs::Header header;
 	float center;
 	bool stopline;
 	float stopline_dist;
 	bool crosswalk;
 	bool dotted;
 
-	std::unique_ptr<Lane2Msg> deserialize(std::vector<uint8_t> &bytes) override;
+	void encode(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted);
 
   private:
+	const size_t bytes_length = 4;
 	const size_t num_elements = 6;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;

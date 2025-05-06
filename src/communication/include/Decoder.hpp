@@ -3,7 +3,7 @@
 #include "std_msgs/Float64MultiArray.h"
 #include <cstdint>
 #include <cstring>
-#include <memory>
+#include <string>
 #include <vector>
 
 template <typename T> class Decoder {
@@ -17,14 +17,13 @@ template <typename T> class Decoder {
 
 	const size_t bytes_length = 4;
 	std::vector<std::vector<uint8_t>> split(std::vector<uint8_t> &bytes);
-	virtual std::unique_ptr<T> deserialize(std::vector<uint8_t> &bytes);
+	virtual void deserialize(std::vector<uint8_t> &bytes);
 
-	int32_t int32_t_from_bytes(std::vector<uint8_t> &bytes);
-	double double_from_bytes(std::vector<uint8_t> &bytes);
-	float float_from_bytes(std::vector<uint8_t> &bytes);
-	bool bool_from_bytes(std::vector<uint8_t> &bytes);
-
-	std_msgs::Float64MultiArray double_vector_to_arr(const std::vector<double> &vec);
+	std::string string_from_bytes(const std::vector<uint8_t> &bytes);
+	int32_t int32_t_from_bytes(const std::vector<uint8_t> &bytes);
+	double double_from_bytes(const std::vector<uint8_t> &bytes);
+	float float_from_bytes(const std::vector<uint8_t> &bytes);
+	bool bool_from_bytes(const std::vector<uint8_t> &bytes);
 };
 
 template <typename T> std::vector<std::vector<uint8_t>> Decoder<T>::split(std::vector<uint8_t> &bytes) {
@@ -52,34 +51,33 @@ template <typename T> std::vector<std::vector<uint8_t>> Decoder<T>::split(std::v
 	return splits;
 }
 
-template <typename T> int32_t Decoder<T>::int32_t_from_bytes(std::vector<uint8_t> &bytes) {
+template <typename T> std::string Decoder<T>::string_from_bytes(const std::vector<uint8_t> &bytes) {
+	std::string s(bytes.begin(), bytes.end());
+	return s;
+}
+
+template <typename T> int32_t Decoder<T>::int32_t_from_bytes(const std::vector<uint8_t> &bytes) {
 	uint32_t i;
 	std::memcpy(&i, bytes.data(), sizeof(i));
 	return i;
 }
 
-template <typename T> double Decoder<T>::double_from_bytes(std::vector<uint8_t> &bytes) {
+template <typename T> double Decoder<T>::double_from_bytes(const std::vector<uint8_t> &bytes) {
 	double d;
 	std::memcpy(&d, bytes.data(), sizeof(d));
 	return d;
 }
 
-template <typename T> float Decoder<T>::float_from_bytes(std::vector<uint8_t> &bytes) {
+template <typename T> float Decoder<T>::float_from_bytes(const std::vector<uint8_t> &bytes) {
 	float f;
 	std::memcpy(&f, bytes.data(), sizeof(f));
 	return f;
 }
 
-template <typename T> bool Decoder<T>::bool_from_bytes(std::vector<uint8_t> &bytes) {
+template <typename T> bool Decoder<T>::bool_from_bytes(const std::vector<uint8_t> &bytes) {
 	bool b;
 	std::memcpy(&b, bytes.data(), sizeof(b));
 	return b;
 }
 
-template <typename T> std_msgs::Float64MultiArray Decoder<T>::double_vector_to_arr(const std::vector<double> &vec) {
-    std_msgs::Float64MultiArray msg;
-    msg.data = vec;
-    return msg;
-}
-
-template <typename T> std::unique_ptr<T> Decoder<T>::deserialize(std::vector<uint8_t> &bytes) { return nullptr; }
+template <typename T> void Decoder<T>::deserialize(std::vector<uint8_t> &bytes) {}

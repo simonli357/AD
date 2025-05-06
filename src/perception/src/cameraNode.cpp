@@ -14,6 +14,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <thread>
+#include <utility>
 #include <vector>
 
 using namespace std::chrono;
@@ -33,6 +34,8 @@ class CameraNode {
 		nh.param(nodeName + "/flip", flip, false);
 		nh.param(nodeName + "/send_depth", send_depth, false);
 		nh.param("quality", quality, 30);
+
+		Sign.tcp_client->set_image_quality(quality);
 
 		if (!realsense) {
 			if (Sign.hasDepthImage) {
@@ -212,7 +215,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr && send_depth) {
-			Sign.tcp_client->send_image_depth(depthImage);
+			Sign.tcp_client->send_image_depth(std::move(depthImage));
 		}
 		// mutex.unlock();
 	}
@@ -238,7 +241,7 @@ class CameraNode {
 				cv::flip(colorImage, colorImage, -1);
 		}
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage, quality);
+			Sign.tcp_client->send_image_rgb(std::move(colorImage));
 		}
 		// mutex.unlock();
 	}
@@ -321,7 +324,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			Sign.tcp_client->send_image_rgb(std::move(colorImage));
 			// Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// if (pubImage) {

@@ -1,8 +1,13 @@
 #pragma once
 
+#include "msg/Lane2Msg.hpp"
+#include "msg/ParamsMsg.hpp"
+#include "msg/RunMsg.hpp"
 #include "msg/SWLoadMsg.hpp"
+#include "msg/TriggerMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
+#include "service_calls/SetStatesSrv.hpp"
 #include "service_calls/WaypointsSrv.hpp"
 #include "std_msgs/Float32MultiArray.h"
 #include "std_msgs/String.h"
@@ -15,6 +20,7 @@
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
 #include <sensor_msgs/Image.h>
+#include <string>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
 #include <thread>
@@ -36,21 +42,19 @@ class TcpClient {
 	~TcpClient();
 	// Fields
 	bool tcp_can_send = false;
-	bool run_sent = false;
 	// Methods
-	void initialize();
+	void run();
+	void set_image_quality(int quality) { rgb_img_quality = quality; }
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(const cv::Mat &img, int quality = 30);
-	void send_current_rgb_image();
-	void send_image_depth(const cv::Mat &img);
-	void send_current_depth_image();
+	void send_image_rgb(cv::Mat &&img);
+	void send_image_depth(cv::Mat &&img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(const std::vector<float> &data);
+	void send_sign(std::vector<float> &&data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);
@@ -76,10 +80,13 @@ class TcpClient {
 	const uint16_t tcp_port = 49153;
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
+	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
 	const size_t buffer_size = 4096;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
+	int swload_counter = 0;
+	int rgb_img_quality = 30;
 	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
@@ -87,12 +94,21 @@ class TcpClient {
 	sockaddr_in udp_address;
 	int tcp_socket;
 	int udp_socket;
-	std::thread receiver;
-	std::thread sender;
+	std::thread main;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
+	// Messages
 	std::unique_ptr<SWLoadMsg> swload;
+	std::unique_ptr<Lane2Msg> lane2_msg;
+	std::unique_ptr<ParamsMsg> params_msg;
+	std::unique_ptr<RunMsg> run_msg;
+	std::unique_ptr<TriggerMsg> trigger_msg;
+	// Service calls
+	std::unique_ptr<GoToCmdSrv> goto_cmd_srv;
+	std::unique_ptr<GoToSrv> goto_srv;
+	std::unique_ptr<WaypointsSrv> waypoints_srv;
+	std::unique_ptr<SetStatesSrv> set_states_srv;
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;

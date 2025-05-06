@@ -5,6 +5,7 @@ import os
 import time
 import threading
 import signal
+import argparse
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
 from PyQt5.QtGui import QFontDatabase, QFont
@@ -21,12 +22,17 @@ from widgets.barca.barca import BarcaWidget
 from widgets.car.car import CarWidget
 from widgets.terminal.terminal import TerminalWidget
 from widgets.enums import CameraParams
-from std_srvs.srv import TriggerRequest
 
 
 class CommunicationHandler(QObject):
+    start_signal = pyqtSignal()
     message_signal = pyqtSignal(str)
-    params_signal = pyqtSignal(object, object)
+    waypoints_signal = pyqtSignal(object)
+    params_signal = pyqtSignal(object)
+    run_signal = pyqtSignal(object)
+    goto_signal = pyqtSignal(object)
+    set_states_signal = pyqtSignal(object)
+
     camera_frame_signal = pyqtSignal(QtGui.QPixmap)
     depth_frame_signal = pyqtSignal(QtGui.QPixmap)
     depth_arr_signal = pyqtSignal(object)
@@ -34,7 +40,6 @@ class CommunicationHandler(QObject):
     road_obj_signal = pyqtSignal(object)
     waypoint_signal = pyqtSignal(object)
     sign_signal = pyqtSignal(object)
-    run_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
 
@@ -57,11 +62,17 @@ class MapContainer(QtWidgets.QStackedWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, server):
+    def __init__(self, args):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
-        self.server = server
+        if args.host_ip is None:
+            self.server = Server(host=True)
+            self.is_host = True
+        else:
+            self.server = Server(host=False, host_ip=args.host_ip)
+            self.is_host = False
+        self.server.initialize()
         self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
@@ -90,8 +101,9 @@ class MainWindow(QMainWindow):
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
 
-        self.comm.message_signal.connect(self.terminal_widget.add_message)
-        self.comm.params_signal.connect(self.handle_params_update)
+        self.cbs = threading.Thread(target=self.set_callbacks, daemon=True)
+        self.cbs.start()
+
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.depth_arr_signal.connect(self.cam_widget.hud.set_depth_arr)
@@ -99,9 +111,16 @@ class MainWindow(QMainWindow):
         self.comm.road_obj_signal.connect(self.map_widget.road_objects_callback)
         self.comm.waypoint_signal.connect(self.map_widget.waypoint_callback)
         self.comm.sign_signal.connect(self.handle_sign_update)
-        self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+
+        self.comm.start_signal.connect(self.cam_buttons_widget.on_start)
+        self.comm.message_signal.connect(self.terminal_widget.add_message)
+        self.comm.waypoints_signal.connect(self.map_widget.on_waypoint)
+        self.comm.params_signal.connect(self.map_widget.on_params)
+        self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
+        self.comm.goto_signal.connect(self.cam_buttons_widget.on_goto)
+        self.comm.set_states_signal.connect(self.sidebar_widget.on_set_states)
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
@@ -140,15 +159,11 @@ class MainWindow(QMainWindow):
         root_layout.addWidget(left_widgets, 2)
         root_layout.addWidget(right_widgets, 1)
 
-        self.terminal_widget.add_message("AD IDE INITIALIZED")
+        self.terminal_widget.add_message("BFMC DASHBOARD INITIALIZED")
 
         self.udp_timer = QTimer(self)
         self.udp_timer.timeout.connect(self.udp_callbacks)
         self.udp_timer.start(int(CameraParams.FPS_30.value * 1000))
-
-        self.udp_timer = QTimer(self)
-        self.udp_timer.timeout.connect(self.tcp_callbacks)
-        self.udp_timer.start(int(CameraParams.FPS_5.value * 1000))
 
         self.cam_timer = QTimer(self)
         self.cam_timer.timeout.connect(self.cam_record_callback)
@@ -156,6 +171,21 @@ class MainWindow(QMainWindow):
 
         self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
         self.cam_thread.start()
+
+    def set_callbacks(self) -> None:
+        print("Waiting for TCP client")
+        while (self.server.tcp_client is None):
+            time.sleep(0.2)
+            continue
+        print("TCP client connected!")
+        self.server.tcp_client.on_start = self.comm.start_signal.emit
+        self.server.tcp_client.on_message = self.comm.message_signal.emit
+        self.server.tcp_client.on_run = self.comm.run_signal.emit
+        self.server.tcp_client.on_goto = self.comm.goto_signal.emit
+        self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
+        self.server.tcp_client.on_params = self.comm.params_signal.emit
+        self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
+        self.server.tcp_client.refresh_run()
 
     def toggle_map(self) -> None:
         self.show_barca = not self.show_barca
@@ -187,10 +217,6 @@ class MainWindow(QMainWindow):
         nerd_font = QFont(font_family, 10)
         QApplication.setFont(nerd_font)
 
-    def handle_params_update(self, req, res):
-        response = self.map_widget.update_params(req)
-        self.server.utility_node_client.send_trigger(TriggerRequest(), response)
-
     def handle_sign_update(self, sign):
         self.map_widget.sign_callback(sign)
         self.cam_widget.sign_callback(sign)
@@ -199,26 +225,14 @@ class MainWindow(QMainWindow):
         self.destinations = destinations
 
     def reset_run_statistics(self):
+        self.visited.clear()
         self.car_widget.run_statistics.dist_traveled = 0
         self.car_widget.run_statistics.set_distance_traveled()
-        self.car_widget.run_statistics.visited.clear()
         self.car_widget.run_statistics.set_dest_visited_num(0)
         self.car_widget.run_statistics.set_total_path_distance()
         self.map_widget.update_waypoints()
         self.map_widget.next_destination = None
         self.map_widget.no_destinations = False
-
-    def tcp_callbacks(self) -> None:
-        if self.server.utility_node_client.socket is not None:
-            if self.server.utility_node_client.messages:
-                msg = self.server.utility_node_client.messages.popleft()
-                self.comm.message_signal.emit(msg.data)
-            if self.server.utility_node_client.triggers.msgs:
-                req, res = self.server.utility_node_client.triggers.msgs.popleft()
-                self.comm.params_signal.emit(req, res)
-            if self.server.utility_node_client.run_msg:
-                run = self.server.utility_node_client.run_msg.popleft()
-                self.comm.run_signal.emit(run)
 
     def udp_callbacks(self) -> None:
         rgb_image = None
@@ -286,15 +300,26 @@ class MainWindow(QMainWindow):
         sys.exit(0)
 
 
+def parse_args():
+    p = argparse.ArgumentParser(description="BFMC Dashboard")
+    p.add_argument(
+        "-ip", "--host-ip",
+        nargs="?",          # allow 0 or 1 arguments
+        const="127.0.0.1",  # value when "-ip" is given with no following string
+        default=None,       # value when "-ip" is omitted entirely
+        help="the host IP address (if no IP is provided, use 127.0.0.1)"
+    )
+    return p.parse_args()
+
+
 if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
+    args = parse_args()
     app = QApplication(sys.argv)
-    server = Server()
-    server.initialize()
 
-    window = MainWindow(server)
+    window = MainWindow(args)
     window.show()
 
     app.exec()

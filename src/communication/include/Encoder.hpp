@@ -25,6 +25,8 @@ class Encoder {
 	std::vector<uint8_t> serializeTriggerRequest(std_srvs::TriggerRequest &request);
 	std::vector<uint8_t> serializeTriggerResponse(std_srvs::TriggerResponse &response);
 
+	std_msgs::Float64MultiArray double_vector_to_arr(const std::vector<double> &vec);
+
   private:
 	const size_t header_size = 5;
 	const size_t message_size = 4;

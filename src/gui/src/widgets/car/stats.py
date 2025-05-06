@@ -23,7 +23,6 @@ class HidableOverlay(QWidget):
 
         self.destinations = None
         self.path = []
-        self.visited = set()
         self.dist_traveled = 0
 
         self.setup_ui()
@@ -99,7 +98,7 @@ class HidableOverlay(QWidget):
             y_inverted = MapData.REAL_WORLD_HEIGHT.value - row['Y']
             if self.is_near(car_x, car_y, x, y_inverted, 0.1, 0.1):
                 self.car_widget.main_window.visited.add((x, y))
-                self.set_dest_visited_num(len(self.visited))
+                self.set_dest_visited_num(len(self.car_widget.main_window.visited))
                 self.car_widget.update_visited_destination(x, y_inverted)
                 break
 

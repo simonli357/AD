@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-from std_srvs.srv import TriggerResponse
+from std_srvs.srv import TriggerResponse, TriggerRequest
 from OpenGL import GL as gl
 from .graph import GraphEditor
 from ..opengl.shader import ShaderRenderer
@@ -11,7 +11,6 @@ from ..enums import MapData, NamedColor, OpenGLContextName
 
 import pandas as pd
 import os
-import time
 import numpy as np
 import glm
 
@@ -100,6 +99,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.main_window.set_destinations(self.destinations)
         self.next_destination = None
         self.no_destinations = False
+
+        self.car_x = 11.75
+        self.car_y = 2.05
+        self.car_yaw = 0
 
         self.sign_images = []
         self.sign_images.append(os.path.join(self.assets_dir, 'oneway.png'))
@@ -197,6 +200,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         else:
             if self.show_path:
                 self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
+
+            car_x, car_y = self.get_gl_coords(self.car_x, self.car_y)
+            self.shader_renderer.draw_car(car_x, car_y, self.car_yaw, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
+            self.shader_renderer.draw_axis2D(car_x, car_y, self.car_yaw, 25.0, self.view_mat, self.proj_mat)
 
             self.find_next_destination()
 
@@ -420,7 +427,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def draw_detected_objects(self):
         if self.detected_data is None or len(self.detected_data) == 0:
             return
-        for i in range(len(self.detected_data)):
+        for i in range(1, len(self.detected_data)):
             obj_type = self.detected_data[i, self.road_msg_dict['type']]
             x_real = self.detected_data[i, self.road_msg_dict['x']]
             y_real = self.detected_data[i, self.road_msg_dict['y']]
@@ -431,12 +438,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # orientation = 2 * np.pi - orientation
 
             if self.object_dict[obj_type] == 'Car':
-                if i == 0:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
-                else:
-                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
                 self.shader_renderer.draw_texture(texture, x, y, 0, (20, 20), self.view_mat, self.proj_mat)
@@ -656,7 +659,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.view_zoom *= zoom_factor
 
         # Keep zoom within bounds
-        self.view_zoom = max(1.0, min(5.0, self.view_zoom))
+        self.view_zoom = max(1.0, min(20.0, self.view_zoom))
 
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom
@@ -680,30 +683,17 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     # Callbacks
     ##################
 
-    def update_params(self, req) -> None:
-        try:
-            max_retries = 50
-            retries = 0
-            params = self.server.utility_node_client.params
-            while (retries < max_retries):
-                if (len(params.state_refs) > 0 and len(params.attributes) > 0):
-                    self.main_window.state_refs_np = params.state_refs.popleft()
-                    self.main_window.attributes_np = params.attributes.popleft()
-                    print("state ref shape: ", self.main_window.state_refs_np.shape)
-                    # print first 3 rows
-                    print("state ref: ", self.main_window.state_refs_np.T[:, :3])
-                    path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                    path = os.path.join(path, 'saved')
-                    np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
-                    print("saved state refs")
-                    return TriggerResponse(success=True, message="Parameters updated")
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to update params: timeout")
-            return TriggerResponse(success=False, message="Failed to update: timeout")
-        except Exception as e:
-            print(f"Failed to update parameters: {e}")
-            return TriggerResponse(success=False, message=f"Failed to update: {e}")
+    def on_params(self, params):
+        self.main_window.state_refs_np = params.state_refs
+        self.main_window.attributes_np = params.attributes
+        print("state ref shape: ", self.main_window.state_refs_np.shape)
+        # print first 3 rows
+        print("state ref: ", self.main_window.state_refs_np.T[:, :3])
+        path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path = os.path.join(path, 'saved')
+        np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+        print("saved state refs")
+        self.main_window.server.tcp_client.send_trigger(TriggerRequest(), TriggerResponse(success=True, message="Parameters updated"))
 
     def road_objects_callback(self, road_object) -> None:
         self.detected_data = np.array(road_object.data).reshape(-1, self.road_msg_length)
@@ -719,22 +709,15 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         else:
             self.numObj = 0
 
+    def on_waypoint(self, res):
+        self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
+        self.main_window.attributes_np = np.array(res.wp_attributes.data)
+        print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
+        self.main_window.reset_run_statistics()
+
     def call_waypoint_service(self, run):
         try:
-            self.server.utility_node_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
-            max_retries = 50
-            retries = 0
-            res = self.server.utility_node_client.waypoints_srv_msg
-            while (retries < max_retries):
-                if (len(res.state_refs.data) > 0 and len(res.wp_attributes.data) > 0):
-                    self.main_window.state_refs_np = np.array(res.state_refs.data).reshape(-1, 3).T
-                    self.main_window.attributes_np = np.array(res.wp_attributes.data)
-                    print("Waypoints service call successful. shape: ", self.main_window.state_refs_np.shape)
-                    self.main_window.buttons_overlay.set_run_name(run.path_name)
-                    self.main_window.reset_run_statistics()
-                    return
-                retries += 1
-                time.sleep(0.1)
-            print("Failed to send waypoints service call")
+            self.main_window.buttons_overlay.set_run_name(run.path_name)
+            self.server.tcp_client.send_waypoints_srv(run.vref_name, run.path_name, run.x_init, run.y_init, run.yaw_init)
         except Exception as e:
             raise e

@@ -1,28 +1,57 @@
 import socket
 import struct
 import threading
+import time
+
 from python_server.tcp_connection import TcpConnection
 from python_server.udp_connection import UdpConnection
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, host=True, host_ip="127.0.0.1"):
+        self.is_host = host
+        self.host_ip = host_ip
         self.tcp_port = 49153
         self.udp_port = 49154
+        self.multicast_address = "239.1.2.3"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.utility_node_client = TcpConnection()
-        self.udp_connection = UdpConnection(self.udp_socket)
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.tcp_client = None
+        self.dashboard_clients = {}
+        self.udp_connection = None
         self.alive = True
         self.listener = None
 
     def initialize(self):
-        self.udp_socket.bind(('0.0.0.0', self.udp_port))
-        self.tcp_socket.bind(('0.0.0.0', self.tcp_port))
-        self.tcp_socket.listen(2)
-        listener = threading.Thread(target=self.listen, daemon=True)
-        listener.start()
+        self.udp_socket.bind((self.multicast_address, self.udp_port))
+        group = socket.inet_aton(self.multicast_address)
+        mreq = struct.pack('4sL', group, socket.INADDR_ANY)
+        self.udp_socket.setsockopt(
+            socket.IPPROTO_IP,
+            socket.IP_ADD_MEMBERSHIP,
+            mreq
+        )
+
+        self.udp_connection = UdpConnection(self.udp_socket)
+
+        if self.is_host:
+            self.tcp_socket.bind(('', self.tcp_port))
+            self.tcp_socket.listen(2)
+            listener = threading.Thread(target=self.listen, daemon=True)
+            listener.start()
+        else:
+            print("Connecting to host dashboard")
+            while True:
+                try:
+                    self.tcp_socket.connect((self.host_ip, self.tcp_port))
+                    break
+                except OSError:
+                    time.sleep(0.5)
+            print("Succesfully connected to host dashboard")
+            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def listen(self):
         while self.alive:
@@ -48,4 +77,31 @@ class Server:
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
             print("Utility Client connected")
-            self.utility_node_client = TcpConnection(client_socket)
+            self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host)
+        if client_type == "dashboard_client":
+            key = client_socket.getpeername()[0]
+            print(f"Dashboard Client Connected with IP: {key}")
+            if key in self.dashboard_clients:
+                old_client = self.dashboard_clients[key]
+                old_client.alive = False
+                try:
+                    old_client.socket.close()
+                except Exception:
+                    pass
+            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+
+    def on_packet(self, source, packet):
+        if source.is_host and not source.is_dashboard:
+            dead = []
+            for key, db in self.dashboard_clients.items():
+                try:
+                    db.socket.sendall(packet)
+                except OSError:
+                    dead.append(key)
+            for key in dead:
+                self.dashboard_clients.pop(key, None)
+        elif source.is_host and source.is_dashboard:
+            try:
+                self.tcp_client.socket.sendall(packet)
+            except Exception as e:
+                print(e)
