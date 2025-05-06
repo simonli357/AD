@@ -24,8 +24,6 @@ class MapData(Enum):
     PNG_HEIGHT = 533
     REAL_WORLD_WIDTH = 20.696
     REAL_WORLD_HEIGHT = 13.786
-    SCREEN_W = 1920
-    SCREEN_H = 1080
 
 
 class BarcaMapData(Enum):

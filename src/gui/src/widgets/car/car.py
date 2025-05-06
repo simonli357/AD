@@ -20,14 +20,14 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.main_window = self.parent()
 
         self.yaw = 0
-        self.x_pos = 11.75
-        self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.05
+        self.x_pos = 11.78
+        self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.06
         self.z_pos = 0
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 45.0
-        self.cam_height = self.cam_dist / 1.25
+        self.cam_dist = 30.0
+        self.cam_height = self.cam_dist
         self.forward_offset = 5.0
         self.fov = 45.0
 
@@ -94,7 +94,11 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.hud_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
 
-        aspect = self.width() / self.height() if self.height() != 0 else 1.0
+        self.SCREEN_W = 640
+        self.SCREEN_H = 413
+        self.CAR_SCALE = (0.86, 0.75, 0.8)
+
+        aspect = self.SCREEN_W / self.SCREEN_H
         self.proj_mat = glm.perspective(
             self.fov,
             aspect,
@@ -172,7 +176,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x=0.0,
             y=0.0,
             z=0,
-            scale=(self.width(), self.height()),
+            scale=(self.SCREEN_W, self.SCREEN_H),
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
@@ -181,7 +185,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x=x,
             y=y,
             yaw=np.radians(self.yaw),
-            scale=0.8,
+            scale=self.CAR_SCALE,
             color=NamedColor.WHITE,
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
@@ -235,7 +239,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
                     x=x,
                     y=y,
                     yaw=orientation,
-                    scale=0.8,
+                    scale=self.CAR_SCALE,
                     color=NamedColor.RED,
                     view_matrix=self.view_mat,
                     proj_matrix=self.proj_mat
@@ -247,12 +251,12 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             if self.is_near(self.x_pos, self.y_pos, x_real, MapData.REAL_WORLD_HEIGHT.value - y_real, 3.0, 0.2):
                 if label == "CAR":
                     speed = detected_data[i, road_msg_dict['speed']]
-                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9.5, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
-                    self.shader_renderer.tiny_text_renderer.render_text3D(f"{speed * 100:.2f} cm/s", x, y, 7, self.width(), self.height(), (0.0, 0.7, 0.0), self.proj_mat, self.view_mat)
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9.5, self.SCREEN_W, self.SCREEN_H, RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                    self.shader_renderer.tiny_text_renderer.render_text3D(f"{speed * 100:.2f} cm/s", x, y, 7, self.SCREEN_W, self.SCREEN_H, (0.0, 0.7, 0.0), self.proj_mat, self.view_mat)
                 elif label == "LIGHT" or label == "GREENLIGHT" or label == "REDLIGHT" or label == "YELLOWLIGHT":
-                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 10, self.SCREEN_W, self.SCREEN_H, RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
                 else:
-                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9, self.width(), self.height(), RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
+                    self.shader_renderer.text_renderer.render_text3D(f"{obj_name}: {confidence:.2f}", x, y, 9, self.SCREEN_W, self.SCREEN_H, RoadObjectsColor[label].value, self.proj_mat, self.view_mat)
 
         self.draw_road_objects()
 
@@ -291,8 +295,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
     def get_gl_coords(self, real_x, real_y):
         # Convert real-world to OpenGL world coordinates
-        world_x = real_x / MapData.REAL_WORLD_WIDTH.value * self.width()
-        world_y = (MapData.REAL_WORLD_HEIGHT.value - real_y) / MapData.REAL_WORLD_HEIGHT.value * self.height()
+        world_x = real_x / MapData.REAL_WORLD_WIDTH.value * self.SCREEN_W
+        world_y = (MapData.REAL_WORLD_HEIGHT.value - real_y) / MapData.REAL_WORLD_HEIGHT.value * self.SCREEN_H
         return world_x, world_y
 
     def update_destinations(self):
@@ -330,13 +334,4 @@ class CarWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.hud_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
-
-        aspect = w / h if h != 0 else 1.0
-        self.proj_mat = glm.perspective(
-            glm.radians(45.0),
-            aspect,
-            0.1,
-            2000.0
-        )
-
         self.update_destinations()
