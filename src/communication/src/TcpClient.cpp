@@ -137,6 +137,10 @@ void TcpClient::listen() {
 		// --- Header Reception ---
 		ssize_t total_header_received = 0;
 		while (total_header_received < 5) {
+            // --- Send data ---
+            send_data();
+            
+            // --- Read data ---
 			ssize_t bytes = recv(tcp_socket, header_buffer.data() + total_header_received, 5 - total_header_received, 0);
 
 			if (bytes > 0) {
@@ -198,8 +202,6 @@ void TcpClient::listen() {
 			connected = false;
 		}
 
-		// --- Send data ---
-        send_data();
 	}
 	tcp_can_send = false;
 }
