@@ -460,8 +460,8 @@ void TcpClient::parse_rgb_image() {
     }
 }
 
-void TcpClient::send_image_rgb(const cv::Mat &img) {
-    rgb_images.push(img);
+void TcpClient::send_image_rgb(cv::Mat img) {
+    rgb_images.push(std::move(img));
 }
 
 void TcpClient::parse_depth_image() {
