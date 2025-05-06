@@ -21,6 +21,7 @@ class TcpConnection:
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
+        self.lock = threading.Lock()
 
         self.buf_size = 2097152
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buf_size)
@@ -105,7 +106,7 @@ class TcpConnection:
                     continue
                 packet = header + data
                 if self.on_packet:
-                    self.on_packet(self, packet)
+                    self.on_packet(self, packet, self.lock)
                 if self.is_dashboard and self.is_host:
                     continue
                 # Process the data
@@ -123,34 +124,41 @@ class TcpConnection:
         data = string.encode('utf-8')
         length = struct.pack('<I', len(string))
         bytes = length + self.types[0] + data
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_trigger(self, request, response):
         bytes = self.triggers.encode(request, response)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
         bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_go_to_cmd_srv(self, cursor_coords):
         bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_set_states_srv(self, x, y):
         bytes = self.set_states_srv_msg.encode(x, y)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_waypoints_srv(self, vrefName, pathName, x0, y0, yaw0):
         bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_start_srv(self, start):
         str = "start" if start else "stop"
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
         bytes = length + self.types[7] + data
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     ###################
     # Decode
