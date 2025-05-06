@@ -41,6 +41,9 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
     initialize_tcp_client();
     initialize();
+    while (!imuInitialized) {
+        ros::spinOnce();
+    }
     fetch_run_params();
 }
 
@@ -65,11 +68,7 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
-    while (!imuInitialized) {
-        ros::spinOnce();
-    }
-
-    if (!Tunable::hasGps) {
+    if (!Tunable::useGps) {
         debug("GPS not found, skipping", 1);
         return;
     }
