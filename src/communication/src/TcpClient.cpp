@@ -207,8 +207,6 @@ void TcpClient::listen() {
 }
 
 void TcpClient::send_data() {
-    parse_rgb_image();
-    parse_depth_image();
     parse_sign();
     if (!stream_tasks.empty() && tcp_can_send) {
         std::any stream_task;
@@ -441,12 +439,7 @@ void TcpClient::send_sign(const std::vector<float> &data) {
     signs.push(std::move(data));
 }
 
-void TcpClient::parse_rgb_image() {
-    if (rgb_images.empty()) {
-        return;
-    }
-    cv::Mat img;
-    rgb_images.try_pop(img);
+void TcpClient::send_image_rgb(cv::Mat &&img) {
     std::vector<uchar> image;
     cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
     uint32_t length = image.size();
@@ -460,16 +453,7 @@ void TcpClient::parse_rgb_image() {
     }
 }
 
-void TcpClient::send_image_rgb(cv::Mat img) {
-    rgb_images.push(std::move(img));
-}
-
-void TcpClient::parse_depth_image() {
-    if (depth_images.empty()) {
-        return;
-    }
-    cv::Mat img;
-    depth_images.try_pop(img);
+void TcpClient::send_image_depth(cv::Mat &&img) {
 	std::vector<uchar> image;
 	cv::imencode(".hdr", img, image);
 	uint32_t length = image.size();
@@ -481,10 +465,6 @@ void TcpClient::parse_depth_image() {
 		std::memcpy(segment.data() + header_size, &image[0], image.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
-}
-
-void TcpClient::send_image_depth(const cv::Mat &img) {
-    depth_images.push(img);
 }
 
 void TcpClient::send_steer(float steer) {

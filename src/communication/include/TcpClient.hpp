@@ -50,10 +50,8 @@ class TcpClient {
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(cv::Mat img);
-	void send_current_rgb_image();
-	void send_image_depth(const cv::Mat &img);
-	void send_current_depth_image();
+	void send_image_rgb(cv::Mat &&img);
+	void send_image_depth(cv::Mat &&img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
 	void send_sign(const std::vector<float> &data);
@@ -126,8 +124,6 @@ class TcpClient {
 	void poll_connection();
 	void listen();
 	void send_data();
-	void parse_rgb_image();
-	void parse_depth_image();
 	void parse_sign();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
