@@ -26,7 +26,7 @@ class Server:
         self.listener = None
 
     def initialize(self):
-        self.udp_socket.bind((self.multicast_address, self.udp_port))
+        self.udp_socket.bind(('', self.udp_port))
         group = socket.inet_aton(self.multicast_address)
         mreq = struct.pack('4sL', group, socket.INADDR_ANY)
         self.udp_socket.setsockopt(
