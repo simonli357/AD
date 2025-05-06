@@ -90,8 +90,8 @@ class TcpConnection:
                 # Receive the header (5 bytes)
                 while self.alive:
                     try:
-                        header = self.socket.recv(header_size)
-                        if len(header) < header_size:
+                        header = self.recvall(header_size)
+                        if header is None:
                             continue
                         break
                     except Exception as e:
