@@ -13,12 +13,10 @@ class Server:
         self.host_ip = host_ip
         self.tcp_port = 49153
         self.udp_port = 49154
-        self.multicast_address = "239.1.2.3"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.tcp_client = None
         self.dashboard_clients = {}
         self.udp_connection = None
@@ -27,15 +25,7 @@ class Server:
 
     def initialize(self):
         self.udp_socket.bind(('', self.udp_port))
-        group = socket.inet_aton(self.multicast_address)
-        mreq = struct.pack('4sL', group, socket.INADDR_ANY)
-        self.udp_socket.setsockopt(
-            socket.IPPROTO_IP,
-            socket.IP_ADD_MEMBERSHIP,
-            mreq
-        )
-
-        self.udp_connection = UdpConnection(self.udp_socket)
+        self.udp_connection = UdpConnection(self.udp_socket, self)
 
         if self.is_host:
             self.tcp_socket.bind(('', self.tcp_port))

@@ -12,8 +12,9 @@ from PyQt5.QtCore import QByteArray
 
 
 class UdpConnection:
-    def __init__(self, udp_socket=None):
+    def __init__(self, udp_socket=None, server=None):
         self.socket = udp_socket
+        self.server = server
         self.MAX_DGRAM = 65507
 
         self._raw_image = queue.Queue(maxsize=1)
@@ -36,6 +37,10 @@ class UdpConnection:
             threading.Thread(target=self._depth_worker, daemon=True).start()
             threading.Thread(target=self._other_worker, daemon=True).start()
 
+    def broadcast(self, payload):
+        for key in self.server.dashboard_clients.keys():
+            self.socket.sendto(payload, (key, self.server.udp_port))
+
     def _receive_loop(self):
         """Read UDP datagrams and push raw payloads into one of three queues."""
         while True:
@@ -43,6 +48,7 @@ class UdpConnection:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
                 if len(seg) < 5:
                     continue
+                self.broadcast(seg)
                 typ = seg[4]
                 payload = seg[5:]
                 if typ == 5:       # RGB frame
