@@ -29,6 +29,7 @@
 #include <iostream>
 #include "Runs.h"
 #include "PathManager.h"
+#include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -74,18 +75,7 @@ void Utility::fetch_run_params() {
         }
     };
 
-    auto topic_exists = []() {
-        ros::master::V_TopicInfo topics;
-        ros::master::getTopics(topics);
-        for (const auto& topic : topics) {
-            if (topic.name == "/gps") {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    if (!topic_exists()) {
+    if (!Tunable::hasGps) {
         debug("GPS not found, skipping", 1);
         return;
     }
