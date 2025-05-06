@@ -73,7 +73,7 @@ void TcpClient::create_udp_socket() {
 	udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	udp_address.sin_family = AF_INET;
 	udp_address.sin_port = htons(udp_port);
-	inet_pton(AF_INET, multicast_address.c_str(), &udp_address.sin_addr);
+	inet_pton(AF_INET, server_address.c_str(), &udp_address.sin_addr);
 	int flags = fcntl(udp_socket, F_GETFL, 0);
 	fcntl(udp_socket, F_SETFL, flags | O_NONBLOCK);
 }
