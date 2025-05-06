@@ -216,7 +216,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.clear_road_objects()
 
-        for i in range(len(detected_data)):
+        for i in range(1, len(detected_data)):
             obj_type = detected_data[i, road_msg_dict['type']]
             x_real = detected_data[i, road_msg_dict['x']]
             y_real = detected_data[i, road_msg_dict['y']]
@@ -230,9 +230,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             x, y = self.get_gl_coords(x_real, MapData.REAL_WORLD_HEIGHT.value - y_real)
             # orientation = 2 * np.pi - orientation
 
-            if object_dict[obj_type] == 'Car' and i == 0:
-                continue
-            elif object_dict[obj_type] == 'Car':
+            if object_dict[obj_type] == 'Car':
                 self.shader_renderer.draw_car(
                     x=x,
                     y=y,
