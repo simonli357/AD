@@ -30,7 +30,7 @@ namespace periodics{
      */
     void CBlinker::_run()
     {
-        printf("[Blinker run] LED state: %d\n", m_led.read());
+        // printf("[Blinker run] LED state: %d\n", m_led.read());
         m_led = !m_led;
     }
 

@@ -494,7 +494,7 @@ inline bool is_straight_line(int start_idx, int num_waypoints, double target_ang
 
 		// Ensure the start index and number of waypoints are within valid bounds
 		if (start_idx < 0 || start_idx >= N || num_waypoints <= 0 || start_idx + num_waypoints > N) {
-			std::cerr << "Invalid index range." << std::endl;
+			// std::cerr << "Invalid index range." << std::endl;
 			return false;
 		}
 
