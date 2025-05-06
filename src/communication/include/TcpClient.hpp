@@ -18,7 +18,6 @@
 #include <functional>
 #include <memory>
 #include <netinet/in.h>
-#include <oneapi/tbb/concurrent_queue.h>
 #include <opencv2/core/mat.hpp>
 #include <sensor_msgs/Image.h>
 #include <string>
