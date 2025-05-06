@@ -327,9 +327,12 @@ void TcpClient::send_set_states_srv(bool success) {
 }
 
 void TcpClient::send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals) {
-    waypoints_srv->encode(state_refs, input_refs, wp_attributes, wp_normals);
-    std::vector<uint8_t> bytes = waypoints_srv->serialize(tcp_data_types[6]);
-    send(tcp_socket, bytes.data(), bytes.size(), 0);
+	auto fn = [this, state_refs, input_refs, wp_attributes, wp_normals]() {
+		waypoints_srv->encode(state_refs, input_refs, wp_attributes, wp_normals);
+		std::vector<uint8_t> bytes = waypoints_srv->serialize(tcp_data_types[6]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+	};
+	add_stream_task(std::move(fn));
 }
 
 void TcpClient::send_start_srv(bool started) {
@@ -346,9 +349,12 @@ void TcpClient::send_start_srv(bool started) {
 }
 
 void TcpClient::send_params(const std::vector<double> &state_refs, const std::vector<double> &attributes) {
-    params_msg->encode(state_refs, attributes);
-    std::vector<uint8_t> bytes = params_msg->serialize(tcp_data_types[8]);
-    send(tcp_socket, bytes.data(), bytes.size(), 0);
+	auto fn = [this, state_refs, attributes]() {
+		params_msg->encode(state_refs, attributes);
+		std::vector<uint8_t> bytes = params_msg->serialize(tcp_data_types[8]);
+		send(tcp_socket, bytes.data(), bytes.size(), 0);
+	};
+	add_stream_task(std::move(fn));
 }
 
 void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init) {
