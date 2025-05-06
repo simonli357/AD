@@ -22,7 +22,7 @@ class TcpConnection:
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
 
-        size = 65536
+        size = 2097152
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, size)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, size)
 
@@ -70,18 +70,18 @@ class TcpConnection:
     def refresh_run(self):
         self.send_string("refresh_run")
 
-    def recvall(self, length):
-        data = b""
-        try:
-            while len(data) < length:
-                chunk = self.socket.recv(min(65536, length - len(data)))
-                if not chunk:
-                    raise ConnectionError("Connection lost")
-                data += chunk
-            return data
-        except Exception as e:
-            print(e)
-            return data
+    # def recvall(self, length):
+    #     data = b""
+    #     try:
+    #         while len(data) < length:
+    #             chunk = self.socket.recv(min(65536, length - len(data)))
+    #             if not chunk:
+    #                 raise ConnectionError("Connection lost")
+    #             data += chunk
+    #         return data
+    #     except Exception as e:
+    #         print(e)
+    #         return data
 
     def receive(self):
         header_size = 5
@@ -101,7 +101,7 @@ class TcpConnection:
                 length = struct.unpack('<I', header[:message_size])[0]
                 message_type = header[message_size:header_size]
                 # Receive the data based on the length from the header
-                data = self.recvall(length)
+                data = self.socket.recv(length)
                 packet = header + data
                 if self.on_packet:
                     self.on_packet(self, packet)
