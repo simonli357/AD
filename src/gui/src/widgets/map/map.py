@@ -100,8 +100,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.next_destination = None
         self.no_destinations = False
 
-        self.car_x = 11.78
-        self.car_y = 2.06
+        self.car_x = 11.8
+        self.car_y = 2.052
         self.car_yaw = 0
 
         self.sign_images = []
@@ -660,8 +660,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom
         self.view_center += glm.vec2(
-            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
-            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+            mouse_x * (self.SCREEN_W / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (self.SCREEN_H / 2) * (1 - zoom_ratio) / old_zoom
         )
 
         # Update projection matrix

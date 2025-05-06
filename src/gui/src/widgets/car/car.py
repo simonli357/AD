@@ -20,13 +20,13 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.main_window = self.parent()
 
         self.yaw = 0
-        self.x_pos = 11.78
-        self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.06
+        self.x_pos = 11.8
+        self.y_pos = MapData.REAL_WORLD_HEIGHT.value - 2.052
         self.z_pos = 0
         self.speed = 0
         self.steer = 0
 
-        self.cam_dist = 30.0
+        self.cam_dist = 45.0
         self.cam_height = self.cam_dist
         self.forward_offset = 5.0
         self.fov = 45.0
@@ -96,7 +96,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
 
         self.SCREEN_W = 640
         self.SCREEN_H = 413
-        self.CAR_SCALE = (0.86, 0.75, 0.8)
+        self.CAR_SCALE = (0.8, 0.725, 0.9)
 
         aspect = self.SCREEN_W / self.SCREEN_H
         self.proj_mat = glm.perspective(
