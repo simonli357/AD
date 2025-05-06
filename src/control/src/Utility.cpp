@@ -74,6 +74,22 @@ void Utility::fetch_run_params() {
         }
     };
 
+    auto topic_exists = []() {
+        ros::master::V_TopicInfo topics;
+        ros::master::getTopics(topics);
+        for (const auto& topic : topics) {
+            if (topic.name == "/gps") {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    if (!topic_exists()) {
+        debug("GPS not found, skipping", 1);
+        return;
+    }
+
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
