@@ -212,7 +212,7 @@ class TcpConnection:
 
     def parse_start_srv(self, bytes):
         try:
-            self.start_srv_msg = bytes == b'\x01'
+            # self.start_srv_msg = bytes == b'\x01'
             while self.on_start is None:
                 time.sleep(0.2)
             self.on_start()

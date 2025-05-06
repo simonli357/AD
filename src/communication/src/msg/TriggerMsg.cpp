@@ -19,7 +19,7 @@ void TriggerMsg::deserialize(std::vector<uint8_t> &bytes) {
         ros::serialization::IStream response_stream(datatypes[0].data(), datatypes[0].size());
         std_srvs::TriggerResponse response;
         ros::serialization::deserialize(response_stream, response);
-        this->response = std::move(response);
+        this->response = response;
         return;
     }
     ros::serialization::IStream request_stream(datatypes[0].data(), datatypes[0].size());
@@ -30,8 +30,8 @@ void TriggerMsg::deserialize(std::vector<uint8_t> &bytes) {
     ros::serialization::deserialize(request_stream, request);
     ros::serialization::deserialize(response_stream, response);
 
-    this->request = std::move(request);
-    this->response = std::move(response);
+    this->request = request;
+    this->response = response;
 }
 
 uint32_t TriggerMsg::compute_lengths_length() { return lengths_length; }
