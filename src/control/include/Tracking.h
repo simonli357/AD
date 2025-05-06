@@ -409,7 +409,7 @@ public:
         double alpha = new_conf / (confidence + new_conf);
         confidence = (1 - alpha) * confidence + alpha * new_conf;
         cumulative_confidence += new_conf;
-        cumulative_confidence += new_conf;
+        // std::cout << "new_conf: " << new_conf << ", cum conf: " << cumulative_confidence << std::endl;
         detection_count++;
     
         last_detection_time = ros::Time::now();
