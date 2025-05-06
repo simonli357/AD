@@ -195,9 +195,7 @@ float CEncoder::readAngularSpeed() {
                     "@5:%.1f;%.3f;;\r\n",
                     ang, speed / DEGREE_PER_CM);
     if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf)) {
-        core_util_critical_section_enter();
         m_serial.write(buf, n);
-        core_util_critical_section_exit();
     }
 
     return speed;

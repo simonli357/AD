@@ -333,39 +333,18 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
                 }
 
                 // Extract substrings between ';' characters
-                std::string roll_str, pitch_str, yaw_str, accelx_str, accely_str, accelz_str, gyrox_str, gyroy_str, gyroz_str;
+                std::string pitch_str, yaw_str;
                 size_t end_pos = pos;
                 pos++;
-                for (int i = 0; i < 9; ++i) {
+                for (int i = 0; i < 2; ++i) {
                     end_pos = line.find(';', pos);
                     if (end_pos != std::string::npos) {
                         switch (i) {
                             case 0:
-                                // roll_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 1:
                                 pitch_str = line.substr(pos, end_pos - pos);
                                 break;
-                            case 2:
+                            case 1:
                                 yaw_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 3:
-                                // accelx_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 4:
-                                // accely_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 5:
-                                // accelz_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 6:
-                                // gyrox_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 7:
-                                // gyroy_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 8:
-                                // gyroz_str = line.substr(pos, end_pos - pos);
                                 break;
                         }
                         pos = end_pos + 1;

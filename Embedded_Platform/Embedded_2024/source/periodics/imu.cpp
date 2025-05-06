@@ -635,7 +635,7 @@ namespace periodics{
     void CImu::BNO055_delay_msek(u32 msek)
     {
         /*Here you can write your own delay routine*/
-        // ThisThread::sleep_for(chrono::milliseconds(msek));
+        ThisThread::sleep_for(chrono::milliseconds(msek));
     }
 
     void CImu::_run() {
@@ -654,46 +654,43 @@ namespace periodics{
         // 2) Sensor reads + immediate error check
         s32 res;
         float yaw, pitch, roll;
-        float ax, ay, az;
-        float gx, gy, gz;
         
-        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
-            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
-            return;
-        }
-        // printf("[Imu Run] got data \n");
-        // if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
-        //     return;  // abort on any error
+        // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
+        //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
+        //     return;
         // }
+        // printf("[Imu Run] got data \n");
+        if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
+            return;  // abort on any error
+        }
     
         // 3) Normalize yaw into [0,360)
         yaw -= init_euler_h_deg;
         if (yaw < 0.0f)   yaw += 360.0f;
         if (yaw >= 360.0f) yaw -= 360.0f;
 
-        printf("@7:%.1f;%.1f;%.1f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
-               roll, pitch, yaw,
-               ax,   ay,    az,
-               gx,   gy,    gz);
-        char out[128];
-        int n = std::snprintf(out, sizeof(out),
-                              "@7:%.1f;%.1f;%.1f;%.3f;%.3f;%.3f;%.3f;%.3f;%.3f;;\r\n",
-                              roll, pitch, yaw,
-                              ax,   ay,    az,
-                              gx,   gy,    gz);
-        if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
-        // if (true) {
-            core_util_critical_section_enter();
-            m_serial.write(out, n);
-            core_util_critical_section_exit();
-        }
+        // printf("@7:%.1f;%.1f;;\r\n",
+        //        pitch, yaw);
+        char out[32];
+        // int n = std::snprintf(out, sizeof(out),
+        //                       "@7:%.3f;%.3f;;\r\n",
+        //                       pitch, yaw);
+        // if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
+        //     m_serial.write(out, n);
+        // }
+
+        snprintf(out, sizeof(out),
+                "@7:%.1f;%.1f;;\r\n",
+                pitch, yaw);
+        m_serial.write(out, strlen(out));
+
     }
 
 }; // namespace periodics
