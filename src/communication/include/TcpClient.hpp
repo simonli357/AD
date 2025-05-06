@@ -82,7 +82,7 @@ class TcpClient {
 	std::string server_address = "127.0.0.1";
 	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
-	const size_t buffer_size = 4096;
+	const size_t buffer_size = 65536;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	int swload_counter = 0;
