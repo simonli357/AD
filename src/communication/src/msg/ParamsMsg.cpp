@@ -1,11 +1,10 @@
 #include "msg/ParamsMsg.hpp"
 #include "ros/serialization.h"
 #include <cstdint>
-#include <utility>
 
 void ParamsMsg::encode(const std::vector<double> &state_refs, const std::vector<double> &attributes) {
-    this->state_refs = std::move(state_refs);
-    this->attributes = std::move(attributes);
+    this->state_refs = state_refs;
+    this->attributes = attributes;
     state_refs_arr = double_vector_to_arr(state_refs);
     attributes_arr = double_vector_to_arr(attributes);
 	state_refs_length = ros::serialization::serializationLength(state_refs_arr);

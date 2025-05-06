@@ -2,10 +2,9 @@
 #include "ros/serialization.h"
 #include "std_msgs/Header.h"
 #include <cstdint>
-#include <utility>
 
-void Lane2Msg::encode(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted) {
-    this->header = std::move(header);
+void Lane2Msg::encode(const std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted) {
+    this->header = header;
     this->center = center;
     this->stopline = stopline;
     this->stopline_dist = stopline_dist;

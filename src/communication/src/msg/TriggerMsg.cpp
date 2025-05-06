@@ -3,7 +3,6 @@
 #include "std_srvs/Trigger.h"
 #include "std_srvs/TriggerRequest.h"
 #include <cstdint>
-#include <utility>
 
 void TriggerMsg::encode(const std_srvs::Trigger &trigger) {
     request = trigger.request;
