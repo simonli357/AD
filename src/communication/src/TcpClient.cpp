@@ -461,7 +461,7 @@ void TcpClient::parse_rgb_image() {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
-    rgb_images.push(img.clone());
+    rgb_images.push(img);
 }
 
 void TcpClient::parse_depth_image() {
@@ -484,7 +484,7 @@ void TcpClient::parse_depth_image() {
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
-    depth_images.push(img.clone());
+    depth_images.push(img);
 }
 
 void TcpClient::send_steer(float steer) {
