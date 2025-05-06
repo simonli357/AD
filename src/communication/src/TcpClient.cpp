@@ -41,8 +41,7 @@ TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::str
 	if (use_tcp) {
 		set_tcp_data_types();
 		set_tcp_data_actions();
-		receiver = std::thread(&TcpClient::initialize, this);
-		sender = std::thread(&TcpClient::send_data, this);
+		main = std::thread(&TcpClient::run, this);
 	}
 }
 
@@ -52,11 +51,8 @@ TcpClient::~TcpClient() {
 	if (tcp_socket != -1) {
 		close(tcp_socket);
 	}
-	if (receiver.joinable()) {
-		receiver.join();
-	}
-	if (sender.joinable()) {
-		sender.join();
+	if (main.joinable()) {
+		main.join();
 	}
 }
 
@@ -115,7 +111,7 @@ void TcpClient::set_tcp_data_actions() {
 	tcp_data_actions[tcp_data_types[7]] = &TcpClient::parse_start_srv;		// StartSrv
 }
 
-void TcpClient::initialize() {
+void TcpClient::run() {
 	while (alive) {
 		create_tcp_socket();
 		std::cout << "Connecting to GUI \n" << std::endl;
@@ -201,35 +197,32 @@ void TcpClient::listen() {
 		} else {
 			connected = false;
 		}
+
+		// --- Send data ---
+        send_data();
 	}
 	tcp_can_send = false;
 }
 
 void TcpClient::send_data() {
-    int swload_counter = 0;
-	while (alive) {
-		if (!stream_tasks.empty() && tcp_can_send) {
-			std::any stream_task;
-			if (stream_tasks.try_pop(stream_task)) {
-				std::function<void()> task = std::any_cast<std::function<void()>>(stream_task);
-				task();
-			}
-			continue;
-		}
-		if (!dgram_tasks.empty()) {
-			std::any dgram_task;
-			if (dgram_tasks.try_pop(dgram_task)) {
-				std::function<void()> task = std::any_cast<std::function<void()>>(dgram_task);
-				task();
-			}
-			continue;
-		}
-        if (++swload_counter >= 20) {
-            send_swload();
-            swload_counter = 0;
+    if (!stream_tasks.empty() && tcp_can_send) {
+        std::any stream_task;
+        if (stream_tasks.try_pop(stream_task)) {
+            std::function<void()> task = std::any_cast<std::function<void()>>(stream_task);
+            task();
         }
-		std::this_thread::sleep_for(std::chrono::milliseconds(32));
-	}
+    }
+    if (!dgram_tasks.empty()) {
+        std::any dgram_task;
+        if (dgram_tasks.try_pop(dgram_task)) {
+            std::function<void()> task = std::any_cast<std::function<void()>>(dgram_task);
+            task();
+        }
+    }
+    if (++swload_counter >= 20) {
+        send_swload();
+        swload_counter = 0;
+    }
 }
 
 template <typename Callable> void TcpClient::add_stream_task(Callable &&lambda) { stream_tasks.push(std::function<void()>(std::forward<Callable>(lambda))); }

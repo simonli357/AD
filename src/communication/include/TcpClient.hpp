@@ -43,7 +43,7 @@ class TcpClient {
 	// Fields
 	bool tcp_can_send = false;
 	// Methods
-	void initialize();
+	void run();
 	// Encode
 	void send_type(const std::string &str);
 	void send_string(const std::string &str);
@@ -86,6 +86,7 @@ class TcpClient {
 	const size_t buffer_size = 4096;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
+	int swload_counter = 0;
 	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
@@ -93,8 +94,7 @@ class TcpClient {
 	sockaddr_in udp_address;
 	int tcp_socket;
 	int udp_socket;
-	std::thread receiver;
-	std::thread sender;
+	std::thread main;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
