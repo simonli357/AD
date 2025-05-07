@@ -444,18 +444,68 @@ void TcpClient::send_image_rgb(cv::Mat &&img) {
 	}
 }
 
-void TcpClient::send_image_depth(cv::Mat &&img) {
-	std::vector<uchar> image;
-	cv::imencode(".hdr", img, image);
-	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	if (total_segments == 1) {
-		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), &length, message_size);
-		segment[4] = udp_data_types[5];
-		std::memcpy(segment.data() + header_size, &image[0], image.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-	}
+void TcpClient::send_image_depth(cv::Mat &&img)
+{
+    // Constants
+    const float kDepthMmToM   = 1.f / 1000.f;
+    const float kDepthU16Norm = 1.f / 65535.f;
+
+    // 1. Convert to CV_32F if needed
+    cv::Mat img32;
+    int type = img.type();
+
+    if (type == CV_32FC1 || type == CV_32FC3)
+        img32 = std::move(img);
+    else if (type == CV_16UC1)
+        img.convertTo(img32, CV_32F, kDepthMmToM);
+    else if (type == CV_16UC3)
+        img.convertTo(img32, CV_32F, kDepthU16Norm);
+    else {
+        std::cerr << "[TcpClient] Unsupported image format: " << type << std::endl;
+        return;
+    }
+
+    // 2. Encode to .hdr
+    std::vector<uchar> encoded;
+    if (!cv::imencode(".hdr", img32, encoded)) {
+        std::cerr << "[TcpClient] HDR encoding failed." << std::endl;
+        return;
+    }
+
+    uint32_t length = static_cast<uint32_t>(encoded.size());
+    uint8_t total_segments = static_cast<uint8_t>(
+        std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM));
+
+    if (total_segments > 255) {
+        std::cerr << "[TcpClient] Too many segments required: " << int(total_segments) << std::endl;
+        return;
+    }
+
+    // 3. Send all segments
+    for (uint8_t i = 0; i < total_segments; ++i)
+    {
+        std::vector<uint8_t> segment(MAX_DGRAM, 0);
+
+        // Header
+        std::memcpy(segment.data(), &length, message_size);  // 4 bytes for full payload size
+        segment[4] = udp_data_types[5];                      // your app's depth type
+        segment[5] = i;                                      // segment index
+        segment[6] = total_segments;                         // total number of segments
+
+        // Payload
+        size_t offset = i * (MAX_DGRAM - header_size);
+        size_t bytes_to_copy = std::min(
+            encoded.size() - offset,
+            static_cast<size_t>(MAX_DGRAM - header_size)
+        );
+        std::memcpy(segment.data() + header_size, encoded.data() + offset, bytes_to_copy);
+
+        sendto(udp_socket,
+               segment.data(), header_size + bytes_to_copy,
+               0,
+               reinterpret_cast<struct sockaddr*>(&udp_address),
+               sizeof(udp_address));
+    }
 }
 
 void TcpClient::send_steer(float steer) {

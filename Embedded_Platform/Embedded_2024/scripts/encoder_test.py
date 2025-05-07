@@ -64,7 +64,7 @@ class SpeedSweep(QtWidgets.QWidget):
         speeds_cm: Sequence[float] = SPEED_SEQUENCE_CM,
         hold_s: float = HOLD_TIME_S,
         poll_hz: int = 30,
-        send_hz: int = 20,
+        send_hz: int = 10,
         bufsize: int = 15_000,
     ) -> None:
         super().__init__()

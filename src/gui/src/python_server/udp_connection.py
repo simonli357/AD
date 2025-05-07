@@ -47,7 +47,9 @@ class UdpConnection:
                 payload = seg[5:]
                 if typ == 5:       # RGB frame
                     self._enqueue_raw(self._raw_image, payload)
+                    # print("RGB frame received")
                 elif typ == 6:     # Depth frame
+                    print("Depth frame received")
                     self._enqueue_raw(self._raw_depth, payload)
                 else:              # everything else
                     if typ in (1, 2, 3, 4, 7, 8):
@@ -75,20 +77,27 @@ class UdpConnection:
     def _depth_worker(self):
         while True:
             raw = self._raw_depth.get()
-            try:
-                np_array = np.frombuffer(raw, dtype=np.uint8)
-                depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
-                depth_normalized = cv2.normalize(depth, None, 50, 255, cv2.NORM_MINMAX)
-                depth_colored = cv2.applyColorMap(depth_normalized.astype(np.uint8), cv2.COLORMAP_TURBO)  # TURBO colormap for better contrast
-                h, w, ch = depth_colored.shape
-                bytes_per_line = ch * w
-                qt_image = QImage(depth_colored.data, w, h, bytes_per_line, QImage.Format_RGB888)
-                pix = QPixmap.fromImage(qt_image)
-                self._try_put(self.depth_buf, pix)
-                self._try_put(self.depth_arr_buf, depth)
-            except Exception as e:
-                print("depth_worker error:", e)
-                continue
+
+            # Decode to native depth (uint16 or float32, single channel)
+            depth = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_UNCHANGED)
+
+            # Robust min‑max stretch into 8‑bit
+            depth_8u = cv2.normalize(depth, None, 0, 255,
+                                    cv2.NORM_MINMAX, cv2.CV_8U)
+
+            # Apply a perceptually nice colormap and convert BGR➜RGB
+            depth_colored = cv2.applyColorMap(depth_8u, cv2.COLORMAP_TURBO)
+            depth_rgb = cv2.cvtColor(depth_colored, cv2.COLOR_BGR2RGB)
+
+            # Push to Qt
+            h, w, ch = depth_rgb.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(depth_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            pix = QPixmap.fromImage(qt_image)
+
+            self._try_put(self.depth_buf, pix)
+            self._try_put(self.depth_arr_buf, depth)  # keep the *raw* depth around
+
 
     def _other_worker(self):
         while True:
