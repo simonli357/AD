@@ -231,10 +231,10 @@ class TcpConnection:
     def parse_params(self, bytes):
         try:
             pass
-            # self.params.decode(bytes)
-            # while self.on_params is None:
-            #     time.sleep(0.2)
-            # self.on_params(self.params)
+            self.params.decode(bytes)
+            while self.on_params is None:
+                time.sleep(0.2)
+            self.on_params(self.params)
         except Exception as e:
             print(e)
 
