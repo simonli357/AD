@@ -5,6 +5,7 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
+#include <algorithm>
 #include <arpa/inet.h>
 #include <chrono>
 #include <cstdint>
@@ -450,13 +451,19 @@ void TcpClient::send_image_depth(cv::Mat &&img) {
 	std::vector<uchar> image;
 	cv::imencode(".hdr", img, image);
 	uint32_t length = image.size();
-	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	if (total_segments == 1) {
+    size_t payload_size = MAX_DGRAM - header_size;
+	uint8_t total_segments = std::ceil(static_cast<float>(length) / payload_size);
+	for (uint32_t seg_num = 0; seg_num < total_segments; ++seg_num) {
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), &length, message_size);
+		std::memcpy(segment.data(), &seg_num, message_size);
 		segment[4] = udp_data_types[5];
-		std::memcpy(segment.data() + header_size, &image[0], image.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+
+        size_t start = seg_num * payload_size;
+        size_t end = std::min(start + payload_size, static_cast<size_t>(length));
+        size_t chunk_size = end - start;
+
+		std::memcpy(segment.data() + header_size, image.data() + start, chunk_size);
+		sendto(udp_socket, segment.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 

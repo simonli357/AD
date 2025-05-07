@@ -9,6 +9,7 @@ from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QByteArray
+from collections import OrderedDict
 
 
 class UdpConnection:
@@ -18,8 +19,8 @@ class UdpConnection:
         self.MAX_DGRAM = 65507
 
         self._raw_image = queue.Queue(maxsize=1)
-        self._raw_depth = queue.Queue(maxsize=1)
-        self._raw_other = queue.Queue(maxsize=1)
+        self._raw_depth = OrderedDict()
+        self._raw_other = queue.Queue()
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
@@ -55,7 +56,8 @@ class UdpConnection:
                 if typ == 5:       # RGB frame
                     self._enqueue_raw(self._raw_image, payload)
                 elif typ == 6:     # Depth frame
-                    self._enqueue_raw(self._raw_depth, payload)
+                    id = struct.unpack('<I', seg[:4])[0]
+                    self._raw_depth[id] = payload
                 else:              # everything else
                     if typ in (1, 2, 3, 4, 7, 8):
                         self._enqueue_raw(self._raw_other, (typ, payload))
@@ -81,7 +83,7 @@ class UdpConnection:
 
     def _depth_worker(self):
         while True:
-            raw = self._raw_depth.get()
+            raw = ''.join(self._raw_depth.values())
             try:
                 np_array = np.frombuffer(raw, dtype=np.uint8)
                 depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
