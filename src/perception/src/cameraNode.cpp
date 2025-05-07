@@ -210,6 +210,7 @@ class CameraNode {
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			depthImage = cv_ptr_depth->image.clone();
+            depthImage.convertTo(depthImage, CV_16UC1);
 			if (flip) {
 				cv::flip(depthImage, depthImage, -1);
 			}
