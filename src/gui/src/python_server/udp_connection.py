@@ -84,7 +84,7 @@ class UdpConnection:
 
     def _depth_worker(self):
         while True:
-            raw = ''.join(self._raw_depth.values())
+            raw = b''.join(self._raw_depth.values())
             try:
                 np_array = np.frombuffer(raw, dtype=np.uint8)
                 depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
