@@ -37,7 +37,7 @@ CM_TO_DEG = 146.0  # deg/s per cm/s (for measurement conversion only)
 
 # 10‑step profile (cm/s) – keep |v| <= 50
 # SPEED_SEQUENCE_CM = [-50, -40, -30, -20, -10, 0, 10, 20, 30, 50]
-SPEED_SEQUENCE_CM = [-50, 50, -40, 40, -30, 30, -20, 20, -10, 10]
+SPEED_SEQUENCE_CM = [46, -45, 0, 40, -30, 30, -20, 20, -10, 10]
 # SPEED_SEQUENCE_CM = [-10, 0, 10, -20, 20, -30, 30, -40, 40, 50]
 
 HOLD_TIME_S       = 10.0
@@ -64,7 +64,7 @@ class SpeedSweep(QtWidgets.QWidget):
         speeds_cm: Sequence[float] = SPEED_SEQUENCE_CM,
         hold_s: float = HOLD_TIME_S,
         poll_hz: int = 30,
-        send_hz: int = 10,
+        send_hz: int = 20,
         bufsize: int = 15_000,
     ) -> None:
         super().__init__()
