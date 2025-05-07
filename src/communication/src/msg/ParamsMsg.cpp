@@ -3,9 +3,8 @@
 #include <cstdint>
 
 void ParamsMsg::encode(const std::vector<double> &state_refs, const std::vector<double> &attributes) {
-    std_msgs::Float64MultiArray state_refs_arr, attributes_arr;
-    state_refs_arr.data = state_refs;
-    attributes_arr.data = attributes;
+    this->state_refs = state_refs;
+    this->attributes = attributes;
     state_refs_arr = double_vector_to_arr(state_refs);
     attributes_arr = double_vector_to_arr(attributes);
 	state_refs_length = ros::serialization::serializationLength(state_refs_arr);
@@ -28,8 +27,8 @@ std::vector<uint8_t> ParamsMsg::get_lengths() {
 std::vector<uint8_t> ParamsMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> state_refs_data = serializeFloat64MultiArray(state_refs_arr);
-	std::vector<uint8_t> attributes_data = serializeFloat64MultiArray(attributes_arr);
+	std::vector<uint8_t> state_refs_data = serializeFloat32MultiArray(state_refs_arr);
+	std::vector<uint8_t> attributes_data = serializeFloat32MultiArray(attributes_arr);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), state_refs_data.data(), state_refs_length);
