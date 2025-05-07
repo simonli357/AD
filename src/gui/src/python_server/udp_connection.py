@@ -84,6 +84,10 @@ class UdpConnection:
         while self.alive:
             try:
                 num_segments, seg_num, payload = self._raw_image.get()
+                if num_segments != max(self.image_map.keys()):
+                    self.image_map.clear()
+                    self.image_map[seg_num] = payload
+                    continue
                 self.image_map[seg_num] = payload
                 if len(self.image_map.keys()) == num_segments:
                     raw = b''.join(self.image_map.values())
@@ -100,7 +104,11 @@ class UdpConnection:
         while self.alive:
             try:
                 num_segments, seg_num, payload = self._raw_depth.get()
-                self.depth_map[seg_num] = payload
+                if num_segments != max(self.image_map.keys()):
+                    self.image_map.clear()
+                    self.image_map[seg_num] = payload
+                    continue
+                self.image_map[seg_num] = payload
                 if len(self.depth_map.keys()) == num_segments:
                     raw = b''.join(self.depth_map.values())
                     self.depth_map.clear()
