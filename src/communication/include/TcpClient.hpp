@@ -80,7 +80,6 @@ class TcpClient {
 	const uint16_t tcp_port = 49153;
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
-	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
 	const int buffer_size = 2097152;
 	const size_t header_size = 5;
