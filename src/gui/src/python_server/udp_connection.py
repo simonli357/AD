@@ -93,8 +93,8 @@ class UdpConnection:
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
-            except Exception as e:
-                print(e)
+            except Exception:
+                continue
 
     def _depth_worker(self):
         while self.alive:
