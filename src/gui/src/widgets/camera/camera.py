@@ -13,7 +13,6 @@ class CameraWidget(QtWidgets.QWidget):
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(7)
-
         self.setup_ui()
 
     def setup_ui(self):

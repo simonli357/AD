@@ -35,11 +35,14 @@ class UdpConnection:
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
 
+        self.show_depth = False
+        self.alive = True
+
         if udp_socket is not None:
             threading.Thread(target=self._receive_loop, daemon=True).start()
+            threading.Thread(target=self._other_worker, daemon=True).start()
             threading.Thread(target=self._image_worker, daemon=True).start()
             threading.Thread(target=self._depth_worker, daemon=True).start()
-            threading.Thread(target=self._other_worker, daemon=True).start()
 
     def broadcast(self, payload):
         for key in self.server.dashboard_clients.keys():
@@ -47,7 +50,7 @@ class UdpConnection:
 
     def _receive_loop(self):
         """Read UDP datagrams and push raw payloads into one of three queues."""
-        while True:
+        while self.alive:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
                 if len(seg) < 5:
@@ -78,7 +81,7 @@ class UdpConnection:
             pass
 
     def _image_worker(self):
-        while True:
+        while self.alive:
             try:
                 num_segments, seg_num, payload = self._raw_image.get()
                 self.image_map[seg_num] = payload
@@ -94,7 +97,7 @@ class UdpConnection:
                 print(e)
 
     def _depth_worker(self):
-        while True:
+        while self.alive:
             try:
                 num_segments, seg_num, payload = self._raw_depth.get()
                 self.depth_map[seg_num] = payload
@@ -118,7 +121,7 @@ class UdpConnection:
                 continue
 
     def _other_worker(self):
-        while True:
+        while self.alive:
             typ, raw = self._raw_other.get()
             try:
                 if typ == 1:  # lane2
