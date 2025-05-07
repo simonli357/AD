@@ -3,6 +3,7 @@ import struct
 import queue
 import numpy as np
 import cv2
+import time
 
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
@@ -95,6 +96,7 @@ class UdpConnection:
                 pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
                 self._try_put(self.depth_arr_buf, depth)
+                time.sleep(0.032)
             except Exception as e:
                 print("depth_worker error:", e)
                 continue
