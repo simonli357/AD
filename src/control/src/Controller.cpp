@@ -83,8 +83,8 @@ public:
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                start_bool_callback(started);
                 utils.tcp_client->send_start_srv(started);
+                start_bool_callback(started);
             }
         );
 
