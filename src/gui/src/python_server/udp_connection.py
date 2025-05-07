@@ -18,10 +18,12 @@ class UdpConnection:
         self.server = server
         self.MAX_DGRAM = 65507
 
-        self._raw_image = queue.Queue(maxsize=1)
+        self._raw_image = queue.Queue()
         self._raw_depth = queue.Queue()
-        self.depth_map = OrderedDict()
         self._raw_other = queue.Queue()
+
+        self.image_map = OrderedDict()
+        self.depth_map = OrderedDict()
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
@@ -55,7 +57,9 @@ class UdpConnection:
                 typ = seg[4]
                 payload = seg[5:]
                 if typ == 5:       # RGB frame
-                    self._enqueue_raw(self._raw_image, payload)
+                    num_segments = struct.unpack('<H', seg[:2])[0]
+                    seg_num = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_image, (num_segments, seg_num, payload))
                 elif typ == 6:     # Depth frame
                     num_segments = struct.unpack('<H', seg[:2])[0]
                     seg_num = struct.unpack('<H', seg[2:4])[0]
@@ -75,8 +79,14 @@ class UdpConnection:
 
     def _image_worker(self):
         while True:
-            raw = self._raw_image.get()
             try:
+                num_segments, seg_num, payload = self._raw_image.get()
+                self.image_map[seg_num] = payload
+                if len(self.image_map.keys()) == num_segments:
+                    raw = b''.join(self.image_map.values())
+                    self.image_map.clear()
+                else:
+                    continue
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
@@ -85,17 +95,14 @@ class UdpConnection:
 
     def _depth_worker(self):
         while True:
-            raw = b''
-            seg = self._raw_image.get()
-            num_segments = seg[0]
-            seg_num = seg[1]
-            self.depth_map[seg_num] = seg[2]
-            if self.depth_map.keys() == num_segments:
-                raw.join(self.depth_map.values())
-                self.depth_map.clear()
-            else:
-                continue
             try:
+                num_segments, seg_num, payload = self._raw_depth.get()
+                self.depth_map[seg_num] = payload
+                if len(self.depth_map.keys()) == num_segments:
+                    raw = b''.join(self.depth_map.values())
+                    self.depth_map.clear()
+                else:
+                    continue
                 np_array = np.frombuffer(raw, dtype=np.uint8)
                 depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 depth_normalized = cv2.normalize(depth, None, 50, 255, cv2.NORM_MINMAX)
