@@ -456,7 +456,7 @@ void TcpClient::send_image_rgb(cv::Mat &&img) {
 
 void TcpClient::send_image_depth(cv::Mat &&img) {
 	std::vector<uchar> image;
-	cv::imencode(".hdr", img, image);
+	cv::imencode(".png", img, image, {cv::IMWRITE_PNG_COMPRESSION, 3});
 	uint32_t length = image.size();
     size_t payload_size = MAX_DGRAM - header_size;
 	uint16_t total_segments = std::ceil(static_cast<float>(length) / payload_size);
