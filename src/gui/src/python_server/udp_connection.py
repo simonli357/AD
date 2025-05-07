@@ -116,8 +116,7 @@ class UdpConnection:
                 pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
                 self._try_put(self.depth_arr_buf, depth)
-            except Exception as e:
-                print("depth_worker error:", e)
+            except Exception:
                 continue
 
     def _other_worker(self):
