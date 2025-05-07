@@ -41,6 +41,7 @@
 #include <std_msgs/Float32.h>
 #include <utils/Sign.h>
 #include <utils/encoder.h>
+#include "utils/helper.h"
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -214,10 +215,10 @@ public:
     void handle_rx(const boost::system::error_code& ec,
                    std::size_t n);
     void scan_frames();                      // frame parser
-    void parse_and_publish(const char* p, std::size_t len);
+    void parse_and_publish(char id, const char *p, std::size_t len);
     static const std::size_t RX_CAP = 512;
-    static std::array<char,   RX_CAP> rxBuf{};
-    static std::size_t                rxLen = 0;
+    std::array<char,   RX_CAP> rxBuf{};
+    std::size_t                rxLen = 0;
     boost::asio::io_service io;
     std::shared_ptr<boost::asio::serial_port> serial = nullptr;
     static bool fast_atof(const char* s, const char* e, double& out)
@@ -237,65 +238,6 @@ public:
         }
         out = (i + f/base) * (neg ? -1.0 : 1.0);
         return s == e;                 // parsed whole span?
-    }
-    void parse_frame(const char *p, std::size_t len)
-    {
-        if (len < 2) return;               // need at least "X:"
-        char id0 = p[-3];                  // '@' '5' ':'  => id0 = '5'
-                                            // ^  p‑3   p‑2  p‑1   p
-        if (id0 == '5') {                  // ‑‑ encoder frame ‑‑
-            double speed_cm;
-            if (!fast_atof(p, p+len, speed_cm)) return;
-            encoder_speed = 0.01 * speed_cm;   // cm/s → m/s
-            filter_encoder();
-            return;
-        }
-        if (id0 == '7') {                  // ‑‑ imu frame ‑‑
-            const char *mid = static_cast<const char*>(memchr(p, ';', len));
-            if (!mid) return;
-            double pitch, yaw;
-            if (!fast_atof(p,      mid,       pitch)) return;
-            if (!fast_atof(mid+1,  p+len,     yaw  )) return;
-
-            {
-                // yaw (deg) → rad, store thread‑safe variable
-                this->yaw = helper::yaw_mod(-yaw * M_PI/180.0);
-            }
-
-            static bool dbg=false;
-            if (dbg) printf("pitch %.2f  yaw %.2f\n", pitch, yaw);
-        }
-    }
-    void imu_pub_timer_callback(const ros::TimerEvent&)
-    {
-        //---------------------------------- read as many bytes as fit
-        rxLen += serial->read_some(
-                    boost::asio::buffer(rxBuf.data() + rxLen,
-                                        rxBuf.size() - rxLen));
-
-        //---------------------------------- scan for @X…;;\r\n frames
-        const char *start = nullptr;
-        for (std::size_t i = 0; i + 3 < rxLen; ++i) {
-            if (!start) {                                      // looking for '@5:' or '@7:'
-                if (rxBuf[i] == '@' &&
-                (rxBuf[i+1] == '5' || rxBuf[i+1] == '7') &&
-                    rxBuf[i+2] == ':')
-                    start = rxBuf.data() + i + 3;              // skip "@X:"
-            } else if (rxBuf[i] == ';' && rxBuf[i+1] == ';' &&
-                    rxBuf[i+2] == '\r' && rxBuf[i+3] == '\n') {
-
-                std::size_t len = (rxBuf.data() + i) - start;  // payload length
-                parse_frame(start, len);                       // handle payload
-
-                std::size_t consumed = i + 4;                  // remove up to \n
-                std::memmove(rxBuf.data(),
-                            rxBuf.data() + consumed,
-                            rxLen - consumed);
-                rxLen -= consumed;
-                start = nullptr;
-                i     = static_cast<std::size_t>(-1);          // restart scan
-            }
-        }
     }
 
     double get_yaw() {

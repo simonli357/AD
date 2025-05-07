@@ -220,8 +220,8 @@ void Utility::initialize() {
         } else {
             debug("getting imu from serial port", 1);
             // create a ros timer to read from serial port
-            imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
-            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
+            // imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
+            // imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
         }
     }
     if (true) {
@@ -300,7 +300,8 @@ void Utility::parse_and_publish(char id, const char *p, std::size_t len) {
 			return;
 
 		{
-			this->yaw = helper::yaw_mod(-yaw_deg * M_PI / 180.0);
+            double tmp_yaw = -yaw_deg * M_PI / 180.0;
+			this->yaw = helper::yaw_mod(tmp_yaw);
 		}
 	}
 }
