@@ -275,9 +275,9 @@ class MainWindow(QMainWindow):
             rgb_image = self.server.udp_connection.parse_rgb_image()
             if rgb_image is not None:
                 now = time.time()
-                if abs(self.car_widget.speed) > 0.02:
-                    filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                    rgb_image.save(filename, 'JPG', quality=100)
+                # if abs(self.car_widget.speed) > 0.02:
+                filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
         try:
