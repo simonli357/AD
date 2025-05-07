@@ -452,10 +452,11 @@ void TcpClient::send_image_depth(cv::Mat &&img) {
 	cv::imencode(".hdr", img, image);
 	uint32_t length = image.size();
     size_t payload_size = MAX_DGRAM - header_size;
-	uint8_t total_segments = std::ceil(static_cast<float>(length) / payload_size);
-	for (uint32_t seg_num = 0; seg_num < total_segments; ++seg_num) {
+	uint16_t total_segments = std::ceil(static_cast<float>(length) / payload_size);
+	for (uint16_t seg_num = 0; seg_num < total_segments; ++seg_num) {
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), &seg_num, message_size);
+		std::memcpy(segment.data(), &total_segments, 2);
+        std::memcpy(segment.data() + 2, &seg_num, 2);
 		segment[4] = udp_data_types[5];
 
         size_t start = seg_num * payload_size;

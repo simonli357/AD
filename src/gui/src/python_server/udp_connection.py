@@ -3,7 +3,6 @@ import struct
 import queue
 import numpy as np
 import cv2
-import time
 
 from std_msgs.msg import Float32MultiArray
 from python_server.msg.lane2_msg import Lane2Msg
@@ -20,7 +19,8 @@ class UdpConnection:
         self.MAX_DGRAM = 65507
 
         self._raw_image = queue.Queue(maxsize=1)
-        self._raw_depth = OrderedDict()
+        self._raw_depth = queue.Queue()
+        self.depth_map = OrderedDict()
         self._raw_other = queue.Queue()
 
         self.rgb_buf = queue.Queue(maxsize=1)
@@ -57,8 +57,9 @@ class UdpConnection:
                 if typ == 5:       # RGB frame
                     self._enqueue_raw(self._raw_image, payload)
                 elif typ == 6:     # Depth frame
-                    id = struct.unpack('<I', seg[:4])[0]
-                    self._raw_depth[id] = payload
+                    num_segments = struct.unpack('<H', seg[:2])[0]
+                    seg_num = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
                 else:              # everything else
                     if typ in (1, 2, 3, 4, 7, 8):
                         self._enqueue_raw(self._raw_other, (typ, payload))
@@ -84,7 +85,16 @@ class UdpConnection:
 
     def _depth_worker(self):
         while True:
-            raw = b''.join(self._raw_depth.values())
+            raw = b''
+            seg = self._raw_image.get()
+            num_segments = seg[0]
+            seg_num = seg[1]
+            self.depth_map[seg_num] = seg[2]
+            if self.depth_map.keys() == num_segments:
+                raw.join(self.depth_map.values())
+                self.depth_map.clear()
+            else:
+                continue
             try:
                 np_array = np.frombuffer(raw, dtype=np.uint8)
                 depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
@@ -96,7 +106,6 @@ class UdpConnection:
                 pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
                 self._try_put(self.depth_arr_buf, depth)
-                time.sleep(0.032)
             except Exception as e:
                 print("depth_worker error:", e)
                 continue
