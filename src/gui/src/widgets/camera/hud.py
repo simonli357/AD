@@ -184,7 +184,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             dist = np.sqrt(dx * dx + dy * dy + dz * dz)
             # dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line((p.x, p.y), (cam_world.x, cam_world.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
-            self.shader_renderer.text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
+            self.shader_renderer.text_renderer.render_text(f"{dist * 1000:.2f} MM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
         if len(self.click_history) == 2:
             p0, p1 = self.click_history
@@ -192,7 +192,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             dy = p1.y - p0.y
             dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line((p0.x, p0.y), (p1.x, p1.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
-            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 1000:.2f} MM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
     def draw_detection_boxes(self):
         for i in range(self.cam_widget.numObj):
@@ -307,7 +307,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
                     return
                 depth_val_mm = float(self.depth_arr[y, x])
                 self.shader_renderer.text_renderer.render_text(
-                    f"DEPTH: {depth_val_mm:.2f}", x, y - 30, 1.0, (1, 0, 0), self.hud_proj_mat
+                    f"DEPTH: {depth_val_mm:.2f} MM", x, y - 30, 1.0, (1, 0, 0), self.hud_proj_mat
                 )
 
     ################
