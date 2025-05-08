@@ -161,7 +161,7 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def on_start(self, started):
         self.started = started
-        if not self.started:
+        if self.started:
             print("Starting")
             self.main_window.reset_run_statistics()
             self.started = True

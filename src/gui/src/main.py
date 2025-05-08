@@ -25,7 +25,7 @@ from widgets.enums import CameraParams
 
 
 class CommunicationHandler(QObject):
-    start_signal = pyqtSignal()
+    start_signal = pyqtSignal(object)
     message_signal = pyqtSignal(str)
     waypoints_signal = pyqtSignal(object)
     params_signal = pyqtSignal(object)
