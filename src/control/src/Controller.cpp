@@ -112,7 +112,7 @@ public:
     }
     ros::NodeHandle& nh;
     ros::Subscriber model_states;
-    ros::Time last_sent_time;
+    ros::Time last_sent_time = ros::Time::now();
 
     bool initialized = false;
     bool wait_for_green_flag = false;
