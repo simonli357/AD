@@ -1,10 +1,9 @@
 #include "msg/RunMsg.hpp"
 #include <cstdint>
-#include <utility>
 
 void RunMsg::encode(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init) {
     this->v_ref = v_ref;
-    this->path_name = std::move(path_name);
+    this->path_name = path_name;
     this->x_init = x_init;
     this->y_init = y_init;
     this->yaw_init = yaw_init;

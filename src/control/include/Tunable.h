@@ -10,7 +10,7 @@
 
 namespace Tunable {
     // launch args
-    inline bool sign, ekf, lane, real, dashboard, keyboardControl, pubWaypoints, hasGps;
+    inline bool sign, ekf, lane, real, dashboard, keyboardControl, pubWaypoints, hasGps, useGps;
     inline bool emergency = false;
     inline double T, v_ref, T_park;
     inline int N;
@@ -76,6 +76,7 @@ namespace Tunable {
       CHECK_PARAM("/kb", keyboardControl);
       CHECK_PARAM("/dashboard", dashboard);
       CHECK_PARAM("/gps", hasGps);
+      CHECK_PARAM("/use_gps", useGps);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;

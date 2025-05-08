@@ -9,16 +9,21 @@ from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QByteArray
+from collections import OrderedDict
 
 
 class UdpConnection:
-    def __init__(self, udp_socket=None):
+    def __init__(self, udp_socket=None, server=None):
         self.socket = udp_socket
+        self.server = server
         self.MAX_DGRAM = 65507
 
-        self._raw_image = queue.Queue(maxsize=1)
-        self._raw_depth = queue.Queue(maxsize=1)
-        self._raw_other = queue.Queue(maxsize=1)
+        self._raw_image = queue.Queue()
+        self._raw_depth = queue.Queue()
+        self._raw_other = queue.Queue()
+
+        self.image_map = OrderedDict()
+        self.depth_map = OrderedDict()
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
@@ -30,25 +35,38 @@ class UdpConnection:
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
 
+        self.show_depth = False
+        self.alive = True
+
         if udp_socket is not None:
             threading.Thread(target=self._receive_loop, daemon=True).start()
+            threading.Thread(target=self._other_worker, daemon=True).start()
             threading.Thread(target=self._image_worker, daemon=True).start()
             threading.Thread(target=self._depth_worker, daemon=True).start()
-            threading.Thread(target=self._other_worker, daemon=True).start()
+
+    def broadcast(self, payload):
+        for key in self.server.dashboard_clients.keys():
+            self.socket.sendto(payload, (key, self.server.udp_port))
 
     def _receive_loop(self):
         """Read UDP datagrams and push raw payloads into one of three queues."""
-        while True:
+        while self.alive:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
                 if len(seg) < 5:
                     continue
+                if self.server.is_host:
+                    self.broadcast(seg)
                 typ = seg[4]
                 payload = seg[5:]
                 if typ == 5:       # RGB frame
-                    self._enqueue_raw(self._raw_image, payload)
+                    num_segments = struct.unpack('<H', seg[:2])[0]
+                    seg_num = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_image, (num_segments, seg_num, payload))
                 elif typ == 6:     # Depth frame
-                    self._enqueue_raw(self._raw_depth, payload)
+                    num_segments = struct.unpack('<H', seg[:2])[0]
+                    seg_num = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
                 else:              # everything else
                     if typ in (1, 2, 3, 4, 7, 8):
                         self._enqueue_raw(self._raw_other, (typ, payload))
@@ -63,19 +81,31 @@ class UdpConnection:
             pass
 
     def _image_worker(self):
-        while True:
-            raw = self._raw_image.get()
+        while self.alive:
             try:
+                num_segments, seg_num, payload = self._raw_image.get()
+                self.image_map[seg_num] = payload
+                if len(self.image_map.keys()) == num_segments:
+                    raw = b''.join(self.image_map.values())
+                    self.image_map.clear()
+                else:
+                    continue
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
-            except Exception as e:
-                print(e)
+            except Exception:
+                continue
 
     def _depth_worker(self):
-        while True:
-            raw = self._raw_depth.get()
+        while self.alive:
             try:
+                num_segments, seg_num, payload = self._raw_depth.get()
+                self.depth_map[seg_num] = payload
+                if len(self.depth_map.keys()) == num_segments:
+                    raw = b''.join(self.depth_map.values())
+                    self.depth_map.clear()
+                else:
+                    continue
                 np_array = np.frombuffer(raw, dtype=np.uint8)
                 depth = cv2.imdecode(np_array, cv2.IMREAD_UNCHANGED)
                 depth_normalized = cv2.normalize(depth, None, 50, 255, cv2.NORM_MINMAX)
@@ -86,12 +116,11 @@ class UdpConnection:
                 pix = QPixmap.fromImage(qt_image)
                 self._try_put(self.depth_buf, pix)
                 self._try_put(self.depth_arr_buf, depth)
-            except Exception as e:
-                print("depth_worker error:", e)
+            except Exception:
                 continue
 
     def _other_worker(self):
-        while True:
+        while self.alive:
             typ, raw = self._raw_other.get()
             try:
                 if typ == 1:  # lane2

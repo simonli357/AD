@@ -50,11 +50,11 @@ class TcpClient {
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(cv::Mat &&img);
-	void send_image_depth(cv::Mat &&img);
+	void send_image_rgb(const cv::Mat &img);
+	void send_image_depth(const cv::Mat &img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(std::vector<float> &&data);
+	void send_sign(const std::vector<float> &data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);
@@ -80,9 +80,8 @@ class TcpClient {
 	const uint16_t tcp_port = 49153;
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
-	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
-	const size_t buffer_size = 4096;
+	const int buffer_size = 2097152;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	int swload_counter = 0;

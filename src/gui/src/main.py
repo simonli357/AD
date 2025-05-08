@@ -240,10 +240,10 @@ class MainWindow(QMainWindow):
         depth_arr = None
         if self.cam_widget.show_depth:
             depth_image = self.server.udp_connection.parse_depth_image()
-            depth_arr = self.server.udp_connection.parse_depth_arr()
         else:
             rgb_image = self.server.udp_connection.parse_rgb_image()
 
+        depth_arr = self.server.udp_connection.parse_depth_arr()
         sign = self.server.udp_connection.parse_sign()
         waypoint = self.server.udp_connection.parse_waypoint()
         road_obj = self.server.udp_connection.parse_road_object()
@@ -275,9 +275,9 @@ class MainWindow(QMainWindow):
             rgb_image = self.server.udp_connection.parse_rgb_image()
             if rgb_image is not None:
                 now = time.time()
-                if abs(self.car_widget.speed) > 0.02:
-                    filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                    rgb_image.save(filename, 'JPG', quality=100)
+                # if abs(self.car_widget.speed) > 0.02:
+                filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
         try:
@@ -286,9 +286,10 @@ class MainWindow(QMainWindow):
             self.terminal_widget.terminate_processes()
             time.sleep(0.2)
             print("Processes terminated")
+            self.server.udp_connection.alive = False
             if self.server.tcp_socket:
                 self.server.tcp_socket.close()
-                self.server.udp_socket.close()
+            self.server.udp_socket.close()
             print("Sockets closed")
         except Exception:
             pass
