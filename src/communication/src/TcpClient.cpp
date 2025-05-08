@@ -444,7 +444,6 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 		std::memcpy(udp_buffer.data(), &total_segments, 2);
         std::memcpy(udp_buffer.data() + 2, &total_segments, 2);
 		udp_buffer[4] = udp_data_types[4];
-
 		std::memcpy(udp_buffer.data() + header_size, image.data(), image.size());
 		sendto(udp_socket, udp_buffer.data(), header_size + image.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}

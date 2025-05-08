@@ -159,7 +159,8 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.main_window.buttons_overlay.handle_cam_lock_clicked()
         self.update_stop_button_style(self.start_btn, self.started)
 
-    def on_start(self):
+    def on_start(self, started):
+        self.started = started
         if not self.started:
             print("Starting")
             self.main_window.reset_run_statistics()

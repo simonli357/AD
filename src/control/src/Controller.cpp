@@ -57,6 +57,11 @@ public:
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
             [this]() {
+                if (state == STATE::INIT || state == STATE::DONE) {
+                    utils.tcp_client->send_start_srv(false);
+                } else {
+                    utils.tcp_client->send_start_srv(true);
+                }
                 utils.fetch_run_params();
                 utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
             }
@@ -83,8 +88,8 @@ public:
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                utils.tcp_client->send_start_srv(started);
                 start_bool_callback(started);
+                utils.tcp_client->send_start_srv(started);
             }
         );
 
