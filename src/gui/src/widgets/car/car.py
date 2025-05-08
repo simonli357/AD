@@ -68,7 +68,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.heap_usage = load_msg.heap_usage
         self.hud_renderer.stack_usage = load_msg.stack_usage
 
-    def update_ground_truth(model_states):
+    def update_ground_truth(self, model_states):
         try:
             # Find index of 'car1'
             idx = model_states.name.index("car1")
