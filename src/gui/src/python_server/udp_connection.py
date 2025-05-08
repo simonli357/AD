@@ -16,7 +16,7 @@ class UdpConnection:
     def __init__(self, udp_socket=None, server=None):
         self.socket = udp_socket
         self.server = server
-        self.MAX_DGRAM = 65507
+        self.MAX_DGRAM = 1024
 
         self._raw_image = queue.Queue()
         self._raw_depth = queue.Queue()

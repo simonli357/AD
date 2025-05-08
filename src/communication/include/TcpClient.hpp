@@ -86,7 +86,7 @@ class TcpClient {
 	const size_t message_size = 4;
 	int swload_counter = 0;
 	int rgb_img_quality = 30;
-	const uint32_t MAX_DGRAM = 65507;
+	const uint32_t MAX_DGRAM = 1024;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
