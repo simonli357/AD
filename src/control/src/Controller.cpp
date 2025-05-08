@@ -54,7 +54,7 @@ public:
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
 
-        ros::Subscriber sub = nh.subscribe<gazebo_msgs::ModelStates::ConstPtr>("/gazebo/model_states", 1, &StateMachine::model_states_callback);
+        ros::Subscriber sub = nh.subscribe("/gazebo/model_states", 1, &StateMachine::model_states_callback, this);
         
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
