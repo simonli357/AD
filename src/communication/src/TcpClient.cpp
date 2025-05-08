@@ -439,11 +439,11 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 	uint32_t length = image_buffer.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
-		std::vector<uint8_t> segment(MAX_DGRAM, 0);
-		std::memcpy(segment.data(), &length, message_size);
-		segment[4] = udp_data_types[4];
-		std::memcpy(segment.data() + header_size, &image_buffer[0], image_buffer.size());
-		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+		std::memcpy(udp_buffer.data(), &length, message_size);
+		udp_buffer[4] = udp_data_types[4];
+		std::memcpy(udp_buffer.data() + header_size, &image_buffer[0], image_buffer.size());
+		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
