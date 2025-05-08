@@ -460,8 +460,8 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 		udp_buffer[4] = udp_data_types[5];
 
         size_t start = seg_num * payload_size;
-        size_t end = std::min(start + payload_size, static_cast<size_t>(length)) - 1;
-        size_t chunk_size = end - start + 1;
+        size_t end = std::min(start + payload_size, static_cast<size_t>(length));
+        size_t chunk_size = end - start;
 
 		std::memcpy(udp_buffer.data() + header_size, image.data() + start, chunk_size);
 		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
