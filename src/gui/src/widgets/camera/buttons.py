@@ -156,7 +156,7 @@ class ButtonsWidget(QtWidgets.QWidget):
             self.start_btn.setText("")
         else:
             self.start_btn.setText("")
-        self.main_window.buttons_overlay.handle_cam_lock_clicked()
+        self.main_window.buttons_overlay.handle_cam_lock_clicked(self.started)
         self.update_stop_button_style(self.start_btn, self.started)
 
     def on_start(self, started):
