@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 from std_msgs.msg import Float32MultiArray
-from geographic_msgs.msg import Pose
+from geometry_msgs.msg import Pose
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
 from PyQt5.QtGui import QPixmap, QImage
