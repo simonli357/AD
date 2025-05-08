@@ -482,11 +482,14 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-	swload->refresh();
-    std::memset(udp_buffer.data(), 0, udp_buffer.size());
-	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
-	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
-	sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	auto fn = [this]() {
+        swload->refresh();
+        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
+        std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
+        sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	};
+	add_dgram_task(std::move(fn));
 }
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
