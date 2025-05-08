@@ -447,7 +447,7 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 
         size_t start = seg_num * payload_size;
         size_t end = std::min(start + payload_size, static_cast<size_t>(length)) - 1;
-        size_t chunk_size = end - start;
+        size_t chunk_size = end - start + 1;
 
 		std::memcpy(segment.data() + header_size, image.data() + start, chunk_size);
 		sendto(udp_socket, segment.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
@@ -468,7 +468,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 
         size_t start = seg_num * payload_size;
         size_t end = std::min(start + payload_size, static_cast<size_t>(length)) - 1;
-        size_t chunk_size = end - start;
+        size_t chunk_size = end - start + 1;
 
 		std::memcpy(segment.data() + header_size, image.data() + start, chunk_size);
 		sendto(udp_socket, segment.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
