@@ -89,7 +89,11 @@ public:
         utils.tcp_client->set_start_callback(
             [this](bool started) {
                 start_bool_callback(started);
-                utils.tcp_client->send_start_srv(started);
+                if (state == STATE::INIT || state == STATE::DONE) {
+                    utils.tcp_client->send_start_srv(false);
+                } else {
+                    utils.tcp_client->send_start_srv(true);
+                }
             }
         );
 
