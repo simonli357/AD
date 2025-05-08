@@ -21,7 +21,7 @@ class UdpConnection:
 
         self._raw_image = queue.Queue(maxsize=1024)
         self._raw_depth = queue.Queue(maxsize=1024)
-        self._raw_other = queue.Queue(maxsize=1024)
+        self._raw_other = queue.Queue()
 
         self.image_map = OrderedDict()
         self.depth_map = OrderedDict()
