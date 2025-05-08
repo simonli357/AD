@@ -112,7 +112,6 @@ public:
     }
     ros::NodeHandle& nh;
     ros::Subscriber model_states;
-    ros::Time last_sent_time = ros::Time::now();
 
     bool initialized = false;
     bool wait_for_green_flag = false;
@@ -146,9 +145,6 @@ public:
         client.call(srv);
     }
     void model_states_callback(const gazebo_msgs::ModelStates::ConstPtr& msg)  {
-        ros::Time now = ros::Time::now();
-        if ((now - last_sent_time).toSec() < 0.032) return;  // 30 Hz throttle
-        last_sent_time = now;
         auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
         if (it == msg->name.end()) {
             return;
