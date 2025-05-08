@@ -62,7 +62,7 @@ class UdpConnection:
                 if typ == 5:       # RGB frame
                     num_segments = struct.unpack('<H', seg[:2])[0]
                     seg_num = struct.unpack('<H', seg[2:4])[0]
-                    self._enqueue_raw(self._raw_image, (num_segments, seg_num, payload))
+                    self._enqueue_raw(self._raw_image, payload)
                 elif typ == 6:     # Depth frame
                     num_segments = struct.unpack('<H', seg[:2])[0]
                     seg_num = struct.unpack('<H', seg[2:4])[0]
@@ -83,13 +83,7 @@ class UdpConnection:
     def _image_worker(self):
         while self.alive:
             try:
-                num_segments, seg_num, payload = self._raw_image.get()
-                self.image_map[seg_num] = payload
-                if len(self.image_map.keys()) == num_segments:
-                    raw = b''.join(self.image_map.values())
-                    self.image_map.clear()
-                else:
-                    continue
+                raw = self._raw_image.get()
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
