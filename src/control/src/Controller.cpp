@@ -144,7 +144,7 @@ public:
         client.call(srv);
     }
     void model_states_callback(const gazebo_msgs::ModelStates::ConstPtr& msg)  {
-        utils.tcp_client->send_model_states(msg);
+        utils.tcp_client->send_model_states(*msg);
     }
     int initialize() {
         if (initialized) return 1;

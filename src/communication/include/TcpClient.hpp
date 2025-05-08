@@ -67,7 +67,7 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
-	void send_model_states(const gazebo_msgs::ModelStates::ConstPtr &msg);
+	void send_model_states(const gazebo_msgs::ModelStates &msg);
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }

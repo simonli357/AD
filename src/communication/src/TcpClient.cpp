@@ -489,7 +489,7 @@ void TcpClient::send_swload() {
 	sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
-void TcpClient::send_model_states(const gazebo_msgs::ModelStates::ConstPtr &msg) {
+void TcpClient::send_model_states(const gazebo_msgs::ModelStates &msg) {
 	auto fn = [this, msg]() {
         std::memset(udp_buffer.data(), 0, udp_buffer.size());
 		uint32_t length = ros::serialization::serializationLength(msg);
