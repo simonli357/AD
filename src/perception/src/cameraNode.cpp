@@ -216,7 +216,7 @@ class CameraNode {
 			}
 		}
 		if (Sign.tcp_client != nullptr && send_depth) {
-			Sign.tcp_client->send_image_depth(std::move(depthImage));
+			Sign.tcp_client->send_image_depth(depthImage);
 		}
 		// mutex.unlock();
 	}
@@ -326,7 +326,9 @@ class CameraNode {
 		}
 		if (Sign.tcp_client != nullptr) {
 			Sign.tcp_client->send_image_rgb(colorImage);
-			Sign.tcp_client->send_image_depth(depthImage);
+            if (send_depth) {
+                Sign.tcp_client->send_image_depth(depthImage);
+            }
 		}
 		// if (pubImage) {
 		// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
