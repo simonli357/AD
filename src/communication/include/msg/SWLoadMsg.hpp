@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Encoder.hpp"
-#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
 #include <hwloc.h>
 #include <unordered_map>
@@ -16,7 +16,7 @@ class SWLoadMsg : public Encoder {
 	SWLoadMsg &operator=(const SWLoadMsg &) = delete;
 	~SWLoadMsg() = default;
 
-	std_msgs::Float64MultiArray cores_usage;
+	std_msgs::Float32MultiArray cores_usage;
 	float ram_usage;
 	float temperature;
 	float heap_usage;

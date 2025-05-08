@@ -262,7 +262,11 @@ class ShaderRenderer:
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(x, y, 0.0))
         model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
-        model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        if isinstance(scale, tuple):
+            model = glm.scale(model, glm.vec3(*scale))
+        else:
+            model = glm.scale(model, glm.vec3(scale, scale, scale))
 
         gl.glUniformMatrix4fv(car_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
         gl.glUniformMatrix4fv(car_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))

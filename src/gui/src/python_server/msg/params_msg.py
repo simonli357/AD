@@ -1,5 +1,5 @@
 from python_server import decoder
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float32MultiArray
 import numpy as np
 
 
@@ -13,7 +13,7 @@ class ParamsMsg:
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
-        state_refs = Float64MultiArray().deserialize(splits[0])
-        attributes = Float64MultiArray().deserialize(splits[1])
+        state_refs = Float32MultiArray().deserialize(splits[0])
+        attributes = Float32MultiArray().deserialize(splits[1])
         self.state_refs = np.array(state_refs.data).reshape(3, -1)
         self.attributes = np.array(attributes.data)

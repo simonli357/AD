@@ -100,8 +100,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         self.next_destination = None
         self.no_destinations = False
 
-        self.car_x = 11.75
-        self.car_y = 2.05
+        self.car_x = 11.8
+        self.car_y = 2.052
         self.car_yaw = 0
 
         self.sign_images = []
@@ -144,12 +144,16 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)  # Fastest mode
         gl.glShadeModel(gl.GL_FLAT)        # Faster than GL_SMOOTH if applicable
 
+        self.SCREEN_W = 1175
+        self.SCREEN_H = 702
+        self.CAR_SCALE = (1.5, 1.3, 1.4)
+
         self.ortho_proj_mat = glm.ortho(0.0, self.width(), self.height(), 0.0, -1.0, 1.0)
         self.ortho_view_mat = glm.mat4(1.0)
 
         zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
+        half_width = self.SCREEN_W * zoom_factor / 2
+        half_height = self.SCREEN_H * zoom_factor / 2
 
         self.proj_mat = glm.ortho(
             -half_width, half_width,
@@ -187,10 +191,10 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
         self.shader_renderer.draw_texture(
             mat=self.shader_renderer.bfmc_track_model,
-            x=-self.width() / 2,
-            y=-self.height() / 2,
+            x=-self.SCREEN_W / 2,
+            y=-self.SCREEN_H / 2,
             z=0,
-            scale=(self.width(), self.height()),
+            scale=(self.SCREEN_W, self.SCREEN_H),
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
@@ -202,7 +206,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                 self.waypoints_renderer.draw(self.proj_mat, self.view_mat)
 
             car_x, car_y = self.get_gl_coords(self.car_x, self.car_y)
-            self.shader_renderer.draw_car(car_x, car_y, self.car_yaw, NamedColor.WHITE, 1.5, self.view_mat, self.proj_mat)
+            self.shader_renderer.draw_car(car_x, car_y, self.car_yaw, NamedColor.WHITE, self.CAR_SCALE, self.view_mat, self.proj_mat)
             self.shader_renderer.draw_axis2D(car_x, car_y, self.car_yaw, 25.0, self.view_mat, self.proj_mat)
 
             self.find_next_destination()
@@ -214,7 +218,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.draw_measurement_points()
             self.update_mouse_pos()
 
-        self.draw_legend(self.width() / 2.7, self.height() / 3)
+        self.draw_legend(self.SCREEN_W / 2.7, self.SCREEN_H / 3)
 
         self.update()
 
@@ -234,7 +238,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             dy = p1[1] - p0[1]
             dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line(self.get_gl_coords(p0[0], p0[1]), self.get_gl_coords(p1[0], p1[1]), NamedColor.RED.value, self.view_mat, self.proj_mat)
-            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
+            self.shader_renderer.large_text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.SCREEN_W, 0.5 * self.SCREEN_H, 1.0, (0.0, 1.0, 0.0), self.ortho_proj_mat)
 
     def is_near(self, x1: float, y1: float, x2: float, y2: float, rad1: float, rad2: float):
         return (x2 - x1)**2 + (y2 - y1)**2 <= (rad1 + rad2)**2
@@ -308,7 +312,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, 1.5, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, self.CAR_SCALE, self.view_mat, self.proj_mat)
                     self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
@@ -438,7 +442,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             # orientation = 2 * np.pi - orientation
 
             if self.object_dict[obj_type] == 'Car':
-                self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, 1.5, self.view_mat, self.proj_mat)
+                self.shader_renderer.draw_car(x, y, orientation, NamedColor.ORANGE, self.CAR_SCALE, self.view_mat, self.proj_mat)
                 self.shader_renderer.draw_axis2D(x, y, orientation, 25.0, self.view_mat, self.proj_mat)
             else:
                 texture = self.sign_models[int(obj_type)]
@@ -485,8 +489,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         if not self.show_mouse:
             return
         if self.current_mouse_pos is not None:
-            widget_width = self.width()
-            widget_height = self.height()
+            widget_width = self.SCREEN_W
+            widget_height = self.SCREEN_H
             if widget_height == 0 or widget_width == 0:
                 return
 
@@ -499,14 +503,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             self.shader_renderer.text_renderer.render_text(f"X {x_world:.2f}   Y {y_world:.2f}", x_scene, y_scene - 30, 1.0, (0, 1, 0), self.ortho_proj_mat)
 
     def get_real_world_coords(self, x_scene, y_scene):
-        widget_width = self.width()
-        widget_height = self.height()
+        widget_width = self.SCREEN_W
+        widget_height = self.SCREEN_H
         if widget_height == 0 or widget_width == 0:
             return (0.0, 0.0)
 
         # Convert screen coordinates to NDC (Normalized Device Coordinates)
-        ndc_x = (2.0 * x_scene / widget_width) - 1.0
-        ndc_y = 1.0 - (2.0 * y_scene / widget_height)
+        ndc_x = (2.0 * x_scene / self.width()) - 1.0
+        ndc_y = 1.0 - (2.0 * y_scene / self.height())
 
         # Compute half width and height in view space after zoom
         hw = (widget_width / self.view_zoom) / 2.0
@@ -527,8 +531,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         return real_world_x, real_world_y
 
     def get_gl_coords(self, real_x, real_y):
-        widget_width = self.width()
-        widget_height = self.height()
+        widget_width = self.SCREEN_W
+        widget_height = self.SCREEN_H
         if widget_height == 0 or widget_width == 0:
             return (0.0, 0.0)
 
@@ -540,7 +544,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
     def update_waypoints(self):
         if self.main_window.state_refs_np is not None and hasattr(self, 'proj_mat') and hasattr(self, 'view_mat'):
-            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, self.width(), self.height())
+            self.waypoints_renderer.update_waypoints(self.main_window.state_refs_np, self.main_window.attributes_np, self.SCREEN_W, self.SCREEN_H)
             self._refs_xs = self.main_window.state_refs_np[0, :].copy()
             self._refs_ys = self.main_window.state_refs_np[1, :].copy()
             self._refs_len = self._refs_xs.shape[0]
@@ -570,14 +574,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def resizeGL(self, w, h):
         gl.glViewport(0, 0, w, h)
         self.ortho_proj_mat = glm.ortho(0.0, w, h, 0.0, -1.0, 1.0)
-        zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
-        self.proj_mat = glm.ortho(
-            -half_width, half_width,
-            -half_height, half_height,
-            -100.0, 100.0
-        )
         self.update_waypoints()
         self.setup_destinations_renderer()
 
@@ -664,14 +660,14 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         # Calculate new center to maintain mouse position
         zoom_ratio = old_zoom / self.view_zoom
         self.view_center += glm.vec2(
-            mouse_x * (self.width() / 2) * (1 - zoom_ratio) / old_zoom,
-            mouse_y * (self.height() / 2) * (1 - zoom_ratio) / old_zoom
+            mouse_x * (self.SCREEN_W / 2) * (1 - zoom_ratio) / old_zoom,
+            mouse_y * (self.SCREEN_H / 2) * (1 - zoom_ratio) / old_zoom
         )
 
         # Update projection matrix
         zoom_factor = 1.0 / self.view_zoom
-        half_width = self.width() * zoom_factor / 2
-        half_height = self.height() * zoom_factor / 2
+        half_width = self.SCREEN_W * zoom_factor / 2
+        half_height = self.SCREEN_H * zoom_factor / 2
 
         self.proj_mat = glm.ortho(
             -half_width, half_width,

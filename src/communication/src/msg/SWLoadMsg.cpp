@@ -1,6 +1,6 @@
 #include "SWLoadMsg.hpp"
 #include "ros/serialization.h"
-#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
 #include <cstdio>
 #include <dirent.h>
@@ -42,7 +42,7 @@ std::vector<uint8_t> SWLoadMsg::get_lengths() {
 std::vector<uint8_t> SWLoadMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
-	std::vector<uint8_t> cores_usage_data = serializeFloat64MultiArray(cores_usage);
+	std::vector<uint8_t> cores_usage_data = serializeFloat32MultiArray(cores_usage);
 
 	size_t offset = 0;
 	std::memcpy(data.data(), cores_usage_data.data(), cores_usage_length);
@@ -98,7 +98,7 @@ void SWLoadMsg::encode() {
 void SWLoadMsg::get_cores_usage() {
 	auto curr_stats = read_proc_stat();
 
-	std::vector<double> utilizations;
+	std::vector<float> utilizations;
 	if (first_core_query_) {
 		first_core_query_ = false;
 		prev_stats_ = curr_stats;
@@ -123,7 +123,7 @@ void SWLoadMsg::get_cores_usage() {
 		prev_stats_ = std::move(curr_stats);
 	}
 
-	std_msgs::Float64MultiArray result;
+	std_msgs::Float32MultiArray result;
 	result.data = std::move(utilizations);
 	cores_usage = std::move(result);
 }

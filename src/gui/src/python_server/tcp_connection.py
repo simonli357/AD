@@ -1,6 +1,7 @@
 import threading
 import struct
 import time
+import socket
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
@@ -20,6 +21,11 @@ class TcpConnection:
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
+        self.lock = threading.Lock()
+
+        self.buf_size = 2097152
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buf_size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buf_size)
 
         self.on_packet = on_packet
         self.on_start = None
@@ -69,14 +75,13 @@ class TcpConnection:
         data = b""
         try:
             while len(data) < length:
-                chunk = self.socket.recv(min(4096, length - len(data)))
+                chunk = self.socket.recv(min(self.buf_size, length - len(data)))
                 if not chunk:
-                    raise ConnectionError("Connection lost")
+                    return None
                 data += chunk
             return data
-        except Exception as e:
-            print(e)
-            return data
+        except Exception:
+            return None
 
     def receive(self):
         header_size = 5
@@ -86,8 +91,8 @@ class TcpConnection:
                 # Receive the header (5 bytes)
                 while self.alive:
                     try:
-                        header = self.socket.recv(header_size)
-                        if len(header) < header_size:
+                        header = self.recvall(header_size)
+                        if header is None:
                             continue
                         break
                     except Exception as e:
@@ -97,9 +102,11 @@ class TcpConnection:
                 message_type = header[message_size:header_size]
                 # Receive the data based on the length from the header
                 data = self.recvall(length)
+                if data is None:
+                    continue
                 packet = header + data
                 if self.on_packet:
-                    self.on_packet(self, packet)
+                    self.on_packet(self, packet, self.lock)
                 if self.is_dashboard and self.is_host:
                     continue
                 # Process the data
@@ -117,34 +124,41 @@ class TcpConnection:
         data = string.encode('utf-8')
         length = struct.pack('<I', len(string))
         bytes = length + self.types[0] + data
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_trigger(self, request, response):
         bytes = self.triggers.encode(request, response)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
         bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_go_to_cmd_srv(self, cursor_coords):
         bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_set_states_srv(self, x, y):
         bytes = self.set_states_srv_msg.encode(x, y)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_waypoints_srv(self, vrefName, pathName, x0, y0, yaw0):
         bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     def send_start_srv(self, start):
         str = "start" if start else "stop"
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
         bytes = length + self.types[7] + data
-        self.socket.sendall(bytes)
+        with self.lock:
+            self.socket.sendall(bytes)
 
     ###################
     # Decode
@@ -207,7 +221,7 @@ class TcpConnection:
 
     def parse_start_srv(self, bytes):
         try:
-            self.start_srv_msg = bytes == b'\x01'
+            # self.start_srv_msg = bytes == b'\x01'
             while self.on_start is None:
                 time.sleep(0.2)
             self.on_start()
@@ -216,6 +230,7 @@ class TcpConnection:
 
     def parse_params(self, bytes):
         try:
+            pass
             self.params.decode(bytes)
             while self.on_params is None:
                 time.sleep(0.2)

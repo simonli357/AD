@@ -29,6 +29,7 @@
 #include <iostream>
 #include "Runs.h"
 #include "PathManager.h"
+#include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -40,6 +41,9 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
     initialize_tcp_client();
     initialize();
+    while (!imuInitialized) {
+        ros::spinOnce();
+    }
     fetch_run_params();
 }
 
@@ -64,6 +68,11 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
+    if (!Tunable::useGps) {
+        debug("GPS not found, skipping", 1);
+        return;
+    }
+
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
     samples.reserve(sample_count);
@@ -77,31 +86,28 @@ void Utility::fetch_run_params() {
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
-    // std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    // while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
-    //     ros::spinOnce();
-    //     rate.sleep();
-    // }
+    std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
+    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
+        ros::spinOnce();
+        rate.sleep();
+    }
 
-    // sub.shutdown();
+    sub.shutdown();
 
-    // double sum_x = 0.0, sum_y = 0.0;
-    // for (const auto& m : samples) {
-    //     sum_x += m->pose.pose.position.x;
-    //     sum_y += m->pose.pose.position.y;
-    // }
-    // double avg_x = sum_x / static_cast<double>(samples.size());
-    // double avg_y = sum_y / static_cast<double>(samples.size());
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& m : samples) {
+        sum_x += m->pose.pose.position.x;
+        sum_y += m->pose.pose.position.y;
+    }
+    double avg_x = sum_x / static_cast<double>(samples.size());
+    double avg_y = sum_y / static_cast<double>(samples.size());
 
-    // std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
-    // while (!imuInitialized) {
-    //     ros::spinOnce();
-    // }
-    // std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
+    std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
+    std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
-    // this->x0   = avg_x;
-    // this->y0   = avg_y;
-    // this->yaw0 = yaw;
+    this->x0   = avg_x;
+    this->y0   = avg_y;
+    this->yaw0 = yaw;
     pathName    = "run189";
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
