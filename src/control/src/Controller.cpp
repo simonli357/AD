@@ -164,6 +164,13 @@ public:
         PathManager::find_intersections(utils);
         mpc.reset_solver();
         initialized = true;
+        
+        // Authorize python client to start
+        if (state == STATE::INIT || state == STATE::DONE) {
+            utils.tcp_client->send_start_srv(false);
+        } else {
+            utils.tcp_client->send_start_srv(true);
+        }
         return 1;
     }
     int start() {

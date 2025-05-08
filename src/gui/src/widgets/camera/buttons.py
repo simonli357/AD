@@ -51,6 +51,8 @@ class ButtonsWidget(QtWidgets.QWidget):
         for btn in self.buttons:
             self.layout.addWidget(btn, 1)
 
+        self.start_btn.setDisabled(True)
+
         self.layout.addWidget(self.timer_label, 2)
 
         self.setStyleSheet("""
@@ -163,7 +165,6 @@ class ButtonsWidget(QtWidgets.QWidget):
         self.started = started
         if self.started:
             print("Starting")
-            self.main_window.reset_run_statistics()
             self.started = True
             if self.start_time is None:
                 self.start_time = time.time()
