@@ -434,23 +434,23 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
-	std::vector<uchar> image;
-	cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
-	uint32_t length = image.size();
+    image_buffer.clear();
+	cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
+	uint32_t length = image_buffer.size();
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	if (total_segments == 1) {
 		std::vector<uint8_t> segment(MAX_DGRAM, 0);
 		std::memcpy(segment.data(), &length, message_size);
 		segment[4] = udp_data_types[4];
-		std::memcpy(segment.data() + header_size, &image[0], image.size());
+		std::memcpy(segment.data() + header_size, &image_buffer[0], image_buffer.size());
 		sendto(udp_socket, segment.data(), segment.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
-	std::vector<uchar> image;
-	cv::imencode(".png", img, image, {cv::IMWRITE_PNG_COMPRESSION, 3});
-	uint32_t length = image.size();
+    image_buffer.clear();
+	cv::imencode(".png", img, image_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
+	uint32_t length = image_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
 	uint16_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	for (uint16_t seg_num = 0; seg_num < total_segments; ++seg_num) {
@@ -463,7 +463,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
         size_t end = std::min(start + payload_size, static_cast<size_t>(length));
         size_t chunk_size = end - start;
 
-		std::memcpy(udp_buffer.data() + header_size, image.data() + start, chunk_size);
+		std::memcpy(udp_buffer.data() + header_size, image_buffer.data() + start, chunk_size);
 		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
