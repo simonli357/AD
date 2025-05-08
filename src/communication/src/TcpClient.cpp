@@ -439,18 +439,14 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 	uint32_t length = image.size();
     size_t payload_size = MAX_DGRAM - header_size;
 	uint16_t total_segments = std::ceil(static_cast<float>(length) / payload_size);
-	for (uint16_t seg_num = 0; seg_num < total_segments; ++seg_num) {
+	if (total_segments == 1) {
         std::memset(udp_buffer.data(), 0, udp_buffer.size());
 		std::memcpy(udp_buffer.data(), &total_segments, 2);
-        std::memcpy(udp_buffer.data() + 2, &seg_num, 2);
+        std::memcpy(udp_buffer.data() + 2, &total_segments, 2);
 		udp_buffer[4] = udp_data_types[4];
 
-        size_t start = seg_num * payload_size;
-        size_t end = std::min(start + payload_size, static_cast<size_t>(length)) - 1;
-        size_t chunk_size = end - start + 1;
-
-		std::memcpy(udp_buffer.data() + header_size, image.data() + start, chunk_size);
-		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		std::memcpy(udp_buffer.data() + header_size, image.data(), image.size());
+		sendto(udp_socket, udp_buffer.data(), header_size + image.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
