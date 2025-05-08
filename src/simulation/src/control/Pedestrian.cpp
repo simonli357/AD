@@ -40,7 +40,7 @@ void Pedestrian::run() {
 		move_pedestrian_to(p.x, p.y, yaw);
 		ros::Duration(6.0).sleep();
 		hide_pedestrian();
-		double delay = delay_dist(60.0);
+		double delay = 60.0;
 		ros::Duration(delay).sleep();
 	}
 }
