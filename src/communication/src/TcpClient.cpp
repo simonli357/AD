@@ -419,7 +419,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	add_dgram_task(std::move(fn));
 }
 
-void TcpClient::send_sign(std::vector<float> &&data) {
+void TcpClient::send_sign(const std::vector<float> &data) {
 	std_msgs::Float32MultiArray array;
 	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
@@ -433,7 +433,7 @@ void TcpClient::send_sign(std::vector<float> &&data) {
 	sendto(udp_socket, bytes.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
-void TcpClient::send_image_rgb(cv::Mat &&img) {
+void TcpClient::send_image_rgb(const cv::Mat &img) {
 	std::vector<uchar> image;
 	cv::imencode(".jpg", img, image, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
 	uint32_t length = image.size();
@@ -454,7 +454,7 @@ void TcpClient::send_image_rgb(cv::Mat &&img) {
 	}
 }
 
-void TcpClient::send_image_depth(cv::Mat &&img) {
+void TcpClient::send_image_depth(const cv::Mat &img) {
 	std::vector<uchar> image;
 	cv::imencode(".png", img, image, {cv::IMWRITE_PNG_COMPRESSION, 3});
 	uint32_t length = image.size();

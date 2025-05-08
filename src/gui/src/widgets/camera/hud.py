@@ -180,9 +180,9 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             p = self.click_history[0]
             dx = p.x - cam_world.x
             dy = p.y - cam_world.y
-            # dz = p.z - cam_world.z
-            # dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-            dist = np.hypot(dx, dy)
+            dz = p.z - cam_world.z
+            dist = np.sqrt(dx * dx + dy * dy + dz * dz)
+            # dist = np.hypot(dx, dy)
             self.shader_renderer.draw_line((p.x, p.y), (cam_world.x, cam_world.y), NamedColor.RED.value, self.view_mat, self.proj_mat, z=0.0)
             self.shader_renderer.text_renderer.render_text(f"{dist * 100:.2f} CM", 0.5 * self.width(), 0.5 * self.height(), 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 

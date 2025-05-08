@@ -93,6 +93,8 @@ public:
                 PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
             }
         );
+
+        initialize();
     }
     ~StateMachine() {
         // utils.stop_car();
@@ -166,7 +168,6 @@ public:
     bool start_bool_callback(bool started) {
         static int history = -1;
         if (started && (state == STATE::INIT || state == STATE::DONE)) {
-            initialize();
             start();
         } else {
             history = state;

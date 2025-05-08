@@ -50,11 +50,11 @@ class TcpClient {
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(cv::Mat &&img);
-	void send_image_depth(cv::Mat &&img);
+	void send_image_rgb(const cv::Mat &img);
+	void send_image_depth(const cv::Mat &img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(std::vector<float> &&data);
+	void send_sign(const std::vector<float> &data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);
