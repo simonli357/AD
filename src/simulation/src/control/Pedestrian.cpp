@@ -18,8 +18,6 @@ Pedestrian::~Pedestrian() {
 
 void Pedestrian::run() {
 	double dist_from_car = 2.0;
-	std::mt19937 rng(std::random_device{}());
-	std::uniform_real_distribution<> delay_dist(10.0, 20.0);
 	while (ros::ok() && alive) {
 		double ego_x;
 		double ego_y;
@@ -40,9 +38,9 @@ void Pedestrian::run() {
 		double pedestrian_y = u.y + dist_from_car * std::sin(yaw);
         Vertex p = traffic_manager.planner->track.find_closest_node(pedestrian_x, pedestrian_y);
 		move_pedestrian_to(p.x, p.y, yaw);
-		ros::Duration(8.0).sleep();
+		ros::Duration(6.0).sleep();
 		hide_pedestrian();
-		double delay = delay_dist(rng);
+		double delay = 60.0;
 		ros::Duration(delay).sleep();
 	}
 }
