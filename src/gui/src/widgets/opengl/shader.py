@@ -29,6 +29,7 @@ class ShaderRenderer:
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
         self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
         self.model_shader = create_shader_program(shader_path('model', 'model.vert'), shader_path('model', 'model.frag'))
+        self.wireframe_shader = create_shader_program(shader_path('wireframe', 'wireframe.vert'), shader_path('wireframe', 'wireframe.frag'))
 
         self.tex_loc = gl.glGetUniformLocation(self.texture_shader, "texture1")
         self.texture_u_model = gl.glGetUniformLocation(self.texture_shader, "model")
@@ -77,6 +78,7 @@ class ShaderRenderer:
             # (object_path args, attribute name)
             (('car', 'white'), 'white_car_model_data'),
             (('car', 'red'), 'red_car_model_data'),
+            (('car', 'orange'), 'wireframe_car_model_data'),
             (('priority_sign', 'prio'), 'prio_sign_model_data'),
             (('oneway_sign', 'oneway'), 'oneway_sign_model_data'),
             (('stop_sign', 'stopsign'), 'stop_sign_model_data'),
@@ -117,6 +119,7 @@ class ShaderRenderer:
 
         self.white_car_model = create_obj(self.white_car_model_data, self.model_shader)
         self.red_car_model = create_obj(self.red_car_model_data, self.model_shader)
+        self.wireframe_car_model = create_obj(self.wireframe_car_model_data, self.wireframe_shader)
 
         self.prio_sign_model = create_obj(self.prio_sign_model_data, self.model_shader)
         self.oneway_sign_model = create_obj(self.oneway_sign_model_data, self.model_shader)
@@ -272,17 +275,38 @@ class ShaderRenderer:
         gl.glUniformMatrix4fv(car_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
         gl.glUniformMatrix4fv(car_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
 
-        if car_model.texture is not None:
-            gl.glUniform1i(car_model.u_hasTex, 1)  # Set to true
-            gl.glActiveTexture(gl.GL_TEXTURE0)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, car_model.texture)
-            gl.glUniform1i(car_model.u_tex, 0)
-        else:
-            gl.glUniform1i(car_model.u_hasTex, 0)
-            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+        gl.glUniform1i(car_model.u_hasTex, 0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         gl.glBindVertexArray(car_model.mesh.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
+
+    def draw_car_wireframe(self, x, y, yaw, color, scale, view_matrix, proj_matrix):
+        car_model = self.wireframe_car_model
+        shader_program = car_model.shader_program
+        gl.glUseProgram(shader_program)
+
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x, y, 0.0))
+        model = glm.rotate(model, yaw, glm.vec3(0.0, 0.0, 1.0))
+
+        if isinstance(scale, tuple):
+            model = glm.scale(model, glm.vec3(*scale))
+        else:
+            model = glm.scale(model, glm.vec3(scale, scale, scale))
+
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+
+        gl.glUniformMatrix4fv(car_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(car_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(car_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        u_color = gl.glGetUniformLocation(shader_program, "u_color")
+        gl.glUniform4f(u_color, *color)
+
+        gl.glBindVertexArray(car_model.mesh.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, car_model.mesh.vertex_count)
+
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
     def draw_destination(self, x, y, yaw, scale, view_matrix, proj_matrix):
         obj_model = self.green_destination_model

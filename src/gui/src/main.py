@@ -273,7 +273,7 @@ class MainWindow(QMainWindow):
         if load is not None:
             self.comm.sw_load_signal.emit(load)
         if model_states is not None:
-            self.comm.model_states_signal.emit(load)
+            self.comm.model_states_signal.emit(model_states)
 
     def cam_record_callback(self) -> None:
         if self.cam_buttons_widget.recording:
