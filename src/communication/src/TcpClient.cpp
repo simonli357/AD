@@ -103,6 +103,7 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x06); // Depth Images
 	udp_data_types.push_back(0x07); // Steer
 	udp_data_types.push_back(0x08); // SWLoad
+	udp_data_types.push_back(0x09); // ModelStates
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -486,6 +487,21 @@ void TcpClient::send_swload() {
 	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
 	sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+}
+
+void TcpClient::send_model_states(const gazebo_msgs::ModelStates::ConstPtr &msg) {
+	auto fn = [this, msg]() {
+        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+		uint32_t length = ros::serialization::serializationLength(msg);
+		std::vector<uint8_t> arr(length);
+		ros::serialization::OStream stream(arr.data(), length);
+		ros::serialization::serialize(stream, msg);
+		std::memcpy(udp_buffer.data(), &length, message_size);
+		udp_buffer[4] = udp_data_types[8];
+		std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
+		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+	};
+	add_dgram_task(std::move(fn));
 }
 
 // ------------------- //

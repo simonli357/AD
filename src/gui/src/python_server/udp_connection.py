@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 
 from std_msgs.msg import Float32MultiArray
+from gazebo_msgs.msg import ModelStates
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
 from PyQt5.QtGui import QPixmap, QImage
@@ -18,9 +19,9 @@ class UdpConnection:
         self.server = server
         self.MAX_DGRAM = 65507
 
-        self._raw_image = queue.Queue()
-        self._raw_depth = queue.Queue()
-        self._raw_other = queue.Queue()
+        self._raw_image = queue.Queue(maxsize=1024)
+        self._raw_depth = queue.Queue(maxsize=1024)
+        self._raw_other = queue.Queue(maxsize=1024)
 
         self.image_map = OrderedDict()
         self.depth_map = OrderedDict()
@@ -34,6 +35,7 @@ class UdpConnection:
         self.sign_buf = queue.Queue(maxsize=1)
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
+        self.states_buf = queue.Queue(maxsize=1)
 
         self.show_depth = False
         self.alive = True
@@ -68,7 +70,7 @@ class UdpConnection:
                     seg_num = struct.unpack('<H', seg[2:4])[0]
                     self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
                 else:              # everything else
-                    if typ in (1, 2, 3, 4, 7, 8):
+                    if typ in (1, 2, 3, 4, 7, 8, 9):
                         self._enqueue_raw(self._raw_other, (typ, payload))
             except Exception:
                 continue
@@ -135,6 +137,9 @@ class UdpConnection:
                 elif typ == 8:  # sw_load
                     msg = SWLoadMsg().decode(raw)
                     self._try_put(self.sw_load_buf, msg)
+                elif typ == 9:  # states
+                    msg = ModelStates().deserialize(raw)
+                    self._try_put(self.states_buf, msg)
             except Exception:
                 pass
 
@@ -196,5 +201,11 @@ class UdpConnection:
     def parse_sw_load(self):
         try:
             return self.sw_load_buf.get_nowait()
+        except queue.Empty:
+            return None
+
+    def parse_states(self):
+        try:
+            return self.states_buf.get_nowait()
         except queue.Empty:
             return None

@@ -53,6 +53,8 @@ public:
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
+
+        ros::Subscriber sub = nh.subscribe<gazebo_msgs::ModelStates::ConstPtr>("/gazebo/model_states", 1, &StateMachine::model_states_callback);
         
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
@@ -140,6 +142,9 @@ public:
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
         client.call(srv);
+    }
+    void model_states_callback(const gazebo_msgs::ModelStates::ConstPtr& msg)  {
+        utils.tcp_client->send_model_states(msg);
     }
     int initialize() {
         if (initialized) return 1;

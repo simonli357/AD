@@ -8,6 +8,8 @@ from ..opengl.instance.gt import GTRenderer
 from ..opengl.instance.model import ModelInstanceRenderer
 from ..opengl.instance.path import PathRenderer
 
+import rospy
+import tf.transformations
 import numpy as np
 import glm
 
@@ -65,6 +67,31 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.ram_usage = load_msg.ram_usage
         self.hud_renderer.heap_usage = load_msg.heap_usage
         self.hud_renderer.stack_usage = load_msg.stack_usage
+
+    def update_ground_truth(model_states):
+        try:
+            # Find index of 'car1'
+            idx = model_states.name.index("car1")
+
+            # Extract pose
+            pose = model_states.pose[idx]
+            x = pose.position.x
+            y = pose.position.y
+
+            # Convert quaternion to yaw
+            orientation_q = pose.orientation
+            quaternion = [
+                orientation_q.x,
+                orientation_q.y,
+                orientation_q.z,
+                orientation_q.w
+            ]
+            roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+
+            print(f"car1 - x: {x:.2f}, y: {y:.2f}, yaw: {yaw:.2f} rad")
+
+        except ValueError:
+            rospy.logwarn("Model 'car1' not found in model_states")
 
     def set_car_data(self, yaw: float, speed: float, x: float, y: float, z: float) -> None:
         if self.main_window.cam_buttons_widget.started:
