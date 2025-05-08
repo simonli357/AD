@@ -82,11 +82,12 @@ class TcpClient {
 	std::string server_address = "127.0.0.1";
 	std::string client_type;
 	const int buffer_size = 2097152;
+	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
+	std::array<uint8_t, 65507> udp_buffer;
 	int swload_counter = 0;
 	int rgb_img_quality = 30;
-	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
