@@ -145,7 +145,12 @@ public:
         client.call(srv);
     }
     void model_states_callback(const gazebo_msgs::ModelStates::ConstPtr& msg)  {
-        utils.tcp_client->send_model_states(*msg);
+        auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
+        if (it == msg->name.end()) {
+            return;
+        }
+        size_t index = std::distance(msg->name.begin(), it);
+        utils.tcp_client->send_model_states(msg->pose[index]);
     }
     int initialize() {
         if (initialized) return 1;

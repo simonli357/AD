@@ -8,7 +8,6 @@ from ..opengl.instance.gt import GTRenderer
 from ..opengl.instance.model import ModelInstanceRenderer
 from ..opengl.instance.path import PathRenderer
 
-import rospy
 import tf.transformations
 import numpy as np
 import glm
@@ -72,10 +71,8 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.heap_usage = load_msg.heap_usage
         self.hud_renderer.stack_usage = load_msg.stack_usage
 
-    def update_ground_truth(self, model_states):
+    def update_ground_truth(self, pose):
         try:
-            idx = model_states.name.index("car1")
-            pose = model_states.pose[idx]
             x = pose.position.x
             y = pose.position.y
             orientation_q = pose.orientation
