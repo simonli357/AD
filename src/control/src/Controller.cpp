@@ -54,8 +54,6 @@ public:
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
 
-        model_states = nh.subscribe("/gazebo/model_states", 1, &StateMachine::model_states_callback, this);
-        
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
             [this]() {
@@ -121,7 +119,6 @@ public:
         // utils.stop_car();
     }
     ros::NodeHandle& nh;
-    ros::Subscriber model_states;
 
     bool initialized = false;
     bool wait_for_green_flag = false;
@@ -153,14 +150,6 @@ public:
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
         client.call(srv);
-    }
-    void model_states_callback(const gazebo_msgs::ModelStates::ConstPtr& msg)  {
-        auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
-        if (it == msg->name.end()) {
-            return;
-        }
-        size_t index = std::distance(msg->name.begin(), it);
-        utils.tcp_client->send_model_states(msg->pose[index]);
     }
     int initialize() {
         if (initialized) return 1;

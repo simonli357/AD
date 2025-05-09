@@ -620,6 +620,7 @@ void Utility::model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
     y_speed = msg->twist[*car_idx].linear.y;
     gps_x = msg->pose[*car_idx].position.x;
     gps_y = msg->pose[*car_idx].position.y;
+    tcp_client->send_model_states(msg->pose[*car_idx]);
 }
 
 void Utility::stop_car() {
