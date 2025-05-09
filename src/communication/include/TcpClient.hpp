@@ -25,6 +25,7 @@
 #include <string>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/enumerable_thread_specific.h>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -101,7 +102,6 @@ class TcpClient {
 	int udp_socket;
 	std::thread main;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
-	std::vector<uint8_t> udp_buffer;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
 	// Messages
@@ -118,6 +118,10 @@ class TcpClient {
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
+    // UDP Buffer
+    tbb::enumerable_thread_specific<std::vector<uint8_t>> udp_buffers {
+        []() { return std::vector<uint8_t>(65507, 0); }
+    };
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();

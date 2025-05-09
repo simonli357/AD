@@ -378,6 +378,7 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 
 void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	auto fn = [this, lane]() {
+        auto& udp_buffer = udp_buffers.local();
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
 		bool stopline = lane.stopline;
@@ -393,6 +394,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
+        auto& udp_buffer = udp_buffers.local();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -407,6 +409,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
+        auto& udp_buffer = udp_buffers.local();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -420,6 +423,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_sign(const std::vector<float> &data) {
+    auto& udp_buffer = udp_buffers.local();
 	std_msgs::Float32MultiArray array;
 	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
@@ -433,6 +437,7 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
+    auto& udp_buffer = udp_buffers.local();
 	cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
 	uint32_t length = image_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
@@ -454,6 +459,7 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
+    auto& udp_buffer = udp_buffers.local();
 	cv::imencode(".png", img, depth_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
 	uint32_t length = depth_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
@@ -476,6 +482,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 
 void TcpClient::send_steer(float steer) {
 	auto fn = [this, steer]() {
+        auto& udp_buffer = udp_buffers.local();
 		uint32_t length = sizeof(steer);
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[6];
@@ -486,6 +493,7 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
+    auto& udp_buffer = udp_buffers.local();
 	swload->refresh();
 	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
@@ -493,6 +501,7 @@ void TcpClient::send_swload() {
 }
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
+    auto& udp_buffer = udp_buffers.local();
     uint32_t length = ros::serialization::serializationLength(msg);
     std::vector<uint8_t> arr(length);
     ros::serialization::OStream stream(arr.data(), length);
