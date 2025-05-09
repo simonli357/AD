@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/subscriber.h>
 #include <thread>
 #include <map>
 #include <string>
@@ -53,6 +54,9 @@ public:
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
+
+
+        model_states = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
 
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
@@ -119,6 +123,7 @@ public:
         // utils.stop_car();
     }
     ros::NodeHandle& nh;
+    ros::Subscriber model_states;
 
     bool initialized = false;
     bool wait_for_green_flag = false;
@@ -146,10 +151,25 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
 
+    std::optional<size_t> car_idx;
+
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
         client.call(srv);
+    }
+    void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
+        if (!car_idx.has_value()) {
+            auto it = std::find(msg->name.begin(), msg->name.end(), robot_name);
+            if (it != msg->name.end()) {
+                car_idx = std::distance(msg->name.begin(), it);
+                std::cout << "automobile found: " << *car_idx << std::endl;
+            } else {
+                printf("automobile not found\n");
+                return; 
+            }
+        }
+        utils.tcp_client->send_model_states(msg->pose[*car_idx]);
     }
     int initialize() {
         if (initialized) return 1;
