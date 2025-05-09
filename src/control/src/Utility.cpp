@@ -201,8 +201,8 @@ void Utility::initialize() {
     if (Tunable::ekf) {
         ekf_sub = nh.subscribe("/odometry/filtered", 3, &Utility::ekf_callback, this);
     } 
-    if (subModel) {
-        std::cout << "SUBMODEL IS TRUEEE!!!" << std::endl;
+    if (true) {
+        /* std::cout << "SUBMODEL IS TRUEEE!!!" << std::endl; */
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
     }
     std::string imu_topic_name;
