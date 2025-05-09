@@ -8,6 +8,7 @@ from ..opengl.instance.gt import GTRenderer
 from ..opengl.instance.model import ModelInstanceRenderer
 from ..opengl.instance.path import PathRenderer
 
+import tf.transformations
 import numpy as np
 import glm
 
@@ -25,6 +26,10 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.z_pos = 0
         self.speed = 0
         self.steer = 0
+
+        self.gt_x = 11.8
+        self.gt_y = MapData.REAL_WORLD_HEIGHT.value - 2.052
+        self.gt_yaw = 0
 
         self.cam_dist = 35.0
         self.cam_height = self.cam_dist
@@ -65,6 +70,24 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.hud_renderer.ram_usage = load_msg.ram_usage
         self.hud_renderer.heap_usage = load_msg.heap_usage
         self.hud_renderer.stack_usage = load_msg.stack_usage
+
+    def update_ground_truth(self, pose):
+        try:
+            x = pose.position.x
+            y = pose.position.y
+            orientation_q = pose.orientation
+            quaternion = [
+                orientation_q.x,
+                orientation_q.y,
+                orientation_q.z,
+                orientation_q.w
+            ]
+            roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+            self.gt_x = x
+            self.gt_y = MapData.REAL_WORLD_HEIGHT.value - y
+            self.gt_yaw = yaw
+        except ValueError:
+            pass
 
     def set_car_data(self, yaw: float, speed: float, x: float, y: float, z: float) -> None:
         if self.main_window.cam_buttons_widget.started:
@@ -143,6 +166,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         x, y = self.get_gl_coords(self.x_pos, self.y_pos)
+        gt_x, gt_y = self.get_gl_coords(self.gt_x, self.gt_y)
 
         raw_quat = glm.angleAxis(glm.radians(self.yaw), glm.vec3(0, 0, 1))
         if glm.dot(self._cam_quat, raw_quat) < 0.0:
@@ -187,6 +211,16 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             yaw=np.radians(self.yaw),
             scale=self.CAR_SCALE,
             color=NamedColor.WHITE,
+            view_matrix=self.view_mat,
+            proj_matrix=self.proj_mat
+        )
+
+        self.shader_renderer.draw_car_wireframe(
+            x=gt_x,
+            y=gt_y,
+            yaw=self.gt_yaw,
+            scale=self.CAR_SCALE,
+            color=(0.0, 1.0, 1.0, 1.0),
             view_matrix=self.view_mat,
             proj_matrix=self.proj_mat
         )
