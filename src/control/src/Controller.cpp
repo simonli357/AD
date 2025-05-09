@@ -56,7 +56,7 @@ public:
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
 
 
-        model_states = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
+        model_states = nh.subscribe("/gazebo/model_states", 3, &StateMachine::model_callback, this);
 
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
