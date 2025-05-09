@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address), udp_buffer(MAX_DGRAM, 0) {
+TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
 	swload = std::make_unique<SWLoadMsg>();
 	lane2_msg = std::make_unique<Lane2Msg>();
 	params_msg = std::make_unique<ParamsMsg>();
@@ -106,6 +106,16 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x07); // Steer
 	udp_data_types.push_back(0x08); // SWLoad
 	udp_data_types.push_back(0x09); // ModelStates
+
+    udp_buffers[udp_data_types[0]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[1]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[2]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[3]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[4]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[5]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[6]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[7]] = std::vector<uint8_t>(MAX_DGRAM, 0);
+    udp_buffers[udp_data_types[8]] = std::vector<uint8_t>(MAX_DGRAM, 0);
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -378,7 +388,7 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 
 void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	auto fn = [this, lane]() {
-        udp_buffer.resize(MAX_DGRAM, 0);
+        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[0]];
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
 		bool stopline = lane.stopline;
@@ -394,7 +404,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        udp_buffer.resize(MAX_DGRAM, 0);
+        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[1]];
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -409,7 +419,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        udp_buffer.resize(MAX_DGRAM, 0);
+        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[2]];
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -423,8 +433,8 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_sign(const std::vector<float> &data) {
+    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[3]];
 	std_msgs::Float32MultiArray array;
-    udp_buffer.resize(MAX_DGRAM, 0);
 	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> arr(length);
@@ -437,13 +447,12 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
-    image_buffer.clear();
+    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[4]];
 	cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
 	uint32_t length = image_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
-        udp_buffer.resize(MAX_DGRAM, 0);
 		udp_buffer[0] = total_segments;
         udp_buffer[1] = seg_num;
 
@@ -460,13 +469,12 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
-    image_buffer.clear();
-	cv::imencode(".png", img, image_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
-	uint32_t length = image_buffer.size();
+    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[5]];
+	cv::imencode(".png", img, depth_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
+	uint32_t length = depth_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
-        udp_buffer.resize(MAX_DGRAM, 0);
 		udp_buffer[0] = total_segments;
         udp_buffer[1] = seg_num;
 
@@ -477,14 +485,14 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 
 		udp_buffer[4] = udp_data_types[5];
 
-		std::memcpy(udp_buffer.data() + header_size, image_buffer.data() + start, chunk_size);
+		std::memcpy(udp_buffer.data() + header_size, depth_buffer.data() + start, chunk_size);
 		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
 void TcpClient::send_steer(float steer) {
 	auto fn = [this, steer]() {
-        udp_buffer.resize(MAX_DGRAM, 0);
+        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[6]];
 		uint32_t length = sizeof(steer);
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[6];
@@ -495,8 +503,8 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
+    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[7]];
 	swload->refresh();
-    udp_buffer.resize(MAX_DGRAM, 0);
 	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
 	sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
@@ -504,7 +512,7 @@ void TcpClient::send_swload() {
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
 	auto fn = [this, msg]() {
-        udp_buffer.resize(MAX_DGRAM, 0);
+        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[8]];
         uint32_t length = ros::serialization::serializationLength(msg);
         std::vector<uint8_t> arr(length);
         ros::serialization::OStream stream(arr.data(), length);

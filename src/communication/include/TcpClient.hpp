@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <functional>
 #include <geometry_msgs/Pose.h>
+#include <map>
 #include <memory>
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
@@ -88,8 +89,8 @@ class TcpClient {
 	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	std::vector<uint8_t> udp_buffer;
 	std::vector<uchar> image_buffer;
+	std::vector<uchar> depth_buffer;
 	int swload_counter = 0;
 	int rgb_img_quality = 30;
 	bool alive = true;
@@ -100,6 +101,7 @@ class TcpClient {
 	int udp_socket;
 	std::thread main;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
+	std::map<uint8_t, std::vector<uint8_t>> udp_buffers;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
 	// Messages
