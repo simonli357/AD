@@ -73,33 +73,34 @@ class UdpConnection:
         while self.alive:
             try:
                 seg, _ = self.socket.recvfrom(self.MAX_DGRAM)
-                if len(seg) < 5:
+                if len(seg) < 6:
                     continue
                 if self.server.is_host:
                     self.broadcast(seg)
-                typ = seg[4]
+                msg_type = seg[4]
                 payload = seg[5:]
-                if typ == 5:       # RGB frame
-                    num_segments = struct.unpack('<H', seg[:2])[0]
-                    seg_num = struct.unpack('<H', seg[2:4])[0]
+                if msg_type != 6:
+                    length = struct.unpack('<I', seg[:4])[0]
+                    payload = payload[:length]
+                if msg_type == 5:
                     self._enqueue_raw(self._raw_image, payload)
-                elif typ == 6:     # Depth frame
+                elif msg_type == 6:
                     num_segments = struct.unpack('<H', seg[:2])[0]
                     seg_num = struct.unpack('<H', seg[2:4])[0]
                     self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
-                elif typ == 1:
+                elif msg_type == 1:
                     self._enqueue_raw(self._raw_lane2_buf, payload)
-                elif typ == 2:
+                elif msg_type == 2:
                     self._enqueue_raw(self._raw_road_obj_buf, payload)
-                elif typ == 3:
+                elif msg_type == 3:
                     self._enqueue_raw(self._raw_waypoint_buf, payload)
-                elif typ == 4:
+                elif msg_type == 4:
                     self._enqueue_raw(self._raw_sign_buf, payload)
-                elif typ == 7:
+                elif msg_type == 7:
                     self._enqueue_raw(self._raw_steer_buf, payload)
-                elif typ == 8:
+                elif msg_type == 8:
                     self._enqueue_raw(self._raw_sw_load_buf, payload)
-                elif typ == 9:
+                elif msg_type == 9:
                     self._enqueue_raw(self._raw_model_states_buf, payload)
             except Exception:
                 continue
