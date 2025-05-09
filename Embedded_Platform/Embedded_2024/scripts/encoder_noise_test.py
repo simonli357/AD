@@ -36,7 +36,7 @@ import serial
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 
-MOTOR_ID = 13
+MOTOR_ID = 11
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
@@ -69,7 +69,8 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[
                 break
 
             if elapsed >= next_send:
-                ser.write(build_cmd(speed_cm_s, last_angle))
+                # ser.write(build_cmd(speed_cm_s, last_angle))
+                ser.write(build_cmd(speed_cm_s, -20.0))
                 next_send += 0.1
 
             while ser.in_waiting:
@@ -185,8 +186,8 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=30, help="Commanded speed [cm/s]")
-    ap.add_argument("--dur", type=float, default=600, help="Duration [s]")
+    ap.add_argument("--cmd", type=float, default=50, help="Commanded speed [cm/s]")
+    ap.add_argument("--dur", type=float, default=5, help="Duration [s]")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
