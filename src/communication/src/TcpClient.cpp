@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address), udp_buffer(MAX_DGRAM, 0) {
+TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
 	swload = std::make_unique<SWLoadMsg>();
 	lane2_msg = std::make_unique<Lane2Msg>();
 	params_msg = std::make_unique<ParamsMsg>();
