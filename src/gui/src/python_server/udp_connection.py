@@ -22,7 +22,14 @@ class UdpConnection:
 
         self._raw_image = queue.Queue(maxsize=1024)
         self._raw_depth = queue.Queue(maxsize=1024)
-        self._raw_other = queue.Queue()
+        self._raw_depth_arr = queue.Queue(maxsize=1024)
+        self._raw_lane2_buf = queue.Queue(maxsize=1024)
+        self._raw_road_obj_buf = queue.Queue(maxsize=1024)
+        self._raw_waypoint_buf = queue.Queue(maxsize=1024)
+        self._raw_sign_buf = queue.Queue(maxsize=1024)
+        self._raw_steer_buf = queue.Queue(maxsize=1024)
+        self._raw_sw_load_buf = queue.Queue(maxsize=1024)
+        self._raw_model_states_buf = queue.Queue(maxsize=1024)
 
         self.image_map = OrderedDict()
         self.depth_map = OrderedDict()
@@ -40,16 +47,22 @@ class UdpConnection:
         self.sign_buf = queue.Queue(maxsize=1)
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
-        self.states_buf = queue.Queue(maxsize=1)
+        self.model_states_buf = queue.Queue(maxsize=1)
 
         self.show_depth = False
         self.alive = True
 
         if udp_socket is not None:
             threading.Thread(target=self._receive_loop, daemon=True).start()
-            threading.Thread(target=self._other_worker, daemon=True).start()
             threading.Thread(target=self._image_worker, daemon=True).start()
             threading.Thread(target=self._depth_worker, daemon=True).start()
+            threading.Thread(target=self._lane2_worker, daemon=True).start()
+            threading.Thread(target=self._road_obj_worker, daemon=True).start()
+            threading.Thread(target=self._waypoint_worker, daemon=True).start()
+            threading.Thread(target=self._sign_worker, daemon=True).start()
+            threading.Thread(target=self._steer_worker, daemon=True).start()
+            threading.Thread(target=self._sw_load_worker, daemon=True).start()
+            threading.Thread(target=self._model_states_worker, daemon=True).start()
 
     def broadcast(self, payload):
         for key in self.server.dashboard_clients.keys():
@@ -74,9 +87,20 @@ class UdpConnection:
                     num_segments = struct.unpack('<H', seg[:2])[0]
                     seg_num = struct.unpack('<H', seg[2:4])[0]
                     self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
-                else:              # everything else
-                    if typ in (1, 2, 3, 4, 7, 8, 9):
-                        self._enqueue_raw(self._raw_other, (typ, payload))
+                elif typ == 1:
+                    self._enqueue_raw(self._raw_lane2_buf, payload)
+                elif typ == 2:
+                    self._enqueue_raw(self._raw_road_obj_buf, payload)
+                elif typ == 3:
+                    self._enqueue_raw(self._raw_waypoint_buf, payload)
+                elif typ == 4:
+                    self._enqueue_raw(self._raw_sign_buf, payload)
+                elif typ == 7:
+                    self._enqueue_raw(self._raw_steer_buf, payload)
+                elif typ == 8:
+                    self._enqueue_raw(self._raw_sw_load_buf, payload)
+                elif typ == 9:
+                    self._enqueue_raw(self._raw_model_states_buf, payload)
             except Exception:
                 continue
 
@@ -120,33 +144,68 @@ class UdpConnection:
             except Exception:
                 continue
 
-    def _other_worker(self):
+    def _lane2_worker(self):
         while self.alive:
-            typ, raw = self._raw_other.get()
             try:
-                if typ == 1:  # lane2
-                    msg = Lane2Msg().decode(raw)
-                    self._try_put(self.lane2_buf, msg)
-                elif typ == 2:  # road object
-                    msg = Float32MultiArray().deserialize(raw)
-                    self._try_put(self.road_object_buf, msg)
-                elif typ == 3:  # waypoint
-                    msg = Float32MultiArray().deserialize(raw)
-                    self._try_put(self.waypoint_buf, msg)
-                elif typ == 4:  # sign
-                    msg = Float32MultiArray().deserialize(raw)
-                    self._try_put(self.sign_buf, msg)
-                elif typ == 7:  # steer
-                    val = struct.unpack('f', raw[:4])[0]
-                    self._try_put(self.steer_buf, val)
-                elif typ == 8:  # sw_load
-                    msg = SWLoadMsg().decode(raw)
-                    self._try_put(self.sw_load_buf, msg)
-                elif typ == 9:  # states
-                    msg = Pose().deserialize(raw)
-                    self._try_put(self.states_buf, msg)
+                raw = self._raw_lane2_buf.get()
+                msg = Lane2Msg().decode(raw)
+                self._try_put(self.lane2_buf, msg)
             except Exception:
-                pass
+                continue
+
+    def _road_obj_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_road_obj_buf.get()
+                msg = Float32MultiArray().deserialize(raw)
+                self._try_put(self.road_object_buf, msg)
+            except Exception:
+                continue
+
+    def _waypoint_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_waypoint_buf.get()
+                msg = Float32MultiArray().deserialize(raw)
+                self._try_put(self.waypoint_buf, msg)
+            except Exception:
+                continue
+
+    def _sign_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_sign_buf.get()
+                msg = Float32MultiArray().deserialize(raw)
+                self._try_put(self.sign_buf, msg)
+            except Exception:
+                continue
+
+    def _steer_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_steer_buf.get()
+                val = struct.unpack('f', raw[:4])[0]
+                self._try_put(self.steer_buf, val)
+            except Exception:
+                continue
+
+    def _sw_load_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_sw_load_buf.get()
+                msg = SWLoadMsg().decode(raw)
+                self._try_put(self.sw_load_buf, msg)
+            except Exception:
+                continue
+
+    def _model_states_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_model_states_buf.get()
+                msg = Pose().deserialize(raw)
+                self._try_put(self.model_states_buf, msg)
+            except Exception:
+                continue
 
     def _try_put(self, buf: queue.Queue, item):
         """Helper: put item into buf if empty; if full, drop it."""
@@ -211,6 +270,6 @@ class UdpConnection:
 
     def parse_states(self):
         try:
-            return self.states_buf.get_nowait()
+            return self.model_states_buf.get_nowait()
         except queue.Empty:
             return None
