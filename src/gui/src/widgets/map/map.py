@@ -301,7 +301,6 @@ class MapWidget(QtWidgets.QOpenGLWidget):
             x, y = self.get_gl_coords(row['X'], row['Y'])
 
             # orientation = 2 * np.pi - orientation
-            orientation = - orientation
 
             if entity_type == 'Intersection':
                 if self.show_signs:
@@ -312,8 +311,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     self.draw_lane(x, y, orientation)
             elif entity_type == 'Car':
                 if self.show_cars:
-                    self.shader_renderer.draw_car(x, y, -orientation, NamedColor.RED, self.CAR_SCALE, self.view_mat, self.proj_mat)
-                    self.shader_renderer.draw_axis2D(x, y, -orientation, 25, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_car(x, y, orientation, NamedColor.RED, self.CAR_SCALE, self.view_mat, self.proj_mat)
+                    self.shader_renderer.draw_axis2D(x, y, orientation, 25, self.view_mat, self.proj_mat)
             else:
                 if self.show_signs:
                     sign_index = self.get_key_from_value(entity_type)
