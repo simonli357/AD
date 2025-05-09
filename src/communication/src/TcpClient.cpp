@@ -388,7 +388,6 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 
 void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	auto fn = [this, lane]() {
-        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[0]];
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
 		bool stopline = lane.stopline;
@@ -404,7 +403,6 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[1]];
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -419,7 +417,6 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[2]];
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -492,7 +489,6 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 
 void TcpClient::send_steer(float steer) {
 	auto fn = [this, steer]() {
-        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[6]];
 		uint32_t length = sizeof(steer);
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[6];
@@ -511,18 +507,14 @@ void TcpClient::send_swload() {
 }
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
-	auto fn = [this, msg]() {
-        std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[8]];
-        uint32_t length = ros::serialization::serializationLength(msg);
-        std::vector<uint8_t> arr(length);
-        ros::serialization::OStream stream(arr.data(), length);
-        ros::serialization::serialize(stream, msg);
-        std::memcpy(udp_buffer.data(), &length, message_size);
-        udp_buffer[4] = udp_data_types[8];
-        std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
-        sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-    };
-	add_dgram_task(std::move(fn));
+    uint32_t length = ros::serialization::serializationLength(msg);
+    std::vector<uint8_t> arr(length);
+    ros::serialization::OStream stream(arr.data(), length);
+    ros::serialization::serialize(stream, msg);
+    std::memcpy(udp_buffer.data(), &length, message_size);
+    udp_buffer[4] = udp_data_types[8];
+    std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
+    sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 // ------------------- //
