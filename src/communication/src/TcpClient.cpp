@@ -138,7 +138,7 @@ void TcpClient::run() {
 }
 
 void TcpClient::listen() {
-	std::vector<uint8_t> header_buffer(5, 0);
+	std::array<uint8_t, 5> header_buffer;
 	while (connected) {
 		// --- Header Reception ---
 		ssize_t total_header_received = 0;

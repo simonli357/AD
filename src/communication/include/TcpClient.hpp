@@ -121,7 +121,7 @@ class TcpClient {
 	tbb::concurrent_queue<std::any> dgram_tasks;
     // UDP Buffer
     tbb::enumerable_thread_specific<std::vector<uint8_t>> udp_buffers {
-        []() { return std::vector<uint8_t>(65507, 0); }
+        []() { return std::array<uint8_t, 65507>(); }
     };
 	// Utility Methods
 	void create_tcp_socket();
