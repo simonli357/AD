@@ -84,7 +84,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
             ]
             roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
             self.gt_x = x
-            self.gt_y = y
+            self.gt_y = MapData.REAL_WORLD_HEIGHT.value - y
             self.gt_yaw = yaw
         except ValueError:
             pass
