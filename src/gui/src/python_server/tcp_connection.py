@@ -18,7 +18,7 @@ class TcpConnection:
     def __init__(self, client_socket, on_packet, is_host=True, dashboard=False):
         self.socket = client_socket
         self.alive = True
-        self.tcp_can_send = False
+        self.tcp_can_send = dashboard
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
