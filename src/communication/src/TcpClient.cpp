@@ -511,6 +511,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "ack") {
 		tcp_can_send = true;
+        ack_callback();
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}

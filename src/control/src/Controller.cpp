@@ -99,6 +99,16 @@ public:
             }
         );
 
+        utils.tcp_client->set_ack_callback(
+            [this]() {
+                if (state == STATE::INIT || state == STATE::DONE) {
+                    utils.tcp_client->send_start_srv(false);
+                } else {
+                    utils.tcp_client->send_start_srv(true);
+                }
+            }
+        );
+
         utils.tcp_client->set_waypoints_callback(
             [this](double x0, double y0, double yaw0) {
                 PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);

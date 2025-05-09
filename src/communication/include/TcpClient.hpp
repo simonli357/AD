@@ -71,6 +71,7 @@ class TcpClient {
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
+	void set_ack_callback(std::function<void()> cb) { ack_callback = cb; }
 	void set_trigger_response_callback(std::function<void(const std_srvs::TriggerResponse &)> cb) { trigger_response_callback = cb; }
 	void set_go_to_cmd_callback(std::function<void(const std::vector<std::tuple<float, float>> &)> cb) { go_to_cmd_callback = cb; }
 	void set_set_states_callback(std::function<void(double, double)> cb) { set_states_callback = cb; }
@@ -133,6 +134,7 @@ class TcpClient {
 	std::function<void(bool)> start_callback;
 	std::function<void(double, double, double)> waypoints_callback;
 	std::function<void()> send_run_callback;
+	std::function<void()> ack_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
