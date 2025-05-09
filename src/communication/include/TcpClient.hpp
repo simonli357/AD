@@ -93,7 +93,7 @@ class TcpClient {
 	std::vector<uchar> image_buffer;
 	std::vector<uchar> depth_buffer;
 	int swload_counter = 0;
-    int model_poses_counter = 0;
+	int model_poses_counter = 0;
 	int rgb_img_quality = 30;
 	bool alive = true;
 	bool connected = false;
@@ -119,10 +119,8 @@ class TcpClient {
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
-    // UDP Buffer
-    tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers {
-        []() { return std::array<uint8_t, 65507>(); }
-    };
+	// UDP Buffer
+	tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers{};
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
