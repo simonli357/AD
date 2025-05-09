@@ -3,6 +3,7 @@ import struct
 import queue
 import numpy as np
 import cv2
+import socket
 
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Pose
@@ -27,8 +28,8 @@ class UdpConnection:
         self.depth_map = OrderedDict()
 
         self.buf_size = 2097152
-        self.socket.setsockopt(udp_socket.SOL_SOCKET, udp_socket.SO_RCVBUF, self.buf_size)
-        self.socket.setsockopt(udp_socket.SOL_SOCKET, udp_socket.SO_SNDBUF, self.buf_size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buf_size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buf_size)
 
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
