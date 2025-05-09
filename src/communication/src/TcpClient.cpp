@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
+TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address), udp_buffer(MAX_DGRAM, 0) {
 	swload = std::make_unique<SWLoadMsg>();
 	lane2_msg = std::make_unique<Lane2Msg>();
 	params_msg = std::make_unique<ParamsMsg>();
@@ -106,16 +106,6 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x07); // Steer
 	udp_data_types.push_back(0x08); // SWLoad
 	udp_data_types.push_back(0x09); // ModelStates
-
-    udp_buffers[udp_data_types[0]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[1]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[2]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[3]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[4]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[5]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[6]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[7]] = std::vector<uint8_t>(MAX_DGRAM, 0);
-    udp_buffers[udp_data_types[8]] = std::vector<uint8_t>(MAX_DGRAM, 0);
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -430,7 +420,6 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_sign(const std::vector<float> &data) {
-    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[3]];
 	std_msgs::Float32MultiArray array;
 	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
@@ -444,7 +433,6 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
-    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[4]];
 	cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
 	uint32_t length = image_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
@@ -466,7 +454,6 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
-    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[5]];
 	cv::imencode(".png", img, depth_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
 	uint32_t length = depth_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
@@ -499,7 +486,6 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-    std::vector<uint8_t> &udp_buffer = udp_buffers[udp_data_types[7]];
 	swload->refresh();
 	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
