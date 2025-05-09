@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address) {
+TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address) : client_type(client_type), server_address(ip_address), udp_buffer(MAX_DGRAM, 0) {
 	swload = std::make_unique<SWLoadMsg>();
 	lane2_msg = std::make_unique<Lane2Msg>();
 	params_msg = std::make_unique<ParamsMsg>();
@@ -378,7 +378,7 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 
 void TcpClient::send_lane2(const utils::Lane2 &lane) {
 	auto fn = [this, lane]() {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
 		bool stopline = lane.stopline;
@@ -394,7 +394,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -409,7 +409,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 	auto fn = [this, array]() {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
 		ros::serialization::OStream stream(arr.data(), length);
@@ -424,7 +424,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 
 void TcpClient::send_sign(const std::vector<float> &data) {
 	std_msgs::Float32MultiArray array;
-    std::memset(udp_buffer.data(), 0, udp_buffer.size());
+    udp_buffer.clear();
 	array.data = std::move(data);
 	uint32_t length = ros::serialization::serializationLength(array);
 	std::vector<uint8_t> arr(length);
@@ -443,7 +443,7 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
     size_t payload_size = MAX_DGRAM - header_size;
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		udp_buffer[0] = total_segments;
         udp_buffer[1] = seg_num;
 
@@ -466,7 +466,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
     size_t payload_size = MAX_DGRAM - header_size;
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
 	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		udp_buffer[0] = total_segments;
         udp_buffer[1] = seg_num;
 
@@ -484,7 +484,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 
 void TcpClient::send_steer(float steer) {
 	auto fn = [this, steer]() {
-        std::memset(udp_buffer.data(), 0, udp_buffer.size());
+        udp_buffer.clear();
 		uint32_t length = sizeof(steer);
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[6];
@@ -496,14 +496,14 @@ void TcpClient::send_steer(float steer) {
 
 void TcpClient::send_swload() {
 	swload->refresh();
-    std::memset(udp_buffer.data(), 0, udp_buffer.size());
+    udp_buffer.clear();
 	std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 	std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
 	sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 }
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
-    std::memset(udp_buffer.data(), 0, udp_buffer.size());
+    udp_buffer.clear();
     uint32_t length = ros::serialization::serializationLength(msg);
     std::vector<uint8_t> arr(length);
     ros::serialization::OStream stream(arr.data(), length);

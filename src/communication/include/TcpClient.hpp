@@ -88,7 +88,7 @@ class TcpClient {
 	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	std::array<uint8_t, 65507> udp_buffer;
+	std::vector<uint8_t> udp_buffer;
 	std::vector<uchar> image_buffer;
 	int swload_counter = 0;
 	int rgb_img_quality = 30;
