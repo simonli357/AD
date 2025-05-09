@@ -93,6 +93,7 @@ class TcpClient {
 	std::vector<uchar> image_buffer;
 	std::vector<uchar> depth_buffer;
 	int swload_counter = 0;
+    int model_poses_counter = 0;
 	int rgb_img_quality = 30;
 	bool alive = true;
 	bool connected = false;
