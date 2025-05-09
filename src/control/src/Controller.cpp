@@ -893,6 +893,8 @@ public:
                 // std::cout << "CHECK_CAR(): car confidence too low: " + helper::d2str(car->cumulative_confidence) + ", threshold: " + helper::d2str(Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) << std::endl;
                 continue;
             }
+            if (car->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(OBJECT::CAR)])) continue;
+
             Eigen::Vector2d car_pose(car->x, car->y);
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
@@ -963,26 +965,34 @@ public:
             return;
         }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
-            // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
-            return;
-        }
-        can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
-        
-        if (!can_overtake) {
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+            if (!PathManager::attribute_cmp(min_same_lane_index, PathManager::ATTRIBUTE::INTERSECTION)) {
+                // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
+                return;
+            }
+            can_overtake = false;
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
         if (on_highway) min_dist_to_car *= 1.3;
-        // double static_distance = CAR_LENGTH * 2 + Tunable::min_dist_to_car * 2;
         double static_distance = CAR_LENGTH * 1.5 + min_dist_to_car * 2;
         double ego_speed = 0.32;
         if (on_highway) ego_speed *= 1.33;
         car_speed = car_speed;
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;
+        int end_idx = static_cast<int>(total_distance * density) + closest_idx;
+        can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
+                            && (PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
+        
+        if (!can_overtake) {
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+        }
+        
         if (relative_speed < 0.15 || total_distance / static_distance > 2.0) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance), 2);
             can_overtake = false;
@@ -1006,7 +1016,7 @@ public:
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
-            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_lat_dist) + "changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ")", 2);
+            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + "changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ")", 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
             return;

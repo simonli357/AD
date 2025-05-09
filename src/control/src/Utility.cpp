@@ -670,7 +670,6 @@ void Utility::publish_odom() {
         // update_states_rk4(velocity, steer_command);
         update_states_rk4(encoder_speed, steer_command);
         {
-            // std::lock_guard<std::mutex> lock(general_mutex);
             odomX += dx;
             odomY += dy;
         }
@@ -678,42 +677,42 @@ void Utility::publish_odom() {
         // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     }
     
-    auto current_time = ros::Time::now();
-    odom_msg.header.stamp = current_time;
-    odom_msg.pose.pose.position.x = odomX;
-    odom_msg.pose.pose.position.y = odomY;
-    odom_msg.pose.pose.position.z = 0.032939;
+    // auto current_time = ros::Time::now();
+    // odom_msg.header.stamp = current_time;
+    // odom_msg.pose.pose.position.x = odomX;
+    // odom_msg.pose.pose.position.y = odomY;
+    // odom_msg.pose.pose.position.z = 0.032939;
 
-    // odom_msg.twist.twist.linear.x = x_speed;
-    // odom_msg.twist.twist.linear.y = y_speed;
+    // // odom_msg.twist.twist.linear.x = x_speed;
+    // // odom_msg.twist.twist.linear.y = y_speed;
+    // // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
+    // odom_msg.twist.twist.linear.x = velocity_command; // non-holonomic, x means forward
+    // odom_msg.twist.twist.linear.y = 0; // y means lateral
     // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
-    odom_msg.twist.twist.linear.x = velocity_command; // non-holonomic, x means forward
-    odom_msg.twist.twist.linear.y = 0; // y means lateral
-    odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
 
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, pitch, yaw);
-    odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
+    // tf2::Quaternion quaternion;
+    // quaternion.setRPY(0, pitch, yaw);
+    // odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
 
-    odom_pub.publish(odom_msg);
+    // odom_pub.publish(odom_msg);
 
-    std_msgs::Float32MultiArray state_offset_msg;
-    state_offset_msg.data.push_back(x0);
-    state_offset_msg.data.push_back(y0);
-    state_offset_pub.publish(state_offset_msg);
+    // std_msgs::Float32MultiArray state_offset_msg;
+    // state_offset_msg.data.push_back(x0);
+    // state_offset_msg.data.push_back(y0);
+    // state_offset_pub.publish(state_offset_msg);
 
-    static bool publish_tf = true;
-    if (publish_tf) {
-        geometry_msgs::TransformStamped transformStamped;
-        transformStamped.header.stamp = current_time;
-        transformStamped.header.frame_id = "odom";
-        transformStamped.child_frame_id = "chassis";
-        transformStamped.transform.translation.x = odomX;
-        transformStamped.transform.translation.y = odomY;
-        transformStamped.transform.translation.z = 0.0;
-        transformStamped.transform.rotation = tf2::toMsg(quaternion);
-        broadcaster.sendTransform(transformStamped);
-    }
+    // static bool publish_tf = true;
+    // if (publish_tf) {
+    //     geometry_msgs::TransformStamped transformStamped;
+    //     transformStamped.header.stamp = current_time;
+    //     transformStamped.header.frame_id = "odom";
+    //     transformStamped.child_frame_id = "chassis";
+    //     transformStamped.transform.translation.x = odomX;
+    //     transformStamped.transform.translation.y = odomY;
+    //     transformStamped.transform.translation.z = 0.0;
+    //     transformStamped.transform.rotation = tf2::toMsg(quaternion);
+    //     broadcaster.sendTransform(transformStamped);
+    // }
 }
 
 int Utility::object_index(int obj_id) {
