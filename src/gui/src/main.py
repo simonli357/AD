@@ -25,7 +25,7 @@ from widgets.enums import CameraParams
 
 
 class CommunicationHandler(QObject):
-    start_signal = pyqtSignal(object)
+    start_signal = pyqtSignal()
     message_signal = pyqtSignal(str)
     waypoints_signal = pyqtSignal(object)
     params_signal = pyqtSignal(object)
@@ -42,7 +42,6 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
-    model_states_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -114,7 +113,6 @@ class MainWindow(QMainWindow):
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
-        self.comm.model_states_signal.connect(self.car_widget.update_ground_truth)
 
         self.comm.start_signal.connect(self.cam_buttons_widget.on_start)
         self.comm.message_signal.connect(self.terminal_widget.add_message)
@@ -187,9 +185,6 @@ class MainWindow(QMainWindow):
         self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
         self.server.tcp_client.on_params = self.comm.params_signal.emit
         self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
-        while (not self.server.tcp_client.tcp_can_send):
-            time.sleep(0.2)
-            continue
         self.server.tcp_client.refresh_run()
 
     def toggle_map(self) -> None:
@@ -248,7 +243,6 @@ class MainWindow(QMainWindow):
         else:
             rgb_image = self.server.udp_connection.parse_rgb_image()
 
-        model_states = self.server.udp_connection.parse_states()
         depth_arr = self.server.udp_connection.parse_depth_arr()
         sign = self.server.udp_connection.parse_sign()
         waypoint = self.server.udp_connection.parse_waypoint()
@@ -275,8 +269,6 @@ class MainWindow(QMainWindow):
             self.comm.steer_signal.emit(steer)
         if load is not None:
             self.comm.sw_load_signal.emit(load)
-        if model_states is not None:
-            self.comm.model_states_signal.emit(model_states)
 
     def cam_record_callback(self) -> None:
         if self.cam_buttons_widget.recording:

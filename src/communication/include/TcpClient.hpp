@@ -16,8 +16,6 @@
 #include <any>
 #include <cstdint>
 #include <functional>
-#include <geometry_msgs/Pose.h>
-#include <map>
 #include <memory>
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
@@ -25,7 +23,6 @@
 #include <string>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
-#include <tbb/enumerable_thread_specific.h>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -69,11 +66,9 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
-	void send_model_states(const geometry_msgs::Pose &msg);
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
-	void set_ack_callback(std::function<void()> cb) { ack_callback = cb; }
 	void set_trigger_response_callback(std::function<void(const std_srvs::TriggerResponse &)> cb) { trigger_response_callback = cb; }
 	void set_go_to_cmd_callback(std::function<void(const std::vector<std::tuple<float, float>> &)> cb) { go_to_cmd_callback = cb; }
 	void set_set_states_callback(std::function<void(double, double)> cb) { set_states_callback = cb; }
@@ -87,14 +82,11 @@ class TcpClient {
 	std::string server_address = "127.0.0.1";
 	std::string client_type;
 	const int buffer_size = 2097152;
-	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	std::vector<uchar> image_buffer;
-	std::vector<uchar> depth_buffer;
 	int swload_counter = 0;
-	int model_poses_counter = 0;
 	int rgb_img_quality = 30;
+	const uint32_t MAX_DGRAM = 65507;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
@@ -119,8 +111,6 @@ class TcpClient {
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	tbb::concurrent_queue<std::any> dgram_tasks;
-	// UDP Buffer
-	tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers{};
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -139,7 +129,6 @@ class TcpClient {
 	std::function<void(bool)> start_callback;
 	std::function<void(double, double, double)> waypoints_callback;
 	std::function<void()> send_run_callback;
-	std::function<void()> ack_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
