@@ -440,13 +440,22 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
     image_buffer.clear();
 	cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
 	uint32_t length = image_buffer.size();
+    size_t payload_size = MAX_DGRAM - header_size;
 	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	if (total_segments == 1) {
+	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
         std::memset(udp_buffer.data(), 0, udp_buffer.size());
-		std::memcpy(udp_buffer.data(), &length, message_size);
+		udp_buffer[0] = total_segments;
+        udp_buffer[1] = seg_num;
+
+        size_t start = seg_num * payload_size;
+        size_t end = std::min(start + payload_size, static_cast<size_t>(length));
+        uint16_t chunk_size = end - start;
+        std::memcpy(udp_buffer.data() + 2, &chunk_size, 2);
+
 		udp_buffer[4] = udp_data_types[4];
-		std::memcpy(udp_buffer.data() + header_size, &image_buffer[0], image_buffer.size());
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+
+		std::memcpy(udp_buffer.data() + header_size, image_buffer.data() + start, chunk_size);
+		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	}
 }
 
@@ -455,16 +464,18 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 	cv::imencode(".png", img, image_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
 	uint32_t length = image_buffer.size();
     size_t payload_size = MAX_DGRAM - header_size;
-	uint16_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
-	for (uint16_t seg_num = 0; seg_num < total_segments; ++seg_num) {
+	uint8_t total_segments = std::ceil(static_cast<float>(length + header_size) / MAX_DGRAM);
+	for (uint8_t seg_num = 0; seg_num < total_segments; ++seg_num) {
         std::memset(udp_buffer.data(), 0, udp_buffer.size());
-		std::memcpy(udp_buffer.data(), &total_segments, 2);
-        std::memcpy(udp_buffer.data() + 2, &seg_num, 2);
-		udp_buffer[4] = udp_data_types[5];
+		udp_buffer[0] = total_segments;
+        udp_buffer[1] = seg_num;
 
         size_t start = seg_num * payload_size;
         size_t end = std::min(start + payload_size, static_cast<size_t>(length));
-        size_t chunk_size = end - start;
+        uint16_t chunk_size = end - start;
+        std::memcpy(udp_buffer.data() + 2, &chunk_size, 2);
+
+		udp_buffer[4] = udp_data_types[5];
 
 		std::memcpy(udp_buffer.data() + header_size, image_buffer.data() + start, chunk_size);
 		sendto(udp_socket, udp_buffer.data(), header_size + chunk_size, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));

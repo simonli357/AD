@@ -79,16 +79,21 @@ class UdpConnection:
                     self.broadcast(seg)
                 msg_type = seg[4]
                 payload = seg[5:]
-                if msg_type != 6:
-                    length = struct.unpack('<I', seg[:4])[0]
-                    payload = payload[:length]
                 if msg_type == 5:
-                    self._enqueue_raw(self._raw_image, payload)
-                elif msg_type == 6:
-                    num_segments = struct.unpack('<H', seg[:2])[0]
-                    seg_num = struct.unpack('<H', seg[2:4])[0]
-                    self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload))
-                elif msg_type == 1:
+                    num_segments = struct.unpack('B', seg[0])[0]
+                    seg_num = struct.unpack('B', seg[1])[0]
+                    length = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_image, (num_segments, seg_num, payload[:length]))
+                    continue
+                if msg_type == 6:
+                    num_segments = struct.unpack('B', seg[0])[0]
+                    seg_num = struct.unpack('B', seg[1])[0]
+                    length = struct.unpack('<H', seg[2:4])[0]
+                    self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload[:length]))
+                    continue
+                length = struct.unpack('<I', seg[:4])[0]
+                payload = payload[:length]
+                if msg_type == 1:
                     self._enqueue_raw(self._raw_lane2_buf, payload)
                 elif msg_type == 2:
                     self._enqueue_raw(self._raw_road_obj_buf, payload)
