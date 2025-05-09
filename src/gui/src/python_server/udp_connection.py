@@ -26,6 +26,10 @@ class UdpConnection:
         self.image_map = OrderedDict()
         self.depth_map = OrderedDict()
 
+        self.buf_size = 2097152
+        self.socket.setsockopt(udp_socket.SOL_SOCKET, udp_socket.SO_RCVBUF, self.buf_size)
+        self.socket.setsockopt(udp_socket.SOL_SOCKET, udp_socket.SO_SNDBUF, self.buf_size)
+
         self.rgb_buf = queue.Queue(maxsize=1)
         self.depth_buf = queue.Queue(maxsize=1)
         self.depth_arr_buf = queue.Queue(maxsize=1)
