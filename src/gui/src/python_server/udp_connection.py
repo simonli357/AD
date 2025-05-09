@@ -80,14 +80,14 @@ class UdpConnection:
                 msg_type = seg[4]
                 payload = seg[5:]
                 if msg_type == 5:
-                    num_segments = struct.unpack('B', seg[0])[0]
-                    seg_num = struct.unpack('B', seg[1])[0]
+                    num_segments = seg[0]
+                    seg_num = seg[1]
                     length = struct.unpack('<H', seg[2:4])[0]
                     self._enqueue_raw(self._raw_image, (num_segments, seg_num, payload[:length]))
                     continue
                 if msg_type == 6:
-                    num_segments = struct.unpack('B', seg[0])[0]
-                    seg_num = struct.unpack('B', seg[1])[0]
+                    num_segments = seg[0]
+                    seg_num = seg[1]
                     length = struct.unpack('<H', seg[2:4])[0]
                     self._enqueue_raw(self._raw_depth, (num_segments, seg_num, payload[:length]))
                     continue
@@ -120,7 +120,15 @@ class UdpConnection:
     def _image_worker(self):
         while self.alive:
             try:
-                raw = self._raw_image.get()
+                num_segments, seg_num, payload = self._raw_image.get()
+                self.image_map[seg_num] = payload
+                if len(self.image_map.keys()) == num_segments:
+                    raw = b''.join(
+                        self.image_map[k] for k in self.image_map if k < num_segments
+                    )
+                    self.image_map.clear()
+                else:
+                    continue
                 pix = QPixmap()
                 pix.loadFromData(QByteArray(raw))
                 self._try_put(self.rgb_buf, pix)
@@ -133,7 +141,9 @@ class UdpConnection:
                 num_segments, seg_num, payload = self._raw_depth.get()
                 self.depth_map[seg_num] = payload
                 if len(self.depth_map.keys()) == num_segments:
-                    raw = b''.join(self.depth_map.values())
+                    raw = b''.join(
+                        self.depth_map[k] for k in self.depth_map if k < num_segments
+                    )
                     self.depth_map.clear()
                 else:
                     continue
