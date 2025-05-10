@@ -191,7 +191,6 @@ public:
             }
         }
         utils.tcp_client->send_model_states(msg->pose[*car_idx]);
-        utils.tcp_client->send_swload();
     }
     int initialize() {
         if (initialized) return 1;
@@ -1238,6 +1237,7 @@ void StateMachine::change_state(STATE new_state) {
 }
 
 void StateMachine::run() {
+    utils.tcp_client->send_swload();
     static ros::Time overtake_cd = ros::Time::now();
     static bool wrong_lane = false;
     std::cout << "State Machine running..." << std::endl;
