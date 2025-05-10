@@ -1,3 +1,4 @@
+#include <memory>
 #include <oneapi/tbb/parallel_invoke.h>
 #include <oneapi/tbb/task_group.h>
 #include <ros/ros.h>
@@ -61,10 +62,14 @@ public:
 
         model_states = nh.subscribe("/gazebo/model_states", 3, &StateMachine::model_callback, this);
 
+        ThreadPools::communication.execute([this] {
+            tcp_callbacks = std::make_unique<tbb::task_group>();
+        });
+
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
             [this]() {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
                     } else {
@@ -78,7 +83,7 @@ public:
 
         utils.tcp_client->set_go_to_cmd_callback(
             [this](const std::vector<std::tuple<float, float>> &coords) {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     utils::goto_command::Response res;
                     goto_multiple_command_callback(coords, res);
                     utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
@@ -88,7 +93,7 @@ public:
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     utils::set_states::Request req;
                     utils::set_states::Response res;
                     req.x = x;
@@ -101,7 +106,7 @@ public:
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     start_bool_callback(started);
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
@@ -114,7 +119,7 @@ public:
 
         utils.tcp_client->set_ack_callback(
             [this]() {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
                     } else {
@@ -126,7 +131,7 @@ public:
 
         utils.tcp_client->set_waypoints_callback(
             [this](double x0, double y0, double yaw0) {
-                tcp_callbacks.run([&] {
+                tcp_callbacks->run([&] {
                     PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
                 });
             }
@@ -136,12 +141,12 @@ public:
     }
     ~StateMachine() {
         // utils.stop_car();
-        tcp_callbacks.wait();
+        tcp_callbacks->wait();
     }
     ros::NodeHandle& nh;
     ros::Subscriber model_states;
 
-    tbb::task_group tcp_callbacks;
+    std::unique_ptr<tbb::task_group> tcp_callbacks;
 
     bool initialized = false;
     bool wait_for_green_flag = false;

@@ -13,7 +13,6 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <any>
 #include <cstdint>
 #include <functional>
 #include <geometry_msgs/Pose.h>
@@ -39,7 +38,7 @@ class TcpClient {
   public:
 	// Constructors
 	TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address);
-	TcpClient(TcpClient &&) = default;
+	TcpClient(TcpClient &&) = delete;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
 	TcpClient &operator=(const TcpClient &) = delete;
@@ -103,7 +102,7 @@ class TcpClient {
 	int tcp_socket;
 	int udp_socket;
 	std::thread main;
-	tbb::task_group tasks;
+	std::unique_ptr<tbb::task_group> tasks;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
