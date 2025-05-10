@@ -86,6 +86,7 @@ public:
                 req.x = x;
                 req.y = y;
                 set_states_callback(req, res);
+                std::cout << "set states callback: " << x << ", " << y << std::endl;
                 utils.tcp_client->send_set_states_srv(true);
             }
         );
@@ -197,8 +198,10 @@ public:
         
         // Authorize python client to start
         if (state == STATE::INIT || state == STATE::DONE) {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(false);
         } else {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(true);
         }
         return 1;

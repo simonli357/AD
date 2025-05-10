@@ -18,7 +18,7 @@ BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
 periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
-// periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
+periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
 periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
 drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,D3, g_encoder); //speed in cm/s
 drivers::CSteeringMotor g_steeringDriver(1, g_rpi, D4, g_imu, g_speedingDriver);
