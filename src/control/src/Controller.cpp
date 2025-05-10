@@ -191,6 +191,7 @@ public:
             }
         }
         utils.tcp_client->send_model_states(msg->pose[*car_idx]);
+        utils.tcp_client->send_swload();
     }
     int initialize() {
         if (initialized) return 1;
