@@ -39,7 +39,11 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
+    // Default values
     pathName    = "run189";
+    x0 = 1.55;
+    y0 = 6.906;
+    yaw0 = 0;
 
     initialize_tcp_client();
     /* initialize(); */
