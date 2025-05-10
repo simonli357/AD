@@ -46,11 +46,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
     yaw0 = 0;
 
     initialize_tcp_client();
-    /* initialize(); */
-    /* while (!imuInitialized) { */
-    /*     ros::spinOnce(); */
-    /* } */
-    /* fetch_run_params(); */
+    initialize();
+    fetch_run_params();
 }
 
 Utility::~Utility() {
