@@ -405,10 +405,10 @@ void TcpClient::send_sign(const std::vector<float> &data) {
     });
 }
 
-void TcpClient::send_image_rgb(const cv::Mat &image) {
-    cv::Mat img = image.clone();
+void TcpClient::send_image_rgb(const cv::Mat &img) {
     tasks->run([this, img] {
         auto& udp_buffer = udp_buffers.local();
+        auto& image_buffer = image_buffers.local();
         cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
         uint32_t length = image_buffer.size();
         size_t payload_size = MAX_DGRAM - header_size;
@@ -430,10 +430,10 @@ void TcpClient::send_image_rgb(const cv::Mat &image) {
     });
 }
 
-void TcpClient::send_image_depth(const cv::Mat &image) {
-    cv::Mat img = image.clone();
+void TcpClient::send_image_depth(const cv::Mat &img) {
     tasks->run([this, img] {
         auto& udp_buffer = udp_buffers.local();
+        auto& depth_buffer = image_buffers.local();
         cv::imencode(".png", img, depth_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
         uint32_t length = depth_buffer.size();
         size_t payload_size = MAX_DGRAM - header_size;

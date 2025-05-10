@@ -90,8 +90,6 @@ class TcpClient {
 	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	std::vector<uchar> image_buffer;
-	std::vector<uchar> depth_buffer;
 	int rgb_img_quality = 30;
 	bool alive = true;
 	bool connected = false;
@@ -115,8 +113,9 @@ class TcpClient {
 	std::unique_ptr<GoToSrv> goto_srv;
 	std::unique_ptr<WaypointsSrv> waypoints_srv;
 	std::unique_ptr<SetStatesSrv> set_states_srv;
-	// UDP Buffer
+	// UDP buffers
 	tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers{};
+	tbb::enumerable_thread_specific<std::vector<uchar>> image_buffers{};
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
