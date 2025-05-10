@@ -272,10 +272,10 @@ class CompileFormWidget(QDialog):
             cmd = self.remote_cmd_cached
         else:
             self.cache['remote_cmd'] = cmd
-        bash = 'bash -ic'
-        src_ros = 'source /opt/ros/noetic/setup.sh'
-        ssh = f'sshpass -p {passwd} ssh -tt {target}'
-        remote_command = f'\'exec bash -c "{src_ros} && {cmd}"\''
+        bash = "bash -ic"
+        src_ros = "source /opt/ros/noetic/setup.sh"
+        ssh = f"sshpass -p {passwd} ssh -tt {target}"
+        remote_command = f'\'{src_ros} && cd {catkin_ws} && {cmd}\''
         self.command = f'{ssh} "{bash} {remote_command}"'
 
     def set_local_cmd(self):
