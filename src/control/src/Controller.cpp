@@ -132,12 +132,11 @@ public:
             }
         );
 
-        tcp_callbacks.wait();
-
         initialize();
     }
     ~StateMachine() {
         // utils.stop_car();
+        tcp_callbacks.wait();
     }
     ros::NodeHandle& nh;
     ros::Subscriber model_states;
