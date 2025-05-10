@@ -222,7 +222,7 @@ void TcpClient::listen() {
 // ------------------- //
 
 void TcpClient::send_type(const std::string &str) {
-    tasks->run([&] {
+    tasks->run([this, str] {
         uint32_t length = str.size();
         size_t total_size = header_size + length;
         std::vector<uint8_t> full_message(total_size);
@@ -234,7 +234,7 @@ void TcpClient::send_type(const std::string &str) {
 }
 
 void TcpClient::send_string(const std::string &str) {
-    tasks->run([&] {
+    tasks->run([this, str] {
 		uint32_t length = str.size();
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
@@ -246,7 +246,7 @@ void TcpClient::send_string(const std::string &str) {
 }
 
 void TcpClient::send_string(const std::string &str, uint8_t datatype) {
-    tasks->run([&] {
+    tasks->run([this, str, datatype] {
 		uint32_t length = str.size();
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
@@ -258,7 +258,7 @@ void TcpClient::send_string(const std::string &str, uint8_t datatype) {
 }
 
 void TcpClient::send_trigger(const std_srvs::Trigger &trigger) {
-    tasks->run([&] {
+    tasks->run([this, trigger] {
 		trigger_msg->encode(trigger);
 		std::vector<uint8_t> bytes = trigger_msg->serialize(tcp_data_types[1]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -266,7 +266,7 @@ void TcpClient::send_trigger(const std_srvs::Trigger &trigger) {
 }
 
 void TcpClient::send_message(const std_msgs::String &msg) {
-    tasks->run([&] {
+    tasks->run([this, msg] {
 		uint32_t length = ros::serialization::serializationLength(msg);
 		std::vector<uint8_t> message(length);
 		ros::serialization::OStream stream(message.data(), length);
@@ -281,7 +281,7 @@ void TcpClient::send_message(const std_msgs::String &msg) {
 }
 
 void TcpClient::send_go_to_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals) {
-    tasks->run([&] {
+    tasks->run([this, state_refs, input_refs, wp_attributes, wp_normals] {
 		goto_srv->encode(state_refs, input_refs, wp_attributes, wp_normals);
 		std::vector<uint8_t> bytes = goto_srv->serialize(tcp_data_types[3]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -289,7 +289,7 @@ void TcpClient::send_go_to_srv(const Float32MultiArray &state_refs, const Float3
 }
 
 void TcpClient::send_go_to_cmd_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals, bool success) {
-    tasks->run([&] {
+    tasks->run([this, state_refs, input_refs, wp_attributes, wp_normals, success] {
 		goto_cmd_srv->encode(state_refs, input_refs, wp_attributes, wp_normals, success);
 		std::vector<uint8_t> bytes = goto_cmd_srv->serialize(tcp_data_types[4]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -297,7 +297,7 @@ void TcpClient::send_go_to_cmd_srv(const Float32MultiArray &state_refs, const Fl
 }
 
 void TcpClient::send_set_states_srv(bool success) {
-    tasks->run([&] {
+    tasks->run([this, success] {
 		uint32_t length = 1;
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
@@ -309,7 +309,7 @@ void TcpClient::send_set_states_srv(bool success) {
 }
 
 void TcpClient::send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals) {
-    tasks->run([&] {
+    tasks->run([this, state_refs, input_refs, wp_attributes, wp_normals] {
 		waypoints_srv->encode(state_refs, input_refs, wp_attributes, wp_normals);
 		std::vector<uint8_t> bytes = waypoints_srv->serialize(tcp_data_types[6]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -317,7 +317,7 @@ void TcpClient::send_waypoints_srv(const Float32MultiArray &state_refs, const Fl
 }
 
 void TcpClient::send_start_srv(bool started) {
-    tasks->run([&] {
+    tasks->run([this, started] {
 		uint32_t length = 1;
 		size_t total_size = header_size + length;
 		std::vector<uint8_t> full_message(total_size);
@@ -329,7 +329,7 @@ void TcpClient::send_start_srv(bool started) {
 }
 
 void TcpClient::send_params(const std::vector<double> &state_refs, const std::vector<double> &attributes) {
-    tasks->run([&] {
+    tasks->run([this, state_refs, attributes] {
 		params_msg->encode(state_refs, attributes);
 		std::vector<uint8_t> bytes = params_msg->serialize(tcp_data_types[8]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -337,7 +337,7 @@ void TcpClient::send_params(const std::vector<double> &state_refs, const std::ve
 }
 
 void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init) {
-    tasks->run([&] {
+    tasks->run([this, v_ref, path_name, x_init, y_init, yaw_init] {
 		run_msg->encode(v_ref, path_name, x_init, y_init, yaw_init);
 		std::vector<uint8_t> bytes = run_msg->serialize(tcp_data_types[9]);
 		send(tcp_socket, bytes.data(), bytes.size(), 0);
@@ -349,7 +349,7 @@ void TcpClient::send_run(float v_ref, const std::string &path_name, float x_init
 // ------------------- //
 
 void TcpClient::send_lane2(const utils::Lane2 &lane) {
-    tasks->run([&] {
+    tasks->run([this, lane] {
         auto& udp_buffer = udp_buffers.local();
 		std_msgs::Header header = lane.header;
 		float center = lane.center;
@@ -364,7 +364,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 }
 
 void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
-    tasks->run([&] {
+    tasks->run([this, array] {
         auto& udp_buffer = udp_buffers.local();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -378,7 +378,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
-    tasks->run([&] {
+    tasks->run([this, array] {
         auto& udp_buffer = udp_buffers.local();
 		uint32_t length = ros::serialization::serializationLength(array);
 		std::vector<uint8_t> arr(length);
@@ -392,7 +392,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 }
 
 void TcpClient::send_sign(const std::vector<float> &data) {
-    tasks->run([&] {
+    tasks->run([this, data] {
         auto& udp_buffer = udp_buffers.local();
         std_msgs::Float32MultiArray array;
         array.data = std::move(data);
@@ -408,7 +408,7 @@ void TcpClient::send_sign(const std::vector<float> &data) {
 }
 
 void TcpClient::send_image_rgb(const cv::Mat &img) {
-    tasks->run([&] {
+    tasks->run([this, img] {
         auto& udp_buffer = udp_buffers.local();
         cv::imencode(".jpg", img, image_buffer, {cv::IMWRITE_JPEG_QUALITY, rgb_img_quality});
         uint32_t length = image_buffer.size();
@@ -432,7 +432,7 @@ void TcpClient::send_image_rgb(const cv::Mat &img) {
 }
 
 void TcpClient::send_image_depth(const cv::Mat &img) {
-    tasks->run([&] {
+    tasks->run([this, img] {
         auto& udp_buffer = udp_buffers.local();
         cv::imencode(".png", img, depth_buffer, {cv::IMWRITE_PNG_COMPRESSION, 3});
         uint32_t length = depth_buffer.size();
@@ -456,7 +456,7 @@ void TcpClient::send_image_depth(const cv::Mat &img) {
 }
 
 void TcpClient::send_steer(float steer) {
-    tasks->run([&] {
+    tasks->run([this, steer] {
         auto& udp_buffer = udp_buffers.local();
 		uint32_t length = sizeof(steer);
 		std::memcpy(udp_buffer.data(), &length, message_size);
@@ -467,7 +467,7 @@ void TcpClient::send_steer(float steer) {
 }
 
 void TcpClient::send_swload() {
-    tasks->run([&] {
+    tasks->run([this] {
         if (swload_counter == 33) {
             swload_counter = 0;
             auto& udp_buffer = udp_buffers.local();
@@ -481,7 +481,7 @@ void TcpClient::send_swload() {
 }
 
 void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
-    tasks->run([&] {
+    tasks->run([this, msg] {
         if (model_poses_counter == 33) {
             model_poses_counter = 0;
             auto& udp_buffer = udp_buffers.local();
