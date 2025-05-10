@@ -39,6 +39,8 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
+    pathName    = "run189";
+
     initialize_tcp_client();
     /* initialize(); */
     /* while (!imuInitialized) { */
@@ -108,7 +110,6 @@ void Utility::fetch_run_params() {
     this->x0   = avg_x;
     this->y0   = avg_y;
     this->yaw0 = yaw;
-    pathName    = "run189";
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
 
