@@ -13,7 +13,6 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <any>
 #include <cstdint>
 #include <functional>
 #include <geometry_msgs/Pose.h>
@@ -26,6 +25,7 @@
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/enumerable_thread_specific.h>
+#include <tbb/task_group.h>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -38,7 +38,7 @@ class TcpClient {
   public:
 	// Constructors
 	TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address);
-	TcpClient(TcpClient &&) = default;
+	TcpClient(TcpClient &&) = delete;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
 	TcpClient &operator=(const TcpClient &) = delete;
@@ -90,11 +90,8 @@ class TcpClient {
 	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	std::vector<uchar> image_buffer;
-	std::vector<uchar> depth_buffer;
-	int swload_counter = 0;
-	int model_poses_counter = 0;
 	int rgb_img_quality = 30;
+    int swload_counter = 0;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
@@ -102,6 +99,7 @@ class TcpClient {
 	int tcp_socket;
 	int udp_socket;
 	std::thread main;
+	std::unique_ptr<tbb::task_group> tasks;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
@@ -116,11 +114,9 @@ class TcpClient {
 	std::unique_ptr<GoToSrv> goto_srv;
 	std::unique_ptr<WaypointsSrv> waypoints_srv;
 	std::unique_ptr<SetStatesSrv> set_states_srv;
-	// Task Queue
-	tbb::concurrent_queue<std::any> stream_tasks;
-	tbb::concurrent_queue<std::any> dgram_tasks;
-	// UDP Buffer
+	// UDP buffers
 	tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers{};
+	tbb::enumerable_thread_specific<std::vector<uchar>> image_buffers{};
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -129,7 +125,6 @@ class TcpClient {
 	void set_udp_data_types();
 	void poll_connection();
 	void listen();
-	void send_data();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Callbacks

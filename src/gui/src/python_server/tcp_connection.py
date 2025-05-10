@@ -18,7 +18,7 @@ class TcpConnection:
     def __init__(self, client_socket, on_packet, is_host=True, dashboard=False):
         self.socket = client_socket
         self.alive = True
-        self.tcp_can_send = dashboard
+        self.run_can_send = dashboard
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
@@ -129,8 +129,6 @@ class TcpConnection:
             self.socket.sendall(bytes)
 
     def send_string(self, string):
-        if not self.tcp_can_send:
-            return
         data = string.encode('utf-8')
         length = struct.pack('<I', len(string))
         bytes = length + self.types[0] + data
@@ -138,43 +136,31 @@ class TcpConnection:
             self.socket.sendall(bytes)
 
     def send_trigger(self, request, response):
-        if not self.tcp_can_send:
-            return
         bytes = self.triggers.encode(request, response)
         with self.lock:
             self.socket.sendall(bytes)
 
     def send_go_to_srv(self, vrefName, x0, y0, yaw0, dest_x, dest_y):
-        if not self.tcp_can_send:
-            return
         bytes = self.go_to_srv_msg.encode(vrefName, x0, y0, dest_x, dest_y)
         with self.lock:
             self.socket.sendall(bytes)
 
     def send_go_to_cmd_srv(self, cursor_coords):
-        if not self.tcp_can_send:
-            return
         bytes = self.go_to_cmd_srv_msg.encode(cursor_coords)
         with self.lock:
             self.socket.sendall(bytes)
 
     def send_set_states_srv(self, x, y):
-        if not self.tcp_can_send:
-            return
         bytes = self.set_states_srv_msg.encode(x, y)
         with self.lock:
             self.socket.sendall(bytes)
 
     def send_waypoints_srv(self, vrefName, pathName, x0, y0, yaw0):
-        if not self.tcp_can_send:
-            return
         bytes = self.waypoints_srv_msg.encode(vrefName, pathName, x0, y0, yaw0)
         with self.lock:
             self.socket.sendall(bytes)
 
     def send_start_srv(self, start):
-        if not self.tcp_can_send:
-            return
         str = "start" if start else "stop"
         data = str.encode('utf-8')
         length = struct.pack('<I', len(str))
@@ -247,7 +233,7 @@ class TcpConnection:
             while self.on_start is None:
                 time.sleep(0.2)
             self.on_start(self.start_srv_msg)
-            self.tcp_can_send = True
+            self.run_can_send = True
         except Exception as e:
             print(e)
 

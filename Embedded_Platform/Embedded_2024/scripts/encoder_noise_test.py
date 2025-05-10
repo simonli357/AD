@@ -49,13 +49,13 @@ def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
 
 # ────────────────────────────────────────────────────────────────────────────────
 
-def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[list[float], list[float]]:
+def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: float) -> tuple[list[float], list[float]]:
     ser = serial.Serial(port, baudrate=baud, timeout=0.1)
     time.sleep(0.1)
 
     t0 = time.time()
     next_send = 0.0
-    last_angle = 0.0
+    last_angle = steer
 
     times: list[float] = []
     speeds_cm: list[float] = []
@@ -65,12 +65,12 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[
         while True:
             now = time.time()
             elapsed = now - t0
+
             if elapsed >= duration:
                 break
 
             if elapsed >= next_send:
-                # ser.write(build_cmd(speed_cm_s, last_angle))
-                ser.write(build_cmd(speed_cm_s, -20.0))
+                ser.write(build_cmd(speed_cm_s, steer))
                 next_send += 0.1
 
             while ser.in_waiting:
@@ -78,10 +78,6 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[
                 m = ENC_PATTERN.match(line)
                 if not m:
                     continue
-                # angle = float(m.group(1))
-                # speed_deg_s = float(m.group(2))
-                # last_angle = angle
-                # speeds_cm.append(speed_deg_s / CM_TO_DEG)
                 angle = float(m.group(1))
                 speed_cm = float(m.group(2))
                 last_angle = angle
@@ -91,11 +87,18 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float) -> tuple[
             if int(elapsed) % 1 == 0:
                 sys.stdout.write(f"\r{elapsed:4.1f}s / {duration:.1f}s")
                 sys.stdout.flush()
-    finally:
-        ser.close()
-    print()
-    return times, speeds_cm
 
+    except KeyboardInterrupt:
+        print("\nInterrupted by user — stopping motor.")
+        ser.write(build_cmd(0.0, 0.0))  # stop motor
+        time.sleep(0.1)
+
+    finally:
+        ser.write(build_cmd(0.0, 0.0))  # always stop motor on exit
+        ser.close()
+        print("\nSerial closed.")
+
+    return times, speeds_cm
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -186,14 +189,15 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=50, help="Commanded speed [cm/s]")
-    ap.add_argument("--dur", type=float, default=5, help="Duration [s]")
+    ap.add_argument("--cmd", type=float, default=32, help="Commanded speed [cm/s]")
+    ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
+    ap.add_argument("--dur", type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
     args = ap.parse_args()
 
-    times, speeds = run_test(args.port, args.baud, args.cmd, args.dur)
+    times, speeds = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
     if len(speeds) < 3:
         print("Insufficient samples.")
         return
@@ -221,3 +225,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

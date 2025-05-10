@@ -6,6 +6,11 @@
 #include <array>
 #include <string>
 #include <vector>
+#include <tbb/task_arena.h>
+
+namespace ThreadPools {
+    inline tbb::task_arena communication{1}; // 1 Thread for communication tasks
+}
 
 namespace VehicleConstants {
     void init_params(Database &db);
