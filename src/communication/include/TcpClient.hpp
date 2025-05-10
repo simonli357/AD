@@ -91,6 +91,7 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	int rgb_img_quality = 30;
+    int swload_counter = 0;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;

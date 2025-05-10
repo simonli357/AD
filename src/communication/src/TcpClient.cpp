@@ -150,6 +150,11 @@ void TcpClient::listen() {
 		// --- Header Reception ---
 		ssize_t total_header_received = 0;
 		while (total_header_received < 5) {
+            if (++swload_counter == 100) {
+                send_swload();
+                swload_counter = 0;
+            }
+
 			// --- Read data ---
 			ssize_t bytes = recv(tcp_socket, header_buffer.data() + total_header_received, 5 - total_header_received, 0);
 
