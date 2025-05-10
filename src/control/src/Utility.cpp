@@ -40,11 +40,11 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
 
     initialize_tcp_client();
-    initialize();
-    while (!imuInitialized) {
-        ros::spinOnce();
-    }
-    fetch_run_params();
+    /* initialize(); */
+    /* while (!imuInitialized) { */
+    /*     ros::spinOnce(); */
+    /* } */
+    /* fetch_run_params(); */
 }
 
 Utility::~Utility() {
