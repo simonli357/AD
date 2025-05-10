@@ -204,12 +204,10 @@ void TcpClient::listen() {
 		}
 
 		if (total_data_received == length) {
-			auto handler = tcp_data_actions.find(type);
-			if (handler != tcp_data_actions.end()) {
-                tasks->run([&] {
-                    handler->second(this, data_buffer);
-                });
-			}
+            auto handler = tcp_data_actions.find(type);
+            if (handler != tcp_data_actions.end()) {
+                handler->second(this, data_buffer);
+            }
 		} else {
 			connected = false;
 		}
