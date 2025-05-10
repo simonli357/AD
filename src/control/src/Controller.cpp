@@ -1,3 +1,5 @@
+#include <oneapi/tbb/parallel_invoke.h>
+#include <oneapi/tbb/task_group.h>
 #include <ros/ros.h>
 #include <ros/subscriber.h>
 #include <thread>
@@ -29,6 +31,7 @@
 #include "GroundTruth.h"
 #include "Tunable.h"
 #include "EgoCar.h"
+#include <tbb/task_group.h>
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -61,61 +64,75 @@ public:
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
             [this]() {
-                if (state == STATE::INIT || state == STATE::DONE) {
-                    utils.tcp_client->send_start_srv(false);
-                } else {
-                    utils.tcp_client->send_start_srv(true);
-                }
-                utils.fetch_run_params();
-                utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
+                tcp_callbacks.run([&] {
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                    utils.fetch_run_params();
+                    utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
+                });
             }
         );
 
         utils.tcp_client->set_go_to_cmd_callback(
             [this](const std::vector<std::tuple<float, float>> &coords) {
-                utils::goto_command::Response res;
-                goto_multiple_command_callback(coords, res);
-                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+                tcp_callbacks.run([&] {
+                    utils::goto_command::Response res;
+                    goto_multiple_command_callback(coords, res);
+                    utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+                });
             }
         );
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                utils::set_states::Request req;
-                utils::set_states::Response res;
-                req.x = x;
-                req.y = y;
-                set_states_callback(req, res);
-                utils.tcp_client->send_set_states_srv(true);
+                tcp_callbacks.run([&] {
+                    utils::set_states::Request req;
+                    utils::set_states::Response res;
+                    req.x = x;
+                    req.y = y;
+                    set_states_callback(req, res);
+                    utils.tcp_client->send_set_states_srv(true);
+                });
             }
         );
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                start_bool_callback(started);
-                if (state == STATE::INIT || state == STATE::DONE) {
-                    utils.tcp_client->send_start_srv(false);
-                } else {
-                    utils.tcp_client->send_start_srv(true);
-                }
+                tcp_callbacks.run([&] {
+                    start_bool_callback(started);
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                });
             }
         );
 
         utils.tcp_client->set_ack_callback(
             [this]() {
-                if (state == STATE::INIT || state == STATE::DONE) {
-                    utils.tcp_client->send_start_srv(false);
-                } else {
-                    utils.tcp_client->send_start_srv(true);
-                }
+                tcp_callbacks.run([&] {
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                });
             }
         );
 
         utils.tcp_client->set_waypoints_callback(
             [this](double x0, double y0, double yaw0) {
-                PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+                tcp_callbacks.run([&] {
+                    PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+                });
             }
         );
+
+        tcp_callbacks.wait();
 
         initialize();
     }
@@ -124,6 +141,8 @@ public:
     }
     ros::NodeHandle& nh;
     ros::Subscriber model_states;
+
+    tbb::task_group tcp_callbacks;
 
     bool initialized = false;
     bool wait_for_green_flag = false;
