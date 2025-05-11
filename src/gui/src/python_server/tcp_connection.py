@@ -18,7 +18,6 @@ class TcpConnection:
     def __init__(self, client_socket, on_packet, is_host=True, dashboard=False):
         self.socket = client_socket
         self.alive = True
-        self.run_can_send = dashboard
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
@@ -233,7 +232,6 @@ class TcpConnection:
             while self.on_start is None:
                 time.sleep(0.2)
             self.on_start(self.start_srv_msg)
-            self.run_can_send = True
         except Exception as e:
             print(e)
 
