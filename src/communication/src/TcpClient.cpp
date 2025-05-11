@@ -521,40 +521,40 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
-	if (!trigger_response_callback) {
-		return;
+	while (!trigger_response_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	trigger_msg->deserialize(bytes);
 	trigger_response_callback(trigger_msg->response);
 }
 
 void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
-	if (!go_to_cmd_callback) {
-		return;
+	while (!go_to_cmd_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	goto_cmd_srv->deserialize(bytes);
 	go_to_cmd_callback(goto_cmd_srv->coords);
 }
 
 void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
-	if (!set_states_callback) {
-		return;
+	while (!set_states_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	set_states_srv->deserialize(bytes);
 	set_states_callback(set_states_srv->x, set_states_srv->y);
 }
 
 void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
-	if (!waypoints_callback) {
-		return;
+	while (!waypoints_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	waypoints_srv->deserialize(bytes);
 	waypoints_callback(waypoints_srv->x0, waypoints_srv->y0, waypoints_srv->yaw0);
 }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
-	if (!start_callback) {
-		return;
+	while (!start_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "start") {
