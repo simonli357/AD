@@ -80,16 +80,15 @@ class Server:
                     pass
             self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
-    def on_packet(self, source, packet, lock):
-        with lock:
-            if source.is_host and not source.is_dashboard:
-                for key, db in self.dashboard_clients.items():
-                    try:
-                        db.socket.sendall(packet)
-                    except OSError:
-                        pass
-            elif source.is_host and source.is_dashboard:
+    def on_packet(self, source, packet):
+        if source.is_host and not source.is_dashboard:
+            for key, db in self.dashboard_clients.items():
                 try:
-                    self.tcp_client.socket.sendall(packet)
-                except Exception as e:
-                    print(e)
+                    db.socket.sendall(packet)
+                except OSError:
+                    pass
+        elif source.is_host and source.is_dashboard:
+            try:
+                self.tcp_client.socket.sendall(packet)
+            except Exception as e:
+                print(e)
