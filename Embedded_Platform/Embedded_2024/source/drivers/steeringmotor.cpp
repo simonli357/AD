@@ -166,16 +166,16 @@ namespace drivers{
         // Zero default when returning from a right turn
         ZD_right = 0.0755;
         // Clip the steering angle for safety
-        if(f_angle > 20.8) f_angle = 20.8; 
-        if(f_angle < -21.8) f_angle = -21.8;
+        if(f_angle > 21.8) f_angle = 21.8; 
+        if(f_angle < -23.1) f_angle = -23.1;
 
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle < 0)
         {
             // Update quadratic function parameters
-            alpha = -22254;
-            beta = 1995.5;
-            gamma = -23.127;
+            alpha = -12382;
+            beta = 763.29;
+            gamma = 14.556;
             // Compute the dutyCycle 
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
@@ -184,10 +184,10 @@ namespace drivers{
         if(f_angle > 0)
         {
             // Update quadratic function parameters
-            alpha = -18728;
-            beta = 4175;
-            gamma = -211.28;
-            // Compute the dutyCycle 
+            alpha = 22127;
+            beta = -483.5;
+            gamma = 242.3;
+            // Compute the dutyCycle 20
             dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
         }
         // Special case if we want to reset to 0 and set the car to go straight
