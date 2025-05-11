@@ -230,6 +230,7 @@ float CEncoder::getTotalDisplacementDegrees() {
     total += delta;
     prev = current;
 
+    printf("[Encoder] Total displacement = %.2f°\n", total);
     return total;
 }
 
@@ -254,7 +255,7 @@ void CEncoder::_run() {
 
     // float angleDeg = readAngleDegrees();
     // float speedDeg = readAngularSpeed();
-    // float displacementDeg = getTotalDisplacementDegrees(); 
+    float displacementDeg = getTotalDisplacementDegrees(); 
 
     // // ————— 5) Mark end of execution and accumulate for average print
     // uint32_t end_us     = execTimer.read_us();
