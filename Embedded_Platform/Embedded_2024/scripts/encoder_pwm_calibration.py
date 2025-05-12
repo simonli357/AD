@@ -205,6 +205,7 @@ def main() -> None:
     ap.add_argument("--cmd",  type=float, default=32, help="Commanded speed [cm/s]; ignored if --pwm provided.")
     ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
+    ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
     ap.add_argument("--dur",   type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
@@ -217,6 +218,7 @@ def main() -> None:
 
     motor_id = MOTOR_ID_PWM if is_pwm else MOTOR_ID_SPEED
     cmd_value = args.pwm if is_pwm else args.cmd
+    steer_value = args.pwm_steer if is_pwm else args.steer
 
     try:
         times, speeds, total_start, total_end = run_test(
@@ -225,7 +227,7 @@ def main() -> None:
             motor_id,
             cmd_value,
             args.dur,
-            args.steer,
+            steer_value,
         )
     except KeyboardInterrupt:
         print("Test aborted by user.")

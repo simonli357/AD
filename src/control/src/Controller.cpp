@@ -91,7 +91,7 @@ public:
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                tcp_callbacks->run([this, x, y] {
+                 tcp_callbacks->run([this, x, y] {
                     utils::set_states::Request req;
                     utils::set_states::Response res;
                     req.x = x;
@@ -218,8 +218,10 @@ public:
         
         // Authorize python client to start
         if (state == STATE::INIT || state == STATE::DONE) {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(false);
         } else {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(true);
         }
         return 1;
@@ -1163,7 +1165,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            utils.reset_yaw();
+            utils.reset_yaw(0);
         }
         res.success = true;
         return true;
