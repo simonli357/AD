@@ -125,7 +125,7 @@ void Utility::initialize() {
     if (true) {
         try {
             serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-            serial->set_option(boost::asio::serial_port_base::baud_rate(460800));
+            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
             start_async_read();
             std::thread([this]{ io.run(); }).detach();
             debug("Utility constructor: Serial port opened successfully.", 1);
@@ -475,11 +475,11 @@ void Utility::scan_frames()
 //                     this->yaw = -yaw_deg * M_PI/180;
 //                     this->yaw = helper::yaw_mod(this->yaw);
 //                 }
-                {
-                    // std::lock_guard<std::mutex> lock(general_mutex);
-                    this->yaw = -yaw_deg * M_PI/180 + yaw_offset;
-                    this->yaw = helper::yaw_mod(this->yaw);
-                }
+                // {
+                //     // std::lock_guard<std::mutex> lock(general_mutex);
+                //     this->yaw = -yaw_deg * M_PI/180 + yaw_offset;
+                //     this->yaw = helper::yaw_mod(this->yaw);
+                // }
 
 //                 static bool debug_imu = false;
 //                 if (debug_imu) {
