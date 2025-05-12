@@ -80,6 +80,7 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         pitch.store(pitch_deg * M_PI / 180.0, std::memory_order_relaxed);
         double tmp_yaw = -yaw_deg * M_PI / 180.0 + yaw_offset.load();
         yaw.store(yaw_mod(tmp_yaw), std::memory_order_relaxed);
+        // std::cout << "Sensing: pitch: " << pitch_deg << " yaw: " << yaw_deg << std::endl;
     }
 }
 

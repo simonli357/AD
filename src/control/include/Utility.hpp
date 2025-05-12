@@ -98,6 +98,7 @@ public:
         return filtered_speed;
     }
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
+    double filtered_encoder_speed = 0.0;
     double x0 = -1, y0 = -1, yaw0 = 0;
     std::string pathName;
     double gps_state[3];
@@ -386,7 +387,8 @@ public:
         vehicle_pos << x, y;
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
-        P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
+        // P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
+        P_v[0] -= latency * filtered_encoder_speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
