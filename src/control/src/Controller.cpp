@@ -1166,7 +1166,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            utils.reset_yaw(0);
+            Sensing::reset_yaw(0);
         }
         res.success = true;
         return true;
@@ -1622,6 +1622,7 @@ int main(int argc, char **argv) {
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
+    Sensing::initialize_sensing(nh);
     StateMachine sm(nh, db);
 
     globalStateMachinePtr = &sm;

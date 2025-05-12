@@ -66,7 +66,7 @@ public:
 
     double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
     int stopline = -1;
-    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, encoder_speed, x_speed, y_speed;
+    double height=0, velocity, steer_command, velocity_command, encoder_speed, x_speed, y_speed;
     std::deque<double> velocity_command_queue; 
     void add_velocity_command(double new_command) {
         velocity_command_queue.push_back(new_command);
@@ -97,7 +97,6 @@ public:
         }
     }
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
-    double yaw_offset = 0;
     double x0 = -1, y0 = -1, yaw0 = 0;
     std::string pathName;
     double gps_state[3];
@@ -214,7 +213,7 @@ public:
     boost::asio::io_service io;
     std::unique_ptr<boost::asio::serial_port> serial;
     double get_yaw() {
-        return yaw;
+        return Sensing::yaw;
     }
     int set_states(double x, double y) {
         x0 = x;
@@ -232,15 +231,15 @@ public:
             x_ = odomX + x0;
             y_ = odomY + y0;
         }
-        yaw_ = yaw;
+        yaw_ = Sengin::yaw;
         return 0;
     }
     void update_states(Eigen::Vector3d& o_state) {
         // std::lock_guard<std::mutex> lock(general_mutex);
         if (subModel) {
-            o_state << gps_x, gps_y, yaw;
+            o_state << gps_x, gps_y, Sensing::yaw;
         } else {
-            o_state << odomX + x0, odomY + y0, yaw;
+            o_state << odomX + x0, odomY + y0, Sensing::yaw;
         }
     }
     int recalibrate_states(double x_offset, double y_offset) {
@@ -513,18 +512,6 @@ public:
         double world_y = vehicle_y + (std::sin(vehicle_yaw) * object_x + std::cos(vehicle_yaw) * object_y);
         double world_yaw = object_yaw + vehicle_yaw;
         return {world_x, world_y, world_yaw};
-    }
-
-    void reset_yaw(int direction) {
-        if (direction == 0) { // east
-            yaw_offset = -yaw;
-        } else if (direction == 1) { // north
-            yaw_offset = -yaw + M_PI / 2;
-        } else if (direction == 2) { // west
-            yaw_offset = -yaw + M_PI;
-        } else if (direction == 3) { // south
-            yaw_offset = -yaw - M_PI / 2;
-        }
     }
 
     void debug(const std::string& message, int level) {

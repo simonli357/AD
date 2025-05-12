@@ -149,7 +149,20 @@ namespace detail {
     }
 } // namespace detail
 
-inline void initialise(ros::NodeHandle& nh)
+inline void reset_yaw(int direction) {
+    double current_yaw = yaw.load(std::memory_order_relaxed);
+    double offset = 0.0;
+    switch (direction) {
+        case 0: offset = -current_yaw;                 break; // east
+        case 1: offset = -current_yaw + M_PI / 2;      break; // north
+        case 2: offset = -current_yaw + M_PI;          break; // west
+        case 3: offset = -current_yaw - M_PI / 2;      break; // south
+        default: return; // invalid input, do nothing
+    }
+    yaw_offset.store(offset, std::memory_order_relaxed);
+}
+
+inline void initialize_sensing(ros::NodeHandle& nh)
 {
     if (!Tunable::initialized) {
         std::cerr << "Sensing: Tunable not initialized" << std::endl;
