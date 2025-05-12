@@ -41,6 +41,8 @@
 #include <std_msgs/Float32.h>
 #include <utils/Sign.h>
 #include <utils/encoder.h>
+#include "utils/helper.h"
+#include "Sensing.h"
 
 using namespace VehicleConstants;
 using namespace Tunable;

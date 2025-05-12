@@ -30,6 +30,7 @@
 #include "GroundTruth.h"
 #include "Tunable.h"
 #include "EgoCar.h"
+#include "Sensing.h"
 #include <tbb/task_group.h>
 
 using namespace VehicleConstants;

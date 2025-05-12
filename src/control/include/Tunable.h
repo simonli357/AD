@@ -9,6 +9,8 @@
     }
 
 namespace Tunable {
+    inline bool initialized = false;
+
     // launch args
     inline bool sign, ekf, lane, real, dashboard, keyboardControl, pubWaypoints, hasGps, useGps;
     inline bool emergency = false;
@@ -155,7 +157,8 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
-  
+        
+      initialized = true;
       return true;
   }
 }
