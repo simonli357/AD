@@ -123,7 +123,11 @@ class TextRenderer:
             # tweak special glyphs (° . -) if needed
             if c == '°' and self.pixel_size == 16:
                 ypos -= 1.7 * h * scale
+            if c == '°' and self.pixel_size == 24:
+                ypos -= 1.6 * h * scale
             if c == '.' and self.pixel_size == 16:
+                ypos += 5 * h * scale
+            if c == '.' and self.pixel_size == 24:
                 ypos += 5 * h * scale
             if c == '.' and self.pixel_size == 48:
                 ypos += 4.2 * h * scale
