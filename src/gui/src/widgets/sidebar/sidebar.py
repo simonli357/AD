@@ -168,7 +168,8 @@ class SidebarWidget(QtWidgets.QWidget):
             self.call_set_states_service(x, y)
 
     def handle_yaw_btn_click(self) -> None:
-        self.call_set_states_service()
+        self.call_set_states_service(0)
+        # TODO
 
     def handle_save_path_btn_click(self) -> None:
         path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -189,11 +190,11 @@ class SidebarWidget(QtWidgets.QWidget):
     def on_set_states(self, success):
         self.main_window.reset_run_statistics()
 
-    def call_set_states_service(self, x=-200.0, y=-200.0):
+    def call_set_states_service(self, direction):
         print("set states service called")
         try:
             if self.server.tcp_client.socket is None:
                 return
-            self.server.tcp_client.send_set_states_srv(x, y)
+            self.server.tcp_client.send_yaw(direction)
         except Exception as e:
             print(e)

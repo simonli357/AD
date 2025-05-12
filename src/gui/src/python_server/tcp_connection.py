@@ -46,6 +46,7 @@ class TcpConnection:
             b'\x08': self.parse_start_srv,
             b'\x09': self.parse_params,
             b'\x0a': self.parse_run,
+            b'\x0b': self.parse_yaw,
         })
         self.types = list(self.data_actions.keys())
         self.strings = deque()
@@ -158,6 +159,11 @@ class TcpConnection:
         bytes = length + self.types[7] + data
         self.socket.sendall(bytes)
 
+    def send_yaw(self, direction):
+        direction = struct.pack('<I', direction)
+        bytes = 4 + self.types[8] + direction
+        self.socket.sendall(bytes)
+
     ###################
     # Decode
     ###################
@@ -241,3 +247,6 @@ class TcpConnection:
             self.go_to_srv_msg.decode(bytes)
         except Exception as e:
             print(e)
+
+    def parse_yaw(self, bytes):
+        pass
