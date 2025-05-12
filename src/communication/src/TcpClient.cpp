@@ -570,7 +570,7 @@ void TcpClient::parse_yaw(std::vector<uint8_t> &bytes) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 	uint32_t direction;
-	std::memcpy(&direction, bytes.data(), sizeof(uint32_t));
+	std::memcpy(&direction, bytes.data(), 4);
 	switch (direction) {
 	case 0:
 		std::cout << "Setting orientation to NORTH" << std::endl;
