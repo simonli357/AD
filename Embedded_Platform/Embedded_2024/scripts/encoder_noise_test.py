@@ -219,7 +219,7 @@ def main() -> None:
 
     # stop motor
     ser = serial.Serial(args.port, baudrate=args.baud, timeout=0.1)
-    ser.write(build_cmd(0.0, 0.0))
+    ser.write(build_cmd(10.0, 0.0))
     ser.close()
 
 

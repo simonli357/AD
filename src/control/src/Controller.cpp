@@ -30,6 +30,7 @@
 #include "GroundTruth.h"
 #include "Tunable.h"
 #include "EgoCar.h"
+#include "Sensing.h"
 #include <tbb/task_group.h>
 
 using namespace VehicleConstants;
@@ -1165,7 +1166,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            utils.reset_yaw(0);
+            Sensing::reset_yaw(0);
         }
         res.success = true;
         return true;
@@ -1599,10 +1600,10 @@ void signalHandler(int signum) {
         globalStateMachinePtr->utils.stop_car();
         globalStateMachinePtr->call_trigger_service();
     }
-    if (globalStateMachinePtr->utils.serial && globalStateMachinePtr->utils.serial->is_open()) {
-        globalStateMachinePtr->utils.serial->close();
+    if (Sensing::serial && Sensing::serial->is_open()) {
+        Sensing::serial->close();
     }
-    globalStateMachinePtr->utils.serial.reset();
+    Sensing::serial.reset();
     ros::shutdown();
     exit(signum);
 }
@@ -1621,6 +1622,7 @@ int main(int argc, char **argv) {
     }
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
+    Sensing::initialize_sensing(nh);
     StateMachine sm(nh, db);
 
     globalStateMachinePtr = &sm;

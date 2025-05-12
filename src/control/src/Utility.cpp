@@ -32,8 +32,7 @@
 #include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
-    : nh(nh_), pubOdom(pubOdom),
-    io(), serial(nullptr), object_detection_time(ros::Time::now())
+    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now())
 {
 
     std::cout << "Utility constructor" << std::endl;  
@@ -110,7 +109,7 @@ void Utility::fetch_run_params() {
 
     this->x0   = avg_x;
     this->y0   = avg_y;
-    this->yaw0 = yaw;
+    this->yaw0 = Sensing::yaw;
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
 
@@ -122,16 +121,6 @@ void Utility::initialize() {
     double sigma_v = 0.1;
     double sigma_delta = 10.0; // degrees
 
-    if (true) {
-        try {
-            serial = std::make_unique<boost::asio::serial_port>(io, "/dev/ttyACM0");
-            serial->set_option(boost::asio::serial_port_base::baud_rate(115200));
-            debug("Utility constructor: Serial port opened successfully.", 1);
-        }
-        catch (const boost::system::system_error &e) {
-            debug("Utility constructor: ERROR: Failed to open serial port: " + std::string(e.what()), 1);
-        }
-    }
     q_transform.setRPY(REALSENSE_TF[3], REALSENSE_TF[4], REALSENSE_TF[5]); // 3 values are roll, pitch, yaw of the imu
     rate = new ros::Rate(Tunable::rateVal);
     if (Tunable::real) {
@@ -154,7 +143,6 @@ void Utility::initialize() {
     broadcaster = tf2_ros::TransformBroadcaster();
     publish_static_transforms();
 
-    yaw = yaw0;
     velocity = 0.0;
     odomX = 0.0;
     odomY = 0.0;
@@ -162,9 +150,6 @@ void Utility::initialize() {
     ekf_x = x0;
     ekf_y = y0;
     ekf_yaw = yaw0;
-    if (x0 > 0 && y0 > 0) {
-        set_pose_using_service(x0, y0, yaw0);
-    }
     initializationFlag = false;
     gps_x = x0;
     gps_y = y0;
@@ -207,29 +192,7 @@ void Utility::initialize() {
         std::cout << "SUBMODEL IS TRUEEE!!!" << std::endl;
         model_sub = nh.subscribe("/gazebo/model_states", 3, &Utility::model_callback, this);
     }
-    std::string imu_topic_name;
-    std::string car_imu_topic = "/" + robot_name + "/imu";
-    if (Tunable::real) car_imu_topic = "/" + robot_name + "/imu";
-    if (Tunable::realsense_imu) {
-        imu_topic_name = "/realsense/imu";
-    } else {
-        imu_topic_name = car_imu_topic;
-    }
-    debug("imu topic: " + imu_topic_name, 2);
-    if (true) {
-        if (!Tunable::real || realsense_imu) {
-            debug("waiting for Imu message", 1);
-            ros::topic::waitForMessage<sensor_msgs::Imu>(imu_topic_name);
-            std::cout << "received message from Imu" << std::endl;
-            imu_sub = nh.subscribe(imu_topic_name, 3, &Utility::imu_callback, this);
-            // imu_sub = nh.subscribe(imu_topic, 3, &Utility::imu_callback, this);
-        } else {
-            debug("getting imu from serial port", 1);
-            // create a ros timer to read from serial port
-            imu_pub = nh.advertise<sensor_msgs::Imu>("/car1/imu", 3);
-            imu_pub_timer = nh.createTimer(ros::Duration(1.0 / 200), &Utility::imu_pub_timer_callback, this);
-        }
-    }
+
     if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
         lane_center_offset_sub = nh.subscribe("/lane_center_offset", 3, &Utility::lane_center_offset_callback, this);
@@ -251,160 +214,14 @@ void Utility::initialize() {
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
 
-    encoder_sub = nh.subscribe("/car1/encoder", 3, &Utility::encoder_callback, this);
     timerodom = ros::Time::now();
     debug("Utility::initialize(): successful.", 1);
-}
-
-void Utility::encoder_callback(const utils::encoder::ConstPtr& msg) {
-    encoder_speed = msg->speed;
 }
 
 void Utility::odom_pub_timer_callback(const ros::TimerEvent&) {
     publish_odom();
 }
-void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
-    auto start = std::chrono::high_resolution_clock::now();
-    static char data[256]; // Buffer to store data
-    static size_t length = 0;
-    static std::string buffer; // Buffer to accumulate the received data
-    length = serial->read_some(boost::asio::mutable_buffer(data, 256)); // Read data from serial port
 
-    buffer.append(data, length);
-    if (buffer.find("@5") != std::string::npos) {            // ── encoder ──
-        size_t end_pos = buffer.find('\n');               
-        if (end_pos != std::string::npos) {
-            std::string line = buffer.substr(0, end_pos);   
-            buffer.erase(0, end_pos + 1);                   
-            if (line.find("@5") != std::string::npos) {     
-                size_t pos = line.find(':');
-                if (pos == std::string::npos || pos + 1 >= line.length()) {
-                    std::cerr << "Encoder‑parse error: no ':' delimiter\n";
-                    return;
-                }
-                ++pos;                                        // move past ':'
-    
-                size_t semi = line.find(';', pos);
-                if (semi == std::string::npos) {
-                    std::cerr << "Encoder‑parse error: no ';' after ang\n";
-                    return;
-                }
-                // const std::string ang_str = line.substr(pos, semi - pos);
-                pos = semi + 1;
-    
-                semi = line.find(';', pos);                  // second ';' ends the speed field
-                if (semi == std::string::npos) {
-                    std::cerr << "Encoder‑parse error: no ';' after speed\n";
-                    return;
-                }
-                const std::string speed_str = line.substr(pos, semi - pos);
-    
-                double speed_cm_s;
-                try {
-                    speed_cm_s = std::stod(speed_str);
-                    encoder_speed = speed_cm_s * 0.01; // convert to m/s
-                    filter_encoder();
-                } catch (const std::invalid_argument&) {
-                    // std::cerr << "Encoder‑parse error: bad speed value\n";
-                    return;
-                }
-    
-                static bool debug_enc = false;
-                if (debug_enc) {
-                    printf("encoder speed: %.2f cm/s\n", speed_cm_s);
-                }
-                // auto end = std::chrono::high_resolution_clock::now();
-                // std::chrono::duration<double> elapsed = end - start;
-                // ROS_INFO("imu_pub_timer_callback ENC time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
-            }
-        }
-        return;
-    } else if (buffer.find("@7") != std::string::npos) { // imu
-        size_t end_pos = buffer.find('\n');
-        if (end_pos != std::string::npos) {
-            std::string line = buffer.substr(0, end_pos); // Extract the line
-            buffer.erase(0, end_pos + 1); // Remove the processed part from the buffer
-
-            if (line.find("@7") != std::string::npos) {
-                // sensor_msgs::Imu imu_msg;
-                imu_msg.header.stamp = ros::Time::now();
-                imu_msg.header.frame_id = "imu0";
-
-                // Extract prefix and ignore '@' and ':' characters
-                std::string prefix;
-                size_t pos = line.find(':');
-                if (pos != std::string::npos && pos + 1 < line.length()) {
-                    prefix = line.substr(pos + 1);
-                } else {
-                    std::cerr << "Error: Failed to extract prefix from the string." << std::endl;
-                    return;
-                }
-
-                // Extract substrings between ';' characters
-                std::string pitch_str, yaw_str;
-                size_t end_pos = pos;
-                pos++;
-                for (int i = 0; i < 2; ++i) {
-                    end_pos = line.find(';', pos);
-                    if (end_pos != std::string::npos) {
-                        switch (i) {
-                            case 0:
-                                pitch_str = line.substr(pos, end_pos - pos);
-                                break;
-                            case 1:
-                                yaw_str = line.substr(pos, end_pos - pos);
-                                break;
-                        }
-                        pos = end_pos + 1;
-                    } else {
-                        std::cerr << "Error: Failed to find delimiter in the string." << std::endl;
-                        return;
-                    }
-                }
-
-                // Convert substrings to floating-point numbers
-                // static double roll;
-                static double pitch;
-                static double yaw_deg;
-                // static double accelx;
-                // static double accely;
-                // static double accelz;
-                // static double gyrox;
-                // static double gyroy;
-                // static double gyroz;
-                try {
-                    // roll = stod(roll_str);
-                    pitch = stod(pitch_str);
-                    yaw_deg = stod(yaw_str);
-                    // accelx = stod(accely_str);
-                    // accely = stod(accelx_str);
-                    // accelz = stod(accelz_str);
-                    // gyrox = stod(gyrox_str);
-                    // gyroy = stod(gyroy_str);
-                    // gyroz = stod(gyroz_str);
-                } catch (const std::invalid_argument& e) {
-                    std::cerr << "Error: Failed to convert string to floating-point number." << std::endl;
-                    return;
-                }
-
-                {
-                    // std::lock_guard<std::mutex> lock(general_mutex);
-                    this->yaw = -yaw_deg * M_PI/180 + yaw_offset;
-                    this->yaw = helper::yaw_mod(this->yaw);
-                }
-
-                static bool debug_imu = false;
-                if (debug_imu) {
-                    printf("pitch: %.2f, yaw: %.2f\n", pitch, yaw_deg);
-                }
-                // auto end = std::chrono::high_resolution_clock::now();
-                // std::chrono::duration<double> elapsed = end - start;
-                // ROS_INFO("imu_pub_timer_callback IMU time elapsed: %fs, rate = %fhz", elapsed.count(), 1/elapsed.count());
-            } 
-        } 
-    }
-    
-}
 void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
 }
@@ -428,7 +245,8 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
-    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, encoder_speed, height, steer_command);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filter_encoder(Sensing::encoder_speed), height, steer_command);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
@@ -482,7 +300,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
 
                     if (yaw_error < 45 * M_PI / 180) {
                         Tracking::create_known_static_object(static_cast<OBJECT>(type),
-                            world_states[0], world_states[1], yaw, confidence, relevant_signs[min_index]);
+                            world_states[0], world_states[1], Sensing::yaw, confidence, relevant_signs[min_index]);
 
                         // debug("Sign Callback(): new " + sign_name + " (known static object) detected at (" +
                             // std::to_string(relevant_signs[min_index][0]) + ", " +
@@ -562,41 +380,14 @@ void Utility::process_lane_data(const utils::Lane2& msg) {
     }
     tcp_client->send_lane2(msg);
 }
-void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
-    // std::lock_guard<std::mutex> lock(general_mutex);
-    // this->imu_msg = *msg;
-    q_imu = tf2::Quaternion(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
-    // q_chassis = q_transform * q_imu;
-    // q_chassis.normalize();
-    // m_chassis = tf2::Matrix3x3(q_chassis);
-    double roll;
 
-    m_chassis = tf2::Matrix3x3(q_imu); // No transformation
-
-    m_chassis.getRPY(roll, pitch, yaw);
-
-    // if (Tunable::real) yaw *= -1;
-    // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
-    if (!imuInitialized) {
-        imuInitialized = true;
-        std::cout << "imu initialized" << ", intial yaw is " << yaw * 180 / M_PI << " degrees" << std::endl;
-    }
-    if (!initializationFlag && x0 > 0 && y0 > 0) {
-        initializationFlag = true;
-        debug("initialized in imu callback", 2);
-    }
-    // if (Tunable::real) yaw = yaw + yaw_offset;
-    if (true) yaw = yaw + yaw_offset;
-    yaw = helper::yaw_mod(yaw);
-    // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
-}
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
     // std::lock_guard<std::mutex> lock(general_mutex);
     // ros::Time now = ros::Time::now();
     double gps_offset_x = 0.0;
     double gps_offset_y = 0.0;
-    double offset_x = gps_offset_x * std::cos(yaw) - gps_offset_y * std::sin(yaw);
-    double offset_y = gps_offset_x * std::sin(yaw) + gps_offset_y * std::cos(yaw);
+    double offset_x = gps_offset_x * std::cos(Sensing::yaw) - gps_offset_y * std::sin(Sensing::yaw);
+    double offset_y = gps_offset_x * std::sin(Sensing::yaw) + gps_offset_y * std::cos(Sensing::yaw);
     ekf_x = msg->pose.pose.position.x + offset_x;
     ekf_y = msg->pose.pose.position.y + offset_y;
     // x0 = ekf_x - odomX;
@@ -634,42 +425,10 @@ void Utility::stop_car() {
     // std::cout << "sent commands to stop car" << std::endl;
 }
 
-void Utility::set_pose_using_service(double x, double y, double yaw) {
-    geometry_msgs::PoseWithCovarianceStamped pose_msg;
-    pose_msg.header.frame_id = "odom";
-    pose_msg.pose.pose.position.x = x;
-    pose_msg.pose.pose.position.y = y;
-    Eigen::Quaterniond q(Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()));
-    pose_msg.pose.pose.orientation.x = q.x();
-    pose_msg.pose.pose.orientation.y = q.y();
-    pose_msg.pose.pose.orientation.z = q.z();
-    pose_msg.pose.pose.orientation.w = q.w();
-
-    if (Tunable::ekf) {
-        std::cout << "waiting for set_pose service" << std::endl;
-        ros::service::waitForService("/set_pose");
-    }
-
-    try {
-        ros::ServiceClient client = nh.serviceClient<robot_localization::SetPose>("/set_pose");
-        robot_localization::SetPose srv;
-        srv.request.pose = pose_msg;
-        if (client.call(srv)) {
-            debug("set pose service call successful", 2);
-        } else {
-            debug("ERROR: set pose service call failed", 1);
-        }
-    } catch (const std::exception& e) {
-        debug("ERROR: set pose service call failed" + std::string(e.what()), 1);
-    }
-}
-
 void Utility::publish_odom() {
     {
-        yaw = fmod(yaw, 2 * M_PI);
-
-        // update_states_rk4(velocity, steer_command);
-        update_states_rk4(encoder_speed, steer_command);
+        filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
+        update_states_rk4(filtered_encoder_speed, steer_command);
         {
             odomX += dx;
             odomY += dy;
@@ -677,43 +436,6 @@ void Utility::publish_odom() {
         height -= dheight;
         // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     }
-    
-    // auto current_time = ros::Time::now();
-    // odom_msg.header.stamp = current_time;
-    // odom_msg.pose.pose.position.x = odomX;
-    // odom_msg.pose.pose.position.y = odomY;
-    // odom_msg.pose.pose.position.z = 0.032939;
-
-    // // odom_msg.twist.twist.linear.x = x_speed;
-    // // odom_msg.twist.twist.linear.y = y_speed;
-    // // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
-    // odom_msg.twist.twist.linear.x = velocity_command; // non-holonomic, x means forward
-    // odom_msg.twist.twist.linear.y = 0; // y means lateral
-    // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
-
-    // tf2::Quaternion quaternion;
-    // quaternion.setRPY(0, pitch, yaw);
-    // odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
-
-    // odom_pub.publish(odom_msg);
-
-    // std_msgs::Float32MultiArray state_offset_msg;
-    // state_offset_msg.data.push_back(x0);
-    // state_offset_msg.data.push_back(y0);
-    // state_offset_pub.publish(state_offset_msg);
-
-    // static bool publish_tf = true;
-    // if (publish_tf) {
-    //     geometry_msgs::TransformStamped transformStamped;
-    //     transformStamped.header.stamp = current_time;
-    //     transformStamped.header.frame_id = "odom";
-    //     transformStamped.child_frame_id = "chassis";
-    //     transformStamped.transform.translation.x = odomX;
-    //     transformStamped.transform.translation.y = odomY;
-    //     transformStamped.transform.translation.z = 0.0;
-    //     transformStamped.transform.rotation = tf2::toMsg(quaternion);
-    //     broadcaster.sendTransform(transformStamped);
-    // }
 }
 
 int Utility::object_index(int obj_id) {
@@ -806,7 +528,6 @@ void Utility::set_initial_pose(double x, double y, double yaw) {
     odomX = x;
     odomY = y;
     odomYaw = yaw;
-    // set_pose_using_service(x, y, yaw);
 }
 void Utility::reset_odom() {
     set_initial_pose(0, 0, 0);
@@ -821,6 +542,8 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
         // std::cout << "ros time: " << dt << ", steady time: " << dt2 << std::endl;
         dt = dt2;
     }
+    double yaw = Sensing::yaw;
+    double pitch = Sensing::pitch;
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
     }
@@ -976,7 +699,7 @@ void Utility::callTriggerService() {
     }
 }
 std::array<double, 3> Utility::get_real_states() const {
-    return {gps_x, gps_y, yaw};
+    return {gps_x, gps_y, Sensing::yaw};
 }
 void Utility::spin() {
     debug("Utility node spinning at a rate of " + std::to_string(rateVal), 2);
