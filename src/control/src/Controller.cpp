@@ -1600,10 +1600,10 @@ void signalHandler(int signum) {
         globalStateMachinePtr->utils.stop_car();
         globalStateMachinePtr->call_trigger_service();
     }
-    if (globalStateMachinePtr->utils.serial && globalStateMachinePtr->utils.serial->is_open()) {
-        globalStateMachinePtr->utils.serial->close();
+    if (Sensing::serial && Sensing::serial->is_open()) {
+        Sensing::serial->close();
     }
-    globalStateMachinePtr->utils.serial.reset();
+    Sensing::serial.reset();
     ros::shutdown();
     exit(signum);
 }
