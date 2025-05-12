@@ -95,7 +95,7 @@ public:
         }
     }
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
-    double initial_yaw = 0;
+    double yaw_offset = 0;
     double x0 = -1, y0 = -1, yaw0 = 0;
     std::string pathName;
     double gps_state[3];
@@ -513,8 +513,16 @@ public:
         return {world_x, world_y, world_yaw};
     }
 
-    void reset_yaw() {
-        initial_yaw = yaw;
+    void reset_yaw(int direction) {
+        if (direction == 0) { // east
+            yaw_offset = -yaw;
+        } else if (direction == 1) { // north
+            yaw_offset = -yaw + M_PI / 2;
+        } else if (direction == 2) { // west
+            yaw_offset = -yaw + M_PI;
+        } else if (direction == 3) { // south
+            yaw_offset = -yaw - M_PI / 2;
+        }
     }
 
     void debug(const std::string& message, int level) {

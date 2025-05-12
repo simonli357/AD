@@ -389,7 +389,7 @@ void Utility::imu_pub_timer_callback(const ros::TimerEvent&) {
 
                 {
                     // std::lock_guard<std::mutex> lock(general_mutex);
-                    this->yaw = -yaw_deg * M_PI/180;
+                    this->yaw = -yaw_deg * M_PI/180 + yaw_offset;
                     this->yaw = helper::yaw_mod(this->yaw);
                 }
 
@@ -579,15 +579,14 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
-        if (Tunable::real) initial_yaw = yaw;
         std::cout << "imu initialized" << ", intial yaw is " << yaw * 180 / M_PI << " degrees" << std::endl;
     }
     if (!initializationFlag && x0 > 0 && y0 > 0) {
         initializationFlag = true;
         debug("initialized in imu callback", 2);
     }
-    if (Tunable::real) yaw = yaw - initial_yaw;
-    // yaw = yaw - initial_yaw + yaw0;
+    // if (Tunable::real) yaw = yaw + yaw_offset;
+    if (true) yaw = yaw + yaw_offset;
     yaw = helper::yaw_mod(yaw);
     // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
 }

@@ -1165,7 +1165,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            utils.reset_yaw();
+            utils.reset_yaw(0);
         }
         res.success = true;
         return true;
