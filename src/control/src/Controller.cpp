@@ -91,13 +91,14 @@ public:
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                utils::set_states::Request req;
-                utils::set_states::Response res;
-                req.x = x;
-                req.y = y;
-                set_states_callback(req, res);
-                std::cout << "set states callback: " << x << ", " << y << std::endl;
-                utils.tcp_client->send_set_states_srv(true);
+                 tcp_callbacks->run([this, x, y] {
+                    utils::set_states::Request req;
+                    utils::set_states::Response res;
+                    req.x = x;
+                    req.y = y;
+                    set_states_callback(req, res);
+                    utils.tcp_client->send_set_states_srv(true);
+                });
             }
         );
 
