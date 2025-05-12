@@ -79,6 +79,7 @@ class TcpClient {
 	void set_set_states_callback(std::function<void(double, double)> cb) { set_states_callback = cb; }
 	void set_start_callback(std::function<void(bool)> cb) { start_callback = cb; }
 	void set_waypoints_callback(std::function<void(double, double, double)> cb) { waypoints_callback = cb; }
+	void set_yaw_callback(std::function<void(int)> cb) { yaw_callback = cb; }
 
   private:
 	// Fields
@@ -91,7 +92,7 @@ class TcpClient {
 	const size_t header_size = 5;
 	const size_t message_size = 4;
 	int rgb_img_quality = 30;
-    int swload_counter = 0;
+	int swload_counter = 0;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
@@ -135,8 +136,10 @@ class TcpClient {
 	std::function<void(double, double, double)> waypoints_callback;
 	std::function<void()> send_run_callback;
 	std::function<void()> ack_callback;
+	std::function<void(int)> yaw_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
+    void parse_yaw(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);

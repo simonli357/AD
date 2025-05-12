@@ -101,6 +101,7 @@ void TcpClient::set_tcp_data_types() {
 	tcp_data_types.push_back(0x08); // Start Srv
 	tcp_data_types.push_back(0x09); // Params
 	tcp_data_types.push_back(0x0a); // Run params
+	tcp_data_types.push_back(0x0b); // Cardinal yaw reset
 }
 
 void TcpClient::set_udp_data_types() {
@@ -122,6 +123,7 @@ void TcpClient::set_tcp_data_actions() {
 	tcp_data_actions[tcp_data_types[5]] = &TcpClient::parse_set_states_srv; // SetStatesSrv
 	tcp_data_actions[tcp_data_types[6]] = &TcpClient::parse_waypoints_srv;	// SetStatesSrv
 	tcp_data_actions[tcp_data_types[7]] = &TcpClient::parse_start_srv;		// StartSrv
+	tcp_data_actions[tcp_data_types[10]] = &TcpClient::parse_yaw;		// Cardinal yaw reset
 }
 
 void TcpClient::run() {
@@ -562,4 +564,13 @@ void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 	} else if (decoded_string == "stop") {
 		start_callback(false);
 	}
+}
+
+void TcpClient::parse_yaw(std::vector<uint8_t> &bytes) {
+	while (!yaw_callback) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	}
+    int direction;
+    std::memcpy(&direction, bytes.data(), sizeof(int));
+    yaw_callback(direction);
 }
