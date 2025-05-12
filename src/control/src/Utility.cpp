@@ -47,7 +47,11 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
     initialize_tcp_client();
     initialize();
-    fetch_run_params();
+    // while (!imuInitialized) {
+    //     ros::spinOnce();
+    // }
+    // fetch_run_params();
+    pathName    = "run189";
 }
 
 Utility::~Utility() {
