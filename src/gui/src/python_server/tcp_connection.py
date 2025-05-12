@@ -160,8 +160,8 @@ class TcpConnection:
         self.socket.sendall(bytes)
 
     def send_yaw(self, direction):
-        direction = struct.pack('<i', direction)
-        bytes = struct.pack('<I', 4) + self.types[8] + direction
+        data = struct.pack('<I', direction)
+        bytes = struct.pack('<I', len(data)) + self.types[8] + data
         self.socket.sendall(bytes)
 
     ###################
