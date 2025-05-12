@@ -156,7 +156,6 @@ void Utility::initialize() {
     broadcaster = tf2_ros::TransformBroadcaster();
     publish_static_transforms();
 
-    yaw = yaw0;
     velocity = 0.0;
     odomX = 0.0;
     odomY = 0.0;
