@@ -6,7 +6,6 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Header.h>
-#include <sensor_msgs/Imu.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -41,6 +40,8 @@
 #include <std_msgs/Float32.h>
 #include <utils/Sign.h>
 #include <utils/encoder.h>
+#include "utils/helper.h"
+#include "Sensing.h"
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -64,7 +65,7 @@ public:
 
     double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
     int stopline = -1;
-    double yaw, pitch = 0, height=0, velocity, steer_command, velocity_command, encoder_speed, x_speed, y_speed;
+    double height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     std::deque<double> velocity_command_queue; 
     void add_velocity_command(double new_command) {
         velocity_command_queue.push_back(new_command);
@@ -72,10 +73,11 @@ public:
             velocity_command_queue.pop_front();  // Remove oldest
         }
     }
-    void filter_encoder() {
+    double filter_encoder(double encoder_speed) {
         if (velocity_command_queue.size() < 5) {
-            return;  // Not enough data to filter
+            return encoder_speed;  // Not enough data to filter
         }
+        double filtered_speed = encoder_speed;
         // calculate the difference between encoder_speed and every element in the queue.
         // if minimum different smaller than 0.1, don't do anything, else set encoder_speed to velocity_command
         double min_diff = std::abs(encoder_speed - velocity_command_queue[0]);
@@ -87,15 +89,16 @@ public:
         }
         if (min_diff > 0.1) {
             printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
-            encoder_speed = velocity_command;
+            filtered_speed = velocity_command;
         }
         // if encoder speed is less than 0.03, set it to 0
         if (std::abs(encoder_speed) < 0.03) {
-            encoder_speed = 0.0;
+            filtered_speed = 0.0;
         }
+        return filtered_speed;
     }
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
-    double yaw_offset = 0;
+    double filtered_encoder_speed = 0.0;
     double x0 = -1, y0 = -1, yaw0 = 0;
     std::string pathName;
     double gps_state[3];
@@ -109,7 +112,7 @@ public:
 
     double covariance_value;
 
-    bool initializationFlag, imuInitialized = false;
+    bool initializationFlag = false;
 
     tf2_ros::StaticTransformBroadcaster static_broadcaster;
     tf2_ros::TransformBroadcaster broadcaster;
@@ -140,8 +143,6 @@ public:
     gazebo_msgs::ModelStates model;
     std_msgs::Float32MultiArray sign;
     utils::Lane2 lane;
-    sensor_msgs::Imu imu_msg;
-    tf2::Quaternion q_imu;
     tf2::Matrix3x3 m_chassis;
     tf2::Quaternion tf2_quat;
     tf2::Quaternion q_transform;
@@ -155,7 +156,6 @@ public:
     ros::Subscriber waypoints_sub;
     std::vector<float> detected_objects;
     ros::Subscriber model_sub;
-    ros::Subscriber imu_sub;
     ros::Subscriber ekf_sub;
     ros::Subscriber tf_sub;
 
@@ -166,13 +166,10 @@ public:
 
     ros::Timer odom_pub_timer;
     void odom_pub_timer_callback(const ros::TimerEvent&);
-    ros::Timer imu_pub_timer;
-    void imu_pub_timer_callback(const ros::TimerEvent&);
     ros::Timer ekf_update_timer;
     void ekf_update_timer_callback(const ros::TimerEvent&) {
         update_odom_with_ekf();
     }
-    ros::Publisher imu_pub;
 
     // Callbacks
     void lane_callback(const utils::Lane2::ConstPtr& msg);
@@ -184,14 +181,12 @@ public:
     void encoder_callback(const utils::encoder::ConstPtr& msg);
     void process_sign_data(const utils::Sign& msg);
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
-    void imu_callback(const sensor_msgs::Imu::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg);
     void spin();
     // Methods
     void stop_car();
     void publish_static_transforms();
-    void set_pose_using_service(double x, double y, double yaw);
     void publish_odom();
     int object_index(int obj_id);
     std::vector<int> object_indices(int obj_id);
@@ -209,10 +204,9 @@ public:
     double get_steering_angle(double offset=-20);
     double get_current_orientation();
     std::array<double, 3> get_real_states() const;
-    boost::asio::io_service io;
-    std::unique_ptr<boost::asio::serial_port> serial;
+
     double get_yaw() {
-        return yaw;
+        return Sensing::yaw;
     }
     int set_states(double x, double y) {
         x0 = x;
@@ -230,15 +224,15 @@ public:
             x_ = odomX + x0;
             y_ = odomY + y0;
         }
-        yaw_ = yaw;
+        yaw_ = Sensing::yaw;
         return 0;
     }
     void update_states(Eigen::Vector3d& o_state) {
         // std::lock_guard<std::mutex> lock(general_mutex);
         if (subModel) {
-            o_state << gps_x, gps_y, yaw;
+            o_state << gps_x, gps_y, Sensing::yaw;
         } else {
-            o_state << odomX + x0, odomY + y0, yaw;
+            o_state << odomX + x0, odomY + y0, Sensing::yaw;
         }
     }
     int recalibrate_states(double x_offset, double y_offset) {
@@ -393,7 +387,8 @@ public:
         vehicle_pos << x, y;
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
-        P_v[0] -= latency * encoder_speed;
+        // P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
+        P_v[0] -= latency * filtered_encoder_speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
@@ -413,35 +408,11 @@ public:
         return estimate_object_pose2d(x, y, yaw, x1, y1, x2, y2, object_distance, is_car);
     }
 
-    void send_speed(float f_velocity) {
-        if (serial == nullptr) {
-            debug("send_speed: Serial is null", 2);
-            return;
-        }
-        std::stringstream strs;
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%.2f;;\r\n", f_velocity * 100);
-        strs << "#" << "1" << ":" << buff;
-        boost::asio::write(*serial, boost::asio::buffer(strs.str()));
-    }
-
-    void send_steer(float f_angle) {
-        if (serial == nullptr) {
-            debug("send_steer: Serial is null", 2);
-            return;
-        }
-        std::stringstream strs;
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%.2f;;\r\n", f_angle);
-        strs << "#" << "2" << ":" << buff;
-        boost::asio::write(*serial, boost::asio::buffer(strs.str()));
-    }
-
     void send_speed_and_steer(float f_velocity, float f_angle) {
         // ROS_INFO("speed:%.3f, angle:%.3f, yaw:%.3f, odomX:%.2f, odomY:%.2f, ekfx:%.2f, ekfy:%.2f", f_velocity, f_angle, yaw * 180 / M_PI, odomX, odomY, ekf_x-x0, ekf_y-y0);
         static bool first = true;
         static bool use_pid = false;
-        if (serial == nullptr) {
+        if (Sensing::serial == nullptr) {
             debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
@@ -460,7 +431,7 @@ public:
             pid_str << "#" << "12" << ":" << pid_buff;
             std::cout << pid_str.str() << std::endl;
             
-            boost::asio::write(*serial, boost::asio::buffer(pid_str.str()));
+            boost::asio::write(*Sensing::serial, boost::asio::buffer(pid_str.str()));
         }
 
         if(f_angle > 3.0) f_angle+=4.0;
@@ -469,7 +440,7 @@ public:
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
         std::string number = use_pid ? "13" : "11";
         strs << "#" << number << ":" << buff;
-        boost::asio::write(*serial, boost::asio::buffer(strs.str()));
+        boost::asio::write(*Sensing::serial, boost::asio::buffer(strs.str()));
         // std::cout << strs.str() << std::endl;
     }
 
@@ -511,18 +482,6 @@ public:
         double world_y = vehicle_y + (std::sin(vehicle_yaw) * object_x + std::cos(vehicle_yaw) * object_y);
         double world_yaw = object_yaw + vehicle_yaw;
         return {world_x, world_y, world_yaw};
-    }
-
-    void reset_yaw(int direction) {
-        if (direction == 0) { // east
-            yaw_offset = -yaw;
-        } else if (direction == 1) { // north
-            yaw_offset = -yaw + M_PI / 2;
-        } else if (direction == 2) { // west
-            yaw_offset = -yaw + M_PI;
-        } else if (direction == 3) { // south
-            yaw_offset = -yaw - M_PI / 2;
-        }
     }
 
     void debug(const std::string& message, int level) {
