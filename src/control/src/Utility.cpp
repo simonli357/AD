@@ -286,30 +286,34 @@ void Utility::handle_rx(const boost::system::error_code& ec,
     start_async_read();                      // arm next read
 }
 void Utility::parse_and_publish(char id, const char *p, std::size_t len) {
-	if (id == '5') { // ───── encoder frame ─────
-		double speed_cm;
-		if (!fast_atof(p, p + len, speed_cm))
-			return;
+	if (id == '5') {                     // ── encoder frame ──
+        const char* semi = static_cast<const char*>(
+                                memchr(p, ';', len));
+        const char* end  = semi ? semi : p + len;   // ≤ one field
 
-		encoder_speed = 0.01 * speed_cm; // cm/s → m/s
-		filter_encoder();
-		return;
-	}
+        double speed_cm;
+        if (!fast_atof(p, end, speed_cm))
+            return;
+
+        encoder_speed = 0.01 * speed_cm;
+        filter_encoder();
+        return;
+    }
 
 	if (id == '7') { // ───── IMU frame ─────
 		const char *delim = static_cast<const char *>(memchr(p, ';', len));
 		if (!delim)
 			return; // need pitch ; yaw
-
-		double pitch, yaw_deg;
-		if (!fast_atof(p, delim, pitch))
+		double pitch_deg, yaw_deg;
+		if (!fast_atof(p, delim, pitch_deg))
 			return;
 		if (!fast_atof(delim + 1, p + len, yaw_deg))
 			return;
-
 		{
-            double tmp_yaw = -yaw_deg * M_PI / 180.0;
+            double tmp_yaw = -yaw_deg * M_PI / 180.0 + yaw_offset;
 			this->yaw = helper::yaw_mod(tmp_yaw);
+            double tmp_pitch = pitch_deg * M_PI / 180.0;
+            this->pitch = helper::yaw_mod(tmp_pitch);
 		}
 	}
 }
@@ -651,19 +655,10 @@ void Utility::process_lane_data(const utils::Lane2& msg) {
     tcp_client->send_lane2(msg);
 }
 void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
-    // std::lock_guard<std::mutex> lock(general_mutex);
-    // this->imu_msg = *msg;
     q_imu = tf2::Quaternion(msg->orientation.x, msg->orientation.y, msg->orientation.z, msg->orientation.w);
-    // q_chassis = q_transform * q_imu;
-    // q_chassis.normalize();
-    // m_chassis = tf2::Matrix3x3(q_chassis);
     double roll;
-
-    m_chassis = tf2::Matrix3x3(q_imu); // No transformation
-
+    m_chassis = tf2::Matrix3x3(q_imu);
     m_chassis.getRPY(roll, pitch, yaw);
-
-    // if (Tunable::real) yaw *= -1;
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
@@ -673,7 +668,6 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
         initializationFlag = true;
         debug("initialized in imu callback", 2);
     }
-    // if (Tunable::real) yaw = yaw + yaw_offset;
     if (true) yaw = yaw + yaw_offset;
     yaw = helper::yaw_mod(yaw);
     // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
