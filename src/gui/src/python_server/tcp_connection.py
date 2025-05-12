@@ -1,6 +1,7 @@
 import threading
 import struct
 import time
+import socket
 
 from collections import OrderedDict, deque
 from std_msgs.msg import String
@@ -20,6 +21,10 @@ class TcpConnection:
         self.is_host = is_host
         self.is_dashboard = dashboard
         self.socket.settimeout(None)
+
+        self.buf_size = 2097152
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buf_size)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buf_size)
 
         self.on_packet = on_packet
         self.on_start = None
@@ -57,10 +62,10 @@ class TcpConnection:
         self.receiver = threading.Thread(target=self.receive, daemon=True)
         self.receiver.start()
         if is_host:
-            self.send_string("ack")
+            self.send_ack("ack")
         else:
-            self.send_string("dashboard_client")
-            self.send_string("ack")
+            self.send_ack("dashboard_client")
+            self.send_ack("ack")
 
     def refresh_run(self):
         self.send_string("refresh_run")
@@ -69,14 +74,13 @@ class TcpConnection:
         data = b""
         try:
             while len(data) < length:
-                chunk = self.socket.recv(min(4096, length - len(data)))
+                chunk = self.socket.recv(min(self.buf_size, length - len(data)))
                 if not chunk:
-                    raise ConnectionError("Connection lost")
+                    return None
                 data += chunk
             return data
-        except Exception as e:
-            print(e)
-            return data
+        except Exception:
+            return None
 
     def receive(self):
         header_size = 5
@@ -86,8 +90,8 @@ class TcpConnection:
                 # Receive the header (5 bytes)
                 while self.alive:
                     try:
-                        header = self.socket.recv(header_size)
-                        if len(header) < header_size:
+                        header = self.recvall(header_size)
+                        if header is None:
                             continue
                         break
                     except Exception as e:
@@ -97,6 +101,8 @@ class TcpConnection:
                 message_type = header[message_size:header_size]
                 # Receive the data based on the length from the header
                 data = self.recvall(length)
+                if data is None:
+                    continue
                 packet = header + data
                 if self.on_packet:
                     self.on_packet(self, packet)
@@ -112,6 +118,12 @@ class TcpConnection:
     ###################
     # Encode
     ###################
+
+    def send_ack(self, string):
+        data = string.encode('utf-8')
+        length = struct.pack('<I', len(string))
+        bytes = length + self.types[0] + data
+        self.socket.sendall(bytes)
 
     def send_string(self, string):
         data = string.encode('utf-8')
@@ -210,12 +222,13 @@ class TcpConnection:
             self.start_srv_msg = bytes == b'\x01'
             while self.on_start is None:
                 time.sleep(0.2)
-            self.on_start()
+            self.on_start(self.start_srv_msg)
         except Exception as e:
             print(e)
 
     def parse_params(self, bytes):
         try:
+            pass
             self.params.decode(bytes)
             while self.on_params is None:
                 time.sleep(0.2)

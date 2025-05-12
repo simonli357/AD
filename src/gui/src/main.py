@@ -25,7 +25,7 @@ from widgets.enums import CameraParams
 
 
 class CommunicationHandler(QObject):
-    start_signal = pyqtSignal()
+    start_signal = pyqtSignal(object)
     message_signal = pyqtSignal(str)
     waypoints_signal = pyqtSignal(object)
     params_signal = pyqtSignal(object)
@@ -42,6 +42,7 @@ class CommunicationHandler(QObject):
     sign_signal = pyqtSignal(object)
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
+    model_states_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -113,6 +114,7 @@ class MainWindow(QMainWindow):
         self.comm.sign_signal.connect(self.handle_sign_update)
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
+        self.comm.model_states_signal.connect(self.car_widget.update_ground_truth)
 
         self.comm.start_signal.connect(self.cam_buttons_widget.on_start)
         self.comm.message_signal.connect(self.terminal_widget.add_message)
@@ -240,10 +242,11 @@ class MainWindow(QMainWindow):
         depth_arr = None
         if self.cam_widget.show_depth:
             depth_image = self.server.udp_connection.parse_depth_image()
-            depth_arr = self.server.udp_connection.parse_depth_arr()
         else:
             rgb_image = self.server.udp_connection.parse_rgb_image()
 
+        model_states = self.server.udp_connection.parse_states()
+        depth_arr = self.server.udp_connection.parse_depth_arr()
         sign = self.server.udp_connection.parse_sign()
         waypoint = self.server.udp_connection.parse_waypoint()
         road_obj = self.server.udp_connection.parse_road_object()
@@ -269,15 +272,17 @@ class MainWindow(QMainWindow):
             self.comm.steer_signal.emit(steer)
         if load is not None:
             self.comm.sw_load_signal.emit(load)
+        if model_states is not None:
+            self.comm.model_states_signal.emit(model_states)
 
     def cam_record_callback(self) -> None:
         if self.cam_buttons_widget.recording:
             rgb_image = self.server.udp_connection.parse_rgb_image()
             if rgb_image is not None:
                 now = time.time()
-                if abs(self.car_widget.speed) > 0.02:
-                    filename = self.recording_path + f"/frame_{int(now)}.jpg"
-                    rgb_image.save(filename, 'JPG', quality=100)
+                # if abs(self.car_widget.speed) > 0.02:
+                filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
         try:
@@ -286,9 +291,10 @@ class MainWindow(QMainWindow):
             self.terminal_widget.terminate_processes()
             time.sleep(0.2)
             print("Processes terminated")
+            self.server.udp_connection.alive = False
             if self.server.tcp_socket:
                 self.server.tcp_socket.close()
-                self.server.udp_socket.close()
+            self.server.udp_socket.close()
             print("Sockets closed")
         except Exception:
             pass

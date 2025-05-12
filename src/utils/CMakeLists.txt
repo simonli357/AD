@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(utils)
 
+find_package(TBB REQUIRED)
+
 find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
@@ -19,7 +21,7 @@ add_message_files(
    Sensors.msg
    odometry.msg
    Point2D.msg
- )
+)
  
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -58,6 +60,7 @@ set_target_properties(utils
 )
 
 target_link_libraries(utils
+  TBB::tbb
   persistence
   ${catkin_LIBRARIES}
 )

@@ -29,6 +29,7 @@
 #include <iostream>
 #include "Runs.h"
 #include "PathManager.h"
+#include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
     : nh(nh_), pubOdom(pubOdom),
@@ -37,6 +38,12 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
+
+    // Default values
+    pathName    = "run189";
+    x0 = 1.55;
+    y0 = 6.906;
+    yaw0 = 0;
 
     initialize_tcp_client();
     initialize();
@@ -64,6 +71,11 @@ void Utility::initialize_tcp_client() {
 }
 
 void Utility::fetch_run_params() {
+    if (!Tunable::useGps) {
+        debug("GPS not found, skipping", 1);
+        return;
+    }
+
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
     samples.reserve(sample_count);
@@ -77,32 +89,28 @@ void Utility::fetch_run_params() {
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
-    // std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    // while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
-    //     ros::spinOnce();
-    //     rate.sleep();
-    // }
+    std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
+    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
+        ros::spinOnce();
+        rate.sleep();
+    }
 
-    // sub.shutdown();
+    sub.shutdown();
 
-    // double sum_x = 0.0, sum_y = 0.0;
-    // for (const auto& m : samples) {
-    //     sum_x += m->pose.pose.position.x;
-    //     sum_y += m->pose.pose.position.y;
-    // }
-    // double avg_x = sum_x / static_cast<double>(samples.size());
-    // double avg_y = sum_y / static_cast<double>(samples.size());
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& m : samples) {
+        sum_x += m->pose.pose.position.x;
+        sum_y += m->pose.pose.position.y;
+    }
+    double avg_x = sum_x / static_cast<double>(samples.size());
+    double avg_y = sum_y / static_cast<double>(samples.size());
 
-    // std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
-    // while (!imuInitialized) {
-    //     ros::spinOnce();
-    // }
-    // std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
+    std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
+    std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
-    // this->x0   = avg_x;
-    // this->y0   = avg_y;
-    // this->yaw0 = yaw;
-    pathName    = "run189";
+    this->x0   = avg_x;
+    this->y0   = avg_y;
+    this->yaw0 = yaw;
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
 
@@ -467,6 +475,11 @@ void Utility::scan_frames()
 //                     this->yaw = -yaw_deg * M_PI/180;
 //                     this->yaw = helper::yaw_mod(this->yaw);
 //                 }
+                {
+                    // std::lock_guard<std::mutex> lock(general_mutex);
+                    this->yaw = -yaw_deg * M_PI/180 + yaw_offset;
+                    this->yaw = helper::yaw_mod(this->yaw);
+                }
 
 //                 static bool debug_imu = false;
 //                 if (debug_imu) {
@@ -654,15 +667,14 @@ void Utility::imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     // ROS_INFO("yaw: %.3f, angular velocity: %.3f, acceleration: %.3f, %.3f, %.3f", yaw * 180 / M_PI, msg->angular_velocity.z, msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
     if (!imuInitialized) {
         imuInitialized = true;
-        if (Tunable::real) initial_yaw = yaw;
         std::cout << "imu initialized" << ", intial yaw is " << yaw * 180 / M_PI << " degrees" << std::endl;
     }
     if (!initializationFlag && x0 > 0 && y0 > 0) {
         initializationFlag = true;
         debug("initialized in imu callback", 2);
     }
-    if (Tunable::real) yaw = yaw - initial_yaw;
-    // yaw = yaw - initial_yaw + yaw0;
+    // if (Tunable::real) yaw = yaw + yaw_offset;
+    if (true) yaw = yaw + yaw_offset;
     yaw = helper::yaw_mod(yaw);
     // ROS_INFO("imu_callback(): yaw: %.3f, pitch: %.3f, real: %s", yaw * 180 / M_PI, pitch * 180 / M_PI, Tunable::real ? "true" : "false");
 }
@@ -747,7 +759,6 @@ void Utility::publish_odom() {
         // update_states_rk4(velocity, steer_command);
         update_states_rk4(encoder_speed, steer_command);
         {
-            // std::lock_guard<std::mutex> lock(general_mutex);
             odomX += dx;
             odomY += dy;
         }
@@ -755,42 +766,42 @@ void Utility::publish_odom() {
         // ROS_INFO("odomX: %.3f, gps_x: %.3f, odomY: %.3f, gps_y: %.3f, error: %.3f", odomX, gps_x, odomY, gps_y, sqrt((odomX - gps_x) * (odomX - gps_x) + (odomY - gps_y) * (odomY - gps_y))); // works
     }
     
-    auto current_time = ros::Time::now();
-    odom_msg.header.stamp = current_time;
-    odom_msg.pose.pose.position.x = odomX;
-    odom_msg.pose.pose.position.y = odomY;
-    odom_msg.pose.pose.position.z = 0.032939;
+    // auto current_time = ros::Time::now();
+    // odom_msg.header.stamp = current_time;
+    // odom_msg.pose.pose.position.x = odomX;
+    // odom_msg.pose.pose.position.y = odomY;
+    // odom_msg.pose.pose.position.z = 0.032939;
 
-    // odom_msg.twist.twist.linear.x = x_speed;
-    // odom_msg.twist.twist.linear.y = y_speed;
+    // // odom_msg.twist.twist.linear.x = x_speed;
+    // // odom_msg.twist.twist.linear.y = y_speed;
+    // // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
+    // odom_msg.twist.twist.linear.x = velocity_command; // non-holonomic, x means forward
+    // odom_msg.twist.twist.linear.y = 0; // y means lateral
     // odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
-    odom_msg.twist.twist.linear.x = velocity_command; // non-holonomic, x means forward
-    odom_msg.twist.twist.linear.y = 0; // y means lateral
-    odom_msg.twist.twist.angular.z = this->imu_msg.angular_velocity.z;
 
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, pitch, yaw);
-    odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
+    // tf2::Quaternion quaternion;
+    // quaternion.setRPY(0, pitch, yaw);
+    // odom_msg.pose.pose.orientation = tf2::toMsg(quaternion);
 
-    odom_pub.publish(odom_msg);
+    // odom_pub.publish(odom_msg);
 
-    std_msgs::Float32MultiArray state_offset_msg;
-    state_offset_msg.data.push_back(x0);
-    state_offset_msg.data.push_back(y0);
-    state_offset_pub.publish(state_offset_msg);
+    // std_msgs::Float32MultiArray state_offset_msg;
+    // state_offset_msg.data.push_back(x0);
+    // state_offset_msg.data.push_back(y0);
+    // state_offset_pub.publish(state_offset_msg);
 
-    static bool publish_tf = true;
-    if (publish_tf) {
-        geometry_msgs::TransformStamped transformStamped;
-        transformStamped.header.stamp = current_time;
-        transformStamped.header.frame_id = "odom";
-        transformStamped.child_frame_id = "chassis";
-        transformStamped.transform.translation.x = odomX;
-        transformStamped.transform.translation.y = odomY;
-        transformStamped.transform.translation.z = 0.0;
-        transformStamped.transform.rotation = tf2::toMsg(quaternion);
-        broadcaster.sendTransform(transformStamped);
-    }
+    // static bool publish_tf = true;
+    // if (publish_tf) {
+    //     geometry_msgs::TransformStamped transformStamped;
+    //     transformStamped.header.stamp = current_time;
+    //     transformStamped.header.frame_id = "odom";
+    //     transformStamped.child_frame_id = "chassis";
+    //     transformStamped.transform.translation.x = odomX;
+    //     transformStamped.transform.translation.y = odomY;
+    //     transformStamped.transform.translation.z = 0.0;
+    //     transformStamped.transform.rotation = tf2::toMsg(quaternion);
+    //     broadcaster.sendTransform(transformStamped);
+    // }
 }
 
 int Utility::object_index(int obj_id) {

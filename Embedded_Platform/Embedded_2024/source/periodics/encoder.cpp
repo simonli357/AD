@@ -137,14 +137,12 @@ float clamp(float x, float min, float max) {
 }
 
 float CEncoder::readAngularSpeed() {
-    // ————— state (static or member)
     static Timer  timer;
     static bool   runOnce  = false;
     static float  prevAng  = 0.0f;
     static float  sumDelta = 0.0f;
     static float  lastT    = 0.0f;
 
-    // one-time timer start
     if (!runOnce) {
         timer.start();
         prevAng = readAngleDegrees();
@@ -152,7 +150,6 @@ float CEncoder::readAngularSpeed() {
         runOnce = true;
     }
 
-    // 1) sample angle & delta
     float ang   = readAngleDegrees();
     float delta = ang - prevAng;
     if      (delta >  180.0f) delta -= 360.0f;
@@ -160,17 +157,15 @@ float CEncoder::readAngularSpeed() {
     sumDelta   += delta;
     prevAng     = ang;
 
-    // 2) check if window elapsed
     float now = timer.read();
     if (now - lastT < REPORT_INTERVAL_SEC) {
         return lastPublishedSpeed;  // or 0 if you only update periodically
     }
 
-    // 3) compute & publish speed
     float dt    = now - lastT;
     float speed = sumDelta / dt;     // deg/s
 
-    // 4) optional filtering / hysteresis
+    //filtering / hysteresis
     static float speedIIR = 0.0f;
     constexpr float tau_speed = 0.025f;       // time-constant in seconds
     float alpha = tau_speed / (tau_speed + dt);
@@ -235,6 +230,7 @@ float CEncoder::getTotalDisplacementDegrees() {
     total += delta;
     prev = current;
 
+    printf("[Encoder] Total displacement = %.2f°\n", total);
     return total;
 }
 
@@ -247,71 +243,56 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    // printf("[Encoder Run]\n");
-    // ————— One-time Timer setup
-    static Timer execTimer;
-    static bool timerStarted = false;
-    if (!timerStarted) {
-        execTimer.start();
-        timerStarted = true;
-    }
+    readAngularSpeed();
+    // static Timer execTimer;
+    // static bool timerStarted = false;
+    // if (!timerStarted) {
+    //     execTimer.start();
+    //     timerStarted = true;
+    // }
 
-    // ————— 1) Mark start of this execution
-    uint32_t start_us = execTimer.read_us();
+    // uint32_t start_us = execTimer.read_us();
 
-    // ————— 2) Read the filtered angle every tick
-    float angleDeg = readAngleDegrees();
-    float speedDeg = readAngularSpeed();
+    // float angleDeg = readAngleDegrees();
+    // float speedDeg = readAngularSpeed();
     float displacementDeg = getTotalDisplacementDegrees(); 
-    
-    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", angleDeg, speedDeg);
 
-    // ————— 4) Package angle+speed into a TelemetryMsg and push
-    {
-        TelemetryMsg msg;
-        msg.type   = PacketType::Encoder;
-        msg.ts_us  = execTimer.read_us();
-        msg.data.encoder.angle_hundredths = static_cast<int32_t>(angleDeg * 100.0f);
-        msg.data.encoder.speed_hundredths = static_cast<int32_t>(speedDeg * 100.0f);
-        rb_push(msg);
-    }
+    // // ————— 5) Mark end of execution and accumulate for average print
+    // uint32_t end_us     = execTimer.read_us();
+    // uint32_t elapsed_us = end_us - start_us;
 
-    // ————— 5) Mark end of execution and accumulate for average print
-    uint32_t end_us     = execTimer.read_us();
-    uint32_t elapsed_us = end_us - start_us;
+    // static uint64_t sum_exec   = 0;
+    // static uint32_t count_exec = 0;
+    // static uint64_t sum_interval_us = 0;
+    // static uint32_t count_interval  = 0;
+    // static uint32_t prevStart_us    = 0;
 
-    static uint64_t sum_exec   = 0;
-    static uint32_t count_exec = 0;
-    static uint64_t sum_interval_us = 0;
-    static uint32_t count_interval  = 0;
-    static uint32_t prevStart_us    = 0;
+    // // Accumulate period statistics (unchanged)
+    // if (prevStart_us != 0) {
+    //     uint32_t delta_start = start_us - prevStart_us;
+    //     sum_interval_us += delta_start;
+    //     count_interval++;
+    // }
+    // prevStart_us = start_us;
 
-    // Accumulate period statistics (unchanged)
-    if (prevStart_us != 0) {
-        uint32_t delta_start = start_us - prevStart_us;
-        sum_interval_us += delta_start;
-        count_interval++;
-    }
-    prevStart_us = start_us;
+    // sum_exec   += elapsed_us;
+    // count_exec += 1;
 
-    sum_exec   += elapsed_us;
-    count_exec += 1;
+    // constexpr uint32_t AVG_N = 200;
+    // if (count_exec >= AVG_N) {
+    //     uint32_t avg_exec     = sum_exec / AVG_N;
+    //     uint32_t avg_interval = (count_interval > 0)
+    //                               ? static_cast<uint32_t>(sum_interval_us / count_interval)
+    //                               : 0;
 
-    constexpr uint32_t AVG_N = 200;
-    if (count_exec >= AVG_N) {
-        uint32_t avg_exec     = sum_exec / AVG_N;
-        uint32_t avg_interval = (count_interval > 0)
-                                  ? static_cast<uint32_t>(sum_interval_us / count_interval)
-                                  : 0;
+    //     // printf("\n[Encoder] avg exec = %u µs, avg period = %u µs over %u runs\n",
+    //     //        avg_exec, avg_interval, AVG_N);
 
-        // printf("\n[Encoder] avg exec = %u µs, avg period = %u µs over %u runs\n",
-        //        avg_exec, avg_interval, AVG_N);
-
-        sum_exec         = 0;
-        count_exec       = 0;
-        sum_interval_us  = 0;
-        count_interval   = 0;
-    }
+    //     sum_exec         = 0;
+    //     count_exec       = 0;
+    //     sum_interval_us  = 0;
+    //     count_interval   = 0;
+    // }
 }
 
 } // namespace periodics

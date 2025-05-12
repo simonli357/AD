@@ -1,4 +1,6 @@
+#include <memory>
 #include <ros/ros.h>
+#include <ros/subscriber.h>
 #include <thread>
 #include <map>
 #include <string>
@@ -28,6 +30,7 @@
 #include "GroundTruth.h"
 #include "Tunable.h"
 #include "EgoCar.h"
+#include <tbb/task_group.h>
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -53,51 +56,95 @@ public:
         utils.debug("start_bool server ready, mpc time step T = " + helper::d2str(Tunable::T), 2);
         utils.debug("state machine initialized", 2);
         db.graph_queries->set_graph(PathManager::path_planner.serialized_graph);
-        
+
+
+        model_states = nh.subscribe("/gazebo/model_states", 3, &StateMachine::model_callback, this);
+
+        ThreadPools::communication.execute([this] {
+            tcp_callbacks = std::make_unique<tbb::task_group>();
+        });
+
         // set callbacks for tcp client
         utils.tcp_client->set_send_run_callback(
             [this]() {
-                utils.fetch_run_params();
-                utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
+                tcp_callbacks->run([this] {
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                    utils.fetch_run_params();
+                    utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
+                });
             }
         );
 
         utils.tcp_client->set_go_to_cmd_callback(
             [this](const std::vector<std::tuple<float, float>> &coords) {
-                utils::goto_command::Response res;
-                goto_multiple_command_callback(coords, res);
-                utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+                tcp_callbacks->run([this, coords] {
+                    utils::goto_command::Response res;
+                    goto_multiple_command_callback(coords, res);
+                    utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
+                });
             }
         );
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                utils::set_states::Request req;
-                utils::set_states::Response res;
-                req.x = x;
-                req.y = y;
-                set_states_callback(req, res);
-                utils.tcp_client->send_set_states_srv(true);
+                 tcp_callbacks->run([this, x, y] {
+                    utils::set_states::Request req;
+                    utils::set_states::Response res;
+                    req.x = x;
+                    req.y = y;
+                    set_states_callback(req, res);
+                    utils.tcp_client->send_set_states_srv(true);
+                });
             }
         );
 
         utils.tcp_client->set_start_callback(
             [this](bool started) {
-                start_bool_callback(started);
-                utils.tcp_client->send_start_srv(started);
+                tcp_callbacks->run([this, started] {
+                    start_bool_callback(started);
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                });
+            }
+        );
+
+        utils.tcp_client->set_ack_callback(
+            [this]() {
+                tcp_callbacks->run([this] {
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                });
             }
         );
 
         utils.tcp_client->set_waypoints_callback(
             [this](double x0, double y0, double yaw0) {
-                PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+                tcp_callbacks->run([this, x0, y0, yaw0] {
+                    PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
+                });
             }
         );
+
+        initialize();
     }
     ~StateMachine() {
         // utils.stop_car();
+        tcp_callbacks->wait();
     }
     ros::NodeHandle& nh;
+    ros::Subscriber model_states;
+
+    std::unique_ptr<tbb::task_group> tcp_callbacks;
 
     bool initialized = false;
     bool wait_for_green_flag = false;
@@ -125,10 +172,25 @@ public:
     // intersection variables
     Eigen::Vector2d last_intersection_point = {1000.0, 1000.0};
 
+    std::optional<size_t> car_idx;
+
     void call_trigger_service() {
         ros::ServiceClient client = nh.serviceClient<std_srvs::Trigger>("/trigger_service");
         std_srvs::Trigger srv;
         client.call(srv);
+    }
+    void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg) {
+        if (!car_idx.has_value()) {
+            auto it = std::find(msg->name.begin(), msg->name.end(), robot_name);
+            if (it != msg->name.end()) {
+                car_idx = std::distance(msg->name.begin(), it);
+                std::cout << "automobile found: " << *car_idx << std::endl;
+            } else {
+                printf("automobile not found\n");
+                return; 
+            }
+        }
+        utils.tcp_client->send_model_states(msg->pose[*car_idx]);
     }
     int initialize() {
         if (initialized) return 1;
@@ -153,6 +215,15 @@ public:
         PathManager::find_intersections(utils);
         mpc.reset_solver();
         initialized = true;
+        
+        // Authorize python client to start
+        if (state == STATE::INIT || state == STATE::DONE) {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
+            utils.tcp_client->send_start_srv(false);
+        } else {
+            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
+            utils.tcp_client->send_start_srv(true);
+        }
         return 1;
     }
     int start() {
@@ -166,7 +237,6 @@ public:
     bool start_bool_callback(bool started) {
         static int history = -1;
         if (started && (state == STATE::INIT || state == STATE::DONE)) {
-            initialize();
             start();
         } else {
             history = state;
@@ -892,6 +962,8 @@ public:
                 // std::cout << "CHECK_CAR(): car confidence too low: " + helper::d2str(car->cumulative_confidence) + ", threshold: " + helper::d2str(Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) << std::endl;
                 continue;
             }
+            if (car->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(OBJECT::CAR)])) continue;
+
             Eigen::Vector2d car_pose(car->x, car->y);
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
@@ -962,26 +1034,34 @@ public:
             return;
         }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
-            // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
-            return;
-        }
-        can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
-        
-        if (!can_overtake) {
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+            if (!PathManager::attribute_cmp(min_same_lane_index, PathManager::ATTRIBUTE::INTERSECTION)) {
+                // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
+                return;
+            }
+            can_overtake = false;
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
         if (on_highway) min_dist_to_car *= 1.3;
-        // double static_distance = CAR_LENGTH * 2 + Tunable::min_dist_to_car * 2;
         double static_distance = CAR_LENGTH * 1.5 + min_dist_to_car * 2;
         double ego_speed = 0.32;
         if (on_highway) ego_speed *= 1.33;
         car_speed = car_speed;
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;
+        int end_idx = static_cast<int>(total_distance * density) + closest_idx;
+        can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
+                            && (PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED)
+                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
+        
+        if (!can_overtake) {
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+        }
+        
         if (relative_speed < 0.15 || total_distance / static_distance > 2.0) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance), 2);
             can_overtake = false;
@@ -1005,7 +1085,7 @@ public:
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
-            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_lat_dist) + "changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ")", 2);
+            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + "changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ")", 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
             return;
@@ -1085,7 +1165,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            utils.reset_yaw();
+            utils.reset_yaw(0);
         }
         res.success = true;
         return true;

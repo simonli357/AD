@@ -13,9 +13,10 @@
 #include "std_msgs/String.h"
 #include "std_srvs/Trigger.h"
 #include "utils/Lane2.h"
-#include <any>
 #include <cstdint>
 #include <functional>
+#include <geometry_msgs/Pose.h>
+#include <map>
 #include <memory>
 #include <netinet/in.h>
 #include <opencv2/core/mat.hpp>
@@ -23,6 +24,8 @@
 #include <string>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/enumerable_thread_specific.h>
+#include <tbb/task_group.h>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -35,7 +38,7 @@ class TcpClient {
   public:
 	// Constructors
 	TcpClient(bool use_tcp, const std::string client_type, const std::string ip_address);
-	TcpClient(TcpClient &&) = default;
+	TcpClient(TcpClient &&) = delete;
 	TcpClient(const TcpClient &) = delete;
 	TcpClient &operator=(TcpClient &&) = delete;
 	TcpClient &operator=(const TcpClient &) = delete;
@@ -50,11 +53,11 @@ class TcpClient {
 	void send_string(const std::string &str);
 	void send_string(const std::string &str, uint8_t datatype);
 	void send_lane2(const utils::Lane2 &lane);
-	void send_image_rgb(cv::Mat &&img);
-	void send_image_depth(cv::Mat &&img);
+	void send_image_rgb(const cv::Mat &img);
+	void send_image_depth(const cv::Mat &img);
 	void send_road_object(const Float32MultiArray &array);
 	void send_waypoint(const Float32MultiArray &array);
-	void send_sign(std::vector<float> &&data);
+	void send_sign(const std::vector<float> &data);
 	void send_steer(float steer);
 	void send_swload();
 	void send_message(const String &msg);
@@ -66,9 +69,11 @@ class TcpClient {
 	void send_waypoints_srv(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals);
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
+	void send_model_states(const geometry_msgs::Pose &msg);
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
+	void set_ack_callback(std::function<void()> cb) { ack_callback = cb; }
 	void set_trigger_response_callback(std::function<void(const std_srvs::TriggerResponse &)> cb) { trigger_response_callback = cb; }
 	void set_go_to_cmd_callback(std::function<void(const std::vector<std::tuple<float, float>> &)> cb) { go_to_cmd_callback = cb; }
 	void set_set_states_callback(std::function<void(double, double)> cb) { set_states_callback = cb; }
@@ -80,14 +85,13 @@ class TcpClient {
 	const uint16_t tcp_port = 49153;
 	const uint16_t udp_port = 49154;
 	std::string server_address = "127.0.0.1";
-	std::string multicast_address = "239.1.2.3";
 	std::string client_type;
-	const size_t buffer_size = 4096;
+	const int buffer_size = 2097152;
+	const uint32_t MAX_DGRAM = 65507;
 	const size_t header_size = 5;
 	const size_t message_size = 4;
-	int swload_counter = 0;
 	int rgb_img_quality = 30;
-	const uint32_t MAX_DGRAM = 65507;
+    int swload_counter = 0;
 	bool alive = true;
 	bool connected = false;
 	sockaddr_in tcp_address;
@@ -95,6 +99,7 @@ class TcpClient {
 	int tcp_socket;
 	int udp_socket;
 	std::thread main;
+	std::unique_ptr<tbb::task_group> tasks;
 	std::map<uint8_t, std::function<void(TcpClient *, std::vector<uint8_t> &)>> tcp_data_actions;
 	std::vector<uint8_t> tcp_data_types;
 	std::vector<uint8_t> udp_data_types;
@@ -109,9 +114,9 @@ class TcpClient {
 	std::unique_ptr<GoToSrv> goto_srv;
 	std::unique_ptr<WaypointsSrv> waypoints_srv;
 	std::unique_ptr<SetStatesSrv> set_states_srv;
-	// Task Queue
-	tbb::concurrent_queue<std::any> stream_tasks;
-	tbb::concurrent_queue<std::any> dgram_tasks;
+	// UDP buffers
+	tbb::enumerable_thread_specific<std::array<uint8_t, 65507>> udp_buffers{};
+	tbb::enumerable_thread_specific<std::vector<uchar>> image_buffers{};
 	// Utility Methods
 	void create_tcp_socket();
 	void create_udp_socket();
@@ -120,7 +125,6 @@ class TcpClient {
 	void set_udp_data_types();
 	void poll_connection();
 	void listen();
-	void send_data();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	template <typename Callable> void add_dgram_task(Callable &&lambda);
 	// Callbacks
@@ -130,6 +134,7 @@ class TcpClient {
 	std::function<void(bool)> start_callback;
 	std::function<void(double, double, double)> waypoints_callback;
 	std::function<void()> send_run_callback;
+	std::function<void()> ack_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);

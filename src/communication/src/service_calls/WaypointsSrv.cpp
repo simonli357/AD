@@ -8,10 +8,10 @@
 using std_msgs::Float32MultiArray;
 
 void WaypointsSrv::encode(const Float32MultiArray &state_refs, const Float32MultiArray &input_refs, const Float32MultiArray &wp_attributes, const Float32MultiArray &wp_normals) {
-    this->state_refs = std::move(state_refs);
-    this->input_refs = std::move(input_refs);
-    this->wp_attributes = std::move(wp_attributes);
-    this->wp_normals = std::move(wp_normals);
+    this->state_refs = state_refs;
+    this->input_refs = input_refs;
+    this->wp_attributes = wp_attributes;
+    this->wp_normals = wp_normals;
 	state_refs_length = ros::serialization::serializationLength(state_refs);
 	input_refs_length = ros::serialization::serializationLength(input_refs);
 	wp_attributes_length = ros::serialization::serializationLength(wp_attributes);

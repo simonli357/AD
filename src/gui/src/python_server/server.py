@@ -13,12 +13,10 @@ class Server:
         self.host_ip = host_ip
         self.tcp_port = 49153
         self.udp_port = 49154
-        self.multicast_address = "239.1.2.3"
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.tcp_client = None
         self.dashboard_clients = {}
         self.udp_connection = None
@@ -26,16 +24,8 @@ class Server:
         self.listener = None
 
     def initialize(self):
-        self.udp_socket.bind((self.multicast_address, self.udp_port))
-        group = socket.inet_aton(self.multicast_address)
-        mreq = struct.pack('4sL', group, socket.INADDR_ANY)
-        self.udp_socket.setsockopt(
-            socket.IPPROTO_IP,
-            socket.IP_ADD_MEMBERSHIP,
-            mreq
-        )
-
-        self.udp_connection = UdpConnection(self.udp_socket)
+        self.udp_socket.bind(('', self.udp_port))
+        self.udp_connection = UdpConnection(self.udp_socket, self)
 
         if self.is_host:
             self.tcp_socket.bind(('', self.tcp_port))
@@ -92,14 +82,11 @@ class Server:
 
     def on_packet(self, source, packet):
         if source.is_host and not source.is_dashboard:
-            dead = []
             for key, db in self.dashboard_clients.items():
                 try:
                     db.socket.sendall(packet)
                 except OSError:
-                    dead.append(key)
-            for key in dead:
-                self.dashboard_clients.pop(key, None)
+                    pass
         elif source.is_host and source.is_dashboard:
             try:
                 self.tcp_client.socket.sendall(packet)

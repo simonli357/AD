@@ -25,7 +25,7 @@ drivers::CSteeringMotor g_steeringDriver(1, g_rpi, D4, g_imu, g_speedingDriver);
 brain::CRobotStateMachine g_robotstatemachine(1, g_rpi, g_steeringDriver, g_speedingDriver);
 
 drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
-    {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
+    // {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
     // {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},
     // {"8",mbed::callback(&g_complexMoves, &drivers::CComplexMoves::serialCallbackComplexMovesCommand)},
     // {"9",mbed::callback(&g_velocityControlDuration, &drivers::CVelocityControlDuration::serialCallbackVCDCommand)},

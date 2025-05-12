@@ -36,7 +36,7 @@ import serial
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 
-MOTOR_ID = 11
+MOTOR_ID = 10
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
@@ -44,7 +44,8 @@ HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 # ────────────────────────────────────────────────────────────────────────────────
 
 def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
-    return f"#{MOTOR_ID}:{speed_cm_s:.2f}:{angle_deg:.2f};;\r\n".encode()
+    return f"#{MOTOR_ID}:{speed_cm_s:.4f}:{angle_deg:.2f};;\r\n".encode()
+    # return f"#{MOTOR_ID}:{0.0:.4f}:{angle_deg:.2f};;\r\n".encode()
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -55,7 +56,7 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
 
     t0 = time.time()
     next_send = 0.0
-    last_angle = steer
+    last_angle = 0.0
 
     times: list[float] = []
     speeds_cm: list[float] = []
@@ -65,11 +66,12 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
         while True:
             now = time.time()
             elapsed = now - t0
-
             if elapsed >= duration:
                 break
 
             if elapsed >= next_send:
+                # ser.write(build_cmd(speed_cm_s, last_angle))
+                # ser.write(build_cmd(speed_cm_s, -20.0))
                 ser.write(build_cmd(speed_cm_s, steer))
                 next_send += 0.1
 
@@ -78,6 +80,10 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
                 m = ENC_PATTERN.match(line)
                 if not m:
                     continue
+                # angle = float(m.group(1))
+                # speed_deg_s = float(m.group(2))
+                # last_angle = angle
+                # speeds_cm.append(speed_deg_s / CM_TO_DEG)
                 angle = float(m.group(1))
                 speed_cm = float(m.group(2))
                 last_angle = angle
@@ -87,18 +93,11 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
             if int(elapsed) % 1 == 0:
                 sys.stdout.write(f"\r{elapsed:4.1f}s / {duration:.1f}s")
                 sys.stdout.flush()
-
-    except KeyboardInterrupt:
-        print("\nInterrupted by user — stopping motor.")
-        ser.write(build_cmd(0.0, 0.0))  # stop motor
-        time.sleep(0.1)
-
     finally:
-        ser.write(build_cmd(0.0, 0.0))  # always stop motor on exit
         ser.close()
-        print("\nSerial closed.")
-
+    print()
     return times, speeds_cm
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -158,6 +157,7 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
         print("matplotlib not installed; skipping plot.")
         return
 
+    delay = 2 # set delay to 2s for testing
     plt.figure(figsize=(10, 5))
     plt.plot(times, speeds, label="Measured (cm/s)", color="blue")
     plt.axhline(cmd_speed, color="red", linestyle=":", label=f"Cmd {cmd_speed:.1f} cm/s")
@@ -189,15 +189,16 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=32, help="Commanded speed [cm/s]")
-    ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
-    ap.add_argument("--dur", type=float, default=10, help="Duration [s]")
+    ap.add_argument("--cmd", type=float, default=35, help="Commanded speed [cm/s]")
+    ap.add_argument("--pwm", type=float, default=0.0673, help="Commanded pwm")
+    ap.add_argument("--dur", type=float, default=12, help="Duration [s]")
+    ap.add_argument("--steer", type=float, default=0, help="Commanded steering in deg")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
     args = ap.parse_args()
 
-    times, speeds = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
+    times, speeds = run_test(args.port, args.baud, args.pwm, args.dur, args.steer)
     if len(speeds) < 3:
         print("Insufficient samples.")
         return
@@ -214,8 +215,9 @@ def main() -> None:
     if args.csv:
         save_csv(times, speeds, args.csv)
 
-    script_dir = Path(__file__).parent
-    save_plot(times, speeds, args.cmd, delay, stats, script_dir / "encoder_noise_plot.png")
+    script_dir = Path(__file__).parent / "pwm_calibration"
+    script_dir.mkdir(parents=True, exist_ok=True)
+    save_plot(times, speeds, args.cmd, delay, stats, script_dir / f"encoder_noise_plot{args.pwm}.png")
 
     # stop motor
     ser = serial.Serial(args.port, baudrate=args.baud, timeout=0.1)
@@ -225,4 +227,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

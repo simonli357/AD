@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Encoder.hpp"
+#include "std_msgs/Float32MultiArray.h"
 #include <cstdint>
 #include <vector>
 
@@ -21,8 +22,8 @@ class ParamsMsg : public Encoder {
   private:
 	const size_t bytes_length = 4;
 	const size_t num_elements = 2;
-	std_msgs::Float64MultiArray state_refs_arr;
-	std_msgs::Float64MultiArray attributes_arr;
+	std_msgs::Float32MultiArray state_refs_arr;
+	std_msgs::Float32MultiArray attributes_arr;
 	uint32_t lengths_length = (num_elements + 1) * bytes_length;
 	uint32_t data_length;
 	uint32_t state_refs_length;

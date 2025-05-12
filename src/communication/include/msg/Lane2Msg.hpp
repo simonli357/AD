@@ -22,7 +22,7 @@ class Lane2Msg : public Encoder {
 	bool crosswalk;
 	bool dotted;
 
-	void encode(std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted);
+	void encode(const std_msgs::Header &header, float center, bool stopline, float stopline_dist, bool crosswalk, bool dotted);
 
   private:
 	const size_t bytes_length = 4;
