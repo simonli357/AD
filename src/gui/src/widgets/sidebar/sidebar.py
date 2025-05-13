@@ -169,10 +169,10 @@ class SidebarWidget(QtWidgets.QWidget):
 
     def handle_yaw_btn_click(self) -> None:
         menu = QtWidgets.QMenu(self.map_widget)
-        action_0 = menu.addAction("NORTH 0° ")
-        action_1 = menu.addAction("EAST 90° ")
-        action_2 = menu.addAction("SOUTH 180° ")
-        action_3 = menu.addAction("WEST 270° ")
+        action_0 = menu.addAction("EAST 0° ")
+        action_1 = menu.addAction("NORTH 90° ")
+        action_2 = menu.addAction("WEST 180° ")
+        action_3 = menu.addAction("SOUTH 270° ")
         menu.setStyleSheet("""
             QMenu {
                 color: white;

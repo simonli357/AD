@@ -167,13 +167,13 @@ class Compass():
                     # Position the label slightly outwards from the tick's inner endpoint.
                     labels.append((label, x_out, y_out))
                 if value == 0:
-                    labels.append(('N', x_in, y_in))
-                elif value == 90:
                     labels.append(('E', x_in, y_in))
+                elif value == 90:
+                    labels.append(('N', x_in, y_in))
                 elif value == 180:
-                    labels.append(('S', x_in, y_in))
-                elif value == 270:
                     labels.append(('W', x_in, y_in))
+                elif value == 270:
+                    labels.append(('S', x_in, y_in))
 
             else:
                 # For small ticks, the tick starts at innerRadius and extends outward.
