@@ -4,7 +4,9 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <iostream>
 #include <memory>
+#include <ostream>
 #include <thread>
 
 #include <ros/ros.h>
@@ -18,6 +20,7 @@ namespace Sensing {
 
 inline std::atomic<double> encoder_speed{0.0};  // [m s⁻¹]
 inline std::atomic<double> yaw{0.0};            // [rad]
+inline std::atomic<double> raw_yaw{0.0};        // [rad]
 inline std::atomic<double> pitch{0.0};          // [rad]
 
 inline std::atomic<double> yaw_offset{0.0};
@@ -78,8 +81,9 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         if (!fast_atof(p, semi, pitch_deg)) return;
         if (!fast_atof(semi + 1, p + len, yaw_deg)) return;
         pitch.store(pitch_deg * M_PI / 180.0, std::memory_order_relaxed);
-        double tmp_yaw = -yaw_deg * M_PI / 180.0 + yaw_offset.load();
-        yaw.store(yaw_mod(tmp_yaw), std::memory_order_relaxed);
+        double tmp_yaw = -yaw_deg * M_PI / 180.0;
+        yaw.store(yaw_mod(tmp_yaw + yaw_offset.load()), std::memory_order_relaxed);
+        raw_yaw.store(tmp_yaw, std::memory_order_relaxed);
         // std::cout << "Sensing: pitch: " << pitch_deg << " yaw: " << yaw_deg << std::endl;
     }
 }
@@ -141,6 +145,9 @@ inline void imuCallback(const sensor_msgs::ImuConstPtr& msg)
     tf2::Matrix3x3(q).getRPY(r, p_, y_);
     pitch.store(p_, std::memory_order_relaxed);
     yaw.store(yaw_mod(y_ + yaw_offset.load()), std::memory_order_relaxed);
+    raw_yaw.store(y_, std::memory_order_relaxed);
+    // std::cout << "Sensing: rawyaw: " << raw_yaw << " yaw_offset: " << yaw_offset
+    //           << " yaw: " << yaw << std::endl;
 }
 
 inline void encoderCallback(const utils::encoder::ConstPtr& msg)
@@ -148,17 +155,20 @@ inline void encoderCallback(const utils::encoder::ConstPtr& msg)
     encoder_speed.store(msg->speed, std::memory_order_relaxed);
 }
 
-inline void reset_yaw(int direction) {
-    double current_yaw = yaw.load(std::memory_order_relaxed);
-    double offset = 0.0;
-    switch (direction) {
-        case 0: offset = -current_yaw;                 break; // east
-        case 1: offset = -current_yaw + M_PI / 2;      break; // north
-        case 2: offset = -current_yaw + M_PI;          break; // west
-        case 3: offset = -current_yaw - M_PI / 2;      break; // south
-        default: return; // invalid input, do nothing
-    }
-    yaw_offset.store(offset, std::memory_order_relaxed);
+inline void reset_yaw(int direction)
+{
+    static constexpr double desired_heading[4] =
+        { 0.0,  M_PI/2,  M_PI, -M_PI/2 };           // E, N, W, S
+    if (direction < 0 || direction > 3) return;
+
+    const double raw   = raw_yaw.load(std::memory_order_relaxed);
+    const double want  = desired_heading[direction];
+
+    yaw_offset.store(yaw_mod(want - raw), std::memory_order_relaxed);
+ 
+    yaw.store(yaw_mod(want), std::memory_order_relaxed);
+    // std::cout << "raw: " << raw << " want: " << want
+    //           << " yaw_offset: " << yaw_offset.load() << " yaw: " << yaw.load() << std::endl;
 }
 
 inline void initialize_sensing(ros::NodeHandle& nh)

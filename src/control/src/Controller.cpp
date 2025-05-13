@@ -136,6 +136,14 @@ public:
             }
         );
 
+        utils.tcp_client->set_yaw_callback(
+            [this](int direction) {
+                tcp_callbacks->run([this, direction] {
+                    Sensing::reset_yaw(direction);
+                });
+            }
+        );
+
         initialize();
     }
     ~StateMachine() {

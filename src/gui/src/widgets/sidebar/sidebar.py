@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QCursor
 from collections import deque
 
-import time
 import os
 import numpy as np
 
@@ -168,7 +168,40 @@ class SidebarWidget(QtWidgets.QWidget):
             self.call_set_states_service(x, y)
 
     def handle_yaw_btn_click(self) -> None:
-        self.call_set_states_service()
+        menu = QtWidgets.QMenu(self.map_widget)
+        action_0 = menu.addAction("EAST 0° ")
+        action_1 = menu.addAction("NORTH 90° ")
+        action_2 = menu.addAction("WEST 180° ")
+        action_3 = menu.addAction("SOUTH 270° ")
+        menu.setStyleSheet("""
+            QMenu {
+                color: white;
+                font-size: 16px;
+                border: none;
+                background-color: transparent;
+            }
+            QMenu::item {
+                background-color: rgba(40, 40, 40, 0.5);
+                margin: 1px;
+                padding-left: 30px;
+                padding-right: 30px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                border-radius: 8px;
+            }
+            QMenu::item:selected {
+                background-color: purple;
+            }
+        """)
+        chosen = menu.exec(QCursor.pos())
+        if chosen == action_0:
+            self.call_set_yaw_service(0)
+        elif chosen == action_1:
+            self.call_set_yaw_service(1)
+        elif chosen == action_2:
+            self.call_set_yaw_service(2)
+        elif chosen == action_3:
+            self.call_set_yaw_service(3)
 
     def handle_save_path_btn_click(self) -> None:
         path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -190,10 +223,21 @@ class SidebarWidget(QtWidgets.QWidget):
         self.main_window.reset_run_statistics()
 
     def call_set_states_service(self, x=-200.0, y=-200.0):
-        print("set states service called")
         try:
-            if self.server.tcp_client.socket is None:
+            if self.server.tcp_client is None:
+                print("tcp_client not online")
                 return
+            print("set states service called")
             self.server.tcp_client.send_set_states_srv(x, y)
+        except Exception as e:
+            print(e)
+
+    def call_set_yaw_service(self, direction):
+        try:
+            if self.server.tcp_client is None:
+                print("tcp_client not online")
+                return
+            print("set yaw service called")
+            self.server.tcp_client.send_yaw(direction)
         except Exception as e:
             print(e)

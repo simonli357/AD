@@ -7,27 +7,19 @@ import numpy as np
 import glm
 
 
-class Speedometer():
-    """Custom circular speedometer bar with ticks."""
+class Compass():
+    """Custom circular angleometer bar with ticks."""
 
-    def __init__(self, tiny_text_renderer, text_renderer, large_text_renderer, gauge_shader_program, tick_shader_program, circle_shader_program, compass_shader_program):
+    def __init__(self, text_renderer, medium_text_renderer, large_text_renderer, tick_shader_program, circle_shader_program, compass_shader_program):
         self.text_renderer = text_renderer
-        self.tiny_text_renderer = tiny_text_renderer
+        self.medium_text_renderer = medium_text_renderer
         self.large_text_renderer = large_text_renderer
         # Shader programs for drawing the gauge arc and tick marks.
-        self.gauge_shader_program = gauge_shader_program
         self.tick_shader_program = tick_shader_program
         self.circle_shader_program = circle_shader_program
         self.compass_shader_program = compass_shader_program
 
         # Uniforms
-        self.loc_center = gl.glGetUniformLocation(self.gauge_shader_program, "uCenter")
-        self.loc_inner = gl.glGetUniformLocation(self.gauge_shader_program, "uInnerRadius")
-        self.loc_outer = gl.glGetUniformLocation(self.gauge_shader_program, "uOuterRadius")
-        self.loc_progress = gl.glGetUniformLocation(self.gauge_shader_program, "uProgress")
-        self.loc_fill = gl.glGetUniformLocation(self.gauge_shader_program, "uFillColor")
-        self.loc_bg = gl.glGetUniformLocation(self.gauge_shader_program, "uBgColor")
-
         self.tick_u_proj = gl.glGetUniformLocation(self.tick_shader_program, "uProjection")
         self.tick_u_color = gl.glGetUniformLocation(self.tick_shader_program, "uColor")
 
@@ -42,15 +34,13 @@ class Speedometer():
         self.compass_u_color = gl.glGetUniformLocation(self.compass_shader_program, "color")
 
         # Ratios and constants
-        self.innerRadius_ratio = 0.20
-        self.outerRadius_ratio = 0.21
+        self.innerRadius_ratio = 0.13
+        self.outerRadius_ratio = 0.14
         self.large_tick_length_ratio = 0.02
         self.small_tick_length_ratio = 0.01
-        self.maxSweep = 280.0
-        self.tick_step = 10.0
-        self.large_tick_interval = 40.0
-        self.maxSweepSteer = 240.0
-        self.steer_tick_interval = 40.0
+        self.maxSweep = 360.0
+        self.tick_step = 9.0
+        self.large_tick_interval = 45.0
 
         # Cached geometry values (will be recomputed if dimensions change)
         self.cached_screen_width = None
@@ -61,8 +51,7 @@ class Speedometer():
         self.compass_vertices = None
         self.large_tick_vertices = None  # large tick vertices (flattened float array)
         self.small_tick_vertices = None  # small tick vertices
-        self.speed_label_data = None           # list of (label, x, y) for speed
-        self.steer_label_data = None           # list of (label, x, y) for steer
+        self.label_data = None           # list of (label, x, y) for large ticks
 
         # VBO's
         quad_placeholder = np.zeros((6 * 2,), dtype=np.float32)
@@ -88,7 +77,7 @@ class Speedometer():
         needle_placeholder = np.zeros((6 * 2,), dtype=np.float32)
         self.needle_vbo = vbo.VBO(needle_placeholder, usage=gl.GL_DYNAMIC_DRAW)
 
-    def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer):
+    def update_geometry(self, screen_width, screen_height, x_norm, y_norm, min_angle, max_angle):
         """Compute and cache the geometry for the gauge and tick marks."""
         # Compute gauge center based on normalized values.
         cx = x_norm * screen_width
@@ -118,7 +107,7 @@ class Speedometer():
         ], dtype=np.float32)
 
         # Precompute circle geometry
-        self.inner_radius = innerRadius * 0.6
+        self.inner_radius = innerRadius * 0.8
         self.num_segments = 128
         theta = np.linspace(0, 2 * np.pi, self.num_segments, endpoint=False)
         x = self.inner_radius * np.cos(theta)
@@ -139,8 +128,7 @@ class Speedometer():
         # Precompute tick geometry.
         large_ticks = []
         small_ticks = []
-        speed_labels = []
-        steer_labels = []
+        labels = []
 
         # Loop over each tick (custom angle r from 0 to maxSweep).
         # In our gauge coordinate system, custom angle 0 corresponds to standard -90°.
@@ -156,7 +144,7 @@ class Speedometer():
 
             # For clockwise drawing, map custom angle r to standard angle:
             # custom angle 0 -> standard -90°, increasing r rotates clockwise.
-            standard_angle = -90.0 - r
+            standard_angle = r
             rad = math.radians(standard_angle)
 
             if tick_type == 'large':
@@ -167,13 +155,26 @@ class Speedometer():
                 y_out = cy - (innerRadius + tick_length) * math.sin(rad)
                 large_ticks.extend([x_in, y_in, x_out, y_out])
 
-                x_in = cx + innerRadius * 0.80 * math.cos(rad)
-                y_in = cy - innerRadius * 0.80 * math.sin(rad)
-                # Map the fractional position along the sweep to a speed value.
-                value = min_speed + (max_speed - min_speed) * (r / self.maxSweep)
-                label = str(int(round(value)))
-                # Position the label slightly inward from the tick's inner endpoint.
-                speed_labels.append((label, x_in, y_in))
+                x_out = cx + innerRadius * 1.4 * math.cos(rad)
+                y_out = cy - innerRadius * 1.4 * math.sin(rad)
+
+                x_in = cx + innerRadius * 0.6 * math.cos(rad)
+                y_in = cy - innerRadius * 0.6 * math.sin(rad)
+                # Map the fractional position along the sweep to a angle value.
+                value = min_angle + (max_angle - min_angle) * (r / self.maxSweep)
+                if value != 360:
+                    label = str(int(round(value)))
+                    # Position the label slightly outwards from the tick's inner endpoint.
+                    labels.append((label, x_out, y_out))
+                if value == 0:
+                    labels.append(('E', x_in, y_in))
+                elif value == 90:
+                    labels.append(('N', x_in, y_in))
+                elif value == 180:
+                    labels.append(('W', x_in, y_in))
+                elif value == 270:
+                    labels.append(('S', x_in, y_in))
+
             else:
                 # For small ticks, the tick starts at innerRadius and extends outward.
                 x_in = cx + innerRadius * math.cos(rad)
@@ -183,38 +184,11 @@ class Speedometer():
                 small_ticks.extend([x_in, y_in, x_out, y_out])
             r += self.tick_step
 
-        standard_angle = -45
-        rad = math.radians(standard_angle)
-        x_in = cx + innerRadius * 0.9 * math.cos(rad)
-        y_in = cy - innerRadius * 0.9 * math.sin(rad)
-        self.speed_label_loc = (x_in, y_in)
-
-        r = 0.0
-        while r <= self.maxSweepSteer + 0.001:
-            # For clockwise drawing, map custom angle r to standard angle:
-            # custom angle 0 -> standard -90°, increasing r rotates clockwise.
-            standard_angle = -150.0 - r
-            rad = math.radians(standard_angle)
-
-            x_in = cx + innerRadius * 0.45 * math.cos(rad)
-            y_in = cy - innerRadius * 0.45 * math.sin(rad)
-            # Map the fractional position along the sweep to a speed value.
-            value = min_steer + (max_steer - min_steer) * (r / self.maxSweepSteer)
-            label = str(int(round(value)))
-            # Position the label slightly inward from the tick's inner endpoint.
-            steer_labels.append((label, x_in, y_in))
-            r += self.steer_tick_interval
-
-        standard_angle = -90
-        rad = math.radians(standard_angle)
-        x_in = cx + innerRadius * 0.25 * math.cos(rad)
-        y_in = cy - innerRadius * 0.25 * math.sin(rad)
-        self.steer_label_loc = (x_in, y_in)
+        self.angle_label_loc = (cx, cy)
 
         self.large_tick_vertices = np.array(large_ticks, dtype=np.float32)
         self.small_tick_vertices = np.array(small_ticks, dtype=np.float32)
-        self.speed_label_data = speed_labels
-        self.steer_label_data = steer_labels
+        self.label_data = labels
 
         # Cache the screen dimensions.
         self.cached_screen_width = screen_width
@@ -241,7 +215,7 @@ class Speedometer():
         gl.glBufferSubData(gl.GL_ARRAY_BUFFER, 0, self.needle_vertices.nbytes, self.needle_vertices)
         self.needle_vbo.unbind()
 
-    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_speed=0, current_steer=0, min_speed=0, max_speed=70, min_steer=-25, max_steer=25, fill_color=(0.0, 0.6, 0.8, 0.85)):
+    def draw(self, screen_width, screen_height, x_norm, y_norm, proj_mat, current_angle=0, min_angle=0, max_angle=360):
         """
         Draw the gauge arc and tick marks using precomputed geometry.
         Assumes that update_geometry() has been called if screen dimensions or gauge
@@ -249,51 +223,21 @@ class Speedometer():
         """
         # If dimensions or gauge position have changed, update the geometry.
         if (self.cached_screen_width != screen_width or self.cached_screen_height != screen_height or self.cached_center is None):
-            self.update_geometry(screen_width, screen_height, x_norm, y_norm, min_speed, max_speed, min_steer, max_steer)
+            self.update_geometry(screen_width, screen_height, x_norm, y_norm, min_angle, max_angle)
 
-        if self.speed_label_data is not None:
-            for label, x, y in self.speed_label_data:
+        if self.label_data is not None:
+            for label, x, y in self.label_data:
                 self.text_renderer.render_text(label, x, y, 1.0, (1.0, 1.0, 1.0), proj_mat)
-        if self.steer_label_data is not None:
-            for label, x, y in self.steer_label_data:
-                self.tiny_text_renderer.render_text(label, x, y, 1.0, (1.0, 1.0, 1.0), proj_mat)
-        if hasattr(self, 'steer_label_loc'):
-            self.text_renderer.render_text(f"{current_steer:.1f}°", self.steer_label_loc[0], self.steer_label_loc[1], 1.0, (1.0, 1.0, 0.0), proj_mat)
-        if hasattr(self, 'speed_label_loc'):
-            self.large_text_renderer.render_text(f"{current_speed:.1f}", self.speed_label_loc[0], self.speed_label_loc[1], 1.0, (1.0, 1.0, 0.0), proj_mat)
-            self.text_renderer.render_text("CM/S", self.speed_label_loc[0], self.speed_label_loc[1] + 35, 1.0, (1.0, 1.0, 0.0), proj_mat)
+        if hasattr(self, 'angle_label_loc'):
+            self.medium_text_renderer.render_text(f"{(current_angle) % 360:.1f}°", self.angle_label_loc[0], self.angle_label_loc[1], 1.0, (1.0, 1.0, 0.0), proj_mat)
 
         cx, cy = self.cached_center
         # Compute normalized progress.
-        progress = (current_speed - min_speed) / (max_speed - min_speed)
+        progress = (current_angle - min_angle) / (max_angle - min_angle)
         progress = max(0.0, min(1.0, progress))
-
-        # Use precomputed radii.
-        innerRadius = self.innerRadius_ratio * self.min_dim
-        outerRadius = self.outerRadius_ratio * self.min_dim
-
-        # Draw the gauge arc quad.
-        gl.glUseProgram(self.gauge_shader_program)
 
         gl.glEnable(gl.GL_BLEND)
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
-
-        loc_proj = gl.glGetUniformLocation(self.gauge_shader_program, "uProjection")
-        gl.glUniformMatrix4fv(loc_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))
-
-        gl.glUniform2f(self.loc_center, cx, cy)
-        gl.glUniform1f(self.loc_inner, innerRadius)
-        gl.glUniform1f(self.loc_outer, outerRadius)
-        gl.glUniform1f(self.loc_progress, progress)
-        gl.glUniform4f(self.loc_fill, *fill_color)
-        gl.glUniform4f(self.loc_bg, 0.0, 0.0, 0.0, 0.0)
-
-        self.quad_vbo.bind()
-        gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 2, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
-        gl.glDrawArrays(gl.GL_TRIANGLES, 0, 6)
-        self.quad_vbo.unbind()
-        gl.glDisableVertexAttribArray(0)
 
         # Draw the ticks.
         self.draw_ticks(proj_mat)
@@ -301,13 +245,8 @@ class Speedometer():
         # Draw inner circle.
         self.draw_circle(proj_mat)
 
-        # Draw steer needle
-        if current_steer > 0:
-            steer = 120 * abs(current_steer) / max_steer
-        else:
-            steer = -120 * abs(current_steer) / max_steer
-        init_angle = 180
-        self.draw_compass_needle(proj_mat, init_angle + steer)
+        # Draw yaw needle
+        self.draw_compass_needle(proj_mat, -current_angle)
 
         gl.glDisable(gl.GL_BLEND)
 
@@ -362,9 +301,13 @@ class Speedometer():
     def draw_compass_needle(self, proj_mat, angle):
         gl.glUseProgram(self.compass_shader_program)
         cx, cy = self.cached_center
-        scale_factor = 0.05 * self.cached_screen_height
-        model = glm.translate(glm.mat4(1.0), glm.vec3(cx, cy, 0.0))
-        model = glm.rotate(model, glm.radians(angle), glm.vec3(0.0, 0.0, 1.0))
+        scale_factor = 0.032 * self.cached_screen_height
+
+        needle_x = cx + self.inner_radius * 1.2 * np.cos(np.radians(angle))
+        needle_y = cy + self.inner_radius * 1.2 * np.sin(np.radians(angle))
+
+        model = glm.translate(glm.mat4(1.0), glm.vec3(needle_x, needle_y, 0.0))
+        model = glm.rotate(model, glm.radians(angle - 90), glm.vec3(0.0, 0.0, 1.0))
         model = glm.scale(model, glm.vec3(scale_factor, scale_factor, 1.0))
 
         gl.glUniformMatrix4fv(self.compass_u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_mat))

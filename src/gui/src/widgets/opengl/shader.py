@@ -10,6 +10,7 @@ from .custom.progress_bar import ProgressBar
 from .custom.lane import LaneIndicator
 from .custom.detection_box import DetectionBox
 from .custom.speedometer import Speedometer
+from .custom.compass import Compass
 from .custom.cam_grid import CameraGrid
 from .custom.cam_point import CameraPoint
 from .font import TextRenderer
@@ -25,6 +26,7 @@ class ShaderRenderer:
         self._start_time = time.perf_counter()
         self.tiny_text_renderer = TextRenderer(12)
         self.text_renderer = TextRenderer(16)
+        self.medium_text_renderer = TextRenderer(24)
         self.large_text_renderer = TextRenderer(48)
         self.texture_shader = create_shader_program(shader_path('texture', 'texture.vert'), shader_path('texture', 'texture.frag'))
         self.texture2D_shader = create_shader_program(shader_path('texture', 'texture2D.vert'), shader_path('texture', 'texture2D.frag'))
@@ -154,7 +156,8 @@ class ShaderRenderer:
         self.speedometer_compass_shader = create_shader_program(shader_path('speedometer', 'compass.vert'), shader_path('speedometer', 'compass.frag'))
 
         self.progress_bar_model = ProgressBar(self.text_renderer, self.progress_bar_shader, self.texture2D_shader)
-        self.speedometer_model = Speedometer(self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
+        self.speedometer_model = Speedometer(self.tiny_text_renderer, self.text_renderer, self.large_text_renderer, self.speedometer_gauge_shader, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
+        self.compass_model = Compass(self.tiny_text_renderer, self.text_renderer, self.large_text_renderer, self.speedometer_tick_shader, self.speedometer_circle_shader, self.speedometer_compass_shader)
 
     def load_map_models(self):
         self.bfmc_track_model = load_map(asset_path('track.png'))

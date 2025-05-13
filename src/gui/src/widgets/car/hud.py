@@ -99,3 +99,12 @@ class HudRenderer:
             self.car_widget.speed,
             self.car_widget.steer
         )
+
+        self.shader_renderer.compass_model.draw(
+            screen_width,
+            screen_height,
+            0.85,
+            0.22,
+            proj_mat,
+            self.car_widget.yaw
+        )

@@ -88,7 +88,7 @@ public:
             }
         }
         if (min_diff > 0.1) {
-            printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
+            /* printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff); */
             filtered_speed = velocity_command;
         }
         // if encoder speed is less than 0.03, set it to 0
