@@ -163,8 +163,10 @@ inline void reset_yaw(int direction)
     const double want  = desired_heading[direction];
 
     yaw_offset.store(yaw_mod(want - raw), std::memory_order_relaxed);
-
+ 
     yaw.store(yaw_mod(want), std::memory_order_relaxed);
+    std::cout << "raw: " << raw << " want: " << want
+              << " yaw_offset: " << yaw_offset.load() << " yaw: " << yaw.load() << std::endl;
 }
 
 inline void initialize_sensing(ros::NodeHandle& nh)
