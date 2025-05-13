@@ -144,6 +144,7 @@ inline void imuCallback(const sensor_msgs::ImuConstPtr& msg)
     pitch.store(p_, std::memory_order_relaxed);
     yaw.store(yaw_mod(y_ + yaw_offset.load()), std::memory_order_relaxed);
     raw_yaw.store(y_, std::memory_order_relaxed);
+    std::cout << "Sensing: yaw: " << y_ << " pitch: " << p_ << std::endl;
 }
 
 inline void encoderCallback(const utils::encoder::ConstPtr& msg)
