@@ -941,12 +941,12 @@ public:
         double density = PathManager::density;
         bool on_highway = false;
         double lane_offset = LANE_OFFSET * change_lane_offset_scaler;
-        PathManager::overtake_end_index_scaler = 1.15;
+        // PathManager::overtake_end_index_scaler = 1.15;
         for (int i = start_idx; i < static_cast<int>(start_idx + 0.5 * PathManager::density); i++) {
             // check if car is on highway
             if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
                 density *= 1/1.33;
-                PathManager::overtake_end_index_scaler *= 1.5;
+                // PathManager::overtake_end_index_scaler *= 1.5;
                 on_highway = true;
                 utils.debug("CHECK_CAR(): detected car is on right side of highway, if overtake, on left", 2);
                 break;
@@ -955,7 +955,7 @@ public:
                 right = true; 
                 on_highway = true;
                 density *= 1/1.33;
-                PathManager::overtake_end_index_scaler *= 1.5;
+                // PathManager::overtake_end_index_scaler *= 1.5;
                 break;
             }
         }
