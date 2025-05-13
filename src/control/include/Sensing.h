@@ -148,17 +148,18 @@ inline void encoderCallback(const utils::encoder::ConstPtr& msg)
     encoder_speed.store(msg->speed, std::memory_order_relaxed);
 }
 
-inline void reset_yaw(int direction) {
-    double current_yaw = yaw.load(std::memory_order_relaxed);
-    double offset = 0.0;
-    switch (direction) {
-        case 0: offset = -current_yaw;                 break; // east
-        case 1: offset = -current_yaw + M_PI / 2;      break; // north
-        case 2: offset = -current_yaw + M_PI;          break; // west
-        case 3: offset = -current_yaw - M_PI / 2;      break; // south
-        default: return; // invalid input, do nothing
-    }
-    yaw_offset.store(offset, std::memory_order_relaxed);
+inline void reset_yaw(int direction)
+{
+    static constexpr double headings[4] = { 0.0,  M_PI/2,  M_PI, -M_PI/2 }; // E, N, W, S
+    if (direction < 0 || direction > 3) return;
+
+    const double desired   = headings[direction];
+    const double prev_off  = yaw_offset.load(std::memory_order_relaxed);
+    const double curr_yaw  = yaw.load(std::memory_order_relaxed);
+    const double raw_yaw   = yaw_mod(curr_yaw - prev_off);
+    const double new_off   = yaw_mod(desired - raw_yaw);
+
+    yaw_offset.store(new_off, std::memory_order_relaxed);
 }
 
 inline void initialize_sensing(ros::NodeHandle& nh)
