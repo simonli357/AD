@@ -229,7 +229,7 @@ class Compass():
             for label, x, y in self.label_data:
                 self.text_renderer.render_text(label, x, y, 1.0, (1.0, 1.0, 1.0), proj_mat)
         if hasattr(self, 'angle_label_loc'):
-            self.medium_text_renderer.render_text(f"{current_angle:.1f}°", self.angle_label_loc[0], self.angle_label_loc[1], 1.0, (1.0, 1.0, 0.0), proj_mat)
+            self.medium_text_renderer.render_text(f"{(current_angle + 270) % 360:.1f}°", self.angle_label_loc[0], self.angle_label_loc[1], 1.0, (1.0, 1.0, 0.0), proj_mat)
 
         cx, cy = self.cached_center
         # Compute normalized progress.
@@ -246,7 +246,7 @@ class Compass():
         self.draw_circle(proj_mat)
 
         # Draw yaw needle
-        self.draw_compass_needle(proj_mat, current_angle + 270)
+        self.draw_compass_needle(proj_mat, -current_angle)
 
         gl.glDisable(gl.GL_BLEND)
 

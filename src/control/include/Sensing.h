@@ -4,7 +4,9 @@
 #include <array>
 #include <atomic>
 #include <cstring>
+#include <iostream>
 #include <memory>
+#include <ostream>
 #include <thread>
 
 #include <ros/ros.h>
@@ -149,6 +151,7 @@ inline void encoderCallback(const utils::encoder::ConstPtr& msg)
 }
 
 inline void reset_yaw(int direction) {
+    std::cout << "RESETTING YAW: DIRECTON: " << direction << std::endl;
     double current_yaw = yaw.load(std::memory_order_relaxed);
     double offset = 0.0;
     switch (direction) {
