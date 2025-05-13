@@ -152,10 +152,10 @@ inline void reset_yaw(int direction) {
     double current_yaw = yaw.load(std::memory_order_relaxed);
     double offset = 0.0;
     switch (direction) {
-        case 0: offset = -current_yaw + M_PI / 2;      break; // north
-        case 1: offset = -current_yaw;                 break; // east
-        case 2: offset = -current_yaw - M_PI / 2;      break; // south
-        case 3: offset = -current_yaw + M_PI;          break; // west
+        case 0: offset = -current_yaw;                 break; // east
+        case 1: offset = -current_yaw + M_PI / 2;      break; // north
+        case 2: offset = -current_yaw + M_PI;          break; // west
+        case 3: offset = -current_yaw - M_PI / 2;      break; // south
         default: return; // invalid input, do nothing
     }
     yaw_offset.store(offset, std::memory_order_relaxed);

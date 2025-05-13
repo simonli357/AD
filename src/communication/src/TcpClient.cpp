@@ -573,16 +573,16 @@ void TcpClient::parse_yaw(std::vector<uint8_t> &bytes) {
 	std::memcpy(&direction, bytes.data(), 4);
 	switch (direction) {
 	case 0:
-		std::cout << "Setting orientation to NORTH" << std::endl;
+		std::cout << "Setting orientation to EAST" << std::endl;
 		break; // north
 	case 1:
-		std::cout << "Setting orientation to EAST" << std::endl;
+		std::cout << "Setting orientation to NORTH" << std::endl;
 		break; // east
 	case 2:
-		std::cout << "Setting orientation to SOUTH" << std::endl;
+		std::cout << "Setting orientation to WEST" << std::endl;
 		break; // south
 	case 3:
-		std::cout << "Setting orientation to WEST" << std::endl;
+		std::cout << "Setting orientation to SOUTH" << std::endl;
 		break; // west
 	default:
 		return; // invalid input, do nothing

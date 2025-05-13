@@ -144,7 +144,7 @@ class Compass():
 
             # For clockwise drawing, map custom angle r to standard angle:
             # custom angle 0 -> standard -90°, increasing r rotates clockwise.
-            standard_angle = -r - 270
+            standard_angle = r - 270
             rad = math.radians(standard_angle)
 
             if tick_type == 'large':
@@ -169,11 +169,11 @@ class Compass():
                 if value == 0:
                     labels.append(('E', x_in, y_in))
                 elif value == 90:
-                    labels.append(('S', x_in, y_in))
+                    labels.append(('N', x_in, y_in))
                 elif value == 180:
                     labels.append(('W', x_in, y_in))
                 elif value == 270:
-                    labels.append(('N', x_in, y_in))
+                    labels.append(('S', x_in, y_in))
 
             else:
                 # For small ticks, the tick starts at innerRadius and extends outward.
