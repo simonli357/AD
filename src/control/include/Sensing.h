@@ -158,7 +158,7 @@ inline void reset_yaw(int direction)
     const double desired   = headings[direction];
     const double prev_off  = yaw_offset.load(std::memory_order_relaxed);
     const double curr_yaw  = yaw.load(std::memory_order_relaxed);
-    const double raw_yaw   = yaw_mod(curr_yaw - prev_off);
+    const double raw_yaw   = curr_yaw - prev_off;
     const double new_off   = yaw_mod(desired - raw_yaw);
 
     yaw_offset.store(new_off, std::memory_order_relaxed);
