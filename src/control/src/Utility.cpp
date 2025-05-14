@@ -67,6 +67,8 @@ void Utility::fetch_run_params() {
         return;
     }
 
+    this->pathName = "run189";
+
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
     samples.reserve(sample_count);

@@ -50,6 +50,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
         start.y = start_y;
         track.add_vertex(start, first);
         path.push_back(start);
+        this->name = "run189";
     }
 	path.push_back(first);
     precompute_path();
