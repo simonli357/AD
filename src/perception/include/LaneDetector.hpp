@@ -578,40 +578,69 @@ class LaneDetector {
 					lane_indices.swap(merged);
 			}
 	}
-	double find_lanes(const cv::Mat &binaryIPM) {
+	double find_lanes(const cv::Mat &binaryIPM)
+	{
 			lane_indices.clear();
 			if (binaryIPM.empty()) return -1.0;
-			constexpr float ROI_FRACTION = 0.10f;  // 10% of image
-			constexpr float FRACTION_FROM_BOT = 0.06f;  // start from bottom + 3%
-			// ─────────────────────────────────────────────────────────────────
-			int H = binaryIPM.rows, W = binaryIPM.cols;
-			int y0 = static_cast<int>((1.0f - ROI_FRACTION - FRACTION_FROM_BOT) * H);
-			int height = static_cast<int>(ROI_FRACTION * H);
-			int width = static_cast<int>(0.9f * W);
-			cv::Mat roi = binaryIPM(cv::Rect(static_cast<int>((W-width)/2), y0, width, height));
+
+			constexpr float ROI_FRACTION   = 0.10f; // analyse only bottom 10 % of image
+			constexpr float FRACTION_FROM_BOT = 0.06f; // start 6 % above bottom edge
+
+			const int H = binaryIPM.rows, W = binaryIPM.cols;
+			const int y0     = static_cast<int>((1.0f - ROI_FRACTION - FRACTION_FROM_BOT) * H);
+			const int height = static_cast<int>(ROI_FRACTION * H);
+			const int width  = static_cast<int>(0.9f * W);               // crop 5 % per side
+
+			const cv::Rect roiRect(static_cast<int>((W - width) / 2), y0, width, height);
+			const cv::Mat  roi = binaryIPM(roiRect);
 
 			cv::Mat hist;
 			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);
-			extract_lanes(hist);
+			extract_lanes(hist);                                    // fills lane_indices
 
-			// DEBUG
-			// for (int x : lane_indices) {
-			// 		float rel = float(x) / float(W);
-			// 		std::cout << "lane @ x=" << x
-			// 							<< " (" << rel << " of width)\n";
-			// }
-			// cv::imshow("ROI", roi);
-			// cv::waitKey(1);
-
-			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0) {
-					int diff = (lane_indices[1] - lane_indices[0]);
-					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.15 * LANE_WIDTH_PIXEL) {
-							double offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
-							// std::cout << "offset_from_center: " << offset_from_center << std::endl;
-							return offset_from_center;
+			cv::Mat vis;                                           // colour copy for drawing
+			if (true)
+			{
+					cv::cvtColor(binaryIPM, vis, cv::COLOR_GRAY2BGR);   // → BGR so we can colour
+					cv::rectangle(vis, roiRect, cv::Scalar(255, 0, 0), 2);
+					for (int x : lane_indices)
+					{
+							cv::line(vis,
+											cv::Point(x, roiRect.y),
+											cv::Point(x, roiRect.y + roiRect.height),
+											cv::Scalar(0, 255, 255), 2);
 					}
 			}
-			return -1.0;
+
+			double offset_from_center = -1.0;                       // default: fail
+
+			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0)
+			{
+					const int diff = lane_indices[1] - lane_indices[0];
+					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.15 * LANE_WIDTH_PIXEL)
+					{
+							offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
+
+							if (showflag)
+							{
+									const int midX = (lane_indices[0] + lane_indices[1]) / 2;
+									const int midY = roiRect.y + roiRect.height / 2;
+									cv::circle(vis, cv::Point(midX, midY), 8, cv::Scalar(0, 255, 0), -1);
+									char buf[64];
+									std::snprintf(buf, sizeof(buf), "offset: %.2fm", offset_from_center);
+									cv::putText(vis, buf, cv::Point(midX + 10, midY - 10),
+															cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+							}
+					}
+			}
+
+			if (true)
+			{
+					cv::imshow("Lane Visualisation", vis);
+					cv::waitKey(1);
+			}
+
+			return offset_from_center;
 	}
 
 	std::vector<int> find_closest_pair(const std::vector<int> &indices, int LANE_WIDTH_PIXEL) {
