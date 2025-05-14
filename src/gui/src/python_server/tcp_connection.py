@@ -67,6 +67,7 @@ class TcpConnection:
         else:
             self.send_ack("dashboard_client")
             self.send_ack("ack")
+        self.refresh_run()
 
     def refresh_run(self):
         self.send_string("refresh_run")
