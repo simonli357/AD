@@ -21,7 +21,7 @@ namespace drivers {
         ,m_pwm_sup_limit(f_pwm_sup_limit)
     {  
         m_pwm.period_us(200);
-        setSpeed(-0.20f);
+        // setSpeed(-0.20f);
     }
 
     /**  @brief  VNH class destructor

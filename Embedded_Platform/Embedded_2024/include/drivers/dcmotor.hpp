@@ -41,10 +41,10 @@ namespace drivers{
             void serialCallbackMOTOR(char const * rx, char * tx)
             {
                 float duty;
-                /* expect optional colon, optional space, then a float, then anything up to ';' */
-                if (sscanf(rx, " :%f", &duty) == 1) {
+                /* one optional leading space, then a float */
+                if (sscanf(rx, " %f", &duty) == 1 && inRange(duty)) {
                     setSpeed(duty);
-                    sprintf(tx, "ack;;");          // same terminator as the other callbacks
+                    sprintf(tx, "ack;;");
                 } else {
                     sprintf(tx, "err;;");
                 }

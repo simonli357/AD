@@ -1,0 +1,32 @@
+#include <mbed.h>
+#include <drivers/dcmotor.hpp>
+#include "mbed_power_mgmt.h"
+
+// pins
+#define PIN_INA  D7
+#define PIN_INB  D5
+#define PIN_PWM  D6
+
+BufferedSerial g_rpi(USBTX, USBRX, 115200);
+
+drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
+                                          -0.30f, 0.30f);
+
+Ticker speedTicker;
+
+void refreshMotor()
+{
+    g_motorVnhDriver.setSpeed(0.20f);
+}
+
+int main()
+{
+    sleep_manager_lock_deep_sleep();        // <──── keep timers alive
+
+    g_motorVnhDriver.setSpeed(0.20f);
+    speedTicker.attach(&refreshMotor, 2s);
+
+    while (true) {
+        ThisThread::sleep_for(1s);          // normal sleep is fine
+    }
+}

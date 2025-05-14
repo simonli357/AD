@@ -22,7 +22,7 @@ HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 # ────────────────────────────────────────────────────────────────────────────────
 
 def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
-    return f"#{MOTOR_ID}:{speed_cm_s:.2f};\r\n".encode()
+    return f"#{MOTOR_ID}:{speed_cm_s:.2f};;\r\n".encode()
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=-0.2, help="Commanded speed [cm/s]")
+    ap.add_argument("--cmd", type=float, default=0.2, help="Commanded speed [cm/s]")
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
     ap.add_argument("--dur", type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")

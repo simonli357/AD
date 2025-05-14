@@ -583,6 +583,7 @@ class LaneDetector {
 			lane_indices.clear();
 			if (binaryIPM.empty()) return -1.0;
 
+			// ───────────────────────── Region of Interest ────────────────────────────
 			constexpr float ROI_FRACTION   = 0.10f; // analyse only bottom 10 % of image
 			constexpr float FRACTION_FROM_BOT = 0.06f; // start 6 % above bottom edge
 
@@ -594,24 +595,34 @@ class LaneDetector {
 			const cv::Rect roiRect(static_cast<int>((W - width) / 2), y0, width, height);
 			const cv::Mat  roi = binaryIPM(roiRect);
 
+			// ───────────────────── Histogram & peak extraction ───────────────────────
 			cv::Mat hist;
 			cv::reduce(roi, hist, 0, cv::REDUCE_SUM, CV_32S);
-			extract_lanes(hist);                                    // fills lane_indices
+			extract_lanes(hist);                                    // fills lane_indices (relative to ROI)
 
+			// Bring indices into full‑image coordinate system so drawings & maths align
+			for (int &x : lane_indices) x += roiRect.x;
+
+			// ─────────────────────────── Visualisation ───────────────────────────────
 			cv::Mat vis;                                           // colour copy for drawing
 			if (true)
 			{
 					cv::cvtColor(binaryIPM, vis, cv::COLOR_GRAY2BGR);   // → BGR so we can colour
+
+					// ❶ draw ROI rectangle (blue)
 					cv::rectangle(vis, roiRect, cv::Scalar(255, 0, 0), 2);
+
+					// ❷ draw detected lane positions (yellow verticals)
 					for (int x : lane_indices)
 					{
 							cv::line(vis,
 											cv::Point(x, roiRect.y),
 											cv::Point(x, roiRect.y + roiRect.height),
-											cv::Scalar(0, 255, 255), 2);
+											cv::Scalar(0, 0, 255), 3);
 					}
 			}
 
+			// ────────────────────── Validate & compute centre ────────────────────────
 			double offset_from_center = -1.0;                       // default: fail
 
 			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0)
@@ -621,11 +632,14 @@ class LaneDetector {
 					{
 							offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
 
-							if (showflag)
+							if (true)
 							{
+									// ❸ draw circle at lane centre (green)
 									const int midX = (lane_indices[0] + lane_indices[1]) / 2;
 									const int midY = roiRect.y + roiRect.height / 2;
 									cv::circle(vis, cv::Point(midX, midY), 8, cv::Scalar(0, 255, 0), -1);
+
+									// ❹ annotate offset value
 									char buf[64];
 									std::snprintf(buf, sizeof(buf), "offset: %.2fm", offset_from_center);
 									cv::putText(vis, buf, cv::Point(midX + 10, midY - 10),
@@ -634,6 +648,7 @@ class LaneDetector {
 					}
 			}
 
+			// ───────────────────────────── Show image ────────────────────────────────
 			if (true)
 			{
 					cv::imshow("Lane Visualisation", vis);
