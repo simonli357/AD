@@ -233,12 +233,10 @@ public:
         mpc.reset_solver();
         initialized = true;
         
-        // Authorize python client to start
+        // send initial state of car
         if (state == STATE::INIT || state == STATE::DONE) {
-            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(false);
         } else {
-            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(true);
         }
         return 1;
