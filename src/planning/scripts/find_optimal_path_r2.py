@@ -55,8 +55,8 @@ class GlobalPlanner:
     def __init__(self):
         self.hw_safety_offset = 0.05
         self.current_dir = os.path.dirname(os.path.realpath(__file__))
-        # self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
-        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
+        self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_modified_new.graphml')
+        # self.G = nx.read_graphml(self.current_dir + '/maps/Competition_track_graph_noright.graphml')
         self.pos = {}
         self.attribute = {}
         for node, data in self.G.nodes(data=True):
@@ -79,7 +79,7 @@ class GlobalPlanner:
                 self.G[u][v]['weight'] = float('inf')
         
         current_dir = os.path.dirname(os.path.realpath(__file__))
-        destination_path = os.path.join(current_dir, 'config/destinations_mod_condensed.yaml')
+        destination_path = os.path.join(current_dir, 'config/destinations_mod_condensed0514.yaml')
         with open(destination_path, 'r') as f:
             self.base_destinations = yaml.safe_load(f)
         self.base_destinations = [str(d) for d in self.base_destinations]
@@ -230,6 +230,6 @@ if __name__ == "__main__":
         if optimal_path_ints and optimal_path_ints[0] == int(start):
             optimal_path_ints.pop(0)
         runs[f'run{start}'] = optimal_path_ints
-    runs_path = os.path.join(current_dir, 'config/runs0509.yaml')
+    runs_path = os.path.join(current_dir, 'config/runs_136removed_right.yaml')
     with open(runs_path, 'w') as f:
         yaml.dump(runs, f, default_flow_style=False)
