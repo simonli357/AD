@@ -1,4 +1,5 @@
 #include <memory>
+#include <ostream>
 #include <ros/ros.h>
 #include <ros/subscriber.h>
 #include <thread>
@@ -69,6 +70,7 @@ public:
         utils.tcp_client->set_send_run_callback(
             [this]() {
                 tcp_callbacks->run([this] {
+                    std::cout << "Sending Run Parameters" << std::endl;
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
                     } else {
@@ -83,6 +85,7 @@ public:
         utils.tcp_client->set_go_to_cmd_callback(
             [this](const std::vector<std::tuple<float, float>> &coords) {
                 tcp_callbacks->run([this, coords] {
+                    std::cout << "Planning Path" << std::endl;
                     utils::goto_command::Response res;
                     goto_multiple_command_callback(coords, res);
                     utils.tcp_client->send_go_to_cmd_srv(res.state_refs, res.input_refs, res.wp_attributes, res.wp_normals, true);
@@ -92,7 +95,8 @@ public:
 
         utils.tcp_client->set_set_states_callback(
             [this](double x, double y) {
-                 tcp_callbacks->run([this, x, y] {
+                tcp_callbacks->run([this, x, y] {
+                    std::cout << "Setting States" << std::endl;
                     utils::set_states::Request req;
                     utils::set_states::Response res;
                     req.x = x;
@@ -106,6 +110,7 @@ public:
         utils.tcp_client->set_start_callback(
             [this](bool started) {
                 tcp_callbacks->run([this, started] {
+                    std::cout << "Sending State" << std::endl;
                     start_bool_callback(started);
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
@@ -119,6 +124,7 @@ public:
         utils.tcp_client->set_ack_callback(
             [this]() {
                 tcp_callbacks->run([this] {
+                    std::cout << "Sending State" << std::endl;
                     if (state == STATE::INIT || state == STATE::DONE) {
                         utils.tcp_client->send_start_srv(false);
                     } else {
@@ -131,6 +137,7 @@ public:
         utils.tcp_client->set_waypoints_callback(
             [this](double x0, double y0, double yaw0) {
                 tcp_callbacks->run([this, x0, y0, yaw0] {
+                    std::cout << "Setting Waypoints" << std::endl;
                     PathManager::call_waypoint_service(x0, y0, yaw0, utils.tcp_client);
                 });
             }
@@ -139,6 +146,7 @@ public:
         utils.tcp_client->set_yaw_callback(
             [this](int direction) {
                 tcp_callbacks->run([this, direction] {
+                    std::cout << "Setting Yaw" << std::endl;
                     Sensing::reset_yaw(direction);
                 });
             }
@@ -225,12 +233,10 @@ public:
         mpc.reset_solver();
         initialized = true;
         
-        // Authorize python client to start
+        // send initial state of car
         if (state == STATE::INIT || state == STATE::DONE) {
-            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(false);
         } else {
-            std::cout << "start_bool_callback(): sending start_srv" << std::endl;
             utils.tcp_client->send_start_srv(true);
         }
         return 1;

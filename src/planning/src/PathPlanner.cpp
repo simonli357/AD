@@ -30,7 +30,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 		Vertex node = track.find_closest_node(x, y);
 		path.push_back(node);
 	}
-	construct_path();
+	construct_path(true);
 	track.remove_vertex(start);
 }
 
@@ -38,21 +38,24 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
-	this->name = name;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
-	Vertex start;
-	start.id = -2;
-	start.x = start_x;
-	start.y = start_y;
-	Vertex first = track.find_closest_node(start_x, start_y);
-	track.add_vertex(start, first);
-	path.push_back(start);
+    Vertex start;
+    Vertex first = track.find_closest_node(start_x, start_y);
+    if (name != "default") {
+        start.id = -2;
+        start.x = start_x;
+        start.y = start_y;
+        track.add_vertex(start, first);
+        path.push_back(start);
+    }
 	path.push_back(first);
-	precompute_path();
-	construct_path();
-	track.remove_vertex(start);
+    precompute_path();
+    construct_path(name != "default");
+    if (name != "default") {
+        track.remove_vertex(start);
+    }
 }
 
 void PathPlanner::precompute_path() {
@@ -72,11 +75,16 @@ void PathPlanner::precompute_path() {
 	}
 }
 
-void PathPlanner::construct_path() {
+void PathPlanner::construct_path(bool has_first) {
 	std::vector<Vertex> general_path;
+    Vertex prev;
 	general_path.push_back(path[0]);
-	general_path.push_back(path[1]);
-	Vertex prev = path[1];
+    if (has_first) {
+        general_path.push_back(path[1]);
+        prev = path[1];
+    } else {
+        prev = path[0];
+    }
 	for (const auto &v : path) {
 		if (v.id == prev.id || v.id == path[0].id) {
 			continue;
@@ -85,10 +93,7 @@ void PathPlanner::construct_path() {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
-	/* path_utils.distance_filter(general_path, distance_threshold, hw_density_factor, cw_density_factor); */
 	condensed_path = spline_utils.interpolate_path(general_path, density, hw_density_factor, cw_density_factor);
-	/* path_utils.normalize_yaw(condensed_path, yaw_threshold); */
-	/* path_utils.smooth_yaw(condensed_path); */
 	path_utils.compute_speeds(condensed_path, vref, density, hw_density_factor, cw_density_factor);
 }
 

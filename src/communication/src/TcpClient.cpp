@@ -137,7 +137,6 @@ void TcpClient::run() {
 		}
 		std::cout << "Connection request established with GUI \n" << std::endl;
 		connected = true;
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		if (!client_type.empty()) {
 			send_type(client_type);
 		}
@@ -504,16 +503,16 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "ack") {
 		tcp_can_send = true;
-		while (!ack_callback) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(250));
+		if (!ack_callback) {
+            return;
 		}
 		ack_callback();
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
 		return;
 	}
 	if (decoded_string == "refresh_run") {
-		while (!send_run_callback || !tcp_can_send) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(250));
+		if (!send_run_callback || !tcp_can_send) {
+            return;
 		}
 		send_run_callback();
 		std::cout << "Resending Run Parameters to GUI" << std::endl;
@@ -522,40 +521,40 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_trigger_msg(std::vector<uint8_t> &bytes) {
-	while (!trigger_response_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!trigger_response_callback) {
+		return;
 	}
 	trigger_msg->deserialize(bytes);
 	trigger_response_callback(trigger_msg->response);
 }
 
 void TcpClient::parse_go_to_cmd_srv(std::vector<uint8_t> &bytes) {
-	while (!go_to_cmd_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!go_to_cmd_callback) {
+		return;
 	}
 	goto_cmd_srv->deserialize(bytes);
 	go_to_cmd_callback(goto_cmd_srv->coords);
 }
 
 void TcpClient::parse_set_states_srv(std::vector<uint8_t> &bytes) {
-	while (!set_states_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!set_states_callback) {
+		return;
 	}
 	set_states_srv->deserialize(bytes);
 	set_states_callback(set_states_srv->x, set_states_srv->y);
 }
 
 void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
-	while (!waypoints_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!waypoints_callback) {
+		return;
 	}
 	waypoints_srv->deserialize(bytes);
 	waypoints_callback(waypoints_srv->x0, waypoints_srv->y0, waypoints_srv->yaw0);
 }
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
-	while (!start_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!start_callback) {
+        return;
 	}
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "start") {
@@ -566,26 +565,26 @@ void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 }
 
 void TcpClient::parse_yaw(std::vector<uint8_t> &bytes) {
-	while (!yaw_callback) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+	if (!yaw_callback) {
+        return;
 	}
 	int direction;
 	std::memcpy(&direction, bytes.data(), 4);
-	switch (direction) {
-	case 0:
-		std::cout << "Setting orientation to EAST" << std::endl;
-		break; // north
-	case 1:
-		std::cout << "Setting orientation to NORTH" << std::endl;
-		break; // east
-	case 2:
-		std::cout << "Setting orientation to WEST" << std::endl;
-		break; // south
-	case 3:
-		std::cout << "Setting orientation to SOUTH" << std::endl;
-		break; // west
-	default:
-		return; // invalid input, do nothing
-	}
+	/* switch (direction) { */
+	/* case 0: */
+	/* 	std::cout << "Setting orientation to EAST" << std::endl; */
+	/* 	break; // north */
+	/* case 1: */
+	/* 	std::cout << "Setting orientation to NORTH" << std::endl; */
+	/* 	break; // east */
+	/* case 2: */
+	/* 	std::cout << "Setting orientation to WEST" << std::endl; */
+	/* 	break; // south */
+	/* case 3: */
+	/* 	std::cout << "Setting orientation to SOUTH" << std::endl; */
+	/* 	break; // west */
+	/* default: */
+	/* 	return; // invalid input, do nothing */
+	/* } */
 	yaw_callback(direction);
 }
