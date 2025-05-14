@@ -38,7 +38,6 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
-	this->name = name;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
@@ -50,7 +49,6 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
         start.y = start_y;
         track.add_vertex(start, first);
         path.push_back(start);
-        this->name = "run189";
     }
 	path.push_back(first);
     precompute_path();

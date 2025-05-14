@@ -67,7 +67,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    this->pathName = "run189";
+    this->pathName = "gps";
 
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;

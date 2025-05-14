@@ -31,7 +31,7 @@ class PathPlanner {
 	double vref;
 	int N;
 	double T;
-	std::string name;
+	std::string name = "run189";
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
 
