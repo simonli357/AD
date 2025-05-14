@@ -17,17 +17,17 @@
 
 BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
-#define PIN_INA  D4   // pick any free pin
-#define PIN_INB  D5
-#define PIN_PWM  D3     // keep the existing PWM pin
+// #define PIN_INA  D4   // pick any free pin
+// #define PIN_INB  D5
+// #define PIN_PWM  D3     // keep the existing PWM pin
 
-drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
-                                                    -0.30f, 0.30f);
+// drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
+//                                                     -0.30f, 0.30f);
 periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
 periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
 periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
-drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,PA_8, g_encoder); //speed in cm/s
+drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,D3, g_encoder); //speed in cm/s
 drivers::CSteeringMotor g_steeringDriver(1, g_rpi, D4, g_imu, g_speedingDriver);
 brain::CRobotStateMachine g_robotstatemachine(1, g_rpi, g_steeringDriver, g_speedingDriver);
 
@@ -41,7 +41,7 @@ drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
     {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
     {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)},
-    {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)}
+    // {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)}
 };
 drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
