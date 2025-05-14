@@ -49,7 +49,7 @@ class PathPlanner {
 
   private:
 	void precompute_path();
-	void construct_path();
+	void construct_path(bool has_first);
 	static void saveTxt(const std_msgs::Float32MultiArray &msg, const std::string &filename, std::size_t elemsPerRow = 0, int precision = 6, const std::string &delim = " ") {
 		const auto &data = msg.data;
 		const std::size_t N = data.size();
