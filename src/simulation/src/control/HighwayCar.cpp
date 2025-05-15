@@ -6,7 +6,7 @@ HighwayCar::HighwayCar(TrafficManager &traffic_manager, ros::NodeHandle &nh, dou
 }
 
 void HighwayCar::start() {
-    plan_path();
+    get_path();
 	Vertex start = path[0];
 	std::cout << "HIGHWAY CAR: " << car_name << " initialized." << std::endl;
 	traffic_manager.task_manager->run([this] { run(); });
