@@ -1,6 +1,5 @@
 #pragma once
 
-#include "HighwayCar.hpp"
 #include "PathPlanner.hpp"
 #include <functional>
 #include <gazebo_msgs/ModelStates.h>
@@ -17,6 +16,7 @@
 
 class Car;
 class Pedestrian;
+class HighwayCar;
 
 class TrafficManager {
   public:
