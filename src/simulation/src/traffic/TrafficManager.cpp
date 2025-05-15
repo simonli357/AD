@@ -1,5 +1,6 @@
 #include "TrafficManager.hpp"
 #include "Car.hpp"
+#include "HighwayCar.hpp"
 #include "Pedestrian.hpp"
 #include "PathPlanner.hpp"
 #include <gazebo_msgs/SetModelState.h>
@@ -18,10 +19,12 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car_046");
 	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car_144");
 	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car_beetle");
-	/* car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus"); */
-	/* car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel"); */
-	/* car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo"); */
-	/* car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo"); */
+
+	car7 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_lexus", "HighwayLeft");
+	car8 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_opel", "HighwayRight");
+	car9 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_polo", "SpeedCurveLeft");
+	car10 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "SpeedCurveRight");
+
     pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
 
     car2->start();
@@ -29,6 +32,11 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
     car4->start();
     car5->start();
     car6->start();
+
+    car7->start();
+    car8->start();
+    car9->start();
+    car10->start();
 }
 
 TrafficManager::~TrafficManager() {}
