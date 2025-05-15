@@ -12,20 +12,20 @@ void HighwayCar::start() {
 	traffic_manager.task_manager->run([this] { run(); });
 }
 
-void HighwayCar::run() {
+void HighwayCar::follow_path() {
     ros::Rate rate(1.0 / T);
 	size_t idx = 0;
 	bool stopped = true;
 	while (ros::ok() && alive) {
-        if (car_started && idx == 0) {
-            break;
-        }
+        /* if (car_started && idx == 0) { */
+        /*     break; */
+        /* } */
 		const Vertex &v = path[idx];
-		if (!start_car || path.empty()) {
-            check_if_can_start(v.x, v.y, idx);
-			rate.sleep();
-			continue;
-		}
+		/* if (!start_car || path.empty()) { */
+            /* check_if_can_start(v.x, v.y, idx); */
+		/* 	rate.sleep(); */
+		/* 	continue; */
+		/* } */
         car_started = true;
 		// Collision detection. If there is an obstacle in front of us, do not move
 		if (can_move_car(v.x, v.y, idx)) {
@@ -62,7 +62,8 @@ void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
 	}
 }
 
-void HighwayCar::plan_path() {
+void HighwayCar::get_path() {
+    path.clear();
     planner->set_constraints(vref, N, T, car_path);
     path = planner->plan_path();
 }

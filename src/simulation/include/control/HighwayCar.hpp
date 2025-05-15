@@ -15,8 +15,8 @@ class HighwayCar : public Car {
 	void start() override;
 
   protected:
-	void run() override;
-	void plan_path() override;
+	void follow_path();
+    void get_path();
 
   private:
 	std::string car_path;
