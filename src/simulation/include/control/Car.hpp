@@ -14,7 +14,7 @@
 
 class Car {
   public:
-	Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name);
+	Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name);
 	Car(Car &&) = delete;
 	Car(const Car &) = delete;
 	Car &operator=(Car &&) = delete;

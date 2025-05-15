@@ -3,6 +3,8 @@
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 
+using Vertex = PathPlanner::Vertex;
+
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
@@ -55,6 +57,17 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
     if (name != "default") {
         track.remove_vertex(start);
     }
+}
+
+void PathPlanner::set_constraints(double vref, int N, double T, std::string name) {
+	this->vref = vref;
+	this->N = N;
+	this->T = 0.1;
+	this->density = 1.0 / std::fabs(this->vref) / this->T;
+	this->distance_threshold = vref * this->T * 1.5;
+	path.clear();
+    precompute_path();
+    construct_path(false);
 }
 
 void PathPlanner::precompute_path() {
@@ -118,4 +131,8 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 	/* saveTxt(out_state_refs, path + "/state_refs.txt", 3); */
 	/* saveTxt(out_input_refs, path + "/input_refs.txt", 2); */
 	/* saveTxt(out_attributes, path + "/attributes.txt", 1); */
+}
+
+std::vector<Vertex> PathPlanner::plan_path() {
+    return condensed_path;
 }

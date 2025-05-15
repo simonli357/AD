@@ -10,7 +10,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <thread>
 
-Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
+Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
     this->vref = vref;
 	planner = std::make_unique<PathPlanner>(vref * factor, N, T);

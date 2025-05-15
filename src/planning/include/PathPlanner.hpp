@@ -4,11 +4,12 @@
 #include "utils/PathUtils.hpp"
 #include "utils/SplineUtils.hpp"
 #include <cmath>
-#include <std_msgs/Float32MultiArray.h>
 #include <fstream>
 #include <iomanip>
+#include <std_msgs/Float32MultiArray.h>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 class PathPlanner {
   public:
@@ -45,7 +46,9 @@ class PathPlanner {
 
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name);
+	void set_constraints(double vref, int N, double T, std::string name);
 	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
+	std::vector<Vertex> plan_path();
 
   private:
 	void precompute_path();
