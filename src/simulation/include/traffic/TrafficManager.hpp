@@ -37,7 +37,7 @@ class TrafficManager {
 	std::unique_ptr<PathPlanner> planner;
 	double gazebo_z = 0.032940;
 
-	std::unique_ptr<tbb::task_group> task_manager;
+	std::shared_ptr<tbb::task_group> task_manager;
 
 	std::array<double, 4> spawn_area = {0, 0, 5.85, 7.50};
 

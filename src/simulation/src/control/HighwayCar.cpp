@@ -1,4 +1,4 @@
-#include "control/HighwayCar.hpp"
+#include "HighwayCar.hpp"
 #include <string>
 
 HighwayCar::HighwayCar(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name, const std::string &path_name) : Car(traffic_manager, nh, vref, car_name) {

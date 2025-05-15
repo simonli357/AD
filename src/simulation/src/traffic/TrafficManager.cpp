@@ -1,8 +1,8 @@
-#include "TrafficManager.hpp"
-#include "Car.hpp"
-#include "HighwayCar.hpp"
+#include "traffic/TrafficManager.hpp"
 #include "PathPlanner.hpp"
-#include "Pedestrian.hpp"
+#include "control/Car.hpp"
+#include "control/HighwayCar.hpp"
+#include "control/Pedestrian.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
@@ -11,7 +11,7 @@
 #include <vector>
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
-	thread_pool.execute([this] { task_manager = std::make_unique<tbb::task_group>(); });
+	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
 	spawn_ego_car();
 	car1 = nh.subscribe("/gazebo/model_states", 3, &TrafficManager::ego_car_gps_callback, this);
@@ -25,13 +25,13 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo");
 
 	car10 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runHighway502");
-	car11 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runHighway483");
-	car12 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runSpeedCurve151");
-	car13 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runSpeedCurve165");
-	car14 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runDottedStreet318");
-	car15 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runDottedStreet55");
-	car16 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runRoundabout368");
-	car17 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runRoundabout343");
+	/* car11 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runHighway483"); */
+	/* car12 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runSpeedCurve151"); */
+	/* car13 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runSpeedCurve165"); */
+	/* car14 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runDottedStreet318"); */
+	/* car15 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runDottedStreet55"); */
+	/* car16 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runRoundabout368"); */
+	/* car17 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_volvo", "runRoundabout343"); */
 
 	pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
 
@@ -45,16 +45,18 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car9->start();
 
 	car10->start();
-	car11->start();
-	car12->start();
-	car13->start();
-	car14->start();
-	car15->start();
-	car16->start();
-	car17->start();
+	/* car11->start(); */
+	/* car12->start(); */
+	/* car13->start(); */
+	/* car14->start(); */
+	/* car15->start(); */
+	/* car16->start(); */
+	/* car17->start(); */
 }
 
-TrafficManager::~TrafficManager() {}
+TrafficManager::~TrafficManager() {
+    task_manager->wait();
+}
 
 double TrafficManager::random_speed() {
 	// Return a random speed between 0.12 and 0.32
@@ -163,5 +165,14 @@ void TrafficManager::stop_cars() {
 	car7->stop();
 	car8->stop();
 	car9->stop();
+
 	car10->stop();
+	/* car11->stop(); */
+	/* car12->stop(); */
+	/* car13->stop(); */
+	/* car14->stop(); */
+	/* car15->stop(); */
+	/* car15->stop(); */
+	/* car16->stop(); */
+	/* car17->stop(); */
 }

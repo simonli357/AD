@@ -1,4 +1,6 @@
-#include "Car.hpp"
+#pragma once
+
+#include "control/Car.hpp"
 #include <string>
 
 class HighwayCar : public Car {
