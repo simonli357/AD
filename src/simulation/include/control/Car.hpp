@@ -9,7 +9,6 @@
 #include <ros/service_client.h>
 #include <std_msgs/String.h>
 #include <string>
-#include <thread>
 #include <vector>
 
 class Car {
