@@ -137,6 +137,7 @@ void TcpClient::run() {
 		}
 		std::cout << "Connection request established with GUI \n" << std::endl;
 		connected = true;
+        tcp_can_send = true;
 		if (!client_type.empty()) {
 			send_type(client_type);
 		}
