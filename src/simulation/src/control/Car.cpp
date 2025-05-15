@@ -12,20 +12,24 @@
 
 Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, std::string car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
+    this->vref = vref;
 	planner = std::make_unique<PathPlanner>(vref * factor, N, T);
 	setup();
-	plan_path();
-
-	Vertex start = path[0];
-
-	std::cout << car_name << " initialized." << std::endl;
-	main = std::thread(&Car::run, this);
 }
 
 Car::~Car() {
 	if (main.joinable()) {
 		main.join();
 	}
+}
+
+void Car::start() {
+	plan_path();
+
+	Vertex start = path[0];
+
+	std::cout << car_name << " initialized." << std::endl;
+	main = std::thread(&Car::run, this);
 }
 
 void Car::run() {

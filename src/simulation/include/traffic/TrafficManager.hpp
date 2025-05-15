@@ -2,6 +2,7 @@
 
 #include "PathPlanner.hpp"
 #include <functional>
+#include <gazebo_msgs/ModelStates.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <memory>
 #include <ros/node_handle.h>
@@ -37,6 +38,7 @@ class TrafficManager {
 	std::array<double, 4> spawn_area = {0, 0, 5.85, 7.50};
 
 	ros::Subscriber car1;
+	std::optional<size_t> car_idx;
 
 	std::unique_ptr<Car> car2;
 	std::unique_ptr<Car> car3;
@@ -59,6 +61,6 @@ class TrafficManager {
 	void stop_cars();
 	double random_speed();
 	void spawn_ego_car();
-	void ego_car_gps_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg);
+	void ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg);
 	void move_car_to(const std::string &car_name, double x, double y, double yaw);
 };

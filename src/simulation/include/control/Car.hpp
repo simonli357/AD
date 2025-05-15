@@ -19,7 +19,7 @@ class Car {
 	Car(const Car &) = delete;
 	Car &operator=(Car &&) = delete;
 	Car &operator=(const Car &) = delete;
-	~Car();
+	virtual ~Car();
 
 	using Graph = PathPlanner::Graph;
 	using Vertex = PathPlanner::Vertex;
@@ -28,12 +28,15 @@ class Car {
 	using Pose = utils::localisationConstPtr;
 	using ATTR = Track::ATTRIBUTE;
 
+	virtual void start();
+
 	void stop();
 
-  private:
+  protected:
 	int N = 40;
 	double factor = 1.0;
 	double T = 0.1 * factor;
+	double vref = 0.32;
 	double gazebo_z = 0.032940;
 	bool alive = true;
 	double car_radius = 0.15;
@@ -54,9 +57,10 @@ class Car {
 	std::vector<VD> destinations;
 	std::vector<Vertex> path;
 
-	void run();
+	virtual void run();
+	virtual void plan_path();
+
 	void setup();
-	void plan_path();
 	void move_car_to(double x, double y, double yaw);
 	void find_random_cycle(const Graph &graph, VD start);
 	bool is_near(double x1, double y1, double x2, double y2, double rad1, double rad2);

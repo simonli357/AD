@@ -12,17 +12,23 @@
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
 	spawn_ego_car();
-	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
+	car1 = nh.subscribe("/gazebo/model_states", 3, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car_008");
 	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car_019");
 	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car_046");
 	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car_144");
 	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car_beetle");
-	car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus");
-	car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel");
-	car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo");
-	car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo");
+	/* car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus"); */
+	/* car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel"); */
+	/* car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo"); */
+	/* car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo"); */
     pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
+
+    car2->start();
+    car3->start();
+    car4->start();
+    car5->start();
+    car6->start();
 }
 
 TrafficManager::~TrafficManager() {}
@@ -109,10 +115,20 @@ bool TrafficManager::car_in_front(const std::string &ego_car, const std::functio
 	return false;
 }
 
-void TrafficManager::ego_car_gps_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
-	double x = msg->pose.pose.position.x;
-	double y = msg->pose.pose.position.y;
-	set_car_position("car1", x, y);
+void TrafficManager::ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg) {
+    if (!car_idx.has_value()) {
+        auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
+        if (it != msg->name.end()) {
+            car_idx = std::distance(msg->name.begin(), it);
+            std::cout << "automobile found: " << *car_idx << std::endl;
+        } else {
+            printf("automobile not found\n");
+            return; 
+        }
+    }
+    double gps_x = msg->pose[*car_idx].position.x;
+    double gps_y = msg->pose[*car_idx].position.y;
+	set_car_position("car1", gps_x, gps_y);
 }
 
 void TrafficManager::stop_cars() {
