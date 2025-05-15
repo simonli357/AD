@@ -8,28 +8,19 @@
 #include <ros/service_client.h>
 #include <std_msgs/String.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <thread>
 
 Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
 	this->car_name = car_name;
-    this->vref = vref;
+	this->vref = vref;
 	planner = std::make_unique<PathPlanner>(vref * factor, N, T);
 	setup();
 }
 
-Car::~Car() {
-	if (main.joinable()) {
-		main.join();
-	}
-}
-
 void Car::start() {
 	plan_path();
-
 	Vertex start = path[0];
-
 	std::cout << car_name << " initialized." << std::endl;
-	main = std::thread(&Car::run, this);
+	traffic_manager.task_manager->run([this] { run(); });
 }
 
 void Car::run() {

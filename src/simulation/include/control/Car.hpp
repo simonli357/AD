@@ -19,7 +19,7 @@ class Car {
 	Car(const Car &) = delete;
 	Car &operator=(Car &&) = delete;
 	Car &operator=(const Car &) = delete;
-	virtual ~Car();
+	virtual ~Car() = default;
 
 	using Graph = PathPlanner::Graph;
 	using Vertex = PathPlanner::Vertex;
@@ -51,7 +51,6 @@ class Car {
 	std::random_device rd;
 	std::mt19937 gen;
 
-	std::thread main;
 	std::unique_ptr<PathPlanner> planner;
 
 	std::vector<VD> destinations;

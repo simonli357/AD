@@ -7,13 +7,7 @@
 Pedestrian::Pedestrian(TrafficManager &traffic_manager, ros::NodeHandle &nh, std::string name) : traffic_manager(traffic_manager), nh(nh) {
 	this->pedestrian_name = name;
 	setup();
-	main = std::thread(&Pedestrian::run, this);
-}
-
-Pedestrian::~Pedestrian() {
-	if (main.joinable()) {
-		main.join();
-	}
+	traffic_manager.task_manager->run([this] { run(); });
 }
 
 void Pedestrian::run() {
