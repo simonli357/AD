@@ -12,7 +12,6 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
-	this->name = "custom path";
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
 	path.clear();
