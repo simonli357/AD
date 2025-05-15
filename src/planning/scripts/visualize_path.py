@@ -80,7 +80,8 @@ def main():
     
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0225_modified.yaml')
     # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0215_modified.yaml')
-    yaml_path = os.path.join(visualizer.current_dir, 'config/runs0429_modified.yaml')
+    # yaml_path = os.path.join(visualizer.current_dir, 'config/runs0429_modified.yaml')
+    yaml_path = os.path.join(visualizer.current_dir, 'config/runs_136removed_modified.yaml')
     runs = visualizer.load_runs(yaml_path)
     
     # custom_run = [56, 54] # Avram 10m

@@ -41,7 +41,7 @@ inline int closest_waypoint_index = 0;
 inline int target_waypoint_index = 0;
 inline int last_waypoint_index = 0;
 inline int overtake_end_index = 0;
-inline int overtake_end_index_scaler = 1.15;
+// inline int overtake_end_index_scaler = 1.15;
 inline double rdb_circumference = 3.95;
 inline bool debug = true;
 

@@ -1,26 +1,4 @@
 #!/usr/bin/env python3
-"""Constant‑speed encoder test — **delay + steady‑state noise** (cm/s)
-
-Adds automatic delay/rise‑time estimation back in.
-
-What this script now does
-=========================
-1. Sends a fixed linear speed command (cm/s, negative conversion handled by
-   `CM_TO_DEG = -146`).
-2. Logs encoder speed, converts to cm/s.
-3. **Delay estimation**: first time the measured speed enters a ±10 % band
-   around the command **and stays there for ≥ 0.5 s**.
-4. All stats (mean, σ, min/max deviation) are computed **after that delay**.
-5. Plot shows:
-     * Measured trace (blue)
-     * Commanded speed (red dotted)
-     * Mean after delay (green dashed)
-     * ±1 σ shaded band
-     * Purple vertical line marking delay
-     * Embedded text box with delay + stats.
-6. Optional CSV logging unchanged.
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -36,7 +14,7 @@ import serial
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 
-MOTOR_ID = 11
+MOTOR_ID = 15
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
@@ -44,7 +22,7 @@ HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 # ────────────────────────────────────────────────────────────────────────────────
 
 def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
-    return f"#{MOTOR_ID}:{speed_cm_s:.2f}:{angle_deg:.2f};;\r\n".encode()
+    return f"#{MOTOR_ID}:{speed_cm_s:.2f};;\r\n".encode()
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -189,7 +167,7 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=32, help="Commanded speed [cm/s]")
+    ap.add_argument("--cmd", type=float, default=0.2, help="Commanded speed [cm/s]")
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
     ap.add_argument("--dur", type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
@@ -219,7 +197,7 @@ def main() -> None:
 
     # stop motor
     ser = serial.Serial(args.port, baudrate=args.baud, timeout=0.1)
-    ser.write(build_cmd(10.0, 0.0))
+    ser.write(build_cmd(0.0, 0.0))
     ser.close()
 
 
