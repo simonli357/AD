@@ -13,7 +13,7 @@
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
-	spawn_ego_car();
+	/* spawn_ego_car(); */
 	car1 = nh.subscribe("/gazebo/model_states", 3, &TrafficManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car_008");
 	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car_019");
