@@ -66,9 +66,9 @@ class Server:
     def process_client(self, client_socket):
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
-            if tcp_client is not None:
-                tcp_client.alive = False
-                tcp_client.socket.close()
+            if self.tcp_client is not None:
+                self.tcp_client.alive = False
+                self.tcp_client.socket.close()
             print("Utility Client connected")
             self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host)
         if client_type == "dashboard_client":
