@@ -192,7 +192,7 @@ class ButtonsWidget(QtWidgets.QWidget):
     def call_start_service(self, start) -> None:
         self.start_btn.setDisabled(True)
         try:
-            if self.server.tcp_client.socket is None:
+            if self.server.tcp_client is None:
                 return
             self.server.tcp_client.send_start_srv(not self.started)
         except Exception as e:
@@ -200,7 +200,7 @@ class ButtonsWidget(QtWidgets.QWidget):
 
     def call_goto_service(self, cursor_coords):
         try:
-            if self.server.tcp_client.socket is None:
+            if self.server.tcp_client is None:
                 return
             if len(cursor_coords) == 0:
                 print("Invalid path, must contain at least 1 destination")

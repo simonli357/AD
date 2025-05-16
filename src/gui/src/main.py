@@ -187,7 +187,6 @@ class MainWindow(QMainWindow):
         self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
         self.server.tcp_client.on_params = self.comm.params_signal.emit
         self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
-        self.server.tcp_client.refresh_run()
 
     def toggle_map(self) -> None:
         self.show_barca = not self.show_barca
