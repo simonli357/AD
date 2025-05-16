@@ -68,58 +68,38 @@ namespace drivers{
      */
     void CSpeedingMotor::CalculateSpeed(float target)
     {
-        constexpr float MAX_DELTA = 70.0f;   // cm/s
-        constexpr auto  STEP_TIME = 5ms;
-
-        float diff = target - m_currentSpeed;    // remaining error (+/‑)
-        while (true)         // ≈ dead‑zone
-        {
-            float step = (diff > 0 ? 1 : -1) *
-                        std::min(std::fabs(diff), MAX_DELTA);
-
-            m_currentSpeed += step;              // <-- increment, not overwrite
-            diff = target - m_currentSpeed;      // recompute remaining error
-
-            // ------- duty‑cycle mapping (unchanged) ----------
+        constexpr float MAX_DELTA = 10.0f; // cm/s
+        constexpr auto  STEP_TIME = 10ms;
+        static float current = 0.0f;
+        float diff = target - current; 
+        const int  sign = (diff >= 0) ? 1 : -1;
+        while (true) {
+            float step = sign * std::min(std::fabs(diff), MAX_DELTA);
+            current += step; 
             float duty = zero_default;
-            if (m_currentSpeed > 0.001f)
+            if (current > 0)
             {
                 constexpr float a = 895099.49f, b = -135002.57f, c = 5071.03f;
-                duty = (-b - std::sqrt(b*b - 4*a*(c - m_currentSpeed)))/(2*a);
+                duty = (-b - std::sqrt(b*b - 4*a*(c - current)))/(2*a);
             }
-            else if (m_currentSpeed < -0.001f)
+            else if (current < 0)
             {
                 constexpr float a = 1798545.44f, b = -258826.54f, c = 9311.76f;
-                duty = 0.0055f + (-b + std::sqrt(b*b - 4*a*(c + m_currentSpeed)))/(2*a);
+                duty = 0.0055f + (-b + std::sqrt(b*b - 4*a*(c + current)))/(2*a);
+            }
+            else
+            {
+                duty = zero_default;
             }
             m_pwm_pin.write(duty);
-            // --------------------------------------------------
-            if (std::fabs(diff) > 0.001f) break;
-            ThisThread::sleep_for(STEP_TIME);    // 10 ms pause
+
+            diff = target - current;
+            if (std::fabs(diff) > 0.001f) {
+                break;
+            }
+            ThisThread::sleep_for(STEP_TIME);
         }
     }
-    // void CSpeedingMotor::CalculateSpeed(float f_speed)
-    // {
-    //     float dutyCycle = zero_default;
-    //     float alpha = 895099.49;
-    //     float beta = -135002.57;
-    //     float gamma = 5071.03;
-    //     if(f_speed > 0 )
-    //     {
-    //         dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
-    //     } else if(f_speed < 0 )
-    //     {
-    //         alpha = 1798545.44;
-    //         beta = -258826.54;
-    //         gamma = 9311.76;
-    //         dutyCycle = 0.0055 + (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_speed)))/(2*alpha);
-    //     }
-    //     if(f_speed == 0)
-    //     {
-    //         dutyCycle = zero_default;
-    //     }
-    //     m_pwm_pin.write(dutyCycle);
-    // }
 
     /** @brief  It converts speed reference to duty cycle for pwm signal. 
      * 

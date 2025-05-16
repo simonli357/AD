@@ -54,7 +54,7 @@ namespace drivers
             ~CSpeedingMotor();
             void PWMSpeed(float f_PWM);
             // Calculate Speed from Equation
-            void CalculateSpeed(float f_speed);
+            void CalculateSpeed(float target);
             // Return current speed
             float getSpeed();
             virtual void _run();
