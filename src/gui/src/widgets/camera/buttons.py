@@ -192,7 +192,7 @@ class ButtonsWidget(QtWidgets.QWidget):
     def call_start_service(self, start) -> None:
         self.start_btn.setDisabled(True)
         try:
-            if self.server.tcp_client.socket is None:
+            if self.server.tcp_client is None:
                 return
             self.server.tcp_client.send_start_srv(not self.started)
         except Exception as e:
