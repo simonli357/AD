@@ -9,7 +9,7 @@ void HighwayCar::start() {
     get_path();
 	Vertex start = path[0];
 	std::cout << "HIGHWAY CAR: " << car_name << " initialized." << std::endl;
-	traffic_manager.task_manager->run([this] { run(); });
+	traffic_manager.task_manager->run([this] { follow_path(); });
 }
 
 void HighwayCar::follow_path() {
