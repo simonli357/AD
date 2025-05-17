@@ -8,7 +8,7 @@ import signal
 import argparse
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
-from PyQt5.QtGui import QFontDatabase, QFont
+from PyQt5.QtGui import QFontDatabase, QFont, QIcon
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal, QObject, Qt, QTimer
 from python_server.server import Server
