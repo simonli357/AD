@@ -86,6 +86,10 @@ class MainWindow(QMainWindow):
         self.recording_path = os.path.join(current_dir, 'frames')
         os.makedirs(self.recording_path, exist_ok=True)
 
+        # App Icon
+        icon_path = os.path.join(current_dir, "assets/icon.png")
+        self.setWindowIcon(QIcon(icon_path))
+
         self.setWindowTitle("BFMC DASHBOARD")
 
         self.setStyleSheet("""
