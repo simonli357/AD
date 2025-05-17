@@ -1,5 +1,6 @@
 #include "PathPlanner.hpp"
 #include "utils/helper.h"
+#include <iostream>
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 
@@ -135,4 +136,13 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 
 std::vector<Vertex> PathPlanner::plan_path() {
     return condensed_path;
+}
+
+void PathPlanner::print_path() {
+    for (size_t i = 0; i < path.size(); i++) {
+        if (i == path.size() - 1) {
+            std::cout << path[i].id << std::endl;
+        }
+        std::cout << path[i].id << "->" << std::endl;
+    }
 }

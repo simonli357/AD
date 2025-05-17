@@ -44,6 +44,8 @@ class PathPlanner {
 	double distance_threshold;
 	double yaw_threshold = 60 * M_PI / 180;
 
+    void print_path();
+
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name);
 	void set_constraints(double vref, int N, double T, std::string name);

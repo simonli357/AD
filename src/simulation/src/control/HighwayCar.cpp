@@ -65,5 +65,6 @@ void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
 void HighwayCar::get_path() {
     path.clear();
     planner->set_constraints(vref, N, T, car_path);
+    planner->print_path();
     path = planner->plan_path();
 }
