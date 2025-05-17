@@ -101,6 +101,11 @@ void Utility::fetch_run_params() {
     std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
     std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
+    if (std::isnan(avg_x) || std::isnan(avg_y)) {
+        return;
+        debug("Utility:: invalid gps data", 1);
+    }
+
     this->x0   = avg_x;
     this->y0   = avg_y;
     this->yaw0 = Sensing::yaw;
