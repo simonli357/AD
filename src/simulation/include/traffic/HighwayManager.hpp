@@ -24,7 +24,7 @@ class HighwayManager {
 	HighwayManager(const HighwayManager &) = delete;
 	HighwayManager &operator=(HighwayManager &&) = delete;
 	HighwayManager &operator=(const HighwayManager &) = delete;
-	~HighwayManager();
+	~HighwayManager() = default;
 
 	using Graph = PathPlanner::Graph;
 	using Vertex = PathPlanner::Vertex;

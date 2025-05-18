@@ -24,7 +24,7 @@ class TrafficManager {
 	TrafficManager(const TrafficManager &) = delete;
 	TrafficManager &operator=(TrafficManager &&) = delete;
 	TrafficManager &operator=(const TrafficManager &) = delete;
-	~TrafficManager();
+	~TrafficManager() = default;
 
 	using Graph = PathPlanner::Graph;
 	using Vertex = PathPlanner::Vertex;
