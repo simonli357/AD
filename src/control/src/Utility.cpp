@@ -138,9 +138,9 @@ void Utility::fetch_run_params() {
 
     this->pathName = "gps";
 
-    constexpr size_t TARGET_SAMPLES = 40;
-    constexpr double MAX_ACCEPTABLE_STD = 0.03;
-    constexpr double CLUSTER_RADIUS = 0.015;
+    constexpr size_t TARGET_SAMPLES = 50;
+    constexpr double MAX_ACCEPTABLE_STD = 0.02;
+    constexpr double CLUSTER_RADIUS = 0.01;
     constexpr size_t MIN_CLUSTER_SIZE = 5;
 
     std::vector<geometry_msgs::Point> samples;
@@ -159,8 +159,7 @@ void Utility::fetch_run_params() {
     std::cout << "Collecting GPS data..." << std::endl;
 
     // Collection loop
-    while (ros::ok() && samples.size() < TARGET_SAMPLES && 
-           (ros::Time::now() - start_time).toSec() < 60.0) {
+    while (ros::ok() && samples.size() < TARGET_SAMPLES && (ros::Time::now() - start_time).toSec() < 60.0) {
         ros::spinOnce();
         rate.sleep();
     }
