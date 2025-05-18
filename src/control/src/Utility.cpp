@@ -138,10 +138,10 @@ void Utility::fetch_run_params() {
 
     this->pathName = "gps";
 
-    constexpr size_t TARGET_SAMPLES = 50;  // Larger sample size
-    constexpr double MAX_ACCEPTABLE_STD = 1.0;  // Meters
-    constexpr double CLUSTER_RADIUS = 2.0;  // Meters for neighborhood
-    constexpr size_t MIN_CLUSTER_SIZE = 15;  // Minimum points in a cluster
+    constexpr size_t TARGET_SAMPLES = 25;
+    constexpr double MAX_ACCEPTABLE_STD = 0.02;
+    constexpr double CLUSTER_RADIUS = 0.02;
+    constexpr size_t MIN_CLUSTER_SIZE = 5;
 
     std::vector<geometry_msgs::Point> samples;
     samples.reserve(TARGET_SAMPLES);
