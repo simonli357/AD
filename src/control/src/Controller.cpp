@@ -252,8 +252,10 @@ public:
     bool start_bool_callback(bool started) {
         static int history = -1;
         if (started && (state == STATE::INIT || state == STATE::DONE)) {
+            std::cout << "Starting CAR" << std::endl;
             start();
         } else {
+            std::cout << "Stopping CAR" << std::endl;
             history = state;
             stop_for(10*T);
             change_state(STATE::INIT);
