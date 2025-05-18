@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ostream>
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
@@ -69,12 +70,13 @@ void Utility::fetch_run_params() {
 
     this->pathName = "gps";
 
-    const size_t sample_count = 500;
+    const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
     samples.reserve(sample_count);
 
     auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
         if (samples.size() < sample_count) {
+            std::cout << "X: " << msg->pose.pose.position.x << ", Y: " << msg->pose.pose.position.y << std::endl;
             samples.push_back(msg);
         }
     };
@@ -83,7 +85,7 @@ void Utility::fetch_run_params() {
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
     std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 60.0) {
+    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 30.0) {
         ros::spinOnce();
         rate.sleep();
     }
