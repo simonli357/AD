@@ -1,4 +1,4 @@
-#include "traffic/TrafficManager.hpp"
+#include "TrafficManager.hpp"
 #include "PathPlanner.hpp"
 #include "control/Car.hpp"
 #include "control/Pedestrian.hpp"
@@ -11,20 +11,27 @@
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
-	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
+    planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
+}
+
+TrafficManager::~TrafficManager() {
+    task_manager->wait();
+}
+
+void TrafficManager::initialize() {
 	spawn_ego_car();
 	car1 = nh.subscribe("/gazebo/model_states", 3, &TrafficManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car_008");
-	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car_019");
-	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car_046");
-	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car_144");
-	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car_beetle");
-	car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus");
-	car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel");
-	car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo");
-	car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo");
+	car2 = std::make_unique<Car>(this, nh, random_speed(), "car_008");
+	car3 = std::make_unique<Car>(this, nh, random_speed(), "car_019");
+	car4 = std::make_unique<Car>(this, nh, random_speed(), "car_046");
+	car5 = std::make_unique<Car>(this, nh, random_speed(), "car_144");
+	car6 = std::make_unique<Car>(this, nh, random_speed(), "car_beetle");
+	car7 = std::make_unique<Car>(this, nh, random_speed(), "car_lexus");
+	car8 = std::make_unique<Car>(this, nh, random_speed(), "car_opel");
+	car9 = std::make_unique<Car>(this, nh, random_speed(), "car_polo");
+	car10 = std::make_unique<Car>(this, nh, random_speed(), "car_volvo");
 
-	pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
+	pedestrian = std::make_unique<Pedestrian>(this, nh, "pedestrian_object");
 
 	car2->start();
 	car3->start();
@@ -35,10 +42,6 @@ TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car8->start();
 	car9->start();
 	car10->start();
-}
-
-TrafficManager::~TrafficManager() {
-    task_manager->wait();
 }
 
 double TrafficManager::random_speed() {

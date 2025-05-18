@@ -1,13 +1,13 @@
 #include "Pedestrian.hpp"
 #include <geometry_msgs/PoseStamped.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <random>
 #include <cmath>
 
-Pedestrian::Pedestrian(TrafficManager &traffic_manager, ros::NodeHandle &nh, std::string name) : traffic_manager(traffic_manager), nh(nh) {
+Pedestrian::Pedestrian(void *traffic_manager, ros::NodeHandle &nh, std::string name) : nh(nh) {
+    this->traffic_manager = static_cast<TrafficManager*>(traffic_manager);
 	this->pedestrian_name = name;
 	setup();
-	traffic_manager.task_manager->run([this] { run(); });
+	this->traffic_manager->task_manager->run([this] { run(); });
 }
 
 void Pedestrian::run() {
@@ -15,9 +15,9 @@ void Pedestrian::run() {
 	while (ros::ok() && alive) {
 		double ego_x;
 		double ego_y;
-		traffic_manager.get_car_position("car1", ego_x, ego_y);
-		Vertex u = traffic_manager.planner->track.find_closest_node(ego_x, ego_y);
-		Vertex v = traffic_manager.planner->track.find_first_neighbor(u);
+		traffic_manager->get_car_position("car1", ego_x, ego_y);
+		Vertex u = traffic_manager->planner->track.find_closest_node(ego_x, ego_y);
+		Vertex v = traffic_manager->planner->track.find_first_neighbor(u);
 		if (u.id == v.id) {
 			// No neighbors
 			ros::Duration(0.1).sleep();
@@ -30,7 +30,7 @@ void Pedestrian::run() {
 		// Calculate pedestrian position.
 		double pedestrian_x = u.x + dist_from_car * std::cos(yaw);
 		double pedestrian_y = u.y + dist_from_car * std::sin(yaw);
-        Vertex p = traffic_manager.planner->track.find_closest_node(pedestrian_x, pedestrian_y);
+        Vertex p = traffic_manager->planner->track.find_closest_node(pedestrian_x, pedestrian_y);
 		move_pedestrian_to(p.x, p.y, yaw);
 		ros::Duration(6.0).sleep();
 		hide_pedestrian();

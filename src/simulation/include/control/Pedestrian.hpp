@@ -5,7 +5,7 @@
 
 class Pedestrian {
   public:
-	Pedestrian(TrafficManager &traffic_manager, ros::NodeHandle &nh, std::string name);
+	Pedestrian(void *traffic_manager, ros::NodeHandle &nh, std::string name);
 	Pedestrian(Pedestrian &&) = default;
 	Pedestrian(const Pedestrian &) = delete;
 	Pedestrian &operator=(Pedestrian &&) = delete;
@@ -21,7 +21,7 @@ class Pedestrian {
 	double gazebo_z = 0;
 	bool alive = true;
 
-	TrafficManager &traffic_manager;
+	TrafficManager *traffic_manager;
 	ros::NodeHandle &nh;
 	ros::Publisher teleport_pub;
 	std::string pedestrian_name;

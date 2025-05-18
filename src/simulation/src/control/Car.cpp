@@ -9,9 +9,10 @@
 #include <std_msgs/String.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-Car::Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name) : traffic_manager(traffic_manager), nh(nh), gen(rd()) {
+Car::Car(void *traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name) : nh(nh), gen(rd()) {
 	this->car_name = car_name;
 	this->vref = vref;
+    this->traffic_manager = static_cast<TrafficManager*>(traffic_manager);
 	planner = std::make_unique<PathPlanner>(vref * factor, N, T);
 	setup();
 }
@@ -20,7 +21,7 @@ void Car::start() {
 	plan_path();
 	Vertex start = path[0];
 	std::cout << car_name << " initialized." << std::endl;
-	traffic_manager.task_manager->run([this] { run(); });
+	traffic_manager->task_manager->run([this] { run(); });
 }
 
 void Car::run() {
@@ -73,7 +74,7 @@ bool Car::can_move_car(double x, double y, size_t idx) {
 
 		const auto pred = [this, &wp](double cx, double cy) { return is_near(wp.x, wp.y, cx, cy, wp_radius, car_radius); };
 
-		if (traffic_manager.car_in_front(car_name, pred)) {
+		if (traffic_manager->car_in_front(car_name, pred)) {
 			return false;
 		}
 	}
@@ -119,7 +120,7 @@ void Car::move_car_to(double x, double y, double yaw) {
 	q.setRPY(0, 0, yaw);
 	cmd.pose.orientation = tf2::toMsg(q);
 	teleport_pub.publish(cmd);
-	traffic_manager.set_car_position(car_name, x, y);
+	traffic_manager->set_car_position(car_name, x, y);
 }
 
 void Car::find_random_cycle(const Graph &graph, VD start) {

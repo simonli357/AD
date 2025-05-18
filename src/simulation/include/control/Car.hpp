@@ -13,7 +13,7 @@
 
 class Car {
   public:
-	Car(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name);
+	Car(void *traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name);
 	Car(Car &&) = delete;
 	Car(const Car &) = delete;
 	Car &operator=(Car &&) = delete;
@@ -42,7 +42,7 @@ class Car {
 	double wp_radius = 0.02;
 	size_t lookahead_wpts = 20;
 
-	TrafficManager &traffic_manager;
+	TrafficManager *traffic_manager;
 	ros::NodeHandle &nh;
 	ros::Publisher teleport_pub;
 	std::string car_name;

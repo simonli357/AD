@@ -1,11 +1,12 @@
 #pragma once
 
+#include "HighwayManager.hpp"
 #include "control/Car.hpp"
 #include <string>
 
 class HighwayCar : public Car {
   public:
-	HighwayCar(TrafficManager &traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name, const std::string &path_name);
+	HighwayCar(void *traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name, const std::string &path_name);
 	HighwayCar(HighwayCar &&) = delete;
 	HighwayCar(const HighwayCar &) = delete;
 	HighwayCar &operator=(HighwayCar &&) = delete;

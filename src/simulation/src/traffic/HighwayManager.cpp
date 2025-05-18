@@ -1,7 +1,7 @@
-#include "traffic/HighwayManager.hpp"
-#include "PathPlanner.hpp"
+#include "HighwayManager.hpp"
 #include "control/HighwayCar.hpp"
 #include "control/Pedestrian.hpp"
+#include "PathPlanner.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
@@ -13,10 +13,10 @@ HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
 	spawn_ego_car();
 	car1 = nh.subscribe("/gazebo/model_states", 3, &HighwayManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_008", "runHighway502");
-	car3 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_014", "runHighway483");
+	car2 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_008", "runHighway502");
+	car3 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_014", "runHighway483");
 
-	pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
+	pedestrian = std::make_unique<Pedestrian>(this, nh, "pedestrian_object");
 
 	car2->start();
 	car3->start();
