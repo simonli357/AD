@@ -73,8 +73,7 @@ std::pair<double, double> calculate_mean(const std::vector<geometry_msgs::Point>
     return {sum_x/points.size(), sum_y/points.size()};
 }
 
-std::pair<double, double> calculate_std_dev(const std::vector<geometry_msgs::Point>& points,
-                                           double mean_x, double mean_y) {
+std::pair<double, double> calculate_std_dev(const std::vector<geometry_msgs::Point>& points, double mean_x, double mean_y) {
     double var_x = 0.0, var_y = 0.0;
     for (const auto& p : points) {
         var_x += std::pow(p.x - mean_x, 2);
@@ -83,10 +82,7 @@ std::pair<double, double> calculate_std_dev(const std::vector<geometry_msgs::Poi
     return {std::sqrt(var_x/points.size()), std::sqrt(var_y/points.size())};
 }
 
-std::vector<geometry_msgs::Point> filter_outliers(const std::vector<geometry_msgs::Point>& points,
-                                                 double mean_x, double mean_y,
-                                                 double std_x, double std_y,
-                                                 double sigma) {
+std::vector<geometry_msgs::Point> filter_outliers(const std::vector<geometry_msgs::Point>& points, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
     std::vector<geometry_msgs::Point> result;
     for (const auto& p : points) {
         if (std::abs(p.x - mean_x) < sigma * std_x &&
@@ -201,9 +197,7 @@ void Utility::fetch_run_params() {
     this->y0 = final_y;
     this->yaw0 = Sensing::yaw;
 
-    debug("Final position - X: " + std::to_string(x0) + 
-          ", Y: " + std::to_string(y0) + " | STD X: " + std::to_string(final_std_x) +
-          ", STD Y: " + std::to_string(final_std_y), 1);
+    debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0) + " | STD X: " + std::to_string(final_std_x) + ", STD Y: " + std::to_string(final_std_y), 1);
 }
 
 void Utility::initialize() {
