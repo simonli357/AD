@@ -1,0 +1,3 @@
+sphinx=2.2.0
+m2r
+breathe==4.13
