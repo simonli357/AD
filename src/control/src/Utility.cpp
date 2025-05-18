@@ -71,13 +71,19 @@ void Utility::fetch_run_params() {
     this->pathName = "gps";
 
     const size_t sample_count = 15;
-    std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
-    samples.reserve(sample_count);
+    const double alpha = 0.2;  // smoothing factor
+    bool first_sample = true;
+    double filtered_x = 0.0;
+    double filtered_y = 0.0;
 
     auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-        if (samples.size() < sample_count) {
-            std::cout << "X: " << msg->pose.pose.position.x << ", Y: " << msg->pose.pose.position.y << std::endl;
-            samples.push_back(msg);
+        if (first_sample) {
+            filtered_x = msg->pose.pose.position.x;
+            filtered_y = msg->pose.pose.position.y;
+            first_sample = false;
+        } else {
+            filtered_x = alpha * msg->pose.pose.position.x + (1.0 - alpha) * filtered_x;
+            filtered_y = alpha * msg->pose.pose.position.y + (1.0 - alpha) * filtered_y;
         }
     };
 
@@ -85,32 +91,27 @@ void Utility::fetch_run_params() {
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
     std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 30.0) {
+
+    size_t count = 0;
+    while (ros::ok() && count < sample_count && (ros::Time::now() - start_time).toSec() < 30.0) {
         ros::spinOnce();
         rate.sleep();
+        ++count;
     }
 
     sub.shutdown();
 
-    double sum_x = 0.0, sum_y = 0.0;
-    for (const auto& m : samples) {
-        sum_x += m->pose.pose.position.x;
-        sum_y += m->pose.pose.position.y;
-    }
-    double avg_x = sum_x / static_cast<double>(samples.size());
-    double avg_y = sum_y / static_cast<double>(samples.size());
-
-    std::cout << "Utility::fetch_run_params: number of pts: " << samples.size() << std::endl;
-    std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
+    std::cout << "Utility::fetch_run_params: number of pts: " << count << std::endl;
+    std::cout << "Utility::fetch_run_params: filtered_x: " << filtered_x << ", filtered_y: " << filtered_y << ", now waiting for IMU" << std::endl;
     std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
-    if (std::isnan(avg_x) || std::isnan(avg_y)) {
-        return;
+    if (std::isnan(filtered_x) || std::isnan(filtered_y)) {
         debug("Utility:: invalid gps data", 1);
+        return;
     }
 
-    this->x0   = avg_x;
-    this->y0   = avg_y;
+    this->x0   = filtered_x;
+    this->y0   = filtered_y;
     this->yaw0 = Sensing::yaw;
     debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
 }
