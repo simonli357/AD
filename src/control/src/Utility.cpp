@@ -32,7 +32,7 @@
 #include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
-    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now()), x0(0.0), y0(0.0)
+    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now())
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -67,7 +67,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    this->pathName = "gps";
+    // this->pathName = "gps";
 
     const size_t sample_count = 15;
     std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
@@ -101,10 +101,10 @@ void Utility::fetch_run_params() {
     std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
     std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
-    if (std::isnan(avg_x) || std::isnan(avg_y)) {
-        return;
-        debug("Utility:: invalid gps data", 1);
-    }
+    // if (std::isnan(avg_x) || std::isnan(avg_y)) {
+    //     return;
+    //     debug("Utility:: invalid gps data", 1);
+    // }
 
     this->x0   = avg_x;
     this->y0   = avg_y;
