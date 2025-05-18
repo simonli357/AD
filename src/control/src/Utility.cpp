@@ -83,7 +83,7 @@ void Utility::fetch_run_params() {
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
     std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 120.0) {
+    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 30.0) {
         ros::spinOnce();
         rate.sleep();
     }
