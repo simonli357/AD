@@ -139,12 +139,8 @@ void TcpClient::run() {
 		if (!client_type.empty()) {
 			send_type(client_type);
 		}
-        while (!send_run_callback) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
 		connected = true;
         tcp_can_send = true;
-        send_run_callback();
 		listen();
 	}
 }
