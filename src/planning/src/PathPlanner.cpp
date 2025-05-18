@@ -42,6 +42,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	path.clear();
     Vertex start;
     Vertex first = track.find_closest_node(start_x, start_y);
+		std::cout << "PathPlanner::set_constraints: first node: " << first.id << ", x: " << first.x << ", y: " << first.y << ", name: " << name << std::endl;
     if (name != "default") {
         start.id = -2;
         start.x = start_x;
@@ -89,6 +90,10 @@ void PathPlanner::construct_path(bool has_first) {
 			continue;
 		}
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);
+		if (shortest_path.empty()) {
+			std::cerr << "No path found between " << prev.x << ", " << prev.y << " and " << v.x << ", " << v.y << "\n";
+			exit(1);
+		}
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}

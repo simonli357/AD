@@ -283,7 +283,7 @@ inline int change_lane(int start_idx, int end_idx, bool shift_right = false, dou
         total_len += (orig_pos[i] - orig_pos[i-1]).norm();
     double avg_sp = total_len / (N-1);
 
-		double densify_factor = 0.5;
+		double densify_factor = 0.25;
     for (int i = 0; i+1 < N; ++i) {
         // always push the already‐shifted original point
         densified.push_back(shifted[i]);
