@@ -98,6 +98,7 @@ void Utility::fetch_run_params() {
     double avg_x = sum_x / static_cast<double>(samples.size());
     double avg_y = sum_y / static_cast<double>(samples.size());
 
+    std::cout << "Utility::fetch_run_params: number of pts: " << samples.size() << std::endl;
     std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
     std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
 
