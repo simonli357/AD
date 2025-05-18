@@ -34,7 +34,7 @@
 #include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
-    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now()), x0(0.0), y0(0.0)
+    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now())
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -132,7 +132,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    this->pathName = "gps";
+    // this->pathName = "gps";
 
     constexpr size_t TARGET_SAMPLES = 25;
     constexpr double MAX_ACCEPTABLE_STD = 0.25;

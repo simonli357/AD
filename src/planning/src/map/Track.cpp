@@ -181,7 +181,7 @@ std::vector<Vertex> Track::dikstra(int src, int tgt) {
 	auto sIt = idMap.find(src);
 	auto tIt = idMap.find(tgt);
 	if (sIt == idMap.end() || tIt == idMap.end()) {
-		std::cerr << "Dijkstra error: src or tgt ID not found in the graph.\n";
+		std::cerr << "Dijkstra error: src or tgt ID not found in the graph: " << src << " " << tgt << "\n";
 		return {};
 	}
 	Graph::vertex_descriptor srcV = sIt->second;
