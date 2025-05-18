@@ -138,9 +138,9 @@ void Utility::fetch_run_params() {
 
     this->pathName = "gps";
 
-    constexpr size_t TARGET_SAMPLES = 25;
-    constexpr double MAX_ACCEPTABLE_STD = 0.02;
-    constexpr double CLUSTER_RADIUS = 0.02;
+    constexpr size_t TARGET_SAMPLES = 40;
+    constexpr double MAX_ACCEPTABLE_STD = 0.03;
+    constexpr double CLUSTER_RADIUS = 0.015;
     constexpr size_t MIN_CLUSTER_SIZE = 5;
 
     std::vector<geometry_msgs::Point> samples;
