@@ -66,50 +66,60 @@ namespace drivers{
      * @brief   Calculates the speed of the car based on experimentally defined equation
      * @param   f_speed speed the car will go at in cm/s
      */
-    void CSpeedingMotor::CalculateSpeed(float f_speed)
+    void CSpeedingMotor::CalculateSpeed(float target)
     {
-        // dutyCycle output value to the pin
-        float dutyCycle = zero_default;
-        // Quadratic function parameters
-        float alpha = 0;
-        float beta = 0;
-        float gamma = 0;
-        if(f_speed > 0 )
-        {
-            // Update quadratic function parameters
-            alpha = 895099.49;
-            beta = -135002.57;
-            gamma = 5071.03;
-            // Compute the dutyCycle 
-            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
-        }
+        constexpr float MAX_DELTA = 70.0f;   // cm/s
+        constexpr auto  STEP_TIME = 5ms;
 
-        if(f_speed < 0 )
+        float diff = target - m_currentSpeed;    // remaining error (+/‑)
+        while (true)         // ≈ dead‑zone
         {
-            // Update quadratic function parameters
-            alpha = 1798545.44;
-            beta = -258826.54;
-            gamma = 9311.76;
-            // Compute the dutyCycle 
-            dutyCycle = 0.0055 + (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_speed)))/(2*alpha);
-        }
-        if(f_speed == 0)
-        {
-            dutyCycle = zero_default;
-        }
-        // Write the appropriate dutyCycle to the pin
-        m_pwm_pin.write(dutyCycle);
+            float step = (diff > 0 ? 1 : -1) *
+                        std::min(std::fabs(diff), MAX_DELTA);
 
-        // m_currentDutyCycle = dutyCycle;
-        // m_currentSpeed = f_speed;
-        // printf("Speed has been set: %f\n", m_currentSpeed);
-        // printf("Duty Cycle has been set: %f\n", m_currentDutyCycle);
-        // printf("[ACK] speed_set = %.2f\n", f_speed);
+            m_currentSpeed += step;              // <-- increment, not overwrite
+            diff = target - m_currentSpeed;      // recompute remaining error
 
-        // char buf[48];
-        // snprintf(buf, sizeof(buf), "[ACK] speed_set = %.2f\n", f_speed);
-        // m_serialPort.write(buf, strlen(buf));
+            // ------- duty‑cycle mapping (unchanged) ----------
+            float duty = zero_default;
+            if (m_currentSpeed > 0.001f)
+            {
+                constexpr float a = 895099.49f, b = -135002.57f, c = 5071.03f;
+                duty = (-b - std::sqrt(b*b - 4*a*(c - m_currentSpeed)))/(2*a);
+            }
+            else if (m_currentSpeed < -0.001f)
+            {
+                constexpr float a = 1798545.44f, b = -258826.54f, c = 9311.76f;
+                duty = 0.0055f + (-b + std::sqrt(b*b - 4*a*(c + m_currentSpeed)))/(2*a);
+            }
+            m_pwm_pin.write(duty);
+            // --------------------------------------------------
+            if (std::fabs(diff) > 0.001f) break;
+            ThisThread::sleep_for(STEP_TIME);    // 10 ms pause
+        }
     }
+    // void CSpeedingMotor::CalculateSpeed(float f_speed)
+    // {
+    //     float dutyCycle = zero_default;
+    //     float alpha = 895099.49;
+    //     float beta = -135002.57;
+    //     float gamma = 5071.03;
+    //     if(f_speed > 0 )
+    //     {
+    //         dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma - f_speed)))/(2*alpha);
+    //     } else if(f_speed < 0 )
+    //     {
+    //         alpha = 1798545.44;
+    //         beta = -258826.54;
+    //         gamma = 9311.76;
+    //         dutyCycle = 0.0055 + (-beta + std::sqrt(beta*beta - 4*alpha*(gamma + f_speed)))/(2*alpha);
+    //     }
+    //     if(f_speed == 0)
+    //     {
+    //         dutyCycle = zero_default;
+    //     }
+    //     m_pwm_pin.write(dutyCycle);
+    // }
 
     /** @brief  It converts speed reference to duty cycle for pwm signal. 
      * 

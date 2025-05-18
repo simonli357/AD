@@ -32,7 +32,7 @@
 #include "Tunable.h"
 
 Utility::Utility(ros::NodeHandle& nh_, bool pubOdom) 
-    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now())
+    : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now()), x0(0.0), y0(0.0)
 {
     std::cout << "Utility constructor" << std::endl;  
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
