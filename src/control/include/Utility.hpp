@@ -42,6 +42,7 @@
 #include <utils/encoder.h>
 #include "utils/helper.h"
 #include "Sensing.h"
+#include <numeric>
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -394,7 +395,19 @@ public:
         static Eigen::Vector2d P_v_2d;
         P_v_2d << P_v[0], P_v[1];
         // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;
-        // std::cout << "relative position: " << P_v_2d[0] << ", " << P_v_2d[1] << ", yaw:" << yaw<< std::endl;
+
+        // static std::vector<std::vector<double>> history;
+        // history.push_back({P_v_2d[0], P_v_2d[1]});
+        // if (history.size() > 25) {
+        //     history.erase(history.begin());
+        // }
+        // double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+        //     return sum + vec[0];
+        // }) / history.size();
+        // double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+        //     return sum + vec[1];
+        // }) / history.size();
+        // printf("avg relative position: %.4f, %.4f\n", avg_x, avg_y);
 
         return vehicle_pos + R_vw * P_v_2d;
     }
