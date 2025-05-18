@@ -1,4 +1,5 @@
 #include "TrafficManager.hpp"
+#include "HighwayManager.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <ros/init.h>
 #include <ros/node_handle.h>
@@ -12,7 +13,7 @@ int main(int argc, char **argv) {
 	tele.waitForExistence();
 
 	TrafficManager *traffic_manager = nullptr;
-	TrafficManager *highway_manager = nullptr;
+	HighwayManager *highway_manager = nullptr;
 
 	std::string run_type = "traffic";
 
@@ -27,7 +28,8 @@ int main(int argc, char **argv) {
 	}
 
 	if (run_type == "highway") {
-        // TODO
+        HighwayManager manager(nh, tele);
+        highway_manager = &manager;
 	}
 
 	ros::AsyncSpinner spinner(1);

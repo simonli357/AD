@@ -11,7 +11,7 @@
 HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
 	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
-	/* spawn_ego_car(); */
+	spawn_ego_car();
 	car1 = nh.subscribe("/gazebo/model_states", 3, &HighwayManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_008", "runHighway502");
 	car3 = std::make_unique<HighwayCar>(*this, nh, random_speed(), "car_014", "runHighway483");
@@ -34,31 +34,9 @@ double HighwayManager::random_speed() {
 }
 
 void HighwayManager::spawn_ego_car() {
-	std::vector<VD> candidates;
-	const auto &graph = planner->track.graph;
-	for (auto [vi, vend] = vertices(graph); vi != vend; ++vi) {
-		const auto &v = graph[*vi];
-		if (v.x >= spawn_area[0] && v.x <= spawn_area[2] && v.y >= spawn_area[1] && v.y <= spawn_area[3] && v.attribute != ATTR::INTERSECTION) {
-			candidates.push_back(*vi);
-		}
-	}
-	if (candidates.empty()) {
-		return;
-	}
-	static std::mt19937_64 rng{std::random_device{}()};
-	std::uniform_int_distribution<size_t> distr(0, candidates.size() - 1);
-	VD chosen = candidates[distr(rng)];
-	const auto &wp = graph[chosen];
-	double yaw = 0.0;
-	auto [ei, eend] = out_edges(chosen, graph);
-	if (ei != eend) {
-		VD next = target(*ei, graph);
-		const auto &wp2 = graph[next];
-		yaw = std::atan2(wp2.y - wp.y, wp2.x - wp.x);
-	}
-	double card = std::round(yaw / (M_PI / 2.0)) * (M_PI / 2.0);
-	move_car_to("car1", wp.x, wp.y, card);
-	ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
+    double start_x = 5.87;
+    double start_y = 11.80;
+    move_car_to("car1", start_x, start_y, 0);
 }
 
 void HighwayManager::move_car_to(const std::string &car_name, double x, double y, double yaw) {

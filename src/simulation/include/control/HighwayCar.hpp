@@ -16,7 +16,7 @@ class HighwayCar : public Car {
 
   protected:
 	void follow_path();
-    void get_path();
+	void get_path();
 
   private:
 	std::string car_path;
