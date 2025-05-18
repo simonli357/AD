@@ -16,7 +16,6 @@
 
 class Car;
 class Pedestrian;
-class HighwayCar;
 
 class TrafficManager {
   public:
@@ -53,15 +52,7 @@ class TrafficManager {
 	std::unique_ptr<Car> car7;
 	std::unique_ptr<Car> car8;
 	std::unique_ptr<Car> car9;
-
-	std::unique_ptr<HighwayCar> car10;
-	/* std::unique_ptr<Car> car11; */
-	/* std::unique_ptr<Car> car12; */
-	/* std::unique_ptr<Car> car13; */
-	/* std::unique_ptr<Car> car14; */
-	/* std::unique_ptr<Car> car15; */
-	/* std::unique_ptr<Car> car16; */
-	/* std::unique_ptr<Car> car17; */
+	std::unique_ptr<Car> car10;
 
 	std::unique_ptr<Pedestrian> pedestrian;
 
