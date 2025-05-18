@@ -3,19 +3,45 @@
 #include <ros/init.h>
 #include <ros/node_handle.h>
 #include <ros/spinner.h>
+#include <string>
 
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "traffic_node");
 	ros::NodeHandle nh;
-    auto tele = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
-    tele.waitForExistence();
+	auto tele = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
+	tele.waitForExistence();
 
-    TrafficManager traffic_manager(nh, tele);
+	TrafficManager *traffic_manager = nullptr;
+	TrafficManager *highway_manager = nullptr;
+
+	std::string run_type = "traffic";
+
+	if (!nh.getParam("/run_type", run_type)) {
+		std::cout << "Missing param: run_type" << std::endl;
+		exit(1);
+	}
+
+	if (run_type == "trafic") {
+		TrafficManager manager(nh, tele);
+        traffic_manager = &manager;
+	}
+
+	if (run_type == "highway") {
+        // TODO
+	}
 
 	ros::AsyncSpinner spinner(1);
 	spinner.start();
 
-    ros::waitForShutdown();
-    traffic_manager.stop_cars();
+	ros::waitForShutdown();
+
+    if (traffic_manager) {
+        traffic_manager->stop_cars();
+    }
+
+    if (highway_manager) {
+        traffic_manager->stop_cars();
+    }
+
 	return 0;
 }

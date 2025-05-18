@@ -1,4 +1,6 @@
 <launch>
+  <arg name="run_type" default="highway"/>
+  <param name="run_type" value="$(arg run_type)"/>
   <node pkg="simulation" type="traffic" name="$(anon traffic)" output="screen"> 
   </node>
 </launch>
