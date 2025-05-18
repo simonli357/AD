@@ -67,7 +67,13 @@ void PathPlanner::precompute_path() {
 			return;
 		}
 		for (const auto &node : config[name]) {
-			path.push_back(track.find_node(node.as<int>()));
+            int id = node.as<int>();
+            bool exists = std::any_of(path.begin(), path.end(), [id](const Vertex &v) {
+                return v.id == id;
+            });
+            if (!exists) {
+                path.push_back(track.find_node(id));
+            }
 		}
 	} catch (const std::exception &e) {
 		std::cerr << "Error reading YAML file: " << e.what() << std::endl;
