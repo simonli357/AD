@@ -83,18 +83,16 @@ void PathPlanner::precompute_path() {
 void PathPlanner::construct_path(bool has_first) {
 	std::vector<Vertex> general_path;
     Vertex prev;
+	general_path.push_back(path[0]);
     prev = path[0];
     if (has_first) {
+        general_path.push_back(path[1]);
         prev = path[1];
     }
 	for (const auto &v : path) {
-		if (v.id == prev.id || v.id == path[0].id) {
-            general_path.push_back(v);
+		if (v.id == prev.id || v.id == path[0].id || prev.id == -2) {
 			continue;
 		}
-        if (prev.id == -2) {
-            continue;
-        }
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
