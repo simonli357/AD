@@ -81,6 +81,18 @@ runSpeedCurve166: # AI Path
 runSpeedCurve: # Test Path
 - 219
 - 406
+runRoundabout342: # AI Path
+- 342
+- 367
+runRoundabout368: # AI Path
+- 368
+- 399
+runRoundabout1: # Test Path
+- 331
+- 379
+- 337
+- 345
+- 367
 runDottedStreet318:
 - 318
 - 330
