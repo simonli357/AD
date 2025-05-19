@@ -69,24 +69,12 @@ run189:
 runHighway502:
 - 502
 - 520
-runHighway483:
-- 483
-- 501
-runSpeedCurve151:
-- 151
-- 163
-runSpeedCurve165:
-- 165
-- 176
+runSpeedCurve219:
+- 219
+- 406
 runDottedStreet318:
 - 318
 - 330
-runDottedStreet55:
-- 55
-- 317
 runRoundabout368:
 - 368
 - 397
-runRoundabout343:
-- 343
-- 367
