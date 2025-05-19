@@ -22,7 +22,6 @@ class HighwayCar : public Car {
   private:
 	std::string car_path;
 	bool start_car = false;
-	bool car_started = false;
 
 	void check_if_can_start(double car_x, double car_y, size_t idx);
 };

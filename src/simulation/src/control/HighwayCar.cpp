@@ -15,16 +15,12 @@ void HighwayCar::follow_path() {
 	size_t idx = 0;
 	bool stopped = true;
 	while (ros::ok() && alive) {
-		/* if (car_started && idx == 0) { */
-		/*     break; */
-		/* } */
 		const Vertex &v = path[idx];
-		/* if (!start_car || path.empty()) { */
-		/* check_if_can_start(v.x, v.y, idx); */
-		/* 	rate.sleep(); */
-		/* 	continue; */
-		/* } */
-		car_started = true;
+		if (!start_car || path.empty()) {
+		check_if_can_start(v.x, v.y, idx);
+			rate.sleep();
+			continue;
+		}
 		// Collision detection. If there is an obstacle in front of us, do not move
 		if (can_move_car(v.x, v.y, idx)) {
 			move_car_to(v.x, v.y, v.tangent_angle);

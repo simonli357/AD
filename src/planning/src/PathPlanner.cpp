@@ -1,6 +1,7 @@
 #include "PathPlanner.hpp"
 #include "utils/helper.h"
 #include <iostream>
+#include <ostream>
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
 
@@ -67,6 +68,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, std::string name
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
+    this->name = name;
 	path.clear();
     precompute_path();
     construct_path(false);
@@ -149,10 +151,13 @@ std::vector<Vertex> PathPlanner::plan_path() {
 }
 
 void PathPlanner::print_path() {
+    std::cout << "Path: ";
     for (size_t i = 0; i < path.size(); i++) {
         if (i == path.size() - 1) {
-            std::cout << path[i].id << std::endl;
+            std::cout << path[i].id;
+        } else {
+            std::cout << path[i].id << "->";
         }
-        std::cout << path[i].id << "->" << std::endl;
     }
+    std::cout << std::endl;
 }
