@@ -37,17 +37,18 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	track.remove_vertex(start);
 }
 
-void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name) {
+void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name, bool use_gps) {
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
+    this->name = name;
 	path.clear();
     Vertex start;
     Vertex first = track.find_closest_node(start_x, start_y);
-		std::cout << "PathPlanner::set_constraints: first node: " << first.id << ", x: " << first.x << ", y: " << first.y << ", name: " << name << std::endl;
-    if (name != "default") {
+    std::cout << "PathPlanner::set_constraints: Path: " << name << std::endl;
+    if (use_gps) {
         start.id = -2;
         start.x = start_x;
         start.y = start_y;
@@ -56,7 +57,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
     }
 	path.push_back(first);
     precompute_path();
-    construct_path(name != "default");
+    construct_path(use_gps);
     if (name != "default") {
         track.remove_vertex(start);
     }
@@ -97,12 +98,12 @@ void PathPlanner::precompute_path() {
 	}
 }
 
-void PathPlanner::construct_path(bool has_first) {
+void PathPlanner::construct_path(bool use_gps) {
 	std::vector<Vertex> general_path;
     Vertex prev;
 	general_path.push_back(path[0]);
     prev = path[0];
-    if (has_first) {
+    if (use_gps) {
         general_path.push_back(path[1]);
         prev = path[1];
     }

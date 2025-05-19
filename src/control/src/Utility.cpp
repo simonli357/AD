@@ -132,8 +132,6 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    // this->pathName = "gps";
-
     constexpr size_t TARGET_SAMPLES = 25;
     constexpr double MAX_ACCEPTABLE_STD = 0.25;
     constexpr double CLUSTER_RADIUS = 0.3;

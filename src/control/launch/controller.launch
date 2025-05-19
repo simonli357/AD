@@ -17,7 +17,8 @@
   <arg name="x0" default="3.83"/>
   <arg name="y0" default="0.376"/>
   <arg name="yaw0" default="3.14159"/>
-  <arg name="path" default="run184"/>
+  <arg name="path" default="run189"/>
+  <param name="/path" value="$(arg path)"/>
   <param name="x0" value="$(arg x0)"/>
   <param name="y0" value="$(arg y0)"/>
   <param name="yaw0" value="$(arg yaw0)"/>
@@ -27,7 +28,6 @@
   <param name="/is_real" value="$(arg real)"/>
   <arg name="subModel" default="false"/>
   <arg name="rate" default="300"/>
-  <param name="pathName" value="$(arg path)"/>
   <param name="vrefInt" value="$(arg v)"/>
   <arg name="dashboard" default="true"/>
   <param name="dashboard" value="$(arg dashboard)"/>

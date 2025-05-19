@@ -32,7 +32,7 @@ class PathPlanner {
 	double vref;
 	int N;
 	double T;
-	std::string name = "run189";
+	std::string name = "default";
 	std::vector<Vertex> path;
 	std::vector<Vertex> condensed_path;
 
@@ -44,17 +44,17 @@ class PathPlanner {
 	double distance_threshold;
 	double yaw_threshold = 60 * M_PI / 180;
 
-    void print_path();
+	void print_path();
 
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
-	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name);
+	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name, bool use_gps);
 	void set_constraints(double vref, int N, double T, std::string name);
 	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
 	std::vector<Vertex> plan_path();
 
   private:
 	void precompute_path();
-	void construct_path(bool has_first);
+	void construct_path(bool use_gps);
 	static void saveTxt(const std_msgs::Float32MultiArray &msg, const std::string &filename, std::size_t elemsPerRow = 0, int precision = 6, const std::string &delim = " ") {
 		const auto &data = msg.data;
 		const std::size_t N = data.size();
