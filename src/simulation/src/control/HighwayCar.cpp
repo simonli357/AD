@@ -17,7 +17,8 @@ void HighwayCar::follow_path() {
 	while (ros::ok() && alive) {
 		const Vertex &v = path[idx];
 		if (!start_car || path.empty()) {
-		check_if_can_start(v.x, v.y, idx);
+			move_car_to(v.x, v.y, v.tangent_angle);
+            check_if_can_start(v.x, v.y, idx);
 			rate.sleep();
 			continue;
 		}
@@ -42,18 +43,22 @@ void HighwayCar::follow_path() {
 }
 
 void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
-	if (path.empty())
+	if (path.empty()) {
 		return;
-	for (size_t step = 1; step <= lookahead_wpts; ++step) {
-		size_t i = (idx + path.size() - step) % path.size();
-		const auto &wp = path[i];
+    }
 
-		const auto pred = [this, &wp](double cx, double cy) { return is_near(wp.x, wp.y, cx, cy, wp_radius, car_radius); };
+    double ego_x, ego_y;
+    traffic_manager->get_car_position("car1", ego_x, ego_y);
 
-		if (traffic_manager->car_in_front("car1", pred)) {
-			start_car = true;
-		}
-	}
+    double self_x, self_y;
+    traffic_manager->get_car_position(car_name, self_x, self_y);
+
+    double r1 = 0.5;
+    double r2 = 0.5;
+
+    if (is_near(ego_x, ego_y, self_x, self_y, r1, r2)) {
+        start_car = true;
+    }
 }
 
 void HighwayCar::get_path() {

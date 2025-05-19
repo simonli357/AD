@@ -14,21 +14,18 @@ HighwayManager::~HighwayManager() { task_manager->wait(); }
 void HighwayManager::initialize() {
 	spawn_ego_car();
 	car2 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_008", "runHighway502");
-	car3 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_014", "runHighway483");
 
 	pedestrian = std::make_unique<Pedestrian>(this, nh, "pedestrian_object");
 
 	car2->start();
-	car3->start();
 }
 
 void HighwayManager::spawn_ego_car() {
-	double start_x = 5.87;
+	double start_x = 5.25;
 	double start_y = 11.80;
 	move_car_to("car1", start_x, start_y, 0);
 }
 
 void HighwayManager::stop_cars() {
 	car2->stop();
-	car3->stop();
 }
