@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 		std::cout << "Missing param: car_speed (optional)" << std::endl;
 	}
 
-	if (run_type == "trafic") {
+	if (run_type == "traffic") {
 		TrafficManager manager(nh, tele);
 		traffic_manager = &manager;
 		traffic_manager->initialize();
