@@ -13,19 +13,19 @@
 #include <periodics/encoder.hpp>
 #include <periodics/serialPrinter.hpp>
 #include "rtos.h"
-// #include <drivers/dcmotor.hpp>
-// #include "mbed_power_mgmt.h"
+#include <drivers/dcmotor.hpp>
+#include "mbed_power_mgmt.h"
 
 BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
-// #define PIN_INA  D7
-// #define PIN_INB  D5
-// #define PIN_PWM  D10
+#define PIN_INA  D7
+#define PIN_INB  D5
+#define PIN_PWM  D10
 #define SPEEDING_DRIVER_PWM_PIN D3
 #define STEERING_DRIVER_PWM_PIN D4
 
-// drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
-//                                                     -0.30f, 0.30f);
+drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
+                                                    -0.30f, 0.30f);
 periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
 periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
@@ -39,7 +39,7 @@ drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
     {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
     {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)},
-    // {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)}
+    {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)}
 };
 drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
@@ -56,6 +56,7 @@ void blinkerTask() {
 void imuTask() {
     while (true) {
         g_imu.run();
+        g_steeringDriver.run();
         ThisThread::sleep_for(50ms);
     }
 }
@@ -83,7 +84,7 @@ void startupMessage() {
 int main() 
 {
     startupMessage();
-    // sleep_manager_lock_deep_sleep();
+    sleep_manager_lock_deep_sleep();
     blinkerThread.start(blinkerTask);
     imuThread.start(imuTask);
     encoderThread.start(encoderTask);

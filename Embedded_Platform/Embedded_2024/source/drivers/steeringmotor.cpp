@@ -90,24 +90,16 @@ namespace drivers{
         if(error > 180.0f) error -= 360.0f;
         if(error < -180.0f) error += 360.0f;
 
-        // Print debug information
-        printf("@E1:%f\n", error);
+        // printf("@E1:%f\n", error);
+        // printf("@T1:%f\n", time_elapsed);
+        // printf("@Y1:%f\n", yaw_calc);
+        // printf("@Y2:%f\n", imu_yaw);
 
-        // Convert to float (Unix timestamp + milliseconds fraction)
-        printf("@T1:%f\n", time_elapsed);
-        printf("@Y1:%f\n", yaw_calc);
-        printf("@Y2:%f\n", imu_yaw);
-
-        // PID control
         integral += error * time_step;
-        // Integral windup
         if(integral > MAX_ERROR) integral = MAX_ERROR;
         float derivative = (error - previous_error) / time_step;
         previous_error = error;
-
-        // Adjust steering
         newSteer =  m_desiredSteer + (m_proportional * error + 0*m_integral * integral + m_derivative * derivative);
-
         float integral_calc = m_integral * integral ;
         float derivative_calc = m_derivative * derivative;
         m_currentSteer = newSteer;
@@ -121,16 +113,14 @@ namespace drivers{
         // Actuate steering
         newDutyCycle = CalculateAngle(newSteer);
         PWMAngle(newDutyCycle);
-        printf("@Y4:%f\n", newSteer);
-        printf("@Y5:%f\n", clipSteer);
-        printf("@S1:%f\n", m_desiredSteer);
 
-        printf("@E4:%f\n", m_proportional);
-        printf("@E2:%f\n", integral_calc);
-        printf("@E3:%f\n", derivative_calc);
-
-        printf("Sent duty cycle: %f\n", newDutyCycle);
-
+        // printf("@Y4:%f\n", newSteer);
+        // printf("@Y5:%f\n", clipSteer);
+        // printf("@S1:%f\n", m_desiredSteer);
+        // printf("@E4:%f\n", m_proportional);
+        // printf("@E2:%f\n", integral_calc);
+        // printf("@E3:%f\n", derivative_calc);
+        // printf("Sent duty cycle: %f\n", newDutyCycle);
     }
 
     /**

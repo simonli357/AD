@@ -94,7 +94,7 @@ namespace drivers{
             }
             m_pwm_pin.write(duty);
             // --------------------------------------------------
-            if (std::fabs(diff) > 0.001f) break;
+            if (std::fabs(diff) < 0.001f) break;
             ThisThread::sleep_for(STEP_TIME);    // 10 ms pause
         }
     }
