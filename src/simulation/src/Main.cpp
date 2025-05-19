@@ -1,3 +1,4 @@
+#include "DottedManager.hpp"
 #include "HighwayManager.hpp"
 #include "RoundaboutManager.hpp"
 #include "SpeedCurveManager.hpp"
@@ -18,6 +19,7 @@ int main(int argc, char **argv) {
 	HighwayManager *highway_manager = nullptr;
 	SpeedCurveManager *speed_curve_manager = nullptr;
 	RoundaboutManager *roundabout_manager = nullptr;
+    DottedManager *dotted_manager = nullptr;
 
 	std::string run_type = "traffic";
 	double car_speed = 0.1;
@@ -47,6 +49,10 @@ int main(int argc, char **argv) {
         RoundaboutManager manager(nh, tele, car_speed);
         roundabout_manager = &manager;
         roundabout_manager->initialize();
+    } else if (run_type == "dotted") {
+        DottedManager manager(nh, tele, car_speed);
+        dotted_manager = &manager;
+        dotted_manager->initialize();
     }
 
 	ros::AsyncSpinner spinner(1);
