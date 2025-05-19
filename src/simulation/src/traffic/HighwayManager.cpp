@@ -7,21 +7,21 @@
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) : TrafficManager(nh, client) {}
+HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client, double car_speed) : TrafficManager(nh, client), car_speed(car_speed) {}
 
 HighwayManager::~HighwayManager() { task_manager->wait(); }
 
 void HighwayManager::initialize() {
 	spawn_ego_car();
-	car2 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_008", "runHighway502");
+	car2 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_008", "runHighway502");
 	car2->start();
 }
 
 void HighwayManager::spawn_ego_car() {
 	double start_x = 5.25;
 	double start_y = 11.80;
+    move_car_to("sign_126", 0, 0, -1, 0);
 	move_car_to("car1", start_x, start_y, 0);
-    move_car_to("sign126", 0, 0, -1, 0);
 }
 
 void HighwayManager::stop_cars() {

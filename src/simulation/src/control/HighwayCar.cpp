@@ -9,55 +9,7 @@ void HighwayCar::start() {
 	get_path();
 	Vertex start = path[0];
 	std::cout << "HIGHWAY CAR: " << car_name << " initialized." << std::endl;
-	traffic_manager->task_manager->run([this] { follow_path(); });
-}
-
-void HighwayCar::follow_path() {
-	ros::Rate rate(1.0 / T);
-	size_t idx = 0;
-	bool stopped = true;
-	while (ros::ok() && alive) {
-		const Vertex &v = path[idx];
-		if (!start_car || path.empty()) {
-			move_car_to(v.x, v.y, v.tangent_angle);
-            check_if_can_start(v.x, v.y, idx);
-			rate.sleep();
-			continue;
-		}
-		// Collision detection. If there is an obstacle in front of us, do not move
-		if (can_move_car(v.x, v.y, idx)) {
-			move_car_to(v.x, v.y, v.tangent_angle);
-		} else {
-			rate.sleep();
-			continue;
-		}
-		// If we are at a stopline, stop for 3 seconds
-		if (v.attribute == ATTR::STOPLINE && !stopped) {
-			ros::Duration(3.0).sleep();
-			stopped = true;
-		}
-		if (v.attribute != ATTR::STOPLINE && stopped) {
-			stopped = false;
-		}
-		idx = (idx + 1) % path.size();
-		rate.sleep();
-	}
-}
-
-void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
-	if (path.empty()) {
-		return;
-    }
-
-    double ego_x, ego_y;
-    traffic_manager->get_car_position("car1", ego_x, ego_y);
-
-    double r1 = 0.5;
-    double r2 = 0.5;
-
-    if (is_near(ego_x, ego_y, car_x, car_y, r1, r2)) {
-        start_car = true;
-    }
+	traffic_manager->task_manager->run([this] { run(); });
 }
 
 void HighwayCar::get_path() {

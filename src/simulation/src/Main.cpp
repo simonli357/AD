@@ -16,20 +16,23 @@ int main(int argc, char **argv) {
 	HighwayManager *highway_manager = nullptr;
 
 	std::string run_type = "traffic";
+    double car_speed = 0.1;
 
 	if (!nh.getParam("/run_type", run_type)) {
 		std::cout << "Missing param: run_type" << std::endl;
 		exit(1);
 	}
 
+	if (!nh.getParam("/car_speed", car_speed)) {
+		std::cout << "Missing param: car_speed (optional)" << std::endl;
+	}
+
 	if (run_type == "trafic") {
 		TrafficManager manager(nh, tele);
         traffic_manager = &manager;
         traffic_manager->initialize();
-	}
-
-	if (run_type == "highway") {
-        HighwayManager manager(nh, tele);
+	} else if (run_type == "highway") {
+        HighwayManager manager(nh, tele, car_speed);
         highway_manager = &manager;
         highway_manager->initialize();
 	}
