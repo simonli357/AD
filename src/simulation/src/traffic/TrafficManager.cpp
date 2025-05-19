@@ -90,8 +90,20 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
 	set_car_position(car_name, x, y);
 }
 
+void TrafficManager::move_car_to(const std::string &car_name, double x, double y, double z, double yaw) {
+	gazebo_msgs::SetModelState srv;
+	srv.request.model_state.model_name = car_name;
+	srv.request.model_state.pose.position.x = x;
+	srv.request.model_state.pose.position.y = y;
+	srv.request.model_state.pose.position.z = z;
+	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
+	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
+	srv.request.model_state.reference_frame = "world";
+	client.call(srv);
+	set_car_position(car_name, x, y);
+}
+
 void TrafficManager::get_car_position(const std::string &car_name, double &out_x, double &out_y) {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, /*write=*/false);
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::const_accessor a;
 	if (car_positions.find(a, car_name)) {
 		out_x = a->second.first;
@@ -104,14 +116,12 @@ void TrafficManager::get_car_position(const std::string &car_name, double &out_x
 }
 
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::accessor a;
 	car_positions.insert(a, car_name);
 	a->second = {x, y};
 }
 
 bool TrafficManager::car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, false);
 	for (auto it = car_positions.begin(); it != car_positions.end(); ++it) {
 		if (it->first == ego_car)
 			continue;

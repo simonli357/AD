@@ -1,4 +1,6 @@
 #include "HighwayCar.hpp"
+#include <iostream>
+#include <ostream>
 #include <string>
 
 HighwayCar::HighwayCar(void *traffic_manager, ros::NodeHandle &nh, double vref, const std::string &car_name, const std::string &path_name) : Car(traffic_manager, nh, vref, car_name) { this->car_path = path_name; }
@@ -50,13 +52,10 @@ void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
     double ego_x, ego_y;
     traffic_manager->get_car_position("car1", ego_x, ego_y);
 
-    double self_x, self_y;
-    traffic_manager->get_car_position(car_name, self_x, self_y);
-
     double r1 = 0.5;
     double r2 = 0.5;
 
-    if (is_near(ego_x, ego_y, self_x, self_y, r1, r2)) {
+    if (is_near(ego_x, ego_y, car_x, car_y, r1, r2)) {
         start_car = true;
     }
 }

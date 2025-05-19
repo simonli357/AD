@@ -72,6 +72,7 @@ class TrafficManager {
 	double random_speed();
 	void ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg);
 	void move_car_to(const std::string &car_name, double x, double y, double yaw);
+	void move_car_to(const std::string &car_name, double x, double y, double z, double yaw);
 
 	tbb::task_arena thread_pool{tbb::this_task_arena::max_concurrency() / 4};
 };
