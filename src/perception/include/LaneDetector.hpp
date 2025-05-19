@@ -649,7 +649,7 @@ class LaneDetector {
 			}
 
 			// ───────────────────────────── Show image ────────────────────────────────
-			if (true)
+			if (false)
 			{
 					cv::imshow("Lane Visualisation", vis);
 					cv::waitKey(1);

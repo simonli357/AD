@@ -1,0 +1,6 @@
+BUILD/src/
+doc/build/
+doc/source/xml
+.vscode/settings.json
+mbed-os
+cmake_build/

@@ -8,7 +8,7 @@ import signal
 import argparse
 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget
-from PyQt5.QtGui import QFontDatabase, QFont
+from PyQt5.QtGui import QFontDatabase, QFont, QIcon
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import pyqtSignal, QObject, Qt, QTimer
 from python_server.server import Server
@@ -68,10 +68,10 @@ class MainWindow(QMainWindow):
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
         if args.host_ip is None:
-            self.server = Server(host=True)
+            self.server = Server(main_window=self, host=True)
             self.is_host = True
         else:
-            self.server = Server(host=False, host_ip=args.host_ip)
+            self.server = Server(main_window=self, host=False, host_ip=args.host_ip)
             self.is_host = False
         self.server.initialize()
         self.database = Database()
@@ -85,6 +85,10 @@ class MainWindow(QMainWindow):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.recording_path = os.path.join(current_dir, 'frames')
         os.makedirs(self.recording_path, exist_ok=True)
+
+        # App Icon
+        icon_path = os.path.join(current_dir, "assets/icon1.png")
+        self.setWindowIcon(QIcon(icon_path))
 
         self.setWindowTitle("BFMC DASHBOARD")
 
@@ -101,9 +105,6 @@ class MainWindow(QMainWindow):
         self.terminal_widget = TerminalWidget(self)
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
-
-        self.cbs = threading.Thread(target=self.set_callbacks, daemon=True)
-        self.cbs.start()
 
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
@@ -171,15 +172,9 @@ class MainWindow(QMainWindow):
         self.cam_timer.timeout.connect(self.cam_record_callback)
         self.cam_timer.start(int(CameraParams.RECORDING_REFRESH_RATE.value * 1000))
 
-        self.cam_thread = threading.Thread(target=self.cam_record_callback, args=(), daemon=True)
-        self.cam_thread.start()
-
     def set_callbacks(self) -> None:
-        print("Waiting for TCP client")
         while (self.server.tcp_client is None):
-            time.sleep(0.2)
-            continue
-        print("TCP client connected!")
+            time.sleep(0.5)
         self.server.tcp_client.on_start = self.comm.start_signal.emit
         self.server.tcp_client.on_message = self.comm.message_signal.emit
         self.server.tcp_client.on_run = self.comm.run_signal.emit
@@ -187,7 +182,6 @@ class MainWindow(QMainWindow):
         self.server.tcp_client.on_set_states = self.comm.set_states_signal.emit
         self.server.tcp_client.on_params = self.comm.params_signal.emit
         self.server.tcp_client.on_waypoint = self.comm.waypoints_signal.emit
-        self.server.tcp_client.refresh_run()
 
     def toggle_map(self) -> None:
         self.show_barca = not self.show_barca

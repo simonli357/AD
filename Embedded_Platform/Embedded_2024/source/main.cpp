@@ -20,7 +20,7 @@ BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
 #define PIN_INA  D7
 #define PIN_INB  D5
-#define PIN_PWM  PA_8
+#define PIN_PWM  D10
 #define SPEEDING_DRIVER_PWM_PIN D3
 #define STEERING_DRIVER_PWM_PIN D4
 

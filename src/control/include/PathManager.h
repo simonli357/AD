@@ -283,13 +283,15 @@ inline int change_lane(int start_idx, int end_idx, bool shift_right = false, dou
         total_len += (orig_pos[i] - orig_pos[i-1]).norm();
     double avg_sp = total_len / (N-1);
 
+		double densify_factor = 0.25;
     for (int i = 0; i+1 < N; ++i) {
         // always push the already‐shifted original point
         densified.push_back(shifted[i]);
 
         // how many to insert?
         double gap = (shifted[i+1].head<2>() - shifted[i].head<2>()).norm();
-        int nins = std::max(0, int(std::round(gap/avg_sp)) - 1);
+				double desired_spacing = avg_sp / densify_factor;
+        int nins = std::max(0, int(std::round(gap/desired_spacing)) - 1);
 
         for (int k = 1; k <= nins; ++k) {
             double u = double(k)/(nins+1);
