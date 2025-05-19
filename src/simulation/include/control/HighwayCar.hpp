@@ -16,7 +16,6 @@ class HighwayCar : public Car {
 	void start() override;
 
   protected:
-	void follow_path();
 	void get_path();
 
   private:
