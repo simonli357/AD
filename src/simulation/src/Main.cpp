@@ -4,6 +4,7 @@
 #include "SpeedCurveManager.hpp"
 #include "TrafficManager.hpp"
 #include <gazebo_msgs/SetModelState.h>
+#include <memory>
 #include <ros/init.h>
 #include <ros/node_handle.h>
 #include <ros/spinner.h>
@@ -15,18 +16,18 @@ int main(int argc, char **argv) {
 	auto tele = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo/set_model_state");
 	tele.waitForExistence();
 
-	TrafficManager *traffic_manager = nullptr;
-	HighwayManager *highway_manager = nullptr;
-	SpeedCurveManager *speed_curve_manager = nullptr;
-	RoundaboutManager *roundabout_manager = nullptr;
-    DottedManager *dotted_manager = nullptr;
+	std::unique_ptr<TrafficManager> traffic_manager;
+	std::unique_ptr<HighwayManager> highway_manager;
+	std::unique_ptr<SpeedCurveManager> speed_curve_manager;
+	std::unique_ptr<RoundaboutManager> roundabout_manager;
+	std::unique_ptr<DottedManager> dotted_manager;
 
 	std::string run_type = "traffic";
 	double car_speed = 0.1;
 
 	if (!nh.getParam("/run_type", run_type)) {
 		std::cout << "Missing param: run_type" << std::endl;
-		exit(1);
+		return 1;
 	}
 
 	if (!nh.getParam("/car_speed", car_speed)) {
@@ -34,26 +35,24 @@ int main(int argc, char **argv) {
 	}
 
 	if (run_type == "traffic") {
-		TrafficManager manager(nh, tele);
-		traffic_manager = &manager;
+		traffic_manager = std::make_unique<TrafficManager>(nh, tele);
 		traffic_manager->initialize();
 	} else if (run_type == "highway") {
-		HighwayManager manager(nh, tele, car_speed);
-		highway_manager = &manager;
+		highway_manager = std::make_unique<HighwayManager>(nh, tele, car_speed);
 		highway_manager->initialize();
 	} else if (run_type == "speedcurve") {
-		SpeedCurveManager manager(nh, tele, car_speed);
-		speed_curve_manager = &manager;
+		speed_curve_manager = std::make_unique<SpeedCurveManager>(nh, tele, car_speed);
 		speed_curve_manager->initialize();
 	} else if (run_type == "roundabout") {
-        RoundaboutManager manager(nh, tele, car_speed);
-        roundabout_manager = &manager;
-        roundabout_manager->initialize();
-    } else if (run_type == "dotted") {
-        DottedManager manager(nh, tele, car_speed);
-        dotted_manager = &manager;
-        dotted_manager->initialize();
-    }
+		roundabout_manager = std::make_unique<RoundaboutManager>(nh, tele, car_speed);
+		roundabout_manager->initialize();
+	} else if (run_type == "dotted") {
+		dotted_manager = std::make_unique<DottedManager>(nh, tele, car_speed);
+		dotted_manager->initialize();
+	} else {
+		std::cerr << "Unknown run_type: " << run_type << std::endl;
+		return 1;
+	}
 
 	ros::AsyncSpinner spinner(1);
 	spinner.start();

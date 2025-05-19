@@ -40,7 +40,7 @@ class Car {
 	bool alive = true;
 	double car_radius = 0.15;
 	double wp_radius = 0.02;
-	size_t lookahead_wpts = 20;
+	size_t lookahead_wpts = 30;
 
 	TrafficManager *traffic_manager;
 	ros::NodeHandle &nh;
