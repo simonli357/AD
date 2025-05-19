@@ -14,9 +14,6 @@ HighwayManager::~HighwayManager() { task_manager->wait(); }
 void HighwayManager::initialize() {
 	spawn_ego_car();
 	car2 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_008", "runHighway502");
-
-	pedestrian = std::make_unique<Pedestrian>(this, nh, "pedestrian_object");
-
 	car2->start();
 }
 
