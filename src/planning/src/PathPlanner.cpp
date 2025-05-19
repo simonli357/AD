@@ -68,7 +68,13 @@ void PathPlanner::precompute_path() {
 			return;
 		}
 		for (const auto &node : config[name]) {
-			path.push_back(track.find_node(node.as<int>()));
+            int id = node.as<int>();
+            bool exists = std::any_of(path.begin(), path.end(), [id](const Vertex &v) {
+                return v.id == id;
+            });
+            if (!exists) {
+                path.push_back(track.find_node(id));
+            }
 		}
 	} catch (const std::exception &e) {
 		std::cerr << "Error reading YAML file: " << e.what() << std::endl;
@@ -79,14 +85,13 @@ void PathPlanner::construct_path(bool has_first) {
 	std::vector<Vertex> general_path;
     Vertex prev;
 	general_path.push_back(path[0]);
+    prev = path[0];
     if (has_first) {
         general_path.push_back(path[1]);
         prev = path[1];
-    } else {
-        prev = path[0];
     }
 	for (const auto &v : path) {
-		if (v.id == prev.id || v.id == path[0].id) {
+		if (v.id == prev.id || v.id == path[0].id || prev.id == -2) {
 			continue;
 		}
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);

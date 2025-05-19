@@ -106,9 +106,6 @@ class MainWindow(QMainWindow):
         self.cam_buttons_widget = ButtonsWidget(self)
         self.sidebar_widget = SidebarWidget(self)
 
-        self.cbs = threading.Thread(target=self.set_callbacks, daemon=True)
-        self.cbs.start()
-
         self.comm.camera_frame_signal.connect(self.cam_widget.process_camera_frame)
         self.comm.depth_frame_signal.connect(self.cam_widget.process_depth_frame)
         self.comm.depth_arr_signal.connect(self.cam_widget.hud.set_depth_arr)
