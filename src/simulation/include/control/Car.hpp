@@ -55,8 +55,9 @@ class Car {
 	std::vector<VD> destinations;
 	std::vector<Vertex> path;
 
-	void run();
-	void plan_path();
+	virtual void run();
+	virtual void plan_path();
+
 	void setup();
 	void move_car_to(double x, double y, double yaw);
 	void find_random_cycle(const Graph &graph, VD start);

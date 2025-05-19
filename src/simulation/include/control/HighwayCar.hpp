@@ -16,11 +16,12 @@ class HighwayCar : public Car {
 	void start() override;
 
   protected:
-	void get_path();
+	void plan_path() override;
+	void run() override;
 
   private:
 	std::string car_path;
 	bool start_car = false;
 
-	void check_if_can_start(double car_x, double car_y, size_t idx);
+	void check_if_can_start(double car_x, double car_y);
 };
