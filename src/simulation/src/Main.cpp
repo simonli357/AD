@@ -25,11 +25,13 @@ int main(int argc, char **argv) {
 	if (run_type == "trafic") {
 		TrafficManager manager(nh, tele);
         traffic_manager = &manager;
+        traffic_manager->initialize();
 	}
 
 	if (run_type == "highway") {
         HighwayManager manager(nh, tele);
         highway_manager = &manager;
+        highway_manager->initialize();
 	}
 
 	ros::AsyncSpinner spinner(1);

@@ -1,18 +1,18 @@
 #include "HighwayManager.hpp"
 #include "control/HighwayCar.hpp"
 #include "control/Pedestrian.hpp"
-#include "PathPlanner.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
 #include <string>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
-	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
-	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
+HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) : TrafficManager(nh, client) {}
+
+HighwayManager::~HighwayManager() { task_manager->wait(); }
+
+void HighwayManager::initialize() {
 	spawn_ego_car();
-	car1 = nh.subscribe("/gazebo/model_states", 3, &HighwayManager::ego_car_gps_callback, this);
 	car2 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_008", "runHighway502");
 	car3 = std::make_unique<HighwayCar>(this, nh, random_speed(), "car_014", "runHighway483");
 
@@ -22,84 +22,10 @@ HighwayManager::HighwayManager(ros::NodeHandle &nh, ros::ServiceClient &client) 
 	car3->start();
 }
 
-HighwayManager::~HighwayManager() {
-    task_manager->wait();
-}
-
-double HighwayManager::random_speed() {
-	// Return a random speed between 0.12 and 0.32
-	static std::mt19937 rng{std::random_device{}()};
-	static std::uniform_real_distribution<double> dist{0.12, 0.32};
-	return dist(rng);
-}
-
 void HighwayManager::spawn_ego_car() {
-    double start_x = 5.87;
-    double start_y = 11.80;
-    move_car_to("car1", start_x, start_y, 0);
-}
-
-void HighwayManager::move_car_to(const std::string &car_name, double x, double y, double yaw) {
-	gazebo_msgs::SetModelState srv;
-	srv.request.model_state.model_name = car_name;
-	srv.request.model_state.pose.position.x = x;
-	srv.request.model_state.pose.position.y = y;
-	srv.request.model_state.pose.position.z = gazebo_z;
-	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
-	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
-	srv.request.model_state.reference_frame = "world";
-	client.call(srv);
-	set_car_position(car_name, x, y);
-}
-
-void HighwayManager::get_car_position(const std::string &car_name, double &out_x, double &out_y) {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, /*write=*/false);
-	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::const_accessor a;
-	if (car_positions.find(a, car_name)) {
-		out_x = a->second.first;
-		out_y = a->second.second;
-	} else {
-		out_x = 0.0;
-		out_y = 0.0;
-		ROS_WARN("HighwayManager: no position found for '%s'", car_name.c_str());
-	}
-}
-
-void HighwayManager::set_car_position(const std::string &car_name, double x, double y) {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
-	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::accessor a;
-	car_positions.insert(a, car_name);
-	a->second = {x, y};
-}
-
-bool HighwayManager::car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, false);
-	for (auto it = car_positions.begin(); it != car_positions.end(); ++it) {
-		if (it->first == ego_car)
-			continue;
-		double cx = it->second.first;
-		double cy = it->second.second;
-		if (pred(cx, cy)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-void HighwayManager::ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg) {
-	if (!car_idx.has_value()) {
-		auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
-		if (it != msg->name.end()) {
-			car_idx = std::distance(msg->name.begin(), it);
-			std::cout << "automobile found: " << *car_idx << std::endl;
-		} else {
-			printf("automobile not found\n");
-			return;
-		}
-	}
-	double gps_x = msg->pose[*car_idx].position.x;
-	double gps_y = msg->pose[*car_idx].position.y;
-	set_car_position("car1", gps_x, gps_y);
+	double start_x = 5.87;
+	double start_y = 11.80;
+	move_car_to("car1", start_x, start_y, 0);
 }
 
 void HighwayManager::stop_cars() {

@@ -54,7 +54,7 @@ void HighwayCar::check_if_can_start(double car_x, double car_y, size_t idx) {
 
 		const auto pred = [this, &wp](double cx, double cy) { return is_near(wp.x, wp.y, cx, cy, wp_radius, car_radius); };
 
-		if (traffic_manager.car_in_front("car1", pred)) {
+		if (traffic_manager->car_in_front("car1", pred)) {
 			start_car = true;
 		}
 	}

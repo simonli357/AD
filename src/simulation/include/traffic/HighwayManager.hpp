@@ -32,4 +32,5 @@ class HighwayManager : public TrafficManager {
 
 	void spawn_ego_car() override;
 	void initialize() override;
+    void stop_cars() override;
 };

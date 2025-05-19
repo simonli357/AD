@@ -59,14 +59,16 @@ class TrafficManager {
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>> car_positions;
 	mutable tbb::spin_rw_mutex rw_mutex;
 
-	virtual void spawn_ego_car();
 	virtual void initialize();
+	virtual void stop_cars();
 
-  protected:
 	void set_car_position(const std::string &car_name, double x, double y);
 	void get_car_position(const std::string &car_name, double &out_x, double &out_y);
 	bool car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const;
-	void stop_cars();
+
+  protected:
+	virtual void spawn_ego_car();
+
 	double random_speed();
 	void ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg);
 	void move_car_to(const std::string &car_name, double x, double y, double yaw);
