@@ -20,7 +20,6 @@ void HighwayManager::initialize() {
 void HighwayManager::spawn_ego_car() {
 	double start_x = 5.25;
 	double start_y = 11.80;
-    move_car_to("sign_126", 0, 0, -1, 0);
 	move_car_to("car1", start_x, start_y, 0);
 }
 

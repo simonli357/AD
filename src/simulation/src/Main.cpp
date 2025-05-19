@@ -1,3 +1,4 @@
+#include "SpeedCurveManager.hpp"
 #include "TrafficManager.hpp"
 #include "HighwayManager.hpp"
 #include <gazebo_msgs/SetModelState.h>
@@ -14,6 +15,7 @@ int main(int argc, char **argv) {
 
 	TrafficManager *traffic_manager = nullptr;
 	HighwayManager *highway_manager = nullptr;
+    SpeedCurveManager *speed_curve_manager = nullptr;
 
 	std::string run_type = "traffic";
     double car_speed = 0.1;
@@ -35,7 +37,11 @@ int main(int argc, char **argv) {
         HighwayManager manager(nh, tele, car_speed);
         highway_manager = &manager;
         highway_manager->initialize();
-	}
+	} else if (run_type == "speedcurve") {
+        SpeedCurveManager manager(nh, tele, car_speed);
+        speed_curve_manager = &manager;
+        speed_curve_manager->initialize();
+    }
 
 	ros::AsyncSpinner spinner(1);
 	spinner.start();
@@ -44,10 +50,17 @@ int main(int argc, char **argv) {
 
     if (traffic_manager) {
         traffic_manager->stop_cars();
+        free(traffic_manager);
     }
 
     if (highway_manager) {
-        traffic_manager->stop_cars();
+        highway_manager->stop_cars();
+        free(highway_manager);
+    }
+
+    if (speed_curve_manager) {
+        speed_curve_manager->stop_cars();
+        free(speed_curve_manager);
     }
 
 	return 0;
