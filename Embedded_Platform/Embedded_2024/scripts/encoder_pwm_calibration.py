@@ -202,9 +202,9 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Encoder constant‑command test with optional safe PWM mode and displacement logging.")
-    ap.add_argument("--cmd",  type=float, default=0, help="Commanded speed [cm/s]; ignored if --pwm provided.")
+    ap.add_argument("--cmd",  type=float, default=20, help="Commanded speed [cm/s]; ignored if --pwm provided.")
     ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--steer", type=float, default=-20, help="Steering angle [deg]")
+    ap.add_argument("--steer", type=float, default=-0, help="Steering angle [deg]")
     ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
     ap.add_argument("--dur",   type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
