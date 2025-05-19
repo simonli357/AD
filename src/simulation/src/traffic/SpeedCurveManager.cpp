@@ -14,8 +14,9 @@ SpeedCurveManager::~SpeedCurveManager() { task_manager->wait(); }
 void SpeedCurveManager::initialize() {
 	spawn_ego_car();
 	car2 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_008", "runSpeedCurve151");
-	car2 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_019", "runSpeedCurve166");
+	car3 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_019", "runSpeedCurve166");
 	car2->start();
+    car3->start();
 }
 
 void SpeedCurveManager::spawn_ego_car() {
@@ -26,4 +27,5 @@ void SpeedCurveManager::spawn_ego_car() {
 
 void SpeedCurveManager::stop_cars() {
 	car2->stop();
+    car3->stop();
 }

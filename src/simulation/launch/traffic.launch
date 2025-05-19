@@ -1,6 +1,8 @@
 <launch>
-  <arg name="run_type" default="highway"/>
+  <arg name="run_type" default="traffic"/>
   <param name="run_type" value="$(arg run_type)"/>
+  <arg name="car_speed" default="0.1"/>
+  <param name="car_speed" value="$(arg car_speed)"/>
   <node pkg="simulation" type="traffic" name="$(anon traffic)" output="screen"> 
   </node>
 </launch>
