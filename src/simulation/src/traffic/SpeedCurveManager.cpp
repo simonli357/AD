@@ -22,7 +22,7 @@ void SpeedCurveManager::initialize() {
 void SpeedCurveManager::spawn_ego_car() {
 	double start_x = 5.14;
 	double start_y = 5.776;
-	move_car_to("car1", start_x, start_y, 0);
+	move_car_to("car1", start_x, start_y, 90 * (M_PI / 180.0));
 }
 
 void SpeedCurveManager::stop_cars() {
