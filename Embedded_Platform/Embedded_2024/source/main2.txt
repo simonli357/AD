@@ -13,33 +13,27 @@
 #include <periodics/encoder.hpp>
 #include <periodics/serialPrinter.hpp>
 #include "rtos.h"
-// #include <drivers/dcmotor.hpp>
-// #include "mbed_power_mgmt.h"
 
 BufferedSerial g_rpi(USBTX, USBRX, 115200);
 
-// #define PIN_INA  D7
-// #define PIN_INB  D5
-// #define PIN_PWM  D10
-#define SPEEDING_DRIVER_PWM_PIN D3
-#define STEERING_DRIVER_PWM_PIN D4
-
-// drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
-//                                                     -0.30f, 0.30f);
 periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
 periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
 periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
-drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,SPEEDING_DRIVER_PWM_PIN, g_encoder); //speed in cm/s
-drivers::CSteeringMotor g_steeringDriver(1, g_rpi, STEERING_DRIVER_PWM_PIN, g_imu, g_speedingDriver);
+drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,D3, g_encoder); //speed in cm/s
+drivers::CSteeringMotor g_steeringDriver(1, g_rpi, D4, g_imu, g_speedingDriver);
 brain::CRobotStateMachine g_robotstatemachine(1, g_rpi, g_steeringDriver, g_speedingDriver);
 
 drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
+    // {"7",mbed::callback(&g_imu,&periodics::CImu::ImuPublisherCommand)},
+    // {"8",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackBOTHcommand)},
+    // {"8",mbed::callback(&g_complexMoves, &drivers::CComplexMoves::serialCallbackComplexMovesCommand)},
+    // {"9",mbed::callback(&g_velocityControlDuration, &drivers::CVelocityControlDuration::serialCallbackVCDCommand)},
+    // Callback for the PWM input command
     {"10",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPWMcommand)},
     {"11",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackComputecommand)},
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
-    {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)},
-    // {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)}
+    {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)}
 };
 drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 
@@ -47,6 +41,7 @@ static Thread blinkerThread(osPriorityLow,    1024, nullptr, "blinker");
 static Thread imuThread    (osPriorityHigh, 2048, nullptr, "imu");
 static Thread encoderThread(osPriorityHigh,   2048, nullptr, "encoder");
 static Thread totalVoltageThread(osPriorityNormal, 2048, nullptr, "totalVoltage");
+// static Thread stateMachineThread(osPriorityAboveNormal,4096,nullptr,"stateMachine");
 void blinkerTask() {
     while (true) {
         g_blinker.run();
@@ -83,10 +78,10 @@ void startupMessage() {
 int main() 
 {
     startupMessage();
-    // sleep_manager_lock_deep_sleep();
     blinkerThread.start(blinkerTask);
     imuThread.start(imuTask);
     encoderThread.start(encoderTask);
+    // totalVoltageThread.start(totalVoltageTask);
     g_serialMonitor.start(5ms);
     ThisThread::sleep_for(osWaitForever);
 }
