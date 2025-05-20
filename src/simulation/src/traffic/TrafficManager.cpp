@@ -1,7 +1,7 @@
 #include "TrafficManager.hpp"
-#include "Car.hpp"
-#include "Pedestrian.hpp"
 #include "PathPlanner.hpp"
+#include "control/Car.hpp"
+#include "control/Pedestrian.hpp"
 #include <gazebo_msgs/SetModelState.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <memory>
@@ -10,22 +10,37 @@
 #include <vector>
 
 TrafficManager::TrafficManager(ros::NodeHandle &nh, ros::ServiceClient &client) : nh(nh), client(client) {
+	thread_pool.execute([this] { task_manager = std::make_shared<tbb::task_group>(); });
 	planner = std::make_unique<PathPlanner>(0.32, 40, 0.1);
-	spawn_ego_car();
-	car1 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 1, &TrafficManager::ego_car_gps_callback, this);
-	car2 = std::make_unique<Car>(*this, nh, random_speed(), "car_008");
-	car3 = std::make_unique<Car>(*this, nh, random_speed(), "car_019");
-	car4 = std::make_unique<Car>(*this, nh, random_speed(), "car_046");
-	car5 = std::make_unique<Car>(*this, nh, random_speed(), "car_144");
-	car6 = std::make_unique<Car>(*this, nh, random_speed(), "car_beetle");
-	car7 = std::make_unique<Car>(*this, nh, random_speed(), "car_lexus");
-	car8 = std::make_unique<Car>(*this, nh, random_speed(), "car_opel");
-	car9 = std::make_unique<Car>(*this, nh, random_speed(), "car_polo");
-	car10 = std::make_unique<Car>(*this, nh, random_speed(), "car_volvo");
-    pedestrian = std::make_unique<Pedestrian>(*this, nh, "pedestrian_object");
+	car1 = nh.subscribe("/gazebo/model_states", 3, &TrafficManager::ego_car_gps_callback, this);
 }
 
-TrafficManager::~TrafficManager() {}
+TrafficManager::~TrafficManager() { task_manager->wait(); }
+
+void TrafficManager::initialize() {
+	spawn_ego_car();
+	car2 = std::make_unique<Car>(this, nh, random_speed(), "car_008");
+	car3 = std::make_unique<Car>(this, nh, random_speed(), "car_019");
+	car4 = std::make_unique<Car>(this, nh, random_speed(), "car_046");
+	car5 = std::make_unique<Car>(this, nh, random_speed(), "car_144");
+	car6 = std::make_unique<Car>(this, nh, random_speed(), "car_beetle");
+	car7 = std::make_unique<Car>(this, nh, random_speed(), "car_lexus");
+	car8 = std::make_unique<Car>(this, nh, random_speed(), "car_opel");
+	car9 = std::make_unique<Car>(this, nh, random_speed(), "car_polo");
+	car10 = std::make_unique<Car>(this, nh, random_speed(), "car_volvo");
+
+	pedestrian = std::make_unique<Pedestrian>(this, nh, "pedestrian_object");
+
+	car2->start();
+	car3->start();
+	car4->start();
+	car5->start();
+	car6->start();
+	car7->start();
+	car8->start();
+	car9->start();
+	car10->start();
+}
 
 double TrafficManager::random_speed() {
 	// Return a random speed between 0.12 and 0.32
@@ -72,31 +87,41 @@ void TrafficManager::move_car_to(const std::string &car_name, double x, double y
 	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
 	srv.request.model_state.reference_frame = "world";
 	client.call(srv);
-    set_car_position(car_name, x, y);
+	set_car_position(car_name, x, y);
+}
+
+void TrafficManager::move_car_to(const std::string &car_name, double x, double y, double z, double yaw) {
+	gazebo_msgs::SetModelState srv;
+	srv.request.model_state.model_name = car_name;
+	srv.request.model_state.pose.position.x = x;
+	srv.request.model_state.pose.position.y = y;
+	srv.request.model_state.pose.position.z = z;
+	srv.request.model_state.pose.orientation.w = cos(yaw / 2);
+	srv.request.model_state.pose.orientation.z = sin(yaw / 2);
+	srv.request.model_state.reference_frame = "world";
+	client.call(srv);
+	set_car_position(car_name, x, y);
 }
 
 void TrafficManager::get_car_position(const std::string &car_name, double &out_x, double &out_y) {
-    tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, /*write=*/false);
-    tbb::concurrent_hash_map<std::string, std::pair<double, double>>::const_accessor a;
-    if (car_positions.find(a, car_name)) {
-        out_x = a->second.first;
-        out_y = a->second.second;
-    } else {
-        out_x = 0.0;
-        out_y = 0.0;
-        ROS_WARN("TrafficManager: no position found for '%s'", car_name.c_str());
-    }
+	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::const_accessor a;
+	if (car_positions.find(a, car_name)) {
+		out_x = a->second.first;
+		out_y = a->second.second;
+	} else {
+		out_x = 0.0;
+		out_y = 0.0;
+		ROS_WARN("TrafficManager: no position found for '%s'", car_name.c_str());
+	}
 }
 
 void TrafficManager::set_car_position(const std::string &car_name, double x, double y) {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, true);
 	tbb::concurrent_hash_map<std::string, std::pair<double, double>>::accessor a;
 	car_positions.insert(a, car_name);
 	a->second = {x, y};
 }
 
 bool TrafficManager::car_in_front(const std::string &ego_car, const std::function<bool(double, double)> &pred) const {
-	tbb::spin_rw_mutex::scoped_lock lock(rw_mutex, false);
 	for (auto it = car_positions.begin(); it != car_positions.end(); ++it) {
 		if (it->first == ego_car)
 			continue;
@@ -109,10 +134,20 @@ bool TrafficManager::car_in_front(const std::string &ego_car, const std::functio
 	return false;
 }
 
-void TrafficManager::ego_car_gps_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg) {
-	double x = msg->pose.pose.position.x;
-	double y = msg->pose.pose.position.y;
-	set_car_position("car1", x, y);
+void TrafficManager::ego_car_gps_callback(const gazebo_msgs::ModelStates::ConstPtr &msg) {
+	if (!car_idx.has_value()) {
+		auto it = std::find(msg->name.begin(), msg->name.end(), "car1");
+		if (it != msg->name.end()) {
+			car_idx = std::distance(msg->name.begin(), it);
+			std::cout << "automobile found: " << *car_idx << std::endl;
+		} else {
+			printf("automobile not found\n");
+			return;
+		}
+	}
+	double gps_x = msg->pose[*car_idx].position.x;
+	double gps_y = msg->pose[*car_idx].position.y;
+	set_car_position("car1", gps_x, gps_y);
 }
 
 void TrafficManager::stop_cars() {
@@ -123,6 +158,6 @@ void TrafficManager::stop_cars() {
 	car6->stop();
 	car7->stop();
 	car8->stop();
-    car9->stop();
-    car10->stop();
+	car9->stop();
+	car10->stop();
 }
