@@ -101,7 +101,7 @@ public:
     double odomX, odomY, odomYaw, dx, dy, dheight, dyaw, ekf_x, ekf_y, ekf_yaw, gps_x, gps_y;
     double filtered_encoder_speed = 0.0;
     double x0 = 1.55, y0 = 6.906, yaw0 = 0;
-    std::string pathName = "default";
+    std::string pathName = Tunable::path;
     double gps_state[3];
     double ekf_state[3];
     std::optional<size_t> car_idx;

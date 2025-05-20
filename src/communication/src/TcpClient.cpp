@@ -136,15 +136,11 @@ void TcpClient::run() {
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 		}
 		std::cout << "Connection request established with GUI \n" << std::endl;
-		connected = true;
-        tcp_can_send = true;
-        while (!send_run_callback) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-        send_run_callback();
 		if (!client_type.empty()) {
 			send_type(client_type);
 		}
+		connected = true;
+        tcp_can_send = true;
 		listen();
 	}
 }

@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ostream>
 #include <ros/ros.h>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
@@ -27,6 +28,7 @@
 #include <cmath>
 #include <robot_localization/SetPose.h>
 #include <iostream>
+#include <algorithm>
 #include "Runs.h"
 #include "PathManager.h"
 #include "Tunable.h"
@@ -61,55 +63,139 @@ void Utility::initialize_tcp_client() {
     }
 }
 
+// Helper functions
+std::pair<double, double> calculate_mean(const std::vector<geometry_msgs::Point>& points) {
+    double sum_x = 0.0, sum_y = 0.0;
+    for (const auto& p : points) {
+        sum_x += p.x;
+        sum_y += p.y;
+    }
+    return {sum_x/points.size(), sum_y/points.size()};
+}
+
+std::pair<double, double> calculate_std_dev(const std::vector<geometry_msgs::Point>& points, double mean_x, double mean_y) {
+    double var_x = 0.0, var_y = 0.0;
+    for (const auto& p : points) {
+        var_x += std::pow(p.x - mean_x, 2);
+        var_y += std::pow(p.y - mean_y, 2);
+    }
+    return {std::sqrt(var_x/points.size()), std::sqrt(var_y/points.size())};
+}
+
+std::vector<geometry_msgs::Point> filter_outliers(const std::vector<geometry_msgs::Point>& points, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
+    std::vector<geometry_msgs::Point> result;
+    for (const auto& p : points) {
+        if (std::abs(p.x - mean_x) < sigma * std_x &&
+            std::abs(p.y - mean_y) < sigma * std_y) {
+            result.push_back(p);
+        }
+    }
+    return result;
+}
+
+std::vector<std::vector<geometry_msgs::Point>> cluster_points(
+    const std::vector<geometry_msgs::Point>& points, double radius) {
+    
+    std::vector<std::vector<geometry_msgs::Point>> clusters;
+    std::vector<bool> processed(points.size(), false);
+
+    for (size_t i = 0; i < points.size(); ++i) {
+        if (processed[i]) continue;
+        
+        std::vector<geometry_msgs::Point> cluster;
+        std::vector<size_t> queue{i};
+        processed[i] = true;
+
+        while (!queue.empty()) {
+            size_t idx = queue.back();
+            queue.pop_back();
+            cluster.push_back(points[idx]);
+
+            for (size_t j = 0; j < points.size(); ++j) {
+                if (!processed[j] && 
+                    std::hypot(points[idx].x - points[j].x, points[idx].y - points[j].y) < radius) {
+                    processed[j] = true;
+                    queue.push_back(j);
+                }
+            }
+        }
+        
+        clusters.push_back(cluster);
+    }
+    
+    return clusters;
+}
+
 void Utility::fetch_run_params() {
     if (!Tunable::useGps) {
         debug("GPS not found, skipping", 1);
         return;
     }
 
-    // this->pathName = "gps";
+    constexpr size_t TARGET_SAMPLES = 25;
+    constexpr double MAX_ACCEPTABLE_STD = 0.25;
+    constexpr double CLUSTER_RADIUS = 0.3;
+    constexpr size_t MIN_CLUSTER_SIZE = 6;
 
-    const size_t sample_count = 15;
-    std::vector<geometry_msgs::PoseWithCovarianceStamped::ConstPtr> samples;
-    samples.reserve(sample_count);
+    std::vector<geometry_msgs::Point> samples;
+    samples.reserve(TARGET_SAMPLES);
 
+    // Simple collection callback
     auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-        if (samples.size() < sample_count) {
-            samples.push_back(msg);
+        if (samples.size() < TARGET_SAMPLES) {
+            samples.push_back(msg->pose.pose.position);
         }
     };
 
     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
     ros::Time start_time = ros::Time::now();
     ros::Rate rate(100);
-    std::cout << "Utility::fetch_run_params: waiting for GPS data..." << std::endl;
-    while (ros::ok() && samples.size() < sample_count && (ros::Time::now() - start_time).toSec() < 5.0) {
+    std::cout << "Collecting GPS data..." << std::endl;
+
+    // Collection loop
+    while (ros::ok() && samples.size() < TARGET_SAMPLES && (ros::Time::now() - start_time).toSec() < 60.0) {
         ros::spinOnce();
         rate.sleep();
     }
-
     sub.shutdown();
 
-    double sum_x = 0.0, sum_y = 0.0;
-    for (const auto& m : samples) {
-        sum_x += m->pose.pose.position.x;
-        sum_y += m->pose.pose.position.y;
+    // Statistical filtering
+    auto [mean_x, mean_y] = calculate_mean(samples);
+    auto [std_x, std_y] = calculate_std_dev(samples, mean_x, mean_y);
+    
+    // First pass outlier removal
+    auto filtered = filter_outliers(samples, mean_x, mean_y, std_x, std_y, 2.0);
+    
+    // Density-based clustering
+    auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
+    if (clusters.empty()) {
+        debug("No valid clusters found", 1);
+        return;
     }
-    double avg_x = sum_x / static_cast<double>(samples.size());
-    double avg_y = sum_y / static_cast<double>(samples.size());
 
-    std::cout << "Utility::fetch_run_params: avg_x: " << avg_x << ", avg_y: " << avg_y << ", now waiting for IMU" << std::endl;
-    std::cout << "Utility::fetch_run_params: IMU initialized, now calculating yaw" << std::endl;
+    // Find largest cluster
+    auto& largest_cluster = *std::max_element(clusters.begin(), clusters.end(),
+        [](const auto& a, const auto& b) { return a.size() < b.size(); });
 
-    // if (std::isnan(avg_x) || std::isnan(avg_y)) {
-    //     return;
-    //     debug("Utility:: invalid gps data", 1);
-    // }
+    if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
+        debug("Insufficient cluster density", 1);
+        return;
+    }
 
-    this->x0   = avg_x;
-    this->y0   = avg_y;
+    // Calculate final position
+    auto [final_x, final_y] = calculate_mean(largest_cluster);
+    auto [final_std_x, final_std_y] = calculate_std_dev(largest_cluster, final_x, final_y);
+
+    if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
+        debug("Excessive variance in final position", 1);
+        return;
+    }
+
+    this->x0 = final_x;
+    this->y0 = final_y;
     this->yaw0 = Sensing::yaw;
-    debug("Utility::fetch_run_params: success: x0: " + std::to_string(x0) + ", y0: " + std::to_string(y0) + ", yaw0: " + std::to_string(yaw0), 1);
+
+    debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0) + " | STD X: " + std::to_string(final_std_x) + ", STD Y: " + std::to_string(final_std_y), 1);
 }
 
 void Utility::initialize() {

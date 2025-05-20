@@ -89,7 +89,7 @@ class ButtonsOverlay(QWidget):
         self.measuring_btn.clicked.connect(self.handle_measuring_clicked)
 
         self.cam_lock_btn = QPushButton("")
-        self.cam_lock_btn.clicked.connect(self.handle_cam_lock_clicked)
+        self.cam_lock_btn.clicked.connect(self.toggle_cam_lock)
 
         self.wrapper.addWidget(self.run_label)
         self.wrapper.addWidget(self.change_run_btn)
@@ -168,6 +168,10 @@ class ButtonsOverlay(QWidget):
     def handle_cam_lock_clicked(self, locked) -> None:
         self.main_window.map_widget.cam_locked = locked
         self.update_button_style(self.cam_lock_btn, locked)
+
+    def toggle_cam_lock(self) -> None:
+        self.main_window.map_widget.cam_locked = not self.main_window.map_widget.cam_locked
+        self.update_button_style(self.cam_lock_btn, self.main_window.map_widget.cam_locked)
 
     def update_launch_params(self, x0, y0, yaw0, path):
         pass
