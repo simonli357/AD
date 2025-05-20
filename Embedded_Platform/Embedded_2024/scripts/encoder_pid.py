@@ -28,7 +28,7 @@ MOTOR_ID_PID   = 12     # activate PID
 MOTOR_ID_SET   = 13     # speed & angle once PID is active
 
 PWM_MIN, PWM_MAX = 0.065, 0.11
-BAND_TOL, HOLD_S, RAMP_SKIP_START = 0.15, 0.5, 1.0
+BAND_TOL, HOLD_S, RAMP_SKIP_START = 0.15, 0.5, 0.0
 
 # ───────────────────────── helpers ─────────────────────────────────────────────
 def build_cmd(motor_id: int, *values: float) -> bytes:
@@ -146,11 +146,11 @@ def main():
     ap.add_argument("--cmd",  type=float, default=20.0,  help="Speed [cm/s]")
     ap.add_argument("--steer",type=float, default= 0.0, help="Steering angle [deg]")
     ap.add_argument("--pwm",  type=float, default=-1,   help=f"Duty cycle (0‑1), safe range {PWM_MIN}-{PWM_MAX}")
+    ap.add_argument("--dur",  type=float, default=5.0, help="Duration [s]")
     ap.add_argument("--kp",   type=float, default=1.0,  help="PID Kp")
     ap.add_argument("--ki",   type=float, default=0.0,  help="PID Ki")
     ap.add_argument("--kd",   type=float, default=0.0,  help="PID Kd")
     ap.add_argument("--pid_off", action="store_true",   help="Send pid_active = 0 (deactivate)")
-    ap.add_argument("--dur",  type=float, default=10.0, help="Duration [s]")
     ap.add_argument("--csv",  type=Path, help="Save raw data to CSV")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int,  default=115200)
@@ -201,7 +201,8 @@ def main():
         disp = t1 - t0
         print(f"Net displacement          : {disp:.2f} °  "
               f"≈ {disp/-146:.2f} cm  "
-              f"({disp/-146/args.dur:.2f} cm/s)")
+              f"({disp/-146/args.dur:.2f} cm/s)"
+              f"start: {t0:.2f}°  end: {t1:.2f}°")
     else:
         print("⚠️  No cumulative‑angle data received — displacement unavailable.")
 
