@@ -21,7 +21,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-146.0f)
+      DEGREE_PER_CM(-141.884f)
 {
     // 1) convert ticks → seconds
     m_dt = 0.001f;
@@ -179,13 +179,8 @@ float CEncoder::readAngularSpeed() {
     sumDelta = 0.0f;
     lastT    = now;
     lastPublishedSpeed = speed;
-    // printf("[Encoder] angle = %.2f°, speed = %.2f°/s\n", ang, speed);
 
     char buf[64];
-    // int len = snprintf(buf, sizeof(buf),
-    //                 "[Encoder] angle = %.2f°, speed = %.2f°/s\n",
-    //                 ang, speed);
-    // m_serial.write(buf, len);
     int n = std::snprintf(buf, sizeof(buf),
                     "@5:%.1f;%.3f;;\r\n",
                     ang, speed / DEGREE_PER_CM);
@@ -193,9 +188,13 @@ float CEncoder::readAngularSpeed() {
         m_serial.write(buf, n);
     }
 
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] Total displacement = %.2f°\n",
+    //                 displacementDeg);
+    // m_serial.write(buf, len);
+
     return speed;
 }
-
 
 float CEncoder::readAngularAcceleration() {
     float dt = m_dt;
@@ -212,25 +211,24 @@ float CEncoder::readAngularAcceleration() {
     return filtAcc;
 }
 
-float CEncoder::getTotalDisplacementDegrees() {
-    float current = readAngleDegrees();
-    static float prev = current;
-    static float total = 0.0f;
+float CEncoder::getTotalDisplacementDegrees()
+{
+    const float ang_raw = m_pwm.dutycycle() * 360.0f;
+    static int   revs = 0;
+    static float prev = ang_raw;
 
-    // Compute raw difference
-    float delta = current - prev;
+    float delta = ang_raw - prev;
 
-    // Correct for wrap-around
-    if (delta < -180.0f) {
-        delta += 360.0f;
-    } else if (delta > 180.0f) {
-        delta -= 360.0f;
-    }
+    if (delta >  180.0f) revs--;      // wrapped 360→0 forward
+    else if (delta < -180.0f) revs++; // wrapped 0→360 backward
 
-    total += delta;
-    prev = current;
-
-    printf("[Encoder] Total displacement = %.2f°\n", total);
+    prev = ang_raw;
+    float total = revs * 360.0f + ang_raw;
+    // char buf[64];
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] Total displacement = %.2f°\n",
+    //                 total);
+    // m_serial.write(buf, len);
     return total;
 }
 
@@ -255,7 +253,7 @@ void CEncoder::_run() {
 
     // float angleDeg = readAngleDegrees();
     // float speedDeg = readAngularSpeed();
-    // float displacementDeg = getTotalDisplacementDegrees(); 
+    displacementDeg = getTotalDisplacementDegrees(); 
 
     // // ————— 5) Mark end of execution and accumulate for average print
     // uint32_t end_us     = execTimer.read_us();

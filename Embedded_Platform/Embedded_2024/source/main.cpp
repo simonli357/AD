@@ -56,6 +56,7 @@ void blinkerTask() {
 void imuTask() {
     while (true) {
         g_imu.run();
+        g_steeringDriver.run();
         ThisThread::sleep_for(50ms);
     }
 }

@@ -14,7 +14,7 @@ import serial
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 
-MOTOR_ID = 15
+MOTOR_ID = 11
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
@@ -22,8 +22,7 @@ HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 # ────────────────────────────────────────────────────────────────────────────────
 
 def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
-    return f"#{MOTOR_ID}:{speed_cm_s:.2f};;\r\n".encode()
-
+    return f"#{MOTOR_ID}:{speed_cm_s:.4f}:{angle_deg:.2f};;\r\n".encode()
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -167,9 +166,9 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=0.245, help="Commanded speed [cm/s]")
-    ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
-    ap.add_argument("--dur", type=float, default=30, help="Duration [s]")
+    ap.add_argument("--cmd", type=float, default=33, help="Commanded speed [cm/s]")
+    ap.add_argument("--steer", type=float, default=-20, help="Steering angle [deg]")
+    ap.add_argument("--dur", type=float, default=7, help="Duration [s]")
     ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
@@ -193,7 +192,7 @@ def main() -> None:
         save_csv(times, speeds, args.csv)
 
     script_dir = Path(__file__).parent
-    save_plot(times, speeds, args.cmd, delay, stats, script_dir / "encoder_noise_plot.png")
+    save_plot(times, speeds, args.cmd, delay, stats, script_dir / "plots" / "encoder_noise_plot.png")
 
     # stop motor
     ser = serial.Serial(args.port, baudrate=args.baud, timeout=0.1)

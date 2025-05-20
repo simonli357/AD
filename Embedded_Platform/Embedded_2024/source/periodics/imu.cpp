@@ -653,7 +653,7 @@ namespace periodics{
     
         // 2) Sensor reads + immediate error check
         s32 res;
-        float yaw, pitch, roll;
+        float pitch, roll;
         
         // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
         //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
