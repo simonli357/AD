@@ -40,7 +40,9 @@ namespace periodics
             /* Serial callback implementation */
             void ImuPublisherCommand(char const * a, char * b);
             // YAW retrieval method
-            // virtual float getYaw();
+            float getYaw() {
+                return yaw;
+            }
             
         private:
             /*I2C init routine */
@@ -78,6 +80,7 @@ namespace periodics
             float m_velocityZ;
             int m_velocityStationaryCounter;
             float init_euler_h_deg;
+            float yaw;
     }; // class CImu
 
 }; // namespace utils

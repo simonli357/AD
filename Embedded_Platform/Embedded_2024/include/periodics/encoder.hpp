@@ -93,6 +93,7 @@ private:
     float  sumDelta{0.0f};             ///< sum of deltas for speed
     float  lastT{0.0f};                ///< last time for speed report
     float  lastPublishedSpeed{0.0f};   ///< last published speed
+    float displacementDeg{0.0f};         ///< total displacement in degrees
 };
 
 } // namespace periodics
