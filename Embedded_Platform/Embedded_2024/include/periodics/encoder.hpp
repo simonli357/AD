@@ -7,7 +7,6 @@
 #include "PwmIn.h"
 #include <cmath>
 #include <algorithm>
-#include <ring_buffer.hpp>
 
 namespace periodics {
 

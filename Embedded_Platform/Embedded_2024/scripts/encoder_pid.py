@@ -144,9 +144,9 @@ def save_plot(t, v, ref, delay, stats, path):
 def main():
     ap = argparse.ArgumentParser("Encoder constant‑command test (PID‑capable)")
     ap.add_argument("--cmd",  type=float, default=30.0,  help="Speed [cm/s]")
-    ap.add_argument("--steer",type=float, default= 0.0, help="Steering angle [deg]")
+    ap.add_argument("--steer",type=float, default= -10.0, help="Steering angle [deg]")
     ap.add_argument("--pwm",  type=float, default=-1,   help=f"Duty cycle (0‑1), safe range {PWM_MIN}-{PWM_MAX}")
-    ap.add_argument("--dur",  type=float, default=5.0, help="Duration [s]")
+    ap.add_argument("--dur",  type=float, default=35.0, help="Duration [s]")
     ap.add_argument("--kp",   type=float, default=1.0,  help="PID Kp")
     ap.add_argument("--ki",   type=float, default=0.0,  help="PID Ki")
     ap.add_argument("--kd",   type=float, default=0.0,  help="PID Kd")

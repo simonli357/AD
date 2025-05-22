@@ -37,6 +37,8 @@ namespace drivers
             float m_desiredSteer = 0;
             /** @brief 0 default */
             float zero_default = 0.07672070;
+            float max_pwm = 0.1500;
+            float min_pwm = 0.0045;
     };
 
     class CSpeedingMotor;

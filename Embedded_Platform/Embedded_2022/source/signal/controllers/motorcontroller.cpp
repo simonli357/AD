@@ -122,14 +122,16 @@ namespace controllers{
         if(std::abs(l_MesRps) > m_mes_abs_sup) {
             m_RefRps = 0.0;
             m_u = 0.0;
+            printf("CMotorController::control(): measured value: %f is too high, m_mes_abs_sup: %f\r\n",l_MesRps,m_mes_abs_sup);
             return -1;
         }
         // Check the inferior limits of reference signal and measured signal for standing state.
         // Inactivate the controller to not brake the robot, when it stopped. 
-        if(std::abs(m_RefRps) < m_ref_abs_inf && std::abs(l_MesRps) < m_mes_abs_inf ){
-            m_u = 0.0;
-            return 1; 
-        }
+        // if(std::abs(m_RefRps) < m_ref_abs_inf && std::abs(l_MesRps) < m_mes_abs_inf ){
+        //     m_u = 0.0;
+        //     printf("CMotorController::control(): measured value: %f is too low, m_mes_abs_inf: %f\r\n",l_MesRps,m_mes_abs_inf);
+        //     return 1; 
+        // }
 
         // Check measured value is orientated or absolute
         if ( l_isAbs ){
@@ -149,11 +151,12 @@ namespace controllers{
             m_RefRps = 0.0;
             m_u = 0.0;
             m_nrHighPwm = 0;
+            printf("CMotorController::control(): m_nrHighPwm: %d, m_maxNrHighPwm: %d, l_MesRps: %f, m_mes_abs_inf: %f\r\n",m_nrHighPwm,m_maxNrHighPwm,l_MesRps,m_mes_abs_inf);
             return -2;
         }
 
         m_u=l_pwm_control;
-        
+        printf("l_pwm_control: %f, m_u: %f, l_MesRps: %f, l_ref: %f, l_error: %f, m_RefRps: %f, m_nrHighPwm: %d\r\n",l_pwm_control,m_u,l_MesRps,l_ref,l_error,m_RefRps,m_nrHighPwm);
         // Check measured value is oriantated or absolute.
         if(m_RefRps<0 && l_isAbs)
         {

@@ -48,7 +48,9 @@ RAMP_SKIP_START = 1.0
 
 def build_cmd(motor_id: int, value: float, angle_deg: float) -> bytes:
     """Return the ASCII command understood by the motor controller."""
-    return f"#{motor_id}:{value:.4f}:{angle_deg:.2f};;\r\n".encode()
+    # return f"#{motor_id}:{value:.4f}:{angle_deg:.2f};;\r\n".encode()
+    return f"#{1}:{-0.0:.4f};;\r\n".encode()
+    # return f"#{7}:{0.02:.4f}:{angle_deg:.2f};;\r\n".encode()
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -57,7 +59,8 @@ def run_test(port: str,
              motor_id: int,
              cmd_value: float,
              duration: float,
-             steer: float) -> tuple[list[float], list[float], float | None, float | None]:
+             steer: float,
+             echo_raw: bool) -> tuple[list[float], list[float], float | None, float | None]:
     """Run the motor command for *duration + 1 s*, logging encoder output."""
     ser = serial.Serial(port, baudrate=baud, timeout=0.1)
     time.sleep(0.1)
@@ -69,6 +72,7 @@ def run_test(port: str,
     speeds: list[float] = []
     total_start: float | None = None
     total_end: float | None = None
+    raw_lines: list[str] = [] 
 
     real_dur = duration + 1.0
     print(f"Running {real_dur:.2f}s … (motor {motor_id} value {cmd_value})")
@@ -85,6 +89,9 @@ def run_test(port: str,
 
             while ser.in_waiting:
                 line = ser.readline().decode("utf-8", errors="ignore").strip()
+                if echo_raw:
+                    print(f"{elapsed:7.3f}  {line}")
+                raw_lines.append(f"{elapsed:.3f},{line}")
 
                 if m := ENC_PATTERN.match(line):
                     speeds.append(float(m.group(2)))
@@ -114,7 +121,7 @@ def run_test(port: str,
         ser.close()
         print("\nSerial closed.")
 
-    return times, speeds, total_start, total_end
+    return times, speeds, total_start, total_end, raw_lines
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -202,38 +209,47 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Encoder constant‑command test with optional safe PWM mode and displacement logging.")
-    ap.add_argument("--cmd",  type=float, default=20, help="Commanded speed [cm/s]; ignored if --pwm provided.")
-    ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--steer", type=float, default=-10, help="Steering angle [deg]")
-    ap.add_argument("--pwm_steer", type=float, default=0.25, help="Steering angle [deg]")
+    ap.add_argument("--cmd",  type=float, default=30, help="Commanded speed [cm/s]; ignored if --pwm provided.")
+    # ap.add_argument("--pwm",  type=float, default=0.0685, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--pwm",  type=float, default=0.22, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--steer", type=float, default=-21, help="Steering angle [deg]")
+    # ap.add_argument("--pwm_steer", type=float, default=0.0645, help="Steering angle [deg]")
+    ap.add_argument("--pwm_steer", type=float, default=0.01, help="Steering angle [deg]")
     ap.add_argument("--dur",   type=float, default=2, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)
+    ap.add_argument("--echo_raw", action="store_true", help="Print every raw serial line as it arrives")
+    
     args = ap.parse_args()
 
     is_pwm = args.pwm != -1
-    if is_pwm and not (PWM_MIN <= args.pwm <= PWM_MAX):
-        sys.exit(f"❌ PWM value {args.pwm} outside safe range {PWM_MIN}-{PWM_MAX}.")
+    # if is_pwm and not (PWM_MIN <= args.pwm <= PWM_MAX):
+    #     sys.exit(f"❌ PWM value {args.pwm} outside safe range {PWM_MIN}-{PWM_MAX}.")
 
     motor_id = MOTOR_ID_PWM if is_pwm else MOTOR_ID_SPEED
     cmd_value = args.pwm if is_pwm else args.cmd
     steer_value = args.pwm_steer if is_pwm else args.steer
 
     try:
-        times, speeds, total_start, total_end = run_test(
+        times, speeds, total_start, total_end, raw_lines = run_test(
             args.port,
             args.baud,
             motor_id,
             cmd_value,
             args.dur,
             steer_value,
+            args.echo_raw,
         )
     except KeyboardInterrupt:
         print("Test aborted by user.")
         return
 
     print()
+    if args.echo_raw:
+        print("Raw lines:")
+        for line in raw_lines:
+            print(line)
     # Stats only in speed mode
     if not is_pwm and speeds:
         delay = estimate_delay(times, speeds, args.cmd)

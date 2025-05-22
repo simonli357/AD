@@ -7,8 +7,7 @@
 #define I2C0           5
 
 #include <mbed.h>
-#include <drivers/BNO055.hpp>
-#include <utils/task.hpp>
+#include <hardware/drivers/BNO055.hpp>
 
 namespace periodics
 {
@@ -17,7 +16,7 @@ namespace periodics
     * 
     * 
     */
-    class CImu : public utils::CTask
+    class CImu
     {
         public:
             /* Construnctor */
@@ -41,14 +40,13 @@ namespace periodics
             float getYaw() {
                 return yaw;
             }
+            void _run();
             
         private:
             /*I2C init routine */
             virtual void I2C_routine(void);
             /* This API is an example for reading sensor data */
             s32 bno055_data_readout_template(void);
-            /* Run method */
-            virtual void    _run();
 
             /*----------------------------------------------------------------------------*
             *  struct bno055_t parameters can be accessed by using BNO055
