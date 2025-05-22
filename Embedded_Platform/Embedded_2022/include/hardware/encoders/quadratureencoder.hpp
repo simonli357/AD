@@ -83,8 +83,8 @@ class CQuadratureEncoderWithFilter: public CQuadratureEncoder, public IEncoderNo
       virtual float getSpeedRps();
       virtual int16_t  getNonFilteredCount();
       virtual float getNonFilteredSpeedRps();
-    protected:
       virtual void _run();
+    protected:
       /** @brief Last filtered counted value */
       double m_encoderCntFiltered;
       /** @brief Filter interface */

@@ -1070,10 +1070,7 @@ public:
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
-                            && (PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
+                            && PathManager::attribute_cmp2(closest_idx, end_idx);
         
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);

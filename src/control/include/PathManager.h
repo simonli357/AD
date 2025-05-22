@@ -204,6 +204,16 @@ inline bool attribute_cmp(int idx, int attr) {
 	return state_attributes(idx) == attr || state_attributes(idx) == attr + 100;
 }
 
+inline bool attribute_cmp2(int idx, int idx2) {
+  if (idx < 0 || idx >= state_attributes.size()) {
+		return false;
+	}
+	if (idx2 < 0 || idx2 >= state_attributes.size()) {
+		return false;
+	}
+	return state_attributes(idx) == state_attributes(idx2);
+}
+
 inline bool is_not_detectable(int idx) {
 	return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
 }

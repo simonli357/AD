@@ -188,10 +188,10 @@ float CEncoder::readAngularSpeed() {
         m_serial.write(buf, n);
     }
 
-    // int len = snprintf(buf, sizeof(buf),
-    //                 "[Encoder] Total displacement = %.2f°\n",
-    //                 displacementDeg);
-    // m_serial.write(buf, len);
+    int len = snprintf(buf, sizeof(buf),
+                    "[Encoder] Total displacement = %.2f°\n",
+                    displacementDeg);
+    m_serial.write(buf, len);
 
     return speed;
 }

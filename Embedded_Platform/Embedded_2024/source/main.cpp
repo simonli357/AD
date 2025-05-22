@@ -11,7 +11,6 @@
 #include <utils/task.hpp>
 #include <drivers/steeringmotor.hpp>
 #include <periodics/encoder.hpp>
-#include <periodics/serialPrinter.hpp>
 #include "rtos.h"
 #include <drivers/dcmotor.hpp>
 #include "mbed_power_mgmt.h"

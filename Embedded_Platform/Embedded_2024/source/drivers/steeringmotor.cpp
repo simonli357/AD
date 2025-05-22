@@ -131,6 +131,8 @@ namespace drivers{
         void CSteeringMotor::PWMAngle(float f_PWM)
     {
         // Writes the PWM value to the PIN
+        if (f_PWM > max_pwm) f_PWM = max_pwm;
+        if (f_PWM < min_pwm) f_PWM = min_pwm;
         m_pwm_pin.write(f_PWM);
         m_currentDutyCycle = f_PWM;
     };
