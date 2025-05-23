@@ -1,0 +1,11 @@
+[Unit]
+Description=Post IP to Cloudflare Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/scandy/AD/src/gui/cloud/client.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
