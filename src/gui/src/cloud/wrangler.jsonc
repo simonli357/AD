@@ -1,0 +1,5 @@
+{
+    "name": "ip-broadcaster-worker",
+    "compatibility_date": "2025-05-23",
+    "main": "src/index.ts"
+}
