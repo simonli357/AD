@@ -3,3 +3,4 @@ PyGLM
 freetype-py # or apt install python3-freetype
 PyOpenGL-accelerate
 requests
+psutil
