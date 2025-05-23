@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QMenu
 
 import os
+import requests
 import xml.etree.ElementTree as ET
 
 
@@ -14,11 +15,12 @@ class CommentedTreeBuilder(ET.TreeBuilder):
 class ButtonsOverlay(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(380, 60)
         self.main_window = self.parent()
         self.runs = []
         self.read_from_cache()
         self.setup_ui()
+        self.wrapper.update()
+        self.adjustSize()
 
     def read_from_cache(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +44,17 @@ class ButtonsOverlay(QWidget):
 
         self.run_label = QLabel("--:--")
         self.run_label.setStyleSheet("""
+            color: white;
+            border: none;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 5px 20px 5px 20px;
+        """)
+
+        self.ip_label = QLabel("  ---.---.-.-")
+        self.ip_label.setStyleSheet("""
             color: white;
             border: none;
             font-size: 24px;
@@ -92,6 +105,7 @@ class ButtonsOverlay(QWidget):
         self.cam_lock_btn.clicked.connect(self.toggle_cam_lock)
 
         self.wrapper.addWidget(self.run_label)
+        self.wrapper.addWidget(self.ip_label)
         self.wrapper.addWidget(self.change_run_btn)
         self.wrapper.addWidget(self.swap_map_btn)
         self.wrapper.addWidget(self.measuring_btn)
@@ -126,6 +140,8 @@ class ButtonsOverlay(QWidget):
         self.update_button_style(self.measuring_btn, self.main_window.map_widget.measuring)
         self.update_button_style(self.cam_lock_btn, self.main_window.map_widget.cam_locked)
 
+        self.fetch_ip()
+
     def update_button_style(self, button, is_active):
         """Update button color based on boolean state"""
         color = "#ffcc00" if is_active else "rgba(255, 255, 255, 0.08);"  # Light green/red
@@ -149,6 +165,19 @@ class ButtonsOverlay(QWidget):
         self.run_label.setText(f' {name}')
         self.wrapper.update()
         self.adjustSize()
+
+    def set_ip(self, ip: str) -> None:
+        self.ip_label.setText(f' {ip}')
+        self.wrapper.update()
+        self.adjustSize()
+
+    def fetch_ip(self):
+        url = "https://ip-broadcaster-worker.yu-qing-liu.workers.dev"
+        try:
+            response = requests.get(url).text
+            self.set_ip(response.rstrip('%').strip())
+        except Exception as e:
+            print("Failed to get IP:", e)
 
     def show_menu(self) -> None:
         original_point = self.change_run_btn.mapToGlobal(self.change_run_btn.rect().topRight())
