@@ -167,7 +167,7 @@ class ButtonsOverlay(QWidget):
         self.adjustSize()
 
     def set_ip(self, ip: str) -> None:
-        self.ip_label.setText(f' {ip}')
+        self.ip_label.setText(f'  {ip}')
         self.wrapper.update()
         self.adjustSize()
 
