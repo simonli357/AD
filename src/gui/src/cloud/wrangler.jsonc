@@ -1,5 +1,11 @@
 {
-    "name": "ip-broadcaster-worker",
-    "compatibility_date": "2025-05-23",
-    "main": "src/index.ts"
+  "name": "ip-broadcaster-worker",
+  "compatibility_date": "2025-05-23",
+  "main": "src/index.ts",
+  "kv_namespaces": [
+    {
+      "binding": "IP_STORE",
+      "id": "383d7a0eb6bd4f9a966e2c2fd63401a5"
+    }
+  ]
 }
