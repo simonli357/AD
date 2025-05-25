@@ -29,6 +29,7 @@ namespace Tunable {
     inline bool subModel;
     inline double rateVal;
     inline bool realsense_imu;
+    inline bool use_encoder = false;
 
     // tunables
     inline double cw_speed_ratio = 1.0;
@@ -80,6 +81,7 @@ namespace Tunable {
       CHECK_PARAM("/dashboard", dashboard);
       CHECK_PARAM("/gps", hasGps);
       CHECK_PARAM("/use_gps", useGps);
+      CHECK_PARAM("/use_encoder", use_encoder);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;

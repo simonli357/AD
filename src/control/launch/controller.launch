@@ -13,6 +13,8 @@
   <param name="steer_offset_maximum" value="$(arg steer_offset_max)"/>
   <arg name="speed_offset" default="0"/>
   <param name="speed_offset" value="$(arg speed_offset)"/>
+  <arg name="use_encoder" default="true"/>
+  <param name="use_encoder" value="$(arg use_encoder)"/>
   <!-- run -->
   <arg name="x0" default="3.83"/>
   <arg name="y0" default="0.376"/>
