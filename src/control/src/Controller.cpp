@@ -1302,7 +1302,7 @@ void StateMachine::run() {
                 }
                 check_car();    
             }
-            if (lane_relocalize) {
+            if (lane_relocalize && Tunable::lane) {
                 lane_based_relocalization();
             }
             double error_sq = (x_current.head(2) - destination).squaredNorm();
