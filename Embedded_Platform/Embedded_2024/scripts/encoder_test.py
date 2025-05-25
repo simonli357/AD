@@ -43,7 +43,7 @@ SPEED_SEQUENCE_CM = [46, -45, 0, 40, -30, 30, -20, 20, -10, 10]
 HOLD_TIME_S       = 5.0
 
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
 
 
 MOTOR_ID = 13
@@ -149,9 +149,8 @@ class SpeedSweep(QtWidgets.QWidget):
             # speed_deg_s_raw = float(m.group(2))
             # self.last_angle_deg = angle_deg
             # speed_cm_s = (-speed_deg_s_raw) / CM_TO_DEG
-            angle_deg = float(m.group(1))
-            speed_cm_s = float(m.group(2))
-            self.last_angle_deg = angle_deg
+            speed_cm_s = float(m.group(1))
+            self.last_angle_deg = 0
 
             self.t_meas.append(now)
             self.meas_cm.append(speed_cm_s)

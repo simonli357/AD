@@ -31,7 +31,7 @@ import serial
 # Fast status: "@5:<angle_deg>;<speed_cm_s>;;"
 # Cum. angle : "[Encoder] Total displacement = <deg>°"
 # ------------------------------------------------------------------------------
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
 MOTOR_ID_SPEED = 7  # expects cm/s

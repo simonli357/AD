@@ -6,8 +6,13 @@ roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false 
 == webm to mp4
 ffmpeg -i ~/Downloads/screen-capture.webm ~/Downloads/output.mp4
 
+== speed up video
+input="output"
+ffmpeg -i "$input".mp4 -filter_complex "[0:v]setpts=PTS/2.0[v]" -map "[v]" -an "$input"_fast.mp4
+
 == mp4 to gif
-ffmpeg -i ~/Downloads/output.mp4 -vf "fps=20,scale=iw:ih:flags=lanczos" -c:v gif ~/Downloads/output.gif
+input="output"
+ffmpeg -i "$input".mp4 -vf "fps=20,scale=iw:ih:flags=lanczos" -c:v gif "$input".gif
 
 == disable screen inversion when connected to realsense
 ```bash
