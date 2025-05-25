@@ -1237,7 +1237,7 @@ void StateMachine::publish_commands() {
     if(pubWaypoints) {
         publish_waypoints();
     }
-    double steer = -mpc.u_current[1] * 180 / M_PI;
+    double steer = mpc.u_current[1] * 180 / M_PI;
     double speed = mpc.u_current[0];
     // steer = 0;
     // speed = 0.32;

@@ -453,7 +453,7 @@ public:
             boost::asio::write(*Sensing::serial, boost::asio::buffer(pid_str.str()));
         }
 
-        if(f_angle > 3.0) f_angle+=4.0;
+        // if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);
