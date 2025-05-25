@@ -43,7 +43,8 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
-    this->name = name;
+    this->name = "default";
+		name = "default";
 	path.clear();
     Vertex start;
     Vertex first = track.find_closest_node(start_x, start_y);

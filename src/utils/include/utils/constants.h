@@ -50,7 +50,7 @@ namespace VehicleConstants {
     static constexpr double SIGN_COOLDOWN = 1.0;
     static constexpr double TOLERANCE_SQUARED = 0.15 * 0.15;
     static constexpr double SOFT_MAX_STEERING = 0.3578 * 180 / M_PI;
-    static constexpr double HARD_MAX_STEERING = 0.3578 * 180 / M_PI;
+    static constexpr double HARD_MAX_STEERING = 0.4363 * 180 / M_PI;
     static constexpr double INTERSECTION_DISTANCE_THRESHOLD = 0.72345; // minimum distance between two intersections
     static constexpr double INTERSECTION_TO_SIGN = 0.290; // distance from intersection to sign
 

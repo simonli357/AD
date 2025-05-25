@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-order = 1
+order = 5
 
 current_dir = Path(__file__).parent
 df = pd.read_csv(current_dir / "left_steer.csv")

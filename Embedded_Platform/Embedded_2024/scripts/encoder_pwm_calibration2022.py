@@ -34,11 +34,11 @@ import serial
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
-MOTOR_ID_SPEED = 11  # expects cm/s
-MOTOR_ID_PWM   = 10  # expects duty cycle in [0,1]
+MOTOR_ID_SPEED = 7  # expects cm/s
+MOTOR_ID_PWM   = 7  # expects duty cycle in [0,1]
 
-PWM_MIN = 0.065
-PWM_MAX = 0.11
+PWM_MIN = -0.3
+PWM_MAX = 0.3
 
 BAND_TOL = 0.15  # ±15 % band for delay detection
 HOLD_S   = 0.5   # must remain inside band ≥ 0.5 s
@@ -48,7 +48,9 @@ RAMP_SKIP_START = 1.0
 
 def build_cmd(motor_id: int, value: float, angle_deg: float) -> bytes:
     """Return the ASCII command understood by the motor controller."""
-    return f"#{motor_id}:{value:.5f}:{angle_deg:.5f};;\r\n".encode()
+    return f"#{motor_id}:{value:.4f}:{angle_deg:.2f};;\r\n".encode()
+    # return f"#{1}:{-0.0:.4f};;\r\n".encode()
+    # return f"#{7}:{-0.0:.4f}:{0.0:.2f};;\r\n".encode()
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -108,13 +110,12 @@ def run_test(port: str,
                 sys.stdout.flush()
     except KeyboardInterrupt:
         print("\n⚙️  Ctrl‑C — stopping motor immediately.")
-        ser.write(build_cmd(motor_id, 0.0, steer))
+        ser.write(build_cmd(motor_id, 0.0, 0.0))
         ser.close()
         raise
     finally:
         try:
-            ser.write(build_cmd(motor_id, 0.0, steer))
-            pass
+            ser.write(build_cmd(motor_id, 0.0, 0.0))
         except Exception:
             pass
         ser.close()
@@ -208,13 +209,10 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Encoder constant‑command test with optional safe PWM mode and displacement logging.")
-    ap.add_argument("--cmd",  type=float, default=30, help="Commanded speed [cm/s]; ignored if --pwm provided.")
-    ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    # ap.add_argument("--pwm",  type=float, default=0.0675, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--steer", type=float, default=10, help="Steering angle [deg]")
-    ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
-    # ap.add_argument("--pwm_steer", type=float, default=0.0835, help="Steering angle [deg]")
-    ap.add_argument("--dur",   type=float, default=60, help="Duration [s]")
+    ap.add_argument("--cmd",  type=float, default=20, help="Commanded speed [cm/s]; ignored if --pwm provided.")
+    ap.add_argument("--pwm",  type=float, default=-0.0, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--pwm_steer", type=float, default=0.09426, help="Steering angle [deg]")
+    ap.add_argument("--dur",   type=float, default=2, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)
@@ -228,7 +226,7 @@ def main() -> None:
 
     motor_id = MOTOR_ID_PWM if is_pwm else MOTOR_ID_SPEED
     cmd_value = args.pwm if is_pwm else args.cmd
-    steer_value = args.pwm_steer if is_pwm else args.steer
+    steer_value = args.pwm_steer
 
     try:
         times, speeds, total_start, total_end, raw_lines = run_test(

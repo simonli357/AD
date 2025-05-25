@@ -71,6 +71,7 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         double speed_cm;
         if (!fast_atof(p, end, speed_cm)) return;
         encoder_speed.store(0.01 * speed_cm, std::memory_order_relaxed);
+        // std::cout << "Sensing: speed: " << speed_cm << std::endl;
         return;
     }
 

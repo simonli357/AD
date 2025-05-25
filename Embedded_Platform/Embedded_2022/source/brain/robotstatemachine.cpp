@@ -126,42 +126,46 @@ namespace brain{
         uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
         if (2 == l_res)
         {
+            // steering
             if( !m_steeringControl.inRange(l_angle)){ // Check the received steering angle
                 sprintf(b,"The steering angle command is too high;;");
             } else {
                 m_steeringControl.setAngle(l_angle); // control the steering angle 
             }
 
-            if (std::abs(l_speed) < 0.01) { // If the speed is 0, then brake
-                if(m_state == 3) {
-                    m_dcMotorControl->clearDist();
-                }
-                m_state = 2;
-                m_dcMotor.brake();
-            } else {
-                if( !m_ispidActivated && !m_dcMotor.inRange(l_speed)){ // Check the received control value
-                    sprintf(b,"The speed command is too high;;");
-                    return;
-                }
-                if( m_ispidActivated && !m_dcMotorControl->inRange(CRobotStateMachine::Mps2Rps(l_speed))){ //Check the received reference value
-                    sprintf(b,"The speed reference is too high;;");
-                    return;
-                }
+            // speed
+            if (std::abs(l_speed) < 0.3) m_dcMotor.setSpeed(l_speed); // set pwm signal to the motor
+            // if (std::abs(l_speed) < 0.01) { // If the speed is 0, then brake
+            //     if(m_state == 3) {
+            //         m_dcMotorControl->clearDist();
+            //     }
+            //     m_state = 2;
+            //     m_dcMotor.brake();
+            // } else {
+            //     m_dcMotor.setSpeed(l_speed);
+            //     if( !m_ispidActivated && !m_dcMotor.inRange(l_speed)){ // Check the received control value
+            //         sprintf(b,"The speed command is too high;;");
+            //         return;
+            //     }
+            //     if( m_ispidActivated && !m_dcMotorControl->inRange(CRobotStateMachine::Mps2Rps(l_speed))){ //Check the received reference value
+            //         sprintf(b,"The speed reference is too high;;");
+            //         return;
+            //     }
                 
-                if(m_state == 3) {
-                    m_dcMotorControl->clearDist();
-                }
-                m_state=1;
+            //     if(m_state == 3) {
+            //         m_dcMotorControl->clearDist();
+            //     }
+            //     m_state=1;
                 
-                if(!m_ispidActivated)
-                { // The pid controller is deactivated and the dc motor is controlled by user control signal by giving duty cycle of PWM. 
-                    m_dcMotor.setSpeed(l_speed);
-                }
-                else
-                {// The pid controller is activated and the dc motor speed is controlled by user control signal by giving the reference speed. 
-                    m_dcMotorControl->setRef(CRobotStateMachine::Mps2Rps( l_speed )); // Set the reference of dc motor speed
-                }
-            }
+            //     if(!m_ispidActivated)
+            //     { // The pid controller is deactivated and the dc motor is controlled by user control signal by giving duty cycle of PWM. 
+            //         m_dcMotor.setSpeed(l_speed);
+            //     }
+            //     else
+            //     {// The pid controller is activated and the dc motor speed is controlled by user control signal by giving the reference speed. 
+            //         m_dcMotorControl->setRef(CRobotStateMachine::Mps2Rps( l_speed )); // Set the reference of dc motor speed
+            //     }
+            // }
 
             sprintf(b,"ack;;");
         }

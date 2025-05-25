@@ -158,11 +158,12 @@ namespace drivers{
         // Zero default when returning from a right turn
         ZD_right = 0.0755;
 
-        if(f_angle > 20.8) f_angle = 20.8; 
-        if(f_angle < -21.8) f_angle = -21.8;
+        // if(f_angle > 20.8) f_angle = 20.8; 
+        // if(f_angle < -21.8) f_angle = -21.8;
         // Function to calculate the positive angle (LEFT TURN)
-        if(f_angle < 0)
+        if(f_angle > 0)
         {
+            f_angle = -f_angle; // Invert the angle for the left turn
             // alpha = -22254;
             // beta = 1995.5;
             // gamma = -23.127;
@@ -174,8 +175,9 @@ namespace drivers{
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
         // Function to calculate the negative angles (RIGHT TURN)
-        else if(f_angle > 0)
+        else if(f_angle < 0)
         {
+            f_angle = -f_angle; // Invert the angle for the right turn
             alpha = -18728;
             beta = 4175;
             gamma = -211.28;

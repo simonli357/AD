@@ -84,6 +84,7 @@ namespace drivers{
             float duty = zero_default;
             if (m_currentSpeed > 0.001f)
             {
+                // constexpr float a = 1289748.65f, b = -187718.55f, c = 6826.86f; // old
                 constexpr float a = 895099.49f, b = -135002.57f, c = 5071.03f;
                 duty = (-b - std::sqrt(b*b - 4*a*(c - m_currentSpeed)))/(2*a);
             }

@@ -43,7 +43,9 @@ namespace hardware::drivers{
      */
     void CSteeringMotor::setAngle(float f_angle)
     {
-        m_pwm.write(conversion(f_angle));
+        printf("setAngle: %.3f, pwm value: %.3f\r\n", f_angle, conversion(f_angle));
+        // m_pwm.write(conversion(f_angle));
+        m_pwm.write(f_angle);
     };
 
     /** @brief  It converts angle degree to duty cycle for pwm signal. 
