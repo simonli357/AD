@@ -514,9 +514,9 @@ void Utility::publish_odom() {
     {
         filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
         double delta_rad = steer_command * M_PI / 180.0;
-        double beta = 0.0;
-        if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
-        filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
+        // double beta = 0.0;
+        // if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
+        // filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
         double speed = filtered_encoder_speed;
         if (!Tunable::use_encoder) {
             speed = velocity_command;
@@ -688,7 +688,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     {
         steer_command = steering_angle;
         velocity_command = velocity;
-        std::cout << "steer: " << steering_angle << ", vel_command: " << velocity_command << ", filtered_encoder: " << filtered_encoder_speed << ", yaw: " << Sensing::yaw*180/M_PI << ", use_encoder: " << Tunable::use_encoder << std::endl;
+        // std::cout << "steer: " << steering_angle << ", vel_command: " << velocity_command << ", filtered_encoder: " << filtered_encoder_speed << ", yaw: " << Sensing::yaw*180/M_PI << ", use_encoder: " << Tunable::use_encoder << std::endl;
         add_velocity_command(velocity_command);
     }
     // apply offset correction
