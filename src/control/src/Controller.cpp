@@ -67,21 +67,6 @@ public:
         });
 
         // set callbacks for tcp client
-        utils.tcp_client->set_send_run_callback(
-            [this]() {
-                tcp_callbacks->run([this] {
-                    std::cout << "Sending Run Parameters" << std::endl;
-                    if (state == STATE::INIT || state == STATE::DONE) {
-                        utils.tcp_client->send_start_srv(false);
-                    } else {
-                        utils.tcp_client->send_start_srv(true);
-                    }
-                    utils.fetch_run_params();
-                    utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
-                });
-            }
-        );
-
         utils.tcp_client->set_go_to_cmd_callback(
             [this](const std::vector<std::tuple<float, float>> &coords) {
                 tcp_callbacks->run([this, coords] {
@@ -148,6 +133,21 @@ public:
                 tcp_callbacks->run([this, direction] {
                     std::cout << "Setting Yaw" << std::endl;
                     Sensing::reset_yaw(direction);
+                });
+            }
+        );
+
+        utils.tcp_client->set_send_run_callback(
+            [this]() {
+                tcp_callbacks->run([this] {
+                    std::cout << "Sending Run Parameters" << std::endl;
+                    if (state == STATE::INIT || state == STATE::DONE) {
+                        utils.tcp_client->send_start_srv(false);
+                    } else {
+                        utils.tcp_client->send_start_srv(true);
+                    }
+                    utils.fetch_run_params();
+                    utils.tcp_client->send_run(PathManager::v_ref, PathManager::pathName, utils.x0, utils.y0, utils.yaw0);
                 });
             }
         );
@@ -252,8 +252,10 @@ public:
     bool start_bool_callback(bool started) {
         static int history = -1;
         if (started && (state == STATE::INIT || state == STATE::DONE)) {
+            std::cout << "Starting CAR" << std::endl;
             start();
         } else {
+            std::cout << "Stopping CAR" << std::endl;
             history = state;
             stop_for(10*T);
             change_state(STATE::INIT);
@@ -1068,10 +1070,7 @@ public:
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
-                            && (PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(end_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
+                            && PathManager::attribute_cmp2(closest_idx, end_idx);
         
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);

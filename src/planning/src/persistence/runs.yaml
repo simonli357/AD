@@ -66,3 +66,39 @@ run189:
 - 179
 # - 173
 - 8
+runHighway502: # AI Path
+- 502
+- 520
+runHighway: # Test Path
+- 502
+- 404
+runSpeedCurve151: # AI Path
+- 151
+- 406
+runSpeedCurve166: # AI Path
+- 166
+- 220
+runSpeedCurve: # Test Path
+- 219
+- 406
+runRoundabout342: # AI Path
+- 342
+- 367
+runRoundabout368: # AI Path
+- 368
+- 399
+runRoundabout: # Test Path
+- 331
+- 379
+- 337
+- 345
+- 367
+runDotted305: # AI Path
+- 305
+- 317
+runDotted318: # AI Path
+- 318
+- 330
+runDotted: # Test Path
+- 55
+- 551

@@ -21,7 +21,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-146.0f)
+      DEGREE_PER_CM(-141.884f)
 {
     // 1) convert ticks → seconds
     m_dt = 0.001f;

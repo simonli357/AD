@@ -31,6 +31,7 @@ namespace brain{
             hardware::drivers::ISteeringCommand&                f_steeringControl,
             signal::controllers::CMotorController*              f_dcMotorControl = NULL);
         
+        virtual void _run();
         /* Start the Rtos timer for applying "_run" method  */
         void startTimer();
         /* Serial callback method for Speed */ 
@@ -43,10 +44,9 @@ namespace brain{
         void serialCallbackACTIVPIDcommand(char const * a, char * b);
         /* Serial callback method for Movement */ 
         void serialCallbackMOVEcommand(char const * a, char * b);
+        void serialCallbackGOODcommand(char const * a, char * b);
 
     private:
-        /* Contains the state machine, which control the lower level drivers (motor and steering) based the current state. */
-        virtual void _run();
         /* Static function to convert from linear velocity ( centimeter per second ) of robot to angular velocity ( rotation per second ) of motor */
         static float Mps2Rps(float f_vel_cmps);
         /* Static function to convert from meters to int */

@@ -649,11 +649,19 @@ class LaneDetector {
 			}
 
 			// ───────────────────────────── Show image ────────────────────────────────
+<<<<<<< HEAD
 			// if (true)
 			// {
 			// 		cv::imshow("Lane Visualisation", vis);
 			// 		cv::waitKey(1);
 			// }
+=======
+			if (false)
+			{
+					cv::imshow("Lane Visualisation", vis);
+					cv::waitKey(1);
+			}
+>>>>>>> 0a646a2e24fd9771d3ab6dce9ee9fe8c0b3c8b24
 
 			return offset_from_center;
 	}

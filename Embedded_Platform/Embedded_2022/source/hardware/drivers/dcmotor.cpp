@@ -51,6 +51,7 @@ namespace hardware::drivers{
             m_ina = 1;
             m_inb = 0;
         } 
+        printf("dcmotor: setSpeed: %.3f\r\n", f_pwm);
         m_pwm = std::abs(f_pwm);
     }
 
