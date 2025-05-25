@@ -88,13 +88,19 @@ public:
                 min_diff = diff;
             }
         }
-        if (min_diff > 0.1) {
-            /* printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff); */
-            filtered_speed = velocity_command;
-        }
+        // if (min_diff > 0.1) {
+        //     printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f. FILTERED!!!\n", encoder_speed, velocity_command, min_diff);
+        //     filtered_speed = velocity_command;
+        // } else {
+        //     // printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
+            
+        // }
         // if encoder speed is less than 0.03, set it to 0
         if (std::abs(encoder_speed) < 0.03) {
             filtered_speed = 0.0;
+        }
+        if (std::abs(velocity_command) < 0.01 && min_diff > 0.07) {
+            filtered_speed = velocity_command;
         }
         return filtered_speed;
     }
@@ -389,7 +395,11 @@ public:
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
         // P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
-        P_v[0] -= latency * filtered_encoder_speed;
+        double speed = filtered_encoder_speed;
+        if (!Tunable::use_encoder) {
+            speed = velocity_command;
+        }
+        P_v[0] -= latency * speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
@@ -447,7 +457,7 @@ public:
             boost::asio::write(*Sensing::serial, boost::asio::buffer(pid_str.str()));
         }
 
-        if(f_angle > 3.0) f_angle+=4.0;
+        // if(f_angle > 3.0) f_angle+=4.0;
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.2f:%.2f;;\r\n", f_velocity * 100, f_angle);

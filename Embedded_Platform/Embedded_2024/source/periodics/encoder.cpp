@@ -21,7 +21,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-141.884f)
+      DEGREE_PER_CM(-145.0f)
 {
     // 1) convert ticks → seconds
     m_dt = 0.001f;
@@ -182,16 +182,16 @@ float CEncoder::readAngularSpeed() {
 
     char buf[64];
     int n = std::snprintf(buf, sizeof(buf),
-                    "@5:%.1f;%.3f;;\r\n",
-                    ang, speed / DEGREE_PER_CM);
+                    "@5:%.3f;;\r\n",
+                    speed / DEGREE_PER_CM);
     if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf)) {
         m_serial.write(buf, n);
     }
 
-    int len = snprintf(buf, sizeof(buf),
-                    "[Encoder] Total displacement = %.2f°\n",
-                    displacementDeg);
-    m_serial.write(buf, len);
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] Total displacement = %.2f°\n",
+    //                 displacementDeg);
+    // m_serial.write(buf, len);
 
     return speed;
 }
@@ -253,7 +253,7 @@ void CEncoder::_run() {
 
     // float angleDeg = readAngleDegrees();
     // float speedDeg = readAngularSpeed();
-    displacementDeg = getTotalDisplacementDegrees(); 
+    // displacementDeg = getTotalDisplacementDegrees(); 
 
     // // ————— 5) Mark end of execution and accumulate for average print
     // uint32_t end_us     = execTimer.read_us();
