@@ -34,11 +34,11 @@ import serial
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
-MOTOR_ID_SPEED = 11  # expects cm/s
-MOTOR_ID_PWM   = 10  # expects duty cycle in [0,1]
+MOTOR_ID_SPEED = 7  # expects cm/s
+MOTOR_ID_PWM   = 7  # expects duty cycle in [0,1]
 
-PWM_MIN = 0.065
-PWM_MAX = 0.11
+PWM_MIN = -0.3
+PWM_MAX = 0.3
 
 BAND_TOL = 0.15  # ±15 % band for delay detection
 HOLD_S   = 0.5   # must remain inside band ≥ 0.5 s
@@ -115,8 +115,7 @@ def run_test(port: str,
         raise
     finally:
         try:
-            pass
-            # ser.write(build_cmd(motor_id, 0.0, 0.0))
+            ser.write(build_cmd(motor_id, 0.0, 0.0))
         except Exception:
             pass
         ser.close()
@@ -210,12 +209,9 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Encoder constant‑command test with optional safe PWM mode and displacement logging.")
-    ap.add_argument("--cmd",  type=float, default=0, help="Commanded speed [cm/s]; ignored if --pwm provided.")
-    # ap.add_argument("--pwm",  type=float, default=0.0685, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
-    # ap.add_argument("--pwm_steer", type=float, default=0.0645, help="Steering angle [deg]")
-    ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
+    ap.add_argument("--cmd",  type=float, default=20, help="Commanded speed [cm/s]; ignored if --pwm provided.")
+    ap.add_argument("--pwm",  type=float, default=-0.0, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--pwm_steer", type=float, default=0.09426, help="Steering angle [deg]")
     ap.add_argument("--dur",   type=float, default=2, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
@@ -230,7 +226,7 @@ def main() -> None:
 
     motor_id = MOTOR_ID_PWM if is_pwm else MOTOR_ID_SPEED
     cmd_value = args.pwm if is_pwm else args.cmd
-    steer_value = args.pwm_steer if is_pwm else args.steer
+    steer_value = args.pwm_steer
 
     try:
         times, speeds, total_start, total_end, raw_lines = run_test(

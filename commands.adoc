@@ -3,6 +3,9 @@
 == webm to mp4
 ffmpeg -i ~/Downloads/screen-capture.webm ~/Downloads/output.mp4
 
+== mp4 to gif
+ffmpeg -i ~/Downloads/output.mp4 -vf "fps=20,scale=iw:ih:flags=lanczos" -c:v gif ~/Downloads/output.gif
+
 == disable screen inversion when connected to realsense
 ```bash
 gsettings set org.gnome.settings-daemon.plugins.orientation active false
