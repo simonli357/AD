@@ -330,8 +330,8 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
-    // Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
-    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
+    // Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
@@ -513,7 +513,12 @@ void Utility::stop_car() {
 void Utility::publish_odom() {
     {
         filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
-        update_states_rk4(filtered_encoder_speed, steer_command);
+        // filtered_encoder_speed = filtered_encoder_speed / cos(steer_command * M_PI / 180);
+        double speed = filtered_encoder_speed;
+        if (!Tunable::use_encoder) {
+            speed = velocity_command;
+        }
+        update_states_rk4(speed, steer_command);
         {
             odomX += dx;
             odomY += dy;

@@ -395,7 +395,11 @@ public:
 
         double latency = (ros::Time::now() - object_detection_time).toSec();
         // P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
-        P_v[0] -= latency * filtered_encoder_speed;
+        double speed = filtered_encoder_speed;
+        if (!Tunable::use_encoder) {
+            speed = velocity_command;
+        }
+        P_v[0] -= latency * speed;
         P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
         P_v[1] += sign_lat_offset;
         static Eigen::Vector2d P_v_2d;
