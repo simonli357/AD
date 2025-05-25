@@ -48,9 +48,7 @@ RAMP_SKIP_START = 1.0
 
 def build_cmd(motor_id: int, value: float, angle_deg: float) -> bytes:
     """Return the ASCII command understood by the motor controller."""
-    return f"#{motor_id}:{value:.4f}:{angle_deg:.2f};;\r\n".encode()
-    # return f"#{1}:{-0.0:.4f};;\r\n".encode()
-    # return f"#{7}:{-0.0:.4f}:{0.0:.2f};;\r\n".encode()
+    return f"#{motor_id}:{value:.5f}:{angle_deg:.5f};;\r\n".encode()
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -110,13 +108,13 @@ def run_test(port: str,
                 sys.stdout.flush()
     except KeyboardInterrupt:
         print("\n⚙️  Ctrl‑C — stopping motor immediately.")
-        ser.write(build_cmd(motor_id, 0.0, 0.0))
+        ser.write(build_cmd(motor_id, 0.0, steer))
         ser.close()
         raise
     finally:
         try:
+            ser.write(build_cmd(motor_id, 0.0, steer))
             pass
-            # ser.write(build_cmd(motor_id, 0.0, 0.0))
         except Exception:
             pass
         ser.close()
@@ -210,13 +208,13 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Encoder constant‑command test with optional safe PWM mode and displacement logging.")
-    ap.add_argument("--cmd",  type=float, default=0, help="Commanded speed [cm/s]; ignored if --pwm provided.")
-    # ap.add_argument("--pwm",  type=float, default=0.0685, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
-    ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--cmd",  type=float, default=30, help="Commanded speed [cm/s]; ignored if --pwm provided.")
+    # ap.add_argument("--pwm",  type=float, default=-1, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
+    ap.add_argument("--pwm",  type=float, default=0.0675, help=f"Duty cycle (0‑1). Valid range {PWM_MIN}-{PWM_MAX}. Use -1 to disable PWM mode.")
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
-    # ap.add_argument("--pwm_steer", type=float, default=0.0645, help="Steering angle [deg]")
-    ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
-    ap.add_argument("--dur",   type=float, default=2, help="Duration [s]")
+    # ap.add_argument("--pwm_steer", type=float, default=-1, help="Steering angle [deg]")
+    ap.add_argument("--pwm_steer", type=float, default=0.040, help="Steering angle [deg]")
+    ap.add_argument("--dur",   type=float, default=60, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)
