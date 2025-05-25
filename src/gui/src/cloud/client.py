@@ -1,37 +1,47 @@
-import socket
+import subprocess
 import psutil
+import socket
 import time
 import requests
+import sys
 
-def has_internet_connection(host="8.8.8.8", port=53, timeout=1):
+def has_internet_connection_ping(host="8.8.8.8", count=1, timeout=2):
     try:
-        socket.setdefaulttimeout(timeout)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((host, port))
-        return True
-    except socket.error:
+        result = subprocess.run(
+            ["ping", "-c", str(count), "-W", str(timeout), host],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return result.returncode == 0
+    except Exception:
         return False
 
-def get_active_ipv4_interface():
-    for interface, addrs in psutil.net_if_addrs().items():
-        for addr in addrs:
-            if addr.family == socket.AF_INET and not addr.address.startswith("127."):
-                stats = psutil.net_if_stats().get(interface)
-                if stats and stats.isup:
-                    return interface, addr.address
-    return None, None
+def get_ipv4_from_interface(interface="wlan0"):
+    addrs = psutil.net_if_addrs().get(interface, [])
+    for addr in addrs:
+        if addr.family == socket.AF_INET and not addr.address.startswith("127."):
+            return addr.address
+    return None
 
-def wait_for_active_connection(poll_interval=2):
+def wait_for_connection_and_ip(interface="wlan0", poll_interval=2):
+    print("Waiting for internet connection and valid IP on interface:", interface)
     while True:
-        if has_internet_connection():
-            iface, ip = get_active_ipv4_interface()
-            if iface and ip:
-                return iface, ip
+        connected = has_internet_connection_ping()
+        ip = get_ipv4_from_interface(interface)
+        print(f"[Debug] Ping: {connected}, IP: {ip}")
+        if connected and ip:
+            return ip
         time.sleep(poll_interval)
 
-def post_ip_to_worker():
-    iface, ip = wait_for_active_connection()
-    requests.post("https://ip-broadcaster-worker.yu-qing-liu.workers.dev", data=ip)
+def post_ip_to_worker(ip):
+    try:
+        response = requests.post("https://ip-broadcaster-worker.yu-qing-liu.workers.dev", data=ip)
+        response.raise_for_status()
+        print(f"Posted IP {ip} successfully.")
+    except Exception as e:
+        print(f"Failed to post IP: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
-    post_ip_to_worker()
+    ip = wait_for_connection_and_ip("wlan0")
+    post_ip_to_worker(ip)
+
