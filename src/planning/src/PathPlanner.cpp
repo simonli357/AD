@@ -58,7 +58,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	path.push_back(first);
     precompute_path();
     construct_path(use_gps);
-    if (name != "default") {
+    if (use_gps) {
         track.remove_vertex(start);
     }
 }
