@@ -156,10 +156,7 @@ namespace drivers{
 
         // if(f_angle > 20.8) f_angle = 20.8; 
         // if(f_angle < -21.8) f_angle = -21.8;
-        if (std::abs(f_angle) < 0.1) {
-            f_angle = 0.0f; // Set to zero if very small
-            dutyCycle = zero_default;
-        }
+
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle > 0)
         {

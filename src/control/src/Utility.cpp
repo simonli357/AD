@@ -513,7 +513,10 @@ void Utility::stop_car() {
 void Utility::publish_odom() {
     {
         filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
-        // filtered_encoder_speed = filtered_encoder_speed / cos(steer_command * M_PI / 180);
+        double delta_rad = steer_command * M_PI / 180.0;
+        double beta = 0.0;
+        if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
+        filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
         double speed = filtered_encoder_speed;
         if (!Tunable::use_encoder) {
             speed = velocity_command;
@@ -640,8 +643,8 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     dheight = speed * dt * odomRatio * sin(pitch);
     double v_eff = speed * cos(pitch);
 
-    double delta_rad = -steering_angle * M_PI / 180.0;
     double beta = 0;
+    double delta_rad = steering_angle * M_PI / 180.0;
     if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
 
     double magnitude = v_eff * dt * odomRatio;
@@ -685,15 +688,16 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     {
         steer_command = steering_angle;
         velocity_command = velocity;
+        std::cout << "steer: " << steering_angle << ", vel_command: " << velocity_command << ", filtered_encoder: " << filtered_encoder_speed << ", yaw: " << Sensing::yaw*180/M_PI << ", use_encoder: " << Tunable::use_encoder << std::endl;
         add_velocity_command(velocity_command);
     }
     // apply offset correction
-    if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
-        steering_angle += steer_offset * std::abs(steering_angle) / steering_angle;
-    }
-    if(std::abs(velocity) > 0.1) {
-        velocity += speed_offset * std::abs(velocity) / velocity;
-    }
+    // if(std::abs(steering_angle) > steer_offset_minimum && std::abs(steering_angle) < steer_offset_maximum) {
+    //     steering_angle += steer_offset * std::abs(steering_angle) / steering_angle;
+    // }
+    // if(std::abs(velocity) > 0.1) {
+    //     velocity += speed_offset * std::abs(velocity) / velocity;
+    // }
     // std::cout << "after: " << steering_angle << ", " << velocity << std::endl;
 
     float vel = velocity;
