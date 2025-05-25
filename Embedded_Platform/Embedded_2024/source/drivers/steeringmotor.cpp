@@ -158,8 +158,8 @@ namespace drivers{
         // Zero default when returning from a right turn
         ZD_right = 0.0755;
 
-        if(f_angle > 20.8) f_angle = 20.8; 
-        if(f_angle < -21.8) f_angle = -21.8;
+        // if(f_angle > 20.8) f_angle = 20.8; 
+        // if(f_angle < -21.8) f_angle = -21.8;
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle > 0)
         {
