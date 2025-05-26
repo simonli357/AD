@@ -1473,16 +1473,16 @@ void StateMachine::run() {
             continue;
         } else if (state == STATE::KEYBOARD_CONTROL) {
             /* ---- Tuning constants ---- */
-            const double ACCELERATION        = 0.05;   // throttle increment per tick
-            const double BRAKE_FORCE         = 0.12;   // stronger than throttle so stopping is faster
-            const double COAST_DECAY         = 0.01;   // natural slowdown when neither W nor S pressed
+            const double ACCELERATION        = 0.015;
+            const double BRAKE_FORCE         = 0.04;
+            const double COAST_DECAY         = 0.007;
 
-            const double MAX_FWD_SPEED       =  1.45;  // m/s forward  (≈ 5 km/h)
-            const double MAX_REV_SPEED       = -0.45;  // m/s reverse  (≈ 1.6 km/h)
+            const double MAX_FWD_SPEED       =  0.6;   // scaled for 1:10
+            const double MAX_REV_SPEED       = -0.25;  // safe reverse
 
-            const double STEERING_INCREMENT  = 1.0;    // degrees per tick
-            const double HARD_MAX_STEERING   = 25.0;   // mechanical limit
-            const double STEERING_RETURN     = 1.25;   // centering rate when A/D released
+            const double STEERING_INCREMENT  = 1.0;
+            const double HARD_MAX_STEERING   = 22.0;
+            const double STEERING_RETURN     = 1.0;
 
             /* ---- Runtime state ---- */
             double velocity = 0.0;             // signed: +fwd, −rev
