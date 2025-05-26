@@ -248,6 +248,300 @@ class LaneDetector {
 	VectorXd right_fit = VectorXd(4);
 	cv::Mat histogram;
 
+	struct StopLine
+	{
+			bool   found;        // did we detect a stop‐line?
+			float  angle;        // radians relative to image X‐axis
+			float  confidence;   // 0…1, higher means more pixels / longer line
+			cv::Point p1, p2;    // endpoints of the best line segment
+	};
+	StopLine detectStopLine(
+			const cv::Mat& binary,
+			float rho           = 1.0f,
+			float theta         = CV_PI/180.0f,
+			int   houghThresh   = 50,
+			float minLen        = 50.0f,
+			float maxGap        = 10.0f,
+			float maxTiltRad    = CV_PI/6.0f  // ±30°
+	)
+	{
+			CV_Assert(binary.type() == CV_8UC1);
+
+			// 1) Morphological closing to fill small gaps
+			cv::Mat closed;
+			cv::Mat kern = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,3));
+			cv::morphologyEx(binary, closed, cv::MORPH_CLOSE, kern);
+
+			// 2) Probabilistic Hough
+			std::vector<cv::Vec4i> lines;
+			cv::HoughLinesP(closed, lines, rho, theta, houghThresh, minLen, maxGap);
+
+			// 3) Filter by tilt and pick the longest
+			float bestLen   = 0;
+			cv::Vec4i bestL = {0,0,0,0};
+			float bestAng   = 0;
+			int   countGood = 0;
+
+			for (auto &l : lines)
+			{
+					float dx = float(l[2] - l[0]);
+					float dy = float(l[3] - l[1]);
+					float ang = std::atan2(dy, dx);       // radians
+					float absAng = std::fabs(ang);
+					// wrap-around: allow near π too
+					if (absAng > CV_PI/2)  
+							absAng = std::fabs(absAng - CV_PI);
+
+					if (absAng <= maxTiltRad)
+					{
+							float length = std::hypot(dx, dy);
+							++countGood;
+							if (length > bestLen)
+							{
+									bestLen = length;
+									bestL   = l;
+									bestAng = ang;
+							}
+					}
+			}
+
+			StopLine result;
+			if (bestLen > 0 && countGood > 0)
+			{
+					result.found      = true;
+					result.angle      = bestAng;
+					result.p1         = cv::Point(bestL[0], bestL[1]);
+					result.p2         = cv::Point(bestL[2], bestL[3]);
+					// naive confidence: fraction of image width covered by the line
+					result.confidence = std::min(1.0f, bestLen / float(binary.cols));
+			}
+			else
+			{
+					result.found      = false;
+					result.angle      = 0;
+					result.confidence = 0;
+					result.p1 = result.p2 = cv::Point(-1,-1);
+			}
+
+			return result;
+	}
+	struct StopLineOut
+	{
+			bool  found         = false;   ///< true if everything passed
+			float dist_m        = -1.f;    ///< front‑bumper → stop‑line (metres)
+			float angle_deg     = 0.f;     ///< yaw   (0° = perfect horizontal)
+			float rmsErr_px     = 0.f;     ///< straightness metric
+			float confidence    = 0.f;     ///< 0‑to‑1 quality score
+			cv::Vec4f segment   = {0,0,0,0};///< (x1,y1,x2,y2)               (optional)
+	};
+	StopLineOut detectStopLineColumns(const cv::Mat& bin,
+                                         int   laneWidthPx,
+                                         float meterPerPixelY,
+                                         int   colStep      = 4,   // probe every 4 px
+                                         int   yTol         = 5)   // ± px around r̂top
+	{
+			CV_Assert(bin.type() == CV_8UC1);
+
+			const int rows = bin.rows, cols = bin.cols;
+
+			// ------------------------------------------------ 1. histogram to get r̂top
+			cv::Mat rowSum;
+			cv::reduce(bin, rowSum, 1, cv::REDUCE_SUM, CV_32S);
+
+			const int minRunPx = int(laneWidthPx * 0.4f);   // contiguous paint length ≥ 40 % lane
+			int rHat = -1;
+
+			auto longestRun = [&](const uchar* row)->int
+			{
+					int best = 0, cur = 0;
+					for (int c = 0; c < cols; ++c)
+							if (row[c]) { best = std::max(best, ++cur); }
+							else        { cur = 0; }
+					return best;
+			};
+
+			for (int r = rows - 1; r >= 0; --r)
+					if (longestRun(bin.ptr<uchar>(r)) >= minRunPx)
+					{ rHat = r; break; }
+
+			StopLineOut out;
+			if (rHat == -1) return out;               // nothing wide enough
+
+			// ------------------------------------------------ 2. column probes → point cloud
+			std::vector<cv::Point2f> pts; pts.reserve(cols / colStep);
+
+			const int yMin = std::max(0,  rHat - yTol);
+			const int yMax = std::min(rows - 1, rHat + yTol);
+
+			for (int c = 0; c < cols; c += colStep)
+			{
+					for (int r = yMin; r <= yMax; ++r)    // scan downward only inside the band
+							if (bin.at<uchar>(r, c))
+							{
+									pts.emplace_back(float(c), float(r));
+									break;                        // next column
+							}
+			}
+			if (pts.size() < 4) return out;           // not enough evidence
+
+			// ------------------------------------------------ 3. RANSAC line fit (robust to strays)
+			cv::Vec4f line;
+			cv::fitLine(pts, line, cv::DIST_L2, 0, 0.01, 0.01); // (vx,vy,x0,y0)
+
+			const float vx = line[0], vy = line[1];
+			out.angle_deg  = -std::atan2(vy, vx) * 180.f / CV_PI;   // flip Y‑axis
+
+			// end‑points (project extrema) – for debugging overlay
+			float minProj =  1e6f, maxProj = -1e6f;
+			for (auto& p : pts)
+			{
+					float proj = (p.x - line[2])*vx + (p.y - line[3])*vy;
+					minProj = std::min(minProj, proj);
+					maxProj = std::max(maxProj, proj);
+			}
+			cv::Point2f p1(line[2] + vx*minProj, line[3] + vy*minProj);
+			cv::Point2f p2(line[2] + vx*maxProj, line[3] + vy*maxProj);
+			out.segment = {p1.x, p1.y, p2.x, p2.y};
+
+			// ------------------------------------------------ 4. distance (same as before)
+			float pixelDist = float(rows - rHat);
+			out.dist_m      = pixelDist * meterPerPixelY + ipm_camera.near_m;
+
+			// ------------------------------------------------ 5. straightness & confidence
+			double sumSq = 0.0;
+			for (auto& p : pts)
+					sumSq += std::pow((p.x - line[2])*vy - (p.y - line[3])*vx, 2);
+			out.rmsErr_px = std::sqrt(sumSq / pts.size());
+
+			const float errOk = std::exp(-out.rmsErr_px / 4.f);
+			const float angOk = std::exp(-std::pow(out.angle_deg,2) / 900.f);
+			const float ptsOk = std::min(1.f, float(pts.size()) / 30.f);
+			out.confidence    = 0.4f*ptsOk + 0.4f*errOk + 0.2f*angOk;
+			out.found         = out.confidence > 0.35f;
+			return out;
+	}
+	StopLineOut findStopLineEx(const cv::Mat& image,
+                                  int   laneWidthPx,
+                                  float meterPerPixelY)
+	{
+			CV_Assert(image.type() == CV_8UC1);
+
+			const int rows = image.rows;
+			const int cols = image.cols;
+
+			// ------------------------------------------------------------------ 1. Row histogram
+			cv::Mat rowSum;                                   // CV_32S, rows×1
+			cv::reduce(image, rowSum, 1, cv::REDUCE_SUM, CV_32S);
+
+			const int minWhite = int(laneWidthPx * 0.75f);    // = threshold [px]
+
+			// ------------------------------------------------------------------ 2. Locate band (contiguous wide rows)
+			int bandBottom = -1, bandTop = -1;
+
+			const int minRun = int(laneWidthPx * 0.40f);   // 40 % lane width
+
+			auto longestRun = [&](const uchar* row, int cols)->int
+			{
+					int best = 0, cur = 0;
+					for (int c = 0; c < cols; ++c)
+					{
+							if (row[c]) { ++cur; best = std::max(best, cur); }
+							else        { cur = 0; }
+					}
+					return best;                           // length in px
+			};
+			for (int r = rows-1; r >= 0; --r)
+			{
+					if (longestRun(image.ptr<uchar>(r), cols) >= minRun)
+					{
+							if (bandBottom == -1) bandBottom = r;
+							bandTop = r;
+					}
+					else if (bandBottom != -1)
+							break;
+			}
+
+			StopLineOut out;
+			if (bandBottom == -1)                // nothing wide enough
+					return out;
+
+			// ------------------------------------------------------------------ 3. Distance (your old maths)
+			const int bandCentre = (bandTop + bandBottom) / 2;
+			float pixelDist = float(rows - bandCentre);       // camera → line [px]
+			out.dist_m      = pixelDist * meterPerPixelY + ipm_camera.near_m;
+
+			// ------------------------------------------------------------------ 4. Row‑centroid cloud
+			std::vector<cv::Point2f> pts;
+			pts.reserve(bandBottom - bandTop + 1);
+
+			for (int r = bandTop; r <= bandBottom; ++r)
+			{
+					const uchar* row = image.ptr<uchar>(r);
+
+					int bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+					for (int c = 0; c <= cols; ++c)                  // note: <= to flush
+					{
+							bool white = (c < cols && row[c]);
+							if (white)
+							{
+									if (curLen == 0) curStart = c;
+									++curLen;
+							}
+							else if (curLen)
+							{
+									if (curLen > bestLen) { bestLen = curLen; bestStart = curStart; }
+									curLen = 0;
+							}
+					}
+					if (bestLen >= minRun)
+					{
+							float cx = bestStart + bestLen * 0.5f;
+							pts.emplace_back(cx, float(r));
+					}
+			}
+
+			if (pts.size() < 2)                 // should never happen, but be safe
+					return out;
+
+			// ------------------------------------------------------------------ 5. Fit a line through centroids
+			cv::Vec4f ln;
+			cv::fitLine(pts, ln, cv::DIST_L2, 0, 0.01, 0.01);   // (vx,vy,x0,y0)
+
+			const float vx = ln[0], vy = ln[1];
+			out.angle_deg  = std::atan2(vy, vx) * 180.f / CV_PI;
+
+			// ------------------------------------------------------------------ 6. RMS error (straightness)
+			double sumSq = 0.0;
+			for (auto& p : pts)
+					sumSq += std::pow( (p.x - ln[2])*vy - (p.y - ln[3])*vx, 2 );
+
+			out.rmsErr_px = std::sqrt(sumSq / pts.size());
+
+			// ------------------------------------------------------------------ 7. Confidence
+			const float lenPx     = float(bandBottom - bandTop + 1);   // vertical span
+			const float errOk     = std::exp(-out.rmsErr_px / 4.f);    // 1 → 0.6 @ 2.8 px
+			const float angOk     = std::exp(-std::pow(out.angle_deg, 2) / 900.f);
+			const float lenOk     = std::min(1.f, lenPx / 6.f);        // good if ≥6 rows
+
+			out.confidence = 0.4f*lenOk + 0.4f*errOk + 0.2f*angOk;
+			out.found      = out.confidence > 0.35f;
+
+			// ------------------------------------------------------------------ 8. Optional: segment for drawing
+			// project extrema of pts onto the line to get two endpoints
+			float minProj =  1e6f, maxProj = -1e6f;
+			for (auto& p : pts)
+			{
+					float proj = (p.x - ln[2])*vx + (p.y - ln[3])*vy;
+					minProj = std::min(minProj, proj);
+					maxProj = std::max(maxProj, proj);
+			}
+			cv::Point2f p1(ln[2] + vx*minProj, ln[3] + vy*minProj);
+			cv::Point2f p2(ln[2] + vx*maxProj, ln[3] + vy*maxProj);
+			out.segment = { p1.x, p1.y, p2.x, p2.y };
+
+			return out;
+	}
+
 	void publish_lane(const cv::Mat &image) {
 		if (image.empty()) {
 			ROS_WARN("empty image received in lane detector");
@@ -259,15 +553,52 @@ class LaneDetector {
 			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return;
 			stopline_dist = find_stopline(ipm_processed);
 
+			ipm_camera.getIPM(image, ipm_color);
+			cv::imshow("ipm color", ipm_color);
+			
 			// cv::imshow("processed image", processed_image);
 			// cv::imshow("processed ipm", ipm_processed);
 			// cv::waitKey(1);
 			// return;
 
+			auto start1 = high_resolution_clock::now();
+			StopLineOut sl = findStopLineEx(ipm_processed,
+                                LANE_WIDTH_PIXEL,
+                                METER_PER_PIXEL_Y);
+			auto stop1 = high_resolution_clock::now();
+			// StopLineOut sl = detectStopLineColumns(ipm_processed,
+			// 																				LANE_WIDTH_PIXEL,
+			// 																				METER_PER_PIXEL_Y);
+			// if (sl.found && sl.confidence > 0.01f)
+			// {
+			// 		cv::Mat dbg; cv::cvtColor(ipm_processed, dbg, cv::COLOR_GRAY2BGR);
+			// 		if (std::abs(sl.angle_deg) > 85) {
+			// 			std::cout << "Stop‑line: distance "
+			// 								<< sl.dist_m << " m, yaw "
+			// 								<< sl.angle_deg << " °, straightness "
+			// 								<< sl.rmsErr_px << " px"
+			// 								<< ", time: " << duration_cast<microseconds>(stop1 - start1).count()
+			// 								<< " μs\n";
+						
+			// 			cv::line(dbg,
+			// 							{ int(sl.segment[0]), int(sl.segment[1]) },
+			// 							{ int(sl.segment[2]), int(sl.segment[3]) },
+			// 							cv::Scalar(0,0,255), 2);
+			// 			cv::putText(dbg, "Stop-line",
+			// 									{ int(sl.segment[0]), int(sl.segment[1]) - 8 },
+			// 									cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,255), 1);
+			// 		}
+			// 		cv::imshow("Stop‑line", dbg);
+			// 		cv::waitKey(1);
+			// } else {
+			// 		std::cout << "No stop‑line found, confidence "
+			// 							<< sl.confidence << "\n";
+			// }
+
 			std_msgs::Float32 center_offset_msg;
 			center_offset_msg.data = find_lanes(ipm_processed);
 			center_offset_pub.publish(center_offset_msg);
-			return;
+			// return;
 			if(!line_fit(ipm_processed)) return;
 
 			auto wpts = get_waypoints(left_fit, right_fit, 40, 0.032);
@@ -309,7 +640,7 @@ class LaneDetector {
 				if (!ipm_camera.getIPM(image, ipm_color))
 					return;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
-				cv::imshow("Binary Image", gyu_img);
+				cv::imshow("viz3", gyu_img);
 				cv::waitKey(1);
 			}
 		} else {
@@ -347,29 +678,33 @@ class LaneDetector {
 	std::vector<float> get_waypoints(const VectorXd &left_fit, const VectorXd &right_fit, int num_waypoints, double density) {
 		std::vector<cv::Point2f> world_waypoints;
 		world_waypoints.reserve(num_waypoints);
-		std::cout << "get_waypoints" << std::endl;
+		// std::cout << "get_waypoints" << std::endl;
 
-		// add points from car center to first point seen in the image
-		double current_y_meter = pixel_to_meter_y_intercept; // where the image starts
-		double y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
+		// double current_y_meter = pixel_to_meter_y_intercept; // where the image starts
+		double current_y_meter = 0;
+		double y_pixel = IPM_HEIGHT - meter_to_pixel_y(current_y_meter);
 		double left_x = evaluate_poly(y_pixel, left_fit);
 		double right_x = evaluate_poly(y_pixel, right_fit);
 		double center_x = 0.5 * (left_x + right_x);
 		double world_x = (320 - center_x) * METER_PER_PIXEL_X;
-		double car_center_to_first_waypoint = current_y_meter + VehicleConstants::REALSENSE_TF[0];
-		int num_unseen_waypoints = car_center_to_first_waypoint / density;
-		double slope = world_x / (pixel_to_meter_y_intercept + VehicleConstants::REALSENSE_TF[0]);
-		for (int i = 0; i < num_unseen_waypoints; ++i) {
-    	float y = -VehicleConstants::REALSENSE_TF[0] + i * density;
-			float x = slope * i * density;
-			world_waypoints.push_back(cv::Point2f(y, x));
-		}
+
+		// double car_center_to_first_waypoint = current_y_meter + VehicleConstants::REALSENSE_TF[0];
+		// int num_unseen_waypoints = car_center_to_first_waypoint / density;
+		// add points from car center to first point seen in the image
+		// double slope = world_x / (pixel_to_meter_y_intercept + VehicleConstants::REALSENSE_TF[0]);
+		// for (int i = 0; i < num_unseen_waypoints; ++i) {
+    // 	float y = -VehicleConstants::REALSENSE_TF[0] + i * density;
+		// 	float x = slope * i * density;
+		// 	world_waypoints.push_back(cv::Point2f(y, x));
+		// }
 
 		// add points from first point seen in the image to the last point seen in the image
-		current_y_meter = pixel_to_meter_y_intercept;
-		std::cout << "done adding unseen waypoints, num_unseen_waypoints: " << num_unseen_waypoints << ", current_y_meter: " << current_y_meter << std::endl;
-		for (int i = 0; i < num_waypoints - num_unseen_waypoints; ++i) {
-			y_pixel = IMG_HEIGHT - meter_to_pixel_y(current_y_meter + 0.1);
+		// current_y_meter = pixel_to_meter_y_intercept;
+		current_y_meter = 0.0;
+		// std::cout << "done adding unseen waypoints, num_unseen_waypoints: " << num_unseen_waypoints << ", current_y_meter: " << current_y_meter << std::endl;
+		// for (int i = 0; i < num_waypoints - num_unseen_waypoints; ++i) {
+		for (int i = 0; i < num_waypoints; ++i) {
+			y_pixel = IPM_HEIGHT - meter_to_pixel_y(current_y_meter);
 
 			left_x = evaluate_poly(y_pixel, left_fit);
 			right_x = evaluate_poly(y_pixel, right_fit);
@@ -392,7 +727,7 @@ class LaneDetector {
 			current_y_meter += dy;
 		}
 
-		std::cout << "done adding seen waypoints" << std::endl;
+		// std::cout << "done adding seen waypoints" << std::endl;
 
 		// add VehicleConstants::REALSENSE_TF[0] to x values so that origin is center of car instead of camera
 		for (auto &waypoint : world_waypoints) {
@@ -451,15 +786,15 @@ class LaneDetector {
 			}
 			// stopline_dist = (img_height - stop_loc) * METER_PER_PIXEL_Y;
 			double pixel_value = (img_height - stop_loc);
-			stopline_dist = pixel_to_meter_y(pixel_value);
+			stopline_dist = pixel_to_meter_y(pixel_value) + ipm_camera.near_m; // distance from line to car center
 			stopline_dist_to_front = stopline_dist;
-			if (real) {
-				stopline_dist_to_front += VehicleConstants::REALSENSE_TF_REAL[0];
-			} else {
-				stopline_dist_to_front += VehicleConstants::REALSENSE_TF[0];
-			}
+			// if (real) {
+			// 	stopline_dist_to_front += VehicleConstants::REALSENSE_TF_REAL[0];
+			// } else {
+			// 	stopline_dist_to_front += VehicleConstants::REALSENSE_TF[0];
+			// }
 			stopline_dist_to_front -= VehicleConstants::CAR_LENGTH / 2;
-			if (stopline_dist_to_front > 0.5) {
+			if (stopline_dist_to_front > 0.0) {
 				stopline = true;
 			} else {
 				stopline = false;
@@ -1006,7 +1341,7 @@ class LaneDetector {
 
 		// // Draw stop line
 		if (stopline_dist > 0) {
-			double stopline_y = img_height - meter_to_pixel_y(stopline_dist);
+			double stopline_y = img_height - meter_to_pixel_y(stopline_dist - ipm_camera.near_m);
 			cv::line(result, cv::Point(0, stopline_y), cv::Point(img_width, stopline_y), cv::Scalar(0, 255, 0), 5);
 		}
 		if (IPM) {

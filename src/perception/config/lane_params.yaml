@@ -1,7 +1,7 @@
 resolution: 300
 width_m: 0.8
 near_m: 0.48 # relative to car
-far_m: 2.0
+far_m: 1.5
 
 window_min_pixels: 10
 window_margin_multiplier: 4

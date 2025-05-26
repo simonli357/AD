@@ -1472,91 +1472,132 @@ void StateMachine::run() {
             utils.stop_car();
             continue;
         } else if (state == STATE::KEYBOARD_CONTROL) {
-            // Constants for steering and speed
-            const double STEERING_INCREMENT = 1;  
-            const double VELOCITY_INCREMENT = 0.05;   
-            const double MAX_VELOCITY = 1.45;     
-            const double MIN_VELOCITY = -0.45;    
-            const double HARD_MAX_STEERING = 25.0;
-            const double STEERING_DECAY = 1.25;
-            const double VELOCITY_DECAY = 0; //0.0025;
-            double velocity = 0.0;
-            double steering_angle = 0.0;
+            /* ---- Tuning constants ---- */
+            const double ACCELERATION        = 0.05;   // throttle increment per tick
+            const double BRAKE_FORCE         = 0.12;   // stronger than throttle so stopping is faster
+            const double COAST_DECAY         = 0.01;   // natural slowdown when neither W nor S pressed
 
-            // Initialize ncurses mode
+            const double MAX_FWD_SPEED       =  1.45;  // m/s forward  (≈ 5 km/h)
+            const double MAX_REV_SPEED       = -0.45;  // m/s reverse  (≈ 1.6 km/h)
+
+            const double STEERING_INCREMENT  = 1.0;    // degrees per tick
+            const double HARD_MAX_STEERING   = 25.0;   // mechanical limit
+            const double STEERING_RETURN     = 1.25;   // centering rate when A/D released
+
+            /* ---- Runtime state ---- */
+            double velocity = 0.0;             // signed: +fwd, −rev
+            double steering_angle = 0.0;       // degrees (L‑ is left, + is right)
+            bool   reverse_gear = false;       // false = forward, true = reverse
+
+            /* ---- ncurses setup ---- */
             initscr();
             cbreak();
             noecho();
-            keypad(stdscr, TRUE);  // Enable keyboard mapping
-            timeout(100);          // Non-blocking delay to allow continuous updates
+            keypad(stdscr, TRUE);
+            timeout(50);                       // 20 Hz update loop
 
-            // Information display
-            printw("Use 'w' and 's' to increase or decrease speed.\n");
-            printw("Use 'a' and 'd' to control steering.\n");
-            printw("'q' to quit.\n");
+            printw("\nControls:\n");
+            printw("  W – Accelerate     |  S – Brake\n");
+            printw("  R – Toggle Gear    |  SPACE – Hand‑brake\n");
+            printw("  A/D – Steer        |  Q – Quit\n\n");
 
             int ch;
             bool running = true;
-
             while (running) {
+                /* ---- read input ---- */
                 ch = getch();
-                
                 switch (ch) {
+                    /* ----- Throttle / Brake ----- */
                     case 'w':
-                        velocity += VELOCITY_INCREMENT;
-                        if (velocity > MAX_VELOCITY) velocity = MAX_VELOCITY;
+                        if (!reverse_gear) {
+                            velocity += ACCELERATION;
+                            if (velocity > MAX_FWD_SPEED) velocity = MAX_FWD_SPEED;
+                        } else {
+                            velocity -= ACCELERATION;   // throttle in reverse
+                            if (velocity < MAX_REV_SPEED) velocity = MAX_REV_SPEED;
+                        }
                         break;
-                    case 's':
-                        velocity -= VELOCITY_INCREMENT;
-                        if (velocity < MIN_VELOCITY) velocity = MIN_VELOCITY;
+
+                    case 's':   // brake – approach 0, never cross it
+                        if (velocity > 0) {
+                            velocity -= BRAKE_FORCE;
+                            if (velocity < 0) velocity = 0;
+                        } else if (velocity < 0) {
+                            velocity += BRAKE_FORCE;
+                            if (velocity > 0) velocity = 0;
+                        }
                         break;
+
+                    case ' ':   // SPACE – hand‑brake / emergency stop
+                        velocity = 0;
+                        break;
+
+                    /* ----- Gear toggle ----- */
+                    case 'r':
+                        reverse_gear = !reverse_gear;   // flip gear
+                        // keep current speed sign consistent with new gear
+                        if (velocity > 0 && reverse_gear)  velocity = -velocity;
+                        if (velocity < 0 && !reverse_gear) velocity = -velocity;
+                        break;
+
+                    /* ----- Steering ----- */
                     case 'a':
                         steering_angle -= STEERING_INCREMENT;
                         if (steering_angle < -HARD_MAX_STEERING) steering_angle = -HARD_MAX_STEERING;
                         break;
+
                     case 'd':
                         steering_angle += STEERING_INCREMENT;
-                        if (steering_angle > HARD_MAX_STEERING) steering_angle = HARD_MAX_STEERING;
+                        if (steering_angle > HARD_MAX_STEERING) steering_angle =  HARD_MAX_STEERING;
                         break;
-                    case 'b':
-                        velocity = 0;
-                        break;
+
+                    /* ----- Quit ----- */
                     case 'q':
                         running = false;
                         break;
+
                     default:
-                        // Gradually return the steering towards zero if no steering keys are pressed
-                        if (steering_angle > 0) {
-                            steering_angle -= STEERING_DECAY;
-                            if (steering_angle < 0) steering_angle = 0;
-                        } else if (steering_angle < 0) {
-                            steering_angle += STEERING_DECAY;
-                            if (steering_angle > 0) steering_angle = 0;
-                        }
-                        if (velocity > 0) {
-                            velocity -= VELOCITY_DECAY;
-                            if (velocity < 0) velocity = 0;
-                        } else if (velocity < 0) {
-                            velocity += VELOCITY_DECAY;
-                            if (velocity > 0) velocity = 0;
-                        }
-                        break;
+                        break; // fall‑through to passive decay below
                 }
 
-                // Clear previous outputs
-                clear();
-                printw("Velocity: %f\n", velocity);
-                printw("Steering angle: %f\n", steering_angle);
-                printw("Press 'q' to quit.");
-                utils.publish_cmd_vel(steering_angle, velocity);
+                /* ---- Passive decay ---- */
+                if (ch != 'w' && ch != 's') {
+                    if (velocity > 0) {
+                        velocity -= COAST_DECAY;
+                        if (velocity < 0) velocity = 0;
+                    } else if (velocity < 0) {
+                        velocity += COAST_DECAY;
+                        if (velocity > 0) velocity = 0;
+                    }
+                }
 
+                if (ch != 'a' && ch != 'd') {
+                    if (steering_angle > 0) {
+                        steering_angle -= STEERING_RETURN;
+                        if (steering_angle < 0) steering_angle = 0;
+                    } else if (steering_angle < 0) {
+                        steering_angle += STEERING_RETURN;
+                        if (steering_angle > 0) steering_angle = 0;
+                    }
+                }
+
+                /* ---- Display ---- */
+                clear();
+                printw("Gear: %s\n", reverse_gear ? "REVERSE" : "FORWARD");
+                printw("Velocity: %.2f m/s\n", velocity);
+                printw("Steering: %.1f°\n", steering_angle);
+                printw("Press 'q' to quit.");
+
+                /* ---- Send command to vehicle ---- */
+                utils.publish_cmd_vel(steering_angle, velocity);
             }
 
-            // Clean up ncurses
+            /* ---- Shutdown ---- */
             endwin();
             utils.stop_car();
             change_state(STATE::INIT);
-        } else if (state == STATE::TESTING) {
+        }
+        else if (state == STATE::TESTING) {
             // lane_based_relocalization();
             int sign_index = utils.object_index(OBJECT::STOPSIGN);
             if (sign_index < 0) {

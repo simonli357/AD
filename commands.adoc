@@ -4,7 +4,8 @@ roslaunch perception cameraNode.launch real:=true realsense:=true lane:=false ip
 roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false lane:=false
 
 == webm to mp4
-ffmpeg -i ~/Downloads/screen-capture.webm ~/Downloads/output.mp4
+input="screen-capture"
+ffmpeg -i ~/Downloads/"$input".webm ~/Downloads/"$input".mp4
 
 == speed up video
 input="output"
