@@ -18,10 +18,10 @@ namespace VehicleConstants {
     static constexpr double WHEELBASE = 0.260;
     // static constexpr double L_R_SIM = 0.130;
     // static constexpr double L_F_SIM = 0.130;
-    static constexpr double L_R_SIM = 0.105;
-    static constexpr double L_F_SIM = 0.155;
-    static constexpr double L_R_REAL = 0.105;
-    static constexpr double L_F_REAL = 0.155;
+    static constexpr double L_R_SIM = 0.108;
+    static constexpr double L_F_SIM = 0.152;
+    static constexpr double L_R_REAL = 0.108;
+    static constexpr double L_F_REAL = 0.152;
 
     static constexpr double CAR_LENGTH = 0.464;
     static constexpr double CAR_WIDTH = 0.1885;
