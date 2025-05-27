@@ -1015,7 +1015,9 @@ class LaneDetector {
 			}
 		}
 
-		cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
+		//DISPLAY
+		// cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
+
 		int window_height = static_cast<int>(binary_warped.rows / n_windows); // Caclulate height of parsing windows
 		static std::vector<cv::Point> nonzero;
 
@@ -1052,9 +1054,9 @@ class LaneDetector {
 				int win_xleft_high = leftx_current + WINDOW_MARGIN;
 				
 				// DISPLAY
-				cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low),
-                  cv::Point(win_xleft_high, win_y_high),
-                  cv::Scalar(0, 255, 0), 2);
+				// cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low),
+        //           cv::Point(win_xleft_high, win_y_high),
+        //           cv::Scalar(0, 255, 0), 2);
 
 				int sum_left = 0;
 				std::vector<int> good_left_inds;
@@ -1074,7 +1076,7 @@ class LaneDetector {
 						num_left_windows++;
 						left_lane_inds.insert(left_lane_inds.end(), good_left_inds.begin(), good_left_inds.end()); // Append all good indices together
 						// DISPLAY
-						cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
+						// cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_left = mean_left- mean_left_prev;
 						mean_left_prev = mean_left;
 						// std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
@@ -1096,9 +1098,9 @@ class LaneDetector {
 				int win_xright_high = rightx_current + WINDOW_MARGIN;
 
 				// DISPLAY
-				cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low),
-									cv::Point(win_xright_high, win_y_high),
-									cv::Scalar(0, 255, 0), 2);  // Green for right lane window
+				// cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low),
+				// 					cv::Point(win_xright_high, win_y_high),
+				// 					cv::Scalar(0, 255, 0), 2);  // Green for right lane window
 
 				int sum_right = 0;
 				std::vector<int> good_right_inds; // x values of pixels within the bounding boxes
@@ -1117,7 +1119,7 @@ class LaneDetector {
 						num_right_windows++;
 						right_lane_inds.insert(right_lane_inds.end(), good_right_inds.begin(), good_right_inds.end()); // Append all good indices together
 						// DISPLAY
-						cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
+						// cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_right = mean_right - mean_right_prev;
 						mean_right_prev = mean_right;
 						// std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
@@ -1133,14 +1135,14 @@ class LaneDetector {
 			}
 		}
 		// DISPLAY
-		for (int i = 0; i < left_lane_inds.size(); ++i) {
-			cv::circle(out_img, cv::Point(nonzerox[left_lane_inds[i]], nonzeroy[left_lane_inds[i]]), 2, cv::Scalar(0, 0, 255), -1);
-		}
-		for (int i = 0; i < right_lane_inds.size(); ++i) {
-			cv::circle(out_img, cv::Point(nonzerox[right_lane_inds[i]], nonzeroy[right_lane_inds[i]]), 2, cv::Scalar(255, 0, 0), -1);
-		}
-		cv::imshow("Detected Pixels", out_img);
-		cv::waitKey(1);
+		// for (int i = 0; i < left_lane_inds.size(); ++i) {
+		// 	cv::circle(out_img, cv::Point(nonzerox[left_lane_inds[i]], nonzeroy[left_lane_inds[i]]), 2, cv::Scalar(0, 0, 255), -1);
+		// }
+		// for (int i = 0; i < right_lane_inds.size(); ++i) {
+		// 	cv::circle(out_img, cv::Point(nonzerox[right_lane_inds[i]], nonzeroy[right_lane_inds[i]]), 2, cv::Scalar(255, 0, 0), -1);
+		// }
+		// cv::imshow("Detected Pixels", out_img);
+		// cv::waitKey(1);
 
 		// std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
 		// Declare vectors to contain the pixel coordinates to fit
