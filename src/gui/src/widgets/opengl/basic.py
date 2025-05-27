@@ -257,3 +257,125 @@ def ripple_model() -> Model:
     u_time = gl.glGetUniformLocation(shader_program, "time")
 
     return Model(vao, quad_vbo, None, 4, shader_program, u_model, u_view, u_proj, None, u_time)
+
+def rect_model() -> Model:
+    shader_program = create_shader_program(shader_path('rect', 'rect.vert'), shader_path('rect', 'rect.frag'))
+
+    vertices = np.array([
+        # Rect Triangle 1
+        -0.04, 0.0, 0.0,
+        -0.04, 1.0, 0.0,
+        0.04, 1.0, 0.0,
+        # Rect Triangle 2
+        0.04, 0.0, 0.0,
+        0.04, 1.0, 0.0,
+        -0.04, 0.0, 0.0,
+    ], dtype=np.float32)
+
+    rect_vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(rect_vao)
+
+    rect_vbo = vbo.VBO(vertices)
+    rect_vbo.bind()
+
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+
+    gl.glBindVertexArray(0)
+    rect_vbo.unbind()
+
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+
+    return Model(rect_vao, rect_vbo, None, 9, shader_program, u_model, u_view, u_proj, u_color)
+
+
+def crosshair_model(thickness=0.075, inner=0.25, outer=1.25) -> Model:
+    shader_program = create_shader_program(shader_path('crosshair', 'crosshair.vert'), shader_path('crosshair', 'crosshair.frag'))
+
+    t = thickness
+    i = inner
+    o = outer
+
+    # 4 strips, each 4 verts (x,y,z):
+    verts = [
+        # ── left horizontal arm ───────────────────
+        -o, t, 0.0,
+        -o, -t, 0.0,
+        -i, t, 0.0,
+        -i, -t, 0.0,
+
+        # ── right horizontal arm ──────────────────
+        i, t, 0.0,
+        i, -t, 0.0,
+        o, t, 0.0,
+        o, -t, 0.0,
+
+        # ── bottom vertical arm ───────────────────
+        -t, -o, 0.0,
+        t, -o, 0.0,
+        -t, -i, 0.0,
+        t, -i, 0.0,
+
+        # ── top vertical arm ──────────────────────
+        -t, i, 0.0,
+        t, i, 0.0,
+        -t, o, 0.0,
+        t, o, 0.0,
+    ]
+    data = np.array(verts, dtype=np.float32)
+
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    cross_vbo = vbo.VBO(data)
+    cross_vbo.bind()
+
+    gl.glEnableVertexAttribArray(0)
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 0, gl.ctypes.c_void_p(0))
+
+    gl.glBindVertexArray(0)
+    cross_vbo.unbind()
+
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_color = gl.glGetUniformLocation(shader_program, "color")
+    u_time = gl.glGetUniformLocation(shader_program, "time")
+
+    return Model(vao, cross_vbo, None, 16, shader_program, u_model, u_view, u_proj, u_color, u_time)
+
+
+def ripple_model() -> Model:
+    shader_program = create_shader_program(shader_path('ripple', 'ripple.vert'), shader_path('ripple', 'ripple.frag'))
+
+    verts = [
+        [-1, -1, 0, 0, 0],
+        [1, -1, 0, 1, 0],
+        [-1, 1, 0, 0, 1],
+        [1, 1, 0, 1, 1],
+    ]
+    vao = gl.glGenVertexArrays(1)
+    gl.glBindVertexArray(vao)
+
+    quad_vbo = vbo.VBO(np.array(verts, dtype=np.float32))
+    quad_vbo.bind()
+
+    # pos @ loc=0, uv @ loc=1
+    stride = 5 * 4
+    gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, False, stride, gl.ctypes.c_void_p(0))
+    gl.glEnableVertexAttribArray(0)
+    gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, False, stride, gl.ctypes.c_void_p(12))
+    gl.glEnableVertexAttribArray(1)
+
+    gl.glBindVertexArray(0)
+    quad_vbo.unbind()
+
+    u_model = gl.glGetUniformLocation(shader_program, "model")
+    u_view = gl.glGetUniformLocation(shader_program, "view")
+    u_proj = gl.glGetUniformLocation(shader_program, "projection")
+    u_time = gl.glGetUniformLocation(shader_program, "time")
+
+    return Model(vao, quad_vbo, None, 4, shader_program, u_model, u_view, u_proj, None, u_time)
