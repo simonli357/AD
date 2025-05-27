@@ -627,6 +627,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     }
     double yaw = Sensing::yaw;
     double pitch = Sensing::pitch;
+    // std::cout << "pitch: " << pitch * 180 / M_PI << std::endl;
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
     }

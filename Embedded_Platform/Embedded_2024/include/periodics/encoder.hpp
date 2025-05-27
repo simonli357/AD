@@ -8,6 +8,59 @@
 #include <cmath>
 #include <algorithm>
 
+struct Kalman2D {
+    // State estimate
+    float ang   = 0.0f;     // θ  (deg, unwrapped)
+    float speed = 0.0f;     // ω  (deg/s)
+
+    // Covariance matrix (symmetric)
+    float P00 = 1.0f, P01 = 0.0f, P11 = 1.0f;
+
+    // Tunables (process & measurement noise)
+    float Q_angle = 0.01f;     // (deg²)   – how “wandery” the true angle is
+    float Q_speed = 100.0f;    // (deg²/s²)– how “wandery” the true speed is
+    float R_angle = 4.0f;      // (deg²)   – encoder quantisation / noise
+
+    inline void predict(float dt)
+    {
+        /* x = F·x ,  with  F = [1  dt; 0 1] */
+        ang   += dt * speed;
+
+        /* P = F·P·Fᵀ + Q  (exploiting symmetry & sparsity) */
+        const float P00_tmp = P00 + dt * (P01 + P01 + P11 * dt);
+        const float P01_tmp = P01 + P11 * dt;
+        const float P11_tmp = P11 + Q_speed;
+
+        P00 = P00_tmp + Q_angle;
+        P01 = P01_tmp;
+        P11 = P11_tmp;
+    }
+
+    inline void update(float z)
+    {
+        /* Innovation */
+        const float y = z - ang;
+
+        /* S = H·P·Hᵀ + R,  with H = [1 0]  →  S = P00 + R */
+        const float S  = P00 + R_angle;
+        const float K0 = P00 / S;   // Kalman gain for angle
+        const float K1 = P01 / S;   // Kalman gain for speed
+
+        /* State update */
+        ang   += K0 * y;
+        speed += K1 * y;
+
+        /* Covariance update   P = (I − K·H)·P   */
+        const float P00_new = P00 - K0 * P00;
+        const float P01_new = P01 - K0 * P01;
+        const float P11_new = P11 - K1 * P01;
+
+        P00 = P00_new;
+        P01 = P01_new;
+        P11 = P11_new;
+    }
+};
+
 namespace periodics {
 
 class CEncoder : public utils::CTask {
@@ -31,6 +84,7 @@ public:
 
     /** @return angular speed (deg/s) */
     float readAngularSpeed();
+    float readAngularSpeedKf();
 
     /** @return angular acceleration (deg/s²) */
     float readAngularAcceleration();
@@ -65,6 +119,11 @@ private:
     float               m_prevAngle{0.0f};   ///< last angle for derivative
     float               m_prevSpeed{0.0f};   ///< last speed for derivative
     float               DEGREE_PER_CM{145.0f}; ///< degrees per cm
+    Kalman2D     _kf;
+    int          _unwrapRevs      = 0;   // revolution counter for unwrapping
+    float        _prevRawAngleDeg = 0.0f;
+    Timer        _kfTimer;
+    bool         _kfTimerStarted  = false;
 
     // Biquad structure for 2nd-order Butterworth
     struct Biquad {

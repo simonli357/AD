@@ -77,6 +77,8 @@ namespace periodics{
         comres += bno055_set_operation_mode(BNO055_OPERATION_MODE_NDOF);
         init_euler_h_deg = BNO055_INIT_VALUE;
         comres += bno055_convert_float_euler_h_deg(&init_euler_h_deg);
+        init_euler_p_deg = BNO055_INIT_VALUE;
+        comres += bno055_convert_float_euler_p_deg(&init_euler_p_deg);
     }
 
     void CImu::reinitializeYaw(const char* a, char* b)
@@ -92,6 +94,8 @@ namespace periodics{
         init_euler_h_deg += yaw - targetDeg + 180.0f;
         while(init_euler_h_deg >= 360.0f) init_euler_h_deg -= 360.0f;
         while(init_euler_h_deg < 0.0f) init_euler_h_deg += 360.0f;
+
+        init_euler_p_deg = 0.0f; // reset pitch to 0
 
         IMU_UNLOCK;
         sprintf(b, "ack");                      // tell host we succeeded
@@ -658,6 +662,10 @@ namespace periodics{
         yaw -= init_euler_h_deg;
         if (yaw < 0.0f)   yaw += 360.0f;
         if (yaw >= 360.0f) yaw -= 360.0f;
+
+        pitch -= init_euler_p_deg;
+        if (pitch < -180.0f) pitch += 360.0f;
+        if (pitch >= 180.0f) pitch -= 360.0f;
 
         // printf("@7:%.1f;%.1f;;\r\n",
         //        pitch, yaw);
