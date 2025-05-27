@@ -1559,15 +1559,15 @@ void StateMachine::run() {
                 }
 
                 /* ---- Passive decay ---- */
-                if (ch != 'w' && ch != 's') {
-                    if (velocity > 0) {
-                        velocity -= COAST_DECAY;
-                        if (velocity < 0) velocity = 0;
-                    } else if (velocity < 0) {
-                        velocity += COAST_DECAY;
-                        if (velocity > 0) velocity = 0;
-                    }
-                }
+                // if (ch != 'w' && ch != 's') {
+                //     if (velocity > 0) {
+                //         velocity -= COAST_DECAY;
+                //         if (velocity < 0) velocity = 0;
+                //     } else if (velocity < 0) {
+                //         velocity += COAST_DECAY;
+                //         if (velocity > 0) velocity = 0;
+                //     }
+                // }
 
                 if (ch != 'a' && ch != 'd') {
                     if (steering_angle > 0) {
@@ -1587,7 +1587,7 @@ void StateMachine::run() {
                 printw("Press 'q' to quit.");
 
                 /* ---- Send command to vehicle ---- */
-                utils.publish_cmd_vel(steering_angle, velocity);
+                utils.publish_cmd_vel(-steering_angle, velocity);
             }
 
             /* ---- Shutdown ---- */
