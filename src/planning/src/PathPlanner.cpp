@@ -1,7 +1,11 @@
 #include "PathPlanner.hpp"
 #include "utils/helper.h"
+#include <iostream>
+#include <ostream>
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
+
+using Vertex = PathPlanner::Vertex;
 
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
 	this->T = 0.1;
@@ -33,16 +37,18 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	track.remove_vertex(start);
 }
 
-void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name) {
+void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name, bool use_gps) {
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 	this->distance_threshold = vref * this->T * 1.5;
+    this->name = name;
 	path.clear();
     Vertex start;
     Vertex first = track.find_closest_node(start_x, start_y);
-    if (name != "default") {
+    std::cout << "PathPlanner::set_constraints: Path: " << name << std::endl;
+    if (use_gps) {
         start.id = -2;
         start.x = start_x;
         start.y = start_y;
@@ -51,10 +57,22 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
     }
 	path.push_back(first);
     precompute_path();
-    construct_path(name != "default");
-    if (name != "default") {
+    construct_path(use_gps);
+    if (use_gps) {
         track.remove_vertex(start);
     }
+}
+
+void PathPlanner::set_constraints(double vref, int N, double T, std::string name) {
+	this->vref = vref;
+	this->N = N;
+	this->T = 0.1;
+	this->density = 1.0 / std::fabs(this->vref) / this->T;
+	this->distance_threshold = vref * this->T * 1.5;
+    this->name = name;
+	path.clear();
+    precompute_path();
+    construct_path(false);
 }
 
 void PathPlanner::precompute_path() {
@@ -67,28 +85,37 @@ void PathPlanner::precompute_path() {
 			return;
 		}
 		for (const auto &node : config[name]) {
-			path.push_back(track.find_node(node.as<int>()));
+            int id = node.as<int>();
+            bool exists = std::any_of(path.begin(), path.end(), [id](const Vertex &v) {
+                return v.id == id;
+            });
+            if (!exists) {
+                path.push_back(track.find_node(id));
+            }
 		}
 	} catch (const std::exception &e) {
 		std::cerr << "Error reading YAML file: " << e.what() << std::endl;
 	}
 }
 
-void PathPlanner::construct_path(bool has_first) {
+void PathPlanner::construct_path(bool use_gps) {
 	std::vector<Vertex> general_path;
     Vertex prev;
 	general_path.push_back(path[0]);
-    if (has_first) {
+    prev = path[0];
+    if (use_gps) {
         general_path.push_back(path[1]);
         prev = path[1];
-    } else {
-        prev = path[0];
     }
 	for (const auto &v : path) {
-		if (v.id == prev.id || v.id == path[0].id) {
+		if (v.id == prev.id || v.id == path[0].id || prev.id == -2) {
 			continue;
 		}
 		std::vector<Vertex> shortest_path = track.dikstra(prev.id, v.id);
+		if (shortest_path.empty()) {
+			std::cerr << "No path found between " << prev.x << ", " << prev.y << " and " << v.x << ", " << v.y << "\n";
+			exit(1);
+		}
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
@@ -118,4 +145,20 @@ void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray
 	/* saveTxt(out_state_refs, path + "/state_refs.txt", 3); */
 	/* saveTxt(out_input_refs, path + "/input_refs.txt", 2); */
 	/* saveTxt(out_attributes, path + "/attributes.txt", 1); */
+}
+
+std::vector<Vertex> PathPlanner::plan_path() {
+    return condensed_path;
+}
+
+void PathPlanner::print_path() {
+    std::cout << "Path: ";
+    for (size_t i = 0; i < path.size(); i++) {
+        if (i == path.size() - 1) {
+            std::cout << path[i].id;
+        } else {
+            std::cout << path[i].id << "->";
+        }
+    }
+    std::cout << std::endl;
 }

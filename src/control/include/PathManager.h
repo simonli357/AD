@@ -204,6 +204,16 @@ inline bool attribute_cmp(int idx, int attr) {
 	return state_attributes(idx) == attr || state_attributes(idx) == attr + 100;
 }
 
+inline bool attribute_cmp2(int idx, int idx2) {
+  if (idx < 0 || idx >= state_attributes.size()) {
+		return false;
+	}
+	if (idx2 < 0 || idx2 >= state_attributes.size()) {
+		return false;
+	}
+	return state_attributes(idx) == state_attributes(idx2);
+}
+
 inline bool is_not_detectable(int idx) {
 	return state_attributes(idx) >= 100 || attribute_cmp(idx, ATTRIBUTE::DOTTED_CROSSWALK) || attribute_cmp(idx, ATTRIBUTE::INTERSECTION) || attribute_cmp(idx, ATTRIBUTE::ROUNDABOUT);
 }
@@ -283,13 +293,15 @@ inline int change_lane(int start_idx, int end_idx, bool shift_right = false, dou
         total_len += (orig_pos[i] - orig_pos[i-1]).norm();
     double avg_sp = total_len / (N-1);
 
+		double densify_factor = 0.25;
     for (int i = 0; i+1 < N; ++i) {
         // always push the already‐shifted original point
         densified.push_back(shifted[i]);
 
         // how many to insert?
         double gap = (shifted[i+1].head<2>() - shifted[i].head<2>()).norm();
-        int nins = std::max(0, int(std::round(gap/avg_sp)) - 1);
+				double desired_spacing = avg_sp / densify_factor;
+        int nins = std::max(0, int(std::round(gap/desired_spacing)) - 1);
 
         for (int k = 1; k <= nins; ++k) {
             double u = double(k)/(nins+1);
@@ -558,7 +570,7 @@ inline bool call_waypoint_service(double x, double y, double yaw, const std::sha
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;
 	std_msgs::Float32MultiArray wp_normals_in;
-	path_planner.set_constraints(v_ref, N, T, x, y, pathName);
+	path_planner.set_constraints(v_ref, N, T, x, y, pathName, Tunable::useGps);
 	path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
 	std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3

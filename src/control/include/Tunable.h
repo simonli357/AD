@@ -18,6 +18,7 @@ namespace Tunable {
     inline int N;
     inline bool use_beta, async;
     inline std::string robot_name;
+    inline std::string path;
     inline double x0, y0, yaw0, vref;
     inline bool use_tcp, use_traffic_server;
     inline std::string traffic_server_ip, ip_address;
@@ -28,6 +29,7 @@ namespace Tunable {
     inline bool subModel;
     inline double rateVal;
     inline bool realsense_imu;
+    inline bool use_encoder = false;
 
     // tunables
     inline double cw_speed_ratio = 1.0;
@@ -79,6 +81,7 @@ namespace Tunable {
       CHECK_PARAM("/dashboard", dashboard);
       CHECK_PARAM("/gps", hasGps);
       CHECK_PARAM("/use_gps", useGps);
+      CHECK_PARAM("/use_encoder", use_encoder);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;
@@ -90,6 +93,7 @@ namespace Tunable {
       CHECK_PARAM("N", N);
       CHECK_PARAM("constraints/v_ref", v_ref);
       CHECK_PARAM(nodeName + "/name", robot_name);
+      CHECK_PARAM("/path", path);
       CHECK_PARAM(nodeName + "/vref", vref);
       CHECK_PARAM("/x0", x0);
       CHECK_PARAM("/y0", y0);

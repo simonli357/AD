@@ -37,7 +37,6 @@ namespace brain{
     {   
         switch(m_state)
         {
-            // speed state - control the dc motor rotation speed and the steering angle. 
             case 1:
                 if(m_ispidActivated && m_dcMotorControl!=NULL) // Check the pid controller 
                 {
@@ -57,7 +56,7 @@ namespace brain{
                     {
                         // In this case the encoder fails and measures 0 rps, but the control signal had a series high values. 
                         // This part protects the robot to run with high speed, when the encoder doesn't measure correctly or it's broker.
-                        printf("@1:Encoder error;;\r\n");
+                        printf("@1:Encoder error!;;\r\n");
                         m_dcMotor.brake();
                         m_dcMotorControl->clearSpeed();
                         m_state = 2;
@@ -95,7 +94,7 @@ namespace brain{
                     {
                         // In this case the encoder fails and measures 0 rps, but the control signal had a series high values. 
                         // This part protects the robot to run with high speed, when the encoder doesn't measure correctly or it's broker.
-                        printf("@7:Encoder error;;\r\n");
+                        printf("@7:Encoder error!!!;;\r\n");
                         m_dcMotor.brake();
                         m_dcMotorControl->clearSpeed();
                         m_state = 2;
@@ -117,19 +116,65 @@ namespace brain{
                 }
                 break;
         }
-        
     }
 
-    /** \brief  Serial callback method for speed command
-     *
-     * Serial callback method setting controller to value received for dc motor control values. 
-     * In the case of pid activated, the dc motor control values has to be express in meter per second, otherwise represent the duty cycle of PWM signal in percent. 
-     * The steering angle has to express in degree, where the positive values marks the right direction and the negative values noticed the left turning direction.
-     *
-     * @param a                   string to read data 
-     * @param b                   string to write data 
-     * 
-     */
+    void CRobotStateMachine::serialCallbackGOODcommand(char const * a, char * b)
+    {
+        float l_speed;
+        float l_angle;
+
+        uint32_t l_res = sscanf(a, "%f:%f", &l_speed, &l_angle);
+        if (2 == l_res)
+        {
+            // steering
+            if( !m_steeringControl.inRange(l_angle)){ // Check the received steering angle
+                sprintf(b,"The steering angle command is too high;;");
+            } else {
+                m_steeringControl.setAngle(l_angle); // control the steering angle 
+            }
+
+            // speed
+            if (std::abs(l_speed) < 0.3) m_dcMotor.setSpeed(l_speed); // set pwm signal to the motor
+            // if (std::abs(l_speed) < 0.01) { // If the speed is 0, then brake
+            //     if(m_state == 3) {
+            //         m_dcMotorControl->clearDist();
+            //     }
+            //     m_state = 2;
+            //     m_dcMotor.brake();
+            // } else {
+            //     m_dcMotor.setSpeed(l_speed);
+            //     if( !m_ispidActivated && !m_dcMotor.inRange(l_speed)){ // Check the received control value
+            //         sprintf(b,"The speed command is too high;;");
+            //         return;
+            //     }
+            //     if( m_ispidActivated && !m_dcMotorControl->inRange(CRobotStateMachine::Mps2Rps(l_speed))){ //Check the received reference value
+            //         sprintf(b,"The speed reference is too high;;");
+            //         return;
+            //     }
+                
+            //     if(m_state == 3) {
+            //         m_dcMotorControl->clearDist();
+            //     }
+            //     m_state=1;
+                
+            //     if(!m_ispidActivated)
+            //     { // The pid controller is deactivated and the dc motor is controlled by user control signal by giving duty cycle of PWM. 
+            //         m_dcMotor.setSpeed(l_speed);
+            //     }
+            //     else
+            //     {// The pid controller is activated and the dc motor speed is controlled by user control signal by giving the reference speed. 
+            //         m_dcMotorControl->setRef(CRobotStateMachine::Mps2Rps( l_speed )); // Set the reference of dc motor speed
+            //     }
+            // }
+
+            sprintf(b,"ack;;");
+        }
+        else
+        {
+            sprintf(b,"syntax error");
+        }
+    }
+
     void CRobotStateMachine::serialCallbackSPEEDcommand(char const * a, char * b)
     {
         float l_speed;
@@ -138,10 +183,12 @@ namespace brain{
         {
             if( !m_ispidActivated && !m_dcMotor.inRange(l_speed)){ // Check the received control value
                 sprintf(b,"The speed command is too high;;");
+                printf("The speed command is too high;;");
                 return;
             }
             if( m_ispidActivated && !m_dcMotorControl->inRange(CRobotStateMachine::Mps2Rps(l_speed))){ //Check the received reference value
                 sprintf(b,"The speed reference is too high;;");
+                printf("The speed reference is too high;;");
                 return;
             }
             
@@ -157,6 +204,10 @@ namespace brain{
             else
             {// The pid controller is activated and the dc motor speed is controlled by user control signal by giving the reference speed. 
                 m_dcMotorControl->setRef(CRobotStateMachine::Mps2Rps( l_speed )); // Set the reference of dc motor speed
+                // m_dcMotorControl->setRef(l_speed); // Set the reference of dc motor speed
+                int8_t l_isCorrect = m_dcMotorControl->control(); 
+                m_dcMotor.setSpeed(m_dcMotorControl->getSpeed());
+                printf("The speed reference is: %f, l_speed is %f;;\r\n", CRobotStateMachine::Mps2Rps( l_speed ), l_speed);
             }
 
             sprintf(b,"ack;;");
@@ -167,14 +218,6 @@ namespace brain{
         }
     }
 
-    /** \brief  Serial callback actions for brake command
-     *
-     * This method aims to change the state of controller to brake and sets the steering angle to the received value. 
-     *
-     * @param a                   string to read data 
-     * @param b                   string to write data
-     * 
-     */
     void CRobotStateMachine::serialCallbackBRAKEcommand(char const * a, char * b)
     {
         float l_angle;
@@ -202,61 +245,9 @@ namespace brain{
         }
     }
 
-    /** \brief  Serial callback actions for movement
-     *
-     * This function provides an interface to make the car run for x steps. The function only works if the PID is activated. 
-     * When the input string contains non-zero value, then it activates. 
-     *
-     * @param a                   string to read data 
-     * @param b                   string to write data
-     * 
-     */
-    void CRobotStateMachine::serialCallbackMOVEcommand(char const * a, char * b)
-    {
-        float l_move, l_speed;
-        uint32_t l_res = sscanf(a,"%f;%f",&l_move, &l_speed);
-        if (2 == l_res)
-        {
-            if(!m_ispidActivated){ // Check the received speed value
-                sprintf(b,"PID not activated;;");
-                return;
-            }
-            if(!m_dcMotorControl->inRange(CRobotStateMachine::Mps2Rps(l_speed))){ //Check the received reference value
-                sprintf(b,"The speed reference is too high;;");
-                return;
-            }
-            if(!m_dcMotorControl->distInRange(CRobotStateMachine::m2imp(l_move))){ //Check the received distance value
-                sprintf(b,"The distance is too high;;");
-                return;
-            }
-            if(l_speed < 0.0 && l_move > 0.0){ //Check the received distance value
-                l_move = -l_move;
-            }
-
-            m_state=3;
- 
-            m_dcMotorControl->setRef(CRobotStateMachine::Mps2Rps( l_speed )); // Set the reference of dc motor speed
-            m_dcMotorControl->setDist(CRobotStateMachine::m2imp( l_move )); // Set the reference of dc motor distance
-
-            sprintf(b,"ack;;");
-        }
-        else
-        {
-            sprintf(b,"sintax error;;");
-        }
-    }
-
-    /** \brief  Serial callback method for steering command
-     *
-     * Serial callback method setting controller to value received for steering angle.
-     * The steering angle has to express in degree, where the positive values marks the right direction and the negative values noticed the left turning direction.
-     *
-     * @param a                   string to read data 
-     * @param b                   string to write data 
-     * 
-     */
     void CRobotStateMachine::serialCallbackSTEERcommand(char const * a, char * b)
     {
+        printf("serialCallbackSTEERcommand: steer command: %s\r\n", a);
         float l_angle;
         uint32_t l_res = sscanf(a,"%f",&l_angle);
         if (1 == l_res)
@@ -268,10 +259,11 @@ namespace brain{
 
             m_steeringControl.setAngle(l_angle); // control the steering angle 
             sprintf(b,"ack;;");
+            printf("serialCallbackSTEERcommand: command sent: %s\r\n", b);
         }
         else
         {
-            sprintf(b,"sintax error;;");
+            sprintf(b,"serialCallbackSTEERcommand sintax error;;");
         }
     }
 
@@ -326,14 +318,6 @@ namespace brain{
      */
     float CRobotStateMachine::m2imp(float f_meters){ //310299 impulses in 1 meter of navigation
         return f_meters * 310299;
-    }
-
-    /**
-     * @brief Start periodically the _run method. 
-     * 
-     */
-    void CRobotStateMachine::startTimer(){
-        this->m_timer.attach(mbed::callback(this,&CRobotStateMachine::_run), m_period_sec);
     }
 
 }; // namespace brain

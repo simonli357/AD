@@ -6,10 +6,8 @@
 #define I2C_BUFFER_LEN 8
 #define I2C0           5
 
-/* The mbed library */
 #include <mbed.h>
 #include <drivers/BNO055.hpp>
-/* Header file for the task manager library, which  applies periodically the fun function of it's children*/
 #include <utils/task.hpp>
 
 namespace periodics
@@ -40,7 +38,9 @@ namespace periodics
             /* Serial callback implementation */
             void ImuPublisherCommand(char const * a, char * b);
             // YAW retrieval method
-            // virtual float getYaw();
+            float getYaw() {
+                return yaw;
+            }
             
         private:
             /*I2C init routine */
@@ -78,6 +78,7 @@ namespace periodics
             float m_velocityZ;
             int m_velocityStationaryCounter;
             float init_euler_h_deg;
+            float yaw;
     }; // class CImu
 
 }; // namespace utils
