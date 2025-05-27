@@ -165,16 +165,11 @@ namespace drivers{
         {
             f_angle = -f_angle; // Invert the angle for the left turn
             // alpha = -22254;
-            // beta = 1995.5;
-            // gamma = -23.127;
-            // update 0519
-            alpha = -12382.0;
             beta = 763.29;
             gamma = 14.556;
             // Compute the dutyCycle 
             dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
         }
-        // Function to calculate the negative angles (RIGHT TURN)
         else if(f_angle < 0)
         {
             f_angle = -f_angle; // Invert the angle for the right turn
