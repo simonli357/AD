@@ -370,7 +370,7 @@ public:
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
                 utils.debug("maneuver_hardcode(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
-                utils.publish_cmd_vel(steering_angle, speed);
+                utils.publish_cmd_vel(-steering_angle, speed);
             }
             if (exit_cond) {
                 utils.debug("stage " + helper::d2str(stage) + " completed. yaw error: " + helper::d2str(yaw_error), 3);
@@ -439,6 +439,10 @@ public:
 
         int intersection_id = PathManager::intersection_indices[idx];
         const auto& next_intersection_pose = GroundTruth::intersections_all[intersection_id].pose;
+        if (Tunable::intersection_relocalize && Tunable::lane) {
+            intersection_based_relocalization2(next_intersection_pose);
+        }
+
         double distance_to_next_sq = (x_current.head(2) - next_intersection_pose.head(2)).squaredNorm();
         
         if (distance_to_next_sq < constant_distance_to_intersection_at_detection * constant_distance_to_intersection_at_detection) {
@@ -728,8 +732,14 @@ public:
             return 0;
         }
     }
-    int intersection_based_relocalization() {
-        // stop_for(0.5);
+    bool intersection_based_relocalization2(const Eigen::Vector3d& intersection_pose) {
+        static ros::Time intersection_cooldown_timer = ros::Time::now();
+        static double cooldown = 5.0; // seconds
+        if(intersection_cooldown_timer > ros::Time::now()) {
+            // utils.debug("LANE_RELOC(): FAILURE: on cooldown" + helper::d2str(count), 4);
+            return 0;
+        }
+        if(utils.stopline_dist < 0 || utils.stopline_dist > 1.0) return 0;
         // check orientation
         double yaw = utils.get_yaw();
         double nearest_direction = helper::nearest_direction(yaw);
@@ -737,39 +747,27 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         if(std::abs(yaw_error) > intersection_localization_orientation_threshold * M_PI / 180) {
-            utils.debug("intersection_based_relocalization(): FAILURE: yaw error too large: " + helper::d2str(yaw_error), 2);
-            return 0;
+            // utils.debug("INTERSECTION_RELOC2(): FAILURE: yaw error too large: " + helper::d2str(yaw_error), 2);
+            return false;
         }
 
-        int nearestDirectionIndex = helper::nearest_direction_index(yaw);
-        const auto& direction_intersections = (nearestDirectionIndex == 0) ? EAST_FACING_INTERSECTIONS :
-                                          (nearestDirectionIndex == 1) ? NORTH_FACING_INTERSECTIONS :
-                                          (nearestDirectionIndex == 2) ? WEST_FACING_INTERSECTIONS :
-                                                                        SOUTH_FACING_INTERSECTIONS;
-        
         static Eigen::Vector2d estimated_position(0, 0);
         utils.get_states(estimated_position(0), estimated_position(1), yaw);
-        estimated_position[0] += constant_distance_to_intersection_at_detection * cos(yaw);
-        estimated_position[1] += constant_distance_to_intersection_at_detection * sin(yaw);
+        estimated_position[0] += utils.stopline_dist * cos(yaw);
+        estimated_position[1] += utils.stopline_dist * sin(yaw);
 
-        double min_error_sq = std::numeric_limits<double>::max();
-        int min_index = 0;
-        for (size_t i = 0; i < direction_intersections.size(); ++i) {
-            double error_sq = std::pow(estimated_position[0] - direction_intersections[i][0], 2) + std::pow(estimated_position[1] - direction_intersections[i][1], 2);
-            if (error_sq < min_error_sq) {
-                min_error_sq = error_sq;
-                min_index = static_cast<int>(i);
-            }
-        }
-
-        // exit(0);
-        if (min_error_sq < intersection_localization_threshold * intersection_localization_threshold) {
-            utils.debug("intersection based relocalization(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
-            utils.recalibrate_states(direction_intersections[min_index][0] - estimated_position[0], direction_intersections[min_index][1] - estimated_position[1]);
-            return 1; // Successful relocalization
+        double error_sq = std::pow(estimated_position[0] - intersection_pose[0], 2) + std::pow(estimated_position[1] - intersection_pose[1], 2);
+        
+        if (error_sq < intersection_localization_threshold * intersection_localization_threshold) {
+            utils.debug("INTERSECTION_RELOC2(): SUCCESS: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(intersection_pose[0]) + ", " + helper::d2str(intersection_pose[1]) + "), error: (" + helper::d2str(intersection_pose[0] - estimated_position[0]) + ", " + helper::d2str(intersection_pose[1] - estimated_position[1]) + ")", 2);
+            utils.recalibrate_states(intersection_pose[0] - estimated_position[0], intersection_pose[1] - estimated_position[1]);
+            stop_for(3);
+            intersection_cooldown_timer = ros::Time::now() + ros::Duration(cooldown);
+            return true; // Successful relocalization
         } else {
-            utils.debug("intersection based relocalization(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(estimated_position[1]) + "), actual: (" + helper::d2str(direction_intersections[min_index][0]) + ", " + helper::d2str(direction_intersections[min_index][1]) + "), error: (" + helper::d2str(direction_intersections[min_index][0] - estimated_position[0]) + ", " + helper::d2str(direction_intersections[min_index][1] - estimated_position[1]) + ")", 2);
-            return 0; // Failed to relocalize
+            // utils.debug("INTERSECTION_RELOC2(): FAILURE: estimated intersection position: (" + helper::d2str(estimated_position[0]) + ", " + helper::d2str(
+            // estimated_position[1]) + "), actual: (" + helper::d2str(intersection_pose[0]) + ", " + helper::d2str(intersection_pose[1]) + "), error: (" + helper::d2str(intersection_pose[0] - estimated_position[0]) + ", " + helper::d2str(intersection_pose[1] - estimated_position[1]) + ")", 2);
+            return false; // Failed to relocalize
         }
     }
 
@@ -927,7 +925,7 @@ public:
         double yaw_error = orientation - utils.get_yaw();
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
-        double steer = - yaw_error * 180 / M_PI * 1;
+        double steer = yaw_error * 180 / M_PI * 1;
         utils.publish_cmd_vel(steer, speed);
     }
 

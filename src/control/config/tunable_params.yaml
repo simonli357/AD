@@ -1,7 +1,7 @@
 real:
-  lane_relocalize: true
-  sign_relocalize: true
-  intersection_relocalize: false
+  lane_relocalize: false
+  sign_relocalize: false
+  intersection_relocalize: true
   has_light: false
   use_kf: false
   # sign_lon_offset: -0.01
@@ -25,7 +25,7 @@ real:
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.9
   lane_localization_orientation_threshold: 7.53 # degrees
-  intersection_localization_threshold: 0.753
+  intersection_localization_threshold: 0.1
   intersection_localization_orientation_threshold: 15.0 # degrees
   parking_base_thresh: 0.1
   parking_base_speed: -0.2
@@ -40,9 +40,9 @@ real:
   pedestrian_threshold: 0.35
 
 sim:
-  lane_relocalize: true
-  sign_relocalize: true
-  intersection_relocalize: false
+  lane_relocalize: false
+  sign_relocalize: false
+  intersection_relocalize: true
   has_light: false
   use_kf: false
   sign_lon_offset: 0.0
@@ -63,7 +63,7 @@ sim:
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
-  intersection_localization_threshold: 1.5
+  intersection_localization_threshold: 0.1
   intersection_localization_orientation_threshold: 15.0 # degrees
   parking_base_yaw_target: 0.26 # times pi
   parking_base_speed: -0.2

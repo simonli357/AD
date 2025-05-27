@@ -1,8 +1,7 @@
 #pragma once
 
-#include "OldLaneDetector.hpp"
 #include "stdafx.h"
-#include "utils/Lane2.h"
+#include "utils/Lane3.h"
 #include "std_msgs/Float32.h"
 #include "utils/constants.h"
 #include <Eigen/Dense>
@@ -159,7 +158,7 @@ class LaneDetector {
 		IPM_HEIGHT = ipm_camera.resolution * (ipm_camera.far_m - ipm_camera.near_m);
 		METER_PER_PIXEL_X = 1 / ipm_camera.resolution;
 		METER_PER_PIXEL_Y = 1 / ipm_camera.resolution;
-		lane_pub = nh.advertise<utils::Lane2>("/lane", 1);
+		lane_pub = nh.advertise<utils::Lane3>("/lane", 1);
 		center_offset_pub = nh.advertise<std_msgs::Float32>("/lane_center_offset", 1);
 		waypoints_pub = nh.advertise<std_msgs::Float32MultiArray>("/lane_waypoints", 1);
 		std::string nodeName = ros::this_node::getName();
@@ -167,11 +166,7 @@ class LaneDetector {
 		nh.getParam(nodeName + "/printFlag", printflag);
 		nh.getParam(nodeName + "/pub", publish);
 		nh.param(nodeName + "/printDuration", printDuration, false);
-		nh.param(nodeName + "/newlane", newlane, false);
 		nh.getParam(nodeName + "/real", real);
-		if (!newlane) {
-			old_lane_detector = std::make_unique<OldLaneDetector>(showflag, printflag);
-		}
 
 		double window_margin_multiplier;
 		nh.getParam("window_margin_multiplier", window_margin_multiplier);
@@ -222,11 +217,9 @@ class LaneDetector {
 	ros::Publisher lane_pub;
 	ros::Publisher center_offset_pub;
 	ros::Publisher waypoints_pub;
-	utils::Lane2 lane_msg;
+	utils::Lane3 lane_msg;
 
-	bool showflag, printflag, newlane, printDuration, publish, real;
-
-	std::unique_ptr<OldLaneDetector> old_lane_detector;
+	bool showflag, printflag, printDuration, publish, real;
 
 	// NEW LANE
 	cv::Mat processed_image = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
@@ -238,93 +231,6 @@ class LaneDetector {
 	std_msgs::MultiArrayDimension dimension;
 
 	// LINE FIT
-	double stopline_dist = -1;
-	double stopline_dist_to_front = -1;
-	double stopline_distance_threshold;
-	bool stopline = false;
-	bool cross_walk = false;
-	int lane_to_fit = NONE;
-	VectorXd left_fit = VectorXd(4);
-	VectorXd right_fit = VectorXd(4);
-	cv::Mat histogram;
-
-	struct StopLine
-	{
-			bool   found;        // did we detect a stop‐line?
-			float  angle;        // radians relative to image X‐axis
-			float  confidence;   // 0…1, higher means more pixels / longer line
-			cv::Point p1, p2;    // endpoints of the best line segment
-	};
-	StopLine detectStopLine(
-			const cv::Mat& binary,
-			float rho           = 1.0f,
-			float theta         = CV_PI/180.0f,
-			int   houghThresh   = 50,
-			float minLen        = 50.0f,
-			float maxGap        = 10.0f,
-			float maxTiltRad    = CV_PI/6.0f  // ±30°
-	)
-	{
-			CV_Assert(binary.type() == CV_8UC1);
-
-			// 1) Morphological closing to fill small gaps
-			cv::Mat closed;
-			cv::Mat kern = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,3));
-			cv::morphologyEx(binary, closed, cv::MORPH_CLOSE, kern);
-
-			// 2) Probabilistic Hough
-			std::vector<cv::Vec4i> lines;
-			cv::HoughLinesP(closed, lines, rho, theta, houghThresh, minLen, maxGap);
-
-			// 3) Filter by tilt and pick the longest
-			float bestLen   = 0;
-			cv::Vec4i bestL = {0,0,0,0};
-			float bestAng   = 0;
-			int   countGood = 0;
-
-			for (auto &l : lines)
-			{
-					float dx = float(l[2] - l[0]);
-					float dy = float(l[3] - l[1]);
-					float ang = std::atan2(dy, dx);       // radians
-					float absAng = std::fabs(ang);
-					// wrap-around: allow near π too
-					if (absAng > CV_PI/2)  
-							absAng = std::fabs(absAng - CV_PI);
-
-					if (absAng <= maxTiltRad)
-					{
-							float length = std::hypot(dx, dy);
-							++countGood;
-							if (length > bestLen)
-							{
-									bestLen = length;
-									bestL   = l;
-									bestAng = ang;
-							}
-					}
-			}
-
-			StopLine result;
-			if (bestLen > 0 && countGood > 0)
-			{
-					result.found      = true;
-					result.angle      = bestAng;
-					result.p1         = cv::Point(bestL[0], bestL[1]);
-					result.p2         = cv::Point(bestL[2], bestL[3]);
-					// naive confidence: fraction of image width covered by the line
-					result.confidence = std::min(1.0f, bestLen / float(binary.cols));
-			}
-			else
-			{
-					result.found      = false;
-					result.angle      = 0;
-					result.confidence = 0;
-					result.p1 = result.p2 = cv::Point(-1,-1);
-			}
-
-			return result;
-	}
 	struct StopLineOut
 	{
 			bool  found         = false;   ///< true if everything passed
@@ -334,6 +240,17 @@ class LaneDetector {
 			float confidence    = 0.f;     ///< 0‑to‑1 quality score
 			cv::Vec4f segment   = {0,0,0,0};///< (x1,y1,x2,y2)               (optional)
 	};
+	double stopline_dist = -1.0, stopline_yaw = -1.0;
+	StopLineOut sl;
+	double stopline_dist_to_front = -1.0;
+	double stopline_distance_threshold;
+	bool stopline = false;
+	bool cross_walk = false;
+	int lane_to_fit = NONE;
+	VectorXd left_fit = VectorXd(4);
+	VectorXd right_fit = VectorXd(4);
+	cv::Mat histogram;
+
 	StopLineOut detectStopLineColumns(const cv::Mat& bin,
                                          int   laneWidthPx,
                                          float meterPerPixelY,
@@ -548,57 +465,52 @@ class LaneDetector {
 			return;
 		}
 		auto start = high_resolution_clock::now();
-		if (newlane) {
+		if (true) {
 			preprocess(image, processed_image);
 			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return;
-			stopline_dist = find_stopline(ipm_processed);
 
-			ipm_camera.getIPM(image, ipm_color);
-			cv::imshow("ipm color", ipm_color);
+			// ipm_camera.getIPM(image, ipm_color);
+			// cv::imshow("ipm color", ipm_color);
 			
 			// cv::imshow("processed image", processed_image);
 			// cv::imshow("processed ipm", ipm_processed);
 			// cv::waitKey(1);
 			// return;
 
-			auto start1 = high_resolution_clock::now();
-			StopLineOut sl = findStopLineEx(ipm_processed,
-                                LANE_WIDTH_PIXEL,
-                                METER_PER_PIXEL_Y);
-			auto stop1 = high_resolution_clock::now();
 			// StopLineOut sl = detectStopLineColumns(ipm_processed,
 			// 																				LANE_WIDTH_PIXEL,
 			// 																				METER_PER_PIXEL_Y);
-			// if (sl.found && sl.confidence > 0.01f)
-			// {
-			// 		cv::Mat dbg; cv::cvtColor(ipm_processed, dbg, cv::COLOR_GRAY2BGR);
-			// 		if (std::abs(sl.angle_deg) > 85) {
-			// 			std::cout << "Stop‑line: distance "
-			// 								<< sl.dist_m << " m, yaw "
-			// 								<< sl.angle_deg << " °, straightness "
-			// 								<< sl.rmsErr_px << " px"
-			// 								<< ", time: " << duration_cast<microseconds>(stop1 - start1).count()
-			// 								<< " μs\n";
-						
-			// 			cv::line(dbg,
-			// 							{ int(sl.segment[0]), int(sl.segment[1]) },
-			// 							{ int(sl.segment[2]), int(sl.segment[3]) },
-			// 							cv::Scalar(0,0,255), 2);
-			// 			cv::putText(dbg, "Stop-line",
-			// 									{ int(sl.segment[0]), int(sl.segment[1]) - 8 },
-			// 									cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,255), 1);
-			// 		}
-			// 		cv::imshow("Stop‑line", dbg);
-			// 		cv::waitKey(1);
-			// } else {
-			// 		std::cout << "No stop‑line found, confidence "
-			// 							<< sl.confidence << "\n";
-			// }
 
-			std_msgs::Float32 center_offset_msg;
-			center_offset_msg.data = find_lanes(ipm_processed);
-			center_offset_pub.publish(center_offset_msg);
-			// return;
+			stopline_dist = find_stopline(ipm_processed);
+			sl = findStopLineEx(ipm_processed,
+                                LANE_WIDTH_PIXEL,
+                                METER_PER_PIXEL_Y);
+			
+			if (sl.found && sl.confidence > 0.01f)
+			{
+					stopline_dist = sl.dist_m;
+					stopline_yaw = sl.angle_deg;
+					// cv::Mat dbg; cv::cvtColor(ipm_processed, dbg, cv::COLOR_GRAY2BGR);
+					// std::cout << "Stop‑line: distance "
+					// 						<< sl.dist_m << " m, straightness "
+					// 						<< sl.rmsErr_px << " px, yaw "
+					// 						<< sl.angle_deg << "°"
+					// 						<< ", confidence " << sl.confidence
+					// 						<< "\n";
+					// if (true) {
+					// 	cv::line(dbg,
+					// 					{ int(sl.segment[0]), int(sl.segment[1]) },
+					// 					{ int(sl.segment[2]), int(sl.segment[3]) },
+					// 					cv::Scalar(0,0,255), 2);
+					// 	cv::putText(dbg, "Stop-line",
+					// 							{ int(sl.segment[0]), int(sl.segment[1]) - 8 },
+					// 							cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,255), 1);
+					// }
+					// cv::imshow("Stop‑line", dbg);
+					// cv::waitKey(1);
+			}
+
+			double center_offset = find_lanes(ipm_processed);
 			if(!line_fit(ipm_processed)) return;
 
 			auto wpts = get_waypoints(left_fit, right_fit, 40, 0.032);
@@ -620,19 +532,12 @@ class LaneDetector {
 			// 	std::cout << i/3 << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
 			// }
 
-			waypoints_msg.data.clear();
-			waypoints_msg.layout.dim.clear();
-			waypoints_msg.layout.data_offset = 0;
-
-			// Populate data array with waypoints
+			lane_msg.lane_waypoints.clear();
 			for (int i = 0; i < wpts.size(); i++) {
-				waypoints_msg.data.push_back(wpts[i]);
+				lane_msg.lane_waypoints.push_back(wpts[i]);
 			}
-			waypoints_pub.publish(waypoints_msg);
-
-			lane_msg.center = 320.0;
-			lane_msg.stopline_dist = stopline_dist_to_front;
-			lane_msg.stopline = stopline;
+			lane_msg.lane_center_offset = center_offset;
+			lane_msg.stopline_dist = stopline_dist;
 			lane_msg.header.stamp = ros::Time::now();
 			lane_pub.publish(lane_msg);
 
@@ -643,14 +548,6 @@ class LaneDetector {
 				cv::imshow("viz3", gyu_img);
 				cv::waitKey(1);
 			}
-		} else {
-			preprocess(image, processed_image);
-			double center = old_lane_detector->optimized_histogram(processed_image, showflag, printflag);
-			lane_msg.center = center;
-			lane_msg.stopline = old_lane_detector->stopline;
-			lane_msg.stopline_dist = old_lane_detector->stopline_dist;
-			lane_msg.header.stamp = ros::Time::now();
-			lane_pub.publish(lane_msg);
 		}
 		if (printDuration) {
 			auto stop = high_resolution_clock::now();
@@ -913,6 +810,10 @@ class LaneDetector {
 					lane_indices.swap(merged);
 			}
 	}
+
+	bool find_lanes_success = false;
+	cv::Rect roiRect;
+	double offset_from_center;
 	double find_lanes(const cv::Mat &binaryIPM)
 	{
 			lane_indices.clear();
@@ -927,7 +828,7 @@ class LaneDetector {
 			const int height = static_cast<int>(ROI_FRACTION * H);
 			const int width  = static_cast<int>(0.9f * W);               // crop 5 % per side
 
-			const cv::Rect roiRect(static_cast<int>((W - width) / 2), y0, width, height);
+			roiRect = cv::Rect(static_cast<int>((W - width) / 2), y0, width, height);
 			const cv::Mat  roi = binaryIPM(roiRect);
 
 			// ───────────────────── Histogram & peak extraction ───────────────────────
@@ -939,51 +840,45 @@ class LaneDetector {
 			for (int &x : lane_indices) x += roiRect.x;
 
 			// ─────────────────────────── Visualisation ───────────────────────────────
-			cv::Mat vis;                                           // colour copy for drawing
-			if (true)
-			{
-					cv::cvtColor(binaryIPM, vis, cv::COLOR_GRAY2BGR);   // → BGR so we can colour
+			// cv::Mat vis;                                           // colour copy for drawing
+			// if (true)
+			// {
+			// 		cv::cvtColor(binaryIPM, vis, cv::COLOR_GRAY2BGR);   // → BGR so we can colour
 
-					// ❶ draw ROI rectangle (blue)
-					cv::rectangle(vis, roiRect, cv::Scalar(255, 0, 0), 2);
+			// 		cv::rectangle(vis, roiRect, cv::Scalar(255, 0, 0), 2);
+			// 		for (int x : lane_indices)
+			// 		{
+			// 				cv::line(vis,
+			// 								cv::Point(x, roiRect.y),
+			// 								cv::Point(x, roiRect.y + roiRect.height),
+			// 								cv::Scalar(0, 0, 255), 3);
+			// 		}
+			// }
 
-					// ❷ draw detected lane positions (yellow verticals)
-					for (int x : lane_indices)
-					{
-							cv::line(vis,
-											cv::Point(x, roiRect.y),
-											cv::Point(x, roiRect.y + roiRect.height),
-											cv::Scalar(0, 0, 255), 3);
-					}
-			}
+			offset_from_center = -1.0;                       // default: fail
 
-			// ────────────────────── Validate & compute centre ────────────────────────
-			double offset_from_center = -1.0;                       // default: fail
-
+			find_lanes_success = false; // reset success flag
 			if (lane_indices.size() == 2 && lane_indices[0] > 0 && lane_indices[1] > 0)
 			{
 					const int diff = lane_indices[1] - lane_indices[0];
 					if (diff > 0 && std::abs(diff - LANE_WIDTH_PIXEL) < 0.15 * LANE_WIDTH_PIXEL)
 					{
+							find_lanes_success = true;
 							offset_from_center = -(lane_indices[0] + lane_indices[1] - W) / 2.0 * METER_PER_PIXEL_X;
 
-							if (true)
-							{
-									// ❸ draw circle at lane centre (green)
-									const int midX = (lane_indices[0] + lane_indices[1]) / 2;
-									const int midY = roiRect.y + roiRect.height / 2;
-									cv::circle(vis, cv::Point(midX, midY), 8, cv::Scalar(0, 255, 0), -1);
-
-									// ❹ annotate offset value
-									char buf[64];
-									std::snprintf(buf, sizeof(buf), "offset: %.2fm", offset_from_center);
-									cv::putText(vis, buf, cv::Point(midX + 10, midY - 10),
-															cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
-							}
+							// if (true)
+							// {
+							// 		const int midX = (lane_indices[0] + lane_indices[1]) / 2;
+							// 		const int midY = roiRect.y + roiRect.height / 2;
+							// 		cv::circle(vis, cv::Point(midX, midY), 8, cv::Scalar(0, 255, 0), -1);
+							// 		char buf[64];
+							// 		std::snprintf(buf, sizeof(buf), "offset: %.2fm", offset_from_center);
+							// 		cv::putText(vis, buf, cv::Point(midX + 10, midY - 10),
+							// 								cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
+							// }
 					}
 			}
 
-			// ───────────────────────────── Show image ────────────────────────────────
 			// if (true)
 			// {
 			// 		cv::imshow("Lane Visualisation", vis);
@@ -1319,7 +1214,7 @@ class LaneDetector {
 			for (size_t i = 0; i < left_fitx.size(); ++i) {
 				left_points.push_back(cv::Point(left_fitx[i], ploty[i]));
 			}
-			cv::polylines(result, left_points, false, cv::Scalar(255, 255, 0), 15);
+			cv::polylines(result, left_points, false, cv::Scalar(255, 255, 0), 3);
 		}
 		if (lane_to_fit == RIGHT || lane_to_fit == BOTH) {
 			for (double y : ploty) {
@@ -1329,20 +1224,33 @@ class LaneDetector {
 			for (size_t i = 0; i < right_fitx.size(); ++i) {
 				right_points.push_back(cv::Point(right_fitx[i], ploty[i]));
 			}
-			cv::polylines(result, right_points, false, cv::Scalar(255, 255, 0), 15);
+			cv::polylines(result, right_points, false, cv::Scalar(255, 255, 0), 3);
 		}
 
 		for (int i = 0; i < waypoints.size(); i += 3) {
 			int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
 			// int y = img_height - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
 			int y = img_height - static_cast<int>(meter_to_pixel_y(waypoints[i] - VehicleConstants::REALSENSE_TF[0]));
-			cv::circle(result, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), -1);
+			cv::circle(result, cv::Point(x, y), 2, cv::Scalar(0, 0, 255), -1);
 		}
 
 		// // Draw stop line
 		if (stopline_dist > 0) {
 			double stopline_y = img_height - meter_to_pixel_y(stopline_dist - ipm_camera.near_m);
-			cv::line(result, cv::Point(0, stopline_y), cv::Point(img_width, stopline_y), cv::Scalar(0, 255, 0), 5);
+			cv::line(result, cv::Point(0, stopline_y), cv::Point(img_width, stopline_y), cv::Scalar(0, 255, 0), 2);
+			// if (sl.found && std::abs(stopline_yaw) > 85.0) {
+			if (sl.found) {
+				auto color = cv::Scalar(255, 0, 255);
+				int thickness = 2;
+				if (std::abs(stopline_yaw) > 85.0) {
+					color = cv::Scalar(255, 255, 0);
+					thickness = 4;
+				}
+				cv::line(result,
+					{ int(sl.segment[0]), int(sl.segment[1]) },
+					{ int(sl.segment[2]), int(sl.segment[3]) },
+					color, thickness);
+			}
 		}
 		if (IPM) {
 			cv::addWeighted(result, 0.95, binary_warped, 0.3, 0, result);
@@ -1352,7 +1260,26 @@ class LaneDetector {
 
 		if (stopline_dist > 0) {
 			cv::putText(result, "stop:" + std::to_string(stopline_dist) + " m", cv::Point(0, 48), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
-			cv::putText(result, "2front:" + std::to_string(stopline_dist_to_front) + " m", cv::Point(0, 48*4), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+			// cv::putText(result, "2front:" + std::to_string(stopline_dist_to_front) + " m", cv::Point(0, 48*4), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 1, cv::LINE_AA);
+		}
+
+		cv::rectangle(result, roiRect, cv::Scalar(255, 0, 0), 2);
+		for (int x : lane_indices)
+		{
+				cv::line(result,
+								cv::Point(x, roiRect.y),
+								cv::Point(x, roiRect.y + roiRect.height),
+								cv::Scalar(0, 0, 255), 3);
+		}
+		if (find_lanes_success)
+		{
+				const int midX = (lane_indices[0] + lane_indices[1]) / 2;
+				const int midY = roiRect.y + roiRect.height / 2;
+				cv::circle(result, cv::Point(midX, midY), 8, cv::Scalar(0, 255, 0), -1);
+				char buf[64];
+				std::snprintf(buf, sizeof(buf), "offset: %.2fm", offset_from_center);
+				cv::putText(result, buf, cv::Point(midX + 10, midY - 10),
+										cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 2);
 		}
 
 		return result;

@@ -16,6 +16,7 @@ add_message_files(
    Sign.msg
    Lane.msg
    Lane2.msg
+   Lane3.msg
    encoder.msg
    ImgInfo.msg
    Sensors.msg
