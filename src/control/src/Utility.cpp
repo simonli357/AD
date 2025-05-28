@@ -39,8 +39,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 {
     std::cout << "Utility constructor" << std::endl;  
 
-	ThreadPools::control.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-
     cameraNode = std::make_unique<CameraLib>(nh);
     cameraNode->onLaneCompletion = [this](utils::Lane3 &msg) {
         process_lane_data(msg);
