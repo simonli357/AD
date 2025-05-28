@@ -140,7 +140,7 @@ float clamp(float x, float min, float max) {
     return x;
 }
 
-float CEncoder::readAngularSpeed() {
+float CEncoder::readAngularSpeedKf() {
     if (!_kfTimerStarted) {
         _kfTimer.start();
         _kfTimerStarted = true;
@@ -197,6 +197,65 @@ float CEncoder::readAngularSpeed() {
 
     return speedDegPerSec;
 }
+float CEncoder::readAngularSpeed() {
+    static Timer  timer;
+    static bool   runOnce  = false;
+    static float  prevAng  = 0.0f;
+    static float  sumDelta = 0.0f;
+    static float  lastT    = 0.0f;
+
+    if (!runOnce) {
+        timer.start();
+        prevAng = readAngleDegrees();
+        lastT   = timer.read();
+        runOnce = true;
+    }
+
+    float ang   = readAngleDegrees();
+    float delta = ang - prevAng;
+    if      (delta >  180.0f) delta -= 360.0f;
+    else if (delta < -180.0f) delta += 360.0f;
+    sumDelta   += delta;
+    prevAng     = ang;
+
+    float now = timer.read();
+    if (now - lastT < REPORT_INTERVAL_SEC) {
+        return lastPublishedSpeed;  // or 0 if you only update periodically
+    }
+
+    float dt    = now - lastT;
+    float speed = sumDelta / dt;     // deg/s
+
+    //filtering / hysteresis
+    static float speedIIR = 0.0f;
+    constexpr float tau_speed = 0.025f;       // time-constant in seconds
+    float alpha = tau_speed / (tau_speed + dt);
+    speedIIR   = alpha * speedIIR + (1.0f - alpha) * speed;
+    speed      = speedIIR;
+    speed = applyHampel(speed);
+    // speed = clamp(speed, -MAX_PHYS, +MAX_PHYS);
+    speed = applySpeedHysteresis(speed);
+
+    // 5) reset for next interval
+    sumDelta = 0.0f;
+    lastT    = now;
+    lastPublishedSpeed = speed;
+
+    char buf[64];
+    int n = std::snprintf(buf, sizeof(buf),
+                    "@5:%.3f;;\r\n",
+                    speed / DEGREE_PER_CM);
+    if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf)) {
+        m_serial.write(buf, n);
+    }
+
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] Total displacement = %.2f°\n",
+    //                 displacementDeg);
+    // m_serial.write(buf, len);
+
+    return speed;
+}
 
 float CEncoder::readAngularAcceleration() {
     float dt = m_dt;
@@ -226,11 +285,6 @@ float CEncoder::getTotalDisplacementDegrees()
 
     prev = ang_raw;
     float total = revs * 360.0f + ang_raw;
-    char buf[64];
-    int len = snprintf(buf, sizeof(buf),
-                    "[Encoder] Total displacement = %.2f°\n",
-                    total);
-    m_serial.write(buf, len);
     return total;
 }
 
@@ -243,7 +297,11 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    readAngularSpeed();
+    readAngularSpeedKf();
+    // readAngularSpeed();
+    
+    // displacementDeg = getTotalDisplacementDegrees(); 
+
     // static Timer execTimer;
     // static bool timerStarted = false;
     // if (!timerStarted) {
@@ -255,7 +313,7 @@ void CEncoder::_run() {
 
     // float angleDeg = readAngleDegrees();
     // float speedDeg = readAngularSpeed();
-    displacementDeg = getTotalDisplacementDegrees(); 
+    // displacementDeg = getTotalDisplacementDegrees(); 
 
     // // ————— 5) Mark end of execution and accumulate for average print
     // uint32_t end_us     = execTimer.read_us();
