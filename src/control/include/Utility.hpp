@@ -58,6 +58,7 @@ public:
     ros::NodeHandle& nh;
     ros::ServiceClient triggerServiceClient;
 
+	std::unique_ptr<tbb::task_group> tasks;
     std::unique_ptr<CameraLib> cameraNode;
     
     bool emergency = false;

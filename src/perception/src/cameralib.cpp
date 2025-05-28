@@ -99,7 +99,9 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 	}
 }
 
-CameraLib::~CameraLib() {}
+CameraLib::~CameraLib() {
+    tasks->wait();
+}
 
 void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 	// mutex.lock();

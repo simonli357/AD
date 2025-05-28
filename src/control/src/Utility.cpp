@@ -39,12 +39,18 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 {
     std::cout << "Utility constructor" << std::endl;  
 
+	ThreadPools::control.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
+
     cameraNode = std::make_unique<CameraLib>(nh);
     cameraNode->onLaneCompletion = [this](utils::Lane3 &msg) {
-        process_lane_data(msg);
+        tasks->run([this, msg] {
+            process_lane_data(msg);
+        });
     };
     cameraNode->onSignCompletion = [this](utils::Sign &msg) {
-        process_sign_data(msg);
+        tasks->run([this, msg] {
+            process_sign_data(msg);
+        });
     };
 
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
@@ -55,6 +61,7 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
 Utility::~Utility() {
     stop_car(); 
+    tasks->wait();
 }
 
 void Utility::initialize_tcp_client() {
