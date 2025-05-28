@@ -43,6 +43,7 @@
 #include "utils/helper.h"
 #include "Sensing.h"
 #include <numeric>
+#include "cameralib.hpp"
 
 using namespace VehicleConstants;
 using namespace Tunable;
@@ -56,6 +57,8 @@ public:
 // private:
     ros::NodeHandle& nh;
     ros::ServiceClient triggerServiceClient;
+
+    std::unique_ptr<CameraLib> cameraNode;
     
     bool emergency = false;
     int num_obj = 0;

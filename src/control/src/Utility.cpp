@@ -1,4 +1,5 @@
 #include <chrono>
+#include <memory>
 #include <ostream>
 #include <ros/ros.h>
 #include "TcpClient.hpp"
@@ -37,6 +38,15 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
     : nh(nh_), pubOdom(pubOdom), object_detection_time(ros::Time::now())
 {
     std::cout << "Utility constructor" << std::endl;  
+
+    cameraNode = std::make_unique<CameraLib>(nh);
+    cameraNode->onLaneCompletion = [this](utils::Lane3 &msg) {
+        process_lane_data(msg);
+    };
+    cameraNode->onSignCompletion = [this](utils::Sign &msg) {
+        process_sign_data(msg);
+    };
+
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
     initialize_tcp_client();
     initialize();

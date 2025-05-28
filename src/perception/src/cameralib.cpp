@@ -16,6 +16,8 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 
 	Sign.tcp_client->set_image_quality(quality);
 
+	ThreadPools::perception.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
+
 	if (!realsense) {
 		if (Sign.hasDepthImage) {
 			std::string topic;
@@ -81,7 +83,7 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 
 		std::cout.precision(4);
 
-        poll = std::thread(&CameraLib::get_frame, this);
+		poll = std::thread(&CameraLib::get_frame, this);
 	}
 
 	if (!doLane) {
@@ -95,7 +97,6 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 	} else {
 		ROS_INFO("RosTimer is disabled");
 	}
-
 }
 
 CameraLib::~CameraLib() {}
@@ -123,28 +124,24 @@ void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 }
 
 void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    if (cv_ptr == nullptr) {
-        ROS_WARN("cv_ptr is null");
-        // mutex.unlock();
-        return;
-    }
+	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+	if (cv_ptr == nullptr) {
+		ROS_WARN("cv_ptr is null");
+		// mutex.unlock();
+		return;
+	}
 
-	tasks->run([this] {
-        run_lane_once();
-	});
-    tasks->run([this] {
-        run_sign_once();
-    });
-    tasks->wait();
+	tasks->run([this] { run_lane_once(); });
+	tasks->run([this] { run_sign_once(); });
+	tasks->wait();
 
-    colorImage = cv_ptr->image.clone();
-    if (flip) {
-        cv::flip(colorImage, colorImage, -1);
-    }
-    if (Sign.tcp_client != nullptr) {
-        Sign.tcp_client->send_image_rgb(colorImage);
-    }
+	colorImage = cv_ptr->image.clone();
+	if (flip) {
+		cv::flip(colorImage, colorImage, -1);
+	}
+	if (Sign.tcp_client != nullptr) {
+		Sign.tcp_client->send_image_rgb(colorImage);
+	}
 }
 
 void CameraLib::run_lane_once() {
@@ -157,7 +154,7 @@ void CameraLib::run_lane_once() {
 		}
 		img = colorImage.clone();
 	}
-    Lane.publish_lane(img, &onLaneCompletion);
+	Lane.publish_lane(img, &onLaneCompletion);
 }
 
 void CameraLib::run_sign_once() {
@@ -196,13 +193,9 @@ void CameraLib::get_frame() {
 		cv::flip(depthImage, depthImage, -1);
 	}
 
-	tasks->run([this] {
-        run_lane_once();
-	});
-    tasks->run([this] {
-        run_sign_once();
-    });
-    tasks->wait();
+	tasks->run([this] { run_lane_once(); });
+	tasks->run([this] { run_sign_once(); });
+	tasks->wait();
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
