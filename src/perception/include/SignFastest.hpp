@@ -287,7 +287,7 @@ class SignFastest {
             float confidence;
             int x1, y1, x2, y2;
         };
-        void publish_sign(const cv::Mat& image, const cv::Mat& depthImage) {
+        void publish_sign(const cv::Mat& image, const cv::Mat& depthImage, std::function<void(utils::Sign&)> &onCompletion) {
             if(printDuration) start = high_resolution_clock::now();
             sign_msg.header.stamp = ros::Time::now();
             sign_msg.data.clear();
@@ -452,6 +452,11 @@ class SignFastest {
             //     sign_msg.layout.dim.push_back(dim); 
             // }
             // Publish Sign message
+            
+            if (onCompletion) {
+                onCompletion(sign_msg);
+            }
+
             if (publish) {
                 if (sign_msg.data.size() % NUM_VALUES_PER_OBJECT != 0) {
                     ROS_WARN("Sign message size is not a multiple of %d", NUM_VALUES_PER_OBJECT);
