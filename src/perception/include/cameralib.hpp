@@ -29,6 +29,8 @@ class CameraLib {
 
 	std::thread poll;
 
+	std::atomic<bool> tasks_running{false};
+
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
 	image_transport::Subscriber rgb_sub;

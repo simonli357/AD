@@ -127,6 +127,10 @@ void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 }
 
 void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
+	if (tasks_running.exchange(true)) {
+		// Already running, skip this frame
+		return;
+	}
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 	if (cv_ptr == nullptr) {
 		ROS_WARN("cv_ptr is null");
@@ -143,6 +147,9 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
+
+    tasks_running = false;
+
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
@@ -180,6 +187,10 @@ void CameraLib::run_sign_once() {
 }
 
 void CameraLib::get_frame() {
+	if (tasks_running.exchange(true)) {
+		// Already running, skip this frame
+		return;
+	}
 	data = pipe.wait_for_frames();
 	auto aligned_frames = align_to_color->process(data);
 	color_frame = aligned_frames.get_color_frame();
@@ -200,6 +211,8 @@ void CameraLib::get_frame() {
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
+
+    tasks_running = false;
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
