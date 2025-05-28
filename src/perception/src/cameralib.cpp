@@ -15,6 +15,7 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 	nh.param("quality", quality, 30);
 
 	Sign.tcp_client->set_image_quality(quality);
+    flip = true;
 
 	ThreadPools::perception.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 
