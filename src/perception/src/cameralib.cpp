@@ -142,6 +142,7 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     }
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
+	tasks->wait();
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
@@ -198,6 +199,7 @@ void CameraLib::get_frame() {
 
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
+	tasks->wait();
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
