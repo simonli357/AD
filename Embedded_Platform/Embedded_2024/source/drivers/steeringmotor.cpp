@@ -149,10 +149,6 @@ namespace drivers{
         float dutyCycle = zero_default;
         // Previous input angle
         static float prev_angle = 0;
-        // Quadratic function parameters
-        float alpha = 0;
-        float beta = 0;
-        float gamma = 0;
         // Zero default when returning from a left turn
         ZD_left = 0.0772;
         // Zero default when returning from a right turn
@@ -160,27 +156,33 @@ namespace drivers{
 
         // if(f_angle > 20.8) f_angle = 20.8; 
         // if(f_angle < -21.8) f_angle = -21.8;
+
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle > 0)
         {
-            f_angle = -f_angle; // Invert the angle for the left turn
-            // alpha = -22254;
-            beta = 763.29;
-            gamma = 14.556;
-            // Compute the dutyCycle 
-            dutyCycle = (-beta - std::sqrt(beta*beta - 4*alpha*(gamma + f_angle)))/(2*alpha);
+            // Polynomial Coefficients (Order 5):
+            // a5 = -0.0000000541430850
+            // a4 = 0.0000030924866654
+            // a3 = -0.0000624797374340
+            // a2 = 0.0005081835695535
+            // a1 = -0.0022800535753529
+            // c     = 0.0769733903210084
+            dutyCycle = -0.0000000541430850 * std::pow(f_angle, 5) + 0.0000030924866654 * std::pow(f_angle, 4) - 0.0000624797374340 * std::pow(f_angle, 3) + 0.0005081835695535 * std::pow(f_angle, 2) - 0.0022800535753529 * f_angle + 0.0769733903210084;
         }
+        // Function to calculate the negative angles (RIGHT TURN)
         else if(f_angle < 0)
         {
-            f_angle = -f_angle; // Invert the angle for the right turn
-            alpha = -18728;
-            beta = 4175;
-            gamma = -211.28;
-            // Compute the dutyCycle 
-            dutyCycle = (-beta + std::sqrt(beta*beta - 4*alpha*(gamma - f_angle)))/(2*alpha);
+            // Polynomial Coefficients (Order 5):
+            // a5 = -0.0000002441721872
+            // a4 = -0.0000121417422652
+            // a3 = -0.0002127002299692
+            // a2 = -0.0015072709396399
+            // a1 = -0.0046305612134746
+            // c     = 0.0765299449449109
+            dutyCycle = -0.0000002441721872 * std::pow(f_angle, 5) - 0.0000121417422652 * std::pow(f_angle, 4) - 0.0002127002299692 * std::pow(f_angle, 3) - 0.0015072709396399 * std::pow(f_angle, 2) - 0.0046305612134746 * f_angle + 0.0765299449449109;
         }
         // Special case if we want to reset to 0 and set the car to go straight
-        if(f_angle == 0)
+        else if(std::abs(f_angle) < 0.1)
         {
             if(prev_angle >= 0) // Zero default for returning from LEFT turns
             {
@@ -191,11 +193,11 @@ namespace drivers{
             {
                 dutyCycle = ZD_right;
             }
+        } else {
+            f_angle = 0.0f; // Set to zero if very small
+            dutyCycle = zero_default;
         }
-        // printf("Current Duty Cycle:%f\n", dutyCycle);
-        //Update the angle to remember
         prev_angle = f_angle;
-        // Return the computed dutyCycle
         return dutyCycle;
     };
 

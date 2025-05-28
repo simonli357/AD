@@ -252,7 +252,7 @@ class SignFastest {
             int totalValidPixels = cv::countNonZero(validMask);
         
             // Visualization
-            if (show) {
+            if (false) {
                 cv::Mat visualization;
                 cv::normalize(depthImage, visualization, 0, 255, cv::NORM_MINMAX, CV_8U);
                 cv::cvtColor(visualization, visualization, cv::COLOR_GRAY2BGR);

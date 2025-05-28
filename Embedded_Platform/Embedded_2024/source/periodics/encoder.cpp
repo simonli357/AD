@@ -21,8 +21,12 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-145.0f)
+      DEGREE_PER_CM(145.0f)
 {
+    _kf.Q_angle = 0.005f;    // deg²  (slow wander)
+    _kf.Q_speed = 6.0f;      // (deg/s)²  (covers 0→50 cm/s braking)
+    _kf.R_angle = 0.02f;     // deg²  (~0.14 deg rms measurement noise)
+    
     // 1) convert ticks → seconds
     m_dt = 0.001f;
 
@@ -136,6 +140,63 @@ float clamp(float x, float min, float max) {
     return x;
 }
 
+float CEncoder::readAngularSpeedKf() {
+    if (!_kfTimerStarted) {
+        _kfTimer.start();
+        _kfTimerStarted = true;
+    }
+    static uint32_t lastT_us = 0;
+    uint32_t now_us = _kfTimer.read_us();      // µs resolution (ticker @ 1 MHz)
+
+    if (lastT_us == 0) {                       // first call
+        lastT_us = now_us;
+        return 0.0f;                           // nothing to report yet
+    }
+
+    float dt = (now_us - lastT_us) * 1e-6f;    // → seconds (≈ 0.001 s)
+    lastT_us = now_us;
+
+    /* ---------- 2. raw measurement (0‒360 deg) ---------- */
+    float rawDeg = m_pwm.dutycycle() * 360.0f;   // instantaneous encoder reading
+
+    /* ---------- 3. unwrap across revolutions ---------- */
+    float diff = rawDeg - _prevRawAngleDeg;
+    if      (diff >  180.0f) _unwrapRevs--;     // wrapped 360→0 forward
+    else if (diff < -180.0f) _unwrapRevs++;     // wrapped 0→360 backward
+    _prevRawAngleDeg = rawDeg;
+    float unwrappedDeg = rawDeg + 360.0f * _unwrapRevs;
+
+    /* ---------- 4. Kalman predict + update ---------- */
+    _kf.predict(dt);
+    _kf.update(unwrappedDeg);
+
+    float speedDegPerSec = _kf.speed;           // final estimate
+
+    /* ---------- 5. (optional) speed hysteresis ---------- */
+    speedDegPerSec = applySpeedHysteresis(speedDegPerSec);
+
+    /* ---------- 6. publish at user‑chosen rate ---------- */
+    static float reportAccum = 0.0f;
+    reportAccum += dt;
+    if (reportAccum >= REPORT_INTERVAL_SEC) {
+        reportAccum = 0.0f;
+        char buf[48];
+        int n = std::snprintf(buf, sizeof(buf),
+                              "@5:%.3f;;\r\n",
+                              speedDegPerSec / DEGREE_PER_CM);
+        if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf))
+            m_serial.write(buf, n);
+        lastPublishedSpeed = speedDegPerSec;
+    }
+
+
+    // int len = snprintf(buf, sizeof(buf),
+    //                 "[Encoder] Total displacement = %.2f°\n",
+    //                 displacementDeg);
+    // m_serial.write(buf, len);
+
+    return speedDegPerSec;
+}
 float CEncoder::readAngularSpeed() {
     static Timer  timer;
     static bool   runOnce  = false;
@@ -224,11 +285,6 @@ float CEncoder::getTotalDisplacementDegrees()
 
     prev = ang_raw;
     float total = revs * 360.0f + ang_raw;
-    // char buf[64];
-    // int len = snprintf(buf, sizeof(buf),
-    //                 "[Encoder] Total displacement = %.2f°\n",
-    //                 total);
-    // m_serial.write(buf, len);
     return total;
 }
 
@@ -241,7 +297,11 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    readAngularSpeed();
+    readAngularSpeedKf();
+    // readAngularSpeed();
+    
+    // displacementDeg = getTotalDisplacementDegrees(); 
+
     // static Timer execTimer;
     // static bool timerStarted = false;
     // if (!timerStarted) {

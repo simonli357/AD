@@ -19,7 +19,7 @@ import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Encoder patterns
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
 MOTOR_ID_PWM   = 10     # duty‑cycle 0‑1
@@ -70,12 +70,13 @@ def run_test(port: str, baud: int,
                 line = ser.readline().decode("utf-8", errors="ignore").strip()
 
                 if m := ENC_PATTERN.match(line):
-                    speeds.append(float(m.group(2)))
+                    speeds.append(float(m.group(1)))
                     times.append(elapsed)
                 elif m := TOT_PATTERN.match(line):
-                    deg = float(m.group(1))
-                    if elapsed >= RAMP_SKIP_START and total_start is None:
-                        total_start = deg
+                    # deg = float(m.group(1))
+                    # if elapsed >= RAMP_SKIP_START and total_start is None:
+                    #     total_start = deg
+                    pass
                     total_end = deg
 
             if int(elapsed * 10) % 10 == 0:

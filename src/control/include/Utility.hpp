@@ -19,7 +19,7 @@
 #include <eigen3/Eigen/Dense>
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
-#include "utils/Lane2.h"
+#include "utils/Lane3.h"
 #include <std_srvs/Trigger.h>
 #include <mutex>
 #include <cmath>
@@ -64,8 +64,13 @@ public:
     std_msgs::String debug_msg;
     ros::Rate* rate;
 
-    double l_r, l_f, odomRatio, maxspeed, center, lane_center_offset, image_center, p, d, last;
-    int stopline = -1;
+    double l_r, l_f, odomRatio, maxspeed;
+
+    // lane stuff
+    double center, lane_center_offset, image_center, p, d, last;
+    double stopline_dist, stopline_angle;
+    Eigen::MatrixXd lane_waypoints;
+
     double height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     std::deque<double> velocity_command_queue; 
     void add_velocity_command(double new_command) {
@@ -149,7 +154,7 @@ public:
 
     gazebo_msgs::ModelStates model;
     std_msgs::Float32MultiArray sign;
-    utils::Lane2 lane;
+    utils::Lane3 lane;
     tf2::Matrix3x3 m_chassis;
     tf2::Quaternion tf2_quat;
     tf2::Quaternion q_transform;
@@ -179,11 +184,8 @@ public:
     }
 
     // Callbacks
-    void lane_callback(const utils::Lane2::ConstPtr& msg);
-    void lane_center_offset_callback(const std_msgs::Float32::ConstPtr& msg);
-    void waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg);
-    Eigen::MatrixXd lane_waypoints;
-    void process_lane_data(const utils::Lane2& msg);
+    void lane_callback(const utils::Lane3::ConstPtr& msg);
+    void process_lane_data(const utils::Lane3& msg);
     void sign_callback(const utils::Sign::ConstPtr& msg);
     void encoder_callback(const utils::encoder::ConstPtr& msg);
     void process_sign_data(const utils::Sign& msg);

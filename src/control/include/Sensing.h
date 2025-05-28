@@ -162,14 +162,26 @@ inline void reset_yaw(int direction)
         { 0.0,  M_PI/2,  M_PI, -M_PI/2 };           // E, N, W, S
     if (direction < 0 || direction > 3) return;
 
-    const double raw   = raw_yaw.load(std::memory_order_relaxed);
-    const double want  = desired_heading[direction];
+    if (Tunable::real) {
+        std::stringstream strs;
+        char buff[100];
+        snprintf(buff, sizeof(buff), "%.3f;;\r\n", 
+                 desired_heading[direction] * 180.0 / M_PI);
+        std::string number = "3";
+        strs << "#" << number << ":" << buff;
+        boost::asio::write(*serial, boost::asio::buffer(strs.str()));
+        std::cout << "Sensing: reset yaw to " << desired_heading[direction] * 180.0 / M_PI
+                  << " degrees" << std::endl;
+    } else {
+        const double raw   = raw_yaw.load(std::memory_order_relaxed);
+        const double want  = desired_heading[direction];
 
-    yaw_offset.store(yaw_mod(want - raw), std::memory_order_relaxed);
- 
-    yaw.store(yaw_mod(want), std::memory_order_relaxed);
-    // std::cout << "raw: " << raw << " want: " << want
-    //           << " yaw_offset: " << yaw_offset.load() << " yaw: " << yaw.load() << std::endl;
+        yaw_offset.store(yaw_mod(want - raw), std::memory_order_relaxed);
+    
+        yaw.store(yaw_mod(want), std::memory_order_relaxed);
+        // std::cout << "raw: " << raw << " want: " << want
+        //           << " yaw_offset: " << yaw_offset.load() << " yaw: " << yaw.load() << std::endl;
+    }
 }
 
 inline void initialize_sensing(ros::NodeHandle& nh)

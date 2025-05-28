@@ -31,7 +31,7 @@ import serial
 # Fast status: "@5:<angle_deg>;<speed_cm_s>;;"
 # Cum. angle : "[Encoder] Total displacement = <deg>°"
 # ------------------------------------------------------------------------------
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
 MOTOR_ID_SPEED = 11  # expects cm/s
@@ -92,12 +92,12 @@ def run_test(port: str,
                 raw_lines.append(f"{elapsed:.3f},{line}")
 
                 if m := ENC_PATTERN.match(line):
-                    speeds.append(float(m.group(2)))
+                    speeds.append(float(m.group(1)))
                     times.append(elapsed)
                     continue
 
                 if m := TOT_PATTERN.match(line):
-                    deg = float(m.group(1))
+                    deg = 0
                     # latch start *after* ramp‑up window
                     if elapsed >= RAMP_SKIP_START and total_start is None:
                         total_start = deg

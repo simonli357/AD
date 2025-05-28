@@ -41,6 +41,7 @@ namespace periodics
             float getYaw() {
                 return yaw;
             }
+            void reinitializeYaw(char const * a, char * b);
             
         private:
             /*I2C init routine */
@@ -77,7 +78,8 @@ namespace periodics
             float m_velocityY;
             float m_velocityZ;
             int m_velocityStationaryCounter;
-            float init_euler_h_deg;
+            float init_euler_h_deg; // initial yaw
+            float init_euler_p_deg; // initial pitch
             float yaw;
     }; // class CImu
 

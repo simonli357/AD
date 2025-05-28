@@ -1,0 +1,223 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+"""Motor‑encoder sine‑wave test utility
+─────────────────────────────────────────────────
+Drives the motor with a *single* full sine‑wave speed command that spans
+0 → Vmax → 0 cm/s over the requested *duration*, logs encoder feedback and
+plots commanded vs measured speed.
+"""
+
+import argparse
+import sys
+import time
+import math
+import re
+import csv
+from pathlib import Path
+
+import serial
+
+# ────────────────────────────────────────────────────────────────────────────────
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+
+MOTOR_ID   = 11
+CM_TO_DEG  = -146.0  # deg/s per cm/s (negative to fix sign)
+BAND_TOL   = 0.15    # ±10 % tolerance band for delay detection
+HOLD_S     = 0.5     # must remain inside band for this long to count as settled
+TX_PERIOD  = 0.10    # command transmission period [s]
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:
+    return f"#{MOTOR_ID}:{speed_cm_s:.4f}:{angle_deg:.2f};;\r\n".encode()
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def sine_profile(t, period: float, vmax: float):
+    """Full sine‑wave profile 0 → vmax → 0 over *period* seconds.
+    Works with scalars *or* numpy arrays."""
+    import numpy as np  # local import to avoid hard dependency when unused
+
+    tau = 2 * math.pi
+    t_arr = np.asarray(t)  # converts scalars transparently
+    return 0.5 * vmax * (1 - np.cos(tau * t_arr / period))
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def run_test(port: str, baud: int, vmax_cm_s: float, duration: float, steer: float) -> tuple[list[float], list[float]]:
+    ser = serial.Serial(port, baudrate=baud, timeout=0.1)
+    time.sleep(0.1)
+
+    t0 = time.time()
+    next_send = 0.0
+
+    times:  list[float] = []  # timestamps for encoder samples
+    speeds: list[float] = []  # encoder speed samples [cm/s]
+
+    print(f"Running {duration:.1f}s sine wave 0 → {vmax_cm_s:.1f} cm/s …")
+    try:
+        while True:
+            now      = time.time()
+            elapsed  = now - t0
+            if elapsed >= duration:
+                break
+
+            # send next command at fixed TX_PERIOD cadence
+            if elapsed >= next_send:
+                cmd_speed = float(sine_profile(elapsed, duration/2, vmax_cm_s))
+                ser.write(build_cmd(cmd_speed, steer))
+                next_send += TX_PERIOD
+
+            # read all available encoder lines
+            while ser.in_waiting:
+                line = ser.readline().decode("utf-8", errors="ignore").strip()
+                m = ENC_PATTERN.match(line)
+                if m:
+                    speeds.append(float(m.group(1)))
+                    times.append(elapsed)
+
+            # status bar each second
+            if int(elapsed) % 1 == 0:
+                sys.stdout.write(f"\r{elapsed:4.1f}s / {duration:.1f}s")
+                sys.stdout.flush()
+
+    except KeyboardInterrupt:
+        print("\nInterrupted by user — stopping motor.")
+
+    finally:
+        ser.write(build_cmd(0.0, 0.0))  # always stop motor on exit
+        ser.close()
+        print("\nSerial closed.")
+
+    return times, speeds
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def estimate_delay(times: list[float], speeds: list[float], cmd_speed: float,
+                   tol: float = BAND_TOL, hold: float = HOLD_S) -> float:
+    """Return first time |speed − cmd| ≤ tol·|cmd| for ≥ *hold* seconds.
+    Only meaningful near the peak where cmd_speed ≈ vmax."""
+    import numpy as np
+    t = np.array(times)
+    v = np.array(speeds)
+    if t.size == 0:
+        return 0.0
+
+    in_band = np.abs(v - cmd_speed) <= tol * abs(cmd_speed)
+    if not in_band.any():
+        return t[-1]
+
+    idx = np.where(in_band)[0]
+    segments = np.split(idx, np.where(np.diff(idx) != 1)[0] + 1)
+    for seg in segments:
+        if t[seg[-1]] - t[seg[0]] >= hold:
+            return t[seg[0]]
+    return t[-1]
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def compute_stats(times: list[float], speeds: list[float], start_time: float) -> dict:
+    import numpy as np
+    t = np.array(times)
+    s = np.array(speeds)
+    mask = t >= start_time
+    if not mask.any():
+        return {k: float("nan") for k in ("mean", "std", "min_dev", "max_dev")}
+    s_seg = s[mask]
+    mean  = float(s_seg.mean())
+    resid = s_seg - mean
+    return {
+        "mean": mean,
+        "std":  float(resid.std(ddof=1)),
+        "min_dev": float(resid.min()),
+        "max_dev": float(resid.max()),
+    }
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def save_csv(times: list[float], speeds: list[float], vmax: float, duration: float, path: Path) -> None:
+    with open(path, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["time_s", "enc_speed_cm_s", "cmd_speed_cm_s"])
+        for t, v in zip(times, speeds):
+            w.writerow([t, v, sine_profile(t, duration/2, vmax)])
+    print(f"CSV saved ➜ {path}")
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def save_plot(times: list[float], speeds: list[float], vmax: float, duration: float,
+              delay: float, stats: dict, path: Path) -> None:
+    try:
+        import numpy as np
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("matplotlib not installed; skipping plot.")
+        return
+
+    t = np.array(times)
+    cmd = sine_profile(t, duration/2, vmax)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(t, cmd, label="Command (cm/s)", linestyle="--")
+    plt.plot(t, speeds, label="Encoder (cm/s)")
+
+    plt.axhline(vmax,  color="red",   linestyle=":",  label=f"Vmax {vmax:.1f} cm/s")
+    plt.axvline(delay, color="purple", linestyle="-.", label=f"Delay {delay:.2f}s")
+
+    txt = (
+        f"Delay to ±10 % band : {delay:.2f} s\n"
+        f"Mean near peak      : {stats['mean']:.2f} cm/s\n"
+        f"σ noise             : {stats['std']:.2f} cm/s\n"
+        f"Min dev             : {stats['min_dev']:.2f} cm/s\n"
+        f"Max dev             : {stats['max_dev']:.2f} cm/s"
+    )
+    plt.gca().text(0.02, 0.97, txt, transform=plt.gca().transAxes,
+                   va="top", bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"))
+
+    plt.xlabel("Time [s]")
+    plt.ylabel("Speed [cm/s]")
+    plt.title("Encoder response to sine‑wave command (cm/s)")
+    plt.grid(True, linestyle=":")
+    plt.legend()
+    plt.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=150)
+    print(f"Plot saved ➜ {path}")
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Sine‑wave encoder test (cm/s)")
+    ap.add_argument("--max",   type=float, default=75, help="Peak command speed [cm/s]")
+    ap.add_argument("--steer", type=float, default=0,  help="Steering angle [deg]")
+    ap.add_argument("--dur",   type=float, default=20, help="Duration / sine period [s]")
+    ap.add_argument("--csv",   type=Path, help="Save raw data to CSV")
+    ap.add_argument("--port",  default="/dev/ttyACM0")
+    ap.add_argument("--baud",  type=int, default=115200)
+    args = ap.parse_args()
+
+    times, speeds = run_test(args.port, args.baud, args.max, args.dur, args.steer)
+    if len(speeds) < 3:
+        print("Insufficient samples.")
+        return
+
+    # estimate delay around the peak (use vmax as reference)
+    delay = estimate_delay(times, speeds, args.max)
+    stats = compute_stats(times, speeds, delay)
+
+    print(f"\nDelay to ±10 % band   : {delay:.3f} s")
+    print(f"Mean encoder speed    : {stats['mean']:.3f} cm/s")
+    print(f"Noise σ               : {stats['std']:.3f} cm/s")
+    print(f"Min deviation         : {stats['min_dev']:.3f} cm/s")
+    print(f"Max deviation         : {stats['max_dev']:.3f} cm/s")
+    if args.csv:
+        save_csv(times, speeds, args.max, args.dur, args.csv)
+    script_dir = Path(__file__).parent
+    save_plot(times, speeds, args.max, args.dur, delay, stats,
+              script_dir / f"encoder_sine_test_{args.max:.0f}cm_s.png")
+if __name__ == "__main__":
+    main()

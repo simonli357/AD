@@ -18,13 +18,15 @@ namespace VehicleConstants {
     static constexpr double WHEELBASE = 0.260;
     // static constexpr double L_R_SIM = 0.130;
     // static constexpr double L_F_SIM = 0.130;
-    static constexpr double L_R_SIM = 0.105;
-    static constexpr double L_F_SIM = 0.155;
-    static constexpr double L_R_REAL = 0.105;
-    static constexpr double L_F_REAL = 0.155;
+    static constexpr double L_R_SIM = 0.108;
+    static constexpr double L_F_SIM = 0.152;
+    static constexpr double L_R_REAL = 0.108;
+    static constexpr double L_F_REAL = 0.152;
 
-    static constexpr double CAR_LENGTH = 0.464;
-    static constexpr double CAR_WIDTH = 0.1885;
+    // static constexpr double CAR_LENGTH = 0.464; // sim
+    static constexpr double CAR_LENGTH = 0.375;
+    // static constexpr double CAR_WIDTH = 0.1885; //sim
+    static constexpr double CAR_WIDTH = 0.195; // real
     static constexpr double CAR_HEIGHT = 0.1155;
     static constexpr double SAME_LANE_SAFETY_FACTOR = 0.0357;//0.0753;
     static constexpr double LANE_CENTER_TO_EDGE = 0.0777;
@@ -303,8 +305,8 @@ namespace VehicleConstants {
         322.97223,  // cx
         244.39398   // cy
     };
-    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 0}; // x, y, z, roll, pitch, yaw
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 0};
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 2.1*M_PI/180.0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 2.1*M_PI/180.0};
     // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
     static constexpr double CAM_TO_CAR_FRONT = CAR_LENGTH / 2 - REALSENSE_TF[0];
 }

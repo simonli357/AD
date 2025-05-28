@@ -280,13 +280,8 @@ void Utility::initialize() {
 
     if (true) {
         lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
-        lane_center_offset_sub = nh.subscribe("/lane_center_offset", 3, &Utility::lane_center_offset_callback, this);
         int horizon = 40;
         lane_waypoints = Eigen::MatrixXd(horizon, 3);
-        waypoints_sub = nh.subscribe("/lane_waypoints", 3, &Utility::waypoints_callback, this);
-        // std::cout << "waiting for lane message" << std::endl;
-        // ros::topic::waitForMessage<utils::Lane2>("/lane");
-        // std::cout << "received message from lane" << std::endl;
     }
 
     timerpid = ros::Time::now();
@@ -440,30 +435,25 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     }
 }
 
-void Utility::lane_callback(const utils::Lane2::ConstPtr& msg) {
+void Utility::lane_callback(const utils::Lane3::ConstPtr& msg) {
     process_lane_data(*msg);
 }
-void Utility::lane_center_offset_callback(const std_msgs::Float32::ConstPtr& msg) {
-    lane_center_offset = msg->data;
-}
-void Utility::waypoints_callback(const std_msgs::Float32MultiArray::ConstPtr& msg) {
-    if(msg->data.size() < lane_waypoints.size()/3) {
-        ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg->data.size());
-        return;
-    }
-    for(int i = 0; i < lane_waypoints.size(); i+=3) {
-        lane_waypoints(i/3, 0) = msg->data[i];
-        lane_waypoints(i/3, 1) = msg->data[i+1];
-        lane_waypoints(i/3, 2) = msg->data[i+2];
-    }
-}
-void Utility::process_lane_data(const utils::Lane2& msg) {
+void Utility::process_lane_data(const utils::Lane3& msg) {
     {
-        // std::lock_guard<std::mutex> lock(general_mutex);
-        center = msg.center;
-        stopline = msg.stopline;
+        std::lock_guard<std::mutex> lock(general_mutex);
+        lane_center_offset = msg.lane_center_offset;
+        stopline_dist = msg.stopline_dist;
+        stopline_angle = msg.stopline_angle;
+        if(msg.lane_waypoints.size() < lane_waypoints.size()/3) {
+            ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg.lane_waypoints.size());
+            return;
+        }
+        for(int i = 0; i < lane_waypoints.size(); i+=3) {
+            lane_waypoints(i/3, 0) = msg.lane_waypoints[i];
+            lane_waypoints(i/3, 1) = msg.lane_waypoints[i+1];
+            lane_waypoints(i/3, 2) = msg.lane_waypoints[i+2];
+        }
     }
-    tcp_client->send_lane2(msg);
 }
 
 void Utility::ekf_callback(const nav_msgs::Odometry::ConstPtr& msg) {
@@ -514,9 +504,9 @@ void Utility::publish_odom() {
     {
         filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
         double delta_rad = steer_command * M_PI / 180.0;
-        double beta = 0.0;
-        if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
-        filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
+        // double beta = 0.0;
+        // if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
+        // filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
         double speed = filtered_encoder_speed;
         if (!Tunable::use_encoder) {
             speed = velocity_command;
@@ -637,6 +627,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
     }
     double yaw = Sensing::yaw;
     double pitch = Sensing::pitch;
+    // std::cout << "pitch: " << pitch * 180 / M_PI << std::endl;
     if (std::abs(pitch) <3 * M_PI / 180) {
         pitch = 0;
     }
@@ -688,7 +679,7 @@ void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip)
     {
         steer_command = steering_angle;
         velocity_command = velocity;
-        std::cout << "steer: " << steering_angle << ", vel_command: " << velocity_command << ", filtered_encoder: " << filtered_encoder_speed << ", yaw: " << Sensing::yaw*180/M_PI << ", use_encoder: " << Tunable::use_encoder << std::endl;
+        // std::cout << "steer: " << steering_angle << ", vel_command: " << velocity_command << ", filtered_encoder: " << filtered_encoder_speed << ", yaw: " << Sensing::yaw*180/M_PI << ", use_encoder: " << Tunable::use_encoder << std::endl;
         add_velocity_command(velocity_command);
     }
     // apply offset correction

@@ -1,6 +1,9 @@
 #include <periodics/imu.hpp>
 #include "imu.hpp"
 
+#define IMU_LOCK   core_util_critical_section_enter()
+#define IMU_UNLOCK core_util_critical_section_exit()
+
 namespace periodics{
     /** \brief  Class constructor
      *
@@ -29,49 +32,14 @@ namespace periodics{
         , m_velocityZ(0.0)
         , m_velocityStationaryCounter(0)
     {
-        s32 comres = BNO055_ERROR;
-        /* variable used to set the power mode of the sensor*/
-        u8 power_mode = BNO055_INIT_VALUE;
-
-        /*---------------------------------------------------------------------------*
-        *********************** START INITIALIZATION ************************
-        *--------------------------------------------------------------------------*/
-
-        /*--------------------------------------------------------------------------------------------------*
-        *  i2c_instance variable member will be initialized with the actual I2C of the target board.
-        *---------------------------------------------------------------------------------------------------*/      
         i2c_instance = new I2C(SDA, SCL);
         i2c_instance->frequency(400000);
-
-        /*  Based on the user need configure I2C interface.
-        *  It is example code to explain how to use the bno055 API*/
         I2C_routine();
 
-        /*--------------------------------------------------------------------------*
-        *  This API used to assign the value/reference of
-        *  the following parameters
-        *  I2C address
-        *  Bus Write
-        *  Bus read
-        *  Chip id
-        *  Page id
-        *  Accel revision id
-        *  Mag revision id
-        *  Gyro revision id
-        *  Boot loader revision id
-        *  Software revision id
-        *-------------------------------------------------------------------------*/
+        s32 comres = BNO055_ERROR;
+        u8 power_mode = BNO055_INIT_VALUE;
         comres = bno055_init(&bno055);
-
-        /*  For initializing the BNO sensor it is required to the operation mode
-        * of the sensor as NORMAL
-        * Normal mode can set from the register
-        * Page - page0
-        * register - 0x3E
-        * bit positions - 0 and 1*/
         power_mode = BNO055_POWER_MODE_NORMAL;
-
-        /* set the power mode as NORMAL*/
         comres += bno055_set_power_mode(power_mode);
 
         /************************* START READ RAW DATA ********
@@ -107,13 +75,30 @@ namespace periodics{
          * 0x0C - BNO055_OPERATION_MODE_NDOF
          * based on the user need configure the operation mode*/
         comres += bno055_set_operation_mode(BNO055_OPERATION_MODE_NDOF);
-
-        /*----------------------------------------------------------------*
-        ************************* END INITIALIZATION *************************
-        *-----------------------------------------------------------------*/
         init_euler_h_deg = BNO055_INIT_VALUE;
-
         comres += bno055_convert_float_euler_h_deg(&init_euler_h_deg);
+        init_euler_p_deg = BNO055_INIT_VALUE;
+        comres += bno055_convert_float_euler_p_deg(&init_euler_p_deg);
+    }
+
+    void CImu::reinitializeYaw(const char* a, char* b)
+    {
+        float targetDeg;                        // the heading you want, e.g. 90
+        if (sscanf(a, "%f", &targetDeg) != 1) {
+            sprintf(b, "syntax error");
+            return;
+        }
+
+        IMU_LOCK;                               // stop imuTask() using I²C
+
+        init_euler_h_deg += yaw - targetDeg + 180.0f;
+        while(init_euler_h_deg >= 360.0f) init_euler_h_deg -= 360.0f;
+        while(init_euler_h_deg < 0.0f) init_euler_h_deg += 360.0f;
+
+        init_euler_p_deg = 0.0f; // reset pitch to 0
+
+        IMU_UNLOCK;
+        sprintf(b, "ack");                      // tell host we succeeded
     }
 
     /** @brief  CImu class destructor
@@ -654,38 +639,37 @@ namespace periodics{
         // 2) Sensor reads + immediate error check
         s32 res;
         float pitch, roll;
+        float ax, ay, az, gx, gy, gz;
         
-        // if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
-        //     (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
-        //     return;
-        // }
-        // printf("[Imu Run] got data \n");
-        if (res = bno055_get_euler_hrp(&yaw, &pitch, &roll) != BNO055_SUCCESS) {
-            return;  // abort on any error
+        if ((res = bno055_convert_float_euler_h_deg(&yaw)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_p_deg(&pitch)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_euler_r_deg(&roll)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_x_msq(&ax)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_y_msq(&ay)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_linear_accel_z_msq(&az)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_x_rps(&gx)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_y_rps(&gy)) != BNO055_SUCCESS ||
+            (res = bno055_convert_float_gyro_z_rps(&gz)) != BNO055_SUCCESS) {
+            return;
         }
+        // printf("[Imu Run] got data \n");
+        // res = bno055_get_euler_hrp(&yaw, &pitch, &roll);
+        // if (res != BNO055_SUCCESS) {
+        //     m_serial.write("Error reading IMU data\r\n", 25);
+        //     return;  // abort on any error
+        // }
     
-        // 3) Normalize yaw into [0,360)
         yaw -= init_euler_h_deg;
         if (yaw < 0.0f)   yaw += 360.0f;
         if (yaw >= 360.0f) yaw -= 360.0f;
 
+        pitch -= init_euler_p_deg;
+        if (pitch < -180.0f) pitch += 360.0f;
+        if (pitch >= 180.0f) pitch -= 360.0f;
+
         // printf("@7:%.1f;%.1f;;\r\n",
         //        pitch, yaw);
         char out[32];
-        // int n = std::snprintf(out, sizeof(out),
-        //                       "@7:%.3f;%.3f;;\r\n",
-        //                       pitch, yaw);
-        // if (n > 0 && static_cast<std::size_t>(n) < sizeof(out)) {
-        //     m_serial.write(out, n);
-        // }
-
         snprintf(out, sizeof(out),
                 "@7:%.1f;%.1f;;\r\n",
                 pitch, yaw);

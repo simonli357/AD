@@ -34,7 +34,7 @@ import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
 # ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
 
 MOTOR_ID = 10
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
@@ -80,13 +80,8 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
                 m = ENC_PATTERN.match(line)
                 if not m:
                     continue
-                # angle = float(m.group(1))
-                # speed_deg_s = float(m.group(2))
-                # last_angle = angle
-                # speeds_cm.append(speed_deg_s / CM_TO_DEG)
-                angle = float(m.group(1))
-                speed_cm = float(m.group(2))
-                last_angle = angle
+                speed_cm = float(m.group(1))
+                last_angle = 0
                 speeds_cm.append(speed_cm)
                 times.append(elapsed)
 
