@@ -111,14 +111,14 @@ void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// mutex.unlock();
 		return;
 	}
-	// {
-	// 	std::lock_guard<std::mutex> lock(mutex);
-	// 	depthImage = cv_ptr_depth->image.clone();
-	// 	depthImage.convertTo(depthImage, CV_16UC1);
-	// 	if (flip) {
-	// 		cv::flip(depthImage, depthImage, -1);
-	// 	}
-	// }
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		depthImage = cv_ptr_depth->image.clone();
+		depthImage.convertTo(depthImage, CV_16UC1);
+		if (flip) {
+			cv::flip(depthImage, depthImage, -1);
+		}
+	}
 	if (Sign.tcp_client != nullptr && send_depth) {
 		Sign.tcp_client->send_image_depth(depthImage);
 	}
@@ -132,15 +132,16 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// mutex.unlock();
 		return;
 	}
-
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
-
-	colorImage = cv_ptr->image.clone();
-	// if (flip) {
-	// 	cv::flip(colorImage, colorImage, -1);
-	// }
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        colorImage = cv_ptr->image.clone();
+        if (flip) {
+            cv::flip(colorImage, colorImage, -1);
+        }
+    }
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
