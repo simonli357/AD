@@ -43,14 +43,10 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
     cameraNode = std::make_unique<CameraLib>(nh);
     cameraNode->onLaneCompletion = [this](utils::Lane3 &msg) {
-        tasks->run([this, msg] {
-            process_lane_data(msg);
-        });
+        process_lane_data(msg);
     };
     cameraNode->onSignCompletion = [this](utils::Sign &msg) {
-        tasks->run([this, msg] {
-            process_sign_data(msg);
-        });
+        process_sign_data(msg);
     };
 
     message_pub = nh.advertise<std_msgs::String>("/message", 10);
