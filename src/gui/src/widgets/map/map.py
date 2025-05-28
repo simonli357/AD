@@ -174,6 +174,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
     def paintGL(self):
         if self.stop_drawing:
             return
+
         if self.view_zoom == 1:
             self.view_center = glm.vec2(0, 0)
 
@@ -304,8 +305,7 @@ class MapWidget(QtWidgets.QOpenGLWidget):
 
             if entity_type == 'Intersection':
                 if self.show_signs:
-                    # self.draw_intersection(image, pixel_x, pixel_y, orientation, 20)
-                    continue
+                    self.draw_intersection(row['X'], row['Y'], -orientation)
             elif entity_type == 'Lane':
                 if self.show_lanes:
                     self.draw_lane(x, y, orientation)
@@ -319,6 +319,21 @@ class MapWidget(QtWidgets.QOpenGLWidget):
                     if sign_index is not None:
                         mat = self.sign_models[sign_index]
                         self.shader_renderer.draw_texture(mat, x, y, 0.05, (20, 20), self.view_mat, self.proj_mat)
+
+    def draw_intersection(self, x, y, orientation, length=0.2):
+        orientation += np.pi / 2
+        while orientation > 2 * np.pi:
+            orientation -= 2 * np.pi
+        while orientation < 0:
+            orientation += 2 * np.pi
+        if orientation == 0 or orientation == np.pi or orientation == 2 * np.pi:
+            start = (x - length, y)
+            end = (x + length, y)
+            self.shader_renderer.draw_rect_between(self.get_gl_coords(*start), self.get_gl_coords(*end), (0.0, 0.0, 1.0, 1.0), 30.0, self.view_mat, self.proj_mat)
+        else:
+            start = (x, y - length)
+            end = (x, y + length)
+            self.shader_renderer.draw_rect_between(self.get_gl_coords(*start), self.get_gl_coords(*end), (0.0, 0.0, 1.0, 1.0), 30.0, self.view_mat, self.proj_mat)
 
     def draw_lane(self, x, y, orientation):
         """Draw lane markings using OpenGL lines"""

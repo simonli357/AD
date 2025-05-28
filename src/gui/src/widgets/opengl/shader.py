@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .utils import asset_path, object_path, create_shader_program, shader_path
 from .loaders import load_mesh, load_map, load_2D_texture
-from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, ripple_model, diamond_model
+from .basic import line_model, circle_model, crosshair_model, triangle_model, arrow_model, ripple_model, diamond_model, rect_model
 from .obj import load_obj, create_obj
 from ..enums import NamedColor, OpenGLContextName
 from .custom.progress_bar import ProgressBar
@@ -199,6 +199,7 @@ class ShaderRenderer:
         self.ripple_model = ripple_model()
         self.triangle_model = triangle_model()
         self.arrow_model = arrow_model()
+        self.rect_model = rect_model()
 
     def load_barca_models(self):
         self.barca_shader = create_shader_program(shader_path('barca', 'barca.vert'), shader_path('barca', 'barca.frag'))
@@ -537,6 +538,36 @@ class ShaderRenderer:
 
         gl.glBindVertexArray(self.arrow_model.vao)
         gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.arrow_model.vertex_count)
+
+    def draw_rect_between(self, start, end, color, thickness, view_matrix, proj_matrix, z=3.0):
+        x0, y0 = start
+        x1, y1 = end
+
+        dx, dy = x1 - x0, y1 - y0
+        length = np.hypot(dx, dy)
+        if length < 1e-6:
+            return  # nothing visible
+
+        # Correct rotation:
+        theta = np.arctan2(dy, dx)
+        angle = theta - np.pi / 2
+
+        # build model matrix
+        model = glm.mat4(1.0)
+        model = glm.translate(model, glm.vec3(x0, y0, z))
+        model = glm.rotate(model, angle, glm.vec3(0.0, 0.0, 1.0))
+        model = glm.scale(model, glm.vec3(thickness, length, 1.0))
+
+        # upload & draw (unchanged)
+        gl.glUseProgram(self.rect_model.shader_program)
+
+        gl.glUniformMatrix4fv(self.rect_model.u_model, 1, gl.GL_FALSE, glm.value_ptr(model))
+        gl.glUniformMatrix4fv(self.rect_model.u_view, 1, gl.GL_FALSE, glm.value_ptr(view_matrix))
+        gl.glUniformMatrix4fv(self.rect_model.u_proj, 1, gl.GL_FALSE, glm.value_ptr(proj_matrix))
+        gl.glUniform4f(self.rect_model.u_color, *color)
+
+        gl.glBindVertexArray(self.rect_model.vao)
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, self.rect_model.vertex_count)
 
     def draw_axis2D(self, x, y, yaw, scale, view_matrix, proj_matrix):
         gl.glUseProgram(self.arrow_model.shader_program)
