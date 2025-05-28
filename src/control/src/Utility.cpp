@@ -296,10 +296,10 @@ void Utility::initialize() {
 
     timerpid = ros::Time::now();
     if (Tunable::sign) {
-        sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-        std::cout << "waiting for sign message" << std::endl;
-        ros::topic::waitForMessage<utils::Sign>("/sign");
-        std::cout << "received message from sign" << std::endl;
+        // sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+        // std::cout << "waiting for sign message" << std::endl;
+        // ros::topic::waitForMessage<utils::Sign>("/sign");
+        // std::cout << "received message from sign" << std::endl;
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
