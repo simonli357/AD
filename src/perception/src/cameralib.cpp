@@ -148,11 +148,11 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
 
-    tasks_running = false;
-
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
+
+    tasks_running = false;
 }
 
 void CameraLib::run_lane_once() {
@@ -212,7 +212,6 @@ void CameraLib::get_frame() {
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
 
-    tasks_running = false;
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
@@ -220,10 +219,13 @@ void CameraLib::get_frame() {
 			Sign.tcp_client->send_image_depth(depthImage);
 		}
 	}
+
 	// if (pubImage) {
 	// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
 	// 	depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
 	// 	color_pub.publish(color_msg);
 	// 	depth_pub.publish(depth_msg);
 	// }
+    
+    tasks_running = false;
 }
