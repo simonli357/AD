@@ -55,7 +55,6 @@ Utility::Utility(ros::NodeHandle& nh_, bool pubOdom)
 
 Utility::~Utility() {
     stop_car(); 
-    tasks->wait();
 }
 
 void Utility::initialize_tcp_client() {
