@@ -1,4 +1,13 @@
 <launch>
+
+  <rosparam command="load" file="$(find perception)/config/sign_params.yaml" />
+  <rosparam command="load" file="$(find perception)/config/lane_params.yaml" />
+  <arg name="quality" default="90"/>
+  <param name="quality" value="$(arg quality)"/>
+  <arg name="flip" default="true"/>
+  <arg name="send_depth" default="false"/>
+  <arg name="ground_dist" default="false"/>
+
   <arg name="sign" default="true"/>
   <arg name="ekf" default="false"/>
   <arg name="lane" default="true"/>
