@@ -287,7 +287,7 @@ class SignFastest {
             float confidence;
             int x1, y1, x2, y2;
         };
-        void publish_sign(const cv::Mat& image, const cv::Mat& depthImage, std::function<void(utils::Sign&)> &onCompletion) {
+        void publish_sign(const cv::Mat& image, const cv::Mat& depthImage, std::function<void(utils::Sign&)> *onCompletion=nullptr) {
             if(printDuration) start = high_resolution_clock::now();
             sign_msg.header.stamp = ros::Time::now();
             sign_msg.data.clear();
@@ -453,8 +453,8 @@ class SignFastest {
             // }
             // Publish Sign message
             
-            if (onCompletion) {
-                onCompletion(sign_msg);
+            if (onCompletion && *onCompletion) {
+                (*onCompletion)(sign_msg);
             }
 
             if (publish) {

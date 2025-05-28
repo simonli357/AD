@@ -18,6 +18,8 @@ class CameraLib {
 	CameraLib &operator=(const CameraLib &) = delete;
 	~CameraLib();
 
+	std::unique_ptr<tbb::task_group> tasks;
+
 	std::function<void(utils::Lane3 &)> onLaneCompletion;
 	std::function<void(utils::Sign &)> onSignCompletion;
 

@@ -123,30 +123,28 @@ void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 }
 
 void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
-	// mutex.lock();
-	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-	if (cv_ptr == nullptr) {
-		ROS_WARN("cv_ptr is null");
-		// mutex.unlock();
-		return;
-	}
-	if (!useRosTimer) {
-		if (doLane) {
-			Lane.publish_lane(cv_ptr->image);
-		}
-		if (doSign) {
-			Sign.publish_sign(cv_ptr->image, cv_ptr_depth->image);
-		}
-	} else {
-		std::lock_guard<std::mutex> lock(mutex);
-		colorImage = cv_ptr->image.clone();
-		if (flip)
-			cv::flip(colorImage, colorImage, -1);
-	}
-	if (Sign.tcp_client != nullptr) {
-		Sign.tcp_client->send_image_rgb(colorImage);
-	}
-	// mutex.unlock();
+    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    if (cv_ptr == nullptr) {
+        ROS_WARN("cv_ptr is null");
+        // mutex.unlock();
+        return;
+    }
+
+	tasks->run([this] {
+        run_lane_once();
+	});
+    tasks->run([this] {
+        run_sign_once();
+    });
+    tasks->wait();
+
+    colorImage = cv_ptr->image.clone();
+    if (flip) {
+        cv::flip(colorImage, colorImage, -1);
+    }
+    if (Sign.tcp_client != nullptr) {
+        Sign.tcp_client->send_image_rgb(colorImage);
+    }
 }
 
 void CameraLib::run_lane_once() {
@@ -159,7 +157,7 @@ void CameraLib::run_lane_once() {
 		}
 		img = colorImage.clone();
 	}
-    Lane.publish_lane(img, onLaneCompletion);
+    Lane.publish_lane(img, &onLaneCompletion);
 }
 
 void CameraLib::run_sign_once() {
@@ -177,7 +175,7 @@ void CameraLib::run_sign_once() {
 		color_img = colorImage.clone();
 		depth_img = depthImage.clone();
 	}
-	Sign.publish_sign(color_img, depth_img, onSignCompletion);
+	Sign.publish_sign(color_img, depth_img, &onSignCompletion);
 }
 
 void CameraLib::get_frame() {
@@ -198,8 +196,13 @@ void CameraLib::get_frame() {
 		cv::flip(depthImage, depthImage, -1);
 	}
 
-    run_lane_once();
-    run_sign_once();
+	tasks->run([this] {
+        run_lane_once();
+	});
+    tasks->run([this] {
+        run_sign_once();
+    });
+    tasks->wait();
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);

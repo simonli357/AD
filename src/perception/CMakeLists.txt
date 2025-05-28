@@ -126,6 +126,7 @@ add_library(object_detection_lib
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp
+  src/cameralib.cpp
 )
 target_link_libraries(object_detection_lib PUBLIC
   ncnn

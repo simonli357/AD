@@ -459,7 +459,7 @@ class LaneDetector {
 			return out;
 	}
 
-	void publish_lane(const cv::Mat &image, std::function<void(utils::Lane3&)> &onCompletion) {
+	void publish_lane(const cv::Mat &image, std::function<void(utils::Lane3&)> *onCompletion=nullptr) {
 		if (image.empty()) {
 			ROS_WARN("empty image received in lane detector");
 			return;
@@ -540,8 +540,8 @@ class LaneDetector {
 			lane_msg.stopline_dist = stopline_dist;
 			lane_msg.header.stamp = ros::Time::now();
 
-            if (onCompletion) {
-                onCompletion(lane_msg);
+            if (onCompletion && *onCompletion) {
+                (*onCompletion)(lane_msg);
             }
 
 			lane_pub.publish(lane_msg);
