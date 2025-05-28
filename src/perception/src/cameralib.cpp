@@ -133,9 +133,6 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// mutex.unlock();
 		return;
 	}
-	tasks->run([this] { run_lane_once(); });
-	tasks->run([this] { run_sign_once(); });
-	tasks->wait();
     {
         std::lock_guard<std::mutex> lock(mutex);
         colorImage = cv_ptr->image.clone();
@@ -143,6 +140,8 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
             cv::flip(colorImage, colorImage, -1);
         }
     }
+	tasks->run([this] { run_lane_once(); });
+	tasks->run([this] { run_sign_once(); });
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
@@ -199,7 +198,6 @@ void CameraLib::get_frame() {
 
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
-	tasks->wait();
 
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
