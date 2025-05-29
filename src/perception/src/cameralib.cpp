@@ -106,7 +106,7 @@ CameraLib::~CameraLib() {
 
 void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 	// mutex.lock();
-	cv_ptr_depth = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+	cv_ptr_depth = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 	if (cv_ptr_depth == nullptr) {
 		ROS_WARN("cv_ptr_depth is null");
 		// mutex.unlock();
@@ -131,7 +131,7 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 		// Already running, skip this frame
 		return;
 	}
-	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+	cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	if (cv_ptr == nullptr) {
 		ROS_WARN("cv_ptr is null");
 		// mutex.unlock();
