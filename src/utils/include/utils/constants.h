@@ -10,7 +10,7 @@
 
 namespace ThreadPools {
     inline tbb::task_arena communication{1}; // 1 Thread for communication tasks
-    inline tbb::task_arena perception{2};    // 2 Threads for perception tasks
+    inline tbb::task_arena perception{3};    // 3 Threads for perception tasks
 }
 
 namespace VehicleConstants {
