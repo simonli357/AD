@@ -102,6 +102,37 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 
 CameraLib::~CameraLib() { tasks->wait(); }
 
+void CameraLib::run_lane_once() {
+	cv::Mat img;
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		if (colorImage.empty()) {
+			ROS_WARN("colorImage is empty");
+			return;
+		}
+		img = colorImage.clone();
+	}
+	Lane.publish_lane(img, &onLaneCompletion);
+}
+
+void CameraLib::run_sign_once() {
+	cv::Mat color_img, depth_img;
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		if (colorImage.empty()) {
+			ROS_WARN("colorImage is empty");
+			return;
+		}
+		if (depthImage.empty()) {
+			ROS_WARN("depthImage is empty");
+			return;
+		}
+		color_img = colorImage.clone();
+		depth_img = depthImage.clone();
+	}
+	Sign.publish_sign(color_img, depth_img, &onSignCompletion);
+}
+
 void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
 	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr_depth = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 
@@ -146,44 +177,14 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
+	tasks->run([this] {
+		if (Sign.tcp_client != nullptr) {
+			Sign.tcp_client->send_image_rgb(colorImage);
+		}
+	});
 	tasks->wait();
 
-	if (Sign.tcp_client != nullptr) {
-		Sign.tcp_client->send_image_rgb(colorImage);
-	}
-
 	tasks_running = false;
-}
-
-void CameraLib::run_lane_once() {
-	cv::Mat img;
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
-		}
-		img = colorImage.clone();
-	}
-	Lane.publish_lane(img, &onLaneCompletion);
-}
-
-void CameraLib::run_sign_once() {
-	cv::Mat color_img, depth_img;
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
-		}
-		if (depthImage.empty()) {
-			ROS_WARN("depthImage is empty");
-			return;
-		}
-		color_img = colorImage.clone();
-		depth_img = depthImage.clone();
-	}
-	Sign.publish_sign(color_img, depth_img, &onSignCompletion);
 }
 
 void CameraLib::get_frame() {
@@ -210,14 +211,15 @@ void CameraLib::get_frame() {
 
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
-	tasks->wait();
-
-	if (Sign.tcp_client != nullptr) {
-		Sign.tcp_client->send_image_rgb(colorImage);
-		if (send_depth) {
-			Sign.tcp_client->send_image_depth(depthImage);
+	tasks->run([this] {
+		if (Sign.tcp_client != nullptr) {
+			Sign.tcp_client->send_image_rgb(colorImage);
+			if (send_depth) {
+				Sign.tcp_client->send_image_depth(depthImage);
+			}
 		}
-	}
+	});
+	tasks->wait();
 
 	// if (pubImage) {
 	// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
