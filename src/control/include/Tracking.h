@@ -70,6 +70,7 @@ public:
 
     double lifetime;
     ros::Time last_detection_time;
+    ros::Time first_detection_time;
 
     std::deque<std::array<double, 3>> position_history;  // x, y, confidence
     static constexpr size_t HISTORY_SIZE = 5;
@@ -81,6 +82,7 @@ public:
         detection_count = 1;
         cumulative_confidence = confidence;
         last_detection_time = ros::Time::now();
+        first_detection_time = last_detection_time;
         lifetime = OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime;
         position_history.push_back({x, y, confidence});
     }
@@ -178,6 +180,8 @@ public:
 
     void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) override {
         RoadObject::merge(new_x, new_y, new_yaw, new_conf, new_type);
+        // ROS_INFO("Merging KnownStaticObject: id=%d, type=%s, detection_count=%d, new_conf=%.2f, cumulative_confidence=%.2f, elapsed_time=%.2f, avg conf per second=%.2f",
+        //          id, OBJECT_NAMES[type].c_str(), detection_count, new_conf, cumulative_confidence, (ros::Time::now() - first_detection_time).toSec(), cumulative_confidence / (ros::Time::now() - first_detection_time).toSec());
         RoadObject::update_yaw(gt_pose[2]); // keep the ground truth yaw
     }
 
@@ -336,14 +340,13 @@ public:
 class DynamicObject : public RoadObject {
 public:
     double first_x, first_y, first_yaw;
-    ros::Time first_detection_time;
     ros::Time last_prediction_time;
     std::unique_ptr<KalmanFilter> kf;
     bool use_kf = true;
 
     DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
         : RoadObject(type, x, y, yaw, confidence),
-            first_x(x), first_y(y), first_yaw(yaw), first_detection_time(ros::Time::now()), use_kf(Tunable::use_kf),
+            first_x(x), first_y(y), first_yaw(yaw), use_kf(Tunable::use_kf),
           kf(std::make_unique<KalmanFilter>(x, y, yaw, 0.0)), last_prediction_time(ros::Time::now())  
     {
         if (type != OBJECT::CAR && type != OBJECT::PEDESTRIAN) {

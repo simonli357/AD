@@ -42,6 +42,7 @@
 #include <utils/encoder.h>
 #include "utils/helper.h"
 #include "Sensing.h"
+#include "Perception.hpp"
 #include <numeric>
 
 using namespace VehicleConstants;
@@ -186,9 +187,23 @@ public:
     // Callbacks
     void lane_callback(const utils::Lane3::ConstPtr& msg);
     void process_lane_data(const utils::Lane3& msg);
+    ros::Timer lane_timer;
+    void lane_timer_callback(const ros::TimerEvent& event) {
+        auto optional_lane_msg = Perception::get_lane_msg();
+        if (optional_lane_msg) {
+            process_lane_data(*optional_lane_msg);
+        }
+    }
     void sign_callback(const utils::Sign::ConstPtr& msg);
     void encoder_callback(const utils::encoder::ConstPtr& msg);
     void process_sign_data(const utils::Sign& msg);
+    ros::Timer sign_timer;
+    void sign_timer_callback(const ros::TimerEvent& event) {
+        auto optional_sign_msg = Perception::get_sign_msg();
+        if (optional_sign_msg) {
+            process_sign_data(*optional_sign_msg);
+        }
+    }
     void model_callback(const gazebo_msgs::ModelStates::ConstPtr& msg);
     void ekf_callback(const nav_msgs::Odometry::ConstPtr& msg);
     void tf_callback(const tf2_msgs::TFMessage::ConstPtr& msg);

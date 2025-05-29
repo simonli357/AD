@@ -151,8 +151,8 @@ class IPMCamera {
 
 class LaneDetector {
   public:
-	LaneDetector(ros::NodeHandle &nh) : nh(nh), showflag(false), printflag(false),
-		ipm_camera(nh, true)
+	LaneDetector(ros::NodeHandle &nh, bool publish_msg) : nh(nh), showflag(false), printflag(false),
+		ipm_camera(nh, true), publish_msg(publish_msg)
 	{
 		IPM_WIDTH = ipm_camera.resolution * ipm_camera.width_m;
 		IPM_HEIGHT = ipm_camera.resolution * (ipm_camera.far_m - ipm_camera.near_m);
@@ -194,6 +194,7 @@ class LaneDetector {
 		}
 	}
 
+	bool publish_msg;
 	enum LANES { NONE = 0, LEFT = 1, BOTH = 2, RIGHT = 3};
 	const double IMG_WIDTH = 640;
 	const double IMG_HEIGHT = 480;
@@ -217,7 +218,6 @@ class LaneDetector {
 	ros::Publisher lane_pub;
 	ros::Publisher center_offset_pub;
 	ros::Publisher waypoints_pub;
-	utils::Lane3 lane_msg;
 
 	bool showflag, printflag, printDuration, publish, real;
 
@@ -459,15 +459,16 @@ class LaneDetector {
 			return out;
 	}
 
-	void publish_lane(const cv::Mat &image) {
+	utils::Lane3 publish_lane(const cv::Mat &image) {
+		utils::Lane3 lane_msg;
 		if (image.empty()) {
 			ROS_WARN("empty image received in lane detector");
-			return;
+			return {};
 		}
 		auto start = high_resolution_clock::now();
 		if (true) {
 			preprocess(image, processed_image);
-			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return;
+			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return {};
 
 			// ipm_camera.getIPM(image, ipm_color);
 			// cv::imshow("ipm color", ipm_color);
@@ -511,7 +512,7 @@ class LaneDetector {
 			}
 
 			double center_offset = find_lanes(ipm_processed);
-			if(!line_fit(ipm_processed)) return;
+			if(!line_fit(ipm_processed)) return lane_msg;
 
 			auto wpts = get_waypoints(left_fit, right_fit, 40, 0.032);
 			// for (size_t i = 0; i + 6 <= wpts.size(); i += 3) {
@@ -532,18 +533,17 @@ class LaneDetector {
 			// 	std::cout << i/3 << ") x: " << wpts[i] << ", y: " << wpts[i + 1] << ", yaw: " << wpts[i + 2] << std::endl;
 			// }
 
-			lane_msg.lane_waypoints.clear();
 			for (int i = 0; i < wpts.size(); i++) {
 				lane_msg.lane_waypoints.push_back(wpts[i]);
 			}
 			lane_msg.lane_center_offset = center_offset;
 			lane_msg.stopline_dist = stopline_dist;
 			lane_msg.header.stamp = ros::Time::now();
-			lane_pub.publish(lane_msg);
+			if (publish_msg) lane_pub.publish(lane_msg);
 
 			if (showflag) {
 				if (!ipm_camera.getIPM(image, ipm_color))
-					return;
+					return lane_msg;
 				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
 				cv::imshow("viz3", gyu_img);
 				cv::waitKey(1);
@@ -554,6 +554,7 @@ class LaneDetector {
 			auto duration = duration_cast<microseconds>(stop - start);
 			ROS_INFO("lane duration: %ld", duration.count());
 		}
+		return lane_msg;
 	}
 
 	double pixel_to_meter_y(double pixel) { 

@@ -30,8 +30,8 @@ using namespace VehicleConstants;
 
 class SignFastest {
     public:
-        SignFastest(ros::NodeHandle& nh, bool real = false) : 
-            real(real)
+        SignFastest(ros::NodeHandle& nh, bool publish_msg, bool real = false) : 
+            real(real), publish_msg(publish_msg)
         {
             std::cout.precision(4);
             bool use_tcp = false;
@@ -84,7 +84,6 @@ class SignFastest {
             nh.param(nodeName+"/printDuration", printDuration, false); //printDuration
             nh.param(nodeName+"/hasDepthImage", hasDepthImage, false);
             nh.param(nodeName+"/real", real, false);
-            nh.param(nodeName+"/pub", publish, false);
             nh.param(nodeName+"/ncnn", ncnn, false);
             nh.param(nodeName+"/ground_dist", ground_dist, false);
             nh.param("/emergency_width", emergency_width, 0.0);
@@ -133,9 +132,6 @@ class SignFastest {
             processed_image_pub = nh.advertise<sensor_msgs::Image>("processed_image", 10);
         }
         
-        // std_msgs::Float32MultiArray sign_msg;
-        utils::Sign sign_msg;
-
         static constexpr int OBJECT_COUNT = 13;
         double emergency_thresh = 429; // in mm
         // private:
@@ -152,8 +148,8 @@ class SignFastest {
         bool printDuration;
         bool hasDepthImage;
         bool real;
-        bool publish;
         bool ncnn;
+        bool publish_msg;
         bool use_emergency = false;
         bool ground_dist = false;
         double emergency_width, emergency_height, emergency_y;
@@ -287,18 +283,18 @@ class SignFastest {
             float confidence;
             int x1, y1, x2, y2;
         };
-        void publish_sign(const cv::Mat& image, const cv::Mat& depthImage) {
+        utils::Sign publish_sign(const cv::Mat& image, const cv::Mat& depthImage) {
             if(printDuration) start = high_resolution_clock::now();
+            utils::Sign sign_msg;
             sign_msg.header.stamp = ros::Time::now();
-            sign_msg.data.clear();
             if (hasDepthImage && depthImage.empty()) {
                 ROS_ERROR("Depth image is empty");
-                return;
+                return sign_msg;
             }
 
             if(image.empty()) {
                 ROS_WARN("empty image received in sign detector");
-                return;
+                return sign_msg;
             }
 
             bool emergency = detect_emergency_obstacle(depthImage);
@@ -307,12 +303,12 @@ class SignFastest {
                 for (int i = 0; i < NUM_VALUES_PER_OBJECT; i++) {
                     sign_msg.data.push_back(-1.0);
                 }
-                if (publish) {
+                if (publish_msg) {
                     pub.publish(sign_msg);
-                    if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
                 }
+                if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
                 if (print) ROS_INFO("Emergency obstacle detected");
-                return;
+                return sign_msg;
             }
             
             static std::vector<int> detected_indices(OBJECT_COUNT, 0);
@@ -452,13 +448,13 @@ class SignFastest {
             //     sign_msg.layout.dim.push_back(dim); 
             // }
             // Publish Sign message
-            if (publish) {
+            if (publish_msg) {
                 if (sign_msg.data.size() % NUM_VALUES_PER_OBJECT != 0) {
                     ROS_WARN("Sign message size is not a multiple of %d", NUM_VALUES_PER_OBJECT);
                 }
                 pub.publish(sign_msg);
-                if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
             }
+            if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
 
             if(printDuration) {
                 stop = high_resolution_clock::now();
@@ -554,6 +550,7 @@ class SignFastest {
                 
                 }
             }
+            return sign_msg;
         }
 
         double computeMedianDepth(const cv::Mat& depthImage, int bbox_x1, int bbox_y1, int bbox_x2, int bbox_y2) {
