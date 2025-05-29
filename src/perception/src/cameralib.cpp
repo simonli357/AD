@@ -15,7 +15,7 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 	nh.param("quality", quality, 30);
 
 	Sign.tcp_client->set_image_quality(quality);
-    flip = true;
+	flip = true;
 
 	ThreadPools::perception.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 
@@ -100,50 +100,50 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 	}
 }
 
-CameraLib::~CameraLib() {
-    tasks->wait();
-}
+CameraLib::~CameraLib() { tasks->wait(); }
 
 void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
-	// mutex.lock();
-	cv_ptr_depth = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
-	if (cv_ptr_depth == nullptr) {
+	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr_depth = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+
+	if (!cv_ptr_depth) {
 		ROS_WARN("cv_ptr_depth is null");
-		// mutex.unlock();
 		return;
 	}
+
 	{
 		std::lock_guard<std::mutex> lock(mutex);
-		depthImage = cv_ptr_depth->image.clone();
+		depthImage = cv_ptr_depth->image.clone(); // clone to allow modification
 		depthImage.convertTo(depthImage, CV_16UC1);
 		if (flip) {
 			cv::flip(depthImage, depthImage, -1);
 		}
 	}
+
 	if (Sign.tcp_client != nullptr && send_depth) {
 		Sign.tcp_client->send_image_depth(depthImage);
 	}
-	// mutex.unlock();
 }
 
 void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 	if (tasks_running.exchange(true)) {
-		// Already running, skip this frame
-		return;
+		return; // Already running, skip this frame
 	}
-	cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
-	if (cv_ptr == nullptr) {
+
+	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
+
+	if (!cv_ptr) {
 		ROS_WARN("cv_ptr is null");
-		// mutex.unlock();
 		return;
 	}
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        colorImage = cv_ptr->image.clone();
-        if (flip) {
-            cv::flip(colorImage, colorImage, -1);
-        }
-    }
+
+	{
+		std::lock_guard<std::mutex> lock(mutex);
+		colorImage = cv_ptr->image.clone(); // clone for safe modification
+		if (flip) {
+			cv::flip(colorImage, colorImage, -1);
+		}
+	}
+
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
@@ -152,7 +152,7 @@ void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 	}
 
-    tasks_running = false;
+	tasks_running = false;
 }
 
 void CameraLib::run_lane_once() {
@@ -212,7 +212,6 @@ void CameraLib::get_frame() {
 	tasks->run([this] { run_sign_once(); });
 	tasks->wait();
 
-
 	if (Sign.tcp_client != nullptr) {
 		Sign.tcp_client->send_image_rgb(colorImage);
 		if (send_depth) {
@@ -226,6 +225,6 @@ void CameraLib::get_frame() {
 	// 	color_pub.publish(color_msg);
 	// 	depth_pub.publish(depth_msg);
 	// }
-    
-    tasks_running = false;
+
+	tasks_running = false;
 }
