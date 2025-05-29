@@ -122,16 +122,16 @@ void CameraLib::run_lane_once() {
 }
 
 void CameraLib::run_sign_once() {
-    cv::Mat colorImage = getActiveColorImage();
-    if (colorImage.empty()) {
-        ROS_WARN("colorImage is empty");
-        return;
-    }
-    cv::Mat depthImage = getActiveDepthImage();
-    if (depthImage.empty()) {
-        ROS_WARN("depthImage is empty");
-        return;
-    }
+	cv::Mat colorImage = getActiveColorImage();
+	if (colorImage.empty()) {
+		ROS_WARN("colorImage is empty");
+		return;
+	}
+	cv::Mat depthImage = getActiveDepthImage();
+	if (depthImage.empty()) {
+		ROS_WARN("depthImage is empty");
+		return;
+	}
 	Sign.publish_sign(colorImage, depthImage, &onSignCompletion);
 }
 
@@ -202,37 +202,42 @@ void CameraLib::get_frame() {
 	auto aligned_frames = align_to_color->process(data);
 	color_frame = aligned_frames.get_color_frame();
 	depth_frame = aligned_frames.get_depth_frame();
-	// gyro_frame = data.first_or_default(RS2_STREAM_GYRO);
-	// accel_frame = data.first_or_default(RS2_STREAM_ACCEL);
 	if (!color_frame || !depth_frame) {
 		ROS_WARN("No frame received");
+		tasks_running = false;
 		return;
 	}
-	colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
-	depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
-	if (flip) {
-		cv::flip(colorImage, colorImage, -1);
-		cv::flip(depthImage, depthImage, -1);
+
+	int writeColorIndex, writeDepthIndex;
+	{
+		std::lock_guard<std::mutex> lock(bufferMutex);
+		writeColorIndex = 1 - activeColorIndex;
+		writeDepthIndex = 1 - activeDepthIndex;
+
+		colorImageBuffers[writeColorIndex] = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP).clone();
+		depthImageBuffers[writeDepthIndex] = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP).clone();
+
+		if (flip) {
+			cv::flip(colorImageBuffers[writeColorIndex], colorImageBuffers[writeColorIndex], -1);
+			cv::flip(depthImageBuffers[writeDepthIndex], depthImageBuffers[writeDepthIndex], -1);
+		}
+
+		std::swap(activeColorIndex, writeColorIndex);
+		std::swap(activeDepthIndex, writeDepthIndex);
 	}
 
+	// Run post-processing tasks
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->run([this] {
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			Sign.tcp_client->send_image_rgb(getActiveColorImage());
 			if (send_depth) {
-				Sign.tcp_client->send_image_depth(depthImage);
+				Sign.tcp_client->send_image_depth(getActiveDepthImage());
 			}
 		}
 	});
 	tasks->wait();
-
-	// if (pubImage) {
-	// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
-	// 	depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-	// 	color_pub.publish(color_msg);
-	// 	depth_pub.publish(depth_msg);
-	// }
 
 	tasks_running = false;
 }
