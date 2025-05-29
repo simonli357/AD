@@ -33,6 +33,14 @@ class CameraLib {
 
 	sensor_msgs::ImagePtr color_msg, depth_msg;
 
+	cv::Mat colorImageBuffers[2];
+	cv::Mat depthImageBuffers[2];
+
+	int activeColorIndex = 0;
+	int activeDepthIndex = 0;
+
+	std::mutex bufferMutex;
+
 	image_transport::Subscriber rgb_sub;
 	image_transport::Subscriber depth_sub;
 	image_transport::ImageTransport it;
@@ -44,9 +52,6 @@ class CameraLib {
 	bool doLane, doSign, realsense, pubImage, useRosTimer, flip, send_depth;
 	int mainLoopRate;
 	int quality = 30;
-
-	// lock
-	std::mutex mutex;
 
 	// rs
 	rs2::pipeline pipe;
@@ -61,7 +66,8 @@ class CameraLib {
 	cv::Mat distCoeffs;
 	cv::Mat map1, map2;
 
-	void cameraNodeSpin();
+	cv::Mat getActiveColorImage();
+	cv::Mat getActiveDepthImage();
 
 	void run_lane_once();
 	void run_sign_once();

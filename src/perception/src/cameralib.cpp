@@ -102,84 +102,90 @@ CameraLib::CameraLib(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
 
 CameraLib::~CameraLib() { tasks->wait(); }
 
+cv::Mat CameraLib::getActiveColorImage() {
+	std::lock_guard<std::mutex> lock(bufferMutex);
+	return colorImageBuffers[activeColorIndex];
+}
+
+cv::Mat CameraLib::getActiveDepthImage() {
+	std::lock_guard<std::mutex> lock(bufferMutex);
+	return depthImageBuffers[activeDepthIndex];
+}
+
 void CameraLib::run_lane_once() {
-	cv::Mat img;
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
-		}
-		img = colorImage.clone();
+	cv::Mat img = getActiveColorImage();
+	if (img.empty()) {
+		ROS_WARN("colorImage is empty");
+		return;
 	}
 	Lane.publish_lane(img, &onLaneCompletion);
 }
 
 void CameraLib::run_sign_once() {
-	cv::Mat color_img, depth_img;
-	{
-		std::lock_guard<std::mutex> lock(mutex);
-		if (colorImage.empty()) {
-			ROS_WARN("colorImage is empty");
-			return;
-		}
-		if (depthImage.empty()) {
-			ROS_WARN("depthImage is empty");
-			return;
-		}
-		color_img = colorImage.clone();
-		depth_img = depthImage.clone();
-	}
-	Sign.publish_sign(color_img, depth_img, &onSignCompletion);
+    cv::Mat colorImage = getActiveColorImage();
+    if (colorImage.empty()) {
+        ROS_WARN("colorImage is empty");
+        return;
+    }
+    cv::Mat depthImage = getActiveDepthImage();
+    if (depthImage.empty()) {
+        ROS_WARN("depthImage is empty");
+        return;
+    }
+	Sign.publish_sign(colorImage, depthImage, &onSignCompletion);
 }
 
 void CameraLib::depthCallback(const sensor_msgs::ImageConstPtr &msg) {
-	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr_depth = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 
-	if (!cv_ptr_depth) {
+	if (!cv_ptr) {
 		ROS_WARN("cv_ptr_depth is null");
 		return;
 	}
 
+	int writeIndex;
 	{
-		std::lock_guard<std::mutex> lock(mutex);
-		depthImage = cv_ptr_depth->image.clone(); // clone to allow modification
-		depthImage.convertTo(depthImage, CV_16UC1);
+		std::lock_guard<std::mutex> lock(bufferMutex);
+		writeIndex = 1 - activeDepthIndex; // write to inactive buffer
+		depthImageBuffers[writeIndex] = cv_ptr->image;
 		if (flip) {
-			cv::flip(depthImage, depthImage, -1);
+			cv::flip(depthImageBuffers[writeIndex], depthImageBuffers[writeIndex], -1);
 		}
+		std::swap(activeDepthIndex, writeIndex); // publish new buffer
 	}
 
 	if (Sign.tcp_client != nullptr && send_depth) {
-		Sign.tcp_client->send_image_depth(depthImage);
+		Sign.tcp_client->send_image_depth(getActiveDepthImage());
 	}
 }
 
 void CameraLib::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
 	if (tasks_running.exchange(true)) {
-		return; // Already running, skip this frame
+		return;
 	}
 
-	boost::shared_ptr<const cv_bridge::CvImage> cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
-
+	auto cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::BGR8);
 	if (!cv_ptr) {
 		ROS_WARN("cv_ptr is null");
 		return;
 	}
 
+	int writeIndex;
 	{
-		std::lock_guard<std::mutex> lock(mutex);
-		colorImage = cv_ptr->image.clone(); // clone for safe modification
+		std::lock_guard<std::mutex> lock(bufferMutex);
+		writeIndex = 1 - activeColorIndex; // write to inactive buffer
+		colorImageBuffers[writeIndex] = cv_ptr->image;
 		if (flip) {
-			cv::flip(colorImage, colorImage, -1);
+			cv::flip(colorImageBuffers[writeIndex], colorImageBuffers[writeIndex], -1);
 		}
+		std::swap(activeColorIndex, writeIndex); // publish new buffer
 	}
 
 	tasks->run([this] { run_lane_once(); });
 	tasks->run([this] { run_sign_once(); });
 	tasks->run([this] {
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			Sign.tcp_client->send_image_rgb(getActiveColorImage());
 		}
 	});
 	tasks->wait();
