@@ -1,6 +1,6 @@
 real:
-  lane_relocalize: true
-  sign_relocalize: true
+  lane_relocalize: false
+  sign_relocalize: false
   intersection_relocalize: true
   has_light: false
   use_kf: false
@@ -40,8 +40,8 @@ real:
   pedestrian_threshold: 0.35
 
 sim:
-  lane_relocalize: false
-  sign_relocalize: false
+  lane_relocalize: true
+  sign_relocalize: true
   intersection_relocalize: true
   has_light: false
   use_kf: false
