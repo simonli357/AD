@@ -14,6 +14,7 @@ testParkCar/
 train640/
 datasets_bb/
 Embedded_Platform/Embedded_2024/mbed-os
+Embedded_Platform/Embedded_2024/CMakeLists.txt
 compile_commands.json
 
 vcpkg/

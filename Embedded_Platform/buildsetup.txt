@@ -2,6 +2,10 @@
 cd "$HOME/AD/Embedded_Platform/Embedded_2024/" && mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM
 cp "$HOME/AD/Embedded_Platform/Embedded_2024/cmake_build/B_L4S5I_IOT01A/develop/GCC_ARM/robot_car.bin" "/media/$(whoami)/DIS_L4S5VI"
 
+#release
+cd "$HOME/AD/Embedded_Platform/Embedded_2024/" && mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM --profile release
+cp "$HOME/AD/Embedded_Platform/Embedded_2024/cmake_build/B_L4S5I_IOT01A/release/GCC_ARM/robot_car.bin" "/media/$(whoami)/DIS_L4S5VI"
+
 cd "$HOME/AD/Embedded_Platform/Embedded_2022/" && mbed-tools compile -m B_L4S5I_IOT01A -t GCC_ARM
 cp "$HOME/AD/Embedded_Platform/Embedded_2022/cmake_build/B_L4S5I_IOT01A/develop/GCC_ARM/robot_car.bin" "/media/$(whoami)/DIS_L4S5VI"
 
