@@ -53,6 +53,7 @@ namespace Tunable {
     inline bool lane_relocalize = false;
     inline bool sign_relocalize = true;
     inline bool intersection_relocalize = false;
+    inline bool lane_yaw_reset = false;
     inline bool has_light = false;
 
     inline double pedestrian_distance = 0.5;
@@ -144,6 +145,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/lane_relocalize", lane_relocalize);
       CHECK_PARAM(mode + "/sign_relocalize", sign_relocalize);
       CHECK_PARAM(mode + "/intersection_relocalize", intersection_relocalize);
+      CHECK_PARAM(mode + "/lane_yaw_reset", lane_yaw_reset);
       CHECK_PARAM(mode + "/has_light", has_light);
       CHECK_PARAM(mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
       CHECK_PARAM(mode + "/min_dist_to_car", min_dist_to_car);
