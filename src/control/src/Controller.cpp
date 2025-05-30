@@ -133,7 +133,7 @@ public:
             [this](int direction) {
                 tcp_callbacks->run([this, direction] {
                     std::cout << "Setting Yaw" << std::endl;
-                    Sensing::reset_yaw(direction);
+                    Sensing::reset_yaw_to_direction(direction);
                 });
             }
         );
@@ -724,7 +724,7 @@ public:
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
             utils.update_states(x_current);
             utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI), 2);
-            stop_for(3.0);
+            // stop_for(3.0);
             PathManager::reset_target_waypoint_index(x_current);
             mpc.reset_solver();
             return 1;
@@ -1178,7 +1178,7 @@ public:
         if (req.x >= 0 && req.y >= 0) {
             utils.set_states(req.x, req.y);
         } else {
-            Sensing::reset_yaw(0);
+            Sensing::reset_yaw_to_direction(0);
         }
         res.success = true;
         return true;
@@ -1278,18 +1278,38 @@ void StateMachine::run() {
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
                     double detected_dist = utils.object_distance(park_index);
                     double abs_error = std::abs(detected_dist - distance_to_parking_spot);
-                    // double error_threshold = 1.0;
-                    double error_threshold = 100.0;
+                    double error_threshold = 1.0;
+                    // double error_threshold = 100.0; // for testing purposes
                     if (abs_error < error_threshold ) {
                         utils.debug("parking sign detected, proceeding to parking...", 3);
                         if (sign_relocalize) {
-                            auto park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
+
+                            auto known_static_objects = Tracking::get_road_known_static_objects();
+                            Eigen::Vector3d park_sign_pose1(1000, 1000, 0);
+                            Eigen::Vector3d park_sign_pose2(1000, 1000, 0);
+                            int num_park_signs = 0;
+                            for (auto& obj: known_static_objects) {
+                                if (obj->type != OBJECT::PARK) continue;
+                                if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(sign_flag)])) continue;
+                                if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) continue;
+                                double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
+                                if (dist > max_sign_dist || dist < min_sign_dist) continue;
+                                if (num_park_signs == 0) park_sign_pose1 << obj->x, obj->y, obj->yaw;
+                                else if (num_park_signs == 1) park_sign_pose2 << obj->x, obj->y, obj->yaw;
+                                else break; // only use first two detected parking signs
+                                num_park_signs++;
+                            }
+                            auto park_sign_pose = park_sign_pose1.head(2); // use first detected parking sign pose
+                            if (num_park_signs == 0) {
+                                park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
+                            }
+
+                            // auto park_sign_pose = utils.estimate_object_pose2d(x_current[0], x_current[1], x_current[2], utils.object_box(park_index), detected_dist);
                             auto empirical_pose1 = PARKING_SIGN_POSES1[0];
                             double dist_to_empirical_pose1 = std::pow((park_sign_pose[0] - empirical_pose1[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose1[1]), 2);
                             auto empirical_pose2 = PARKING_SIGN_POSES2[0];
                             double dist_to_empirical_pose2 = std::pow((park_sign_pose[0] - empirical_pose2[0]), 2) + std::pow((park_sign_pose[1] - empirical_pose2[1]), 2);
                             auto& empirical_pose = dist_to_empirical_pose1 < dist_to_empirical_pose2 ? PARKING_SIGN_POSES1 : PARKING_SIGN_POSES2;
-                            // int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING", 20.0); // relocalize to parking sign
                             int success = sign_based_relocalization(park_sign_pose, empirical_pose, "PARKING"); // relocalize to parking sign
                         }
                         change_state(STATE::PARKING);

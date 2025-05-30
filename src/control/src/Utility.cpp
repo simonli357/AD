@@ -387,7 +387,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                 double min_error_sq = 1000.0;
                 Eigen::Vector2d sign_pose = {world_states[0], world_states[1]};
 
-                if (helper::get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, 0.357)) {
+                if (helper::get_min_object_index(sign_pose, relevant_signs, min_index, min_error_sq, Tracking::OBJECT_TRACKING_PARAMS[type].association_radius)) {
                     double sign_yaw = relevant_signs[min_index][2];
                     double yaw_error = helper::compare_yaw(sign_yaw, ego_yaw);
 
@@ -465,6 +465,18 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
             lane_waypoints(i/3, 0) = msg.lane_waypoints[i];
             lane_waypoints(i/3, 1) = msg.lane_waypoints[i+1];
             lane_waypoints(i/3, 2) = msg.lane_waypoints[i+2];
+        }
+        static ros::Time last_reset_yaw_time = ros::Time::now();
+        static constexpr double reset_yaw_cooldown = 60.0; // seconds
+        if (msg.straight_lane && std::abs(msg.straight_lane_angle) < 2.0 * M_PI / 180.0) {
+            double nearest_direction_yaw = helper::nearest_direction(Sensing::yaw);
+            double lane_based_yaw = nearest_direction_yaw - msg.straight_lane_angle;
+            double yaw_error = helper::compare_yaw(lane_based_yaw, Sensing::yaw);
+            if (std::abs(yaw_error) < 4.0 * M_PI / 180.0 && (ros::Time::now() - last_reset_yaw_time).toSec() > reset_yaw_cooldown) {
+                last_reset_yaw_time = ros::Time::now();
+                Sensing::reset_yaw(lane_based_yaw);
+                debug("process_lane_data(): Resetting yaw to lane-based yaw: " + std::to_string(lane_based_yaw), 1);
+            }
         }
     }
 }
