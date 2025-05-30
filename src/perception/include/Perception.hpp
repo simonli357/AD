@@ -1,3 +1,5 @@
+#pragma once
+
 #include "LaneDetector.hpp"
 #include "SignFastest.hpp"
 #include "TcpClient.hpp"
@@ -9,6 +11,7 @@
 #include "yolo-fastestv2.h"
 #include <chrono>
 #include <librealsense2/rs.hpp>
+#include <shared_mutex>
 #include <mutex>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
@@ -16,12 +19,47 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include <optional>
 
 using namespace std::chrono;
 
+namespace Perception {
+
+inline std::shared_mutex sign_mtx;
+inline std::shared_mutex lane_mtx;
+inline std::atomic<bool> lane_msg_refreshed{false};
+inline std::atomic<bool> sign_msg_refreshed{false};
+inline ros::Time last_image_refresh_time;
+inline utils::Sign sign_msg;
+inline utils::Lane3 lane_msg;
+inline void set_lane_msg(const utils::Lane3& m)
+{
+    std::unique_lock<std::shared_mutex> lock(lane_mtx);
+    lane_msg = m;
+    lane_msg_refreshed.store(true, std::memory_order_release);
+}
+inline void set_sign_msg(const utils::Sign& m)
+{
+    std::unique_lock<std::shared_mutex> lock(sign_mtx);
+    sign_msg = m;
+    sign_msg_refreshed.store(true, std::memory_order_release);
+}
+inline std::optional<utils::Lane3> get_lane_msg()
+{
+    std::shared_lock<std::shared_mutex> lock(lane_mtx);
+    if (!lane_msg_refreshed.exchange(false, std::memory_order_acq_rel)) return std::nullopt;
+    return lane_msg;
+}
+inline std::optional<utils::Sign> get_sign_msg()
+{
+    std::shared_lock<std::shared_mutex> lock(sign_mtx);
+    if (!sign_msg_refreshed.exchange(false, std::memory_order_acq_rel)) return std::nullopt;
+    return sign_msg;
+}
+
 class CameraNode {
   public:
-	CameraNode(ros::NodeHandle &nh) : it(nh), Sign(nh), Lane(nh) {
+	CameraNode(ros::NodeHandle &nh, bool publish_msg) : it(nh), Sign(nh, publish_msg), Lane(nh, publish_msg) {
 		depthImage = cv::Mat::zeros(480, 640, CV_16UC1);
 		colorImage = cv::Mat::zeros(480, 640, CV_8UC3);
 		std::string nodeName = ros::this_node::getName();
@@ -30,7 +68,6 @@ class CameraNode {
 		nh.param(nodeName + "/realsense", realsense, false);
 		nh.param(nodeName + "/rate", mainLoopRate, 50);
 		nh.param(nodeName + "/pubImage", pubImage, false);
-		nh.param(nodeName + "/thread", useRosTimer, false);
 		nh.param(nodeName + "/flip", flip, false);
 		nh.param(nodeName + "/send_depth", send_depth, false);
 		nh.param("quality", quality, 30);
@@ -68,8 +105,6 @@ class CameraNode {
 
 			cfg.enable_stream(RS2_STREAM_COLOR, 640, 480, RS2_FORMAT_BGR8, 30);
 			cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
-			// cfg.enable_stream(RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F);
-			// cfg.enable_stream(RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F);
 			pipe.start(cfg);
 
 			auto profiles = pipe.get_active_profile().get_streams();
@@ -114,24 +149,20 @@ class CameraNode {
 		if (!doSign) {
 			ROS_WARN("Sign detection is disabled");
 		}
-		if (useRosTimer) {
-			ROS_INFO("RosTimer is enabled");
-		} else {
-			ROS_INFO("RosTimer is disabled");
-		}
 
-		if (useRosTimer) {
-			if (doLane) {
-				ROS_INFO("starting lane timer");
-				// laneTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::lane_timer_callback, this);
-				lane_thread = std::thread(&CameraNode::run_lane, this);
-			}
-			if (doSign) {
-				ROS_INFO("starting sign timer");
-				// signTimer = nh.createTimer(ros::Duration(1.0 / mainLoopRate), &CameraNode::sign_timer_callback, this);
-				sign_thread = std::thread(&CameraNode::run_sign, this);
-			}
+		if (doLane) {
+			ROS_INFO("starting lane thread");
+			lane_thread = std::thread(&CameraNode::run_lane, this);
 		}
+		if (doSign) {
+			ROS_INFO("starting sign thread");
+			sign_thread = std::thread(&CameraNode::run_sign, this);
+		}
+		if (realsense) {
+			ROS_INFO("starting realsense thread");
+			realsense_thread = std::thread(&CameraNode::run_realsense, this);
+		}
+		Perception::last_image_refresh_time = ros::Time::now();
 	}
 
 	~CameraNode() {
@@ -141,25 +172,8 @@ class CameraNode {
 		if (sign_thread.joinable()) {
 			sign_thread.join();
 		}
-	}
-
-	void cameraNodeSpin() {
-		if (realsense) {
-			ros::Rate cameraRate(30);
-			while (ros::ok()) {
-				get_frame();
-				cameraRate.sleep();
-			}
-		} else {
-			ros::Rate loopRate(mainLoopRate);
-			while (ros::ok()) {
-				ros::spinOnce();
-				if (!realsense && !useRosTimer) {
-					// If not using realsense or timers,
-					// detection might happen in imageCallback.
-				}
-				loopRate.sleep();
-			}
+		if (realsense_thread.joinable()) {
+			realsense_thread.join();
 		}
 	}
 
@@ -176,13 +190,18 @@ class CameraNode {
 	cv_bridge::CvImagePtr cv_ptr_depth;
 	ros::Timer signTimer, laneTimer;
 
-	bool doLane, doSign, realsense, pubImage, useRosTimer, flip, send_depth;
-	std::thread lane_thread, sign_thread;
+	bool doLane, doSign, realsense, pubImage, flip, send_depth;
+	std::thread lane_thread, sign_thread, realsense_thread;
 	int mainLoopRate;
 	int quality = 30;
 
 	// lock
-	std::mutex mutex;
+	std::mutex frame_mtx;
+	std::condition_variable lane_cv;        // wakes the lane‑thread
+	std::condition_variable sign_cv;        // wakes the sign‑thread
+	bool new_color_for_lane = false;
+	bool new_color_for_sign = false;
+	bool new_depth_for_sign = false;
 
 	// rs
 	ros::Publisher color_pub, depth_pub;
@@ -200,71 +219,63 @@ class CameraNode {
 	cv::Mat map1, map2;
 
 	void depthCallback(const sensor_msgs::ImageConstPtr &msg) {
-		// mutex.lock();
 		cv_ptr_depth = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 		if (cv_ptr_depth == nullptr) {
 			ROS_WARN("cv_ptr_depth is null");
-			// mutex.unlock();
 			return;
 		}
 		{
-			std::lock_guard<std::mutex> lock(mutex);
+			std::lock_guard<std::mutex> lock(frame_mtx);
 			depthImage = cv_ptr_depth->image.clone();
-            depthImage.convertTo(depthImage, CV_16UC1);
+			depthImage.convertTo(depthImage, CV_16UC1);
 			if (flip) {
 				cv::flip(depthImage, depthImage, -1);
 			}
+			new_depth_for_sign = true;
 		}
+		sign_cv.notify_one();
 		if (Sign.tcp_client != nullptr && send_depth) {
 			Sign.tcp_client->send_image_depth(depthImage);
 		}
-		// mutex.unlock();
 	}
 	void imageCallback(const sensor_msgs::ImageConstPtr &msg) {
-		// mutex.lock();
 		cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 		if (cv_ptr == nullptr) {
 			ROS_WARN("cv_ptr is null");
-			// mutex.unlock();
 			return;
 		}
-		if (!useRosTimer) {
-			if (doLane) {
-				Lane.publish_lane(cv_ptr->image);
-			}
-			if (doSign) {
-				Sign.publish_sign(cv_ptr->image, cv_ptr_depth->image);
-			}
-		} else {
-			std::lock_guard<std::mutex> lock(mutex);
+		{
+			std::lock_guard<std::mutex> lock(frame_mtx);
 			colorImage = cv_ptr->image.clone();
-			if (flip)
-				cv::flip(colorImage, colorImage, -1);
+			if (flip) cv::flip(colorImage, colorImage, -1);
+			new_color_for_lane = true;          // lane needs only colour
+			new_color_for_sign = true;          // sign needs both; set colour half
+			last_image_refresh_time = ros::Time::now();
 		}
+		lane_cv.notify_one();                   // wake the lane thread
+    sign_cv.notify_one();                   // wake the sign thread
 		if (Sign.tcp_client != nullptr) {
 			Sign.tcp_client->send_image_rgb(colorImage);
 		}
-		// mutex.unlock();
 	}
 
-	void lane_timer_callback(const ros::TimerEvent &event) { run_lane_once(); }
-	void sign_timer_callback(const ros::TimerEvent &event) { run_sign_once(); }
 	void run_lane_once() {
 		cv::Mat img;
 		{
-			std::lock_guard<std::mutex> lock(mutex);
+			std::lock_guard<std::mutex> lock(frame_mtx);
 			if (colorImage.empty()) {
 				ROS_WARN("colorImage is empty");
 				return;
 			}
 			img = colorImage.clone();
 		}
-		Lane.publish_lane(img);
+		utils::Lane3 tmp = Lane.publish_lane(img);
+		Perception::set_lane_msg(tmp);
 	}
 	void run_sign_once() {
 		cv::Mat color_img, depth_img;
 		{
-			std::lock_guard<std::mutex> lock(mutex);
+			std::lock_guard<std::mutex> lock(frame_mtx);
 			if (colorImage.empty()) {
 				ROS_WARN("colorImage is empty");
 				return;
@@ -276,26 +287,53 @@ class CameraNode {
 			color_img = colorImage.clone();
 			depth_img = depthImage.clone();
 		}
-		Sign.publish_sign(color_img, depth_img);
+		utils::Sign tmp = Sign.publish_sign(color_img, depth_img);
+		Perception::set_sign_msg(tmp);
 	}
-	void run_lane() {
-		static ros::Rate lane_rate(30);
-		if (!doLane) {
-			return;
-		}
-		while (ros::ok()) {
-			run_lane_once();
-			lane_rate.sleep();
-		}
+	void run_lane()
+	{
+			if (!doLane) return;
+
+			while (ros::ok())
+			{
+					std::unique_lock<std::mutex> lk(frame_mtx);
+					lane_cv.wait(lk, [&]{ return new_color_for_lane; });
+
+					// Copy the frame while we still hold the mutex
+					cv::Mat img = colorImage.clone();
+					new_color_for_lane = false;         // we have consumed it
+					lk.unlock();                        // release the lock quickly
+
+					utils::Lane3 tmp = Lane.publish_lane(img);
+					Perception::set_lane_msg(tmp);
+			}
 	}
-	void run_sign() {
-		static ros::Rate sign_rate(30);
-		if (!doSign) {
-			return;
-		}
+	void run_sign()
+	{
+			if (!doSign) return;
+
+			while (ros::ok())
+			{
+					std::unique_lock<std::mutex> lk(frame_mtx);
+					sign_cv.wait(lk, [&]{
+							return new_color_for_sign && new_depth_for_sign;
+					});
+
+					cv::Mat c  = colorImage.clone();
+					cv::Mat d  = depthImage.clone();
+					new_color_for_sign = false;
+					new_depth_for_sign = false;
+					lk.unlock();
+
+					utils::Sign tmp = Sign.publish_sign(c, d);
+					Perception::set_sign_msg(tmp);
+			}
+	}
+	void run_realsense() {
+		static ros::Rate realsense_rate(30);
 		while (ros::ok()) {
-			run_sign_once();
-			sign_rate.sleep();
+			get_frame();
+			realsense_rate.sleep();
 		}
 	}
 	void get_frame() {
@@ -303,50 +341,33 @@ class CameraNode {
 		auto aligned_frames = align_to_color->process(data);
 		color_frame = aligned_frames.get_color_frame();
 		depth_frame = aligned_frames.get_depth_frame();
-		// gyro_frame = data.first_or_default(RS2_STREAM_GYRO);
-		// accel_frame = data.first_or_default(RS2_STREAM_ACCEL);
 		if (!color_frame || !depth_frame) {
 			ROS_WARN("No frame received");
 			return;
 		}
-		colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
-		depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
-		if (flip) {
-			cv::flip(colorImage, colorImage, -1);
-			cv::flip(depthImage, depthImage, -1);
+		{
+			std::lock_guard<std::mutex> lock(frame_mtx);
+			colorImage = cv::Mat(cv::Size(640, 480), CV_8UC3, (void *)color_frame.get_data(), cv::Mat::AUTO_STEP);
+			depthImage = cv::Mat(cv::Size(640, 480), CV_16UC1, (void *)depth_frame.get_data(), cv::Mat::AUTO_STEP);
+			if (flip) {
+				cv::flip(colorImage, colorImage, -1);
+				cv::flip(depthImage, depthImage, -1);
+			}
+			new_color_for_lane  = true;
+			new_color_for_sign  = true;
+			new_depth_for_sign  = true;
+			last_image_refresh_time = ros::Time::now();
 		}
+		lane_cv.notify_one();                   // wake the lane thread
+		sign_cv.notify_one();                   // wake the sign thread
 
-		if (!useRosTimer) {
-			if (doLane) {
-				run_lane_once();
-			}
-			if (doSign) {
-				run_sign_once();
-			}
-		}
 		if (Sign.tcp_client != nullptr) {
 			Sign.tcp_client->send_image_rgb(colorImage);
-            if (send_depth) {
-                Sign.tcp_client->send_image_depth(depthImage);
-            }
+			if (send_depth) {
+					Sign.tcp_client->send_image_depth(depthImage);
+			}
 		}
-		// if (pubImage) {
-		// 	color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
-		// 	depth_msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", depthImage).toImageMsg();
-		// 	color_pub.publish(color_msg);
-		// 	depth_pub.publish(depth_msg);
-		// }
 	}
 };
 
-int main(int argc, char **argv) {
-	std::cout << "OpenCV version : " << CV_VERSION << std::endl;
-
-	ros::init(argc, argv, "object_detector2");
-	ros::NodeHandle nh;
-
-	CameraNode cameraNode(nh);
-	cameraNode.cameraNodeSpin();
-
-	return 0;
-}
+} // namespace Perception

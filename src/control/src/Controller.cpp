@@ -2,6 +2,7 @@
 #include <ostream>
 #include <ros/ros.h>
 #include <ros/subscriber.h>
+#include "Perception.hpp"
 #include <thread>
 #include <map>
 #include <string>
@@ -1675,6 +1676,11 @@ int main(int argc, char **argv) {
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
     Sensing::initialize_sensing(nh);
+    // Perception::CameraNode cameraNode(nh);
+    std::unique_ptr<Perception::CameraNode> cameraNode;
+    if(Tunable::camera) {
+        cameraNode = std::make_unique<Perception::CameraNode>(nh, false);
+    }
     StateMachine sm(nh, db);
 
     globalStateMachinePtr = &sm;

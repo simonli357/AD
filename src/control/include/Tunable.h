@@ -124,7 +124,8 @@ namespace Tunable {
       printf("LoadFromParams2: debug_level: %d, camera: %d, steer_offset: %.3f, speed_offset: %.3f, steer_offset_minimum: %.3f, steer_offset_maximum: %.3f, subModel: %d, rateVal: %.3f, realsense_imu: %d\n",
           debugLevel, camera, steer_offset, speed_offset, steer_offset_minimum, steer_offset_maximum, subModel, rateVal, realsense_imu);
       // Tunables
-      std::string mode = real ? "/real" : "/sim";
+    //   std::string mode = real ? "/real" : "/sim";
+      std::string mode = "real";
   
       CHECK_PARAM(mode + "/cw_speed_ratio", cw_speed_ratio);
       CHECK_PARAM(mode + "/hw_speed_ratio", hw_speed_ratio);

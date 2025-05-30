@@ -207,7 +207,7 @@ catkin_package(
 # )
 
 add_executable(cameraNode
-  src/cameraNode.cpp
+  src/CameraNode.cpp
   src/yolo-fastestv2.cpp
   src/engine.cpp
   src/yolov8.cpp

@@ -140,56 +140,78 @@ float clamp(float x, float min, float max) {
     return x;
 }
 
-float CEncoder::readAngularSpeedKf() {
-    if (!_kfTimerStarted) {
-        _kfTimer.start();
-        _kfTimerStarted = true;
-    }
-    static uint32_t lastT_us = 0;
-    uint32_t now_us = _kfTimer.read_us();      // µs resolution (ticker @ 1 MHz)
+float CEncoder::readAngularSpeedKf()
+{
+    /* ───────────── 1. time base ───────────── */
+    if (!_kfTimerStarted) { _kfTimer.start(); _kfTimerStarted = true; }
 
-    if (lastT_us == 0) {                       // first call
-        lastT_us = now_us;
-        return 0.0f;                           // nothing to report yet
-    }
+    static uint32_t last_us = 0;
+    const uint32_t now_us = _kfTimer.read_us();
+    if (last_us == 0) { last_us = now_us; return 0.0f; }
 
-    float dt = (now_us - lastT_us) * 1e-6f;    // → seconds (≈ 0.001 s)
-    lastT_us = now_us;
+    const float dt = (now_us - last_us) * 1e-6f;     // ≈ 0.001 s
+    last_us = now_us;
 
-    /* ---------- 2. raw measurement (0‒360 deg) ---------- */
-    float rawDeg = m_pwm.dutycycle() * 360.0f;   // instantaneous encoder reading
+    /* ───────────── 2. raw angle ────────────── */
+    float rawDeg = m_pwm.dutycycle() * 360.0f;
 
-    /* ---------- 3. unwrap across revolutions ---------- */
-    float diff = rawDeg - _prevRawAngleDeg;
-    if      (diff >  180.0f) _unwrapRevs--;     // wrapped 360→0 forward
-    else if (diff < -180.0f) _unwrapRevs++;     // wrapped 0→360 backward
+    /* ───────────── 3. unwrap ───────────────── */
+    float diffRaw = rawDeg - _prevRawAngleDeg;           // -360…+360
+    if      (diffRaw >  180.0f) _unwrapRevs--;
+    else if (diffRaw < -180.0f) _unwrapRevs++;
     _prevRawAngleDeg = rawDeg;
-    float unwrappedDeg = rawDeg + 360.0f * _unwrapRevs;
 
-    /* ---------- 4. Kalman predict + update ---------- */
+    float measDeg = rawDeg + 360.0f * _unwrapRevs;       // absolute angle
+
+    /* ───────────── 4. Kalman predict ───────── */
     _kf.predict(dt);
-    _kf.update(unwrappedDeg);
 
-    float speedDegPerSec = _kf.speed;           // final estimate
+    /* ───────────── 4a. step‑size glitch gate ─ */
+    constexpr float STEP_LIM = 15.0f;   // max is 7.5 for 50cm/s at 1000 Hz
+    static int  overLimitCnt = 0;       // counts consecutive big steps
+    static int  overLimitCntThreshold = 3; // threshold for accepting big steps
 
-    /* ---------- 5. (optional) speed hysteresis ---------- */
+    if (fabsf(diffRaw) <= STEP_LIM) {
+        /* normal small step ─ always accept */
+        _kf.update(measDeg);
+        overLimitCnt = 0;               // reset streak
+    } else {
+        /* big step */
+        if (++overLimitCnt >= overLimitCntThreshold) {      // third big step in a row → accept
+            _kf.update(measDeg);
+            overLimitCnt = 0;           // reset after acceptance
+        }
+        /* else: <3 big steps so far → reject this sample */
+    }
+
+    /* ───── 4a. innovation‑based glitch gate ────────────────────── */
+    // float innov = measDeg - _kf.ang;                     // prediction residual
+    // innov -= 360.0f * std::round(innov / 360.0f);        // wrap to (‑180, +180]
+
+    // constexpr float INNOV_LIM = 45.0f;                   // 3 ms of max speed
+
+    // if (fabsf(innov) <= INNOV_LIM) {                     // plausible ?
+    //     _kf.update(measDeg);                             // yes -> use it
+    // }
+
+    // _kf.update(measDeg);
+
+    /* ───────────── 5. result ───────────────── */
+    float speedDegPerSec = _kf.speed;
     speedDegPerSec = applySpeedHysteresis(speedDegPerSec);
 
-    /* ---------- 6. publish at user‑chosen rate ---------- */
-    static float reportAccum = 0.0f;
-    reportAccum += dt;
-    if (reportAccum >= REPORT_INTERVAL_SEC) {
-        reportAccum = 0.0f;
+    /* ───────────── 6. periodic publish ─────── */
+    static float accum = 0.0f;
+    accum += dt;
+    if (accum >= REPORT_INTERVAL_SEC) {
+        accum = 0.0f;
         char buf[48];
         int n = std::snprintf(buf, sizeof(buf),
                               "@5:%.3f;;\r\n",
                               speedDegPerSec / DEGREE_PER_CM);
-        if (n > 0 && static_cast<std::size_t>(n) < sizeof(buf))
-            m_serial.write(buf, n);
+        if (n > 0 && (size_t)n < sizeof(buf)) m_serial.write(buf, n);
         lastPublishedSpeed = speedDegPerSec;
     }
-
-
     // int len = snprintf(buf, sizeof(buf),
     //                 "[Encoder] Total displacement = %.2f°\n",
     //                 displacementDeg);
@@ -301,56 +323,6 @@ void CEncoder::_run() {
     // readAngularSpeed();
     
     // displacementDeg = getTotalDisplacementDegrees(); 
-
-    // static Timer execTimer;
-    // static bool timerStarted = false;
-    // if (!timerStarted) {
-    //     execTimer.start();
-    //     timerStarted = true;
-    // }
-
-    // uint32_t start_us = execTimer.read_us();
-
-    // float angleDeg = readAngleDegrees();
-    // float speedDeg = readAngularSpeed();
-    // displacementDeg = getTotalDisplacementDegrees(); 
-
-    // // ————— 5) Mark end of execution and accumulate for average print
-    // uint32_t end_us     = execTimer.read_us();
-    // uint32_t elapsed_us = end_us - start_us;
-
-    // static uint64_t sum_exec   = 0;
-    // static uint32_t count_exec = 0;
-    // static uint64_t sum_interval_us = 0;
-    // static uint32_t count_interval  = 0;
-    // static uint32_t prevStart_us    = 0;
-
-    // // Accumulate period statistics (unchanged)
-    // if (prevStart_us != 0) {
-    //     uint32_t delta_start = start_us - prevStart_us;
-    //     sum_interval_us += delta_start;
-    //     count_interval++;
-    // }
-    // prevStart_us = start_us;
-
-    // sum_exec   += elapsed_us;
-    // count_exec += 1;
-
-    // constexpr uint32_t AVG_N = 200;
-    // if (count_exec >= AVG_N) {
-    //     uint32_t avg_exec     = sum_exec / AVG_N;
-    //     uint32_t avg_interval = (count_interval > 0)
-    //                               ? static_cast<uint32_t>(sum_interval_us / count_interval)
-    //                               : 0;
-
-    //     // printf("\n[Encoder] avg exec = %u µs, avg period = %u µs over %u runs\n",
-    //     //        avg_exec, avg_interval, AVG_N);
-
-    //     sum_exec         = 0;
-    //     count_exec       = 0;
-    //     sum_interval_us  = 0;
-    //     count_interval   = 0;
-    // }
 }
 
 } // namespace periodics

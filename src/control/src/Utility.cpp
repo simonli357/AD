@@ -279,17 +279,25 @@ void Utility::initialize() {
     }
 
     if (true) {
-        lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+        if (Tunable::camera) {
+            lane_timer = nh.createTimer(ros::Duration(1/60.0), &Utility::lane_timer_callback, this);
+        } else {
+            lane_sub = nh.subscribe("/lane", 3, &Utility::lane_callback, this);
+        }
         int horizon = 40;
         lane_waypoints = Eigen::MatrixXd(horizon, 3);
     }
 
     timerpid = ros::Time::now();
     if (Tunable::sign) {
-        sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
-        std::cout << "waiting for sign message" << std::endl;
-        ros::topic::waitForMessage<utils::Sign>("/sign");
-        std::cout << "received message from sign" << std::endl;
+        if (Tunable::camera) {
+            sign_timer = nh.createTimer(ros::Duration(1/60.0), &Utility::sign_timer_callback, this);
+        } else {
+            sign_sub = nh.subscribe("/sign", 3, &Utility::sign_callback, this);
+            std::cout << "waiting for sign message" << std::endl;
+            ros::topic::waitForMessage<utils::Sign>("/sign");
+            std::cout << "received message from sign" << std::endl;
+        }
         car_pose_pub = nh.advertise<std_msgs::Float32MultiArray>("/car_locations", 10);
         road_object_pub = nh.advertise<std_msgs::Float32MultiArray>("/road_objects", 10);
     }
@@ -322,6 +330,11 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     }
     std::lock_guard<std::mutex> lock(Tracking::container_mutex);
     object_detection_time = msg.header.stamp;
+
+    // ros::Time last_image_time = Perception::last_image_refresh_time;
+    // ros::Time current_time = ros::Time::now();
+    // std::cout << "process_sign_data(): latency: " << (current_time - object_detection_time).toSec() << " seconds" << ", image latency: " << (current_time - last_image_time).toSec() << " seconds" << std::endl;
+
     double ego_x, ego_y, ego_yaw;
     get_states(ego_x, ego_y, ego_yaw);
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
@@ -445,7 +458,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         stopline_dist = msg.stopline_dist;
         stopline_angle = msg.stopline_angle;
         if(msg.lane_waypoints.size() < lane_waypoints.size()/3) {
-            ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg.lane_waypoints.size());
+            // ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg.lane_waypoints.size());
             return;
         }
         for(int i = 0; i < lane_waypoints.size(); i+=3) {
