@@ -2,6 +2,7 @@ real:
   lane_relocalize: true
   sign_relocalize: true
   intersection_relocalize: false
+  lane_yaw_reset: true
   has_light: false
   use_kf: false
   # sign_lon_offset: -0.01

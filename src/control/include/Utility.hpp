@@ -379,48 +379,32 @@ public:
         double y_norm = (bbox_center_y - cy) / fy;
 
         // Estimate 3D coordinates in the camera frame
+        // [forward = Z_c, right = –X_c]
         double X_c = x_norm * object_distance;
-        double Y_c = y_norm * object_distance;
-        // double Z_c = object_distance * std::sqrt(1 - x_norm*x_norm);
+        // double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
 
-        // 3D point in the camera frame
-        static Eigen::Vector3d P_c;
-        P_c << X_c, Y_c, Z_c;
+        auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
+        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5];
 
-        // Convert to vehicle coordinates (vehicle's x-axis is forward, y-axis is left/right)
-        static Eigen::Vector3d P_v;
-        P_v << Z_c, -X_c, 0;
+        // flat ground‐plane ray in camera coords (forward, right)
+        Eigen::Vector2d P_cam_flat(Z_c, -X_c);
 
-        // std::cout << "before: " << P_v[0] << ", " << P_v[1] << std::endl;
-        if (Tunable::real) {
-            P_v[0] += REALSENSE_TF_REAL[0];
-        } else {
-            P_v[0] += REALSENSE_TF[0];
-        }
-        P_v[1] += REALSENSE_TF[1];
-        // std::cout << "after: " << P_v[0] << ", " << P_v[1] << std::endl;
+        // rotate by the camera’s yaw mount offset, then translate
+        Eigen::Rotation2Dd R_cam_yaw(cam_yaw);
+        Eigen::Vector2d P_v2d = R_cam_yaw * P_cam_flat + Eigen::Vector2d(tx, ty);
 
-        // Rotation matrix from vehicle to world coordinates
-        static Eigen::Matrix2d R_vw;
-        R_vw << std::cos(yaw), -std::sin(yaw),
-                std::sin(yaw), std::cos(yaw);
-
-        // Translate to world coordinates
-        static Eigen::Vector2d vehicle_pos;
-        vehicle_pos << x, y;
-
+        // latency & motion compensation
         double latency = (ros::Time::now() - object_detection_time).toSec();
-        // P_v[0] -= latency * filter_encoder(Sensing::encoder_speed);
-        double speed = filtered_encoder_speed;
-        if (!Tunable::use_encoder) {
-            speed = velocity_command;
-        }
-        P_v[0] -= latency * speed;
-        P_v[0] += sign_lon_offset_slope * P_v[0] + sign_lon_offset;
-        P_v[1] += sign_lat_offset;
-        static Eigen::Vector2d P_v_2d;
-        P_v_2d << P_v[0], P_v[1];
+        double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
+        P_v2d.x()    -= latency * speed;
+        P_v2d.x()    += sign_lon_offset_slope * P_v2d.x() + sign_lon_offset;
+        P_v2d.y()    += sign_lat_offset;
+
+        // rotate into world frame and translate by vehicle pose
+        Eigen::Matrix2d R_vw;
+        R_vw << cos(yaw), -sin(yaw),
+                sin(yaw),  cos(yaw);
         // std::cout << "object_distance4: " << P_v_2d[0] << std::endl;
 
         // static std::vector<std::vector<double>> history;
@@ -436,7 +420,7 @@ public:
         // }) / history.size();
         // printf("avg relative position: %.4f, %.4f\n", avg_x, avg_y);
 
-        return vehicle_pos + R_vw * P_v_2d;
+        return Eigen::Vector2d(x, y) + R_vw * P_v2d;
     }
     Eigen::Vector2d estimate_object_pose2d(double x, double y, double yaw, 
             const std::array<double, 4>& bounding_box, double object_distance, 
