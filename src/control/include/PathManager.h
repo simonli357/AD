@@ -24,15 +24,15 @@ namespace PathManager {
 
 inline std::atomic<bool> path_manager_initialized = false;
 inline ros::NodeHandle* nh = nullptr;
-inline PathPlanner path_planner{0.25, 40, 0.125};
+inline PathPlanner path_planner{0.32, 40, 0.1};
 
-inline double T = 0.125;
+inline double T = 0.1;
 inline int N = 40;
-inline double v_ref = 0.25;
+inline double v_ref = 0.32;
 inline std::string pathName = "speedrun";
 
 inline double density = 1.0 / T / v_ref;
-inline double region_of_acceptance = 0.03076923 * 3 * (0.125 * 1.3) / density;
+inline double region_of_acceptance = 0.03076923 * 3 * (0.1 * 1.3) / density;
 inline double region_of_acceptance_cw = region_of_acceptance / 1.5;
 inline double region_of_acceptance_hw = region_of_acceptance * 1.5;
 

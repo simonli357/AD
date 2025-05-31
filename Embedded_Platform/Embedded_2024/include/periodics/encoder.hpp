@@ -118,7 +118,7 @@ private:
     float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative
     float               m_prevSpeed{0.0f};   ///< last speed for derivative
-    float               DEGREE_PER_CM{145.0f}; ///< degrees per cm
+    float               DEGREE_PER_CM{-145.0f}; ///< degrees per cm
     Kalman2D     _kf;
     int          _unwrapRevs      = 0;   // revolution counter for unwrapping
     float        _prevRawAngleDeg = 0.0f;

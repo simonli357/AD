@@ -21,7 +21,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(145.0f)
+      DEGREE_PER_CM(-145.0f)
 {
     _kf.Q_angle = 0.005f;    // deg²  (slow wander)
     _kf.Q_speed = 6.0f;      // (deg/s)²  (covers 0→50 cm/s braking)
@@ -319,8 +319,8 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    readAngularSpeedKf();
-    // readAngularSpeed();
+    // readAngularSpeedKf();
+    readAngularSpeed();
     
     // displacementDeg = getTotalDisplacementDegrees(); 
 }
