@@ -91,7 +91,7 @@ namespace periodics{
 
         IMU_LOCK;                               // stop imuTask() using I²C
 
-        init_euler_h_deg += yaw - targetDeg + 180.0f;
+        init_euler_h_deg += (yaw − targetDeg);
         while(init_euler_h_deg >= 360.0f) init_euler_h_deg -= 360.0f;
         while(init_euler_h_deg < 0.0f) init_euler_h_deg += 360.0f;
 

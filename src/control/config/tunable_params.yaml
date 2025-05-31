@@ -28,7 +28,7 @@ real:
   lane_localization_threshold: 0.1
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 0.1
-  intersection_localization_orientation_threshold: 15.0 # degrees
+  intersection_localization_orientation_threshold: 3.0 # degrees
   parking_base_yaw_target: 0.26 # times pi
   parking_base_speed: -0.2
   parking_base_thresh: 0.1

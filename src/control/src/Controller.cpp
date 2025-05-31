@@ -291,10 +291,11 @@ public:
         Eigen::VectorXd speeds(3);
         Eigen::VectorXd thresholds(3);
         double base_yaw_target = parking_base_yaw_target * M_PI;
-        utils.debug("parking_maneuver_hardcode(): base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 3);
+        // utils.debug("parking_maneuver_hardcode(): base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 3);
         base_yaw_target = base_yaw_target + 0.02 / (0.29 * M_PI) * base_yaw_target * initial_y_error / MAX_PARKING_Y_ERROR * (right ? 1 : -1);
-        utils.debug("parking_maneuver_hardcode(): initial y error: " + helper::d2str(initial_y_error) + ", initial yaw error: " + helper::d2str(initial_yaw_error) + ", base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 2);
-        double base_steer = - HARD_MAX_STEERING;
+        // utils.debug("parking_maneuver_hardcode(): initial y error: " + helper::d2str(initial_y_error) + ", initial yaw error: " + helper::d2str(initial_yaw_error) + ", base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 2);
+        // double base_steer = - HARD_MAX_STEERING;
+        double base_steer = - SOFT_MAX_STEERING;
         double base_speed = parking_base_speed;
         double base_thresh = parking_base_thresh;
         targets << base_yaw_target, 0.0, 0.0;
@@ -317,7 +318,7 @@ public:
         utils.debug(std::string("parking_maneuver_hardcode(): park right: ") + 
             (right ? "true" : "false") + 
             ", exit: " + helper::d2str(exit), 2);
-        std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
+        // std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
         return maneuver_hardcode(targets, steerings, speeds, thresholds, rate_val);
     }
     int maneuver_hardcode(const Eigen::VectorXd &targets, const Eigen::VectorXd &steerings, const Eigen::VectorXd &speeds, const Eigen::VectorXd &thresholds, double rate_val = 20) {
@@ -370,19 +371,19 @@ public:
                 } else {
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
-                utils.debug("maneuver_hardcode(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
+                // utils.debug("maneuver_hardcode(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
                 utils.publish_cmd_vel(-steering_angle, speed);
             }
             if (exit_cond) {
-                utils.debug("stage " + helper::d2str(stage) + " completed. yaw error: " + helper::d2str(yaw_error), 3);
+                // utils.debug("stage " + helper::d2str(stage) + " completed. yaw error: " + helper::d2str(yaw_error), 3);
                 stage++;
                 if (stage > num_stages) {
-                    utils.debug("maneuver completed", 2);
+                    // utils.debug("maneuver completed", 2);
                     break;
                 }
                 steering_angle = steerings(stage-1);
                 speed = speeds(stage-1);
-                utils.debug("new stage: " + helper::d2str(stage) + ", steer: " + helper::d2str(steering_angle) + ", speed: " + helper::d2str(speed), 3);
+                // utils.debug("new stage: " + helper::d2str(stage) + ", steer: " + helper::d2str(steering_angle) + ", speed: " + helper::d2str(speed), 3);
                 yaw_error = yaw - target_yaws(stage-1);
                 yaw_error_sign = yaw_error > 0 ? 1 : -1;
                 continue;
@@ -809,7 +810,7 @@ public:
         if(yaw_error > M_PI * 1.5) yaw_error -= 2 * M_PI;
         else if(yaw_error < -M_PI * 1.5) yaw_error += 2 * M_PI;
         if (std::abs(yaw_error) > lane_localization_orientation_threshold * M_PI / 180) {
-            utils.debug("LANE_RELOC(): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(lane_localization_orientation_threshold), 2);
+            // utils.debug("LANE_RELOC(): FAILURE: yaw error too large: " + helper::d2str(yaw_error) + ", threshold: " + helper::d2str(lane_localization_orientation_threshold), 2);
             return 0;
         }
         int nearestDirectionIndex = helper::nearest_direction_index(yaw);

@@ -468,13 +468,12 @@ inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index
 	return closest;
 }
 
+inline int find_next_waypoint_count = 5;
 inline int find_next_waypoint(int& output_target, const Eigen::Vector3d& i_current_state, int min_index = -1, int max_index = -1) {
   	int target = 0;
-		static int limit = floor(rdb_circumference / (v_ref * T)); // rdb circumference [m] * wpt density [wp/m]
-		static int lookahead = 1;
+		int lookahead = 1;
 		if (v_ref > 0.375) lookahead = 1;
 
-		static int count = 0;
 		closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
 		double distance_to_current = std::sqrt((state_refs(closest_waypoint_index, 0) - i_current_state[0]) * (state_refs(closest_waypoint_index, 0) - i_current_state[0]) +
 											   (state_refs(closest_waypoint_index, 1) - i_current_state[1]) * (state_refs(closest_waypoint_index, 1) - i_current_state[1]));
@@ -484,12 +483,15 @@ inline int find_next_waypoint(int& output_target, const Eigen::Vector3d& i_curre
 			closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
 		}
 
-		if (count >= 8) {
+		std::cout << "PathManager:: find_next_waypoint_count = " << find_next_waypoint_count << std::endl;
+		if (find_next_waypoint_count >= 8) {
 			target = closest_waypoint_index + lookahead;
-			count = 0;
+			// std::cout << "PathManager::find_next_waypoint(): count >= 8, setting target to closest waypoint index + lookahead: " << target << std::endl;
+			find_next_waypoint_count = 0;
 		} else {
+			// std::cout << "PathManager:: incrementing find_next_waypoint_count to " << find_next_waypoint_count + 1 << std::endl;
 			target = target_waypoint_index + 1;
-			count++;
+			find_next_waypoint_count++;
 		}
 
 		output_target = std::min(target, static_cast<int>((*state_refs_ptr).rows()) - 1);

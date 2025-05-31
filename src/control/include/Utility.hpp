@@ -437,7 +437,7 @@ public:
         static bool first = true;
         static bool use_pid = false;
         if (Sensing::serial == nullptr) {
-            debug("send_speed_and_steer(): Serial is null", 4);
+            // debug("send_speed_and_steer(): Serial is null", 4);
             return;
         }
 
