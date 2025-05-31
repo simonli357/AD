@@ -41,7 +41,7 @@ namespace periodics
             float getYaw() {
                 return yaw;
             }
-            void reinitializeYaw(char const * a, char * b);
+            void recalibrateYaw(char const * a, char * b);
             
         private:
             /*I2C init routine */

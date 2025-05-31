@@ -81,7 +81,7 @@ namespace periodics{
         comres += bno055_convert_float_euler_p_deg(&init_euler_p_deg);
     }
 
-    void CImu::reinitializeYaw(const char* a, char* b)
+    void CImu::recalibrateYaw(const char* a, char* b)
     {
         float targetDeg;                        // the heading you want, e.g. 90
         if (sscanf(a, "%f", &targetDeg) != 1) {
@@ -91,7 +91,7 @@ namespace periodics{
 
         IMU_LOCK;                               // stop imuTask() using I²C
 
-        init_euler_h_deg = (targetDeg-yaw);
+        init_euler_h_deg += (yaw + targetDeg);
         while(init_euler_h_deg >= 360.0f) init_euler_h_deg -= 360.0f;
         while(init_euler_h_deg < 0.0f) init_euler_h_deg += 360.0f;
 

@@ -85,6 +85,36 @@ float CEncoder::readAngleDegrees() {
     return applyHysteresis(ang);
 }
 
+// float CEncoder::readAngleDegrees() {
+//     float duty = m_pwm.dutycycle();
+//     constexpr float TOTAL_CLOCKS   = 4351.0f;  // (128 high + 4095 data + 128 low)
+//     constexpr float FRAME_OFFSET   = 128.0f;   // the fixed 128-high “start-of-frame” count
+//     constexpr float MAX_DATA_COUNTS = 4095.0f; // data section length
+//     float highCounts = duty * TOTAL_CLOCKS;
+
+//     float dataCounts = highCounts - FRAME_OFFSET;
+
+//     if (dataCounts < 0.0f)       dataCounts = 0.0f;
+//     else if (dataCounts > MAX_DATA_COUNTS) dataCounts = MAX_DATA_COUNTS;
+
+//     float rawDeg = dataCounts * (360.0f / 4096.0f);
+
+//     float rawRad = rawDeg * (static_cast<float>(M_PI) / 180.0f);
+
+//     float s = sinf(rawRad);
+//     float c = cosf(rawRad);
+
+//     float fs = _sinF.process(s);
+//     float fc = _cosF.process(c);
+
+//     float ang = atan2f(fs, fc) * (180.0f / static_cast<float>(M_PI));
+//     if (ang < 0.0f) {
+//         ang += 360.0f;
+//     }
+
+//     return applyHysteresis(ang);
+// }
+
 float CEncoder::applyHampel(float newSampleDeg)
 {
     // 1) insert into circular buffer
@@ -154,12 +184,17 @@ float CEncoder::readAngularSpeedKf()
 
     /* ───────────── 2. raw angle ────────────── */
     float rawDeg = m_pwm.dutycycle() * 360.0f;
+    // char buf1[48];
+    // int n = std::snprintf(buf1, sizeof(buf1),
+    //                         "@3:%.3f;;\r\n",
+    //                         rawDeg);
+    // if (n > 0 && (size_t)n < sizeof(buf1)) m_serial.write(buf1, n);
 
     /* ───────────── 3. unwrap ───────────────── */
-    float diffRaw = rawDeg - _prevRawAngleDeg;           // -360…+360
+    float diffRaw = rawDeg - _prevRawForUnwrap;           // -360…+360
     if      (diffRaw >  180.0f) _unwrapRevs--;
     else if (diffRaw < -180.0f) _unwrapRevs++;
-    _prevRawAngleDeg = rawDeg;
+    _prevRawForUnwrap = rawDeg; 
 
     float measDeg = rawDeg + 360.0f * _unwrapRevs;       // absolute angle
 
@@ -171,17 +206,21 @@ float CEncoder::readAngularSpeedKf()
     static int  overLimitCnt = 0;       // counts consecutive big steps
     static int  overLimitCntThreshold = 3; // threshold for accepting big steps
 
-    if (fabsf(diffRaw) <= STEP_LIM) {
-        /* normal small step ─ always accept */
+    float stepDiff = rawDeg - _prevGoodRaw;
+    bool accept;
+    if (fabsf(stepDiff) <= STEP_LIM) {               // small step
+        accept = true;
+    } else if (!lastRejected) {                      // first big step
+        accept = false;
+        lastRejected = true;
+    } else {                                         // second big step in a row
+        accept = true;
+        lastRejected = false;
+    }
+    if (accept) {
         _kf.update(measDeg);
-        overLimitCnt = 0;               // reset streak
-    } else {
-        /* big step */
-        if (++overLimitCnt >= overLimitCntThreshold) {      // third big step in a row → accept
-            _kf.update(measDeg);
-            overLimitCnt = 0;           // reset after acceptance
-        }
-        /* else: <3 big steps so far → reject this sample */
+        _prevGoodRaw = rawDeg;                 // <- update only on accept
+        lastRejected = false;
     }
 
     /* ───── 4a. innovation‑based glitch gate ────────────────────── */
@@ -212,6 +251,7 @@ float CEncoder::readAngularSpeedKf()
         if (n > 0 && (size_t)n < sizeof(buf)) m_serial.write(buf, n);
         lastPublishedSpeed = speedDegPerSec;
     }
+    // char buf[64];
     // int len = snprintf(buf, sizeof(buf),
     //                 "[Encoder] Total displacement = %.2f°\n",
     //                 displacementDeg);

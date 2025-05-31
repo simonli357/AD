@@ -121,7 +121,10 @@ private:
     float               DEGREE_PER_CM{-145.0f}; ///< degrees per cm
     Kalman2D     _kf;
     int          _unwrapRevs      = 0;   // revolution counter for unwrapping
-    float        _prevRawAngleDeg = 0.0f;
+    // float        _prevRawAngleDeg = 0.0f;
+    float _prevRawForUnwrap = 0.0f;   // last raw, any quality
+    float _prevGoodRaw      = 0.0f;   // last sample accepted by the gate
+    bool lastRejected{false};  // last sample was rejected by the gate
     Timer        _kfTimer;
     bool         _kfTimerStarted  = false;
 
