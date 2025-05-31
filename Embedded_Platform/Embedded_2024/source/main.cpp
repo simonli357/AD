@@ -39,7 +39,7 @@ drivers::SerialSubscriberMap g_serialMonitorSubscribers = {
     {"12",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackPIDcommand)},
     {"13",mbed::callback(&g_robotstatemachine,&brain::CRobotStateMachine::serialCallbackSetcommand)},
     {"15",mbed::callback(&g_motorVnhDriver,&drivers::CMotorDriverVnh::serialCallbackMOTOR)},
-    {"3",mbed::callback(&g_imu,&periodics::CImu::reinitializeYaw)},
+    {"3",mbed::callback(&g_imu,&periodics::CImu::recalibrateYaw)},
 };
 drivers::SerialMonitor g_serialMonitor(g_rpi, g_serialMonitorSubscribers);
 

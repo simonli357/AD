@@ -118,10 +118,13 @@ private:
     float               m_dt;                 ///< dt in seconds
     float               m_prevAngle{0.0f};   ///< last angle for derivative
     float               m_prevSpeed{0.0f};   ///< last speed for derivative
-    float               DEGREE_PER_CM{145.0f}; ///< degrees per cm
+    float               DEGREE_PER_CM{-145.0f}; ///< degrees per cm
     Kalman2D     _kf;
     int          _unwrapRevs      = 0;   // revolution counter for unwrapping
-    float        _prevRawAngleDeg = 0.0f;
+    // float        _prevRawAngleDeg = 0.0f;
+    float _prevRawForUnwrap = 0.0f;   // last raw, any quality
+    float _prevGoodRaw      = 0.0f;   // last sample accepted by the gate
+    bool lastRejected{false};  // last sample was rejected by the gate
     Timer        _kfTimer;
     bool         _kfTimerStarted  = false;
 
