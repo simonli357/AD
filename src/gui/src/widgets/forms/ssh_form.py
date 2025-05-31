@@ -183,15 +183,15 @@ class SSHFormWidget(QDialog):
         self.handle_ssh_toggle()
 
     def handle_ssh_toggle(self):
-        use_ssh = self.ssh.isChecked()
-        self.ssh_target.setVisible(use_ssh)
-        self.ssh_target_label.setVisible(use_ssh)
-        self.passwd.setVisible(use_ssh)
-        self.passwd_label.setVisible(use_ssh)
-        self.remote_catkin_ws.setVisible(use_ssh)
-        self.remote_catkin_ws_label.setVisible(use_ssh)
-        self.catkin_ws.setVisible(not use_ssh)
-        self.catkin_ws_label.setVisible(not use_ssh)
+        self.use_ssh = self.ssh.isChecked()
+        self.ssh_target.setVisible(self.use_ssh)
+        self.ssh_target_label.setVisible(self.use_ssh)
+        self.passwd.setVisible(self.use_ssh)
+        self.passwd_label.setVisible(self.use_ssh)
+        self.remote_catkin_ws.setVisible(self.use_ssh)
+        self.remote_catkin_ws_label.setVisible(self.use_ssh)
+        self.catkin_ws.setVisible(not self.use_ssh)
+        self.catkin_ws_label.setVisible(not self.use_ssh)
         self.layout.invalidate()
         self.layout.activate()
         self.adjustSize()
@@ -267,22 +267,27 @@ class SSHFormWidget(QDialog):
             args = self.args_cached
         else:
             self.cache['args'] = args
+
         bash = 'bash -ic'
         src_ros = 'source /opt/ros/noetic/setup.sh'
         src_devel = f'source {catkin_ws}/devel/setup.bash'
         ssh = f'sshpass -p {passwd} ssh -tt {target}'
-        remote_command = ''
+
         if self.terminal_type == TerminalType.CONTROL:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch control controller.launch {args}"\''
+            command = f'{src_ros} && {src_devel} && roslaunch control controller.launch {args}'
         elif self.terminal_type == TerminalType.CAM:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && roslaunch perception cameraNode.launch {args}"\''
+            command = f'{src_ros} && {src_devel} && roslaunch perception cameraNode.launch {args}'
         elif self.terminal_type == TerminalType.PATH:
-            remote_command = f'\'exec bash -c "{src_ros} && {src_devel} && rosrun planning {args}"\''
+            command = f'{src_ros} && {src_devel} && rosrun planning {args}'
         elif self.terminal_type == TerminalType.ROSCORE:
-            remote_command = '\'exec bash -c "roscore"\''
+            command = 'roscore'
         else:
             self.cmd = 'echo "invalid params"'
-        self.cmd = f'{ssh} "{bash} {remote_command}"'
+            return
+
+        escaped_command = command.replace('"', '\\"')
+
+        self.cmd = f'{ssh} "{bash} \\"{escaped_command}\\""'
 
     def set_local_cmd(self):
         src_ros = 'source /opt/ros/noetic/setup.sh'
