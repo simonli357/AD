@@ -382,8 +382,8 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    readAngularSpeedKf();
-    // readAngularSpeed();
+    // readAngularSpeedKf();
+    readAngularSpeed();
     
     // displacementDeg = getTotalDisplacementDegrees(); 
 }
