@@ -172,6 +172,9 @@ class MainWindow(QMainWindow):
         self.cam_timer.timeout.connect(self.cam_record_callback)
         self.cam_timer.start(int(CameraParams.RECORDING_REFRESH_RATE.value * 1000))
 
+        if not self.is_host:
+            self.set_callbacks()
+
     def set_callbacks(self) -> None:
         while (self.server.tcp_client is None):
             time.sleep(0.5)
