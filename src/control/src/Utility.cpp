@@ -540,9 +540,9 @@ void Utility::publish_odom() {
     {
         filtered_encoder_speed = filter_encoder(Sensing::encoder_speed);
         double delta_rad = steer_command * M_PI / 180.0;
-        // double beta = 0.0;
-        // if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
-        // filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
+        double beta = 0.0;
+        if (Tunable::use_beta) beta = atan((l_r / WHEELBASE) * tan(delta_rad));
+        filtered_encoder_speed = filtered_encoder_speed * (cos(delta_rad - beta) / cos(beta));
         double speed = filtered_encoder_speed;
         if (!Tunable::use_encoder) {
             speed = velocity_command;

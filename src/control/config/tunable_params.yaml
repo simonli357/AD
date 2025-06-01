@@ -1,8 +1,8 @@
 real:
-  lane_relocalize: true
-  sign_relocalize: true
+  lane_relocalize: false
+  sign_relocalize: false
   intersection_relocalize: false
-  lane_yaw_reset: true
+  lane_yaw_reset: false
   lane_yaw_reset_cooldown: 5.0
   has_light: false
   use_kf: false
@@ -11,7 +11,7 @@ real:
   # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: 0.015
-  sign_lat_offset: 0.0
+  sign_lat_offset: -0.1
   change_lane_offset_scaler: 1.2
   min_dist_to_car: 0.25 # min distance from ego car front to other car back
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
