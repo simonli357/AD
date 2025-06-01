@@ -43,6 +43,7 @@ class Server:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
             self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+            self.main_window.set_callbacks()
 
     def listen(self):
         while self.alive:
