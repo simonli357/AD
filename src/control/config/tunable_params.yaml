@@ -3,7 +3,7 @@ real:
   sign_relocalize: true
   intersection_relocalize: false
   lane_yaw_reset: true
-  lane_yaw_reset_cooldown: 30.0
+  lane_yaw_reset_cooldown: 5.0
   has_light: false
   use_kf: false
   # sign_lon_offset: -0.01

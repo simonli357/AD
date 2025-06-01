@@ -65,6 +65,7 @@ namespace periodics {
 
 class CEncoder : public utils::CTask {
 public:
+    float _speedCommand = 0.0f;  ///< speed command for the encoder
     /**
      * @brief Constructor for PWM-based AS5048A encoder.
      * @param f_periodTicks Task period in ticks

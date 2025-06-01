@@ -201,38 +201,45 @@ float CEncoder::readAngularSpeedKf()
     /* ───────────── 4. Kalman predict ───────── */
     _kf.predict(dt);
 
-    /* ───────────── 4a. step‑size glitch gate ─ */
-    constexpr float STEP_LIM = 15.0f;   // max is 7.5 for 50cm/s at 1000 Hz
-    static int  overLimitCnt = 0;       // counts consecutive big steps
-    static int  overLimitCntThreshold = 3; // threshold for accepting big steps
+    const float omega_cmd = _speedCommand * DEGREE_PER_CM;
+    static float prevGoodRaw = 0.0f;      // last rawDeg that was actually accepted
+    static int   overLimitCnt  = 0;       // consecutive out‐of‐band counts
+    constexpr int OVERLIMIT_THRESHOLD = 30;
 
-    float stepDiff = rawDeg - _prevGoodRaw;
-    bool accept;
-    if (fabsf(stepDiff) <= STEP_LIM) {               // small step
+    // 4a–3. compute “measured instantaneous speed” (deg/s):
+    float deltaDeg = rawDeg - prevGoodRaw;       // can be ±360 if wrap, but prevGoodRaw is already unwrapped
+    // (no need to re‐unwrap deltaDeg here, because prevGoodRaw is the unwrapped raw from last accept)
+    float omega_meas = deltaDeg / dt;            // deg/s
+
+    // 4a–4. decide if this sample is “too far” from commanded
+    float diff_speed = omega_meas - omega_cmd;   // deg/s difference
+    bool  accept;
+    if (fabsf(diff_speed) <= 1.3f * omega_cmd) {
+        //
+        // If the measured speed is within ±(1.3×command) of the cmd,
+        // we treat it as a “small”/plausible change. You can tighten this band
+        // if you want a stricter gate.
+        //
         accept = true;
-    } else if (!lastRejected) {                      // first big step
-        accept = false;
-        lastRejected = true;
-    } else {                                         // second big step in a row
-        accept = true;
-        lastRejected = false;
+        overLimitCnt = 0;
+    } else {
+        // A “big” jump. Only accept if we see OVERLIMIT_THRESHOLD in a row.
+        overLimitCnt++;
+        if (overLimitCnt >= OVERLIMIT_THRESHOLD) {
+            accept = true;            // third consecutive “big” jump
+            overLimitCnt = 0;         // reset counter
+        } else {
+            accept = false;           // treat as glitch
+        }
     }
+
     if (accept) {
+        // 4a–5. update Kalman with this measurement
         _kf.update(measDeg);
-        _prevGoodRaw = rawDeg;                 // <- update only on accept
-        lastRejected = false;
+        prevGoodRaw = rawDeg;        // remember as last good sample
     }
 
-    /* ───── 4a. innovation‑based glitch gate ────────────────────── */
-    // float innov = measDeg - _kf.ang;                     // prediction residual
-    // innov -= 360.0f * std::round(innov / 360.0f);        // wrap to (‑180, +180]
-
-    // constexpr float INNOV_LIM = 45.0f;                   // 3 ms of max speed
-
-    // if (fabsf(innov) <= INNOV_LIM) {                     // plausible ?
-    //     _kf.update(measDeg);                             // yes -> use it
-    // }
-
+    // no check
     // _kf.update(measDeg);
 
     /* ───────────── 5. result ───────────────── */
@@ -246,8 +253,8 @@ float CEncoder::readAngularSpeedKf()
         accum = 0.0f;
         char buf[48];
         int n = std::snprintf(buf, sizeof(buf),
-                              "@5:%.3f;;\r\n",
-                              speedDegPerSec / DEGREE_PER_CM);
+                              "@5:%.3f;%.3f;;\r\n",
+                              speedDegPerSec / DEGREE_PER_CM, _speedCommand);
         if (n > 0 && (size_t)n < sizeof(buf)) m_serial.write(buf, n);
         lastPublishedSpeed = speedDegPerSec;
     }
@@ -359,8 +366,8 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    // readAngularSpeedKf();
-    readAngularSpeed();
+    readAngularSpeedKf();
+    // readAngularSpeed();
     
     // displacementDeg = getTotalDisplacementDegrees(); 
 }

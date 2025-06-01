@@ -483,7 +483,7 @@ inline int find_next_waypoint(int& output_target, const Eigen::Vector3d& i_curre
 			closest_waypoint_index = find_closest_waypoint(i_current_state, min_index, max_index);
 		}
 
-		std::cout << "PathManager:: find_next_waypoint_count = " << find_next_waypoint_count << std::endl;
+		// std::cout << "PathManager:: find_next_waypoint_count = " << find_next_waypoint_count << std::endl;
 		if (find_next_waypoint_count >= 8) {
 			target = closest_waypoint_index + lookahead;
 			// std::cout << "PathManager::find_next_waypoint(): count >= 8, setting target to closest waypoint index + lookahead: " << target << std::endl;
