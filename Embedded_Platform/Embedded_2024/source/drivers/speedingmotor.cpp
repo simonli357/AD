@@ -72,6 +72,7 @@ namespace drivers{
         constexpr auto  STEP_TIME = 5ms;
 
         float diff = target - m_currentSpeed;    // remaining error (+/‑)
+        m_encoder._speedCommand = target; // set the speed command for the encoder
         while (true)         // ≈ dead‑zone
         {
             float step = (diff > 0 ? 1 : -1) *

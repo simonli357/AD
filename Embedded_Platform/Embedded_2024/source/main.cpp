@@ -63,7 +63,7 @@ void imuTask() {
 void encoderTask() {
     while (true) {
         g_encoder.run();
-        ThisThread::sleep_for(1ms);
+        ThisThread::sleep_for(2ms);
     }
 }
 void totalVoltageTask() {

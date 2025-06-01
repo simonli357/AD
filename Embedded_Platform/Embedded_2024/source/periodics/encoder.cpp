@@ -172,90 +172,113 @@ float clamp(float x, float min, float max) {
 
 float CEncoder::readAngularSpeedKf()
 {
-    /* ───────────── 1. time base ───────────── */
-    if (!_kfTimerStarted) { _kfTimer.start(); _kfTimerStarted = true; }
+    /* ───────────── 1. high-resolution time base ───────────── */
+    if (!_kfTimerStarted) {
+        _kfTimer.start();
+        _kfTimerStarted = true;
+    }
 
     static uint32_t last_us = 0;
     const uint32_t now_us = _kfTimer.read_us();
-    if (last_us == 0) { last_us = now_us; return 0.0f; }
+    if (last_us == 0) {
+        last_us = now_us;
+        return 0.0f;  // first call, no dt yet
+    }
 
-    const float dt = (now_us - last_us) * 1e-6f;     // ≈ 0.001 s
+    const float dt = (now_us - last_us) * 1e-6f;   // seconds (≈ 0.001)
     last_us = now_us;
 
-    /* ───────────── 2. raw angle ────────────── */
+    /* ───────────── 2. raw PWM → angle in degrees ────────────── */
     float rawDeg = m_pwm.dutycycle() * 360.0f;
-    // char buf1[48];
-    // int n = std::snprintf(buf1, sizeof(buf1),
-    //                         "@3:%.3f;;\r\n",
-    //                         rawDeg);
-    // if (n > 0 && (size_t)n < sizeof(buf1)) m_serial.write(buf1, n);
 
-    /* ───────────── 3. unwrap ───────────────── */
-    float diffRaw = rawDeg - _prevRawForUnwrap;           // -360…+360
-    if      (diffRaw >  180.0f) _unwrapRevs--;
-    else if (diffRaw < -180.0f) _unwrapRevs++;
-    _prevRawForUnwrap = rawDeg; 
+    /* ───────────── 3. unwrap (always use raw for correct topology) ─── */
+    static float prevRawForUnwrap = 0.0f;
+    float wrapDiff = rawDeg - prevRawForUnwrap;   // range: -360…+360
+    if      (wrapDiff >  180.0f) _unwrapRevs--;
+    else if (wrapDiff < -180.0f) _unwrapRevs++;
+    prevRawForUnwrap = rawDeg;
 
-    float measDeg = rawDeg + 360.0f * _unwrapRevs;       // absolute angle
+    float measDeg = rawDeg + 360.0f * _unwrapRevs; // absolute, unwrapped angle
 
-    /* ───────────── 4. Kalman predict ───────── */
+    /* ───────────── 4. Kalman predict ─────────────────────────── */
     _kf.predict(dt);
 
-    /* ───────────── 4a. step‑size glitch gate ─ */
-    constexpr float STEP_LIM = 15.0f;   // max is 7.5 for 50cm/s at 1000 Hz
-    static int  overLimitCnt = 0;       // counts consecutive big steps
-    static int  overLimitCntThreshold = 3; // threshold for accepting big steps
-
-    float stepDiff = rawDeg - _prevGoodRaw;
-    bool accept;
-    if (fabsf(stepDiff) <= STEP_LIM) {               // small step
-        accept = true;
-    } else if (!lastRejected) {                      // first big step
-        accept = false;
-        lastRejected = true;
-    } else {                                         // second big step in a row
-        accept = true;
-        lastRejected = false;
-    }
-    if (accept) {
-        _kf.update(measDeg);
-        _prevGoodRaw = rawDeg;                 // <- update only on accept
-        lastRejected = false;
-    }
-
-    /* ───── 4a. innovation‑based glitch gate ────────────────────── */
-    // float innov = measDeg - _kf.ang;                     // prediction residual
-    // innov -= 360.0f * std::round(innov / 360.0f);        // wrap to (‑180, +180]
-
-    // constexpr float INNOV_LIM = 45.0f;                   // 3 ms of max speed
-
-    // if (fabsf(innov) <= INNOV_LIM) {                     // plausible ?
-    //     _kf.update(measDeg);                             // yes -> use it
+    /* ───────────── 4a. speed-based glitch gate (3-strike rule) ─ */
+    // static float prevGoodRaw = 0.0f;         // last rawDeg we accepted
+    // static int   overLimitCnt  = 0;          // consecutive out-of-band counts
+    // static bool  speedValid    = false;      // “true” if last measurement was accepted
+    // constexpr int OVERLIMIT_THRESHOLD = 3;   // require 3 in a row to accept a big jump
+    // const float omega_cmd = _speedCommand * DEGREE_PER_CM;  // deg/s
+    // float deltaDeg = rawDeg - prevGoodRaw;
+    // float omega_meas = deltaDeg / dt;         // deg/s
+    // float diff_speed = omega_meas - omega_cmd;   // deg/s difference
+    // bool  accept;
+    // if (fabsf(diff_speed) <= 1.3f * fabsf(omega_cmd)) {
+    //     accept = true;
+    //     overLimitCnt = 0;         // reset counter
+    // } else {
+    //     overLimitCnt++;
+    //     if (overLimitCnt >= OVERLIMIT_THRESHOLD) {
+    //         accept = true;        // third consecutive out-of-band → probably real
+    //         overLimitCnt = 0;     // reset after acceptance
+    //     } else {
+    //         accept = false;       // treat as a glitch
+    //     }
+    // }
+    // if (accept) {
+    //     _kf.update(measDeg);
+    //     prevGoodRaw = rawDeg;     // remember this as last good sample
+    //     speedValid = true;
+    // } else {
+    //     speedValid = false;
     // }
 
-    // _kf.update(measDeg);
+    _kf.update(measDeg);
 
-    /* ───────────── 5. result ───────────────── */
+    /* ───────────── 5. compute speed result ───────────────────── */
     float speedDegPerSec = _kf.speed;
-    speedDegPerSec = applySpeedHysteresis(speedDegPerSec);
+    speedDegPerSec = applySpeedHysteresis(speedDegPerSec);  // optional dead-band
 
-    /* ───────────── 6. periodic publish ─────── */
-    static float accum = 0.0f;
-    accum += dt;
-    if (accum >= REPORT_INTERVAL_SEC) {
-        accum = 0.0f;
-        char buf[48];
+    /* ───────────── 6. periodic publish ───────────────────────── */
+    static float reportAccum = 0.0f;
+    reportAccum += dt;
+    if (reportAccum >= REPORT_INTERVAL_SEC) {
+        reportAccum = 0.0f;
+
+        float filteredCm   = speedDegPerSec / DEGREE_PER_CM;
+
+        // float commandCm    = _speedCommand;
+        // static float prev_good_sent_speed = commandCm;
+        // float sendSpeedCm;
+        // if (speedValid) {
+        //     sendSpeedCm = filteredCm;
+        // } else {
+        //     sendSpeedCm = commandCm;
+        // }
+        // constexpr float MAX_DELTA_CM_S = 0.2f;
+        // if (fabsf((filteredCm - commandCm)/commandCm) > MAX_DELTA_CM_S) {
+        //     sendSpeedCm = prev_good_sent_speed; // keep the last sent speed
+        // } else {
+        //     prev_good_sent_speed = filteredCm; // update last sent speed
+        // }
+
+        // 4) format and transmit
+        char buf[64];
+        // int n = std::snprintf(buf, sizeof(buf),
+        //                     "@5:%.3f;%.3f;;\r\n",
+        //                     sendSpeedCm,
+        //                     commandCm);
         int n = std::snprintf(buf, sizeof(buf),
-                              "@5:%.3f;;\r\n",
-                              speedDegPerSec / DEGREE_PER_CM);
-        if (n > 0 && (size_t)n < sizeof(buf)) m_serial.write(buf, n);
+                            "@5:%.3f;;\r\n",
+                            // sendSpeedCm);
+                            filteredCm);
+        if (n > 0 && static_cast<size_t>(n) < sizeof(buf)) {
+            m_serial.write(buf, n);
+        }
+
+        // 5) for internal use, always keep the last “filtered” speed in deg/s
         lastPublishedSpeed = speedDegPerSec;
     }
-    // char buf[64];
-    // int len = snprintf(buf, sizeof(buf),
-    //                 "[Encoder] Total displacement = %.2f°\n",
-    //                 displacementDeg);
-    // m_serial.write(buf, len);
 
     return speedDegPerSec;
 }
@@ -359,8 +382,8 @@ float CEncoder::getLinearAcceleration() {
 }
 
 void CEncoder::_run() {
-    // readAngularSpeedKf();
-    readAngularSpeed();
+    readAngularSpeedKf();
+    // readAngularSpeed();
     
     // displacementDeg = getTotalDisplacementDegrees(); 
 }

@@ -11,8 +11,9 @@ from pathlib import Path
 import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
-# ENC_PATTERN = re.compile(r"\[Encoder\]\s+angle\s*=\s*([-0-9.]+)°,\s*speed\s*=\s*([-0-9.]+)°/s")
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+# ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+
 
 MOTOR_ID = 11
 CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
@@ -36,6 +37,7 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
 
     times: list[float] = []
     speeds_cm: list[float] = []
+    cmd_speeds_cm: list[float] = []
 
     print(f"Running {duration}s at {speed_cm_s:.2f} cm/s …")
     try:
@@ -56,8 +58,9 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
                 if not m:
                     continue
                 speed_cm = float(m.group(1))
-                last_angle = 0
+                cmd_speed_cm = float(m.group(2))
                 speeds_cm.append(speed_cm)
+                cmd_speeds_cm.append(cmd_speed_cm)
                 times.append(elapsed)
 
             if int(elapsed) % 1 == 0:
@@ -74,7 +77,7 @@ def run_test(port: str, baud: int, speed_cm_s: float, duration: float, steer: fl
         ser.close()
         print("\nSerial closed.")
 
-    return times, speeds_cm
+    return times, speeds_cm, cmd_speeds_cm
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -120,10 +123,11 @@ def compute_stats(times: list[float], speeds: list[float], start_time: float) ->
 
 # ────────────────────────────────────────────────────────────────────────────────
 
-def save_csv(times: list[float], speeds: list[float], path: Path) -> None:
+def save_csv(times: list[float], speeds: list[float], cmds: list[float], path: Path) -> None:
     with open(path, "w", newline="") as f:
-        csv.writer(f).writerows(zip(["time_s", "enc_speed_cm_s"], []))
-        csv.writer(f).writerows(zip(times, speeds))
+        writer = csv.writer(f)
+        writer.writerow(["time_s", "enc_speed_cm_s", "cmd_speed_cm_s"])
+        writer.writerows(zip(times, speeds, cmds))
     print(f"CSV saved ➜ {path}")
 
 
@@ -165,15 +169,15 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
-    ap.add_argument("--cmd", type=float, default=35, help="Commanded speed [cm/s]")
+    ap.add_argument("--cmd", type=float, default=50, help="Commanded speed [cm/s]")
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
     ap.add_argument("--dur", type=float, default=5, help="Duration [s]")
-    ap.add_argument("--csv", type=Path, help="Save raw data to CSV")
+    ap.add_argument("--csv", action="store_true", help="Save data to CSV file")
     ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
     args = ap.parse_args()
 
-    times, speeds = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
+    times, speeds, cmd_speeds = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
     if len(speeds) < 3:
         print("Insufficient samples.")
         return
@@ -187,10 +191,10 @@ def main() -> None:
     print(f"Min deviation         : {stats['min_dev']:.3f} cm/s")
     print(f"Max deviation         : {stats['max_dev']:.3f} cm/s")
 
-    if args.csv:
-        save_csv(times, speeds, args.csv)
-
     script_dir = Path(__file__).parent
+    if args.csv:
+        save_csv(times, speeds, cmd_speeds, script_dir / "data" / f"encoder_noise_data_v{int(args.cmd)}_d{int(args.dur)}.csv")
+
     save_plot(times, speeds, args.cmd, delay, stats, script_dir / "plots" / f"encoder_noise_plot_v{int(args.cmd)}_d{int(args.dur)}.png")
 
     # stop motor

@@ -94,13 +94,16 @@ public:
                 min_diff = diff;
             }
         }
-        // if (min_diff > 0.1) {
-        //     printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f. FILTERED!!!\n", encoder_speed, velocity_command, min_diff);
-        //     filtered_speed = velocity_command;
-        // } else {
-        //     // printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
-            
-        // }
+        if (min_diff > 0.15) {
+            // printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f. FILTERED!!!\n", encoder_speed, velocity_command, min_diff);
+            debug("filter_encoder(): Encoder speed: " + helper::d2str(encoder_speed) + 
+                  ", Velocity command: " + helper::d2str(velocity_command) + 
+                  ", min diff: " + helper::d2str(min_diff) + ". FILTERED!!!", 1);
+            filtered_speed = velocity_command;
+        } else {
+            // printf("filter_encoder(): Encoder speed: %.2f, Velocity command: %.2f, min diff: %.2f\n", encoder_speed, velocity_command, min_diff);
+        }
+
         // if encoder speed is less than 0.03, set it to 0
         if (std::abs(encoder_speed) < 0.03) {
             filtered_speed = 0.0;

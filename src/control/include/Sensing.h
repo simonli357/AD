@@ -159,7 +159,8 @@ inline void encoderCallback(const utils::encoder::ConstPtr& msg)
 inline void reset_yaw(double new_yaw) {
     while(new_yaw < -M_PI) new_yaw += 2 * M_PI;
     while(new_yaw >= M_PI) new_yaw -= 2 * M_PI;
-    if (Tunable::real) {
+    // if (Tunable::real) {
+    if (false) {
         std::stringstream strs;
         char buff[100];
         snprintf(buff, sizeof(buff), "%.3f;;\r\n", 
