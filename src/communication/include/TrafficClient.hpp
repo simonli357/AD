@@ -62,7 +62,7 @@ class TrafficClient {
 	void send_data();
 	void send_car_id();
 	bool can_send();
-    void receive_datagram();
+	void receive_datagram();
 	void on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred);
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	// Encode
