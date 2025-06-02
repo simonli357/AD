@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cv_bridge/cv_bridge.h>
 #include <fcntl.h>
+#include <memory>
 #include <netinet/in.h>
 #include <nlohmann/json.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -17,7 +18,10 @@ using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
+	keyDealer = std::make_unique<KeyDealer>();
+	create_udp_socket();
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
+    receive_datagram();
 }
 
 TrafficClient::~TrafficClient() {
@@ -43,6 +47,8 @@ void TrafficClient::create_tcp_socket() {
 	int flags = fcntl(tcp_socket, F_GETFL, 0);
 	fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
 }
+
+void TrafficClient::create_udp_socket() { udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx, ip::udp::endpoint(ip::udp::v4(), udp_port)); }
 
 void TrafficClient::initialize() {
 	while (alive) {
@@ -77,14 +83,28 @@ void TrafficClient::poll_connection() {
 	}
 }
 
-bool TrafficClient::can_send() {
-    auto now = steady_clock::now();
-    auto elapsed = duration_cast<milliseconds>(now - last_send_time);
-    if (elapsed.count() >= 250) {
-        last_send_time = now;
-        return true;
+void TrafficClient::receive_datagram() {
+	udp_socket->async_receive_from(boost::asio::buffer(udp_recv_buffer), remote_endpoint, [this](boost::system::error_code ec, std::size_t bytes_recvd) { this->on_datagram(ec, bytes_recvd); });
+}
+
+void TrafficClient::on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred) {
+    if (!error) {
+        // Process datagram here (bytes_transferred bytes in recv_buffer_)
+        std::cout << "Received: " << std::string(udp_recv_buffer.data(), bytes_transferred) << "\n";
+    } else {
+        std::cerr << "Receive error: " << error.message() << "\n";
     }
-    return false;
+    receive_datagram();
+}
+
+bool TrafficClient::can_send() {
+	auto now = steady_clock::now();
+	auto elapsed = duration_cast<milliseconds>(now - last_send_time);
+	if (elapsed.count() >= 250) {
+		last_send_time = now;
+		return true;
+	}
+	return false;
 }
 
 std::string TrafficClient::create_vehicle_pos(double x, double y) {
@@ -112,18 +132,18 @@ std::string TrafficClient::create_encountered_obstacle(int type, double x, doubl
 // ------------------- //
 
 void TrafficClient::send_car_id() {
-    tasks->run([this] {
-        json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
-        std::string chars = msg.dump();
-        send(tcp_socket, chars.data(), chars.size(), 0);
-    });
+	tasks->run([this] {
+		json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
+		std::string chars = msg.dump();
+		send(tcp_socket, chars.data(), chars.size(), 0);
+	});
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
 void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
-    if (!can_send()) {
-        return;
-    }
+	if (!can_send()) {
+		return;
+	}
 	static auto road_obj_to_int = [](OBJECT &obj) -> int {
 		switch (obj) {
 		case OBJECT::BLOCK:
