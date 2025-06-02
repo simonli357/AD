@@ -50,6 +50,7 @@ class TrafficClient {
 	void poll_connection();
 	void send_data();
 	void send_car_id();
+	bool can_send();
 	template <typename Callable> void add_stream_task(Callable &&lambda);
 	// Encode
 	std::string create_vehicle_pos(double x, double y);

@@ -77,6 +77,16 @@ void TrafficClient::poll_connection() {
 	}
 }
 
+bool TrafficClient::can_send() {
+    auto now = steady_clock::now();
+    auto elapsed = duration_cast<milliseconds>(now - last_send_time);
+    if (elapsed.count() >= 250) {
+        last_send_time = now;
+        return true;
+    }
+    return false;
+}
+
 std::string TrafficClient::create_vehicle_pos(double x, double y) {
 	json msg = {{"reqORinfo", "info"}, {"type", "devicePos"}, {"value1", x}, {"value2", y}};
 	return msg.dump();
@@ -102,20 +112,18 @@ std::string TrafficClient::create_encountered_obstacle(int type, double x, doubl
 // ------------------- //
 
 void TrafficClient::send_car_id() {
-    auto now = steady_clock::now();
-    auto elapsed = duration_cast<milliseconds>(now - last_send_time);
-    if (elapsed.count() >= 250) {
-        last_send_time = now;
-        tasks->run([this] {
-            json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
-            std::string chars = msg.dump();
-            send(tcp_socket, chars.data(), chars.size(), 0);
-        });
-    }
+    tasks->run([this] {
+        json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
+        std::string chars = msg.dump();
+        send(tcp_socket, chars.data(), chars.size(), 0);
+    });
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
 void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
+    if (!can_send()) {
+        return;
+    }
 	static auto road_obj_to_int = [](OBJECT &obj) -> int {
 		switch (obj) {
 		case OBJECT::BLOCK:
