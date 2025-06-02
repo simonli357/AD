@@ -52,16 +52,9 @@ void TrafficClient::create_udp_socket() {
     try {
         udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx);
         udp_socket->open(ip::udp::v4());
-        
-        // Allow multiple applications to bind to the same address
         udp_socket->set_option(socket_base::reuse_address(true));
-        
-        // Bind to any available port (let OS choose)
-        udp_socket->bind(ip::udp::endpoint(ip::udp::v4(), 0));
-        
+        udp_socket->bind(ip::udp::endpoint(ip::udp::v4(), udp_port));
         ROS_INFO("UDP socket bound to port: %d", udp_socket->local_endpoint().port());
-        
-        // Start receiving datagrams
         receive_datagram();
     } catch (const std::exception& e) {
         ROS_ERROR("Failed to create UDP socket: %s", e.what());
