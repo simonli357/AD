@@ -10,6 +10,7 @@
 #include <tbb/task_group.h>
 #include <thread>
 
+using namespace std::chrono;
 using std_msgs::Float32MultiArray;
 
 class TrafficClient {
@@ -31,7 +32,8 @@ class TrafficClient {
   private:
 	// Fields
 	int car_id = 3;
-	const std::chrono::milliseconds frequency = std::chrono::milliseconds(250);
+	const milliseconds frequency = milliseconds(250);
+	steady_clock::time_point last_send_time = steady_clock::now();
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "127.0.0.1";
 	const size_t buffer_size = 1024;

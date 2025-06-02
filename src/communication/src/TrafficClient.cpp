@@ -102,11 +102,16 @@ std::string TrafficClient::create_encountered_obstacle(int type, double x, doubl
 // ------------------- //
 
 void TrafficClient::send_car_id() {
-	tasks->run([this] {
-		json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
-		std::string chars = msg.dump();
-		send(tcp_socket, chars.data(), chars.size(), 0);
-	});
+    auto now = steady_clock::now();
+    auto elapsed = duration_cast<milliseconds>(now - last_send_time);
+    if (elapsed.count() >= 250) {
+        last_send_time = now;
+        tasks->run([this] {
+            json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
+            std::string chars = msg.dump();
+            send(tcp_socket, chars.data(), chars.size(), 0);
+        });
+    }
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
