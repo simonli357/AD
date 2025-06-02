@@ -16,7 +16,7 @@ using namespace VehicleConstants;
 using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
-    main = std::thread(&TrafficClient::initialize, this); 
+	main = std::thread(&TrafficClient::initialize, this);
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 }
 
@@ -77,14 +77,36 @@ void TrafficClient::poll_connection() {
 	}
 }
 
+std::string TrafficClient::create_vehicle_pos(double x, double y) {
+	json msg = {{"reqORinfo", "info"}, {"type", "devicePos"}, {"value1", x}, {"value2", y}};
+	return msg.dump();
+}
+
+std::string TrafficClient::create_vehicle_rot(double yaw) {
+	json msg = {{"reqORinfo", "info"}, {"type", "deviceRot"}, {"value1", yaw}};
+	return msg.dump();
+}
+
+std::string TrafficClient::create_vehicle_speed(double speed) {
+	json msg = {{"reqORinfo", "info"}, {"type", "deviceSpeed"}, {"value1", speed}};
+	return msg.dump();
+}
+
+std::string TrafficClient::create_encountered_obstacle(int type, double x, double y) {
+	json msg = {{"reqORinfo", "info"}, {"type", "historyData"}, {"value1", type}, {"value2", x}, {"value3", y}};
+	return msg.dump();
+}
+
 // ------------------- //
 // TCP Encoding
 // ------------------- //
 
 void TrafficClient::send_car_id() {
-	json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
-	std::string chars = msg.dump();
-	send(tcp_socket, chars.data(), chars.size(), 0);
+	tasks->run([this] {
+		json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
+		std::string chars = msg.dump();
+		send(tcp_socket, chars.data(), chars.size(), 0);
+	});
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
@@ -129,37 +151,16 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 			return -1;
 		}
 	};
-    auto fn = [this, road_object]() {
+	tasks->run([this, road_object]() {
 		std::string v_pos = create_vehicle_pos(road_object.data[1], road_object.data[2]);
 		std::string v_rot = create_vehicle_rot(road_object.data[3]);
 		std::string v_speed = create_vehicle_speed(road_object.data[4]);
-        std::string objcts = "";
+		std::string objcts = "";
 		for (size_t i = 7; i < road_object.data.size(); i += 7) {
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
 			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
 		}
-        std::string msg = v_pos + v_rot + v_speed + objcts;
-        send(tcp_socket, msg.data(), msg.size(), 0);
-    };
-    add_stream_task(std::move(fn));
-}
-
-std::string TrafficClient::create_vehicle_pos(double x, double y) {
-	json msg = {{"reqORinfo", "info"}, {"type", "devicePos"}, {"value1", x}, {"value2", y}};
-	return msg.dump();
-}
-
-std::string TrafficClient::create_vehicle_rot(double yaw) {
-	json msg = {{"reqORinfo", "info"}, {"type", "deviceRot"}, {"value1", yaw}};
-	return msg.dump();
-}
-
-std::string TrafficClient::create_vehicle_speed(double speed) {
-	json msg = {{"reqORinfo", "info"}, {"type", "deviceSpeed"}, {"value1", speed}};
-	return msg.dump();
-}
-
-std::string TrafficClient::create_encountered_obstacle(int type, double x, double y) {
-	json msg = {{"reqORinfo", "info"}, {"type", "historyData"}, {"value1", type}, {"value2", x}, {"value3", y}};
-    return msg.dump();
+		std::string msg = v_pos + v_rot + v_speed + objcts;
+		send(tcp_socket, msg.data(), msg.size(), 0);
+	});
 }
