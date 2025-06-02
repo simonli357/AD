@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/task_group.h>
 #include <thread>
 
 using std_msgs::Float32MultiArray;
@@ -38,8 +39,8 @@ class TrafficClient {
 	bool connected = false;
 	sockaddr_in tcp_address;
 	int tcp_socket;
-	std::thread poll;
-	std::thread sender;
+	std::thread main;
+	std::unique_ptr<tbb::task_group> tasks;
 	// Task Queue
 	tbb::concurrent_queue<std::any> stream_tasks;
 	// Utility Methods

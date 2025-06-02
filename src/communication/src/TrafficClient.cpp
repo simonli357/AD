@@ -16,8 +16,8 @@ using namespace VehicleConstants;
 using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
-    poll = std::thread(&TrafficClient::initialize, this); 
-    sender = std::thread(&TrafficClient::send_data, this);
+    main = std::thread(&TrafficClient::initialize, this); 
+	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 }
 
 TrafficClient::~TrafficClient() {
@@ -26,11 +26,8 @@ TrafficClient::~TrafficClient() {
 	if (tcp_socket != -1) {
 		close(tcp_socket);
 	}
-	if (poll.joinable()) {
-		poll.join();
-	}
-	if (sender.joinable()) {
-		sender.join();
+	if (main.joinable()) {
+		main.join();
 	}
 }
 
@@ -79,22 +76,6 @@ void TrafficClient::poll_connection() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
 	}
 }
-
-void TrafficClient::send_data() {
-	while (alive) {
-		if (!stream_tasks.empty() && tcp_can_send) {
-            std::any stream_task;
-            if (stream_tasks.try_pop(stream_task)) {
-                std::function<void()> task = std::any_cast<std::function<void()>>(stream_task);
-                task();
-            }
-            stream_tasks.clear();
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(frequency));
-	}
-}
-
-template <typename Callable> void TrafficClient::add_stream_task(Callable &&lambda) { stream_tasks.push(std::function<void()>(std::forward<Callable>(lambda))); }
 
 // ------------------- //
 // TCP Encoding
