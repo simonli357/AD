@@ -389,6 +389,8 @@ class SignFastest {
                 double roughDepth = computeMedianDepth(depthImage, detectedBoxes[i].x1,
                                                          detectedBoxes[i].y1, detectedBoxes[i].x2,
                                                          detectedBoxes[i].y2);
+
+                // std::cout << "roughDepth: " << roughDepth << std::endl;
                 if (roughDepth < 0)
                     roughDepth = std::numeric_limits<double>::max();
                 depthIndices.push_back(std::make_pair(roughDepth, static_cast<int>(i)));
@@ -631,6 +633,10 @@ class SignFastest {
             // Sort the closest 25% for median computation
             std::vector<double> closest25(validDepths.begin(), validDepths.begin() + cutoff);
             std::sort(closest25.begin(), closest25.end());
+
+            // std::cout << "Closest " << cutoff << " depth values:";
+            // for (double d : closest25) std::cout << ' ' << d;
+            // std::cout << '\n';
 
             double median = 0;
             size_t m = closest25.size();

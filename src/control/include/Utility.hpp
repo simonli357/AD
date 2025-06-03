@@ -411,17 +411,22 @@ public:
         // std::cout << "object_distance4: " << P_v2d[0] << std::endl;
 
         static std::vector<std::vector<double>> history;
-        history.push_back({P_v2d[0], P_v2d[1]});
-        if (history.size() > 25) {
-            history.erase(history.begin());
-        }
         double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
             return sum + vec[0];
         }) / history.size();
         double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
             return sum + vec[1];
         }) / history.size();
-        printf("avg relative position: %.4f, %.4f\n", avg_x, avg_y);
+        // push back if error in x and y is smaller than 15% from the average
+        // if(history.size() <3 || (std::abs(P_v2d[0] - avg_x) < 0.15 * std::abs(avg_x) &&
+        //    std::abs(P_v2d[1] - avg_y) < 0.15 * std::abs(avg_y))) {
+        //     history.push_back({P_v2d[0], P_v2d[1]});
+        // }
+        history.push_back({P_v2d[0], P_v2d[1]});
+        if (history.size() > 3) {
+            history.erase(history.begin());
+            printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
+        }
 
         return Eigen::Vector2d(x, y) + R_vw * P_v2d;
     }
