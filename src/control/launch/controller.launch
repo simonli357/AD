@@ -82,7 +82,7 @@
   <arg name="sign_rate" default="30"/>
   <arg name="pubImage" default="true"/>
   <arg name="thread" default="true"/>
-  <arg name="use_emergency" default="false"/>
+  <arg name="use_emergency" default="true"/>
   <arg name="quality" default="90"/>
   <param name="quality" value="$(arg quality)"/>
   <arg name="flip" default="true"/>
