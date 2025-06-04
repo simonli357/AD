@@ -175,6 +175,10 @@ class LaneDetector {
 		nh.getParam("window_height", window_height);
 		n_windows = int((ipm_camera.far_m - ipm_camera.near_m) / window_height);
 		nh.getParam("stopline_distance_threshold", stopline_distance_threshold);
+		if(!nh.getParam("show_lane", showlane)) {
+			std::cerr << "show_lane parameter not found, exiting." << std::endl;
+			exit(1);
+		}
 		LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
 		LANE_WIDTH_PIXEL = LANE_WIDTH_PIXEL;
 
@@ -211,7 +215,7 @@ class LaneDetector {
 	ros::Publisher center_offset_pub;
 	ros::Publisher waypoints_pub;
 
-	bool showflag, printflag, printDuration, publish, real;
+	bool showflag, printflag, printDuration, publish, real, showlane = false;
 
 	// NEW LANE
 	cv::Mat processed_image = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
@@ -522,12 +526,14 @@ class LaneDetector {
 			
 			if (publish_msg) lane_pub.publish(lane_msg);
 
-			if (showflag) {
+			if (showflag || showlane) {
 				if (!ipm_camera.getIPM(image, ipm_color))
 					return lane_msg;
-				cv::Mat gyu_img = viz3(ipm_color, image, wpts, true);
-				cv::imshow("viz3", gyu_img);
-				cv::waitKey(1);
+				viz3(ipm_color, image, wpts, true);
+				if (showflag) {
+					cv::imshow("viz3", viz_img);
+					cv::waitKey(1);
+				}
 			}
 		}
 		if (printDuration) {
@@ -1204,7 +1210,8 @@ class LaneDetector {
 		polyfit(x, y, fit);
 	}
 
-	cv::Mat viz3(const cv::Mat &binary_warped, const cv::Mat &non_warped, const std::vector<float> waypoints, bool IPM = true) {
+	cv::Mat viz_img;
+	void viz3(const cv::Mat &binary_warped, const cv::Mat &non_warped, const std::vector<float> waypoints, bool IPM = true) {
 		const int img_height = binary_warped.rows;
 		const int img_width = binary_warped.cols;
 		cv::Mat result(binary_warped.size(), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -1313,7 +1320,6 @@ class LaneDetector {
                       base.y - int( arrow_len * std::cos(ang)));
         cv::arrowedLine(result, base, tip, txt_col, 3, cv::LINE_AA, 0, 0.25);
     }
-
-		return result;
+		viz_img = result.clone();
 	}
 };

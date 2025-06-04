@@ -255,7 +255,17 @@ class CameraNode {
 		lane_cv.notify_one();                   // wake the lane thread
     sign_cv.notify_one();                   // wake the sign thread
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			if (Lane.showlane) {
+				cv::Mat lane_viz = Lane.viz_img;
+				if (lane_viz.empty()) {
+					ROS_WARN("Lane viz image is empty");
+				} else if (lane_viz.size() != cv::Size(640, 480)) {
+					cv::resize(lane_viz, lane_viz, cv::Size(640, 480));
+				}
+				Sign.tcp_client->send_image_rgb(lane_viz);
+			} else {
+				Sign.tcp_client->send_image_rgb(colorImage);
+			}
 		}
 	}
 
@@ -362,7 +372,17 @@ class CameraNode {
 		sign_cv.notify_one();                   // wake the sign thread
 
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			if (Lane.showlane) {
+				cv::Mat lane_viz = Lane.viz_img;
+				if (lane_viz.empty()) {
+					ROS_WARN("Lane viz image is empty");
+				} else if (lane_viz.size() != cv::Size(640, 480)) {
+					cv::resize(lane_viz, lane_viz, cv::Size(640, 480));
+				}
+				Sign.tcp_client->send_image_rgb(lane_viz);
+			} else {
+				Sign.tcp_client->send_image_rgb(colorImage);
+			}
 			if (send_depth) {
 					Sign.tcp_client->send_image_depth(depthImage);
 			}

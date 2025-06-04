@@ -85,6 +85,8 @@
   <arg name="use_emergency" default="true"/>
   <arg name="quality" default="90"/>
   <param name="quality" value="$(arg quality)"/>
+  <arg name="show_lane" default="true"/>
+  <param name="show_lane" value="$(arg show_lane)"/>
   <arg name="flip" default="true"/>
   <arg name="send_depth" default="false"/>
   <arg name="ground_dist" default="false"/>
