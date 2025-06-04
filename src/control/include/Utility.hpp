@@ -410,23 +410,18 @@ public:
                 sin(yaw),  cos(yaw);
         // std::cout << "object_distance4: " << P_v2d[0] << std::endl;
 
-        static std::vector<std::vector<double>> history;
-        double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-            return sum + vec[0];
-        }) / history.size();
-        double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-            return sum + vec[1];
-        }) / history.size();
-        // push back if error in x and y is smaller than 15% from the average
-        // if(history.size() <3 || (std::abs(P_v2d[0] - avg_x) < 0.15 * std::abs(avg_x) &&
-        //    std::abs(P_v2d[1] - avg_y) < 0.15 * std::abs(avg_y))) {
-        //     history.push_back({P_v2d[0], P_v2d[1]});
+        // static std::vector<std::vector<double>> history;
+        // double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+        //     return sum + vec[0];
+        // }) / history.size();
+        // double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+        //     return sum + vec[1];
+        // }) / history.size();
+        // history.push_back({P_v2d[0], P_v2d[1]});
+        // if (history.size() > 3) {
+        //     history.erase(history.begin());
+        //     printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
         // }
-        history.push_back({P_v2d[0], P_v2d[1]});
-        if (history.size() > 3) {
-            history.erase(history.begin());
-            printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
-        }
 
         return Eigen::Vector2d(x, y) + R_vw * P_v2d;
     }
