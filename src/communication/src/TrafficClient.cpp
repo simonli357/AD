@@ -196,15 +196,29 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 		}
 	};
 	tasks->run([this, road_object]() {
-		std::string v_pos = create_vehicle_pos(road_object.data[1], road_object.data[2]);
-		std::string v_rot = create_vehicle_rot(road_object.data[3]);
-		std::string v_speed = create_vehicle_speed(road_object.data[4]);
-		std::string objcts = "";
-		for (size_t i = 7; i < road_object.data.size(); i += 7) {
-			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
-			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
-		}
-		std::string msg = v_pos + v_rot + v_speed + objcts;
-		send(tcp_socket, msg.data(), msg.size(), 0);
-	});
+        int num_objects = road_object.data.size() / 8;
+        if (road_object.data.size() % 8 != 0) return;
+
+        double x = road_object.data[1];
+        double y = road_object.data[2];
+        double rot = road_objects.data[3];
+        double speed = road_objects.data[4];
+
+		std::string v_pos = create_vehicle_pos(x, y);
+		std::string v_rot = create_vehicle_rot(rot);
+		std::string v_speed = create_vehicle_speed(speed);
+        
+        std::string objcts = "";
+        for (int i = 1; i < num_objects; ++i) {
+            int type = road_objects.data[i * 8];
+            double x = road_object.data[i * 8 + 1];
+            double y = road_object.data[i * 8 + 2];
+			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(type));
+			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), x, y);
+        }
+
+        std::string msg = v_pos + v_rot + v_speed + objcts;
+        send(tcp_socket, msg.data(), msg.size(), 0);
+    };
+    add_stream_task(std::move(fn));
 }
