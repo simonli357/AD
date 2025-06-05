@@ -10,6 +10,7 @@
 #include "std_msgs/Header.h"
 #include "yolo-fastestv2.h"
 #include <chrono>
+#include <condition_variable>
 #include <librealsense2/rs.hpp>
 #include <shared_mutex>
 #include <mutex>
