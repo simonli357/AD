@@ -81,7 +81,7 @@ class Server:
                     old_client.socket.close()
                 except Exception:
                     pass
-            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=False)
+            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def on_packet(self, source, packet):
         if source.is_host and not source.is_dashboard:
