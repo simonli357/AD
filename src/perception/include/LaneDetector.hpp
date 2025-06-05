@@ -520,6 +520,8 @@ class LaneDetector {
 				}
 				lane_msg.straight_lane = is_straight;
 				lane_msg.straight_lane_angle = waypoints_angle;
+				lane_msg.good_left = good_left;
+				lane_msg.good_right = good_right;
 			} else {
 				is_straight = false;
 			}
@@ -952,6 +954,8 @@ class LaneDetector {
 		return x;
 	}
 
+	bool good_left = false;
+	bool good_right = false;
 	bool line_fit(const cv::Mat &binary_warped) {
 		const int img_height = binary_warped.rows;
 		const int img_width = binary_warped.cols;
@@ -1001,7 +1005,7 @@ class LaneDetector {
 			}
 		}
 
-		//DISPLAY
+		// DISPLAY
 		// cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
 
 		int window_height = static_cast<int>(binary_warped.rows / n_windows); // Caclulate height of parsing windows
@@ -1138,14 +1142,19 @@ class LaneDetector {
 		VectorXd righty;
 
 		static constexpr int num_window_thresh = 10;
-		bool good_left  = false;
-		bool good_right = false;
+		good_left  = false;
+		good_right = false;
 
 		/* -------- 1. fit the sides that have enough windows ---------------- */
 		if (lane_to_fit == LEFT || lane_to_fit == BOTH) {
 				if (num_left_windows >= num_window_thresh) {
 						fit_points(leftx, lefty, left_lane_inds,
 											nonzeroy, nonzerox, left_fit);
+						
+						if (lane_to_fit == LEFT) {
+							right_fit = left_fit;
+							right_fit(0) += LANE_WIDTH_PIXEL;
+						}
 						good_left = true;
 				}
 		}
@@ -1155,41 +1164,45 @@ class LaneDetector {
 						fit_points(rightx, righty, right_lane_inds,
 											nonzeroy, nonzerox, right_fit);
 						good_right = true;
+						if (lane_to_fit == RIGHT) {
+							left_fit = right_fit;
+							left_fit(0) -= LANE_WIDTH_PIXEL;
+						}
 				}
 		}
 
 		/* -------- 2. insist on seeing **both** real sides ------------------ */
-		if (!(good_left && good_right)) {
+		if (!good_left && !good_right) {
 				return false;                 // discard this frame immediately
 		}
 
 		/* 2.  Lane‑width and curvature consistency (only if both sides exist) */
-		bool width_ok = true, curv_ok = true;
-		if (good_left && good_right)
-		{
-				// sample at three y‑locations in the lower half
-				for (int y = img_height-1; y > img_height/2; y -= img_height/6) {
-						double lx = evaluate_poly(y, left_fit);
-						double rx = evaluate_poly(y, right_fit);
-						double width = std::abs(rx - lx);
-						if (std::fabs(width - LANE_WIDTH_PIXEL) > 15.0) { width_ok = false; break; }
-				}
-				// curvature κ = |y''| / (1+y'^2)^(3/2); here use mid‑ROI point
-				auto curvature = [](const VectorXd& p, double y){
-						double dy  = 3*p(0)*y*y + 2*p(1)*y + p(2);
-						double d2y = 6*p(0)*y   + 2*p(1);
-						return std::abs(d2y) / std::pow(1 + dy*dy, 1.5);
-				};
-				double y_mid = img_height*0.6;
-				double kL = curvature(left_fit,  y_mid);
-				double kR = curvature(right_fit, y_mid);
-				curv_ok = std::fabs(kL - kR) < 0.001;          // px‑1
-		}
+		// bool width_ok = true, curv_ok = true;
+		// if (good_left || good_right)
+		// {
+		// 		// sample at three y‑locations in the lower half
+		// 		for (int y = img_height-1; y > img_height/2; y -= img_height/6) {
+		// 				double lx = evaluate_poly(y, left_fit);
+		// 				double rx = evaluate_poly(y, right_fit);
+		// 				double width = std::abs(rx - lx);
+		// 				if (std::fabs(width - LANE_WIDTH_PIXEL) > 15.0) { width_ok = false; break; }
+		// 		}
+		// 		// curvature κ = |y''| / (1+y'^2)^(3/2); here use mid‑ROI point
+		// 		auto curvature = [](const VectorXd& p, double y){
+		// 				double dy  = 3*p(0)*y*y + 2*p(1)*y + p(2);
+		// 				double d2y = 6*p(0)*y   + 2*p(1);
+		// 				return std::abs(d2y) / std::pow(1 + dy*dy, 1.5);
+		// 		};
+		// 		double y_mid = img_height*0.6;
+		// 		double kL = curvature(left_fit,  y_mid);
+		// 		double kR = curvature(right_fit, y_mid);
+		// 		curv_ok = std::fabs(kL - kR) < 0.001;          // px‑1
+		// }
 
-		bool fits_good = false;
-		if (good_left && good_right)        fits_good = width_ok && curv_ok;
+		// bool fits_good = false;
+		// if (good_left || good_right)        fits_good = width_ok && curv_ok;
 
-		if (!fits_good)       return false;   // discard this frame
+		// if (!fits_good)       return false;   // discard this frame
 				
 		return true;
 	}
@@ -1230,7 +1243,10 @@ class LaneDetector {
 				for (size_t i = 0; i < left_fitx.size(); ++i) {
 					left_points.push_back(cv::Point(left_fitx[i], ploty[i]));
 				}
-				cv::polylines(result, left_points, false, cv::Scalar(255, 255, 0), 3);
+				auto left_color = cv::Scalar(255, 255, 0);
+				// Orange if left lane is not good
+				if (!good_left) left_color = cv::Scalar(0, 165, 255);
+				cv::polylines(result, left_points, false, left_color, 3);
 			}
 			if (lane_to_fit == RIGHT || lane_to_fit == BOTH) {
 				for (double y : ploty) {
@@ -1240,7 +1256,10 @@ class LaneDetector {
 				for (size_t i = 0; i < right_fitx.size(); ++i) {
 					right_points.push_back(cv::Point(right_fitx[i], ploty[i]));
 				}
-				cv::polylines(result, right_points, false, cv::Scalar(255, 255, 0), 3);
+				auto right_color = cv::Scalar(255, 255, 0);
+				// Orange if right lane is not good
+				if (!good_right) right_color = cv::Scalar(0, 165, 255);
+				cv::polylines(result, right_points, false, right_color, 3);
 			}
 			for (int i = 0; i < waypoints.size(); i += 3) {
 				int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
