@@ -42,7 +42,7 @@ class Server:
                 except OSError:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
-            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=False)
             self.main_window.set_callbacks()
 
     def listen(self):
