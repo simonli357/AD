@@ -69,7 +69,7 @@ class Server:
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
             print("Utility Client connected")
-            self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+            self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=False)
             self.main_window.set_callbacks()
         if client_type == "dashboard_client":
             key = client_socket.getpeername()[0]
@@ -81,7 +81,7 @@ class Server:
                     old_client.socket.close()
                 except Exception:
                     pass
-            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=False)
+            self.dashboard_clients[key] = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=True)
 
     def on_packet(self, source, packet):
         if source.is_host and not source.is_dashboard:
