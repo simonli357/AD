@@ -82,9 +82,10 @@
   <arg name="sign_rate" default="30"/>
   <arg name="pubImage" default="true"/>
   <arg name="thread" default="true"/>
-  <arg name="use_emergency" default="true"/>
   <arg name="quality" default="90"/>
   <param name="quality" value="$(arg quality)"/>
+  <arg name="show_lane" default="false"/>
+  <param name="show_lane" value="$(arg show_lane)"/>
   <arg name="flip" default="true"/>
   <arg name="send_depth" default="false"/>
   <arg name="ground_dist" default="false"/>
@@ -105,7 +106,7 @@
     <param name="subModel" value="$(arg subModel)"/>
     <param name="rate" value="$(arg rate)"/>
     <!-- cameraNode params -->
-    <param name="/use_emergency" value="$(arg use_emergency)"/>
+    <param name="/use_emergency" value="$(arg emergency)"/>
     <param name="/showFlag" value="$(arg show)"/>
     <param name="/printFlag" value="$(arg print)"/>
     <param name="/printDuration" value="$(arg print_duration)"/>

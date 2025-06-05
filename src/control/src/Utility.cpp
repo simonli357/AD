@@ -323,7 +323,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     } else {
         num_obj = 0;
     }
-    if (num_obj == 1 && detected_objects[0] == -1.0) {
+    if (detected_objects.size() >= NUM_VALUES_PER_OBJECT && detected_objects[5] == -1.0 && num_obj == 1 && detected_objects[6] == -1.0) {
         emergency = true;
     } else {
         emergency = false;

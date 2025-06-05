@@ -255,7 +255,31 @@ class CameraNode {
 		lane_cv.notify_one();                   // wake the lane thread
     sign_cv.notify_one();                   // wake the sign thread
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			if (Lane.showlane) {
+				cv::Mat lane_viz = Lane.viz_img;
+				if (lane_viz.empty()) {
+					ROS_WARN("Lane viz image is empty");
+				} else if (lane_viz.size() != cv::Size(640, 480)) {
+					cv::Mat padded;
+					int top = (480 - lane_viz.rows) / 2;
+					int bottom = 480 - lane_viz.rows - top;
+					int left = (640 - lane_viz.cols) / 2;
+					int right = 640 - lane_viz.cols - left;
+					cv::copyMakeBorder(lane_viz, padded, top, bottom, left, right, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+					lane_viz = padded;
+					if (lane_viz.size() != cv::Size(640, 480)) {
+						ROS_WARN("Lane viz image still not good after padding.");
+						return;
+					}
+				}
+				if (lane_viz.size() != cv::Size(640, 480)) {
+					ROS_WARN("Lane viz image not good.");
+					return;
+				}
+				Sign.tcp_client->send_image_rgb(lane_viz);
+			} else {
+				Sign.tcp_client->send_image_rgb(colorImage);
+			}
 		}
 	}
 
@@ -362,7 +386,31 @@ class CameraNode {
 		sign_cv.notify_one();                   // wake the sign thread
 
 		if (Sign.tcp_client != nullptr) {
-			Sign.tcp_client->send_image_rgb(colorImage);
+			if (Lane.showlane) {
+				cv::Mat lane_viz = Lane.viz_img;
+				if (lane_viz.empty()) {
+					ROS_WARN("Lane viz image is empty");
+				} else if (lane_viz.size() != cv::Size(640, 480)) {
+					cv::Mat padded;
+					int top = (480 - lane_viz.rows) / 2;
+					int bottom = 480 - lane_viz.rows - top;
+					int left = (640 - lane_viz.cols) / 2;
+					int right = 640 - lane_viz.cols - left;
+					cv::copyMakeBorder(lane_viz, padded, top, bottom, left, right, cv::BORDER_CONSTANT, cv::Scalar(255, 255, 255));
+					lane_viz = padded;
+					if (lane_viz.size() != cv::Size(640, 480)) {
+						ROS_WARN("Lane viz image still not good after padding.");
+						return;
+					}
+				}
+				if (lane_viz.size() != cv::Size(640, 480)) {
+					ROS_WARN("Lane viz image not good.");
+					return;
+				}
+				Sign.tcp_client->send_image_rgb(lane_viz);
+			} else {
+				Sign.tcp_client->send_image_rgb(colorImage);
+			}
 			if (send_depth) {
 					Sign.tcp_client->send_image_depth(depthImage);
 			}

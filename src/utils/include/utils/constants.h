@@ -305,10 +305,9 @@ namespace VehicleConstants {
         322.97223,  // cx
         244.39398   // cy
     };
-    static constexpr std::array<double, 6> REALSENSE_TF = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 2.1*M_PI/180.0}; // x, y, z, roll, pitch, yaw
-    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.08255 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, 2.1*M_PI/180.0};
-    // static constexpr std::array<double, 6> REALSENSE_TF = {-0.1, 0.05, 0.2, 0, 0.1, 0};
-    static constexpr double CAM_TO_CAR_FRONT = CAR_LENGTH / 2 - REALSENSE_TF[0];
+    static constexpr std::array<double, 6> REALSENSE_TF = {-0.090 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, -0.15*M_PI/180.0}; // x, y, z, roll, pitch, yaw
+    static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.090 - 0.0042, -0.032, 0.257, 0, 1.85*M_PI/180.0, -0.15*M_PI/180.0};
+    static constexpr double CAM_TO_CAR_FRONT = 0.30;
 }
 
 #endif // VEHICLE_CONSTANTS_H

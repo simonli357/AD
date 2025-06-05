@@ -246,7 +246,8 @@ class SignFastest {
         
             int belowThresholdCount = cv::countNonZero(belowThresholdMask);
             int totalValidPixels = cv::countNonZero(validMask);
-        
+
+            bool emergency = minVal < emergency_thresh && belowThresholdCount > 0.05 * totalValidPixels;
             // Visualization
             if (false) {
                 cv::Mat visualization;
@@ -266,16 +267,13 @@ class SignFastest {
                             << "Below 120% Min: " << belowThresholdCount << ", Valid Pixels: " << totalValidPixels 
                             << ", Emergency Threshold: " << emergency_thresh;
                 cv::putText(visualization, overlayText.str(), cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 0), 2);
+                if (emergency) cv::putText(visualization, "EMERGENCY DETECTED", cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 255), 2);
                 std::cout << overlayText.str() << std::endl;
                 cv::imshow("Depth Visualization", visualization);
                 cv::waitKey(1);
             }
         
-            if (minVal < emergency_thresh && belowThresholdCount > 0.05 * totalValidPixels) {
-                return true;
-            }
-        
-            return false;
+            return emergency;
         }
         
         struct DetectedBox {
@@ -389,6 +387,8 @@ class SignFastest {
                 double roughDepth = computeMedianDepth(depthImage, detectedBoxes[i].x1,
                                                          detectedBoxes[i].y1, detectedBoxes[i].x2,
                                                          detectedBoxes[i].y2);
+
+                // std::cout << "roughDepth: " << roughDepth << std::endl;
                 if (roughDepth < 0)
                     roughDepth = std::numeric_limits<double>::max();
                 depthIndices.push_back(std::make_pair(roughDepth, static_cast<int>(i)));
@@ -631,6 +631,10 @@ class SignFastest {
             // Sort the closest 25% for median computation
             std::vector<double> closest25(validDepths.begin(), validDepths.begin() + cutoff);
             std::sort(closest25.begin(), closest25.end());
+
+            // std::cout << "Closest " << cutoff << " depth values:";
+            // for (double d : closest25) std::cout << ' ' << d;
+            // std::cout << '\n';
 
             double median = 0;
             size_t m = closest25.size();

@@ -278,6 +278,7 @@ class MainWindow(QMainWindow):
             if rgb_image is not None:
                 now = time.time()
                 # if abs(self.car_widget.speed) > 0.02:
+                print(f"Recording frame at {now}")
                 filename = self.recording_path + f"/frame_{int(now)}.jpg"
                 rgb_image.save(filename, 'JPG', quality=100)
 
