@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
+#include <ostream>
 #include <ros/ros.h>
 #include <sys/socket.h>
 
@@ -211,6 +212,7 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
         std::string objcts = "";
         for (int i = 1; i < num_objects; ++i) {
             int type = road_object.data[i * 8];
+            std::cout << "OBJECT: " << i << " " << type << std::endl;
             double x = road_object.data[i * 8 + 1];
             double y = road_object.data[i * 8 + 2];
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(type));
