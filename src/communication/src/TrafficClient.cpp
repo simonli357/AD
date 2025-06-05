@@ -201,8 +201,8 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 
         double x = road_object.data[1];
         double y = road_object.data[2];
-        double rot = road_objects.data[3];
-        double speed = road_objects.data[4];
+        double rot = road_object.data[3];
+        double speed = road_object.data[4];
 
 		std::string v_pos = create_vehicle_pos(x, y);
 		std::string v_rot = create_vehicle_rot(rot);
@@ -210,7 +210,7 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
         
         std::string objcts = "";
         for (int i = 1; i < num_objects; ++i) {
-            int type = road_objects.data[i * 8];
+            int type = road_object.data[i * 8];
             double x = road_object.data[i * 8 + 1];
             double y = road_object.data[i * 8 + 2];
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(type));
