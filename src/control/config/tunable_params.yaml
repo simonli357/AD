@@ -1,7 +1,7 @@
 real:
   lane_relocalize: false
-  sign_relocalize: false
-  intersection_relocalize: true
+  sign_relocalize: true
+  intersection_relocalize: false
   lane_yaw_reset: false
   lane_yaw_reset_cooldown: 5.0
   has_light: false
