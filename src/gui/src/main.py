@@ -67,13 +67,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         signal.signal(signal.SIGINT, self.handle_signal)
         self.alive = True
-        if args.host_ip is None:
-            self.server = Server(main_window=self, host=True)
-            self.is_host = True
-        else:
-            self.server = Server(main_window=self, host=False, host_ip=args.host_ip)
-            self.is_host = False
-        self.server.initialize()
         self.database = Database()
         self.comm = CommunicationHandler()
         self.show_barca = False
@@ -124,6 +117,14 @@ class MainWindow(QMainWindow):
         self.comm.run_signal.connect(self.map_widget.call_waypoint_service)
         self.comm.goto_signal.connect(self.cam_buttons_widget.on_goto)
         self.comm.set_states_signal.connect(self.sidebar_widget.on_set_states)
+
+        if args.host_ip is None:
+            self.server = Server(main_window=self, host=True)
+            self.is_host = True
+        else:
+            self.server = Server(main_window=self, host=False, host_ip=args.host_ip)
+            self.is_host = False
+        self.server.initialize()
 
         root_widget = QWidget()
         self.setCentralWidget(root_widget)
