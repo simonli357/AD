@@ -87,11 +87,13 @@ class Server:
         if source.is_host and not source.is_dashboard:
             for key, db in self.dashboard_clients.items():
                 try:
-                    db.socket.sendall(packet)
+                    with db.lock:
+                        db.socket.sendall(packet)
                 except OSError:
                     pass
         elif source.is_host and source.is_dashboard:
             try:
-                self.tcp_client.socket.sendall(packet)
+                with self.tcp_client.lock:
+                    self.tcp_client.socket.sendall(packet)
             except Exception as e:
                 print(e)
