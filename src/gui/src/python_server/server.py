@@ -30,7 +30,7 @@ class Server:
 
         if self.is_host:
             self.tcp_socket.bind(('', self.tcp_port))
-            self.tcp_socket.listen(2)
+            self.tcp_socket.listen(5)
             listener = threading.Thread(target=self.listen, daemon=True)
             listener.start()
         else:
@@ -42,7 +42,8 @@ class Server:
                 except OSError:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
-            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=False)
+            self.main_window.set_callbacks()
 
     def listen(self):
         while self.alive:
