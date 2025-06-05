@@ -220,5 +220,4 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
         std::string msg = v_pos + v_rot + v_speed + objcts;
         send(tcp_socket, msg.data(), msg.size(), 0);
     };
-    add_stream_task(std::move(fn));
 }
