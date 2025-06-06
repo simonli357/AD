@@ -197,6 +197,15 @@ inline bool find_intersections(Utility& utils) {
 	return false;
 }
 
+inline int closest_idx_attribute() {
+	if (state_attributes.size() == 0) {
+		return -1;
+	}
+	// int idx = closest_waypoint_index;
+	int idx = target_waypoint_index;
+	return state_attributes(idx);
+}
+
 inline bool attribute_cmp(int idx, int attr) {
   if (idx < 0 || idx >= state_attributes.size()) {
 		return false;

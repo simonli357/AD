@@ -522,6 +522,7 @@ class LaneDetector {
 				lane_msg.straight_lane_angle = waypoints_angle;
 				lane_msg.good_left = good_left;
 				lane_msg.good_right = good_right;
+				lane_msg.near_m = ipm_camera.near_m;
 			} else {
 				is_straight = false;
 			}
@@ -585,8 +586,21 @@ class LaneDetector {
 					double left_x   = evaluate_poly(y_pixel, left_fit);
 					double right_x  = evaluate_poly(y_pixel, right_fit);
 					double center_x = 0.5 * (left_x + right_x);
+					if (good_left && good_right) {
+						double estimated_lane_width = std::abs(left_x - right_x);
+						if (std::abs(estimated_lane_width-LANE_WIDTH_PIXEL) > 0.25 * LANE_WIDTH_PIXEL) {
+							good_left = false;
+							good_right = false;
+							return {};
+						}
+					}
+					if (!good_left) {
+						center_x = right_x - LANE_WIDTH_PIXEL / 2.0;
+					} else if (!good_right) {
+						center_x = left_x + LANE_WIDTH_PIXEL / 2.0;
+					}
 
-					double world_x  = (320.0 - center_x) * METER_PER_PIXEL_X;
+					double world_x  = (IPM_WIDTH - center_x) * METER_PER_PIXEL_X - ipm_camera.width_m / 2.0;
 					world_waypoints.emplace_back(static_cast<float>(current_y_meter),
 																			static_cast<float>(world_x));   // (x = fwd, y = left)
 
@@ -1262,7 +1276,7 @@ class LaneDetector {
 				cv::polylines(result, right_points, false, right_color, 3);
 			}
 			for (int i = 0; i < waypoints.size(); i += 3) {
-				int x = 320 - static_cast<int>(waypoints[i + 1] / METER_PER_PIXEL_X);
+				int x = img_width/2 - static_cast<int>((waypoints[i + 1]) / METER_PER_PIXEL_X);
 				// int y = img_height - static_cast<int>(waypoints[i] / METER_PER_PIXEL_Y);
 				int y = img_height - static_cast<int>(meter_to_pixel_y(waypoints[i]));
 				cv::circle(result, cv::Point(x, y), 2, cv::Scalar(0, 0, 255), -1);

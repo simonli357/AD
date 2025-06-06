@@ -778,7 +778,7 @@ public:
         if (count >= 100) count = 0;
         count++;
         static ros::Time lane_cooldown_timer = ros::Time::now();
-        static double cooldown = 3.0; // seconds
+        static double cooldown = Tunable::lane_localization_cooldown;
         if(lane_cooldown_timer > ros::Time::now()) {
             // utils.debug("LANE_RELOC(): FAILURE: on cooldown" + helper::d2str(count), 4);
             return 0;
@@ -1044,9 +1044,9 @@ public:
                 }
             }
         }
-        double max_car_dist = MAX_CAR_DIST;
-        if (on_highway) max_car_dist *= 1.25;
-        if (min_same_lane_dist > max_car_dist) {
+        double min_car_dist = MIN_CAR_DIST;
+        if (on_highway) min_car_dist *= 1.25;
+        if (min_same_lane_dist > min_car_dist) {
             // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
             return;
         }
@@ -1058,7 +1058,7 @@ public:
             can_overtake = false;
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
-        if (on_highway) min_dist_to_car *= 1.3;
+        if (on_highway) min_dist_to_car *= 1.15;
         double static_distance = CAR_LENGTH * 1.5 + min_dist_to_car * 2;
         double ego_speed = 0.32;
         if (on_highway) ego_speed *= 1.33;
