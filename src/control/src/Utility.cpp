@@ -457,25 +457,70 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         lane_center_offset = msg.lane_center_offset;
         stopline_dist = msg.stopline_dist;
         stopline_angle = msg.stopline_angle;
-        if(msg.lane_waypoints.size() < lane_waypoints.size()/3) {
-            // ROS_WARN("waypoints_callback: received fewer waypoints than expected: %lu", msg.lane_waypoints.size());
-            return;
+        if(msg.lane_waypoints.size() > lane_waypoints.size()/3) {
+            for(int i = 0; i < lane_waypoints.size(); i+=3) {
+                lane_waypoints(i/3, 0) = msg.lane_waypoints[i];
+                lane_waypoints(i/3, 1) = msg.lane_waypoints[i+1];
+                lane_waypoints(i/3, 2) = msg.lane_waypoints[i+2];
+            }
         }
-        for(int i = 0; i < lane_waypoints.size(); i+=3) {
-            lane_waypoints(i/3, 0) = msg.lane_waypoints[i];
-            lane_waypoints(i/3, 1) = msg.lane_waypoints[i+1];
-            lane_waypoints(i/3, 2) = msg.lane_waypoints[i+2];
+
+        // Lane wpt pose correction
+        static ros::Time next_pose_reset_time = ros::Time::now();
+        static int good_pose_count = 0;
+        if (Tunable::lane_relocalize2 && (ros::Time::now() - next_pose_reset_time).toSec() > 0) {
+            // if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+            if (true) {
+                if((msg.good_left||msg.good_right) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index) {
+                    if(msg.lane_waypoints.size() > lane_waypoints.size()/3) {
+                        double near_m = msg.near_m;
+                        double lane_wpt_x = msg.lane_waypoints[0] + near_m;
+                        double lane_wpt_y = msg.lane_waypoints[1];
+                        int path_idx = static_cast<int>(PathManager::closest_waypoint_index + PathManager::density * near_m);
+                        if (path_idx > 0 && path_idx < PathManager::state_refs.rows()) {
+                            double path_wpt_x = PathManager::state_refs(path_idx, 0); // in world frame
+                            double path_wpt_y = PathManager::state_refs(path_idx, 1); // in world frame
+                            double ego_x, ego_y, ego_yaw;
+                            get_states(ego_x, ego_y, ego_yaw);
+                            // convert path_wpts to body fixed frame
+                            double path_wpt_x_body = (path_wpt_x - ego_x) * std::cos(ego_yaw) + (path_wpt_y - ego_y) * std::sin(ego_yaw);
+                            double path_wpt_y_body = -(path_wpt_x - ego_x) * std::sin(ego_yaw) + (path_wpt_y - ego_y) * std::cos(ego_yaw);
+                            double errory = path_wpt_y_body - lane_wpt_y;
+                            bool proceed = true;
+                            if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+                                errory += 0.05;
+                            } else {
+                                if (!msg.good_left || !msg.good_right) proceed = false;
+                                if (msg.stopline_dist > 0 && msg.stopline_dist < 0.73) proceed = false;
+                                double dir_yaw = helper::nearest_direction(ego_yaw);
+		                        double yaw_error = helper::compare_yaw(ego_yaw, dir_yaw);
+                                if (yaw_error > 5 * M_PI / 180.0) proceed = false;
+                            }
+                            
+                            if (proceed && std::abs(errory) < 0.075) { 
+                                double err_dx_world = -std::sin(ego_yaw) * errory;   // Δx in world
+                                double err_dy_world =  std::cos(ego_yaw) * errory;   // Δy in world
+                                debug("LANE_RELOC2(): SUCCESS: errorx: " + helper::d2str(err_dx_world) + ", errory: " + helper::d2str(err_dy_world) + ", errory: " + helper::d2str(errory), 1);
+                                recalibrate_states(err_dx_world, err_dy_world);
+                                next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        // Lane wpt yaw correction
         static ros::Time next_yaw_reset_time = ros::Time::now();
         if (!Tunable::lane_yaw_reset || (ros::Time::now() - next_yaw_reset_time).toSec() < 0) {
             return;
         }
-        static int count = 0;
+        static int good_yaw_count = 0;
         static double last_straight_lane_angle = 0.0;
         if (msg.straight_lane && std::abs(msg.straight_lane_angle) < 2.0 * M_PI / 180.0) {
-            count++;
+            good_yaw_count++;
             last_straight_lane_angle = msg.straight_lane_angle;
-            if (count < 2) return; // need 2 consecutive messages with straight lane angle to reset yaw
+            if (good_yaw_count < 2) return; // need 2 consecutive messages with straight lane angle to reset yaw
             double nearest_direction_yaw = helper::nearest_direction(Sensing::yaw);
             double avg_straight_lane_angle = (last_straight_lane_angle + msg.straight_lane_angle) / 2.0;
             double lane_based_yaw = nearest_direction_yaw - avg_straight_lane_angle;
@@ -487,7 +532,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                 Sensing::reset_yaw(lane_based_yaw);
             }
         } else {
-            count = 0;
+            good_yaw_count = 0;
         }
     }
 }

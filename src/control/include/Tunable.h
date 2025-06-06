@@ -51,6 +51,7 @@ namespace Tunable {
     inline double min_tailing_dist = 0.3; 
     
     inline bool lane_relocalize = false;
+    inline bool lane_relocalize2 = false;
     inline bool sign_relocalize = true;
     inline bool intersection_relocalize = false;
     inline bool lane_yaw_reset = false;
@@ -68,6 +69,7 @@ namespace Tunable {
     inline double max_sign_dist = 1.5;
     inline double min_sign_dist = 0.5;
     inline double highway_cooldown = 3.0;
+    inline double lane_localization_cooldown = 3.0;
     inline double sign_cooldown = 3.0;
     inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5};
     inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
@@ -144,6 +146,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/intersection_localization_orientation_threshold", intersection_localization_orientation_threshold);
       CHECK_PARAM(mode + "/NORMAL_SPEED", NORMAL_SPEED);
       CHECK_PARAM(mode + "/lane_relocalize", lane_relocalize);
+      CHECK_PARAM(mode + "/lane_relocalize2", lane_relocalize2);
       CHECK_PARAM(mode + "/sign_relocalize", sign_relocalize);
       CHECK_PARAM(mode + "/intersection_relocalize", intersection_relocalize);
       CHECK_PARAM(mode + "/lane_yaw_reset", lane_yaw_reset);
@@ -161,6 +164,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/max_sign_dist", max_sign_dist);
       CHECK_PARAM(mode + "/min_sign_dist", min_sign_dist);
       CHECK_PARAM(mode + "/highway_cooldown", highway_cooldown);
+      CHECK_PARAM(mode + "/lane_localization_cooldown", lane_localization_cooldown);
       CHECK_PARAM(mode + "/sign_cooldown", sign_cooldown);
       CHECK_PARAM(mode + "/cumulative_confidence_thresholds", cumulative_confidence_thresholds);
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
