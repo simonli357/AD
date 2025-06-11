@@ -30,7 +30,7 @@ class Server:
 
         if self.is_host:
             self.tcp_socket.bind(('', self.tcp_port))
-            self.tcp_socket.listen(2)
+            self.tcp_socket.listen(5)
             listener = threading.Thread(target=self.listen, daemon=True)
             listener.start()
         else:
@@ -42,7 +42,8 @@ class Server:
                 except OSError:
                     time.sleep(0.5)
             print("Succesfully connected to host dashboard")
-            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=True)
+            self.tcp_client = TcpConnection(self.tcp_socket, self.on_packet, is_host=self.is_host, dashboard=False)
+            self.main_window.set_callbacks()
 
     def listen(self):
         while self.alive:
@@ -68,7 +69,7 @@ class Server:
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
             print("Utility Client connected")
-            self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host)
+            self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=False)
             self.main_window.set_callbacks()
         if client_type == "dashboard_client":
             key = client_socket.getpeername()[0]
@@ -86,11 +87,13 @@ class Server:
         if source.is_host and not source.is_dashboard:
             for key, db in self.dashboard_clients.items():
                 try:
-                    db.socket.sendall(packet)
+                    with db.lock:
+                        db.socket.sendall(packet)
                 except OSError:
                     pass
         elif source.is_host and source.is_dashboard:
             try:
-                self.tcp_client.socket.sendall(packet)
+                with self.tcp_client.lock:
+                    self.tcp_client.socket.sendall(packet)
             except Exception as e:
                 print(e)

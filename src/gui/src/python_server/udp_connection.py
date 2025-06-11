@@ -122,16 +122,13 @@ class UdpConnection:
             try:
                 num_segments, seg_num, payload = self._raw_image.get()
                 self.image_map[seg_num] = payload
-                if len(self.image_map.keys()) == num_segments:
-                    raw = b''.join(
-                        self.image_map[k] for k in self.image_map if k < num_segments
-                    )
-                    self.image_map.clear()
-                else:
-                    continue
-                pix = QPixmap()
-                pix.loadFromData(QByteArray(raw))
-                self._try_put(self.rgb_buf, pix)
+                if all(k in self.image_map for k in range(num_segments)):
+                    raw = b''.join(self.image_map[k] for k in range(num_segments))
+                    pix = QPixmap()
+                    if pix.loadFromData(QByteArray(raw)):
+                        self._try_put(self.rgb_buf, pix)
+                        self.image_map.clear()
+                        continue
             except Exception:
                 continue
 

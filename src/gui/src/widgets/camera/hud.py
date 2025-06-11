@@ -161,7 +161,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         self.draw_detection_boxes()
         self.draw_lane_indicator()
-        self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 1.0, 1.0), cell_size=0.3048)
+        self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 0.0, 0.0), cell_size=0.3048)
         self.draw_measurement_points()
         self.update_mouse_pos()
 

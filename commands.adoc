@@ -2,14 +2,33 @@
 
 roslaunch perception cameraNode.launch real:=true realsense:=true lane:=false ip:=10.121.105.18
 roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false lane:=false
+roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false real:=true realsense:=true
 
 == webm to mp4
 input="screen-capture"
 ffmpeg -i ~/Downloads/"$input".webm ~/Downloads/"$input".mp4
 
 == speed up video
+input="8ruler2"
+speed=1.334
+ffmpeg -i "$HOME/Downloads/$input".mp4 -filter_complex "[0:v]setpts=PTS/$speed[v]" -map "[v]" -an "$HOME/Downloads/${input}_fast.mp4"
+
+== trim video
 input="output"
-ffmpeg -i "$input".mp4 -filter_complex "[0:v]setpts=PTS/2.0[v]" -map "[v]" -an "$input"_fast.mp4
+start_time="00:04:15"
+end_time="00:04:35"
+
+ffmpeg -ss "$start_time" -to "$end_time" \
+-i "$HOME/Downloads/${input}.webm" \
+-c:v libx264 -c:a aac \
+"$HOME/Downloads/${input}_trimmed.mp4"
+
+== crop video (e.g., top-left 640x360 region)
+input="output"
+ffmpeg -i "$HOME/Downloads/${input}.webm" \
+-vf "crop=640:360:0:0" \
+-c:v libx264 -c:a aac \
+"$HOME/Downloads/${input}_cropped.mp4"
 
 == mp4 to gif
 input="output"
