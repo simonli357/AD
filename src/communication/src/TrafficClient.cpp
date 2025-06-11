@@ -54,7 +54,7 @@ void TrafficClient::create_udp_socket() {
         udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx);
         udp_socket->open(ip::udp::v4());
         udp_socket->set_option(socket_base::reuse_address(true));
-        udp_socket->bind(ip::udp::endpoint(ip::udp::v4(), udp_port));
+        udp_socket->bind(ip::udp::endpoint(ip::address_v4::any(), udp_port));
         ROS_INFO("UDP socket bound to port: %d", udp_socket->local_endpoint().port());
         receive_datagram();
     } catch (const std::exception& e) {
