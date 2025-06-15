@@ -442,8 +442,28 @@ void Utility::process_sign_data(const utils::Sign& msg) {
         if (tcp_client != nullptr) {
             tcp_client->send_road_object(road_object_msg);
         }
+        std::vector<OBJECT> extras;
+        double ego_x, ego_y, ego_yaw;
+        get_states(ego_x, ego_y, ego_yaw);
+        auto node_attr = PathManager::path_planner.attribute_map->find_closest_node(ego_x, ego_y).attribute;
+        switch (node_attr) {
+            case Track::ATTRIBUTE::FOG:
+                extras.emplace_back(OBJECT::FOG);
+                std::cout << "FOG" << std::endl;
+                break;
+            case Track::ATTRIBUTE::TUNNEL:
+                extras.emplace_back(OBJECT::TUNNEL);
+                std::cout << "TUNNEL" << std::endl;
+                break;
+            case Track::ATTRIBUTE::RAMP:
+                extras.emplace_back(OBJECT::RAMP);
+                std::cout << "RAMP" << std::endl;
+                break;
+            default:
+                break;
+        }
         if (traffic_client != nullptr) {
-            traffic_client->send_car_data(road_object_msg);
+            traffic_client->send_car_data(road_object_msg, extras);
         }
     }
 }

@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <ros/package.h>
 #include <tinyxml2.h>
 
 using Vertex = Track::Vertex;
@@ -19,6 +18,12 @@ std::istream &operator>>(std::istream &in, Track::ATTRIBUTE &attr) {
 }
 
 Track::Track() {
+	read_graph();
+	compute_edge_distances();
+}
+
+Track::Track(const std::string &filename) {
+    graph_file = package_path + "/src/persistence/" + filename;
 	read_graph();
 	compute_edge_distances();
 }

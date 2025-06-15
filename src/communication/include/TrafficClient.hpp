@@ -1,6 +1,7 @@
 #pragma once
 
 #include "KeyDealer.hpp"
+#include "utils/constants.h"
 #include <any>
 #include <boost/asio.hpp>
 #include <chrono>
@@ -14,6 +15,7 @@
 
 using namespace std::chrono;
 using namespace boost::asio;
+using namespace VehicleConstants;
 using std_msgs::Float32MultiArray;
 
 class TrafficClient {
@@ -30,7 +32,7 @@ class TrafficClient {
 	// Methods
 	void initialize();
 	// Encode
-	void send_car_data(const Float32MultiArray &road_object);
+	void send_car_data(const Float32MultiArray &road_object, const std::vector<VehicleConstants::OBJECT> &extras);
 
   private:
 	// Fields
@@ -61,6 +63,7 @@ class TrafficClient {
 	void poll_connection();
 	void send_data();
 	void send_car_id();
+	void subscribeToLocationData();
 	bool can_send();
 	void receive_datagram();
 	void on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred);

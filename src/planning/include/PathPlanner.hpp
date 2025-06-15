@@ -15,9 +15,9 @@ class PathPlanner {
   public:
 	PathPlanner(double vref, int N, double T);
 	PathPlanner(PathPlanner &&) = default;
-	PathPlanner(const PathPlanner &) = default;
-	PathPlanner &operator=(PathPlanner &&) = default;
-	PathPlanner &operator=(const PathPlanner &) = default;
+	PathPlanner(const PathPlanner &) = delete;
+	PathPlanner &operator=(PathPlanner &&) = delete;
+	PathPlanner &operator=(const PathPlanner &) = delete;
 	~PathPlanner() = default;
 
 	using Vertex = Track::Vertex;
@@ -26,6 +26,7 @@ class PathPlanner {
 	using Float32MultiArray = std_msgs::Float32MultiArray;
 
 	Track track;
+	std::unique_ptr<Track> attribute_map;
 	SplineUtils spline_utils;
 	PathUtils path_utils;
 

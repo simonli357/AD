@@ -1,5 +1,4 @@
 #include "TrafficClient.hpp"
-#include "utils/constants.h"
 #include <arpa/inet.h>
 #include <chrono>
 #include <cstring>
@@ -14,15 +13,14 @@
 #include <ros/ros.h>
 #include <sys/socket.h>
 
-using namespace VehicleConstants;
 using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
 	keyDealer = std::make_unique<KeyDealer>();
-	create_udp_socket();
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-    receive_datagram();
+	// create_udp_socket();
+    // receive_datagram();
 }
 
 TrafficClient::~TrafficClient() {
@@ -152,7 +150,7 @@ void TrafficClient::send_car_id() {
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
-void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
+void TrafficClient::send_car_data(const Float32MultiArray &road_object, const std::vector<OBJECT> &extras) {
 	if (!can_send()) {
 		return;
 	}
@@ -192,6 +190,12 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 			return 1;
 		case OBJECT::YELLOWLIGHT:
 			return 14;
+        case OBJECT::FOG:
+            return 15;
+        case OBJECT::TUNNEL:
+            return 16;
+        case OBJECT::RAMP:
+            return 17;
 		default:
 			return -1;
 		}

@@ -13,7 +13,6 @@
 #include "KalmanFilter.h"
 #include <atomic>
 #include <mutex>
-#include <shared_mutex>
 
 using namespace VehicleConstants;
 

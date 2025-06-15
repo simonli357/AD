@@ -1,6 +1,7 @@
 #include "PathPlanner.hpp"
 #include "utils/helper.h"
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <ros/package.h>
 #include <yaml-cpp/yaml.h>
@@ -8,6 +9,7 @@
 using Vertex = PathPlanner::Vertex;
 
 PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils(), path_utils(), vref(vref), N(N), T(T) {
+    this->attribute_map = std::make_unique<Track>("attribute_map.graphml");
 	this->T = 0.1;
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 }
