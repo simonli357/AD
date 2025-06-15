@@ -1,8 +1,8 @@
 = useful commands
 
-roslaunch perception cameraNode.launch real:=true realsense:=true lane:=false ip:=10.121.105.18
-roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false lane:=false
-roslaunch control controller.launch real:=true ip:=10.121.105.18 use_gps:=false real:=true realsense:=true
+roslaunch perception cameraNode.launch real:=true realsense:=true ip:=10.121.105.18
+roslaunch control controller.launch camera:=false real:=true ip:=10.121.105.18 use_gps:=false
+roslaunch control controller.launch camera:=true ip:=10.121.105.18 use_gps:=false real:=true realsense:=true v:=35
 
 == webm to mp4
 input="screen-capture"
