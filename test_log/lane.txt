@@ -1,0 +1,457 @@
+[17:21:16] BFMC DASHBOARD INITIALIZED
+[17:21:16] GPS not found, skipping
+[17:21:16] start(): x=1.550, y=6.906, yaw=0.000
+[17:21:16] INITIALIZE(): start: 1.550, 6.906
+[17:21:16] INITIALIZE(): destination: 4.789, 7.471
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 43 intersections. time: 321us
+[17:21:16] 0) [1.270, 6.902], yaw: 3.142, associated sign: None, stateref index: 0
+[17:21:16] 1) [0.359, 4.559], yaw: -1.571, associated sign: None, stateref index: 80
+[17:21:16] 2) [1.976, 3.646], yaw: 0.000, associated sign: Lights, stateref index: 152
+[17:21:16] 3) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 241
+[17:21:16] 4) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 309
+[17:21:16] 5) [6.630, 3.468], yaw: 1.571, associated sign: None, stateref index: 473
+[17:21:16] 6) [5.682, 6.901], yaw: 3.142, associated sign: None, stateref index: 615
+[17:21:16] 7) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk, stateref index: 652
+[17:21:16] 8) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 804
+[17:21:16] 9) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1283
+[17:21:16] 10) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout, stateref index: 1711
+[17:21:16] 11) [15.312, 4.554], yaw: -1.571, associated sign: None, stateref index: 1947
+[17:21:16] 12) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk, stateref index: 1995
+[17:21:16] 13) [15.313, 1.472], yaw: -1.571, associated sign: None, stateref index: 2050
+[17:21:16] 14) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 2160
+[17:21:16] 15) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 2246
+[17:21:16] 16) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout, stateref index: 2426
+[17:21:16] 17) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout, stateref index: 2794
+[17:21:16] 18) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 3320
+[17:21:16] 19) [0.359, 7.445], yaw: -1.571, associated sign: None, stateref index: 3424
+[17:21:16] 20) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 3487
+[17:21:16] 21) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 3565
+[17:21:16] 22) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 3638
+[17:21:16] 23) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 3723
+[17:21:16] 24) [3.431, 0.729], yaw: 3.142, associated sign: None, stateref index: 3772
+[17:21:16] 25) [2.892, 3.097], yaw: 1.571, associated sign: Lights, stateref index: 3864
+[17:21:16] 26) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 3930
+[17:21:16] 27) [1.976, 0.356], yaw: 0.000, associated sign: None, stateref index: 4102
+[17:21:16] 28) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 4171
+[17:21:16] 29) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk, stateref index: 4305
+[17:21:16] 30) [14.764, 0.924], yaw: 0.000, associated sign: None, stateref index: 4521
+[17:21:16] 31) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 4636
+[17:21:16] 32) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 4725
+[17:21:16] 33) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 4927
+[17:21:16] 34) [7.543, 4.015], yaw: 3.142, associated sign: None, stateref index: 4996
+[17:21:16] 35) [5.684, 4.014], yaw: 3.142, associated sign: None, stateref index: 5058
+[17:21:16] 36) [3.429, 4.013], yaw: 3.142, associated sign: Lights, stateref index: 5127
+[17:21:16] 37) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 5228
+[17:21:16] 38) [0.727, 3.097], yaw: 1.571, associated sign: None, stateref index: 5369
+[17:21:16] 39) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 5459
+[17:21:16] 40) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 5556
+[17:21:16] 41) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 5596
+[17:21:16] 42) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 5730
+[17:21:16] goto_command_callback(): start: 3.991413, 3.668721
+[17:21:16] goto_command_callback(): destination: 2.511345, 5.608962
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 3 intersections. time: 42us
+[17:21:16] 0) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 0
+[17:21:16] 1) [5.136, 5.984], yaw: 1.571, associated sign: None, stateref index: 83
+[17:21:16] 2) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 149
+[17:21:16] goto_command_callback(): start: 3.991413, 3.668721
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] goto_command_callback(): destination: 2.519215, 5.225908
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 3 intersections. time: 47us
+[17:21:16] 0) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 0
+[17:21:16] 1) [5.136, 5.984], yaw: 1.571, associated sign: None, stateref index: 83
+[17:21:16] 2) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 149
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(None): REACHED: x_cur: (3.991, 3.669, 0.000), intersection: (4.220, 3.645), distance: 0.230, index: 1, next intersection: (5.136, 5.984, 1.571)
+[17:21:16] intersection reached: WARNING: CASE NO SIGN, stopping for safety...
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.462, min diff: 0.319. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.462, min diff: 0.319. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.462, min diff: 0.319. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.462, min diff: 0.319. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.462, min diff: 0.319. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.499, min diff: 0.355. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.499, min diff: 0.355. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.499, min diff: 0.355. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.499, min diff: 0.355. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.499, min diff: 0.355. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.389. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.389. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.389. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.389. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.389. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.423. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.423. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.423. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.423. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.423. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.462. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.462. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.462. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.462. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.462. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.499. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.499. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.499. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.499. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.499. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] filter_encoder(): Encoder speed: 0.000, Velocity command: 0.500, min diff: 0.500. FILTERED!!!
+[17:21:16] Changing from MOVING to INIT
+[17:21:16] check_emergency_stop(): emergency stop triggered
+[17:21:16] check_emergency_stop(): emergency stop released
+[17:21:16] check_emergency_stop(): emergency stop triggered
+[17:21:16] check_emergency_stop(): emergency stop released
+[17:21:16] GPS not found, skipping
+[17:21:16] start(): x=1.550, y=6.906, yaw=0.003
+[17:21:16] INITIALIZE(): start: 1.550, 6.906
+[17:21:16] INITIALIZE(): destination: 4.789, 7.471
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 43 intersections. time: 200us
+[17:21:16] 0) [1.270, 6.902], yaw: 3.142, associated sign: None, stateref index: 0
+[17:21:16] 1) [0.359, 4.559], yaw: -1.571, associated sign: None, stateref index: 80
+[17:21:16] 2) [1.976, 3.646], yaw: 0.000, associated sign: Lights, stateref index: 152
+[17:21:16] 3) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 241
+[17:21:16] 4) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 309
+[17:21:16] 5) [6.630, 3.468], yaw: 1.571, associated sign: None, stateref index: 473
+[17:21:16] 6) [5.682, 6.901], yaw: 3.142, associated sign: None, stateref index: 615
+[17:21:16] 7) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk, stateref index: 652
+[17:21:16] 8) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 804
+[17:21:16] 9) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1283
+[17:21:16] 10) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout, stateref index: 1711
+[17:21:16] 11) [15.312, 4.554], yaw: -1.571, associated sign: None, stateref index: 1947
+[17:21:16] 12) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk, stateref index: 1995
+[17:21:16] 13) [15.313, 1.472], yaw: -1.571, associated sign: None, stateref index: 2050
+[17:21:16] 14) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 2160
+[17:21:16] 15) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 2246
+[17:21:16] 16) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout, stateref index: 2426
+[17:21:16] 17) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout, stateref index: 2794
+[17:21:16] 18) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 3320
+[17:21:16] 19) [0.359, 7.445], yaw: -1.571, associated sign: None, stateref index: 3424
+[17:21:16] 20) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 3487
+[17:21:16] 21) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 3565
+[17:21:16] 22) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 3638
+[17:21:16] 23) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 3723
+[17:21:16] 24) [3.431, 0.729], yaw: 3.142, associated sign: None, stateref index: 3772
+[17:21:16] 25) [2.892, 3.097], yaw: 1.571, associated sign: Lights, stateref index: 3864
+[17:21:16] 26) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 3930
+[17:21:16] 27) [1.976, 0.356], yaw: 0.000, associated sign: None, stateref index: 4102
+[17:21:16] 28) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 4171
+[17:21:16] 29) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk, stateref index: 4305
+[17:21:16] 30) [14.764, 0.924], yaw: 0.000, associated sign: None, stateref index: 4521
+[17:21:16] 31) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 4636
+[17:21:16] 32) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 4725
+[17:21:16] 33) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 4927
+[17:21:16] 34) [7.543, 4.015], yaw: 3.142, associated sign: None, stateref index: 4996
+[17:21:16] 35) [5.684, 4.014], yaw: 3.142, associated sign: None, stateref index: 5058
+[17:21:16] 36) [3.429, 4.013], yaw: 3.142, associated sign: Lights, stateref index: 5127
+[17:21:16] 37) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 5228
+[17:21:16] 38) [0.727, 3.097], yaw: 1.571, associated sign: None, stateref index: 5369
+[17:21:16] 39) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 5459
+[17:21:16] 40) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 5556
+[17:21:16] 41) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 5596
+[17:21:16] 42) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 5730
+[17:21:16] goto_command_callback(): start: 3.963660, 3.639942
+[17:21:16] goto_command_callback(): destination: 2.519092, 5.225872
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 4 intersections. time: 37us
+[17:21:16] 0) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 0
+[17:21:16] 1) [5.136, 5.984], yaw: 1.571, associated sign: None, stateref index: 83
+[17:21:16] 2) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 152
+[17:21:16] 3) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 242
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(None): REACHED: x_cur: (3.964, 3.640, 0.000), intersection: (4.220, 3.645), distance: 0.257, index: 1, next intersection: (5.136, 5.984, 1.571)
+[17:21:16] intersection reached: WARNING: CASE NO SIGN, stopping for safety...
+[17:21:16] CHECK_INTERSECTION(): sign found for intersection at (5.136, 5.984), sign: Stop Sign, cumulative confidence: 2.306, error: 0.000
+[17:21:16] Changing from MOVING to INIT
+[17:21:16] check_emergency_stop(): emergency stop triggered
+[17:21:16] check_emergency_stop(): emergency stop released
+[17:21:16] GPS not found, skipping
+[17:21:16] start(): x=1.550, y=6.906, yaw=0.000
+[17:21:16] INITIALIZE(): start: 1.550, 6.906
+[17:21:16] INITIALIZE(): destination: 4.789, 7.471
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 43 intersections. time: 202us
+[17:21:16] 0) [1.270, 6.902], yaw: 3.142, associated sign: None, stateref index: 0
+[17:21:16] 4) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 309
+[17:21:16] 2) [1.976, 3.646], yaw: 0.000, associated sign: Lights, stateref index: 152
+[17:21:16] 5) [6.630, 3.468], yaw: 1.571, associated sign: None, stateref index: 473
+[17:21:16] 3) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 241
+[17:21:16] 6) [5.682, 6.901], yaw: 3.142, associated sign: None, stateref index: 615
+[17:21:16] 7) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk, stateref index: 652
+[17:21:16] 8) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 804
+[17:21:16] 9) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1283
+[17:21:16] 10) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout, stateref index: 1711
+[17:21:16] 11) [15.312, 4.554], yaw: -1.571, associated sign: None, stateref index: 1947
+[17:21:16] 12) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk, stateref index: 1995
+[17:21:16] 1) [0.359, 4.559], yaw: -1.571, associated sign: None, stateref index: 80
+[17:21:16] 13) [15.313, 1.472], yaw: -1.571, associated sign: None, stateref index: 2050
+[17:21:16] 14) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 2160
+[17:21:16] 15) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 2246
+[17:21:16] 16) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout, stateref index: 2426
+[17:21:16] 17) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout, stateref index: 2794
+[17:21:16] 18) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 3320
+[17:21:16] 19) [0.359, 7.445], yaw: -1.571, associated sign: None, stateref index: 3424
+[17:21:16] 20) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 3487
+[17:21:16] 21) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 3565
+[17:21:16] 22) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 3638
+[17:21:16] 23) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 3723
+[17:21:16] 24) [3.431, 0.729], yaw: 3.142, associated sign: None, stateref index: 3772
+[17:21:16] 25) [2.892, 3.097], yaw: 1.571, associated sign: Lights, stateref index: 3864
+[17:21:16] 26) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 3930
+[17:21:16] 27) [1.976, 0.356], yaw: 0.000, associated sign: None, stateref index: 4102
+[17:21:16] 28) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 4171
+[17:21:16] 29) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk, stateref index: 4305
+[17:21:16] 30) [14.764, 0.924], yaw: 0.000, associated sign: None, stateref index: 4521
+[17:21:16] 31) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 4636
+[17:21:16] 32) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 4725
+[17:21:16] 33) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 4927
+[17:21:16] 34) [7.543, 4.015], yaw: 3.142, associated sign: None, stateref index: 4996
+[17:21:16] 35) [5.684, 4.014], yaw: 3.142, associated sign: None, stateref index: 5058
+[17:21:16] 36) [3.429, 4.013], yaw: 3.142, associated sign: Lights, stateref index: 5127
+[17:21:16] 37) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 5228
+[17:21:16] 38) [0.727, 3.097], yaw: 1.571, associated sign: None, stateref index: 5369
+[17:21:16] 39) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 5459
+[17:21:16] 40) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 5556
+[17:21:16] 41) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 5596
+[17:21:16] 42) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 5730
+[17:21:16] goto_command_callback(): start: 3.964703, 3.675006
+[17:21:16] goto_command_callback(): destination: 2.519064, 5.225865
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 3 intersections. time: 43us
+[17:21:16] 0) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 0
+[17:21:16] 1) [5.136, 5.984], yaw: 1.571, associated sign: None, stateref index: 83
+[17:21:16] 2) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 149
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(None): REACHED: x_cur: (3.965, 3.675, 0.000), intersection: (4.220, 3.645), distance: 0.258, index: 1, next intersection: (5.136, 5.984, 1.571)
+[17:21:16] intersection reached: WARNING: CASE NO SIGN, stopping for safety...
+[17:21:16] CHECK_INTERSECTION(): sign found for intersection at (5.136, 5.984), sign: Stop Sign, cumulative confidence: 2.339, error: 0.000
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (5.131, 5.621, 1.567), intersection: (5.136, 5.984), distance: 0.362, index: 2, next intersection: (3.429, 6.902, 3.142)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] CHECK_INTERSECTION(): sign found for intersection at (3.429, 6.902), sign: Priority, cumulative confidence: 2.139, error: 0.000
+[17:21:16] CHECK_INTERSECTION(Priority): REACHED: x_cur: (3.789, 6.909, 3.161), intersection: (3.429, 6.902), distance: 0.360, index: 3, no more intersections
+[17:21:16] intersection reached: CASE Priority, proceeding...
+[17:21:16] Changing from MOVING to DONE
+[17:21:16] Changing from DONE to INIT
+[17:21:16] goto_command_callback(): start: 2.523909, 5.345884
+[17:21:16] goto_command_callback(): destination: 2.523187, 5.607013
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] 3) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 187
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 4 intersections. time: 43us
+[17:21:16] 0) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 7
+[17:21:16] 1) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 58
+[17:21:16] 2) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 133
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.526, 4.906, -1.578), intersection: (2.522, 4.558), distance: 0.348, index: 1, next intersection: (1.270, 4.011, 3.142)
+[17:21:16] intersection reached: CASE Lights, proceeding...
+[17:21:16] CHECK_INTERSECTION(None): REACHED: x_cur: (1.616, 4.032, -3.068), intersection: (1.270, 4.011), distance: 0.346, index: 2, next intersection: (0.727, 5.988, 1.571)
+[17:21:16] intersection reached: WARNING: CASE NO SIGN, stopping for safety...
+[17:21:16] CHECK_INTERSECTION(): sign found for intersection at (0.727, 5.988), sign: Stop Sign, cumulative confidence: 2.298, error: 0.000
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (0.724, 5.623, -4.695), intersection: (0.727, 5.988), distance: 0.365, index: 3, next intersection: (1.976, 6.534, 0.000)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] CHECK_INTERSECTION(None): REACHED: x_cur: (1.632, 6.578, -6.250), intersection: (1.976, 6.534), distance: 0.347, index: 4, no more intersections
+[17:21:16] intersection reached: WARNING: CASE NO SIGN, stopping for safety...
+[17:21:16] Changing from MOVING to DONE
+[17:21:16] Changing from DONE to INIT
+[17:21:16] goto_command_callback(): start: 2.512683, 5.708476
+[17:21:16] goto_command_callback(): destination: 3.820439, 6.918553
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 4 intersections. time: 41us
+[17:21:16] 0) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 14
+[17:21:16] 1) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 91
+[17:21:16] 2) [5.136, 5.984], yaw: 1.571, associated sign: Stop Sign, stateref index: 181
+[17:21:16] 3) [3.429, 6.902], yaw: 3.142, associated sign: Priority, stateref index: 247
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.511, 4.917, -1.550), intersection: (2.522, 4.558), distance: 0.358, index: 1, next intersection: (4.220, 3.645, 0.000)
+[17:21:16] intersection reached: CASE Lights, proceeding...
+[17:21:16] CHECK_INTERSECTION(): sign found for intersection at (4.220, 3.645), sign: Stop Sign, cumulative confidence: 2.442, error: 0.000
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (3.849, 3.673, 0.037), intersection: (4.220, 3.645), distance: 0.372, index: 2, next intersection: (5.136, 5.984, 1.571)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (5.131, 5.622, 1.567), intersection: (5.136, 5.984), distance: 0.362, index: 3, next intersection: (3.429, 6.902, 3.142)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] Changing from MOVING to DONE
+[17:21:16] Changing from DONE to INIT
+[17:21:16] goto_command_callback(): start: 3.924387, 6.904073
+[17:21:16] goto_command_callback(): destination: 1.590891, 4.032924
+[17:21:16] FIND_INTERSECTIONS(): started
+[17:21:16] FIND_INTERSECTIONS(): SUCCESS: found 7 intersections. time: 49us
+[17:21:16] 0) [3.429, 6.902], yaw: 3.142, associated sign: Priority, stateref index: 0
+[17:21:16] 1) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 87
+[17:21:16] 2) [4.220, 3.645], yaw: 0.000, associated sign: Stop Sign, stateref index: 163
+[17:21:16] 3) [5.136, 5.984], yaw: 1.571, associated sign: Stop Sign, stateref index: 250
+[17:21:16] 4) [3.429, 6.902], yaw: 3.142, associated sign: Priority, stateref index: 319
+[17:21:16] 5) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 412
+[17:21:16] 6) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 459
+[17:21:16] Changing from INIT to MOVING
+[17:21:16] CHECK_INTERSECTION(Priority): REACHED: x_cur: (3.785, 6.901, 3.180), intersection: (3.429, 6.902), distance: 0.356, index: 1, next intersection: (2.522, 4.558, -1.571)
+[17:21:16] intersection reached: CASE Priority, proceeding...
+[17:21:16] CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.519, 4.909, 4.719), intersection: (2.522, 4.558), distance: 0.350, index: 2, next intersection: (4.220, 3.645, 0.000)
+[17:21:16] intersection reached: CASE Lights, proceeding...
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (3.879, 3.675, 6.330), intersection: (4.220, 3.645), distance: 0.343, index: 3, next intersection: (5.136, 5.984, 1.571)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (5.131, 5.620, 7.850), intersection: (5.136, 5.984), distance: 0.363, index: 4, next intersection: (3.429, 6.902, 3.142)
+[17:21:16] intersection reached: CASE STOP SIGN, stopping for 1.500 seconds...
+[17:21:16] CHECK_INTERSECTION(Priority): REACHED: x_cur: (3.788, 6.911, 9.447), intersection: (3.429, 6.902), distance: 0.359, index: 5, next intersection: (2.522, 4.558, -1.571)
+[17:21:16] intersection reached: CASE Priority, proceeding...
+[17:21:16] CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.526, 4.912, 10.980), intersection: (2.522, 4.558), distance: 0.354, index: 6, next intersection: (1.270, 4.011, 3.142)
+[17:21:16] intersection reached: CASE Lights, proceeding...
+[17:21:16] Changing from MOVING to DONE
+[17:21:16] Changing from DONE to INIT
+[17:21:16] check_emergency_stop(): emergency stop triggered
+[17:21:16] check_emergency_stop(): emergency stop released
