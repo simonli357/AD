@@ -20,7 +20,7 @@ TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_a
 	keyDealer = std::make_unique<KeyDealer>();
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 	// create_udp_socket();
-    // receive_datagram();
+	// receive_datagram();
 }
 
 TrafficClient::~TrafficClient() {
@@ -48,16 +48,16 @@ void TrafficClient::create_tcp_socket() {
 }
 
 void TrafficClient::create_udp_socket() {
-    try {
-        udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx);
-        udp_socket->open(ip::udp::v4());
-        udp_socket->set_option(socket_base::reuse_address(true));
-        udp_socket->bind(ip::udp::endpoint(ip::address_v4::any(), udp_port));
-        ROS_INFO("UDP socket bound to port: %d", udp_socket->local_endpoint().port());
-        receive_datagram();
-    } catch (const std::exception& e) {
-        ROS_ERROR("Failed to create UDP socket: %s", e.what());
-    }
+	try {
+		udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx);
+		udp_socket->open(ip::udp::v4());
+		udp_socket->set_option(socket_base::reuse_address(true));
+		udp_socket->bind(ip::udp::endpoint(ip::address_v4::any(), udp_port));
+		ROS_INFO("UDP socket bound to port: %d", udp_socket->local_endpoint().port());
+		receive_datagram();
+	} catch (const std::exception &e) {
+		ROS_ERROR("Failed to create UDP socket: %s", e.what());
+	}
 }
 
 void TrafficClient::initialize() {
@@ -98,13 +98,13 @@ void TrafficClient::receive_datagram() {
 }
 
 void TrafficClient::on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred) {
-    if (!error) {
-        // Process datagram here (bytes_transferred bytes in recv_buffer_)
-        std::cout << "Received: " << std::string(udp_recv_buffer.data(), bytes_transferred) << "\n";
-    } else {
-        std::cerr << "Receive error: " << error.message() << "\n";
-    }
-    receive_datagram();
+	if (!error) {
+		// Process datagram here (bytes_transferred bytes in recv_buffer_)
+		std::cout << "Received: " << std::string(udp_recv_buffer.data(), bytes_transferred) << "\n";
+	} else {
+		std::cerr << "Receive error: " << error.message() << "\n";
+	}
+	receive_datagram();
 }
 
 bool TrafficClient::can_send() {
@@ -154,7 +154,7 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object, const st
 	if (!can_send()) {
 		return;
 	}
-	static auto road_obj_to_int = [](OBJECT &obj) -> int {
+	static auto road_obj_to_int = [](OBJECT obj) -> int {
 		switch (obj) {
 		case OBJECT::BLOCK:
 			return 13;
@@ -190,39 +190,44 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object, const st
 			return 1;
 		case OBJECT::YELLOWLIGHT:
 			return 14;
-        case OBJECT::FOG:
-            return 15;
-        case OBJECT::TUNNEL:
-            return 16;
-        case OBJECT::RAMP:
-            return 17;
+		case OBJECT::FOG:
+			return 15;
+		case OBJECT::TUNNEL:
+			return 16;
+		case OBJECT::RAMP:
+			return 17;
 		default:
 			return -1;
 		}
 	};
-	tasks->run([this, road_object]() {
-        int num_objects = road_object.data.size() / 8;
-        if (road_object.data.size() % 8 != 0) return;
+	tasks->run([this, road_object, extras]() {
+		int num_objects = road_object.data.size() / 8;
+		if (road_object.data.size() % 8 != 0)
+			return;
 
-        double x = road_object.data[1];
-        double y = road_object.data[2];
-        double rot = road_object.data[3];
-        double speed = road_object.data[4];
+		double x = road_object.data[1];
+		double y = road_object.data[2];
+		double rot = road_object.data[3];
+		double speed = road_object.data[4];
 
 		std::string v_pos = create_vehicle_pos(x, y);
 		std::string v_rot = create_vehicle_rot(rot);
 		std::string v_speed = create_vehicle_speed(speed);
-        
-        std::string objcts = "";
-        for (int i = 1; i < num_objects; ++i) {
-            int type = road_object.data[i * 8];
-            double x = road_object.data[i * 8 + 1];
-            double y = road_object.data[i * 8 + 2];
+
+		std::string objcts = "";
+		for (int i = 1; i < num_objects; ++i) {
+			int type = road_object.data[i * 8];
+			double x = road_object.data[i * 8 + 1];
+			double y = road_object.data[i * 8 + 2];
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(type));
 			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), x, y);
-        }
+		}
 
-        std::string msg = v_pos + v_rot + v_speed + objcts;
-        send(tcp_socket, msg.data(), msg.size(), 0);
-    });
+		for (const auto &o : extras) {
+            objcts += create_encountered_obstacle(road_obj_to_int(o), x, y);
+		}
+
+		std::string msg = v_pos + v_rot + v_speed + objcts;
+		send(tcp_socket, msg.data(), msg.size(), 0);
+	});
 }
