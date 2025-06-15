@@ -31,7 +31,7 @@ EVP_PKEY *KeyDealer::load_public_key(const string &path) {
 	BIO_free(bio);
 
 	if (!pkey) {
-		throw runtime_error("Failed to load public key from: " + path);
+		// throw runtime_error("Failed to load public key from: " + path);
 	}
 	return pkey;
 }
