@@ -586,9 +586,10 @@ class LaneDetector {
 					double left_x   = evaluate_poly(y_pixel, left_fit);
 					double right_x  = evaluate_poly(y_pixel, right_fit);
 					double center_x = 0.5 * (left_x + right_x);
-					if (good_left && good_right) {
+					if (i == 0 && good_left && good_right) {
 						double estimated_lane_width = std::abs(left_x - right_x);
 						if (std::abs(estimated_lane_width-LANE_WIDTH_PIXEL) > 0.25 * LANE_WIDTH_PIXEL) {
+							// std::cout << "Inconsistent lane width detected, ratio: " << std::abs(estimated_lane_width-LANE_WIDTH_PIXEL)/LANE_WIDTH_PIXEL << ", LANE_WIDTH_PIXEL: " << LANE_WIDTH_PIXEL << ", estimated: " << estimated_lane_width << std::endl;
 							good_left = false;
 							good_right = false;
 							return {};
