@@ -84,7 +84,7 @@ void TrafficClient::send_car_data2() {
 	std::string v_pos = create_vehicle_pos(Tracking::ego_car->x, Tracking::ego_car->y);
 	std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
 	std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
-	std::string objcts = v_pos + v_rot + v_speed;
+	std::string msg_string = v_pos + v_rot + v_speed;
 
 	for (auto& obj: Tracking::road_objects) {
 		int id = -1;
@@ -99,7 +99,7 @@ void TrafficClient::send_car_data2() {
 		} else if (obj->type == OBJECT::FOG) {
 			id = -6;
 		}
-		objcts += create_encountered_obstacle(id, obj->x, obj->y);
+		if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
 	}
 	for (auto& obj: Tracking::road_known_static_objects) {
 		int id = -1;
@@ -124,7 +124,7 @@ void TrafficClient::send_car_data2() {
 		} else if (obj->type == OBJECT::PRIORITY) {
 			id = 2;
 		}
-		objcts += create_encountered_obstacle(id, obj->x, obj->y);
+		if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
 	}
 
 	for (auto& car: Tracking::road_cars) {
@@ -134,7 +134,7 @@ void TrafficClient::send_car_data2() {
 				continue;
 		}
 		if (car_obj->parked) id = 14;
-		objcts += create_encountered_obstacle(id, car_obj->x, car_obj->y);
+		if (id > 0) msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
 	}
 
 	for (auto& car: Tracking::road_pedestrians) {
@@ -144,11 +144,11 @@ void TrafficClient::send_car_data2() {
 				continue;
 		}
 		if (pedestrian_obj->on_crosswalk) id = -3;
-		objcts += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
+		if (id > 0) msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
 	}
 
-	auto fn = [this, objcts]() {
-		send(tcp_socket, objcts.data(), objcts.size(), 0);
+	auto fn = [this, msg_string]() {
+		send(tcp_socket, msg_string.data(), msg_string.size(), 0);
 	};
 	add_stream_task(std::move(fn));
 }
@@ -224,12 +224,12 @@ void TrafficClient::send_car_data(const Float32MultiArray &road_object) {
 		std::string v_pos = create_vehicle_pos(road_object.data[1], road_object.data[2]);
 		std::string v_rot = create_vehicle_rot(road_object.data[3]);
 		std::string v_speed = create_vehicle_speed(road_object.data[4]);
-        std::string objcts = "";
+        std::string msg_string = "";
 		for (size_t i = 7; i < road_object.data.size(); i += 7) {
 			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(road_object.data[i]));
-			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
+			msg_string += create_encountered_obstacle(road_obj_to_int(obj_type), road_object.data[i + 1], road_object.data[i + 2]);
 		}
-        std::string msg = v_pos + v_rot + v_speed + objcts;
+        std::string msg = v_pos + v_rot + v_speed + msg_string;
         send(tcp_socket, msg.data(), msg.size(), 0);
     };
     add_stream_task(std::move(fn));
