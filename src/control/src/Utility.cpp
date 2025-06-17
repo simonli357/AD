@@ -325,6 +325,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     }
     if (detected_objects.size() >= NUM_VALUES_PER_OBJECT && detected_objects[5] == -1.0 && num_obj == 1 && detected_objects[6] == -1.0) {
         emergency = true;
+        for(int i = 0; i <3; i++) {
+            publish_cmd_vel(0.0, 0.0);
+        }
     } else {
         emergency = false;
     }
@@ -403,6 +406,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                 }
             } else {
                 double object_yaw = ego_yaw;
+                bool parked = false;
                 if (type == OBJECT::CAR) {
                     int closest_index = PathManager::find_closest_waypoint2(world_states, 0.25);
                     if (closest_index >= 0) {
@@ -418,6 +422,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                         if(helper::get_min_object_index(world_states, GroundTruth::PARKING_SPOTS, min_index, min_error_sq, 0.15)) {
                             // this means the detected object is a parked car. all parking spots are facing east
                             object_yaw = 0.0;
+                            parked = true;
                             // debug("Sign Callback(): new PARKED CAR detected at (" +
                             //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
                             //     "), closest parking spot: (" + std::to_string(GroundTruth::PARKING_SPOTS[min_index][0]) + ", " +
@@ -426,7 +431,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
                         }
                     }
                 }
-                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], object_yaw, confidence);
+                Tracking::create_object(static_cast<OBJECT>(type), world_states[0], world_states[1], object_yaw, confidence, parked);
                 // debug("Sign Callback(): new " + OBJECT_NAMES[type] + " detected at (" +
                 //     std::to_string(world_states[0]) + ", " + std::to_string(world_states[1]) +
                 //     "), road_objects size: " + std::to_string(road_objects->size()), 2);
@@ -443,7 +448,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
             tcp_client->send_road_object(road_object_msg);
         }
         if (traffic_client != nullptr) {
-            traffic_client->send_car_data(road_object_msg);
+            traffic_client->send_car_data2();
         }
     }
 }

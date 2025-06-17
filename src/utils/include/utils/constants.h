@@ -109,7 +109,10 @@ namespace VehicleConstants {
         GREENLIGHT,
         YELLOWLIGHT,
         REDLIGHT,
-        NONE
+        NONE,
+        TUNNEL,
+        RAMP,
+        FOG
     };
 
     static constexpr std::array<OBJECT, 11> KNOWN_STATIC_OBJECTS = { 
