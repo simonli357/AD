@@ -169,6 +169,7 @@ include_directories(
 add_executable(controller 
   src/Controller.cpp
   src/Utility.cpp
+  src/TrafficClient.cpp
 )
 target_link_libraries(controller
   acados_shared_lib 

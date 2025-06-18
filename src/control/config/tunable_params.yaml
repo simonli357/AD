@@ -1,10 +1,13 @@
 real:
   lane_relocalize: false
-  lane_relocalize2: true
-  sign_relocalize: false
   intersection_relocalize: false
+  lane_relocalize2: false
+  sign_relocalize: true
   lane_yaw_reset: false
-  lane_yaw_reset_cooldown: 5.0
+  lane_yaw_reset_cooldown: 1.0
+  highway_cooldown: 3.0
+  sign_cooldown: 0.5
+  lane_localization_cooldown: 0.5
   has_light: false
   use_kf: false
   # sign_lon_offset: -0.01
@@ -19,9 +22,6 @@ real:
   max_light_dist: 0.75
   max_sign_dist: 1.5
   min_sign_dist: 0.3
-  highway_cooldown: 3.0
-  sign_cooldown: 3.0
-  lane_localization_cooldown: 1.0
   cumulative_confidence_thresholds: [7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 15, 5.37, 5.37, 5.37]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
   stop_duration: 1.5
