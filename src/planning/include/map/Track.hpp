@@ -13,8 +13,8 @@ class Track {
 
 	Track(Track &&) = default;
 	Track(const Track &) = default;
-	Track &operator=(Track &&) = delete;
-	Track &operator=(const Track &) = delete;
+	Track &operator=(Track &&) = default;
+	Track &operator=(const Track &) = default;
 
 	enum ATTRIBUTE {
 		NORMAL = 0,
