@@ -221,9 +221,6 @@ void TrafficClient::send_car_data() {
             if (id > 0) msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
         }
 
-        std::cout << "Sending data to Traffic Server: " << msg_string << std::endl;
-        auto fn = [this, msg_string]() {
-            send(tcp_socket, msg_string.data(), msg_string.size(), 0);
-        };
+        send(tcp_socket, msg_string.data(), msg_string.size(), 0);
 	});
 }
