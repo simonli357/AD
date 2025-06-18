@@ -12,6 +12,7 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
+#include "Tracking.h"
 
 using namespace std::chrono;
 using namespace boost::asio;
@@ -32,7 +33,8 @@ class TrafficClient {
 	// Methods
 	void initialize();
 	// Encode
-	void send_car_data(const Float32MultiArray &road_object, const std::vector<VehicleConstants::OBJECT> &extras);
+	void send_car_data(const Float32MultiArray &road_object);
+	void send_car_data2();
 
   private:
 	// Fields

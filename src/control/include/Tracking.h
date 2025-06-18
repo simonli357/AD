@@ -342,6 +342,7 @@ public:
     ros::Time last_prediction_time;
     std::unique_ptr<KalmanFilter> kf;
     bool use_kf = true;
+    bool parked = false;
 
     DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
         : RoadObject(type, x, y, yaw, confidence),
@@ -407,6 +408,7 @@ public:
         
             x = (1 - alpha) * x + alpha * new_x;
             y = (1 - alpha) * y + alpha * new_y;
+            if (parked) this->yaw = 0.0;
         }
         double alpha = new_conf / (confidence + new_conf);
         confidence = (1 - alpha) * confidence + alpha * new_conf;
@@ -455,6 +457,24 @@ public:
         msg.data.push_back(static_cast<float>(cumulative_confidence));
         msg.data.push_back(static_cast<float>(z));
         msg.data.push_back(static_cast<float>(id));
+    }
+};
+
+class PedestrianObject : public DynamicObject {
+    public:
+    bool on_crosswalk = false;
+    PedestrianObject(OBJECT type, double x, double y, double yaw, double confidence)
+        : DynamicObject(type, x, y, yaw, confidence), on_crosswalk(false) {
+        if (type != OBJECT::PEDESTRIAN) {
+            throw std::invalid_argument("PedestrianObject Constructor(): PedestrianObject must be of type PEDESTRIAN");
+            for(auto& crosswalk: ALL_CROSSWALKS) {
+                if (std::hypot(crosswalk[0] - x, crosswalk[1] - y) < 0.537) {
+                    on_crosswalk = true;
+                    break;
+                }
+            }
+            parked = false;
+        }
     }
 };
 
@@ -580,10 +600,11 @@ inline void initialize_tracking() {
     OBJECT_COUNT = 0;
     create_ego_car(0, 0, 0);
 }
-inline void create_object(OBJECT type, double x, double y, double yaw, double confidence) {
+inline void create_object(OBJECT type, double x, double y, double yaw, double confidence, bool parked = false) {
     switch (type) {
         case OBJECT::CAR: {
             auto car = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
+            car->parked = parked;
             road_cars.push_back(car);
             return;
         }
