@@ -93,11 +93,11 @@ void TrafficClient::send_car_data2() {
 		} else if (obj->type == OBJECT::NOENTRY) {
 			id = 9;
 		} else if (obj->type == OBJECT::RAMP) {
-			id = -4;
+			id = 16;
 		} else if (obj->type == OBJECT::TUNNEL) {
-			id = -5;
+			id = 16;
 		} else if (obj->type == OBJECT::FOG) {
-			id = -6;
+			id = 15;
 		}
 		if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
 	}
@@ -128,25 +128,26 @@ void TrafficClient::send_car_data2() {
 	}
 
 	for (auto& car: Tracking::road_cars) {
-		int id = -1;
+		int id = 10;
 		auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
 		if (!car_obj) {
 				continue;
 		}
-		if (car_obj->parked) id = 14;
+		if (car_obj->parked) id = 10;
 		if (id > 0) msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
 	}
 
 	for (auto& car: Tracking::road_pedestrians) {
-		int id = -2;
+		int id = 11;
 		auto pedestrian_obj = std::dynamic_pointer_cast<Tracking::PedestrianObject>(car);
 		if (!pedestrian_obj) {
 				continue;
 		}
-		if (pedestrian_obj->on_crosswalk) id = -3;
+		if (pedestrian_obj->on_crosswalk) id = 12;
 		if (id > 0) msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
 	}
 
+	std::cout << "Sending data to Traffic Server: " << msg_string << std::endl;
 	auto fn = [this, msg_string]() {
 		send(tcp_socket, msg_string.data(), msg_string.size(), 0);
 	};

@@ -448,7 +448,10 @@ void Utility::process_sign_data(const utils::Sign& msg) {
             tcp_client->send_road_object(road_object_msg);
         }
         if (traffic_client != nullptr) {
+            std::cout << "hi" << std::endl;
             traffic_client->send_car_data2();
+        } else {
+            std::cout << "traffic_client is null" << std::endl;
         }
     }
 }
