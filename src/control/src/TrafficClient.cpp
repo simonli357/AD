@@ -150,84 +150,79 @@ void TrafficClient::send_car_id() {
 }
 
 // https://bosch-future-mobility-challenge-documentation.readthedocs-hosted.com/data/vehicletoeverything/TrafficCommunication.html
-void TrafficClient::send_car_data(const Float32MultiArray &road_object, const std::vector<OBJECT> &extras) {
+void TrafficClient::send_car_data() {
 	if (!can_send()) {
 		return;
 	}
-	static auto road_obj_to_int = [](OBJECT obj) -> int {
-		switch (obj) {
-		case OBJECT::BLOCK:
-			return 13;
-		case OBJECT::CAR:
-			return -1;
-		case OBJECT::CROSSWALK:
-			return 4;
-		case OBJECT::GREENLIGHT:
-			return 14;
-		case OBJECT::HIGHWAYENTRANCE:
-			return 5;
-		case OBJECT::HIGHWAYEXIT:
-			return 6;
-		case OBJECT::LIGHTS:
-			return 14;
-		case OBJECT::NOENTRY:
-			return 9;
-		case OBJECT::NONE:
-			return -1;
-		case OBJECT::ONEWAY:
-			return 8;
-		case OBJECT::PARK:
-			return 3;
-		case OBJECT::PEDESTRIAN:
-			return 12;
-		case OBJECT::PRIORITY:
-			return 2;
-		case OBJECT::REDLIGHT:
-			return 14;
-		case OBJECT::ROUNDABOUT:
-			return 7;
-		case OBJECT::STOPSIGN:
-			return 1;
-		case OBJECT::YELLOWLIGHT:
-			return 14;
-		case OBJECT::FOG:
-			return 15;
-		case OBJECT::TUNNEL:
-			return 16;
-		case OBJECT::RAMP:
-			return 17;
-		default:
-			return -1;
-		}
-	};
-	tasks->run([this, road_object, extras]() {
-		int num_objects = road_object.data.size() / 8;
-		if (road_object.data.size() % 8 != 0)
-			return;
+	tasks->run([this]() {
+        std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
+        std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
+        std::string msg_string = v_pos + v_rot + v_speed;
 
-		double x = road_object.data[1];
-		double y = road_object.data[2];
-		double rot = road_object.data[3];
-		double speed = road_object.data[4];
+        for (auto& obj: Tracking::road_objects) {
+            int id = -1;
+            if (obj->type == OBJECT::ONEWAY) {
+                id = 8;
+            } else if (obj->type == OBJECT::NOENTRY) {
+                id = 9;
+            } else if (obj->type == OBJECT::RAMP) {
+                id = 16;
+            } else if (obj->type == OBJECT::TUNNEL) {
+                id = 16;
+            } else if (obj->type == OBJECT::FOG) {
+                id = 15;
+            }
+            if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+        }
+        for (auto& obj: Tracking::road_known_static_objects) {
+            int id = -1;
+            if (obj->type == OBJECT::LIGHTS || obj->type == OBJECT::GREENLIGHT || obj->type == OBJECT::YELLOWLIGHT || obj->type == OBJECT::REDLIGHT) {
+                auto light_obj = std::dynamic_pointer_cast<Tracking::LightObject>(obj);
+                if (!light_obj) {
+                        continue;
+                }
+                id = 14;
+            } else if (obj->type == OBJECT::HIGHWAYENTRANCE) {
+                id = 5;
+            } else if (obj->type == OBJECT::STOPSIGN) {
+                id = 1;
+            } else if (obj->type == OBJECT::ROUNDABOUT) {
+                id = 7;
+            } else if (obj->type == OBJECT::PARK) {
+                id = 3;
+            } else if (obj->type == OBJECT::CROSSWALK) {
+                id = 4;
+            } else if (obj->type == OBJECT::HIGHWAYEXIT) {
+                id = 6;
+            } else if (obj->type == OBJECT::PRIORITY) {
+                id = 2;
+            }
+            if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+        }
 
-		std::string v_pos = create_vehicle_pos(x, y);
-		std::string v_rot = create_vehicle_rot(rot);
-		std::string v_speed = create_vehicle_speed(speed);
+        for (auto& car: Tracking::road_cars) {
+            int id = 10;
+            auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
+            if (!car_obj) {
+                    continue;
+            }
+            if (car_obj->parked) id = 10;
+            if (id > 0) msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
+        }
 
-		std::string objcts = "";
-		for (int i = 1; i < num_objects; ++i) {
-			int type = road_object.data[i * 8];
-			double x = road_object.data[i * 8 + 1];
-			double y = road_object.data[i * 8 + 2];
-			OBJECT obj_type = static_cast<OBJECT>(static_cast<int>(type));
-			objcts += create_encountered_obstacle(road_obj_to_int(obj_type), x, y);
-		}
+        for (auto& car: Tracking::road_pedestrians) {
+            int id = 11;
+            auto pedestrian_obj = std::dynamic_pointer_cast<Tracking::PedestrianObject>(car);
+            if (!pedestrian_obj) {
+                    continue;
+            }
+            if (pedestrian_obj->on_crosswalk) id = 12;
+            if (id > 0) msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
+        }
 
-		for (const auto &o : extras) {
-            objcts += create_encountered_obstacle(road_obj_to_int(o), x, y);
-		}
-
-		std::string msg = v_pos + v_rot + v_speed + objcts;
-		send(tcp_socket, msg.data(), msg.size(), 0);
+        std::cout << "Sending data to Traffic Server: " << msg_string << std::endl;
+        auto fn = [this, msg_string]() {
+            send(tcp_socket, msg_string.data(), msg_string.size(), 0);
+        };
 	});
 }
