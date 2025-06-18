@@ -26,7 +26,6 @@ class PathPlanner {
 	using Float32MultiArray = std_msgs::Float32MultiArray;
 
 	Track track;
-	std::unique_ptr<Track> attribute_map;
 	SplineUtils spline_utils;
 	PathUtils path_utils;
 
