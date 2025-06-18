@@ -155,6 +155,7 @@ void TrafficClient::send_car_data() {
 		return;
 	}
 	tasks->run([this]() {
+        std::string v_pos = create_vehicle_pos(Tracking::ego_car->x, Tracking::ego_car->y);
         std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
         std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
         std::string msg_string = v_pos + v_rot + v_speed;

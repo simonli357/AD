@@ -33,8 +33,7 @@ class TrafficClient {
 	// Methods
 	void initialize();
 	// Encode
-	void send_car_data(const Float32MultiArray &road_object);
-	void send_car_data2();
+	void send_car_data();
 
   private:
 	// Fields
