@@ -408,7 +408,7 @@ public:
             double dt1 = (current_time - last_detection_time).toSec();
             double dt2 = (current_time - first_detection_time).toSec();
         
-            if (speed < 0.04) {
+            if (speed < 0.0537) {
                 speed = 0;
             }
             double dx_avg = new_x - first_x;
