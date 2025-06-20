@@ -1088,7 +1088,7 @@ public:
         }
         utils.debug("CHECK_CAR(): min_same_lane_dist: " + helper::d2str(min_same_lane_dist) + ", min_adj_lane_dist: " + helper::d2str(min_adj_lane_dist) + ", min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_adj_lane_lat_dist: " + helper::d2str(min_adj_lane_lat_dist) + ", relative_speed: " + helper::d2str(relative_speed) + ", static_distance: " + helper::d2str(static_distance) + ", total_distance: " + helper::d2str(total_distance) + ", ego_speed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed), 2);
         if (can_overtake) {
-            stop_for(1.0);
+            stop_for(0.15);
             double start_dist = std::max(min_same_lane_dist - CAR_LENGTH, min_dist_to_car) - Tunable::min_dist_to_car;
             utils.update_states(x_current);
             closest_idx = PathManager::find_closest_waypoint(x_current);
