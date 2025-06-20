@@ -1059,7 +1059,7 @@ public:
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
         if (on_highway) min_dist_to_car *= 1.15;
-        double static_distance = CAR_LENGTH * 1.5 + min_dist_to_car * 2;
+        double static_distance = CAR_LENGTH * 2.0 + min_dist_to_car * 2;
         double ego_speed = Tunable::v_ref;
         if (on_highway) ego_speed *= Tunable::hw_speed_ratio;
         car_speed = car_speed;
