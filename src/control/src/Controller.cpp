@@ -1059,9 +1059,9 @@ public:
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
         if (on_highway) min_dist_to_car *= 1.15;
-        double static_distance = CAR_LENGTH * 1.5 + min_dist_to_car * 2;
-        double ego_speed = 0.32;
-        if (on_highway) ego_speed *= 1.33;
+        double static_distance = CAR_LENGTH * 2.0 + min_dist_to_car * 2;
+        double ego_speed = Tunable::v_ref;
+        if (on_highway) ego_speed *= Tunable::hw_speed_ratio;
         car_speed = car_speed;
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;
@@ -1077,7 +1077,7 @@ public:
         }
         
         if (relative_speed < 0.15 || total_distance / static_distance > 2.0) {
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance), 2);
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance) + ", ego_speed = " + helper::d2str(ego_speed) + ", car_speed = " + helper::d2str(car_speed), 2);
             can_overtake = false;
         }
         if (min_adj_lane_dist < total_distance) {
@@ -1088,7 +1088,7 @@ public:
         }
         utils.debug("CHECK_CAR(): min_same_lane_dist: " + helper::d2str(min_same_lane_dist) + ", min_adj_lane_dist: " + helper::d2str(min_adj_lane_dist) + ", min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", min_adj_lane_lat_dist: " + helper::d2str(min_adj_lane_lat_dist) + ", relative_speed: " + helper::d2str(relative_speed) + ", static_distance: " + helper::d2str(static_distance) + ", total_distance: " + helper::d2str(total_distance) + ", ego_speed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed), 2);
         if (can_overtake) {
-            stop_for(1.0);
+            stop_for(0.15);
             double start_dist = std::max(min_same_lane_dist - CAR_LENGTH, min_dist_to_car) - Tunable::min_dist_to_car;
             utils.update_states(x_current);
             closest_idx = PathManager::find_closest_waypoint(x_current);

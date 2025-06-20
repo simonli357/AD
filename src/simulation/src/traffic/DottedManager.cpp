@@ -14,9 +14,7 @@ DottedManager::~DottedManager() { task_manager->wait(); }
 void DottedManager::initialize() {
 	spawn_ego_car();
 	car2 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_008", "runDotted305");
-	car3 = std::make_unique<HighwayCar>(this, nh, car_speed, "car_019", "runDotted318");
 	car2->start();
-    car3->start();
 }
 
 void DottedManager::spawn_ego_car() {
@@ -27,5 +25,4 @@ void DottedManager::spawn_ego_car() {
 
 void DottedManager::stop_cars() {
 	car2->stop();
-    car3->stop();
 }

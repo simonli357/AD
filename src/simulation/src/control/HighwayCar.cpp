@@ -50,7 +50,7 @@ void HighwayCar::check_if_can_start(double car_x, double car_y) {
 	double ego_x, ego_y;
 	traffic_manager->get_car_position("car1", ego_x, ego_y);
 
-    if (is_near(car_x, car_y, ego_x, ego_y, 0.8, 0.8)) {
+    if (is_near(car_x, car_y, ego_x, ego_y, 0.5, 0.5)) {
         start_car = true;
     }
 }
