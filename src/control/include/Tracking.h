@@ -458,10 +458,11 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         if (use_kf && kf) {
             double dt = (ros::Time::now() - last_prediction_time).toSec();
+            last_prediction_time = ros::Time::now();
             kf->predict(dt);
             x = kf->x();
             y = kf->y();
-            // yaw = kf->yaw();
+            yaw = kf->yaw();
             speed = kf->speed();
         }
     }

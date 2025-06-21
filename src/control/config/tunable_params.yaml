@@ -41,4 +41,4 @@ real:
   pedestrian_distance: 0.75
   pedestrian_threshold: 0.35
   has_light: false
-  use_kf: false
+  use_kf: true

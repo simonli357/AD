@@ -1060,9 +1060,9 @@ public:
         double min_dist_to_car = Tunable::min_dist_to_car;
         if (on_highway) min_dist_to_car *= 1.15;
         double static_distance = CAR_LENGTH * 2.0 + min_dist_to_car * 2.0;
-        if (car_speed > 0.0537) {
-            static_distance += LANE_OFFSET;
-        }
+        // if (car_speed > 0.0537) {
+        //     static_distance += LANE_OFFSET;
+        // }
         double ego_speed = Tunable::vref;
         if (on_highway) ego_speed *= Tunable::hw_speed_ratio;
         double relative_speed = ego_speed - car_speed;
