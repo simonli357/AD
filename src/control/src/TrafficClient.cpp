@@ -71,22 +71,26 @@ void TrafficClient::listen() {
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
 		if (bytes > 0) {
-			std::cout << "[TrafficClient] received " << bytes << " bytes\n";
 
-			std::cout << "  HEX : ";
-			for (ssize_t i = 0; i < bytes; ++i) {
-				printf("%02X ", buffer[i]);
+			uint8_t *begin = buffer.data();
+			uint8_t *end = buffer.data() + bytes;
+			uint8_t *json_start = std::find(begin, end, '{');
+
+			if (json_start == end) {
+				continue;
 			}
-			std::cout << '\n';
 
-			std::cout << "  TEXT: ";
-			for (ssize_t i = 0; i < bytes; ++i) {
-				char c = static_cast<char>(buffer[i]);
-				std::cout << (isprint(static_cast<unsigned char>(c)) ? c : '.');
+			std::string_view json_view(reinterpret_cast<char *>(json_start), end - json_start);
+
+			if (!nlohmann::json::accept(json_view)) {
+				continue;
 			}
-			std::cout << "\n--------------------------------\n";
+            
+			nlohmann::json msg = nlohmann::json::parse(json_view);
 
-			// TODO: existing parsing / handling here
+			double x = msg.value("x", 0.0);
+			double y = msg.value("y", 0.0);
+			double z = msg.value("z", 0.0);
 		} else if (bytes == 0) {
 			connected = false; // connection closed
 			break;
