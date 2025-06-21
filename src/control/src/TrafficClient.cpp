@@ -60,39 +60,43 @@ void TrafficClient::initialize() {
 		send_car_id();
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		tcp_can_send = true;
-        listen();
+		listen();
 	}
 }
 
 void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
-		// --- Data Reception ---
-		if (true) {
-			
-		} else {
-			connected = false;
-		}
-        // --- Read data ---
-        ssize_t bytes = recv(tcp_socket, buffer.data() + 10, 10, 0);
+		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
-        if (bytes > 0) {
-            // TODO
-        } else if (bytes == 0) {
-            // Connection closed
-            connected = false;
-            break;
-        } else { // bytes == -1
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                // Non-blocking retry
-                usleep(10000); // 10ms delay (adjust as needed)
-                continue;
-            } else {
-                // Handle other errors
-                connected = false;
-                break;
-            }
-        }
+		if (bytes > 0) {
+			std::cout << "[TrafficClient] received " << bytes << " bytes\n";
+
+			std::cout << "  HEX : ";
+			for (ssize_t i = 0; i < bytes; ++i) {
+				printf("%02X ", buffer[i]);
+			}
+			std::cout << '\n';
+
+			std::cout << "  TEXT: ";
+			for (ssize_t i = 0; i < bytes; ++i) {
+				char c = static_cast<char>(buffer[i]);
+				std::cout << (isprint(static_cast<unsigned char>(c)) ? c : '.');
+			}
+			std::cout << "\n--------------------------------\n";
+
+			// TODO: existing parsing / handling here
+		} else if (bytes == 0) {
+			connected = false; // connection closed
+			break;
+		} else { // bytes == -1
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				usleep(10000); // 10 ms back-off
+				continue;
+			}
+			connected = false;
+			break;
+		}
 	}
 	tcp_can_send = false;
 }
@@ -145,72 +149,78 @@ void TrafficClient::send_car_data() {
 		return;
 	}
 	tasks->run([this]() {
-        std::string v_pos = create_vehicle_pos(Tracking::ego_car->x, Tracking::ego_car->y);
-        std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
-        std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
-        std::string msg_string = v_pos + v_rot + v_speed;
+		std::string v_pos = create_vehicle_pos(Tracking::ego_car->x, Tracking::ego_car->y);
+		std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
+		std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
+		std::string msg_string = v_pos + v_rot + v_speed;
 
-        for (auto& obj: Tracking::road_objects) {
-            int id = -1;
-            if (obj->type == OBJECT::ONEWAY) {
-                id = 8;
-            } else if (obj->type == OBJECT::NOENTRY) {
-                id = 9;
-            } else if (obj->type == OBJECT::RAMP) {
-                id = 16;
-            } else if (obj->type == OBJECT::TUNNEL) {
-                id = 16;
-            } else if (obj->type == OBJECT::FOG) {
-                id = 15;
-            }
-            if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
-        }
-        for (auto& obj: Tracking::road_known_static_objects) {
-            int id = -1;
-            if (obj->type == OBJECT::LIGHTS || obj->type == OBJECT::GREENLIGHT || obj->type == OBJECT::YELLOWLIGHT || obj->type == OBJECT::REDLIGHT) {
-                auto light_obj = std::dynamic_pointer_cast<Tracking::LightObject>(obj);
-                if (!light_obj) {
-                        continue;
-                }
-                id = 14;
-            } else if (obj->type == OBJECT::HIGHWAYENTRANCE) {
-                id = 5;
-            } else if (obj->type == OBJECT::STOPSIGN) {
-                id = 1;
-            } else if (obj->type == OBJECT::ROUNDABOUT) {
-                id = 7;
-            } else if (obj->type == OBJECT::PARK) {
-                id = 3;
-            } else if (obj->type == OBJECT::CROSSWALK) {
-                id = 4;
-            } else if (obj->type == OBJECT::HIGHWAYEXIT) {
-                id = 6;
-            } else if (obj->type == OBJECT::PRIORITY) {
-                id = 2;
-            }
-            if (id > 0) msg_string += create_encountered_obstacle(id, obj->x, obj->y);
-        }
+		for (auto &obj : Tracking::road_objects) {
+			int id = -1;
+			if (obj->type == OBJECT::ONEWAY) {
+				id = 8;
+			} else if (obj->type == OBJECT::NOENTRY) {
+				id = 9;
+			} else if (obj->type == OBJECT::RAMP) {
+				id = 16;
+			} else if (obj->type == OBJECT::TUNNEL) {
+				id = 16;
+			} else if (obj->type == OBJECT::FOG) {
+				id = 15;
+			}
+			if (id > 0)
+				msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+		}
+		for (auto &obj : Tracking::road_known_static_objects) {
+			int id = -1;
+			if (obj->type == OBJECT::LIGHTS || obj->type == OBJECT::GREENLIGHT || obj->type == OBJECT::YELLOWLIGHT || obj->type == OBJECT::REDLIGHT) {
+				auto light_obj = std::dynamic_pointer_cast<Tracking::LightObject>(obj);
+				if (!light_obj) {
+					continue;
+				}
+				id = 14;
+			} else if (obj->type == OBJECT::HIGHWAYENTRANCE) {
+				id = 5;
+			} else if (obj->type == OBJECT::STOPSIGN) {
+				id = 1;
+			} else if (obj->type == OBJECT::ROUNDABOUT) {
+				id = 7;
+			} else if (obj->type == OBJECT::PARK) {
+				id = 3;
+			} else if (obj->type == OBJECT::CROSSWALK) {
+				id = 4;
+			} else if (obj->type == OBJECT::HIGHWAYEXIT) {
+				id = 6;
+			} else if (obj->type == OBJECT::PRIORITY) {
+				id = 2;
+			}
+			if (id > 0)
+				msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+		}
 
-        for (auto& car: Tracking::road_cars) {
-            int id = 10;
-            auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
-            if (!car_obj) {
-                    continue;
-            }
-            if (car_obj->parked) id = 10;
-            if (id > 0) msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
-        }
+		for (auto &car : Tracking::road_cars) {
+			int id = 10;
+			auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
+			if (!car_obj) {
+				continue;
+			}
+			if (car_obj->parked)
+				id = 10;
+			if (id > 0)
+				msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
+		}
 
-        for (auto& car: Tracking::road_pedestrians) {
-            int id = 11;
-            auto pedestrian_obj = std::dynamic_pointer_cast<Tracking::PedestrianObject>(car);
-            if (!pedestrian_obj) {
-                    continue;
-            }
-            if (pedestrian_obj->on_crosswalk) id = 12;
-            if (id > 0) msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
-        }
+		for (auto &car : Tracking::road_pedestrians) {
+			int id = 11;
+			auto pedestrian_obj = std::dynamic_pointer_cast<Tracking::PedestrianObject>(car);
+			if (!pedestrian_obj) {
+				continue;
+			}
+			if (pedestrian_obj->on_crosswalk)
+				id = 12;
+			if (id > 0)
+				msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
+		}
 
-        send(tcp_socket, msg_string.data(), msg_string.size(), 0);
+		send(tcp_socket, msg_string.data(), msg_string.size(), 0);
 	});
 }
