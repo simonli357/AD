@@ -36,7 +36,7 @@ class TrafficClient {
 
   private:
 	// Fields
-	int car_id = 3;
+	int car_id = 6;
 	const milliseconds frequency = milliseconds(250);
 	std::array<std::pair<double, double>, 32> car_positions;
 	size_t array_ptr = 0;
