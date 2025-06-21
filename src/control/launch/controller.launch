@@ -82,7 +82,7 @@
   <arg name="sign_rate" default="30"/>
   <arg name="pubImage" default="true"/>
   <arg name="thread" default="true"/>
-  <arg name="quality" default="30"/>
+  <arg name="quality" default="100"/>
   <param name="quality" value="$(arg quality)"/>
   <arg name="show_lane" default="false"/>
   <param name="show_lane" value="$(arg show_lane)"/>

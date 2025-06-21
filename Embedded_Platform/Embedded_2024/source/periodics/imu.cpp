@@ -659,20 +659,38 @@ namespace periodics{
         //     return;  // abort on any error
         // }
     
-        yaw -= init_euler_h_deg;
-        if (yaw < 0.0f)   yaw += 360.0f;
-        if (yaw >= 360.0f) yaw -= 360.0f;
+        // yaw -= init_euler_h_deg;
+        // if (yaw < 0.0f)   yaw += 360.0f;
+        // if (yaw >= 360.0f) yaw -= 360.0f;
 
-        pitch -= init_euler_p_deg;
-        if (pitch < -180.0f) pitch += 360.0f;
-        if (pitch >= 180.0f) pitch -= 360.0f;
+        // pitch -= init_euler_p_deg;
+        // if (pitch < -180.0f) pitch += 360.0f;
+        // if (pitch >= 180.0f) pitch -= 360.0f;
+
+        // calibration
+        u8 gyro_calib, mag_calib, accel_calib, sys_calib;
+        // bool calibrated = false;
+        if ((res = bno055_get_mag_calib_stat(&mag_calib)) != BNO055_SUCCESS ||
+        (res = bno055_get_gyro_calib_stat(&gyro_calib)) != BNO055_SUCCESS || 
+        (res = bno055_get_accel_calib_stat(&accel_calib)) != BNO055_SUCCESS ||
+        (res = bno055_get_sys_calib_stat(&sys_calib)) != BNO055_SUCCESS) {
+            
+            return;
+        }
+
+            // char calib_out[32];
+            // snprintf(calib_out, sizeof(calib_out),
+            //         "calib:%d;%d;%d;%d;;\r\n",
+            //         sys_calib, gyro_calib, mag_calib, accel_calib);
+
+            // m_serial.write(calib_out, strlen(calib_out));
 
         // printf("@7:%.1f;%.1f;;\r\n",
         //        pitch, yaw);
-        char out[32];
+        char out[48];
         snprintf(out, sizeof(out),
-                "@7:%.1f;%.1f;;\r\n",
-                pitch, yaw);
+                "@7:%.1f;%.1f, %d, %d, %d, %d;;\r\n",
+                pitch, yaw, sys_calib, gyro_calib, mag_calib, accel_calib);
         m_serial.write(out, strlen(out));
 
     }
