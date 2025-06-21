@@ -1,6 +1,7 @@
 #pragma once
 
 #include "KeyDealer.hpp"
+#include "Tracking.h"
 #include <chrono>
 #include <cstdint>
 #include <netinet/in.h>
@@ -9,7 +10,6 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
-#include "Tracking.h"
 
 using namespace std::chrono;
 using namespace VehicleConstants;
@@ -26,8 +26,11 @@ class TrafficClient {
 	~TrafficClient();
 	// Fields
 	bool tcp_can_send = false;
+    bool enough_points = false;
 	// Methods
 	void initialize();
+    void clear_positions();
+	void get_car_position(double &out_x, double &out_y);
 	// Encode
 	void send_car_data();
 
@@ -35,6 +38,8 @@ class TrafficClient {
 	// Fields
 	int car_id = 3;
 	const milliseconds frequency = milliseconds(250);
+	std::array<std::pair<double, double>, 32> car_positions;
+	size_t array_ptr = 0;
 	steady_clock::time_point last_send_time = steady_clock::now();
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "192.168.50.2";
@@ -52,6 +57,13 @@ class TrafficClient {
 	void send_data();
 	void subscribeToLocationData();
 	bool can_send();
+	void handle_location_data(double x, double y, double z);
+	std::pair<double, double> calculate_mean(std::array<std::pair<double, double>, 32> &data);
+	std::pair<double, double> calculate_std_dev(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y);
+	std::pair<double, double> calculate_mean(std::vector<std::pair<double, double>> &data);
+	std::pair<double, double> calculate_std_dev(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y);
+	std::vector<std::pair<double, double>> filter_outliers(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma);
+	std::vector<std::vector<std::pair<double, double>>> cluster_points(const std::vector<std::pair<double, double>> &points, double radius);
 	// Encode
 	std::string create_vehicle_pos(double x, double y);
 	std::string create_vehicle_rot(double yaw);
