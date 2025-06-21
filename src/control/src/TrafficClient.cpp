@@ -1,4 +1,5 @@
 #include "TrafficClient.hpp"
+#include "TcpClient.hpp"
 #include "utils/constants.h"
 #include <arpa/inet.h>
 #include <chrono>
@@ -57,7 +58,7 @@ void TrafficClient::initialize() {
 		}
 		std::cout << "Successfully connected to Traffic Server \n" << std::endl;
 		connected = true;
-		send_car_id();
+		subscribeToLocationData();
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		tcp_can_send = true;
 		listen();
@@ -135,7 +136,7 @@ std::string TrafficClient::create_encountered_obstacle(int type, double x, doubl
 // TCP Encoding
 // ------------------- //
 
-void TrafficClient::send_car_id() {
+void TrafficClient::subscribeToLocationData() {
 	tasks->run([this] {
 		json msg = {{"reqORinfo", "info"}, {"type", "locIDsub"}, {"freq", 0.25}, {"locID", car_id}};
 		std::string chars = msg.dump();

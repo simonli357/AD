@@ -1,8 +1,6 @@
 #pragma once
 
 #include "KeyDealer.hpp"
-#include "utils/constants.h"
-#include <any>
 #include <chrono>
 #include <cstdint>
 #include <netinet/in.h>
@@ -52,7 +50,6 @@ class TrafficClient {
 	void create_tcp_socket();
 	void listen();
 	void send_data();
-	void send_car_id();
 	void subscribeToLocationData();
 	bool can_send();
 	// Encode
