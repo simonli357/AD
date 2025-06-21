@@ -343,6 +343,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
     // Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    debug("calib status: " + std::to_string(Sensing::sys_calib) + ", " + std::to_string(Sensing::gyro_calib) + ", " + std::to_string(Sensing::mag_calib) + ", " + std::to_string(Sensing::accel_calib), 2);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
         double dist = object_distance(i);
