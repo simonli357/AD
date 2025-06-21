@@ -689,7 +689,7 @@ namespace periodics{
         //        pitch, yaw);
         char out[48];
         snprintf(out, sizeof(out),
-                "@7:%.1f;%.1f, %d, %d, %d, %d;;\r\n",
+                "@7:%.1f;%.1f; %d; %d; %d; %d;;\r\n",
                 pitch, yaw, sys_calib, gyro_calib, mag_calib, accel_calib);
         m_serial.write(out, strlen(out));
 
