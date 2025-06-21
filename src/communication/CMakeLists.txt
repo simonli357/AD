@@ -7,6 +7,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DEXT_DEP -fdiagnostics-show-option
 
 find_package(OpenCV 4.5 REQUIRED)
 find_package(TBB REQUIRED)
+find_package(OpenSSL REQUIRED)
+# sudo apt install libssl-dev
 
 find_package(catkin REQUIRED COMPONENTS
   nav_msgs
@@ -43,6 +45,7 @@ target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${OpenCV_LIBS}
+  OpenSSL::Crypto
   TBB::tbb
   hwloc
 )

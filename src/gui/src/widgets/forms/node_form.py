@@ -93,6 +93,9 @@ class NodeFormWidget(QDialog):
             7: 'STOPLINE',
             8: 'DOTTED',
             9: 'DOTTED_CROSSWALK',
+            10: 'FOG',
+            11: 'TUNNEL',
+            12: 'RAMP'
         }
         self.setup_ui()
 

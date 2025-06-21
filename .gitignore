@@ -72,3 +72,7 @@ qtcreator-*
 CATKIN_IGNORE
 Embedded_Platform/Embedded_2024/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux
 Embedded_Platform/Embedded_2024/cmake_build
+
+# MISC
+*.db
+CMakeLists.txt

@@ -3,7 +3,7 @@
   <arg name="ekf" default="false"/>
   <arg name="lane" default="true"/>
   <arg name="name" default="car1"/>
-  <arg name="v" default="32"/>
+  <arg name="v" default="35"/>
   <arg name="vref" default="0.$(arg v)"/>
   <arg name="steer_offset" default="0"/>
   <param name="steer_offset" value="$(arg steer_offset)"/>

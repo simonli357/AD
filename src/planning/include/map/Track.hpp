@@ -2,11 +2,13 @@
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/property_map/vector_property_map.hpp>
+#include <ros/package.h>
 #include <string>
 
 class Track {
   public:
 	Track();
+	Track(const std::string &filename);
 	~Track() = default;
 
 	Track(Track &&) = default;
@@ -25,6 +27,9 @@ class Track {
 		STOPLINE = 7,
 		DOTTED = 8,
 		DOTTED_CROSSWALK = 9,
+		FOG = 10,
+		TUNNEL = 11,
+		RAMP = 12
 	};
 
 	struct Vertex {
@@ -47,11 +52,10 @@ class Track {
 
 	Graph graph;
 	double hw_safety_offset = 0.05;
-	std::string package_path;
 
 	void add_vertex(const Vertex &u, const Vertex &v);
 	void remove_vertex(const Vertex &u);
-    Vertex find_first_neighbor(const Vertex &u);
+	Vertex find_first_neighbor(const Vertex &u);
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
 	Vertex find_node(int id);
@@ -63,6 +67,9 @@ class Track {
 	void print_graph();
 
   private:
+	std::string package_path = ros::package::getPath("planning");
+	std::string graph_file = package_path + "/src/persistence/track.graphml";
+
 	std::unordered_map<int, Track::Graph::vertex_descriptor> build_to_vertex_map();
 
 	void read_graph();

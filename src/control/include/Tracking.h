@@ -13,7 +13,6 @@
 #include "KalmanFilter.h"
 #include <atomic>
 #include <mutex>
-#include <shared_mutex>
 
 using namespace VehicleConstants;
 
@@ -53,6 +52,13 @@ inline bool is_known_static_object(int obj) {
     return is_known_static_object(static_cast<OBJECT>(obj));
 }
 
+struct PositionSample {
+    double x;
+    double y;
+    double confidence;
+    ros::Time stamp;
+};
+
 class RoadObject {
 public:
     int id;
@@ -72,8 +78,8 @@ public:
     ros::Time last_detection_time;
     ros::Time first_detection_time;
 
-    std::deque<std::array<double, 3>> position_history;  // x, y, confidence
-    static constexpr size_t HISTORY_SIZE = 5;
+    std::deque<PositionSample> position_history;
+    static constexpr std::size_t BASE_HISTORY_SIZE = 5;
 
     RoadObject(OBJECT type, double x, double y, double yaw, double confidence)
         : id(OBJECT_COUNT.fetch_add(1)), type(type), x(x), y(y), yaw(yaw), confidence(confidence),
@@ -84,7 +90,7 @@ public:
         last_detection_time = ros::Time::now();
         first_detection_time = last_detection_time;
         lifetime = OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime;
-        position_history.push_back({x, y, confidence});
+        position_history.push_back({x, y, confidence, last_detection_time});
     }
 
     virtual ~RoadObject() {
@@ -120,8 +126,8 @@ public:
     
         lifetime = std::min(lifetime + (0.2 * new_conf), OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime);
     
-        position_history.push_back({x, y, confidence});
-        if (position_history.size() > HISTORY_SIZE) {
+         position_history.push_back({x, y, confidence, last_detection_time});
+        if (position_history.size() > BASE_HISTORY_SIZE) {
             position_history.pop_front();
         }
     }
@@ -343,6 +349,8 @@ public:
     ros::Time last_prediction_time;
     std::unique_ptr<KalmanFilter> kf;
     bool use_kf = true;
+    bool parked = false;
+    static constexpr std::size_t HISTORY_SIZE = 60;
 
     DynamicObject(OBJECT type, double x, double y, double yaw, double confidence)
         : RoadObject(type, x, y, yaw, confidence),
@@ -376,16 +384,31 @@ public:
             yaw = kf->yaw();
             speed = kf->speed();
         } else {
-            ros::Time current_time = ros::Time::now();
+            const ros::Time current_time = ros::Time::now();
+            const double alpha = new_conf / (confidence + new_conf); 
+            while (!position_history.empty() &&
+                   (current_time - position_history.front().stamp).toSec() > 2.0)
+            {
+                position_history.pop_front();
+            }
+            double est_speed = speed;          // fallback
+            double est_yaw   = yaw;
+            if (!position_history.empty()) {
+                const auto& oldest = position_history.front();
+                const double dt = (current_time - oldest.stamp).toSec();
+                if (dt > 0.0) {
+                    const double dx = new_x - oldest.x;
+                    const double dy = new_y - oldest.y;
+                    est_speed = std::hypot(dx, dy) / dt;
+                    est_yaw   = std::atan2(dy, dx);
+                }
+            }
+            speed = est_speed;
+
             double dt1 = (current_time - last_detection_time).toSec();
             double dt2 = (current_time - first_detection_time).toSec();
         
-            double avg_speed = (dt2 > 0) ? std::hypot(new_x - first_x, new_y - first_y) / dt2 : speed;
-        
-            double alpha = new_conf / (confidence + new_conf);
-            double est_speed = avg_speed;
-            speed = (1 - alpha) * speed + alpha * est_speed;
-            if (speed < 0.04) {
+            if (speed < 0.0537) {
                 speed = 0;
             }
             double dx_avg = new_x - first_x;
@@ -408,6 +431,7 @@ public:
         
             x = (1 - alpha) * x + alpha * new_x;
             y = (1 - alpha) * y + alpha * new_y;
+            if (parked) this->yaw = 0.0;
         }
         double alpha = new_conf / (confidence + new_conf);
         confidence = (1 - alpha) * confidence + alpha * new_conf;
@@ -424,7 +448,7 @@ public:
     
         lifetime = std::min(lifetime + (0.2 * new_conf), OBJECT_TRACKING_PARAMS[static_cast<int>(type)].base_lifetime);
     
-        position_history.push_back({x, y, confidence});
+        position_history.push_back({x, y, confidence, last_detection_time});
         if (position_history.size() > HISTORY_SIZE) {
             position_history.pop_front();
         }
@@ -456,6 +480,24 @@ public:
         msg.data.push_back(static_cast<float>(cumulative_confidence));
         msg.data.push_back(static_cast<float>(z));
         msg.data.push_back(static_cast<float>(id));
+    }
+};
+
+class PedestrianObject : public DynamicObject {
+    public:
+    bool on_crosswalk = false;
+    PedestrianObject(OBJECT type, double x, double y, double yaw, double confidence)
+        : DynamicObject(type, x, y, yaw, confidence), on_crosswalk(false) {
+        if (type != OBJECT::PEDESTRIAN) {
+            throw std::invalid_argument("PedestrianObject Constructor(): PedestrianObject must be of type PEDESTRIAN");
+            for(auto& crosswalk: ALL_CROSSWALKS) {
+                if (std::hypot(crosswalk[0] - x, crosswalk[1] - y) < 0.537) {
+                    on_crosswalk = true;
+                    break;
+                }
+            }
+            parked = false;
+        }
     }
 };
 
@@ -581,10 +623,11 @@ inline void initialize_tracking() {
     OBJECT_COUNT = 0;
     create_ego_car(0, 0, 0);
 }
-inline void create_object(OBJECT type, double x, double y, double yaw, double confidence) {
+inline void create_object(OBJECT type, double x, double y, double yaw, double confidence, bool parked = false) {
     switch (type) {
         case OBJECT::CAR: {
             auto car = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
+            car->parked = parked;
             road_cars.push_back(car);
             return;
         }

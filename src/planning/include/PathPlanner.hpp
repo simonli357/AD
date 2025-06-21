@@ -15,7 +15,7 @@ class PathPlanner {
   public:
 	PathPlanner(double vref, int N, double T);
 	PathPlanner(PathPlanner &&) = default;
-	PathPlanner(const PathPlanner &) = default;
+	PathPlanner(const PathPlanner &) = delete;
 	PathPlanner &operator=(PathPlanner &&) = default;
 	PathPlanner &operator=(const PathPlanner &) = default;
 	~PathPlanner() = default;
