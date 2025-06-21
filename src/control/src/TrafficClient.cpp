@@ -97,9 +97,9 @@ void TrafficClient::listen() {
 			double y = msg.value("y", 0.0);
 			double z = msg.value("z", 0.0);
 
-			std::cout << "Parsed JSON: x=" << x << "  y=" << y << "  z=" << z << std::endl;
+			std::cout << "GPS DATA: " << msg.dump() << std::endl;
 
-			handle_location_data(x, y, z);
+			handle_location_data(x / 1000, y / 1000, z / 1000);
 		} else if (bytes == 0) {
 			connected = false; // connection closed
 			break;
