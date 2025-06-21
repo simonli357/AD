@@ -19,7 +19,6 @@ using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
-	keyDealer = std::make_unique<KeyDealer>();
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
 }
 

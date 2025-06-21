@@ -1,6 +1,5 @@
 #pragma once
 
-#include "KeyDealer.hpp"
 #include "Tracking.h"
 #include <chrono>
 #include <cstdint>
@@ -26,10 +25,10 @@ class TrafficClient {
 	~TrafficClient();
 	// Fields
 	bool tcp_can_send = false;
-    bool enough_points = false;
+	bool enough_points = false;
 	// Methods
 	void initialize();
-    void clear_positions();
+	void clear_positions();
 	void get_car_position(double &out_x, double &out_y);
 	// Encode
 	void send_car_data();
@@ -50,7 +49,6 @@ class TrafficClient {
 	int tcp_socket;
 	std::thread main;
 	std::unique_ptr<tbb::task_group> tasks;
-	std::unique_ptr<KeyDealer> keyDealer;
 	// Utility Methods
 	void create_tcp_socket();
 	void listen();
