@@ -5,6 +5,7 @@
 #include "msg/RunMsg.hpp"
 #include "msg/SWLoadMsg.hpp"
 #include "msg/TriggerMsg.hpp"
+#include "msg/ImuMsg.hpp"
 #include "service_calls/GoToCmdSrv.hpp"
 #include "service_calls/GoToSrv.hpp"
 #include "service_calls/SetStatesSrv.hpp"
@@ -70,6 +71,7 @@ class TcpClient {
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
 	void send_model_states(const geometry_msgs::Pose &msg);
+	void send_imu_intrinsics(double sys, double gyro_calib, double mag_calib, double accel_calib);
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
@@ -110,6 +112,7 @@ class TcpClient {
 	std::unique_ptr<ParamsMsg> params_msg;
 	std::unique_ptr<RunMsg> run_msg;
 	std::unique_ptr<TriggerMsg> trigger_msg;
+	std::unique_ptr<ImuMsg> imu_msg;
 	// Service calls
 	std::unique_ptr<GoToCmdSrv> goto_cmd_srv;
 	std::unique_ptr<GoToSrv> goto_srv;
@@ -139,7 +142,7 @@ class TcpClient {
 	std::function<void(int)> yaw_callback;
 	// Decode
 	void parse_string(std::vector<uint8_t> &bytes);
-    void parse_yaw(std::vector<uint8_t> &bytes);
+	void parse_yaw(std::vector<uint8_t> &bytes);
 	void parse_trigger_msg(std::vector<uint8_t> &bytes);
 	void parse_go_to_cmd_srv(std::vector<uint8_t> &bytes);
 	void parse_set_states_srv(std::vector<uint8_t> &bytes);

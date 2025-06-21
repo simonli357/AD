@@ -13,6 +13,7 @@
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include "TcpClient.hpp"
 #include "Tunable.h"
 #include "utils/encoder.h"
 
@@ -28,6 +29,8 @@ inline std::atomic<double>    mag_calib{0.0};
 inline std::atomic<double>    accel_calib{0.0};
 
 inline std::atomic<double> yaw_offset{0.0};
+
+inline std::unique_ptr<TcpClient> tcp_client = std::make_unique<TcpClient>(false, "sensing", Tunable::ip_address);
 
 // ---------- serial machinery ----------
 inline boost::asio::io_service io;
@@ -125,6 +128,8 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         gyro_calib .store(gyro , std::memory_order_relaxed);
         mag_calib  .store(mag  , std::memory_order_relaxed);
         accel_calib.store(accel, std::memory_order_relaxed);
+
+        tcp_client->send_imu_intrinsics(sys, gyro_calib, mag_calib, accel_calib);
     }
 }
 

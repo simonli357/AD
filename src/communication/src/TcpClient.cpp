@@ -496,6 +496,16 @@ void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
 	});
 }
 
+void TcpClient::send_imu_intrinsics(double sys, double gyro_calib, double mag_calib, double accel_calib) {
+    tasks->run([this, sys, gyro_calib, mag_calib, accel_calib] {
+		auto &udp_buffer = udp_buffers.local();
+		imu_msg->encode(sys, gyro_calib, mag_calib, accel_calib);
+		std::vector<uint8_t> bytes = imu_msg->serialize(udp_data_types[9]);
+		std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
+		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+    });
+}
+
 // ------------------- //
 // TCP Decoding
 // ------------------- //
