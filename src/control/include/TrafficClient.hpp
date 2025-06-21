@@ -3,7 +3,6 @@
 #include "KeyDealer.hpp"
 #include "utils/constants.h"
 #include <any>
-#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdint>
 #include <netinet/in.h>
@@ -15,7 +14,6 @@
 #include "Tracking.h"
 
 using namespace std::chrono;
-using namespace boost::asio;
 using namespace VehicleConstants;
 using std_msgs::Float32MultiArray;
 
@@ -41,8 +39,7 @@ class TrafficClient {
 	const milliseconds frequency = milliseconds(250);
 	steady_clock::time_point last_send_time = steady_clock::now();
 	const uint16_t tcp_port = 5000;
-	const uint16_t udp_port = 9000;
-	std::string server_address = "127.0.0.1";
+	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
 	bool alive = true;
 	bool connected = false;
@@ -51,24 +48,13 @@ class TrafficClient {
 	std::thread main;
 	std::unique_ptr<tbb::task_group> tasks;
 	std::unique_ptr<KeyDealer> keyDealer;
-	// BOOST
-	io_context udp_io_ctx;
-	std::unique_ptr<ip::udp::socket> udp_socket;
-	std::array<char, 1024> udp_recv_buffer;
-	ip::udp::endpoint remote_endpoint;
-	// Task Queue
-	tbb::concurrent_queue<std::any> stream_tasks;
 	// Utility Methods
 	void create_tcp_socket();
-	void create_udp_socket();
-	void poll_connection();
+	void listen();
 	void send_data();
 	void send_car_id();
 	void subscribeToLocationData();
 	bool can_send();
-	void receive_datagram();
-	void on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred);
-	template <typename Callable> void add_stream_task(Callable &&lambda);
 	// Encode
 	std::string create_vehicle_pos(double x, double y);
 	std::string create_vehicle_rot(double yaw);

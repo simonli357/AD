@@ -19,8 +19,6 @@ TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_a
 	main = std::thread(&TrafficClient::initialize, this);
 	keyDealer = std::make_unique<KeyDealer>();
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-	// create_udp_socket();
-	// receive_datagram();
 }
 
 TrafficClient::~TrafficClient() {
@@ -47,19 +45,6 @@ void TrafficClient::create_tcp_socket() {
 	fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
 }
 
-void TrafficClient::create_udp_socket() {
-	try {
-		udp_socket = std::make_unique<ip::udp::socket>(udp_io_ctx);
-		udp_socket->open(ip::udp::v4());
-		udp_socket->set_option(socket_base::reuse_address(true));
-		udp_socket->bind(ip::udp::endpoint(ip::address_v4::any(), udp_port));
-		ROS_INFO("UDP socket bound to port: %d", udp_socket->local_endpoint().port());
-		receive_datagram();
-	} catch (const std::exception &e) {
-		ROS_ERROR("Failed to create UDP socket: %s", e.what());
-	}
-}
-
 void TrafficClient::initialize() {
 	while (alive) {
 		create_tcp_socket();
@@ -75,36 +60,41 @@ void TrafficClient::initialize() {
 		send_car_id();
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		tcp_can_send = true;
-		poll_connection();
+        listen();
 	}
 }
 
-void TrafficClient::poll_connection() {
-	while (alive) {
-		char buffer[32];
-		if (connected && recv(tcp_socket, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT) == 0) {
-			std::cout << "Traffic Server Disconnected \n" << std::endl;
+void TrafficClient::listen() {
+	std::array<uint8_t, 1024> buffer;
+	while (connected) {
+		// --- Data Reception ---
+		if (true) {
+			
+		} else {
 			connected = false;
-			tcp_can_send = false;
-			close(tcp_socket);
-			break;
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(250));
-	}
-}
+        // --- Read data ---
+        ssize_t bytes = recv(tcp_socket, buffer.data() + 10, 10, 0);
 
-void TrafficClient::receive_datagram() {
-	udp_socket->async_receive_from(boost::asio::buffer(udp_recv_buffer), remote_endpoint, [this](boost::system::error_code ec, std::size_t bytes_recvd) { this->on_datagram(ec, bytes_recvd); });
-}
-
-void TrafficClient::on_datagram(const boost::system::error_code &error, std::size_t bytes_transferred) {
-	if (!error) {
-		// Process datagram here (bytes_transferred bytes in recv_buffer_)
-		std::cout << "Received: " << std::string(udp_recv_buffer.data(), bytes_transferred) << "\n";
-	} else {
-		std::cerr << "Receive error: " << error.message() << "\n";
+        if (bytes > 0) {
+            // TODO
+        } else if (bytes == 0) {
+            // Connection closed
+            connected = false;
+            break;
+        } else { // bytes == -1
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // Non-blocking retry
+                usleep(10000); // 10ms delay (adjust as needed)
+                continue;
+            } else {
+                // Handle other errors
+                connected = false;
+                break;
+            }
+        }
 	}
-	receive_datagram();
+	tcp_can_send = false;
 }
 
 bool TrafficClient::can_send() {
