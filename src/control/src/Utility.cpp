@@ -126,76 +126,90 @@ std::vector<std::vector<geometry_msgs::Point>> cluster_points(
     return clusters;
 }
 
+// void Utility::fetch_run_params() {
+//     if (!Tunable::useGps) {
+//         debug("GPS not found, skipping", 1);
+//         return;
+//     }
+
+//     constexpr size_t TARGET_SAMPLES = 25;
+//     constexpr double MAX_ACCEPTABLE_STD = 0.25;
+//     constexpr double CLUSTER_RADIUS = 0.3;
+//     constexpr size_t MIN_CLUSTER_SIZE = 6;
+
+//     std::vector<geometry_msgs::Point> samples;
+//     samples.reserve(TARGET_SAMPLES);
+
+//     // Simple collection callback
+//     auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
+//         if (samples.size() < TARGET_SAMPLES) {
+//             samples.push_back(msg->pose.pose.position);
+//         }
+//     };
+
+//     ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
+//     ros::Time start_time = ros::Time::now();
+//     ros::Rate rate(100);
+//     std::cout << "Collecting GPS data..." << std::endl;
+
+//     // Collection loop
+//     while (ros::ok() && samples.size() < TARGET_SAMPLES && (ros::Time::now() - start_time).toSec() < 60.0) {
+//         ros::spinOnce();
+//         rate.sleep();
+//     }
+//     sub.shutdown();
+
+//     // Statistical filtering
+//     auto [mean_x, mean_y] = calculate_mean(samples);
+//     auto [std_x, std_y] = calculate_std_dev(samples, mean_x, mean_y);
+    
+//     // First pass outlier removal
+//     auto filtered = filter_outliers(samples, mean_x, mean_y, std_x, std_y, 2.0);
+    
+//     // Density-based clustering
+//     auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
+//     if (clusters.empty()) {
+//         debug("No valid clusters found", 1);
+//         return;
+//     }
+
+//     // Find largest cluster
+//     auto& largest_cluster = *std::max_element(clusters.begin(), clusters.end(),
+//         [](const auto& a, const auto& b) { return a.size() < b.size(); });
+
+//     if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
+//         debug("Insufficient cluster density", 1);
+//         return;
+//     }
+
+//     // Calculate final position
+//     auto [final_x, final_y] = calculate_mean(largest_cluster);
+//     auto [final_std_x, final_std_y] = calculate_std_dev(largest_cluster, final_x, final_y);
+
+//     if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
+//         debug("Excessive variance in final position", 1);
+//         return;
+//     }
+
+//     this->x0 = final_x;
+//     this->y0 = final_y;
+//     this->yaw0 = Sensing::yaw;
+
+//     debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0) + " | STD X: " + std::to_string(final_std_x) + ", STD Y: " + std::to_string(final_std_y), 1);
+// }
+
 void Utility::fetch_run_params() {
     if (!Tunable::useGps) {
         debug("GPS not found, skipping", 1);
         return;
     }
 
-    constexpr size_t TARGET_SAMPLES = 25;
-    constexpr double MAX_ACCEPTABLE_STD = 0.25;
-    constexpr double CLUSTER_RADIUS = 0.3;
-    constexpr size_t MIN_CLUSTER_SIZE = 6;
-
-    std::vector<geometry_msgs::Point> samples;
-    samples.reserve(TARGET_SAMPLES);
-
-    // Simple collection callback
-    auto gps_cb = [&](const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) {
-        if (samples.size() < TARGET_SAMPLES) {
-            samples.push_back(msg->pose.pose.position);
-        }
-    };
-
-    ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("/gps", 100, gps_cb);
-    ros::Time start_time = ros::Time::now();
-    ros::Rate rate(100);
-    std::cout << "Collecting GPS data..." << std::endl;
-
-    // Collection loop
-    while (ros::ok() && samples.size() < TARGET_SAMPLES && (ros::Time::now() - start_time).toSec() < 60.0) {
-        ros::spinOnce();
-        rate.sleep();
-    }
-    sub.shutdown();
-
-    // Statistical filtering
-    auto [mean_x, mean_y] = calculate_mean(samples);
-    auto [std_x, std_y] = calculate_std_dev(samples, mean_x, mean_y);
-    
-    // First pass outlier removal
-    auto filtered = filter_outliers(samples, mean_x, mean_y, std_x, std_y, 2.0);
-    
-    // Density-based clustering
-    auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
-    if (clusters.empty()) {
-        debug("No valid clusters found", 1);
-        return;
+    traffic_client->get_car_position(x0, y0);
+    while (std::isnan(x0) || std::isnan(y0)) {
+        traffic_client->get_car_position(x0, y0);
     }
 
-    // Find largest cluster
-    auto& largest_cluster = *std::max_element(clusters.begin(), clusters.end(),
-        [](const auto& a, const auto& b) { return a.size() < b.size(); });
-
-    if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
-        debug("Insufficient cluster density", 1);
-        return;
-    }
-
-    // Calculate final position
-    auto [final_x, final_y] = calculate_mean(largest_cluster);
-    auto [final_std_x, final_std_y] = calculate_std_dev(largest_cluster, final_x, final_y);
-
-    if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
-        debug("Excessive variance in final position", 1);
-        return;
-    }
-
-    this->x0 = final_x;
-    this->y0 = final_y;
-    this->yaw0 = Sensing::yaw;
-
-    debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0) + " | STD X: " + std::to_string(final_std_x) + ", STD Y: " + std::to_string(final_std_y), 1);
+    debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
 }
 
 void Utility::initialize() {
