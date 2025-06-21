@@ -69,6 +69,11 @@ void TrafficClient::initialize() {
 void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
+        if (enough_points) {
+            continue;
+            std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+        }
+
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
 		if (bytes > 0) {
