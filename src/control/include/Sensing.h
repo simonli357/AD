@@ -23,6 +23,11 @@ inline std::atomic<double> yaw{0.0};            // [rad]
 inline std::atomic<double> raw_yaw{0.0};        // [rad]
 inline std::atomic<double> pitch{0.0};          // [rad]
 
+inline std::atomic<int>    sys_calib  {0};     
+inline std::atomic<int>    gyro_calib {0};     
+inline std::atomic<int>    mag_calib  {0};     
+inline std::atomic<int>    accel_calib{0};     
+
 inline std::atomic<double> yaw_offset{0.0};
 
 // ---------- serial machinery ----------
@@ -52,6 +57,14 @@ inline bool fast_atof(const char* s, const char* e, double& out)
     out = (i + f / base) * (neg ? -1.0 : 1.0);
     return s == e;
 }
+inline bool fast_atoi(const char* s, const char* e, int& out)
+{
+    int v = 0;
+    while (s < e && *s >= '0' && *s <= '9')
+        v = v * 10 + (*s++ - '0');
+    out = v;
+    return s == e;
+}
 
 // Helper to wrap yaw to [‑π, π)
 inline double yaw_mod(double v) {
@@ -75,17 +88,60 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         return;
     }
 
-    if (id == '7') {            // IMU frame
-        const char* semi = static_cast<const char*>(memchr(p, ';', len));
-        if (!semi) return; // need pitch ; yaw
-        double pitch_deg, yaw_deg;
-        if (!fast_atof(p, semi, pitch_deg)) return;
-        if (!fast_atof(semi + 1, p + len, yaw_deg)) return;
+    if (id == '7') {            // IMU frame -------------------------------------------------
+        const char* cur = p;                     // start of field
+        const char* end = p + len;               // end of whole payload
+
+        /* -------- pitch -------- */
+        const char* semi = static_cast<const char*>(memchr(cur, ';', end - cur));
+        if (!semi) return;
+        double pitch_deg;
+        if (!fast_atof(cur, semi, pitch_deg)) return;
+
+        /* -------- yaw -------- */
+        cur  = semi + 1;
+        semi = static_cast<const char*>(memchr(cur, ';', end - cur));
+        if (!semi) return;
+        double yaw_deg;
+        if (!fast_atof(cur, semi, yaw_deg)) return;
+
+        /* -------- calib[0] sys -------- */
+        cur  = semi + 1;
+        semi = static_cast<const char*>(memchr(cur, ';', end - cur));
+        if (!semi) return;
+        int sys;
+        if (!fast_atoi(cur, semi, sys)) return;
+
+        /* -------- calib[1] gyro -------- */
+        cur  = semi + 1;
+        semi = static_cast<const char*>(memchr(cur, ';', end - cur));
+        if (!semi) return;
+        int gyro;
+        if (!fast_atoi(cur, semi, gyro)) return;
+
+        /* -------- calib[2] mag -------- */
+        cur  = semi + 1;
+        semi = static_cast<const char*>(memchr(cur, ';', end - cur));
+        if (!semi) return;
+        int mag;
+        if (!fast_atoi(cur, semi, mag)) return;
+
+        /* -------- calib[3] accel -------- */
+        cur  = semi + 1;                       // last field runs up to end
+        int accel;
+        if (!fast_atoi(cur, end, accel)) return;
+
+        /* -------- store results -------- */
         pitch.store(pitch_deg * M_PI / 180.0, std::memory_order_relaxed);
+
         double tmp_yaw = -yaw_deg * M_PI / 180.0;
-        yaw.store(yaw_mod(tmp_yaw + yaw_offset.load()), std::memory_order_relaxed);
+        yaw.store (yaw_mod(tmp_yaw + yaw_offset.load()), std::memory_order_relaxed);
         raw_yaw.store(tmp_yaw, std::memory_order_relaxed);
-        // std::cout << "Sensing: pitch: " << pitch_deg << " yaw: " << yaw_deg << std::endl;
+
+        sys_calib.store(sys, std::memory_order_relaxed);
+        gyro_calib.store(gyro, std::memory_order_relaxed);
+        mag_calib.store(mag, std::memory_order_relaxed);
+        accel_calib.store(accel, std::memory_order_relaxed);
     }
 }
 
