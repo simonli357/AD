@@ -13,7 +13,8 @@ real:
   # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: -0.1
-  sign_lat_offset: 0.0
+  sign_lat_offset: -0.0086
+  sign_lat_offset_slope: -0.0119
   change_lane_offset_scaler: 1.2
   min_dist_to_car: 0.30 # min distance from ego car front to other car back
   min_tailing_dist: 0.3 # max distance from ego car front to other car back

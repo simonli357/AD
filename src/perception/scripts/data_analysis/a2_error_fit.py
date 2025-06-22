@@ -31,7 +31,7 @@ def plot_with_fit(x, y, xlabel, ylabel, filename, label):
         
         # Fit a linear line
         m, b = np.polyfit(x_valid, y_valid, 1)
-        print(f"Linear Fit: y = {m:.2f}x + {b:.2f}")
+        print(f"Linear Fit: y = {m:.4f}x + {b:.4f}")
         plt.plot(x_valid, m*x_valid + b, color='blue', linestyle='dashed', label='Linear Fit')
         
         plt.xlabel(xlabel)
@@ -50,10 +50,10 @@ def plot_with_fit(x, y, xlabel, ylabel, filename, label):
 # plot_with_fit(measured_longitudinal, error_lateral, 'Measured Longitudinal', 'Error in Lateral', name + '_error_lateral.png', 'Error in Lateral')
 
 # Second scatter plot: Error in Longitudinal vs. Measured Longitudinal
-plot_with_fit(estimated_longitudinal, error_longitudinal, 'Measured Longitudinal', 'Error in Longitudinal', name + '_error_longitudinal.png', 'Error in Longitudinal')
+# plot_with_fit(estimated_longitudinal, error_longitudinal, 'Measured Longitudinal', 'Error in Longitudinal', name + '_error_longitudinal.png', 'Error in Longitudinal')
 
 # # Third scatter plot: Error in Lateral vs. Measured Lateral
-# plot_with_fit(measured_lateral, error_lateral, 'Measured Lateral', 'Error in Lateral', name + '_error_lateral_vs_lateral.png', 'Error in Lateral')
+plot_with_fit(measured_lateral, error_lateral, 'Measured Lateral', 'Error in Lateral', name + '_error_lateral_vs_lateral.png', 'Error in Lateral')
 
 # # Fourth scatter plot: Error in Longitudinal vs. Measured Lateral
 # plot_with_fit(measured_lateral, error_longitudinal, 'Measured Lateral', 'Error in Longitudinal', name + '_error_longitudinal_vs_lateral.png', 'Error in Longitudinal')
