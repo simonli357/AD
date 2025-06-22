@@ -275,25 +275,25 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         text = f"SYS CALIB: {self.sys_calib}"
         text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
-        self.render_color_threshold_text(text, text_w, text_h, self.sys_calib)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.sys_calib)
         text_y += y_offset
 
         text = f"GYRO CALIB: {self.gyro_calib}"
         text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
-        self.render_color_threshold_text(text, text_w, text_h, self.gyro_calib)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.gyro_calib)
         text_y += y_offset
 
         text = f"GYRO CALIB: {self.mag_calib}"
         text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
-        self.render_color_threshold_text(text, text_w, text_h, self.mag_calib)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.mag_calib)
         text_y += y_offset
 
         text = f"ACCEL CALIB: {self.accel_calib}"
         text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
-        self.render_color_threshold_text(text, text_w, text_h, self.accel_calib)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.accel_calib)
         text_y += y_offset
 
-    def render_color_threshold_text(self, text, text_w, text_h, value):
+    def render_color_threshold_text(self, text, text_x, text_y, text_w, text_h, value):
         white = (1.0, 1.0, 1.0) # WHITE
         red = (1.0, 0.0, 0.0) # RED
         yellow = (1.0, 1.0, 0.0) # YELLOW
@@ -301,11 +301,11 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
 
         if value < 1:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, white, self.hud_proj_mat)
-        if value < 2:
+        elif value < 2:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, red, self.hud_proj_mat)
-        if value < 3:
+        elif value < 3:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, yellow, self.hud_proj_mat)
-        if value < 4:
+        elif value < 4:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, green, self.hud_proj_mat)
 
     def get_gl_coords(self, x_real, y_real, z_real):
