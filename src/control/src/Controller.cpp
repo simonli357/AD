@@ -1275,7 +1275,7 @@ void StateMachine::run() {
                 find_highway_for_relocalization();
                 check_light();
                 int park_index = park_sign_detected();
-                if(park_index>=0 && park_count < 1) {
+                if(park_index>=0 && park_count <3) {
                     auto x1 = PARKING_SIGN_POSES1[0][0];
                     auto y1 = PARKING_SIGN_POSES1[0][1];
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
