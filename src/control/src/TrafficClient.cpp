@@ -70,8 +70,8 @@ void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
         if (enough_points) {
-            continue;
             std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+            continue;
         }
 
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
@@ -134,21 +134,20 @@ void TrafficClient::handle_location_data(double x, double y, double z) {
 }
 
 void TrafficClient::clear_positions() {
-    car_positions = std::array<std::pair<double, double>, 32>{};
+    car_positions = std::array<std::pair<double, double>, 25>{};
     array_ptr = 0;
 }
 
-void TrafficClient::get_car_position(double &out_x, double &out_y) {
-	constexpr size_t TARGET_SAMPLES = 32;
+std::pair<double, double> TrafficClient::get_car_position() {
+	constexpr size_t TARGET_SAMPLES = 25;
 	constexpr double MAX_ACCEPTABLE_STD = 0.25;
 	constexpr double CLUSTER_RADIUS = 0.3;
 	constexpr size_t MIN_CLUSTER_SIZE = 6;
 
     if (!enough_points) {
-        out_x = std::nan("");
-        out_y = std::nan("");
-        return;
-    } 
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        return {};
+    }
 
 	// Statistical filtering
 	auto [mean_x, mean_y] = calculate_mean(car_positions);
@@ -161,9 +160,7 @@ void TrafficClient::get_car_position(double &out_x, double &out_y) {
 	auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
 	if (clusters.empty()) {
 		std::cout << "No valid clusters found" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
 
 	// Find largest cluster
@@ -171,9 +168,7 @@ void TrafficClient::get_car_position(double &out_x, double &out_y) {
 
 	if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
 		std::cout << "Insufficient cluster density" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
 
 	// Calculate final position
@@ -182,16 +177,13 @@ void TrafficClient::get_car_position(double &out_x, double &out_y) {
 
 	if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
 		std::cout << "Excessive variance in final position" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
     
-    out_x = final_x;
-    out_y = final_y;
+    return {final_x, final_y};
 }
 
-std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 32> &data) {
+std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 25> &data) {
 	double sum_x = 0.0, sum_y = 0.0;
 	for (const auto &p : data) {
 		sum_x += p.first;
@@ -200,7 +192,7 @@ std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<dou
 	return {sum_x / data.size(), sum_y / data.size()};
 }
 
-std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y) {
+std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y) {
 	double var_x = 0.0, var_y = 0.0;
 	for (const auto &p : data) {
 		var_x += std::pow(p.first - mean_x, 2);
@@ -227,7 +219,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(std::vector<std::pair
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
+std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
 	std::vector<std::pair<double, double>> result;
 	for (const auto &p : data) {
 		if (std::abs(p.first - mean_x) < sigma * std_x && std::abs(p.second - mean_y) < sigma * std_y) {
