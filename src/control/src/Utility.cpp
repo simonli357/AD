@@ -132,7 +132,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (!Tunable::real) {
+    if (Tunable::real) {
         auto p = traffic_client->get_car_position();
         while (p.first == 0.0 || p.second == 0.0) {
             p = traffic_client->get_car_position();
