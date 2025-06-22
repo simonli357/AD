@@ -515,7 +515,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                             double path_wpt_x_body = (path_wpt_x - ego_x) * std::cos(ego_yaw) + (path_wpt_y - ego_y) * std::sin(ego_yaw);
                             double path_wpt_y_body = -(path_wpt_x - ego_x) * std::sin(ego_yaw) + (path_wpt_y - ego_y) * std::cos(ego_yaw);
                             double errory = path_wpt_y_body - lane_wpt_y;
-                            std::cout << "path_wpt_y_body: " << path_wpt_y_body << ", lane_wpt_y: " << lane_wpt_y << ", errory: " << errory << std::endl;
+                            // std::cout << "path_wpt_y_body: " << path_wpt_y_body << ", lane_wpt_y: " << lane_wpt_y << ", errory: " << errory << std::endl;
                             bool proceed = true;
                             if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
                                 errory += 0.05;
