@@ -133,11 +133,10 @@ void Utility::fetch_run_params() {
     }
 
     if (Tunable::real) {
-        traffic_client->get_car_position(x0, y0);
-        while (std::isnan(x0) || std::isnan(y0)) {
-            traffic_client->get_car_position(x0, y0);
+        auto p = traffic_client->get_car_position(x0, y0);
+        while (std::isnan(p.first) || std::isnan(p.second)) {
+            p = traffic_client->get_car_position(x0, y0);
         }
-
         debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
         return;
     }

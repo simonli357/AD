@@ -29,7 +29,7 @@ class TrafficClient {
 	// Methods
 	void initialize();
 	void clear_positions();
-	void get_car_position(double &out_x, double &out_y);
+	std::pair<double, double> get_car_position(double &out_x, double &out_y);
 	// Encode
 	void send_car_data();
 

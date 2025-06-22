@@ -138,7 +138,7 @@ void TrafficClient::clear_positions() {
     array_ptr = 0;
 }
 
-void TrafficClient::get_car_position(double &out_x, double &out_y) {
+std::pair<double, doubel> TrafficClient::get_car_position(double &out_x, double &out_y) {
 	constexpr size_t TARGET_SAMPLES = 32;
 	constexpr double MAX_ACCEPTABLE_STD = 0.25;
 	constexpr double CLUSTER_RADIUS = 0.3;
