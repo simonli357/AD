@@ -175,7 +175,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 0.0, 0.0), cell_size=0.3048)
         self.draw_measurement_points()
         self.update_mouse_pos()
-        self.draw_imu_intrinsics()
+        self.draw_imu_calib()
 
         self.update()
 
@@ -268,7 +268,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
 
-    def draw_imu_intrinsics(self):
+    def draw_imu_calib(self):
         text_x = 0.02 * self.width()
         text_y = 0.04 * self.height()
         y_offset = 30
@@ -305,7 +305,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, red, self.hud_proj_mat)
         elif value < 3:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, yellow, self.hud_proj_mat)
-        elif value < 4:
+        else:
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, green, self.hud_proj_mat)
 
     def get_gl_coords(self, x_real, y_real, z_real):

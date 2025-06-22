@@ -6,10 +6,10 @@ class ImuCalibMsg:
     def __init__(self):
         self.bytes_length = 4
         self.num_elements = 4
-        self.sys_calib = None
-        self.gyro_calib = None
-        self.mag_calib = None
-        self.accel_calib = None
+        self.sys_calib = 0.0
+        self.gyro_calib = 0.0
+        self.mag_calib = 0.0
+        self.accel_calib = 0.0
 
     def decode(self, bytes):
         splits = decoder.split(bytes)
