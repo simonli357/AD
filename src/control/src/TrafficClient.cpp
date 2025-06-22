@@ -138,18 +138,16 @@ void TrafficClient::clear_positions() {
     array_ptr = 0;
 }
 
-std::pair<double, doubel> TrafficClient::get_car_position(double &out_x, double &out_y) {
+std::pair<double, double> TrafficClient::get_car_position() {
 	constexpr size_t TARGET_SAMPLES = 32;
 	constexpr double MAX_ACCEPTABLE_STD = 0.25;
 	constexpr double CLUSTER_RADIUS = 0.3;
 	constexpr size_t MIN_CLUSTER_SIZE = 6;
 
     if (!enough_points) {
-        out_x = std::nan("");
-        out_y = std::nan("");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        return;
-    } 
+        return {};
+    }
 
 	// Statistical filtering
 	auto [mean_x, mean_y] = calculate_mean(car_positions);
@@ -162,9 +160,7 @@ std::pair<double, doubel> TrafficClient::get_car_position(double &out_x, double 
 	auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
 	if (clusters.empty()) {
 		std::cout << "No valid clusters found" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
 
 	// Find largest cluster
@@ -172,9 +168,7 @@ std::pair<double, doubel> TrafficClient::get_car_position(double &out_x, double 
 
 	if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
 		std::cout << "Insufficient cluster density" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
 
 	// Calculate final position
@@ -183,13 +177,10 @@ std::pair<double, doubel> TrafficClient::get_car_position(double &out_x, double 
 
 	if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
 		std::cout << "Excessive variance in final position" << std::endl;
-        out_x = std::nan("");
-        out_y = std::nan("");
-		return;
+		return {};
 	}
     
-    out_x = final_x;
-    out_y = final_y;
+    return {final_x, final_y};
 }
 
 std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 32> &data) {
