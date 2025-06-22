@@ -384,16 +384,18 @@ public:
         // Estimate 3D coordinates in the camera frame
         // [forward = Z_c, right = –X_c]
         double X_c = x_norm * object_distance;
-        // double Y_c = y_norm * object_distance;
+        double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
 
         auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
-        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5];
-        double cam_roll = tf[3];
-        double cam_pitch = tf[4];
+        double tx    = tf[0], ty = tf[1], cam_yaw = Tunable::rs_yaw, cam_roll = Tunable::rs_roll, cam_pitch = Tunable::rs_pitch;
+
+        double cos_r = std::cos(cam_roll);
+        double sin_r = std::sin(cam_roll);
+        double X_c_roll =  cos_r * X_c + sin_r * Y_c;
 
         // flat ground‐plane ray in camera coords (forward, right)
-        Eigen::Vector2d P_cam_flat(Z_c, -X_c);
+        Eigen::Vector2d P_cam_flat(Z_c, -X_c_roll);
 
         // rotate by the camera’s yaw mount offset, then translate
         Eigen::Rotation2Dd R_cam_yaw(cam_yaw);
@@ -412,18 +414,18 @@ public:
                 sin(yaw),  cos(yaw);
         // std::cout << "object_distance4: " << P_v2d[0] << std::endl;
 
-        // static std::vector<std::vector<double>> history;
-        // double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-        //     return sum + vec[0];
-        // }) / history.size();
-        // double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-        //     return sum + vec[1];
-        // }) / history.size();
-        // history.push_back({P_v2d[0], P_v2d[1]});
-        // if (history.size() > 3) {
-        //     history.erase(history.begin());
-        //     printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
-        // }
+        static std::vector<std::vector<double>> history;
+        double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+            return sum + vec[0];
+        }) / history.size();
+        double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+            return sum + vec[1];
+        }) / history.size();
+        history.push_back({P_v2d[0], P_v2d[1]});
+        if (history.size() > 3) {
+            history.erase(history.begin());
+            printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
+        }
 
         return Eigen::Vector2d(x, y) + R_vw * P_v2d;
     }

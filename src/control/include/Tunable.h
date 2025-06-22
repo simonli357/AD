@@ -37,6 +37,7 @@ namespace Tunable {
     inline double hw_speed_ratio = 1.0;
     inline double sign_localization_threshold = 0.5;
     inline double lane_localization_orientation_threshold = 10;
+    inline double lane_localization_threshold = 0.1;
     inline double pixel_center_offset = -30.0;
     inline double constant_distance_to_intersection_at_detection = 0.371;
     inline double intersection_localization_threshold = 0.5;
@@ -76,6 +77,9 @@ namespace Tunable {
     inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
     inline bool use_kf; // use Kalman filter for dynamic object tracking, else use EMA
     inline double odom_rate;
+    inline double rs_roll = 0.0;
+    inline double rs_pitch = 0.0;
+    inline double rs_yaw = 0.0;
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -137,6 +141,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/hw_speed_ratio", hw_speed_ratio);
       CHECK_PARAM(mode + "/sign_localization_threshold", sign_localization_threshold);
       CHECK_PARAM(mode + "/lane_localization_orientation_threshold", lane_localization_orientation_threshold);
+      CHECK_PARAM(mode + "/lane_localization_threshold", lane_localization_threshold);
       CHECK_PARAM(mode + "/pixel_center_offset", pixel_center_offset);
       CHECK_PARAM(mode + "/constant_distance_to_intersection_at_detection", constant_distance_to_intersection_at_detection);
       CHECK_PARAM(mode + "/intersection_localization_threshold", intersection_localization_threshold);
@@ -172,6 +177,9 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
+      CHECK_PARAM(mode + "/rs_roll", rs_roll);
+      CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
+      CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
         
       initialized = true;
       return true;
