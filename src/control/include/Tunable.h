@@ -77,6 +77,9 @@ namespace Tunable {
     inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
     inline bool use_kf; // use Kalman filter for dynamic object tracking, else use EMA
     inline double odom_rate;
+    inline double rs_roll = 0.0;
+    inline double rs_pitch = 0.0;
+    inline double rs_yaw = 0.0;
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -174,6 +177,9 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
+      CHECK_PARAM(mode + "/rs_roll", rs_roll);
+      CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
+      CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
         
       initialized = true;
       return true;

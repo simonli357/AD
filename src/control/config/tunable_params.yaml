@@ -42,3 +42,6 @@ real:
   pedestrian_threshold: 0.35
   has_light: false
   use_kf: true
+  rs_roll: -0.009774
+  rs_yaw: 0.011
+  rs_pitch: 0.03229
