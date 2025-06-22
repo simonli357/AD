@@ -132,7 +132,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (Tunable::real) {
+    if (!Tunable::real) {
         traffic_client->get_car_position(x0, y0);
         while (std::isnan(x0) || std::isnan(y0)) {
             traffic_client->get_car_position(x0, y0);
@@ -353,7 +353,6 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
     // Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
-    tcp_client->send_imu_calib(Sensing::sys_calib, Sensing::gyro_calib, Sensing::mag_calib, Sensing::accel_calib);
     // debug("calib status: " + std::to_string(Sensing::sys_calib) + ", " + std::to_string(Sensing::gyro_calib) + ", " + std::to_string(Sensing::mag_calib) + ", " + std::to_string(Sensing::accel_calib), 2);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
@@ -488,26 +487,26 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         if (Tunable::lane_relocalize2 && (ros::Time::now() - next_pose_reset_time).toSec() > 0) {
             // if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
             if (true) {
-                double lane_wpt_y = msg.lane_waypoints[1];
-                bool proceed = true;
-                bool right_only = false;
-                if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
-                    if (msg.good_right) {
-                        lane_wpt_y = msg.right_waypoints[0] + 0.37/2.0; // 0.37 is the width of the lane
-                        right_only = true;
-                        // std::cout << "lane_wpt_y: " << lane_wpt_y << ", msg.right_waypoints[0]: " << msg.right_waypoints[0] << ", msg.left_waypoints[0]: " << msg.left_waypoints[0] << std::endl;
-                    } else {
-                        proceed = false;
-                        // std::cout << "process_lane_data(): HIGHWAYLEFT but no good_right, skipping lane relocation" << std::endl;
-                    }
-                    // proceed = false;
-                }
-                if(proceed && (msg.good_left||msg.good_right) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index) {
+                if((msg.good_left||msg.good_right) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index) {
                     if(msg.lane_waypoints.size() > lane_waypoints.size()/3) {
+                        double lane_wpt_y = msg.lane_waypoints[1];
+                        bool proceed = true;
+                        bool right_only = false;
+                        if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+                            if (msg.good_right && !msg.right_waypoints.empty()) {
+                                lane_wpt_y = msg.right_waypoints[0] + 0.37/2.0; // 0.37 is the width of the lane
+                                right_only = true;
+                                // std::cout << "lane_wpt_y: " << lane_wpt_y << ", msg.right_waypoints[0]: " << msg.right_waypoints[0] << ", msg.left_waypoints[0]: " << msg.left_waypoints[0] << std::endl;
+                            } else {
+                                proceed = false;
+                                // std::cout << "process_lane_data(): HIGHWAYLEFT but no good_right, skipping lane relocation" << std::endl;
+                            }
+                            // proceed = false;
+                        }
                         double near_m = msg.near_m;
                         double lane_wpt_x = msg.lane_waypoints[0] + near_m;
                         int path_idx = static_cast<int>(PathManager::closest_waypoint_index + PathManager::density * near_m);
-                        if (path_idx > 0 && path_idx < PathManager::state_refs.rows()) {
+                        if (proceed && path_idx > 0 && path_idx < PathManager::state_refs.rows()) {
                             double path_wpt_x = PathManager::state_refs(path_idx, 0); // in world frame
                             double path_wpt_y = PathManager::state_refs(path_idx, 1); // in world frame
                             double ego_x, ego_y, ego_yaw;

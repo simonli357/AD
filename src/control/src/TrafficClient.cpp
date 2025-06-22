@@ -20,7 +20,7 @@ using json = nlohmann::json;
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-    this->car_id = Tunable::gps_id;
+	this->car_id = Tunable::gps_id;
 }
 
 TrafficClient::~TrafficClient() {
@@ -40,6 +40,10 @@ TrafficClient::~TrafficClient() {
 
 void TrafficClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (tcp_socket == -1) {
+		std::cerr << "Failed to create TCP socket: " << strerror(errno) << std::endl;
+		exit(EXIT_FAILURE);
+	}
 	tcp_address.sin_family = AF_INET;
 	tcp_address.sin_port = htons(tcp_port);
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
@@ -70,8 +74,8 @@ void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
         if (enough_points) {
-            continue;
             std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+            continue;
         }
 
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
