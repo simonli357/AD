@@ -9,6 +9,9 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
+#include <shared_mutex>
+#include <utility>
+#include <array> 
 
 using namespace std::chrono;
 using namespace VehicleConstants;
@@ -17,6 +20,7 @@ using std_msgs::Float32MultiArray;
 class TrafficClient {
   public:
 	// Constructors
+	mutable std::shared_mutex pos_mtx;
 	TrafficClient(const std::string ip_address);
 	TrafficClient(TrafficClient &&) = delete;
 	TrafficClient(const TrafficClient &) = delete;
@@ -29,7 +33,7 @@ class TrafficClient {
 	// Methods
 	void initialize();
 	void clear_positions();
-	void get_car_position(double &out_x, double &out_y);
+	bool get_car_position(double &out_x, double &out_y);
 	// Encode
 	void send_car_data();
 
@@ -56,10 +60,10 @@ class TrafficClient {
 	void subscribeToLocationData();
 	bool can_send();
 	void handle_location_data(double x, double y, double z);
-	std::pair<double, double> calculate_mean(std::array<std::pair<double, double>, 32> &data);
-	std::pair<double, double> calculate_std_dev(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y);
-	std::pair<double, double> calculate_mean(std::vector<std::pair<double, double>> &data);
-	std::pair<double, double> calculate_std_dev(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y);
+	std::pair<double, double> calculate_mean(const std::array<std::pair<double, double>, 32> &data);
+	std::pair<double, double> calculate_std_dev(const std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y);
+	std::pair<double, double> calculate_mean(const std::vector<std::pair<double, double>> &data);
+	std::pair<double, double> calculate_std_dev(const std::vector<std::pair<double, double>> &data, double mean_x, double mean_y);
 	std::vector<std::pair<double, double>> filter_outliers(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma);
 	std::vector<std::vector<std::pair<double, double>>> cluster_points(const std::vector<std::pair<double, double>> &points, double radius);
 	// Encode
