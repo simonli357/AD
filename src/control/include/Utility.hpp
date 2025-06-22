@@ -397,7 +397,7 @@ public:
 
         // rotate by the camera’s yaw mount offset, then translate
         Eigen::Rotation2Dd R_cam_yaw(cam_yaw);
-        Eigen::Vector2d P_v2d = p-[]; * P_cam_flat + Eigen::Vector2d(tx, ty);
+        Eigen::Vector2d P_v2d = R_cam_yaw * P_cam_flat + Eigen::Vector2d(tx, ty);
 
         // latency & motion compensation
         double latency = (ros::Time::now() - object_detection_time).toSec();
