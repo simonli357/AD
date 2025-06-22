@@ -230,7 +230,7 @@ class UdpConnection:
         while self.alive:
             try:
                 raw = self._raw_imu_calib_buf.get()
-                msg = ImuCalibMsg().deserialize(raw)
+                msg = ImuCalibMsg().decode(raw)
                 self._try_put(self.imu_calib_buf, msg)
             except Exception as e:
                 raise e
