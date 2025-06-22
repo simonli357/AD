@@ -1,7 +1,7 @@
 #include "msg/ImuMsg.hpp"
 #include <cstdint>
 
-void ImuMsg::encode(double sys_calib, double gyro_calib, double mag_calib, double accel_calib) {
+void ImuMsg::encode(float sys_calib, float gyro_calib, float mag_calib, float accel_calib) {
     this->sys_calib = sys_calib;
     this->gyro_calib = gyro_calib;
     this->mag_calib = mag_calib;
