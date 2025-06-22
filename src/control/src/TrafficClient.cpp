@@ -20,6 +20,7 @@ using json = nlohmann::json;
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
+    this->car_id = Tunable::gps_id;
 }
 
 TrafficClient::~TrafficClient() {
