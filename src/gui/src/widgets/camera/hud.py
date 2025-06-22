@@ -54,10 +54,21 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.realsense_tf_sim = None
         self.realsense_tf_real = None
 
+        self.sys_calib = 0
+        self.gyro_calib = 0
+        self.mag_calib = 0
+        self.accel_calib = 0
+
         threading.Thread(target=self.fetch_camera_params, daemon=True).start()
 
     def set_depth_arr(self, arr):
         self.depth_arr = arr
+
+    def set_imu_calib(self, msg):
+        self.sys_calib = msg.sys_calib
+        self.gyro_calib = msg.gyro_calib
+        self.mag_calib = msg.mag_calib
+        self.accel_calib = msg.accel_calib
 
     def fetch_camera_params(self):
         while self.cam_real_params is None or self.cam_sim_params is None or self.realsense_tf_real is None or self.realsense_tf_sim is None:
@@ -164,6 +175,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.shader_renderer.grid_model.draw(self.proj_mat, self.view_mat, color=(1.0, 0.0, 0.0), cell_size=0.3048)
         self.draw_measurement_points()
         self.update_mouse_pos()
+        self.draw_imu_intrinsics()
 
         self.update()
 
@@ -255,6 +267,46 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
             text = "CROSSWALK DETECTED"
             text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
             self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, (0.0, 1.0, 0.0), self.hud_proj_mat)
+
+    def draw_imu_intrinsics(self):
+        text_x = 0.02 * self.width()
+        text_y = 0.04 * self.height()
+        y_offset = 30
+
+        text = f"SYS CALIB: {self.sys_calib}"
+        text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.sys_calib)
+        text_y += y_offset
+
+        text = f"GYRO CALIB: {self.gyro_calib}"
+        text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.gyro_calib)
+        text_y += y_offset
+
+        text = f"GYRO CALIB: {self.mag_calib}"
+        text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.mag_calib)
+        text_y += y_offset
+
+        text = f"ACCEL CALIB: {self.accel_calib}"
+        text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
+        self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.accel_calib)
+        text_y += y_offset
+
+    def render_color_threshold_text(self, text, text_x, text_y, text_w, text_h, value):
+        white = (1.0, 1.0, 1.0) # WHITE
+        red = (1.0, 0.0, 0.0) # RED
+        yellow = (1.0, 1.0, 0.0) # YELLOW
+        green = (0.0, 1.0, 0.0) # GREEN
+
+        if value < 1:
+            self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, white, self.hud_proj_mat)
+        elif value < 2:
+            self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, red, self.hud_proj_mat)
+        elif value < 3:
+            self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, yellow, self.hud_proj_mat)
+        elif value < 4:
+            self.shader_renderer.text_renderer.render_text(text, text_x + text_w / 2, text_y + text_h / 2, 1.0, green, self.hud_proj_mat)
 
     def get_gl_coords(self, x_real, y_real, z_real):
         if hasattr(self, 'extrinsic'):

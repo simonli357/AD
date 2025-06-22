@@ -43,6 +43,7 @@ class CommunicationHandler(QObject):
     steer_signal = pyqtSignal(object)
     sw_load_signal = pyqtSignal(object)
     model_states_signal = pyqtSignal(object)
+    imu_calib_signal = pyqtSignal(object)
 
 
 class MapContainer(QtWidgets.QStackedWidget):
@@ -116,6 +117,7 @@ class MainWindow(QMainWindow):
         self.comm.steer_signal.connect(self.car_widget.set_steer)
         self.comm.sw_load_signal.connect(self.car_widget.update_sw_load)
         self.comm.model_states_signal.connect(self.car_widget.update_ground_truth)
+        self.comm.imu_calib_signal.connect(self.cam_widget.hud.set_imu_calib)
 
         self.comm.start_signal.connect(self.cam_buttons_widget.on_start)
         self.comm.message_signal.connect(self.terminal_widget.add_message)
@@ -250,6 +252,7 @@ class MainWindow(QMainWindow):
         lane2 = self.server.udp_connection.parse_lane2()
         steer = self.server.udp_connection.parse_steer()
         load = self.server.udp_connection.parse_sw_load()
+        imu = self.server.udp_connection.parse_imu_calib_msg()
 
         if rgb_image is not None:
             self.comm.camera_frame_signal.emit(rgb_image)
@@ -271,6 +274,8 @@ class MainWindow(QMainWindow):
             self.comm.sw_load_signal.emit(load)
         if model_states is not None:
             self.comm.model_states_signal.emit(model_states)
+        if imu is not None:
+            self.comm.imu_calib_signal.emit(imu)
 
     def cam_record_callback(self) -> None:
         if self.cam_buttons_widget.recording:
