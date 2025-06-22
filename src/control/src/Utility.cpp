@@ -487,7 +487,11 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         if (Tunable::lane_relocalize2 && (ros::Time::now() - next_pose_reset_time).toSec() > 0) {
             // if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
             if (true) {
-                if((msg.good_left||msg.good_right) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index) {
+                bool proceed = true;
+                if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+                    if (!msg.good_right) proceed = false;
+                }
+                if(proceed && (msg.good_left||msg.good_right) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index) {
                     if(msg.lane_waypoints.size() > lane_waypoints.size()/3) {
                         double near_m = msg.near_m;
                         double lane_wpt_x = msg.lane_waypoints[0] + near_m;
