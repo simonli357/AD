@@ -9,6 +9,7 @@ from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Pose
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
+from python_server.msg.imu_calib_msg import ImuCalibMsg
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QByteArray
 from collections import OrderedDict
