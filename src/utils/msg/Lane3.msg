@@ -4,6 +4,8 @@ float32 lane_center_offset
 float32 stopline_dist
 float32 stopline_angle
 float32[] lane_waypoints
+float32[] left_waypoints
+float32[] right_waypoints
 bool good_left
 bool good_right
 float32 near_m

@@ -24,7 +24,7 @@ class TrafficClient {
 	TrafficClient &operator=(const TrafficClient &) = delete;
 	~TrafficClient();
 	// Fields
-	bool tcp_can_send = false;
+	std::atomic<bool> tcp_can_send{false};
 	bool enough_points = false;
 	// Methods
 	void initialize();
@@ -43,8 +43,8 @@ class TrafficClient {
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
-	bool alive = true;
-	bool connected = false;
+	std::atomic<bool> alive{true};
+	std::atomic<bool> connected{false};
 	sockaddr_in tcp_address;
 	int tcp_socket;
 	std::thread main;
