@@ -406,7 +406,7 @@ public:
         double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
         P_v2d.x()    -= latency * speed;
         P_v2d.x()    += sign_lon_offset_slope * P_v2d.x() + sign_lon_offset;
-        P_v2d.y()    += sign_lat_offset;
+        P_v2d.y()    += sign_lat_offset + sign_lat_offset_slope * P_v2d.y();
 
         // rotate into world frame and translate by vehicle pose
         Eigen::Matrix2d R_vw;

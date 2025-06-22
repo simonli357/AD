@@ -13,14 +13,11 @@ Output:
 import math
 from typing import Tuple
 
-def estimate_roll(x_top: float, y_top: float,
-                  x_bot: float, y_bot: float) -> Tuple[float, float]:
-    # slope in pixel space  (Δx / Δy)
-    dx = x_top - x_bot
-    dy = y_top - y_bot
-    theta_rad = math.atan2(dx, dy)      # +ve = clockwise tilt
-    theta_deg = math.degrees(theta_rad)
-    return theta_rad, theta_deg
+def estimate_roll(x_top, y_top, x_bot, y_bot):
+    dx = x_bot - x_top        #  bottom – top
+    dy = y_bot - y_top
+    theta_rad = math.atan2(dx, -dy)   # rolls: +clockwise, −counter-clockwise
+    return theta_rad, math.degrees(theta_rad)
 
 
 def main() -> None:
@@ -30,10 +27,15 @@ def main() -> None:
     # x_bot  = 277
     # y_bot  = 256
     
-    x_top  = 339
-    y_top  = 31
-    x_bot  = 345
-    y_bot  = 249
+    # x_top  = 304
+    # y_top  = 61
+    # x_bot  = 305
+    # y_bot  = 264
+    
+    x_top  = 304
+    y_top  = 58
+    x_bot  = 302
+    y_bot  = 263
     
     theta_rad, theta_deg = estimate_roll(x_top, y_top, x_bot, y_bot)
     print(f"\nEstimated roll tilt")

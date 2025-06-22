@@ -477,13 +477,13 @@ public:
                             ", no more intersections", 2);
             }
             if(sign_flag == OBJECT::STOPSIGN) {
-                utils.debug("intersection reached: CASE STOP SIGN, stopping for " + helper::d2str(stop_duration) + " seconds...", 2);
+                utils.debug("intersection reached: CASE STOP SIGN, stopping for 3 seconds...", 2);
                 mpc.reset_solver();
                 stop_for(stop_duration);
             } else if(sign_flag == OBJECT::NONE) {
-                utils.debug("intersection reached: WARNING: CASE NO SIGN, stopping for safety...", 2);
-                mpc.reset_solver();
-                stop_for(stop_duration * 0.75);
+                utils.debug("intersection reached: WARNING: CASE NO SIGN, not stopping for safety...", 2);
+                // mpc.reset_solver();
+                // stop_for(stop_duration * 0.75);
             } else {
                 utils.debug("intersection reached: CASE " + OBJECT_NAMES[sign_flag] + ", proceeding...", 2);
             }

@@ -3,7 +3,7 @@ real:
   intersection_relocalize: false
   lane_relocalize2: true
   sign_relocalize: true
-  lane_yaw_reset: false 
+  lane_yaw_reset: true 
   lane_yaw_reset_cooldown: 1.0
   highway_cooldown: 3.0
   sign_cooldown: 0.5
@@ -13,7 +13,8 @@ real:
   # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: -0.1
-  sign_lat_offset: 0.0
+  sign_lat_offset: -0.0086
+  sign_lat_offset_slope: -0.0119
   change_lane_offset_scaler: 1.2
   min_dist_to_car: 0.30 # min distance from ego car front to other car back
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
@@ -22,7 +23,7 @@ real:
   min_sign_dist: 0.3
   cumulative_confidence_thresholds: [7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 15, 5.37, 5.37, 5.37]
   recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
-  stop_duration: 1.5
+  stop_duration: 1.0
   sign_localization_threshold: 0.735 #0.357
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.15
