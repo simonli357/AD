@@ -5,7 +5,7 @@ import numpy as np
 
 # Load the CSV file
 current_dir = os.path.dirname(os.path.abspath(__file__))
-name = "test2"
+name = "0622"
 input_path = os.path.join(current_dir, name + '.csv')
 df = pd.read_csv(input_path)
 
