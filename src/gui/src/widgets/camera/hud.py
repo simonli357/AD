@@ -283,7 +283,7 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
         self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.gyro_calib)
         text_y += y_offset
 
-        text = f"GYRO CALIB: {self.mag_calib}"
+        text = f"MAG CALIB: {self.mag_calib}"
         text_w, text_h = self.shader_renderer.text_renderer.compute_text_size(text, 1.0)
         self.render_color_threshold_text(text, text_x, text_y, text_w, text_h, self.mag_calib)
         text_y += y_offset
