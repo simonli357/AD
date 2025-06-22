@@ -497,7 +497,7 @@ void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
 	});
 }
 
-void TcpClient::send_imu_intrinsics(double sys, double gyro_calib, double mag_calib, double accel_calib) {
+void TcpClient::send_imu_calib(double sys, double gyro_calib, double mag_calib, double accel_calib) {
 	tasks->run([this, sys, gyro_calib, mag_calib, accel_calib] {
 		auto &udp_buffer = udp_buffers.local();
 		imu_msg->encode(sys, gyro_calib, mag_calib, accel_calib);
