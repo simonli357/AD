@@ -389,6 +389,8 @@ public:
 
         auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
         double tx    = tf[0], ty = tf[1], cam_yaw = tf[5];
+        double cam_roll = tf[3];
+        double cam_pitch = tf[4];
 
         // flat ground‐plane ray in camera coords (forward, right)
         Eigen::Vector2d P_cam_flat(Z_c, -X_c);

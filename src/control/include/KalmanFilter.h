@@ -11,26 +11,22 @@ public:
     using Matrix42d = Eigen::Matrix<double, 4, 2>;
     using Matrix24d = Eigen::Matrix<double, 2, 4>;
 
-    KalmanFilter(double x_init, double y_init, double yaw_init = 0.0, double v_init = 0.0) {
+    KalmanFilter(double x_init, double y_init,
+             double yaw_init = 0.0, double v_init = 0.0)
+    {
         x_ << x_init, y_init, yaw_init, v_init;
-        
-        // decrease to trust initial guess more
-        P_(0, 0) = P_(1, 1) = 1.0;
-        P_(2, 2) = 0.1; // yaw uncertainty
-        P_(3, 3) = 0.5;   // speed uncertainty
 
-        // decrease to trust predictions more
-        Q_.setZero();
-        Q_(0, 0) = Q_(1, 1) = 0.05;   // small drift in position
-        Q_(2, 2) = 0.2;               // moderate uncertainty in yaw
-        Q_(3,3) = 0.1;                // small uncertainty in speed
+        P_.setZero();
+        P_.diagonal() << 0.04, 0.04, 0.05, 0.04;
 
-        // decrease to trust measurements more
-        R_(0, 0) = R_(1, 1) = 0.3;    
+        // R: 10 cm 1-σ  ⇒  variance = 0.01
+        R_.setZero();
+        R_.diagonal().setConstant(0.01);   // use 0.0049 if 7 cm is correct
 
         H_.setZero();
-        H_(0, 0) = 1;
-        H_(1, 1) = 1;
+        H_(0,0) = H_(1,1) = 1;
+
+        Q_.setZero();          // will be filled in predict()
     }
 
     void predict(double dt) {
@@ -48,8 +44,16 @@ public:
         F(1, 2) = v * dt * std::cos(yaw);   // ∂y/∂yaw
         F(1, 3) = dt * std::sin(yaw);       // ∂y/∂v
 
-        // Predict covariance
-        P_ = F * P_ * F.transpose() + Q_;
+        const double sa2 = 0.01;      // (0.1 m s⁻²)²
+        const double sw2 = 1.9e-03;   // (0.0436 rad s⁻¹)²
+        // Build Q scaled by dt
+        Q_(0,0) = 0.5*sa2*dt*dt;
+        Q_(1,1) = 0.5*sa2*dt*dt;
+        Q_(2,2) = sw2*dt*dt;
+        Q_(3,3) = sa2;
+        Q_(0,3) = Q_(3,0) = sa2*dt;
+
+        P_ = F*P_*F.transpose() + Q_;
     }
 
     void update(double meas_x, double meas_y) {

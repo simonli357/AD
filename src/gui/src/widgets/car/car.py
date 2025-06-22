@@ -103,6 +103,7 @@ class CarWidget(QtWidgets.QOpenGLWidget):
         self.y_pos = y
         self.z_pos = z
         self.run_statistics.set_car_pose(x, y, z)
+        self.run_statistics.set_car_rotation(self.yaw, 0)
 
     def initializeGL(self):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)

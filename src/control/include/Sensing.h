@@ -22,6 +22,10 @@ inline std::atomic<double> encoder_speed{0.0};  // [m s⁻¹]
 inline std::atomic<double> yaw{0.0};            // [rad]
 inline std::atomic<double> raw_yaw{0.0};        // [rad]
 inline std::atomic<double> pitch{0.0};          // [rad]
+inline std::atomic<double>    sys_calib{0.0};     
+inline std::atomic<double>    gyro_calib{0.0};     
+inline std::atomic<double>    mag_calib{0.0};     
+inline std::atomic<double>    accel_calib{0.0};
 
 inline std::atomic<double> yaw_offset{0.0};
 
@@ -75,17 +79,52 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         return;
     }
 
-    if (id == '7') {            // IMU frame
-        const char* semi = static_cast<const char*>(memchr(p, ';', len));
-        if (!semi) return; // need pitch ; yaw
-        double pitch_deg, yaw_deg;
-        if (!fast_atof(p, semi, pitch_deg)) return;
-        if (!fast_atof(semi + 1, p + len, yaw_deg)) return;
+    if (id == '7') {                    // ----- IMU frame -----------------------
+        const char* cur  = p;           // start of current field
+        const char* end  = p + len;     // end of payload
+
+        auto next_field = [&](double& out)->bool {
+        // look for the next semicolon in the remaining slice
+        const char* semi = static_cast<const char*>(
+            memchr(cur, ';', end - cur));
+
+        const char* stop = semi ? semi : end;   // take ; or end-of-payload
+        /* trim leading spaces */
+        const char* s = cur;
+        while (s < stop && *s == ' ') ++s;
+
+        if (!fast_atof(s, stop, out)) return false;
+
+        /* advance pointer unless we already are at the end */
+        if (semi) {
+            cur = semi + 1;
+            while (cur < end && *cur == ' ') ++cur;
+        } else {
+            cur = end;          // no more data
+        }
+        return true;
+    };
+
+        double pitch_deg, yaw_deg, sys, gyro, mag, accel;
+
+        if (!next_field(pitch_deg)) return;
+        if (!next_field(yaw_deg))   return;
+        if (!next_field(sys))       return;
+        if (!next_field(gyro))      return;
+        if (!next_field(mag))       return;
+        if (!next_field(accel))     return;
+
+        /* ------------ store the results ------------------------------- */
         pitch.store(pitch_deg * M_PI / 180.0, std::memory_order_relaxed);
+
         double tmp_yaw = -yaw_deg * M_PI / 180.0;
-        yaw.store(yaw_mod(tmp_yaw + yaw_offset.load()), std::memory_order_relaxed);
+        yaw.store (yaw_mod(tmp_yaw + yaw_offset.load()), std::memory_order_relaxed);
         raw_yaw.store(tmp_yaw, std::memory_order_relaxed);
-        // std::cout << "Sensing: pitch: " << pitch_deg << " yaw: " << yaw_deg << std::endl;
+
+        sys_calib  .store(sys  , std::memory_order_relaxed);
+        gyro_calib .store(gyro , std::memory_order_relaxed);
+        mag_calib  .store(mag  , std::memory_order_relaxed);
+        accel_calib.store(accel, std::memory_order_relaxed);
     }
 }
 
