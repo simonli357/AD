@@ -188,7 +188,7 @@ inline void imuCallback(const sensor_msgs::ImuConstPtr& msg)
     raw_yaw.store(y_, std::memory_order_relaxed);
     // std::cout << "Sensing: rawyaw: " << raw_yaw << " yaw_offset: " << yaw_offset
     //           << " yaw: " << yaw << std::endl;
-    sys_calib.store(sys_calib.load() + 1, std::memory_order_relaxed);
+    // sys_calib.store(sys_calib.load() + 1, std::memory_order_relaxed);
 }
 
 inline void encoderCallback(const utils::encoder::ConstPtr& msg)
