@@ -134,12 +134,12 @@ void TrafficClient::handle_location_data(double x, double y, double z) {
 }
 
 void TrafficClient::clear_positions() {
-    car_positions = std::array<std::pair<double, double>, 32>{};
+    car_positions = std::array<std::pair<double, double>, 25>{};
     array_ptr = 0;
 }
 
 std::pair<double, double> TrafficClient::get_car_position() {
-	constexpr size_t TARGET_SAMPLES = 32;
+	constexpr size_t TARGET_SAMPLES = 25;
 	constexpr double MAX_ACCEPTABLE_STD = 0.25;
 	constexpr double CLUSTER_RADIUS = 0.3;
 	constexpr size_t MIN_CLUSTER_SIZE = 6;
@@ -183,7 +183,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
     return {final_x, final_y};
 }
 
-std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 32> &data) {
+std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 25> &data) {
 	double sum_x = 0.0, sum_y = 0.0;
 	for (const auto &p : data) {
 		sum_x += p.first;
@@ -192,7 +192,7 @@ std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<dou
 	return {sum_x / data.size(), sum_y / data.size()};
 }
 
-std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y) {
+std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y) {
 	double var_x = 0.0, var_y = 0.0;
 	for (const auto &p : data) {
 		var_x += std::pow(p.first - mean_x, 2);
@@ -219,7 +219,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(std::vector<std::pair
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
+std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
 	std::vector<std::pair<double, double>> result;
 	for (const auto &p : data) {
 		if (std::abs(p.first - mean_x) < sigma * std_x && std::abs(p.second - mean_y) < sigma * std_y) {
