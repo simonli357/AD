@@ -1,12 +1,12 @@
 #include "msg/ImuMsg.hpp"
 #include <cstdint>
 
-void ImuMsg::encode(double sys, double gyro_calib, double mag_calib, double accel_calib) {
-    this->sys = sys;
+void ImuMsg::encode(double sys_calib, double gyro_calib, double mag_calib, double accel_calib) {
+    this->sys_calib = sys_calib;
     this->gyro_calib = gyro_calib;
     this->mag_calib = mag_calib;
     this->accel_calib = accel_calib;
-	sys_length = sizeof(sys);
+	sys_length = sizeof(sys_calib);
 	gyro_calib_length = sizeof(gyro_calib);
     mag_calib_length = sizeof(mag_calib);
 	accel_calib_length = sizeof(accel_calib);
@@ -31,7 +31,7 @@ std::vector<uint8_t> ImuMsg::get_data() {
 	std::vector<uint8_t> data(data_length);
 
 	size_t offset = 0;
-	std::memcpy(data.data() + offset, &sys, sys_length);
+	std::memcpy(data.data() + offset, &sys_calib, sys_length);
 	offset += sys_length;
 
 	std::memcpy(data.data() + offset, &gyro_calib, gyro_calib_length);
