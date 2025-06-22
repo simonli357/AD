@@ -33,6 +33,7 @@ TcpClient::TcpClient(bool use_tcp, const std::string client_type, const std::str
 	params_msg = std::make_unique<ParamsMsg>();
 	run_msg = std::make_unique<RunMsg>();
 	trigger_msg = std::make_unique<TriggerMsg>();
+    imu_msg = std::make_unique<ImuMsg>();
 
 	goto_cmd_srv = std::make_unique<GoToCmdSrv>();
 	goto_srv = std::make_unique<GoToSrv>();
