@@ -21,6 +21,7 @@ namespace Tunable {
     inline std::string path;
     inline double x0, y0, yaw0, vref;
     inline bool use_tcp, use_traffic_server;
+    inline int gps_id;
     inline std::string traffic_server_ip, ip_address;
     inline bool testing;
     inline int debugLevel;
@@ -87,6 +88,7 @@ namespace Tunable {
       CHECK_PARAM("/gps", hasGps);
       CHECK_PARAM("/use_gps", useGps);
       CHECK_PARAM("/use_encoder", use_encoder);
+      CHECK_PARAM("/gps_id", gps_id);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;

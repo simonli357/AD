@@ -132,7 +132,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (!Tunable::real) {
+    if (Tunable::real) {
         traffic_client->get_car_position(x0, y0);
         while (std::isnan(x0) || std::isnan(y0)) {
             traffic_client->get_car_position(x0, y0);
@@ -353,6 +353,7 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     // std::cout << "sign_callback(): ego_x: " << ego_x << ", ego_y: " << ego_y << ", ego_yaw: " << ego_yaw << ", num_obj: " << num_obj << std::endl;
     // Tracking::ego_car->update(ego_x, ego_y, ego_yaw, filtered_encoder_speed, height, steer_command);
     Tracking::ego_car->update(ego_x, ego_y, ego_yaw, velocity_command, height, steer_command);
+    tcp_client->send_imu_calib(Sensing::sys_calib, Sensing::gyro_calib, Sensing::mag_calib, Sensing::accel_calib);
     // debug("calib status: " + std::to_string(Sensing::sys_calib) + ", " + std::to_string(Sensing::gyro_calib) + ", " + std::to_string(Sensing::mag_calib) + ", " + std::to_string(Sensing::accel_calib), 2);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {

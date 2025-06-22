@@ -43,6 +43,8 @@
   <param name="gps" value="$(arg gps)"/>
   <arg name="use_gps" default="true"/>
   <param name="use_gps" value="$(arg use_gps)"/>
+  <arg name="gps_id" default="1"/>
+  <param name="gps_id" value="$(arg gps_id)"/>
   <arg name="pub_wpts" default="true"/>
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
   <arg name="debug_level" default="2"/>
@@ -55,7 +57,7 @@
   <param name="ip" value="$(arg ip)"/>
   <arg name="use_traffic_server" default="false"/>
   <param name="use_traffic_server" value="$(arg use_traffic_server)"/>
-  <arg name="traffic_server_ip" default="127.0.0.1"/>
+  <arg name="traffic_server_ip" default="192.168.50.2"/>
   <param name="traffic_server_ip" value="$(arg traffic_server_ip)"/>
   <arg name="use_beta" default="true"/>
   <param name="use_beta" value="$(arg use_beta)"/>

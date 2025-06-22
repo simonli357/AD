@@ -9,6 +9,7 @@ from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Pose
 from python_server.msg.lane2_msg import Lane2Msg
 from python_server.msg.sw_load_msg import SWLoadMsg
+from python_server.msg.imu_calib_msg import ImuCalibMsg
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QByteArray
 from collections import OrderedDict
@@ -30,6 +31,7 @@ class UdpConnection:
         self._raw_steer_buf = queue.Queue(maxsize=1024)
         self._raw_sw_load_buf = queue.Queue(maxsize=1024)
         self._raw_model_states_buf = queue.Queue(maxsize=1024)
+        self._raw_imu_calib_buf = queue.Queue(maxsize=1024)
 
         self.image_map = OrderedDict()
         self.depth_map = OrderedDict()
@@ -48,6 +50,7 @@ class UdpConnection:
         self.steer_buf = queue.Queue(maxsize=1)
         self.sw_load_buf = queue.Queue(maxsize=1)
         self.model_states_buf = queue.Queue(maxsize=1)
+        self.imu_calib_buf = queue.Queue(maxsize=1)
 
         self.show_depth = False
         self.alive = True
@@ -63,6 +66,7 @@ class UdpConnection:
             threading.Thread(target=self._steer_worker, daemon=True).start()
             threading.Thread(target=self._sw_load_worker, daemon=True).start()
             threading.Thread(target=self._model_states_worker, daemon=True).start()
+            threading.Thread(target=self._imu_calib_worker, daemon=True).start()
 
     def broadcast(self, payload):
         for key in self.server.dashboard_clients.keys():
@@ -107,6 +111,8 @@ class UdpConnection:
                     self._enqueue_raw(self._raw_sw_load_buf, payload)
                 elif msg_type == 9:
                     self._enqueue_raw(self._raw_model_states_buf, payload)
+                elif msg_type == 10:
+                    self._enqueue_raw(self._raw_imu_calib_buf, payload)
             except Exception:
                 continue
 
@@ -220,6 +226,15 @@ class UdpConnection:
             except Exception:
                 continue
 
+    def _imu_calib_worker(self):
+        while self.alive:
+            try:
+                raw = self._raw_imu_calib_buf.get()
+                msg = ImuCalibMsg().decode(raw)
+                self._try_put(self.imu_calib_buf, msg)
+            except Exception as e:
+                raise e
+
     def _try_put(self, buf: queue.Queue, item):
         """Helper: put item into buf if empty; if full, drop it."""
         try:
@@ -285,4 +300,10 @@ class UdpConnection:
         try:
             return self.model_states_buf.get_nowait()
         except queue.Empty:
+            return None
+
+    def parse_imu_calib_msg(self):
+        try:
+            return self.imu_calib_buf.get_nowait()
+        except Exception as e:
             return None
