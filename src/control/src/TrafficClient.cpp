@@ -70,8 +70,8 @@ void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
         if (enough_points) {
-            continue;
             std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+            continue;
         }
 
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
@@ -147,6 +147,7 @@ void TrafficClient::get_car_position(double &out_x, double &out_y) {
     if (!enough_points) {
         out_x = std::nan("");
         out_y = std::nan("");
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         return;
     } 
 
