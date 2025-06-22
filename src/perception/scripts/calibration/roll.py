@@ -25,11 +25,16 @@ def estimate_roll(x_top: float, y_top: float,
 
 def main() -> None:
     print("Pixel coordinates of a vertical edge (undistorted image)")
-    x_top  = 299
-    y_top  = 0
-    x_bot  = 301
-    y_bot  = 322
-
+    # x_top  = 270
+    # y_top  = 35
+    # x_bot  = 277
+    # y_bot  = 256
+    
+    x_top  = 339
+    y_top  = 31
+    x_bot  = 345
+    y_bot  = 249
+    
     theta_rad, theta_deg = estimate_roll(x_top, y_top, x_bot, y_bot)
     print(f"\nEstimated roll tilt")
     print(f"  θ = {theta_rad:+.6f} rad  ({theta_deg:+.3f} °)")
