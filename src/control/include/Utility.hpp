@@ -384,16 +384,18 @@ public:
         // Estimate 3D coordinates in the camera frame
         // [forward = Z_c, right = –X_c]
         double X_c = x_norm * object_distance;
-        // double Y_c = y_norm * object_distance;
+        double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
 
         auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
-        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5];
-        double cam_roll = tf[3];
-        double cam_pitch = tf[4];
+        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5], cam_roll = tf[3], cam_pitch = tf[4];
+
+        double cos_r = std::cos(cam_roll);
+        double sin_r = std::sin(cam_roll);
+        double X_c_roll =  cos_r * X_c + sin_r * Y_c;
 
         // flat ground‐plane ray in camera coords (forward, right)
-        Eigen::Vector2d P_cam_flat(Z_c, -X_c);
+        Eigen::Vector2d P_cam_flat(Z_c, -X_c_roll);
 
         // rotate by the camera’s yaw mount offset, then translate
         Eigen::Rotation2Dd R_cam_yaw(cam_yaw);
