@@ -129,7 +129,7 @@ inline void parse_and_publish(char id, const char* p, std::size_t len)
         mag_calib  .store(mag  , std::memory_order_relaxed);
         accel_calib.store(accel, std::memory_order_relaxed);
 
-        tcp_client->send_imu_intrinsics(sys, gyro_calib, mag_calib, accel_calib);
+        tcp_client->send_imu_intrinsics(sys_calib, gyro_calib, mag_calib, accel_calib);
     }
 }
 

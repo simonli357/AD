@@ -113,6 +113,7 @@ void TcpClient::set_udp_data_types() {
 	udp_data_types.push_back(0x07); // Steer
 	udp_data_types.push_back(0x08); // SWLoad
 	udp_data_types.push_back(0x09); // ModelStates
+    udp_data_types.push_back(0x0a); // Imu Calibration
 }
 
 void TcpClient::set_tcp_data_actions() {
@@ -140,7 +141,7 @@ void TcpClient::run() {
 			send_type(client_type);
 		}
 		connected = true;
-        tcp_can_send = true;
+		tcp_can_send = true;
 		listen();
 	}
 }
@@ -497,13 +498,13 @@ void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
 }
 
 void TcpClient::send_imu_intrinsics(double sys, double gyro_calib, double mag_calib, double accel_calib) {
-    tasks->run([this, sys, gyro_calib, mag_calib, accel_calib] {
+	tasks->run([this, sys, gyro_calib, mag_calib, accel_calib] {
 		auto &udp_buffer = udp_buffers.local();
 		imu_msg->encode(sys, gyro_calib, mag_calib, accel_calib);
 		std::vector<uint8_t> bytes = imu_msg->serialize(udp_data_types[9]);
 		std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
 		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
-    });
+	});
 }
 
 // ------------------- //
@@ -515,7 +516,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	if (decoded_string == "ack") {
 		tcp_can_send = true;
 		if (!ack_callback) {
-            return;
+			return;
 		}
 		ack_callback();
 		std::cout << client_type << " successfully connected to GUI.\n" << std::endl;
@@ -523,7 +524,7 @@ void TcpClient::parse_string(std::vector<uint8_t> &bytes) {
 	}
 	if (decoded_string == "refresh_run") {
 		if (!send_run_callback || !tcp_can_send) {
-            return;
+			return;
 		}
 		send_run_callback();
 		std::cout << "Resending Run Parameters to GUI" << std::endl;
@@ -565,7 +566,7 @@ void TcpClient::parse_waypoints_srv(std::vector<uint8_t> &bytes) {
 
 void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 	if (!start_callback) {
-        return;
+		return;
 	}
 	std::string decoded_string(bytes.begin(), bytes.end());
 	if (decoded_string == "start") {
@@ -577,7 +578,7 @@ void TcpClient::parse_start_srv(std::vector<uint8_t> &bytes) {
 
 void TcpClient::parse_yaw(std::vector<uint8_t> &bytes) {
 	if (!yaw_callback) {
-        return;
+		return;
 	}
 	int direction;
 	std::memcpy(&direction, bytes.data(), 4);
