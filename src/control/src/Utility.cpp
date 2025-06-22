@@ -132,6 +132,16 @@ void Utility::fetch_run_params() {
         return;
     }
 
+    if (!Tunable::real) {
+        traffic_client->get_car_position(x0, y0);
+        while (std::isnan(x0) || std::isnan(y0)) {
+            traffic_client->get_car_position(x0, y0);
+        }
+
+        debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
+        return;
+    }
+
     constexpr size_t TARGET_SAMPLES = 25;
     constexpr double MAX_ACCEPTABLE_STD = 0.25;
     constexpr double CLUSTER_RADIUS = 0.3;
