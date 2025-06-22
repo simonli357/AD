@@ -132,7 +132,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (!Tunable::real) {
+    if (Tunable::real) {
         traffic_client->get_car_position(x0, y0);
         while (std::isnan(x0) || std::isnan(y0)) {
             traffic_client->get_car_position(x0, y0);
