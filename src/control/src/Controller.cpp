@@ -956,7 +956,7 @@ public:
                 density *= 1/1.33;
                 // PathManager::overtake_end_index_scaler *= 1.5;
                 on_highway = true;
-                utils.debug("CHECK_CAR(): detected car is on right side of highway, if overtake, on left", 2);
+                // utils.debug("CHECK_CAR(): detected car is on right side of highway, if overtake, on left", 2);
                 break;
             }
             else if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
