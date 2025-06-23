@@ -46,8 +46,8 @@ class PathPlanner {
 
 	void print_path();
 
-	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions);
-	void set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name, bool use_gps);
+	void set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::vector<std::tuple<float, float>> destination_positions);
+	void set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::string name, bool use_gps);
 	void set_constraints(double vref, int N, double T, std::string name);
 	void plan_path(Float32MultiArray &state_refs, Float32MultiArray &input_refs, Float32MultiArray &attributes, Float32MultiArray &normals);
 	std::vector<Vertex> plan_path();
