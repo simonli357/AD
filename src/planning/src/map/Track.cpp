@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/graphml.hpp>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -23,7 +24,7 @@ Track::Track() {
 }
 
 Track::Track(const std::string &filename) {
-    graph_file = package_path + "/src/persistence/" + filename;
+	graph_file = package_path + "/src/persistence/" + filename;
 	read_graph();
 	compute_edge_distances();
 }
@@ -60,11 +61,11 @@ void Track::read_graph() {
 
 		// strip leading 'n'
 		int nodeId = 0;
-        if (idStr[0] == 'n' || idStr[0] == 'N') {
-            nodeId = std::stoi(idStr + 1);
-        } else {
-            nodeId = std::stoi(idStr);
-        }
+		if (idStr[0] == 'n' || idStr[0] == 'N') {
+			nodeId = std::stoi(idStr + 1);
+		} else {
+			nodeId = std::stoi(idStr);
+		}
 
 		double xVal = 0.0, yVal = 0.0;
 		int attrVal = 0;
@@ -157,18 +158,18 @@ void Track::remove_vertex(const Vertex &u) {
 }
 
 Vertex Track::find_first_neighbor(const Vertex &u) {
-    auto id_map = build_to_vertex_map();
-    auto it = id_map.find(u.id);
-    if (it == id_map.end()) {
-        throw std::runtime_error("Track::find_neighbor: no vertex with id " + std::to_string(u.id));
-    }
-    auto u_desc = it->second;
-    auto [ei, ei_end] = boost::out_edges(u_desc, graph);
-    if (ei == ei_end) {
-        return u;
-    }
-    auto neighbor_desc = boost::target(*ei, graph);
-    return graph[neighbor_desc];
+	auto id_map = build_to_vertex_map();
+	auto it = id_map.find(u.id);
+	if (it == id_map.end()) {
+		throw std::runtime_error("Track::find_neighbor: no vertex with id " + std::to_string(u.id));
+	}
+	auto u_desc = it->second;
+	auto [ei, ei_end] = boost::out_edges(u_desc, graph);
+	if (ei == ei_end) {
+		return u;
+	}
+	auto neighbor_desc = boost::target(*ei, graph);
+	return graph[neighbor_desc];
 }
 
 std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_map() {
@@ -240,6 +241,38 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 		if (dist < best_dist) {
 			best_node = vertex;
 			best_dist = dist;
+		}
+	}
+	return best_node;
+}
+
+constexpr double kYawThreshold = 15.0 * M_PI / 180.0;
+inline double ang_diff(double a, double b) {
+    return std::remainder(a - b, 2 * M_PI);   // C++11 <cmath>
+}
+Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
+	double best_dist = std::numeric_limits<double>::max();
+	Vertex best_node;
+
+	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+		const auto &node = graph[*vp.first];
+        Vertex neighbor = find_first_neighbor(node);
+
+        double x, y, x_n, y_n;
+        x = node.x;
+        y = node.y;
+        x_n = neighbor.x;
+        y_n = neighbor.y;
+        double yaw = std::atan2(y_n - y, x_n - x);
+        double angular_diff = std::fabs(ang_diff(yaw, car_yaw));
+		if (angular_diff > kYawThreshold) {
+			continue;
+        }
+
+		double dist = sqrt_dist(pos_x, pos_y, node);
+		if (dist < best_dist) {
+			best_dist = dist;
+			best_node = node;
 		}
 	}
 	return best_node;
