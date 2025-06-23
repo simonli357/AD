@@ -1,0 +1,689 @@
+teref index: 248
+[ INFO] [1750657496.516166156]: LANE_RELOC2(): SUCCESS: errorx: 0.002, errory: -0.046, errory: -0.046, right_only: 0
+[ INFO] [1750657497.032865843]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: 0.000, right_only: 0
+[ INFO] [1750657497.566141514]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: 0.000, right_only: 0
+[ INFO] [1750657498.082744855]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.000, errory: -0.000, right_only: 0
+Sending State
+Starting CAR
+[ INFO] [1750657498.537054277]: Changing from INIT to MOVING
+[ INFO] [1750657498.610558725]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (6.566, 11.582), actual: (6.348, 11.560), error: (-0.218, -0.022), error norm: 0.219, threshold: 0.735, old states: (5.282, 11.788), new states: (5.064, 11.766), yaw: 2.300, sign: Highway Entrance, ID: 10
+[ INFO] [1750657498.616050316]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.013, errory: 0.013, right_only: 0
+[ INFO] [1750657499.149501881]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.004, errory: 0.004, right_only: 0
+[ INFO] [1750657502.709871686]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657502.811696248]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657502.909684772]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.009763641]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.110993293]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.209766348]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.309672715]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.409627975]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.509669055]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.609697751]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.709696432]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.809818339]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657503.909885657]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.009807063]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.109719701]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.209702384]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.309654092]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.410740712]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.510964149]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.610452652]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.710471492]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.810623381]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657504.910716745]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.010660582]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.110694238]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.210747316]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.311255761]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.410713066]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.511040209]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.610763738]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.711924145]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.810651796]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657505.910649741]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.010712387]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.110471115]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.210482692]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.310455295]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.410458104]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.511560627]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.609579805]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.709614997]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657506.809576049]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657507.008429318]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 97.000, end idx: 129.000, min_dist: 1.039, min_dist_adj: 1000.000, changing lane to the left in 0.364 meters. start pose: (8.587,11.327), end: (9.848, 10.887), cur: (8.241, 11.349), min_dist_to_car: 0.300, egospeed: 0.438, car_speed: -0.021, total_distance: 1.375
+[ INFO] [1750657508.208372668]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657509.508377833]: check_emergency_stop(): emergency stop released
+Sending State
+Stopping CAR
+[ INFO] [1750657518.694875038]: Changing from MOVING to INIT
+^C[mpc_controller_jetson_11526_7810234544119953717-2] killing on exit
+^C[ERROR] [1750657521.771280826]: serial error: Operation canceled
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+scandy@jetson:~/AD$ roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=false real:=true realsense:=true show_lane:=true
+... logging to /home/scandy/.ros/log/4fcc569c-4ff5-11f0-a0bf-28d0431cfecf/roslaunch-jetson-12247.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+
+started roslaunch server http://localhost:35865/
+
+SUMMARY
+========
+
+PARAMETERS
+ * /N: 40
+ * /N_park: 49
+ * /T: 0.1
+ * /T_park: 0.05
+ * /adaptive_threshold_block_size: 199
+ * /adaptive_threshold_c: -25
+ * /async: True
+ * /camera: True
+ * /class_names: ['oneway', 'highw...
+ * /confidence_thresholds: [0.7, 0.6, 0.7, 0...
+ * /constraints/delta_max: 0.4363
+ * /constraints/delta_min: -0.37524579
+ * /constraints/v_max: 0.5
+ * /constraints/v_min: -0.5
+ * /constraints/v_ref: 0.32
+ * /constraints/x_max: 1000.0
+ * /constraints/x_min: -1000.0
+ * /constraints/y_max: 1000.0
+ * /constraints/y_min: -1000.0
+ * /constraints_park/delta_max: 0.4
+ * /constraints_park/delta_min: -0.4
+ * /constraints_park/v_max: 0.5
+ * /constraints_park/v_min: -0.5
+ * /constraints_park/v_ref: -0.5
+ * /constraints_park/x_max: 4
+ * /constraints_park/x_min: -4
+ * /constraints_park/y_max: 4
+ * /constraints_park/y_min: -4
+ * /costs/delta_steer_cost: 0.5
+ * /costs/delta_v_cost: 0.25
+ * /costs/steer_cost: 0.0
+ * /costs/v_cost: 1
+ * /costs/x_cost: 2
+ * /costs/y_cost: 2
+ * /costs/yaw_cost: 0.5
+ * /costs_park/delta_steer_cost: 0.0
+ * /costs_park/delta_v_cost: 0.0
+ * /costs_park/steer_cost: 0.05
+ * /costs_park/v_cost: 0.5
+ * /costs_park/x_cost: 1
+ * /costs_park/y_cost: 7
+ * /costs_park/yaw_cost: 1
+ * /counter_thresholds: [1, 1, 1, 1, 1, 1...
+ * /dashboard: True
+ * /debug_level: 2
+ * /emergency: True
+ * /emergency_height: 0.25
+ * /emergency_thresh: 450
+ * /emergency_width: 0.42
+ * /emergency_y: 0.03
+ * /exit_thresh: 0.1
+ * /far_m: 1.5
+ * /gps: False
+ * /gps_id: 1
+ * /hw: 1.33
+ * /ip: 192.168.50.216
+ * /is_real: True
+ * /kb: False
+ * /l_f: 0.155
+ * /l_r: 0.105
+ * /max_distance_thresholds: [3.0, 3.0, 3.0, 3...
+ * /median_thresholds: [0.25, 0.25, 0.25...
+ * /mpc_controller_jetson_12247_4845419431011407130/camera_rate: 50
+ * /mpc_controller_jetson_12247_4845419431011407130/ekf: False
+ * /mpc_controller_jetson_12247_4845419431011407130/flip: True
+ * /mpc_controller_jetson_12247_4845419431011407130/ground_dist: False
+ * /mpc_controller_jetson_12247_4845419431011407130/hasDepthImage: True
+ * /mpc_controller_jetson_12247_4845419431011407130/lane: True
+ * /mpc_controller_jetson_12247_4845419431011407130/lane_rate: 30
+ * /mpc_controller_jetson_12247_4845419431011407130/name: car1
+ * /mpc_controller_jetson_12247_4845419431011407130/ncnn: False
+ * /mpc_controller_jetson_12247_4845419431011407130/printDuration: False
+ * /mpc_controller_jetson_12247_4845419431011407130/printFlag: False
+ * /mpc_controller_jetson_12247_4845419431011407130/pub: True
+ * /mpc_controller_jetson_12247_4845419431011407130/pubImage: True
+ * /mpc_controller_jetson_12247_4845419431011407130/rate: 300
+ * /mpc_controller_jetson_12247_4845419431011407130/real: True
+ * /mpc_controller_jetson_12247_4845419431011407130/realsense: True
+ * /mpc_controller_jetson_12247_4845419431011407130/robot_name: car1
+ * /mpc_controller_jetson_12247_4845419431011407130/send_depth: False
+ * /mpc_controller_jetson_12247_4845419431011407130/showFlag: False
+ * /mpc_controller_jetson_12247_4845419431011407130/sign: True
+ * /mpc_controller_jetson_12247_4845419431011407130/sign_rate: 30
+ * /mpc_controller_jetson_12247_4845419431011407130/subModel: False
+ * /mpc_controller_jetson_12247_4845419431011407130/thread: True
+ * /mpc_controller_jetson_12247_4845419431011407130/use_emergency: True
+ * /mpc_controller_jetson_12247_4845419431011407130/vref: 0.35
+ * /mpc_controller_jetson_12247_4845419431011407130/x0: 3.83
+ * /mpc_controller_jetson_12247_4845419431011407130/y0: 0.376
+ * /mpc_controller_jetson_12247_4845419431011407130/yaw0: 3.14159
+ * /n_windows: 18
+ * /name: mobile_robot_35
+ * /ncnn_model: sissi753-opt
+ * /near_m: 0.48
+ * /parallel_park: offset_x = 0.63 o...
+ * /park_thresh: 0.1
+ * /path: run189
+ * /pub_wpts: True
+ * /quality: 100
+ * /real/NORMAL_SPEED: 0.23
+ * /real/change_lane_offset_scaler: 1.2
+ * /real/constant_distance_to_intersection_at_detection: 0.3725
+ * /real/cumulative_confidence_thresholds: [7.53, 5.37, 5.37...
+ * /real/cw_speed_ratio: 0.85
+ * /real/has_light: False
+ * /real/highway_cooldown: 3.0
+ * /real/hw_speed_ratio: 1.25
+ * /real/intersection_localization_orientation_threshold: 3.0
+ * /real/intersection_localization_threshold: 0.1
+ * /real/intersection_relocalize: False
+ * /real/lane_localization_cooldown: 0.5
+ * /real/lane_localization_orientation_threshold: 7.53
+ * /real/lane_localization_threshold: 0.15
+ * /real/lane_relocalize2: True
+ * /real/lane_relocalize: False
+ * /real/lane_yaw_reset: True
+ * /real/lane_yaw_reset_cooldown: 1.0
+ * /real/max_light_dist: 0.75
+ * /real/max_sign_dist: 1.5
+ * /real/min_dist_to_car: 0.3
+ * /real/min_sign_dist: 0.3
+ * /real/min_tailing_dist: 0.3
+ * /real/odom_rate: 50
+ * /real/parking_base_speed: -0.2
+ * /real/parking_base_thresh: 0.1
+ * /real/parking_base_yaw_target: 0.2
+ * /real/pedestrian_distance: 0.75
+ * /real/pedestrian_threshold: 0.35
+ * /real/pixel_center_offset: 0
+ * /real/recency_thresholds: [0.5, 0.5, 0.5, 0...
+ * /real/rs_pitch: 0.03229
+ * /real/rs_roll: -0.009774
+ * /real/rs_yaw: 0.011
+ * /real/sign_cooldown: 0.5
+ * /real/sign_lat_offset: -0.0086
+ * /real/sign_lat_offset_slope: -0.0119
+ * /real/sign_localization_orientation_threshold: 45.0
+ * /real/sign_localization_threshold: 0.735
+ * /real/sign_lon_offset: -0.0
+ * /real/sign_lon_offset_slope: 0.0
+ * /real/sign_relocalize: True
+ * /real/stop_duration: 1.0
+ * /real/use_kf: True
+ * /realsense_imu: False
+ * /resolution: 300
+ * /rosdistro: noetic
+ * /rosversion: 1.17.0
+ * /show_lane: True
+ * /speed_offset: 0
+ * /steer_offset: 0
+ * /steer_offset_maximum: 9
+ * /steer_offset_minimum: 2
+ * /stopline_distance_threshold: 0.5
+ * /test: 0
+ * /traffic_server_ip: 192.168.50.2
+ * /use_beta: True
+ * /use_encoder: True
+ * /use_gps: False
+ * /use_tcp: True
+ * /use_traffic_server: False
+ * /v8_model: brooke
+ * /vrefInt: 35
+ * /wheelbase: 0.26
+ * /width_m: 0.8
+ * /window_height: 0.1
+ * /window_margin_multiplier: 4
+ * /window_min_pixels: 8
+ * /x0: 3.83
+ * /y0: 0.376
+ * /yaw0: 3.14159
+
+NODES
+  /
+    mpc_controller_jetson_12247_4845419431011407130 (control/controller)
+
+auto-starting new master
+process[master]: started with pid [12260]
+ROS_MASTER_URI=http://localhost:11311
+
+setting /run_id to 4fcc569c-4ff5-11f0-a0bf-28d0431cfecf
+process[rosout-1]: started with pid [12275]
+started core service [/rosout]
+process[mpc_controller_jetson_12247_4845419431011407130-2]: started with pid [12282]
+LoadFromParams: nodeName: /mpc_controller_jetson_12247_4845419431011407130
+LoadFromParams: emergency: 1, pubWaypoints: 1, kb: 0, dashboard: 1, gps: 0, lane: 1, ekf: 0, sign: 1, T: 0.100, N: 40, v_ref: 0.320, robot_name: car1, vref: 0.350, x0: 3.830, y0: 0.376, yaw0: 3.142, T_park: 0.050, real: 1, use_beta: 1, async: 1, use_tcp: 1, test: 0
+LoadFromParams2: debug_level: 2, camera: 1, steer_offset: 0.000, speed_offset: 0.000, steer_offset_minimum: 2.000, steer_offset_maximum: 9.000, subModel: 0, rateVal: 300.000, realsense_imu: 0
+[GroundTruth] Initializing ground truth...
+[ INFO] [1750657548.662408123]: Sensing: serial port opened and async IO started
+[ INFO] [1750657548.664718872]: Attempting to create TCP client...
+[ INFO] [1750657548.668999716]: TCP client created successfully.
+loaded confidence_thresholds size: 16
+loaded distance_thresholds size: 16
+loaded median_thresholds size: 16
+loaded counter_thresholds size: 16
+[ INFO] [1750657548.673632891]: class_names: oneway, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673694808]: class_names: highwayentrance, confidence thresh: 0.600, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673724534]: class_names: stopsign, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673747733]: class_names: roundabout, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673769236]: class_names: park, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673795410]: class_names: crosswalk, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673818321]: class_names: noentry, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673841424]: class_names: highwayexit, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673863662]: class_names: priority, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673885389]: class_names: lights, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673906220]: class_names: block, confidence thresh: 0.650, distance_thresholds: 1.500, counter_thresholds: 1
+[ INFO] [1750657548.673927947]: class_names: pedestrian, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673948649]: class_names: car, confidence thresh: 0.700, distance_thresholds: 5.000, counter_thresholds: 1
+[ INFO] [1750657548.673969384]: class_names: green light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.673991175]: class_names: yellow light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1750657548.674011430]: class_names: red light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+showFlag: 0
+printFlag: 0
+printDuration: 0
+class_names: 16
+confidence_thresholds: 16
+distance_thresholds: 16
+model: sissi753-opt
+hasDepthImage: true
+Searching for engine file with name: brooke.engine.Orin.fp16.1.1
+Engine found, not regenerating...
+Using an engine plan file across different models of devices is not recommended and is likely to affect performance or even cause errors.
+[ INFO] [1750657550.936354646]: camera intrinsics: fx=607.41, fy=607.06, cx=322.97, cy=244.39
+[ INFO] [1750657550.936870841]: distortion coefficients: 0.00, 0.00, 0.00, 0.00, 0.00
+pub created
+[ INFO] [1750657550.939984551]: starting lane thread
+[ INFO] [1750657550.940197339]: starting sign thread
+[ INFO] [1750657550.940363665]: starting realsense thread
+Utility constructor
+[ INFO] [1750657550.942764937]: Utility constructor: Attempting to create TCP client...
+Connecting to GUI 
+
+[ INFO] [1750657550.943846603]: Utility constructor: TCP client created successfully.
+[ INFO] [1750657550.948940936]: Utility::initialize(): successful.
+[ INFO] [1750657550.949000261]: GPS not found, skipping
+MPC Constructor
+reference speed is 32cm/s
+rate: 10
+[ INFO] [1750657550.969866847]: start_bool server ready, mpc time step T = 0.100
+[ INFO] [1750657550.969928380]: state machine initialized
+Connection request established with GUI 
+
+utility_node_client successfully connected to GUI.
+
+Sending State
+Resending Run Parameters to GUI
+Sending Run Parameters
+[ INFO] [1750657551.515265954]: GPS not found, skipping
+Setting Waypoints
+PathPlanner::set_constraints: Path: run189
+[ WARN] [1750657551.580949185]: Lane viz image is empty
+[ WARN] [1750657551.581887051]: Lane viz image not good.
+[ INFO] [1750657552.978642891]: start(): x=1.550, y=6.906, yaw=0.550
+PathPlanner::set_constraints: Path: run189
+[ INFO] [1750657557.490750265]: initialize(): Received waypoints of size 5776
+Setting States
+[ INFO] [1750657557.759325125]: Python node notified successfully.
+[ INFO] [1750657558.784187100]: initialize(): Received waypoints of size 5776
+[ INFO] [1750657558.953956939]: INITIALIZE(): start: 1.550, 6.906
+[ INFO] [1750657558.954491244]: INITIALIZE(): destination: 4.790, 7.471
+[ INFO] [1750657558.954734910]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 5776, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657558.955205412]: FIND_INTERSECTIONS(): SUCCESS: found 43 intersections. time: 290us
+[ INFO] [1750657558.955373146]: 0) [1.270, 6.902], yaw: 3.142, associated sign: None, stateref index: 0
+[ INFO] [1750657558.955527601]: 1) [0.359, 4.559], yaw: -1.571, associated sign: None, stateref index: 80
+[ INFO] [1750657558.955685384]: 2) [1.976, 3.646], yaw: 0.000, associated sign: Lights, stateref index: 152
+[ INFO] [1750657558.955847455]: 3) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 241
+[ INFO] [1750657558.956002486]: 4) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 309
+[ INFO] [1750657558.956145806]: 5) [6.630, 3.468], yaw: 1.571, associated sign: None, stateref index: 473
+[ INFO] [1750657558.956322372]: 6) [5.682, 6.901], yaw: 3.142, associated sign: None, stateref index: 615
+[ INFO] [1750657558.956466524]: 7) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk, stateref index: 652
+[ INFO] [1750657558.956612467]: 8) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 804
+[ INFO] [1750657558.956684623]: 9) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1288
+[ INFO] [1750657558.956726765]: 10) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout, stateref index: 1717
+[ INFO] [1750657558.956763339]: 11) [15.312, 4.554], yaw: -1.571, associated sign: None, stateref index: 1947
+[ INFO] [1750657558.956796393]: 12) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk, stateref index: 2002
+[ INFO] [1750657558.957013724]: 13) [15.313, 1.472], yaw: -1.571, associated sign: None, stateref index: 2057
+[ INFO] [1750657558.957155860]: 14) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 2167
+[ INFO] [1750657558.957203794]: 15) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 2253
+[ INFO] [1750657558.957237008]: 16) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout, stateref index: 2433
+[ INFO] [1750657558.957267086]: 17) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout, stateref index: 2801
+[ INFO] [1750657558.957293421]: 18) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 3329
+[ INFO] [1750657558.957455203]: 19) [0.359, 7.445], yaw: -1.571, associated sign: None, stateref index: 3433
+[ INFO] [1750657558.957529023]: 20) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 3499
+[ INFO] [1750657558.957635065]: 21) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 3574
+[ INFO] [1750657558.957780625]: 22) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 3647
+[ INFO] [1750657558.957832046]: 23) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 3733
+[ INFO] [1750657558.957900458]: 24) [3.431, 0.729], yaw: 3.142, associated sign: None, stateref index: 3789
+[ INFO] [1750657558.957940584]: 25) [2.892, 3.097], yaw: 1.571, associated sign: Lights, stateref index: 3870
+[ INFO] [1750657558.957977925]: 26) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 3943
+[ INFO] [1750657558.958010660]: 27) [1.976, 0.356], yaw: 0.000, associated sign: None, stateref index: 4111
+[ INFO] [1750657558.958041186]: 28) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 4187
+[ INFO] [1750657558.958080000]: 29) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk, stateref index: 4317
+[ INFO] [1750657558.958119645]: 30) [14.764, 0.924], yaw: 0.000, associated sign: None, stateref index: 4533
+[ INFO] [1750657558.958154939]: 31) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 4641
+[ INFO] [1750657558.958186074]: 32) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 4734
+[ INFO] [1750657558.958216440]: 33) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 4936
+[ INFO] [1750657558.958249782]: 34) [7.543, 4.015], yaw: 3.142, associated sign: None, stateref index: 5005
+[ INFO] [1750657558.958280788]: 35) [5.684, 4.014], yaw: 3.142, associated sign: None, stateref index: 5067
+[ INFO] [1750657558.958309011]: 36) [3.429, 4.013], yaw: 3.142, associated sign: Lights, stateref index: 5136
+[ INFO] [1750657558.958337969]: 37) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 5240
+[ INFO] [1750657558.958368687]: 38) [0.727, 3.097], yaw: 1.571, associated sign: None, stateref index: 5374
+[ INFO] [1750657558.958398989]: 39) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 5471
+[ INFO] [1750657558.958428908]: 40) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 5568
+[ INFO] [1750657558.958461098]: 41) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 5607
+[ INFO] [1750657558.958494952]: 42) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 5741
+Async spinner started with 4 threads
+State Machine running...
+[ INFO] [1750657559.028314747]: Python node notified successfully.
+Setting Yaw
+Planning Path
+[ INFO] [1750657564.884148184]: initialize(): Received waypoints of size 373
+[ INFO] [1750657564.884533026]: goto_command_callback(): start: 5.040150, 11.794474
+[ INFO] [1750657564.884636028]: goto_command_callback(): destination: 17.908491, 10.404139
+[ INFO] [1750657564.884703768]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 373, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657564.884788467]: FIND_INTERSECTIONS(): SUCCESS: found 1 intersections. time: 39us
+[ INFO] [1750657564.885038117]: 0) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 252
+[ INFO] [1750657565.026167925]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.022, errory: 0.022, right_only: 0
+[ INFO] [1750657565.559550566]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.000, errory: -0.000, right_only: 0
+[ INFO] [1750657566.092917495]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: 0.000, right_only: 0
+[ INFO] [1750657566.626295464]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: 0.000, right_only: 0
+[ INFO] [1750657567.159526369]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: 0.000, right_only: 0
+Sending State
+Starting CAR
+[ INFO] [1750657567.225621832]: Changing from INIT to MOVING
+[ INFO] [1750657567.263312419]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (6.293, 11.566), actual: (6.348, 11.560), error: (0.055, -0.006), error norm: 0.055, threshold: 0.735, old states: (5.040, 11.818), new states: (5.095, 11.812), yaw: 0.000, sign: Highway Entrance, ID: 1
+[ INFO] [1750657567.692858420]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.004, errory: 0.004, right_only: 0
+[ INFO] [1750657570.362126176]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (6.409, 11.564), actual: (6.348, 11.560), error: (-0.062, -0.004), error norm: 0.062, threshold: 0.735, old states: (6.061, 11.807), new states: (5.999, 11.802), yaw: -3.300, sign: Highway Entrance, ID: 1
+[ INFO] [1750657571.962191414]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.061906944]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.161960822]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.262119239]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.362381490]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.462101403]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.561350880]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.661976054]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.761929714]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.861910092]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657572.961280906]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.062347847]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.162510327]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.262513680]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.362507850]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.462275729]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.562172593]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.661896698]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.761311317]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.861989672]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657573.961934885]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.062023513]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.161651848]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.262130278]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.362142943]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.462077501]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.562227054]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.662119309]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.762128039]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.862098434]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657574.961200207]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.062225870]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.162118318]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.261898164]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.361863343]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.461887016]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.561896897]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657575.759914149]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 99.000, end idx: 133.000, min_dist: 1.248, min_dist_adj: 1000.000, changing lane to the left in 0.573 meters. start pose: (8.504,11.339), end: (9.848, 10.887), cur: (7.935, 11.369), min_dist_to_car: 0.300, egospeed: 0.438, car_speed: 0.009, total_distance: 1.469
+[ INFO] [1750657591.862357652]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (14.949, 10.174), actual: (14.924, 10.155), error: (-0.025, -0.019), error norm: 0.031, threshold: 0.735, old states: (14.474, 10.407), new states: (14.449, 10.387), yaw: 7.900, sign: Roundabout, ID: 4
+[ INFO] [1750657592.461203952]: CHECK_INTERSECTION(Roundabout): REACHED: x_cur: (14.647, 10.396, 0.038), intersection: (15.009, 10.406), distance: 0.362, index: 1, no more intersections
+[ INFO] [1750657592.461305898]: intersection reached: CASE Roundabout, proceeding...
+Sending State
+Stopping CAR
+[ INFO] [1750657594.131974374]: Changing from MOVING to INIT
+Planning Path
+[ INFO] [1750657598.758372958]: initialize(): Received waypoints of size 385
+[ INFO] [1750657598.758726602]: goto_command_callback(): start: 15.078464, 10.353242
+[ INFO] [1750657598.758778727]: goto_command_callback(): destination: 5.973796, 12.179759
+[ INFO] [1750657598.758810853]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 385, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657598.758925215]: FIND_INTERSECTIONS(): FAILURE: no intersections found
+Sending State
+Starting CAR
+[ INFO] [1750657599.938572826]: Changing from INIT to MOVING
+[ INFO] [1750657610.676963905]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.373, 10.995), actual: (14.350, 11.030), error: (-0.023, 0.035), error norm: 0.042, threshold: 0.735, old states: (15.616, 11.036), new states: (15.592, 11.071), yaw: -159.100, sign: Highway Entrance, ID: 6
+[ INFO] [1750657614.642872185]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 180.389, current yaw: 177.200, straight_lane_angle: -0.389
+[ INFO] [1750657615.042873344]: LANE_RELOC2(): SUCCESS: errorx: 0.009, errory: 0.114, errory: -0.114, right_only: 0
+[ INFO] [1750657615.476727164]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657615.576020766]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657615.676764365]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657615.776777606]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657615.877397276]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657615.976899154]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.076892076]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.176931395]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.277153584]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.377537076]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.477356664]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.577144574]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.577391951]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750657616.577524232]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 1.232
+[ INFO] [1750657616.677088634]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.678040420]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750657616.678402383]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 1.202
+[ INFO] [1750657616.777002393]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657616.974867014]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 198.000, end idx: 232.000, min_dist: 1.169, min_dist_adj: 1000.000, changing lane to the left in 0.494 meters. start pose: (13.227,11.210), end: (11.790, 11.282), cur: (13.690, 11.081), min_dist_to_car: 0.300, egospeed: 0.438, car_speed: 0.011, total_distance: 1.478
+[ INFO] [1750657623.675920445]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657623.775910008]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657623.875844309]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657623.976713149]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.076067771]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.175982714]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.275958165]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.375897714]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.475876557]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.575696017]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.675833986]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.775831676]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.875916273]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657624.975694775]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657625.075848776]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657625.175864161]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657625.275907736]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657625.375717436]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657633.974647603]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657639.774707165]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657641.474717552]: check_emergency_stop(): emergency stop triggered
+Sending State
+Stopping CAR
+[ INFO] [1750657642.776230054]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657642.897939210]: Changing from MOVING to INIT
+[ INFO] [1750657643.380307800]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657645.281156046]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657645.881133801]: check_emergency_stop(): emergency stop triggered
+Planning Path
+[ INFO] [1750657650.241323213]: initialize(): Received waypoints of size 1883
+[ INFO] [1750657650.241531873]: goto_command_callback(): start: 6.337969, 11.558925
+[ INFO] [1750657650.241954793]: goto_command_callback(): destination: 14.733665, 10.788947
+[ INFO] [1750657650.242217434]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 1883, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657650.242384177]: FIND_INTERSECTIONS(): SUCCESS: found 8 intersections. time: 82us
+[ INFO] [1750657650.242460365]: 0) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 216
+[ INFO] [1750657650.242514473]: 1) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 810
+[ INFO] [1750657650.242564263]: 2) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 866
+[ INFO] [1750657650.242597509]: 3) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 1007
+[ INFO] [1750657650.242631875]: 4) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 1078
+[ INFO] [1750657650.242664545]: 5) [1.270, 6.902], yaw: 3.142, associated sign: None, stateref index: 1147
+[ INFO] [1750657650.242701631]: 6) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 1229
+[ INFO] [1750657650.242753340]: 7) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1711
+[ INFO] [1750657650.409476281]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 180.276, current yaw: -176.411, straight_lane_angle: -0.276
+[ INFO] [1750657653.481193855]: check_emergency_stop(): emergency stop released
+Planning Path
+[ INFO] [1750657660.159080960]: initialize(): Received waypoints of size 376
+[ INFO] [1750657660.159675838]: goto_command_callback(): start: 6.337969, 11.558925
+[ INFO] [1750657660.159983404]: goto_command_callback(): destination: 15.115211, 10.815434
+[ INFO] [1750657660.160149219]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 376, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657660.160357815]: FIND_INTERSECTIONS(): SUCCESS: found 1 intersections. time: 43us
+[ INFO] [1750657660.160506190]: 0) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 217
+Planning Path
+[ INFO] [1750657666.747761343]: initialize(): Received waypoints of size 376
+[ INFO] [1750657666.748146185]: goto_command_callback(): start: 6.337969, 11.558925
+[ INFO] [1750657666.748306144]: goto_command_callback(): destination: 15.115211, 10.815434
+[ INFO] [1750657666.748354045]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 376, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657666.748433561]: FIND_INTERSECTIONS(): SUCCESS: found 1 intersections. time: 39us
+[ INFO] [1750657666.748470679]: 0) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 217
+Planning Path
+[ INFO] [1750657676.258668818]: initialize(): Received waypoints of size 376
+[ INFO] [1750657676.258825545]: goto_command_callback(): start: 6.337969, 11.558925
+[ INFO] [1750657676.258908612]: goto_command_callback(): destination: 15.115211, 10.815434
+[ INFO] [1750657676.258959777]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 376, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657676.259049500]: FIND_INTERSECTIONS(): SUCCESS: found 1 intersections. time: 42us
+[ INFO] [1750657676.259133111]: 0) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 217
+Setting States
+Planning Path
+[ INFO] [1750657693.028820774]: initialize(): Received waypoints of size 245
+[ INFO] [1750657693.028998044]: goto_command_callback(): start: 15.009677, 10.769709
+[ INFO] [1750657693.029046041]: goto_command_callback(): destination: 5.973789, 12.179853
+[ INFO] [1750657693.029078711]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 245, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657693.029144883]: FIND_INTERSECTIONS(): FAILURE: no intersections found
+Setting Yaw
+Sending State
+Starting CAR
+[ INFO] [1750657705.417766275]: Changing from INIT to MOVING
+[ INFO] [1750657705.484251604]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.298, 11.084), actual: (14.350, 11.030), error: (0.052, -0.054), error norm: 0.074, threshold: 0.735, old states: (15.010, 10.770), new states: (15.061, 10.716), yaw: -180.000, sign: Highway Entrance, ID: 6
+[ INFO] [1750657711.282454823]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.382398436]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.482466810]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.582457044]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.682446446]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.782497221]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.882432002]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657711.982399134]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.082290558]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.182382962]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.282369580]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.382394245]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.482334914]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.582370201]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.682383154]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.782334478]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.882581946]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657712.982345825]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.082335867]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.182428080]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.282370348]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.382348103]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.482354305]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.583513880]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.683485491]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.783266905]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.883296049]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657713.982610098]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.083331874]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.183225954]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.283252794]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.383254388]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.483229935]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.583225385]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.683264288]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.783251258]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.883257780]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657714.983274956]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.083228072]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.183248545]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.283218268]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.383339247]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.483469537]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.583342498]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.683242785]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.783352501]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.883331375]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657715.983321802]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.083353057]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.183504338]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.283400082]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.383360174]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.483608953]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.583362305]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.683357467]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.783243547]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.883579361]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657716.983312842]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.084032187]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.183503794]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.287035747]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.382373222]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.482361728]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.582372377]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.682380627]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.782369805]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.882305514]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657717.982394239]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657718.082336219]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657718.182352724]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657718.282345326]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657718.382375142]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657718.482370592]: CHECK_CAR(): detected car is on right side of highway, if overtake, on left
+[ INFO] [1750657723.481117416]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+Sending State
+Stopping CAR
+[ INFO] [1750657725.788100838]: Changing from MOVING to INIT
+[ INFO] [1750657725.983079384]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657726.884729216]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657728.284721543]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657733.684728174]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657735.084712917]: check_emergency_stop(): emergency stop released
+[ INFO] [1750657735.384722625]: check_emergency_stop(): emergency stop triggered
+Setting States
+[ INFO] [1750657738.784721960]: check_emergency_stop(): emergency stop released
+Setting States
+[ INFO] [1750657753.584735573]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657754.884784703]: check_emergency_stop(): emergency stop released
+Planning Path
+[ INFO] [1750657760.259120957]: initialize(): Received waypoints of size 243
+[ INFO] [1750657760.259307474]: goto_command_callback(): start: 14.935829, 10.769709
+[ INFO] [1750657760.259355152]: goto_command_callback(): destination: 5.973364, 12.181025
+[ INFO] [1750657760.259392301]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 243, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1750657760.259462409]: FIND_INTERSECTIONS(): FAILURE: no intersections found
+Setting Yaw
+Sending State
+Starting CAR
+[ INFO] [1750657770.063000909]: Changing from INIT to MOVING
+[ INFO] [1750657770.087760777]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.409, 11.050), actual: (14.350, 11.030), error: (-0.059, -0.020), error norm: 0.062, threshold: 0.735, old states: (14.936, 10.770), new states: (14.877, 10.749), yaw: 179.900, sign: Highway Entrance, ID: 6
+[ INFO] [1750657792.686551337]: Changing from MOVING to DONE
+[ INFO] [1750657793.276156499]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.955, current yaw: -179.800, straight_lane_angle: -1.955
+[ INFO] [1750657794.559533364]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.952, current yaw: -178.045, straight_lane_angle: -1.952
+Sending State
+Stopping CAR
+[ INFO] [1750657795.692914494]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.827, current yaw: -178.048, straight_lane_angle: -1.827
+[ INFO] [1750657795.848168745]: Changing from DONE to INIT
+[ INFO] [1750657797.076163392]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.852, current yaw: -178.173, straight_lane_angle: -1.852
+[ INFO] [1750657798.209529259]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.881, current yaw: -178.148, straight_lane_angle: -1.881
+[ INFO] [1750657799.342832698]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 181.924, current yaw: -178.119, straight_lane_angle: -1.924
+[ INFO] [1750657799.790770131]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750657805.090787615]: check_emergency_stop(): emergency stop released
+^C[mpc_controller_jetson_12247_4845419431011407130-2] killing on exit
+[ERROR] [1750657812.165100049]: serial error: Operation canceled
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+scandy@jetson:~/AD$ 
