@@ -4,7 +4,7 @@ roslaunch control controller.launch camera:=true ip:=192.168.43.143 use_gps:=fal
 
 roslaunch perception cameraNode.launch real:=true realsense:=true ip:=10.121.105.18
 roslaunch control controller.launch camera:=false real:=true ip:=10.121.105.18 use_gps:=false
-roslaunch control controller.launch camera:=true ip:=10.121.105.18 use_gps:=false real:=true realsense:=true v:=35
+roslaunch control controller.launch camera:=true ip:=192.168.43.143 use_gps:=false real:=true realsense:=true v:=35
 
 == webm to mp4
 input="screen-capture"

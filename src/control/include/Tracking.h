@@ -277,7 +277,7 @@ public:
         double time_in_state = (now - state_start_time).toSec();
         
         // Time-based forced transition: e.g., if red for over n seconds, force a transition to green.
-        if (current_color == LightColor::RED && time_in_state > 5.0) {
+        if (current_color == LightColor::RED && time_in_state > 10.0) {
             current_color = LightColor::GREEN;
             state_start_time = now;
             return;

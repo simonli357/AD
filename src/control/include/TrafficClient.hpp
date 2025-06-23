@@ -9,6 +9,9 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
+#include <shared_mutex>
+#include <utility>
+#include <array> 
 
 using namespace std::chrono;
 using namespace VehicleConstants;
@@ -17,6 +20,7 @@ using std_msgs::Float32MultiArray;
 class TrafficClient {
   public:
 	// Constructors
+	mutable std::shared_mutex pos_mtx;
 	TrafficClient(const std::string ip_address);
 	TrafficClient(TrafficClient &&) = delete;
 	TrafficClient(const TrafficClient &) = delete;
@@ -24,7 +28,7 @@ class TrafficClient {
 	TrafficClient &operator=(const TrafficClient &) = delete;
 	~TrafficClient();
 	// Fields
-	bool tcp_can_send = false;
+	std::atomic<bool> tcp_can_send{false};
 	bool enough_points = false;
 	// Methods
 	void initialize();
@@ -43,8 +47,8 @@ class TrafficClient {
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
-	bool alive = true;
-	bool connected = false;
+	std::atomic<bool> alive{true};
+	std::atomic<bool> connected{false};
 	sockaddr_in tcp_address;
 	int tcp_socket;
 	std::thread main;

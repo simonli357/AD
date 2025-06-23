@@ -518,6 +518,12 @@ class LaneDetector {
 				for (int i = 0; i < wpts.size(); i++) {
 					lane_msg.lane_waypoints.push_back(wpts[i]);
 				}
+				for (int i =0; i < left_waypoints.size(); i++) {
+					lane_msg.left_waypoints.push_back(left_waypoints[i]);
+				}
+				for (int i =0; i < right_waypoints.size(); i++) {
+					lane_msg.right_waypoints.push_back(right_waypoints[i]);
+				}
 				lane_msg.straight_lane = is_straight;
 				lane_msg.straight_lane_angle = waypoints_angle;
 				lane_msg.good_left = good_left;
@@ -565,6 +571,10 @@ class LaneDetector {
 
 	bool is_straight = false;
 	double waypoints_angle = 0.0;
+	std::vector<float> flat;
+	std::vector<cv::Point2f> world_waypoints;
+	std::vector<float> left_waypoints;
+	std::vector<float> right_waypoints;
 	std::vector<float> get_waypoints(const VectorXd &left_fit,
                                                const VectorXd &right_fit,
                                                int   num_waypoints,
@@ -573,8 +583,12 @@ class LaneDetector {
 			constexpr double kBEND_TH = 1.02;                //  ≈2 % longer than chord
 			constexpr double kYAW_TH  = 2.0 * M_PI / 180.0;  // 2 deg in radians
 
-			std::vector<cv::Point2f> world_waypoints;
+			world_waypoints.clear();
+			left_waypoints.clear();
+			right_waypoints.clear();
 			world_waypoints.reserve(num_waypoints);
+			left_waypoints.reserve(num_waypoints);
+			right_waypoints.reserve(num_waypoints);
 
 			// ---------- 1. build way‑points in the body‑fixed (x = forward) frame ----
 			double current_y_meter = 0.0;
@@ -602,9 +616,14 @@ class LaneDetector {
 					}
 
 					double world_x  = (IPM_WIDTH - center_x) * METER_PER_PIXEL_X - ipm_camera.width_m / 2.0;
+					double world_x_left	= (IPM_WIDTH - left_x) * METER_PER_PIXEL_X - ipm_camera.width_m / 2.0;
+					double world_x_right = (IPM_WIDTH - right_x) * METER_PER_PIXEL_X - ipm_camera.width_m / 2.0;
 					world_waypoints.emplace_back(static_cast<float>(current_y_meter),
 																			static_cast<float>(world_x));   // (x = fwd, y = left)
 
+					
+					left_waypoints.emplace_back(static_cast<float>(world_x_left));
+					right_waypoints.emplace_back(static_cast<float>(world_x_right));
 					// advance y by arc‑length “density” metres along the centre line
 					double left_dxdy   = get_derivative(y_pixel, left_fit);
 					double right_dxdy  = get_derivative(y_pixel, right_fit);
@@ -631,8 +650,9 @@ class LaneDetector {
 			yaw_values.push_back(!yaw_values.empty() ? yaw_values.back() : 0.0f);
 
 			// ---------- 3. pack (x,y,yaw) for the planner/MCU ------------------------
-			std::vector<float> flat;
+			
 			flat.reserve(world_waypoints.size() * 3);
+			flat.clear();
 			for (size_t i = 0; i < world_waypoints.size(); ++i)
 			{
 					flat.push_back(world_waypoints[i].x);
