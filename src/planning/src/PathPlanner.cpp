@@ -12,7 +12,7 @@ PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils()
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 }
 
-void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::vector<std::tuple<float, float>> destination_positions) {
+void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::vector<std::tuple<float, float>> destination_positions) {
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
@@ -23,7 +23,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	start.id = -2;
 	start.x = start_x;
 	start.y = start_y;
-	Vertex first = track.find_closest_node(start_x, start_y);
+	Vertex first = track.find_closest_node(start_x, start_y, car_yaw);
 	track.add_vertex(start, first);
 	path.push_back(start);
 	path.push_back(first);
@@ -37,7 +37,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
 	track.remove_vertex(start);
 }
 
-void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, std::string name, bool use_gps) {
+void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::string name, bool use_gps) {
 	this->vref = vref;
 	this->N = N;
 	this->T = 0.1;
@@ -46,7 +46,7 @@ void PathPlanner::set_constraints(double vref, int N, double T, double start_x, 
     this->name = name;
 	path.clear();
     Vertex start;
-    Vertex first = track.find_closest_node(start_x, start_y);
+    Vertex first = track.find_closest_node(start_x, start_y, car_yaw);
     std::cout << "PathPlanner::set_constraints: Path: " << name << std::endl;
     if (use_gps) {
         start.id = -2;

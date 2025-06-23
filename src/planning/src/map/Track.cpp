@@ -23,7 +23,7 @@ Track::Track() {
 }
 
 Track::Track(const std::string &filename) {
-    graph_file = package_path + "/src/persistence/" + filename;
+	graph_file = package_path + "/src/persistence/" + filename;
 	read_graph();
 	compute_edge_distances();
 }
@@ -60,11 +60,11 @@ void Track::read_graph() {
 
 		// strip leading 'n'
 		int nodeId = 0;
-        if (idStr[0] == 'n' || idStr[0] == 'N') {
-            nodeId = std::stoi(idStr + 1);
-        } else {
-            nodeId = std::stoi(idStr);
-        }
+		if (idStr[0] == 'n' || idStr[0] == 'N') {
+			nodeId = std::stoi(idStr + 1);
+		} else {
+			nodeId = std::stoi(idStr);
+		}
 
 		double xVal = 0.0, yVal = 0.0;
 		int attrVal = 0;
@@ -157,18 +157,18 @@ void Track::remove_vertex(const Vertex &u) {
 }
 
 Vertex Track::find_first_neighbor(const Vertex &u) {
-    auto id_map = build_to_vertex_map();
-    auto it = id_map.find(u.id);
-    if (it == id_map.end()) {
-        throw std::runtime_error("Track::find_neighbor: no vertex with id " + std::to_string(u.id));
-    }
-    auto u_desc = it->second;
-    auto [ei, ei_end] = boost::out_edges(u_desc, graph);
-    if (ei == ei_end) {
-        return u;
-    }
-    auto neighbor_desc = boost::target(*ei, graph);
-    return graph[neighbor_desc];
+	auto id_map = build_to_vertex_map();
+	auto it = id_map.find(u.id);
+	if (it == id_map.end()) {
+		throw std::runtime_error("Track::find_neighbor: no vertex with id " + std::to_string(u.id));
+	}
+	auto u_desc = it->second;
+	auto [ei, ei_end] = boost::out_edges(u_desc, graph);
+	if (ei == ei_end) {
+		return u;
+	}
+	auto neighbor_desc = boost::target(*ei, graph);
+	return graph[neighbor_desc];
 }
 
 std::unordered_map<int, Track::Graph::vertex_descriptor> Track::build_to_vertex_map() {
@@ -240,6 +240,31 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 		if (dist < best_dist) {
 			best_node = vertex;
 			best_dist = dist;
+		}
+	}
+	return best_node;
+}
+
+Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
+	constexpr double kYawThresholdDeg = 25.0; // Acceptable ± range
+
+	double best_dist = std::numeric_limits<double>::max();
+	Vertex best_node; // Will hold the closest orientation-matched node
+
+	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
+		auto v = *vp.first;
+		auto &vertex = graph[v];
+
+		// Put yaw difference in (–180, 180] then take its absolute value
+		double yaw_diff = std::fabs(std::remainder(vertex.tangent_angle - car_yaw, 360.0));
+		if (yaw_diff > kYawThresholdDeg) {
+			continue; // Skip: orientation too different
+		}
+
+		double dist = sqrt_dist(pos_x, pos_y, vertex);
+		if (dist < best_dist) {
+			best_dist = dist;
+			best_node = vertex;
 		}
 	}
 	return best_node;
