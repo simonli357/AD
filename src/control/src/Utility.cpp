@@ -338,9 +338,10 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     if (detected_objects.size() >= NUM_VALUES_PER_OBJECT && detected_objects[5] == -1.0 && num_obj == 1 && detected_objects[6] == -1.0) {
         double x, y, yaw;
         get_states(x, y, yaw);
-        double fog_x = Tracking::fog->x;
-        double fog_y = Tracking::fog->y;
-        double dist = std::hypot(fog_x - x, fog_y - y);
+        // double fog_x = Tracking::fog->x;
+        // double fog_y = Tracking::fog->y;
+        // double dist = std::hypot(fog_x - x, fog_y - y);
+        double dist = 4.0;
         if (dist > 1.25) { // emergency might be triggered by the fog, which is not a real object
             // std::cout << "fog: (" << fog_x << ", " << fog_y << "), ego: (" << x << ", " << y << "), dist: " << dist << std::endl;
             emergency = true;

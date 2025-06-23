@@ -263,6 +263,8 @@ namespace VehicleConstants {
     static const std::vector<std::vector<double>> ALL_ONEWAYS = {
         {{5.391, 0.104, 0}},
         {{15.634, 0.678, 0}},
+        {{14.634, 4.268, M_PI}},
+        {{15.049, 3.388, -M_PI/2}},
     };
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;

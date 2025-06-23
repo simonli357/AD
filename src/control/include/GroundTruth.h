@@ -166,6 +166,7 @@ inline void initialize_ground_truth() {
         PARKING_SPOTS.push_back(spot_right);
         PARKING_SPOTS.push_back(spot_left);
     }
+    std::cout << "[GroundTruth] Done Initializing ground truth...\n";
 }
 
 }  // namespace GroundTruth

@@ -629,9 +629,9 @@ inline void initialize_tracking() {
     road_pedestrians.clear();
     OBJECT_COUNT = 0;
     create_ego_car(0, 0, 0);
-    fog = std::make_shared<RoadObject>(OBJECT::FOG, 0.55, 0.5, 0, 1.0);
-    tunnel = std::make_shared<RoadObject>(OBJECT::TUNNEL, 4.0, 9.93, 0, 1.0);
-    ramp = std::make_shared<RoadObject>(OBJECT::RAMP, 3.65, 11.96, 0, 1.0);
+    // fog = std::make_shared<RoadObject>(OBJECT::FOG, 0.55, 0.5, 0, 1.0);
+    // tunnel = std::make_shared<RoadObject>(OBJECT::TUNNEL, 4.0, 9.93, 0, 1.0);
+    // ramp = std::make_shared<RoadObject>(OBJECT::RAMP, 3.65, 11.96, 0, 1.0);
 }
 inline void create_object(OBJECT type, double x, double y, double yaw, double confidence, bool parked = false) {
     switch (type) {
