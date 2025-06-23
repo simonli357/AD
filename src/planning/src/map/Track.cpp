@@ -246,36 +246,26 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 	return best_node;
 }
 
+inline double ang_diff(double a, double b) {
+    return std::remainder(a - b, 2 * M_PI);   // C++11 <cmath>
+}
+
 Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
-	constexpr double kYawThresholdDeg = 0.436332; // Acceptable ± range
-
 	double best_dist = std::numeric_limits<double>::max();
-	Vertex best_node; // Will hold the closest orientation-matched node
-    
-    double yaw, max, min;
+	Vertex best_node;
+
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
-		auto v = *vp.first;
-		auto &vertex = graph[v];
+		const auto &node = graph[*vp.first];
 
-		yaw = vertex.tangent_angle;
-        max = car_yaw + kYawThresholdDeg;
-        min = car_yaw - kYawThresholdDeg;
+		if (std::fabs(ang_diff(node.tangent_angle, car_yaw)) > kYawThreshold)
+			continue; // orientation mismatch
 
-
-        if (yaw > max || yaw < min) {
-            continue;
-        }
-
-		double dist = sqrt_dist(pos_x, pos_y, vertex);
+		double dist = sqrt_dist(pos_x, pos_y, node);
 		if (dist < best_dist) {
 			best_dist = dist;
-			best_node = vertex;
+			best_node = node;
 		}
 	}
-
-    std::cout << car_yaw << std::endl;
-    std::cout << yaw << std::endl;
-
 	return best_node;
 }
 
