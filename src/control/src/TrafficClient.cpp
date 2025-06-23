@@ -69,10 +69,10 @@ void TrafficClient::initialize() {
 void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
-        if (enough_points) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-            continue;
-        }
+		if (enough_points) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+			continue;
+		}
 
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
@@ -128,14 +128,14 @@ bool TrafficClient::can_send() {
 void TrafficClient::handle_location_data(double x, double y, double z) {
 	car_positions[array_ptr] = {x, y};
 	array_ptr = (array_ptr + 1) % car_positions.size();
-    if (array_ptr == 0) {
-        enough_points = true;
-    }
+	if (array_ptr == 0) {
+		enough_points = true;
+	}
 }
 
 void TrafficClient::clear_positions() {
-    car_positions = std::array<std::pair<double, double>, 25>{};
-    array_ptr = 0;
+	car_positions = std::array<std::pair<double, double>, 25>{};
+	array_ptr = 0;
 }
 
 std::pair<double, double> TrafficClient::get_car_position() {
@@ -144,10 +144,10 @@ std::pair<double, double> TrafficClient::get_car_position() {
 	constexpr double CLUSTER_RADIUS = 0.3;
 	constexpr size_t MIN_CLUSTER_SIZE = 6;
 
-    if (!enough_points) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        return {};
-    }
+	if (!enough_points) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return {};
+	}
 
 	// Statistical filtering
 	auto [mean_x, mean_y] = calculate_mean(car_positions);
@@ -179,8 +179,8 @@ std::pair<double, double> TrafficClient::get_car_position() {
 		std::cout << "Excessive variance in final position" << std::endl;
 		return {};
 	}
-    
-    return {final_x, final_y};
+
+	return {final_x, final_y};
 }
 
 std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 25> &data) {
