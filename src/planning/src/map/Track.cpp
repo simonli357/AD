@@ -255,11 +255,13 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
 
-		// Put yaw difference in (–180, 180] then take its absolute value
-		double yaw_diff = std::fabs(std::remainder(vertex.tangent_angle - car_yaw, 360.0));
-		if (yaw_diff > kYawThresholdDeg) {
-			continue; // Skip: orientation too different
-		}
+		double yaw = vertex.tangent_angle;
+        double max = car_yaw + kYawThresholdDeg;
+        double min = car_yaw - kYawThresholdDeg;
+
+        if (yaw > max || yaw < min) {
+            continue;
+        }
 
 		double dist = sqrt_dist(pos_x, pos_y, vertex);
 		if (dist < best_dist) {
