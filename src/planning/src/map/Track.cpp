@@ -257,8 +257,11 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		const auto &node = graph[*vp.first];
 
-		if (std::fabs(ang_diff(node.tangent_angle, car_yaw)) > kYawThreshold)
-			continue; // orientation mismatch
+        double angular_diff = std::fabs(ang_diff(node.tangent_angle, car_yaw));
+        std::cout << angular_diff << std::endl;
+		if (angular_diff > kYawThreshold) {
+			continue;
+        }
 
 		double dist = sqrt_dist(pos_x, pos_y, node);
 		if (dist < best_dist) {
