@@ -21,6 +21,7 @@ TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_a
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
     this->car_id = Tunable::gps_id;
     this->car_positions.reserve(num_points);
+    this->car_positions.resize(num_points);
 }
 
 TrafficClient::~TrafficClient() {
