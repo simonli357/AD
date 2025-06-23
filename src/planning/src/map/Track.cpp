@@ -263,7 +263,7 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
         y = node.y;
         x_n = neighbor.x;
         y_n = neighbor.y;
-        double yaw = std::atan2(x_n - x, y_n - y);
+        double yaw = std::atan2(y_n - y, x_n - x);
         double angular_diff = std::fabs(ang_diff(yaw, car_yaw));
 		if (angular_diff > kYawThreshold) {
 			continue;
