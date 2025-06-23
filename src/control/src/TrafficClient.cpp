@@ -146,7 +146,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
 
 	if (!enough_points) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		return {};
+		return {0.0, 0.0};
 	}
 
 	// Statistical filtering
@@ -160,7 +160,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
 	auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
 	if (clusters.empty()) {
 		std::cout << "No valid clusters found" << std::endl;
-		return {};
+		return {0.0, 0.0};
 	}
 
 	// Find largest cluster
@@ -168,7 +168,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
 
 	if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
 		std::cout << "Insufficient cluster density" << std::endl;
-		return {};
+		return {0.0, 0.0};
 	}
 
 	// Calculate final position
@@ -177,7 +177,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
 
 	if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
 		std::cout << "Excessive variance in final position" << std::endl;
-		return {};
+		return {0.0, 0.0};
 	}
 
 	return {final_x, final_y};
