@@ -494,24 +494,20 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                         double lane_wpt_y = msg.lane_waypoints[1];
                         bool proceed = true;
                         bool right_only = false;
-                        if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYRIGHT) ||
-                            PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
-                            if ((PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYRIGHT) && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 < PathManager::overtake_end_index) ||
-                                PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+                        bool on_highway = false;
+                        if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYRIGHT)) {
+                            on_highway = true;
+                            if (false) {
                                 if (msg.good_right && !msg.right_waypoints.empty()) {
                                     // on highwayright, but in overtaking maneuver
                                     lane_wpt_y = msg.right_waypoints[0] + 0.37/2.0; // 0.37 is the width of the lane
                                     right_only = true;
                                     // std::cout << "lane_wpt_y: " << lane_wpt_y << ", msg.right_waypoints[0]: " << msg.right_waypoints[0] << ", msg.left_waypoints[0]: " << msg.left_waypoints[0] << std::endl;
                                 }
-                            } else {
-                                proceed = false;
-                                // std::cout << "process_lane_data(): HIGHWAYLEFT but no good_right, skipping lane relocation" << std::endl;
                             }
                             // proceed = false;
-                        } else if (std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 < PathManager::overtake_end_index) {
-                            proceed = false;
                         }
+                        proceed = proceed && std::max(0.0, PathManager::closest_waypoint_index - 1.5 * PathManager::density)+1 >= PathManager::overtake_end_index;
                         double near_m = msg.near_m;
                         double lane_wpt_x = msg.lane_waypoints[0] + near_m;
                         int path_idx = static_cast<int>(PathManager::closest_waypoint_index + PathManager::density * near_m);
@@ -539,7 +535,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                             if (proceed && std::abs(errory) < Tunable::lane_localization_threshold) { 
                                 double err_dx_world = -std::sin(ego_yaw) * errory;   // Δx in world
                                 double err_dy_world =  std::cos(ego_yaw) * errory;   // Δy in world
-                                debug("LANE_RELOC2(): SUCCESS: errorx: " + helper::d2str(err_dx_world) + ", errory: " + helper::d2str(err_dy_world) + ", errory: " + helper::d2str(errory) + ", right_only: " + std::to_string(right_only), 1);
+                                debug("LANE_RELOC2(): SUCCESS: errorx: " + helper::d2str(err_dx_world) + ", errory: " + helper::d2str(err_dy_world) + ", errory: " + helper::d2str(errory) + ", right_only: " + std::to_string(right_only) + ", on_highway: " + std::to_string(on_highway), 1);
                                 recalibrate_states(err_dx_world, err_dy_world);
                                 next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
                             }
@@ -556,7 +552,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         }
         static int good_yaw_count = 0;
         static double last_straight_lane_angle = 0.0;
-        if (msg.straight_lane && std::abs(msg.straight_lane_angle) < 2.0 * M_PI / 180.0) {
+        if (msg.good_left && msg.good_right && msg.straight_lane && std::abs(msg.straight_lane_angle) < 2.0 * M_PI / 180.0) {
             good_yaw_count++;
             last_straight_lane_angle = msg.straight_lane_angle;
             if (good_yaw_count < 2) return; // need 2 consecutive messages with straight lane angle to reset yaw
@@ -565,7 +561,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
             double lane_based_yaw = nearest_direction_yaw - avg_straight_lane_angle;
             double yaw_error = helper::compare_yaw(lane_based_yaw, Sensing::yaw);
             // debug("process_lane_data(): lane_based_yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", yaw_error: " + helper::d2str(yaw_error*180/M_PI) + ", straight_lane_angle: " + helper::d2str(msg.straight_lane_angle*180/M_PI), 1);
-            if (std::abs(yaw_error) < 4.0 * M_PI / 180.0) {
+            if (std::abs(yaw_error) < 1.5 * M_PI / 180.0) {
                 next_yaw_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_yaw_reset_cooldown);
                 debug("LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", straight_lane_angle: " + helper::d2str(avg_straight_lane_angle*180/M_PI), 1);
                 Sensing::reset_yaw(lane_based_yaw);
