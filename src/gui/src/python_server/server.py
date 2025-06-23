@@ -68,6 +68,10 @@ class Server:
     def process_client(self, client_socket):
         client_type = self.get_client_type(client_socket)
         if client_type == "utility_node_client":
+            if self.tcp_client is not None:
+                self.tcp_client.alive = False
+                with self.tcp_client.lock:
+                    self.tcp_client.socket.close()
             print("Utility Client connected")
             self.tcp_client = TcpConnection(client_socket, self.on_packet, is_host=self.is_host, dashboard=False)
             self.main_window.set_callbacks()
