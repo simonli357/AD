@@ -176,6 +176,7 @@ public:
     OBJECT sign_flag = OBJECT::NONE;
     ros::Time sign_cooldown_timer = ros::Time::now();
     ros::Time highway_cooldown_timer = ros::Time::now();
+    ros::Time oneway_cooldown_timer = ros::Time::now();
     Eigen::Vector2d destination;
     int state = 0;
     
@@ -231,6 +232,26 @@ public:
         // std::cout << "INITIALIZE(): target waypoint index2: " << PathManager::target_waypoint_index << std::endl;
         PathManager::target_waypoint_index = 0;
         PathManager::find_intersections(utils);
+        if (Tunable::useGps) {
+            double initial_point_yaw = PathManager::state_refs(static_cast<int>(PathManager::target_waypoint_index + 0.2 * PathManager::density), 2);
+            double imu_yaw = Sensing::yaw;
+            double imu_nearest_direction_yaw = helper::nearest_direction(imu_yaw);
+            double initial_point_nearest_direction_yaw = helper::nearest_direction(initial_point_yaw);
+            double direction_error = helper::compare_yaw(imu_nearest_direction_yaw, initial_point_nearest_direction_yaw);
+            double yaw_error = helper::compare_yaw(imu_yaw, initial_point_yaw);
+            bool reset = (yaw_error) < 10 * M_PI / 180.0 && direction_error <3 * M_PI / 180.0;
+            utils.debug("INITIALIZE(): imu_yaw: " + helper::d2str(imu_yaw * 180 / M_PI) + ", initial_point_yaw: " + helper::d2str(initial_point_yaw * 180 / M_PI) + ", imu_nearest_direction_yaw: " + helper::d2str(imu_nearest_direction_yaw * 180 / M_PI) + ", initial_point_nearest_direction_yaw: " + helper::d2str(initial_point_nearest_direction_yaw * 180 / M_PI) + ", direction_error: " + helper::d2str(direction_error * 180 / M_PI) + ", yaw_error: " + helper::d2str(yaw_error * 180 / M_PI) + ", reset: " + (reset ? "true" : "false"), 1);
+            // std::cout << "INITIALIZE(): imu_yaw: " << imu_yaw * 180 / M_PI 
+            //     << ", initial_point_yaw: " << initial_point_yaw * 180 / M_PI 
+            //     << ", imu_nearest_direction_yaw: " << imu_nearest_direction_yaw * 180 / M_PI 
+            //     << ", initial_point_nearest_direction_yaw: " << initial_point_nearest_direction_yaw * 180 / M_PI 
+            //     << ", direction_error: " << direction_error * 180 / M_PI 
+            //     << ", yaw_error: " << yaw_error * 180 / M_PI 
+            //     << ", reset: " << (reset ? "true" : "false") << std::endl;
+            if (reset) {
+                Sensing::reset_yaw(imu_nearest_direction_yaw);
+            }
+        }
         mpc.reset_solver();
         initialized = true;
         
@@ -553,6 +574,7 @@ public:
         }
     }
     void find_sign_for_relocalization() {
+        // for stopsigns, crosswalks, prios, roundabout only
         if (!sign_relocalize) return;
         // check cooldown
         if (sign_cooldown_timer > ros::Time::now()) return;
@@ -593,6 +615,33 @@ public:
         }
         return -1;
     }
+    void find_oneway_for_relocalization() {
+        if (!sign_relocalize) return;
+        if(oneway_cooldown_timer > ros::Time::now()) {
+            return;
+        }
+        auto known_static_objects = Tracking::get_road_known_static_objects();
+        for (auto& obj: known_static_objects) {
+            // check type
+            if (obj->type != OBJECT::ONEWAY) continue;
+            // check last detection time
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(obj->type)])) {
+                continue;
+            }
+            // check confidence
+            if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) {
+                continue;
+            }
+            double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
+            // check distance
+            if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
+                continue;
+            }
+            oneway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
+            if (sign_based_relocalization2(obj)) obj->reset();
+            return;
+        }
+    }
     void find_highway_for_relocalization() {
         // TODO: move magic numbers to tunable
         if (!sign_relocalize) return;
@@ -616,7 +665,7 @@ public:
             if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
                 continue;
             }
-            highway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
+            oneway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
             if (sign_based_relocalization2(obj)) obj->reset();
             return;
         }
@@ -1273,6 +1322,7 @@ void StateMachine::run() {
             if (Tunable::sign) {
                 find_sign_for_relocalization();
                 find_highway_for_relocalization();
+                find_oneway_for_relocalization();
                 check_light();
                 int park_index = park_sign_detected();
                 if(park_index>=0 && park_count <3) {
@@ -1409,7 +1459,15 @@ void StateMachine::run() {
                         stop_for(stop_duration/2);
                         break;
                     }
-                    orientation_follow(orientation);
+                    
+                    if (Tunable::orientation_follow) {
+                        orientation_follow(orientation);
+                        temp_rate.sleep();
+                    } else {
+                        update_mpc_states();
+                        solve();
+                        rate->sleep();
+                    }
                     // solve();
                     // if (norm_sq > offset * offset * 0.2) {
                     //     orientation_follow(orientation);
@@ -1417,7 +1475,6 @@ void StateMachine::run() {
                     //     update_mpc_states();
                     //     solve();
                     // }
-                    temp_rate.sleep();
                 }
             }
             stop_for(stop_duration/2);

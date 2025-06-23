@@ -82,6 +82,7 @@ namespace Tunable {
     inline double rs_roll = 0.0;
     inline double rs_pitch = 0.0;
     inline double rs_yaw = 0.0;
+    inline bool orientation_follow = false;
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -184,6 +185,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/rs_roll", rs_roll);
       CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
       CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
+      CHECK_PARAM(mode + "/orientation_follow", orientation_follow);
         
       initialized = true;
       return true;

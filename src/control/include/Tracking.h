@@ -377,7 +377,7 @@ public:
         if (new_type != type) {
             throw std::invalid_argument("Cannot merge different types of objects");
         }
-        if (use_kf && kf) {
+        if (use_kf && kf && parked) {
             kf->update(new_x, new_y);
             x = kf->x();
             y = kf->y();
@@ -428,10 +428,13 @@ public:
                     this->yaw = first_yaw;
                 }
             }
-        
+            
             x = (1 - alpha) * x + alpha * new_x;
             y = (1 - alpha) * y + alpha * new_y;
-            if (parked) this->yaw = 0.0;
+            if (parked) {
+                this->yaw = 0.0;
+                this->speed = 0.0;
+            }
         }
         double alpha = new_conf / (confidence + new_conf);
         confidence = (1 - alpha) * confidence + alpha * new_conf;
@@ -456,7 +459,7 @@ public:
     }
     void predict() {
         std::lock_guard<std::mutex> lock(mtx);
-        if (use_kf && kf) {
+        if (use_kf && kf && !parked) {
             double dt = (ros::Time::now() - last_prediction_time).toSec();
             last_prediction_time = ros::Time::now();
             kf->predict(dt);
@@ -553,6 +556,9 @@ inline constexpr std::array<int, 8> KNOWN_STATIC_SIGNS = {
 };
 
 inline std::shared_ptr<EgoCarObject> ego_car;
+inline std::shared_ptr<RoadObject> fog;
+inline std::shared_ptr<RoadObject> tunnel;
+inline std::shared_ptr<RoadObject> ramp;
 inline std::vector<std::shared_ptr<RoadObject>> road_objects;
 inline std::vector<std::shared_ptr<KnownStaticObject>> road_known_static_objects;
 inline std::vector<std::shared_ptr<DynamicObject>> road_cars;
@@ -623,6 +629,9 @@ inline void initialize_tracking() {
     road_pedestrians.clear();
     OBJECT_COUNT = 0;
     create_ego_car(0, 0, 0);
+    fog = std::make_shared<RoadObject>(OBJECT::FOG, 0.55, 0.5, 0, 1.0);
+    tunnel = std::make_shared<RoadObject>(OBJECT::TUNNEL, 4.0, 9.93, 0, 1.0);
+    ramp = std::make_shared<RoadObject>(OBJECT::RAMP, 3.65, 11.96, 0, 1.0);
 }
 inline void create_object(OBJECT type, double x, double y, double yaw, double confidence, bool parked = false) {
     switch (type) {

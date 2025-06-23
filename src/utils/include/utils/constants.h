@@ -115,11 +115,12 @@ namespace VehicleConstants {
         RAMP
     };
 
-    static constexpr std::array<OBJECT, 11> KNOWN_STATIC_OBJECTS = { 
+    static constexpr std::array<OBJECT, 12> KNOWN_STATIC_OBJECTS = { 
         HIGHWAYENTRANCE, STOPSIGN, 
         ROUNDABOUT, PARK, CROSSWALK, 
         HIGHWAYEXIT, PRIORITY, LIGHTS, 
-        GREENLIGHT, YELLOWLIGHT, REDLIGHT
+        GREENLIGHT, YELLOWLIGHT, REDLIGHT,
+        ONEWAY
     };
     const std::array<std::string, 17> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None" };
     const std::array<double, 17> OBJECT_HEIGHTS = {
@@ -258,6 +259,10 @@ namespace VehicleConstants {
     static const std::vector<std::vector<double>> ALL_HIGHWAYEXITS = {
         {{6.488, 12.474, M_PI}},
         {{14.233, 10.066, 0}},
+    };
+    static const std::vector<std::vector<double>> ALL_ONEWAYS = {
+        {{5.391, 0.104, 0}},
+        {{15.634, 0.678, 0}},
     };
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;
