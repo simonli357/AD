@@ -247,7 +247,7 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 }
 
 Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
-	constexpr double kYawThresholdDeg = 25.0; // Acceptable ± range
+	constexpr double kYawThresholdDeg = 0.436332; // Acceptable ± range
 
 	double best_dist = std::numeric_limits<double>::max();
 	Vertex best_node; // Will hold the closest orientation-matched node
@@ -257,9 +257,9 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
 
-		yaw = vertex.tangent_angle * 180.0 / M_PI;
-        max = car_yaw * 180.0 / M_PI + kYawThresholdDeg;
-        min = car_yaw * 180.0 / M_PI - kYawThresholdDeg;
+		yaw = vertex.tangent_angle;
+        max = car_yaw + kYawThresholdDeg;
+        min = car_yaw - kYawThresholdDeg;
 
 
         if (yaw > max || yaw < min) {
