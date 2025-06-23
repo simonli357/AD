@@ -259,6 +259,9 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
         double max = car_yaw + kYawThresholdDeg;
         double min = car_yaw - kYawThresholdDeg;
 
+        std::cout << car_yaw << std::endl;
+        std::cout << yaw << std::endl;
+
         if (yaw > max || yaw < min) {
             continue;
         }
