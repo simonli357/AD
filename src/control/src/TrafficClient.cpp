@@ -313,7 +313,7 @@ void TrafficClient::send_car_data() {
 			} else if (obj->type == OBJECT::RAMP) {
 				id = 16;
 			} else if (obj->type == OBJECT::TUNNEL) {
-				id = 16;
+				id = 17;
 			} else if (obj->type == OBJECT::FOG) {
 				id = 15;
 			}
