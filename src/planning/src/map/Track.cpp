@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/graph/graphml.hpp>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -255,9 +256,9 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 		auto v = *vp.first;
 		auto &vertex = graph[v];
 
-		double yaw = vertex.tangent_angle;
-        double max = car_yaw + kYawThresholdDeg;
-        double min = car_yaw - kYawThresholdDeg;
+		double yaw = vertex.tangent_angle * 180.0 / M_PI;
+        double max = car_yaw * 180.0 / M_PI + kYawThresholdDeg;
+        double min = car_yaw * 180.0 / M_PI - kYawThresholdDeg;
 
         std::cout << car_yaw << std::endl;
         std::cout << yaw << std::endl;
