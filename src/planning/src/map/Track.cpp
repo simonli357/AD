@@ -246,10 +246,10 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 	return best_node;
 }
 
+constexpr double kYawThreshold = 25.0 * M_PI / 180.0;
 inline double ang_diff(double a, double b) {
     return std::remainder(a - b, 2 * M_PI);   // C++11 <cmath>
 }
-
 Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 	double best_dist = std::numeric_limits<double>::max();
 	Vertex best_node;
