@@ -122,10 +122,10 @@ namespace VehicleConstants {
         GREENLIGHT, YELLOWLIGHT, REDLIGHT,
         ONEWAY
     };
-    const std::array<std::string, 17> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None" };
-    const std::array<double, 17> OBJECT_HEIGHTS = {
+    const std::array<std::string, 20> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None", "Fog", "Tunnel", "Ramp" };
+    const std::array<double, 20> OBJECT_HEIGHTS = {
         0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774,
-        0.1944, 0.125, 0.1, 0.1, 0.1944, 0.1944, 0.1944, 0.1};
+        0.1944, 0.125, 0.1, 0.1, 0.1944, 0.1944, 0.1944, 0.1, 1.0, 1.0, 1.0};
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,

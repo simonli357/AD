@@ -75,8 +75,8 @@ namespace Tunable {
     inline double highway_cooldown = 3.0;
     inline double lane_localization_cooldown = 3.0;
     inline double sign_cooldown = 3.0;
-    inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5};
-    inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+    inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 10, 10, 10, 10};
+    inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1, 0.1};
     inline bool use_kf; // use Kalman filter for dynamic object tracking, else use EMA
     inline double odom_rate;
     inline double rs_roll = 0.0;
