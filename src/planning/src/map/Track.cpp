@@ -256,8 +256,15 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
 
 	for (auto vp = boost::vertices(graph); vp.first != vp.second; ++vp.first) {
 		const auto &node = graph[*vp.first];
+        Vertex neighbor = find_first_neighbor(node);
 
-        double angular_diff = std::fabs(ang_diff(node.tangent_angle, car_yaw));
+        double x, y, x_n, y_n;
+        x = node.x;
+        y = node.y;
+        x_n = neighbor.x;
+        y_n = neighbor.y;
+        double yaw = std::atan2(x_n - x, y_n - y);
+        double angular_diff = std::fabs(ang_diff(yaw, car_yaw));
         std::cout << angular_diff << std::endl;
 		if (angular_diff > kYawThreshold) {
 			continue;
