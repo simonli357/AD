@@ -1,5 +1,4 @@
 #include "TrafficClient.hpp"
-#include "TcpClient.hpp"
 #include "utils/constants.h"
 #include <arpa/inet.h>
 #include <chrono>
@@ -21,6 +20,8 @@ TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_a
 	main = std::thread(&TrafficClient::initialize, this);
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
     this->car_id = Tunable::gps_id;
+    this->car_positions.reserve(num_points);
+    this->car_positions.resize(num_points);
 }
 
 TrafficClient::~TrafficClient() {
@@ -69,10 +70,10 @@ void TrafficClient::initialize() {
 void TrafficClient::listen() {
 	std::array<uint8_t, 1024> buffer;
 	while (connected) {
-        if (enough_points) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(2500));
-            continue;
-        }
+		if (enough_points) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+			continue;
+		}
 
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
@@ -128,26 +129,25 @@ bool TrafficClient::can_send() {
 void TrafficClient::handle_location_data(double x, double y, double z) {
 	car_positions[array_ptr] = {x, y};
 	array_ptr = (array_ptr + 1) % car_positions.size();
-    if (array_ptr == 0) {
-        enough_points = true;
-    }
+	if (array_ptr == 0) {
+		enough_points = true;
+	}
 }
 
 void TrafficClient::clear_positions() {
-    car_positions = std::array<std::pair<double, double>, 25>{};
-    array_ptr = 0;
+	car_positions.clear();
+	array_ptr = 0;
 }
 
 std::pair<double, double> TrafficClient::get_car_position() {
-	constexpr size_t TARGET_SAMPLES = 25;
 	constexpr double MAX_ACCEPTABLE_STD = 0.25;
 	constexpr double CLUSTER_RADIUS = 0.3;
 	constexpr size_t MIN_CLUSTER_SIZE = 6;
 
-    if (!enough_points) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        return {};
-    }
+	if (!enough_points) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		return {};
+	}
 
 	// Statistical filtering
 	auto [mean_x, mean_y] = calculate_mean(car_positions);
@@ -179,26 +179,8 @@ std::pair<double, double> TrafficClient::get_car_position() {
 		std::cout << "Excessive variance in final position" << std::endl;
 		return {};
 	}
-    
-    return {final_x, final_y};
-}
 
-std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 25> &data) {
-	double sum_x = 0.0, sum_y = 0.0;
-	for (const auto &p : data) {
-		sum_x += p.first;
-		sum_y += p.second;
-	}
-	return {sum_x / data.size(), sum_y / data.size()};
-}
-
-std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y) {
-	double var_x = 0.0, var_y = 0.0;
-	for (const auto &p : data) {
-		var_x += std::pow(p.first - mean_x, 2);
-		var_y += std::pow(p.second - mean_y, 2);
-	}
-	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
+	return {final_x, final_y};
 }
 
 std::pair<double, double> TrafficClient::calculate_mean(std::vector<std::pair<double, double>> &data) {
@@ -219,7 +201,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(std::vector<std::pair
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
+std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
 	std::vector<std::pair<double, double>> result;
 	for (const auto &p : data) {
 		if (std::abs(p.first - mean_x) < sigma * std_x && std::abs(p.second - mean_y) < sigma * std_y) {
@@ -313,7 +295,7 @@ void TrafficClient::send_car_data() {
 			} else if (obj->type == OBJECT::RAMP) {
 				id = 16;
 			} else if (obj->type == OBJECT::TUNNEL) {
-				id = 16;
+				id = 17;
 			} else if (obj->type == OBJECT::FOG) {
 				id = 15;
 			}
