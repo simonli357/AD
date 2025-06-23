@@ -246,7 +246,7 @@ Vertex Track::find_closest_node(double pos_x, double pos_y) {
 	return best_node;
 }
 
-constexpr double kYawThreshold = 25.0 * M_PI / 180.0;
+constexpr double kYawThreshold = 35.0 * M_PI / 180.0;
 inline double ang_diff(double a, double b) {
     return std::remainder(a - b, 2 * M_PI);   // C++11 <cmath>
 }
@@ -265,7 +265,6 @@ Vertex Track::find_closest_node(double pos_x, double pos_y, double car_yaw) {
         y_n = neighbor.y;
         double yaw = std::atan2(x_n - x, y_n - y);
         double angular_diff = std::fabs(ang_diff(yaw, car_yaw));
-        std::cout << angular_diff << std::endl;
 		if (angular_diff > kYawThreshold) {
 			continue;
         }
