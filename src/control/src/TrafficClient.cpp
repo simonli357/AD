@@ -14,16 +14,13 @@
 #include <ros/ros.h>
 #include <sys/socket.h>
 #include <tuple>
-#include <algorithm>   // std::nth_element
-#include <cmath>       // std::fabs
-#include <limits>
 
 using json = nlohmann::json;
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
 	main = std::thread(&TrafficClient::initialize, this);
 	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-	this->car_id = Tunable::gps_id;
+    this->car_id = Tunable::gps_id;
 }
 
 TrafficClient::~TrafficClient() {
@@ -43,10 +40,6 @@ TrafficClient::~TrafficClient() {
 
 void TrafficClient::create_tcp_socket() {
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (tcp_socket == -1) {
-		std::cerr << "Failed to create TCP socket: " << strerror(errno) << std::endl;
-		exit(EXIT_FAILURE);
-	}
 	tcp_address.sin_family = AF_INET;
 	tcp_address.sin_port = htons(tcp_port);
 	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
@@ -170,61 +163,17 @@ std::pair<double, double> TrafficClient::get_car_position() {
 		return {};
 	}
 
-		std::cout << "hi1" << std::endl;
-    // ---------- snapshot under lock ----------
-    std::array<std::pair<double,double>, BUF_CAP> snapshot;
-    {
-        std::shared_lock lk(pos_mtx);
-        snapshot = car_positions;                // std::array *is* assignable
-    }
+	// Find largest cluster
+	auto &largest_cluster = *std::max_element(clusters.begin(), clusters.end(), [](const auto &a, const auto &b) { return a.size() < b.size(); });
 
 	if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
 		std::cout << "Insufficient cluster density" << std::endl;
 		return {};
 	}
 
-		std::cout << "hi2" << std::endl;
-    const std::size_t mid = BUF_CAP / 2;
-    std::nth_element(xs.begin(), xs.begin() + mid, xs.end());
-    std::nth_element(ys.begin(), ys.begin() + mid, ys.end());
-    const double med_x = xs[mid];
-    const double med_y = ys[mid];
-
-    // ---------- MAD ----------
-    std::array<double, BUF_CAP> dxs{}, dys{};
-    for (std::size_t i = 0; i < BUF_CAP; ++i) {
-        dxs[i] = std::fabs(snapshot[i].first  - med_x);
-        dys[i] = std::fabs(snapshot[i].second - med_y);
-    }
-    std::nth_element(dxs.begin(), dxs.begin() + mid, dxs.end());
-    std::nth_element(dys.begin(), dys.begin() + mid, dys.end());
-    const double mad_x = dxs[mid];
-    const double mad_y = dys[mid];
-
-    if (mad_x == 0.0 && mad_y == 0.0) {          // perfect overlap
-        out_x = med_x;
-        out_y = med_y;
-        return true;
-    }
-		std::cout << "hi3" << std::endl;
-
-    const double thr_x = MAD_FACTOR * 1.4826 * mad_x; // 1.4826 ≈ 1/Φ⁻¹(0.75)
-    const double thr_y = MAD_FACTOR * 1.4826 * mad_y;
-
-    // ---------- robust mean of inliers ----------
-    double sum_x = 0.0, sum_y = 0.0;
-    std::size_t count = 0;
-
-    for (auto const& p : snapshot) {
-        if (std::fabs(p.first  - med_x) <= thr_x &&
-            std::fabs(p.second - med_y) <= thr_y)
-        {
-            sum_x += p.first;
-            sum_y += p.second;
-            ++count;
-        }
-    }
-		std::cout << "hi4" << std::endl;
+	// Calculate final position
+	auto [final_x, final_y] = calculate_mean(largest_cluster);
+	auto [final_std_x, final_std_y] = calculate_std_dev(largest_cluster, final_x, final_y);
 
 	if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
 		std::cout << "Excessive variance in final position" << std::endl;
@@ -252,7 +201,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::pair<double, double> TrafficClient::calculate_mean(const std::vector<std::pair<double, double>> &data) {
+std::pair<double, double> TrafficClient::calculate_mean(std::vector<std::pair<double, double>> &data) {
 	double sum_x = 0.0, sum_y = 0.0;
 	for (const auto &p : data) {
 		sum_x += p.first;
@@ -261,7 +210,7 @@ std::pair<double, double> TrafficClient::calculate_mean(const std::vector<std::p
 	return {sum_x / data.size(), sum_y / data.size()};
 }
 
-std::pair<double, double> TrafficClient::calculate_std_dev(const std::vector<std::pair<double, double>> &data, double mean_x, double mean_y) {
+std::pair<double, double> TrafficClient::calculate_std_dev(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y) {
 	double var_x = 0.0, var_y = 0.0;
 	for (const auto &p : data) {
 		var_x += std::pow(p.first - mean_x, 2);
