@@ -141,23 +141,34 @@ void TrafficClient::handle_location_data(double x, double y, double z) {
 }
 
 void TrafficClient::clear_positions() {
-    car_positions = std::array<std::pair<double, double>, 32>{};
+    car_positions = std::array<std::pair<double, double>, 25>{};
     array_ptr = 0;
 }
 
-bool TrafficClient::get_car_position(double& out_x, double& out_y)
-{
-    // ---------- constants ----------
-		std::cout << "hi-1" << std::endl;
-    static constexpr std::size_t BUF_CAP     = 32;   // compile-time!
-    static constexpr std::size_t MIN_SAMPLES = 6;
-    static constexpr double      MAD_FACTOR  = 3.0;  // ≈3σ for normal data
+std::pair<double, double> TrafficClient::get_car_position() {
+	constexpr size_t TARGET_SAMPLES = 25;
+	constexpr double MAX_ACCEPTABLE_STD = 0.25;
+	constexpr double CLUSTER_RADIUS = 0.3;
+	constexpr size_t MIN_CLUSTER_SIZE = 6;
 
-		std::cout << "hi" << std::endl;
-    if (!enough_points) {                        // not filled a full lap yet
-        out_x = out_y = 1000.0;;
-        return false;
+    if (!enough_points) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        return {};
     }
+
+	// Statistical filtering
+	auto [mean_x, mean_y] = calculate_mean(car_positions);
+	auto [std_x, std_y] = calculate_std_dev(car_positions, mean_x, mean_y);
+
+	// First pass outlier removal
+	auto filtered = filter_outliers(car_positions, mean_x, mean_y, std_x, std_y, 2.0);
+
+	// Density-based clustering
+	auto clusters = cluster_points(filtered, CLUSTER_RADIUS);
+	if (clusters.empty()) {
+		std::cout << "No valid clusters found" << std::endl;
+		return {};
+	}
 
 		std::cout << "hi1" << std::endl;
     // ---------- snapshot under lock ----------
@@ -167,12 +178,10 @@ bool TrafficClient::get_car_position(double& out_x, double& out_y)
         snapshot = car_positions;                // std::array *is* assignable
     }
 
-    // ---------- split into X / Y ----------
-    std::array<double, BUF_CAP> xs{}, ys{};
-    for (std::size_t i = 0; i < BUF_CAP; ++i) {
-        xs[i] = snapshot[i].first;
-        ys[i] = snapshot[i].second;
-    }
+	if (largest_cluster.size() < MIN_CLUSTER_SIZE) {
+		std::cout << "Insufficient cluster density" << std::endl;
+		return {};
+	}
 
 		std::cout << "hi2" << std::endl;
     const std::size_t mid = BUF_CAP / 2;
@@ -217,18 +226,15 @@ bool TrafficClient::get_car_position(double& out_x, double& out_y)
     }
 		std::cout << "hi4" << std::endl;
 
-    if (count < MIN_SAMPLES) {                   // still too noisy
-        out_x = out_y = std::numeric_limits<double>::quiet_NaN();
-        return false;
-    }
-
-    out_x = sum_x / static_cast<double>(count);
-    out_y = sum_y / static_cast<double>(count);
-		std::cout << "hi5" << std::endl;
-    return true;
+	if (final_std_x > MAX_ACCEPTABLE_STD || final_std_y > MAX_ACCEPTABLE_STD) {
+		std::cout << "Excessive variance in final position" << std::endl;
+		return {};
+	}
+    
+    return {final_x, final_y};
 }
 
-std::pair<double, double> TrafficClient::calculate_mean(const std::array<std::pair<double, double>, 32> &data) {
+std::pair<double, double> TrafficClient::calculate_mean(std::array<std::pair<double, double>, 25> &data) {
 	double sum_x = 0.0, sum_y = 0.0;
 	for (const auto &p : data) {
 		sum_x += p.first;
@@ -237,7 +243,7 @@ std::pair<double, double> TrafficClient::calculate_mean(const std::array<std::pa
 	return {sum_x / data.size(), sum_y / data.size()};
 }
 
-std::pair<double, double> TrafficClient::calculate_std_dev(const std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y) {
+std::pair<double, double> TrafficClient::calculate_std_dev(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y) {
 	double var_x = 0.0, var_y = 0.0;
 	for (const auto &p : data) {
 		var_x += std::pow(p.first - mean_x, 2);
@@ -264,7 +270,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(const std::vector<std
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 32> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
+std::vector<std::pair<double, double>> TrafficClient::filter_outliers(std::array<std::pair<double, double>, 25> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
 	std::vector<std::pair<double, double>> result;
 	for (const auto &p : data) {
 		if (std::abs(p.first - mean_x) < sigma * std_x && std::abs(p.second - mean_y) < sigma * std_y) {

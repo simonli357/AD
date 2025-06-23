@@ -1,6 +1,7 @@
 #include <chrono>
 #include <ostream>
 #include <ros/ros.h>
+#include "Sensing.h"
 #include "TcpClient.hpp"
 #include "TrafficClient.hpp"
 #include "Utility.hpp"
@@ -132,13 +133,14 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (!Tunable::real) {
-        traffic_client->get_car_position(x0, y0);
-        // while (std::isnan(x0) || std::isnan(y0)) {
-        //     traffic_client->get_car_position(x0, y0);
-        // }
-
-        // debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
+    if (Tunable::real) {
+        auto p = traffic_client->get_car_position();
+        while (p.first == 0.0 || p.second == 0.0) {
+            p = traffic_client->get_car_position();
+        }
+        this->x0 = p.first;
+        this->y0 = p.second;
+        debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
         return;
     }
 

@@ -71,7 +71,7 @@ class TcpClient {
 	void send_start_srv(bool started);
 	void send_run(float v_ref, const std::string &path_name, float x_init, float y_init, float yaw_init);
 	void send_model_states(const geometry_msgs::Pose &msg);
-	void send_imu_calib(double sys, double gyro_calib, double mag_calib, double accel_calib);
+	void send_imu_calib(float sys_calib, float gyro_calib, float mag_calib, float accel_calib);
 
 	// Callbacks
 	void set_send_run_callback(std::function<void()> cb) { send_run_callback = cb; }
