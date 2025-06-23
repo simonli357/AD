@@ -46,7 +46,7 @@ run189:
 - 297
 - 158
 - 419
-- 520
+- 402
 - 372
 - 328
 - 259
@@ -68,13 +68,13 @@ run189:
 - 8
 runHighway502: # AI Path
 - 502
-- 520
+- 402
 runHighway464: # AI Path
 - 464
 - 482
 runHighway: # Test Path
-- 502
-- 404
+- 422
+- 402
 runSpeedCurve151: # AI Path
 - 151
 - 406

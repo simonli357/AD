@@ -960,9 +960,9 @@ public:
                 break;
             }
             else if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
-                right = true; 
                 on_highway = true;
                 density *= 1/1.33;
+                right = true; 
                 // PathManager::overtake_end_index_scaler *= 1.5;
                 break;
             }
