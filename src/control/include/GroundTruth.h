@@ -156,6 +156,9 @@ inline void initialize_ground_truth() {
     for (const auto& p : PARKING_SIGN_POSES2) {
         standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::PARK));
     }
+    for (const auto& p : ALL_ONEWAYS) {
+        standalone_signs.emplace_back(std::make_shared<Sign>(p, OBJECT::ONEWAY));
+    }
 
     for(int i=0; i<5; i++) {
         Eigen::Vector2d spot_right = {PARKING_SPOT_RIGHT[0] + i*PARKING_SPOT_LENGTH, PARKING_SPOT_RIGHT[1]};
@@ -163,6 +166,7 @@ inline void initialize_ground_truth() {
         PARKING_SPOTS.push_back(spot_right);
         PARKING_SPOTS.push_back(spot_left);
     }
+    std::cout << "[GroundTruth] Done Initializing ground truth...\n";
 }
 
 }  // namespace GroundTruth

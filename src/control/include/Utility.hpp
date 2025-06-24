@@ -549,6 +549,9 @@ public:
         } else if (obj == OBJECT::PARK) {
             o_string = "PARKING SIGNS";
             return PARKING_SIGN_POSES1;
+        } else if (obj == OBJECT::ONEWAY) {
+            o_string = "ALL_ONEWAYS";
+            return ALL_ONEWAYS;
         }
         o_string = "UNKNOWN";
         return EMPTY;

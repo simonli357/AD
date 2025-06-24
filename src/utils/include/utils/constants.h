@@ -115,16 +115,17 @@ namespace VehicleConstants {
         RAMP
     };
 
-    static constexpr std::array<OBJECT, 11> KNOWN_STATIC_OBJECTS = { 
+    static constexpr std::array<OBJECT, 12> KNOWN_STATIC_OBJECTS = { 
         HIGHWAYENTRANCE, STOPSIGN, 
         ROUNDABOUT, PARK, CROSSWALK, 
         HIGHWAYEXIT, PRIORITY, LIGHTS, 
-        GREENLIGHT, YELLOWLIGHT, REDLIGHT
+        GREENLIGHT, YELLOWLIGHT, REDLIGHT,
+        ONEWAY
     };
-    const std::array<std::string, 17> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None" };
-    const std::array<double, 17> OBJECT_HEIGHTS = {
+    const std::array<std::string, 20> OBJECT_NAMES = { "Oneway", "Highway Entrance", "Stop Sign", "Roundabout", "Park", "Crosswalk", "No Entry", "Highway Exit", "Priority", "Lights", "Block", "Pedestrian", "Car", "Green Light", "Yellow Light", "Red Light", "None", "Fog", "Tunnel", "Ramp" };
+    const std::array<double, 20> OBJECT_HEIGHTS = {
         0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774, 0.1774,
-        0.1944, 0.125, 0.1, 0.1, 0.1944, 0.1944, 0.1944, 0.1};
+        0.1944, 0.125, 0.1, 0.1, 0.1944, 0.1944, 0.1944, 0.1, 1.0, 1.0, 1.0};
     enum MANEUVER_DIRECTION {
         LEFT,
         STRAIGHT,
@@ -241,18 +242,29 @@ namespace VehicleConstants {
     static const std::vector<std::vector<double>> EMPTY = {};
 
     static const std::vector<std::vector<double>> ALL_LIGHTS = {
-        {{2.67-ofs6*2-pole_size-sign_ofs1, 4.584+sign_ofs2, -M_PI/2}},
-        {{2.744851+ofs6*2+pole_size+sign_ofs1, 3.07145-sign_ofs2, M_PI/2}},
-        {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1, M_PI}},
-        {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1, 0}},
+        // {{2.67-ofs6*2-pole_size-sign_ofs1, 4.584+sign_ofs2, -M_PI/2}},
+        // {{2.744851+ofs6*2+pole_size+sign_ofs1, 3.07145-sign_ofs2, M_PI/2}},
+        // {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1, M_PI}},
+        // {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1, 0}},
+        // Ferreol's measurements
+        {{2.216, 4.601, -M_PI/2}},
+        {{3.195, 3.031, M_PI/2}},
+        {{3.541, 3.865637+ofs6*2+pole_size+sign_ofs1 + 0.05, M_PI}},
+        {{1.906, 3.347, 0}},
     };
     static const std::vector<std::vector<double>> ALL_HIGHWAYENTRANCES = {
-        {{14.35,11.03, M_PI}},
-        {{6.3477, 11.56, 0}},
+        {{14.362,11.028, M_PI}},
+        {{6.332, 11.551, 0}},
     };
     static const std::vector<std::vector<double>> ALL_HIGHWAYEXITS = {
-        {{7.0845, 12.9, M_PI}},
-        {{13.63, 9.7, 0}},
+        {{6.488, 12.474, M_PI}},
+        {{14.233, 10.066, 0}},
+    };
+    static const std::vector<std::vector<double>> ALL_ONEWAYS = {
+        {{5.391, 0.104, 0}},
+        {{15.634, 0.678, 0}},
+        {{14.634, 4.268, M_PI}},
+        {{15.049, 3.388, -M_PI/2}},
     };
     // PARKING SIGN COORDINATES
     static constexpr double park_ofs1_left = 0.009, park_ofs1_right = 0.016;

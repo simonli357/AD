@@ -293,9 +293,9 @@ void TrafficClient::send_car_data() {
 			} else if (obj->type == OBJECT::NOENTRY) {
 				id = 9;
 			} else if (obj->type == OBJECT::RAMP) {
-				id = 16;
-			} else if (obj->type == OBJECT::TUNNEL) {
 				id = 17;
+			} else if (obj->type == OBJECT::TUNNEL) {
+				id = 16;
 			} else if (obj->type == OBJECT::FOG) {
 				id = 15;
 			}
@@ -330,7 +330,7 @@ void TrafficClient::send_car_data() {
 		}
 
 		for (auto &car : Tracking::road_cars) {
-			int id = 10;
+			int id = -1;
 			auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
 			if (!car_obj) {
 				continue;

@@ -659,13 +659,13 @@ namespace periodics{
         //     return;  // abort on any error
         // }
     
-        // yaw -= init_euler_h_deg;
-        // if (yaw < 0.0f)   yaw += 360.0f;
-        // if (yaw >= 360.0f) yaw -= 360.0f;
+        yaw -= init_euler_h_deg;
+        if (yaw < 0.0f)   yaw += 360.0f;
+        if (yaw >= 360.0f) yaw -= 360.0f;
 
-        // pitch -= init_euler_p_deg;
-        // if (pitch < -180.0f) pitch += 360.0f;
-        // if (pitch >= 180.0f) pitch -= 360.0f;
+        pitch -= init_euler_p_deg;
+        if (pitch < -180.0f) pitch += 360.0f;
+        if (pitch >= 180.0f) pitch -= 360.0f;
 
         // calibration
         u8 gyro_calib, mag_calib, accel_calib, sys_calib;
