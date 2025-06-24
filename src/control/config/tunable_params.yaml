@@ -2,8 +2,8 @@ real:
   lane_relocalize: false
   intersection_relocalize: false
   lane_relocalize2: false
-  sign_relocalize: true
-  lane_yaw_reset: true 
+  sign_relocalize: false
+  lane_yaw_reset: false 
   lane_yaw_reset_cooldown: 1.0
   highway_cooldown: 3.0
   sign_cooldown: 0.5
@@ -40,7 +40,7 @@ real:
   pedestrian_distance: 0.75
   pedestrian_threshold: 0.35
   has_light: false
-  use_kf: true
+  use_kf: false
   rs_roll: -0.009774
   rs_yaw: 0.011
   rs_pitch: 0.03229
