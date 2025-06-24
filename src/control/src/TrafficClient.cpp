@@ -187,8 +187,7 @@ std::pair<double, double> TrafficClient::calculate_std_dev(std::vector<std::tupl
 	return {std::sqrt(var_x / data.size()), std::sqrt(var_y / data.size())};
 }
 
-std::vector<std::tuple<double, double, double>> TrafficClient::filter_outliers(std::vector<std::tuple<double, double, double>> &data, double mean_x, double mean_y, double std_x, double std_y,
-																			   double sigma) {
+std::vector<std::tuple<double, double, double>> TrafficClient::filter_outliers(std::vector<std::tuple<double, double, double>> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma) {
 	std::vector<std::tuple<double, double, double>> result;
 	for (const auto &p : data) {
 		auto [x, y, q] = p;
