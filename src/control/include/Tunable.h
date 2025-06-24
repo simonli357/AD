@@ -84,6 +84,8 @@ namespace Tunable {
     inline double rs_pitch = 0.0;
     inline double rs_yaw = 0.0;
     inline bool orientation_follow = false;
+    inline double lane_yaw_reset_thresh1 = 2.0; // threshold 1 for lane yaw reset
+    inline double lane_yaw_reset_thresh2 = 1.5; // threshold 2 for lane yaw reset
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -188,6 +190,8 @@ namespace Tunable {
       CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
       CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
       CHECK_PARAM(mode + "/orientation_follow", orientation_follow);
+      CHECK_PARAM(mode + "/lane_yaw_reset_thresh1", lane_yaw_reset_thresh1);
+      CHECK_PARAM(mode + "/lane_yaw_reset_thresh2", lane_yaw_reset_thresh2);
         
       initialized = true;
       return true;
