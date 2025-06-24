@@ -48,3 +48,4 @@ real:
   min_dist_to_car: 0.30 # min distance from ego car front to other car back
   change_lane_offset_scaler: 1.0
   min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
+  rel_speed_thresh: 0.15
