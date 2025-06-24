@@ -1,10 +1,9 @@
 real:
   lane_relocalize: false
   intersection_relocalize: false
-  lane_relocalize2: false
-  sign_relocalize: false
-  lane_yaw_reset: false 
-  lane_yaw_reset_cooldown: 1.0
+  lane_relocalize2: true
+  sign_relocalize: true
+  lane_yaw_reset: true 
   highway_cooldown: 3.0
   sign_cooldown: 0.5
   lane_localization_cooldown: 0.5
@@ -45,9 +44,10 @@ real:
   rs_yaw: 0.011
   rs_pitch: 0.03229
   orientation_follow: false
-  min_dist_to_car: 0.30 # min distance from ego car front to other car back
-  change_lane_offset_scaler: 1.0
+  min_dist_to_car: 0.34 # min distance from ego car front to other car back
+  change_lane_offset_scaler: 1.07
   min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
-  lane_yaw_reset_thresh1: 2.0 # degrees
-  lane_yaw_reset_thresh2: 1.5 # degrees
-  rel_speed_thresh: 0.15
+  lane_yaw_reset_thresh1: 1.1 # degrees
+  lane_yaw_reset_thresh2: 3.75 # degrees
+  lane_yaw_reset_cooldown: 30.0
+  rel_speed_thresh: 0.2

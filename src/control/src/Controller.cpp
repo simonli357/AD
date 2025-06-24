@@ -1136,11 +1136,15 @@ public:
         can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
-                            && PathManager::attribute_cmp2(closest_idx, end_idx);
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
         
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+        }
+
+        if (!PathManager::attribute_cmp2(closest_idx, end_idx)) {
+            can_overtake = false;
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + helper::d2str(PathManager::state_attributes(end_idx)) + " is not on the same lane as closest idx " + helper::d2str(PathManager::state_attributes(closest_idx)) + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
         }
         
         if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
@@ -1165,13 +1169,13 @@ public:
                 utils.debug("CHECK_CAR(): WARNING: start index exceeds state_refs size, stopping... start_index: " + helper::d2str(start_index) + ", state_refs size: " + helper::d2str(PathManager::state_refs.rows()), 2);
                 return;
             };
-            if (PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
-                PathManager::overtake_end_index = PathManager::state_refs.rows() - 1;
-            }
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
             utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
+            if (PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
+                PathManager::overtake_end_index = PathManager::state_refs.rows() - 1;
+            }
             return;
         } else {
             if (min_same_lane_dist - CAR_LENGTH < Tunable::min_tailing_dist) {
