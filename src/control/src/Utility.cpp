@@ -133,11 +133,8 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (Tunable::real) {
+    if (Tunable::real && traffic_client) {
         auto p = traffic_client->get_car_position();
-        while (p.first == 0.0 || p.second == 0.0) {
-            p = traffic_client->get_car_position();
-        }
         this->x0 = p.first;
         this->y0 = p.second;
         debug("Final position - X: " + std::to_string(x0) + ", Y: " + std::to_string(y0), 1);
