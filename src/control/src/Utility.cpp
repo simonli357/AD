@@ -572,7 +572,7 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
             double avg_straight_lane_angle = (last_straight_lane_angle + msg.straight_lane_angle) / 2.0;
             double lane_based_yaw = nearest_direction_yaw - avg_straight_lane_angle;
             double yaw_error = helper::compare_yaw(lane_based_yaw, Sensing::yaw);
-            debug("process_lane_data(): lane_based_yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", yaw_error: " + helper::d2str(yaw_error*180/M_PI) + ", straight_lane_angle: " + helper::d2str(msg.straight_lane_angle*180/M_PI), 1);
+            // debug("process_lane_data(): lane_based_yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", yaw_error: " + helper::d2str(yaw_error*180/M_PI) + ", straight_lane_angle: " + helper::d2str(msg.straight_lane_angle*180/M_PI), 1);
             if (std::abs(yaw_error) < Tunable::lane_yaw_reset_thresh2 * M_PI / 180.0) {
                 next_yaw_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_yaw_reset_cooldown);
                 std::cout << msg.straight_lane_angle*180/M_PI << std::endl;
