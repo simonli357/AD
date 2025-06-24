@@ -550,6 +550,11 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                                 debug("LANE_RELOC2(): SUCCESS: errorx: " + helper::d2str(err_dx_world) + ", errory: " + helper::d2str(err_dy_world) + ", errory: " + helper::d2str(errory) + ", right_only: " + std::to_string(right_only) + ", on_highway: " + std::to_string(on_highway), 1);
                                 recalibrate_states(err_dx_world, err_dy_world);
                                 next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
+                                emergency=true;
+                                ros::Time now = ros::Time::now();
+                                while(ros::ok() && (ros::Time::now() - now).toSec() < 3.0) {
+                                    publish_cmd_vel(0.0, 0.0);
+                                }
                             }
                         }
                     }
