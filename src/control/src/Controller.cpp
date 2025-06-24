@@ -1002,17 +1002,16 @@ public:
         for (int i = start_idx; i < static_cast<int>(start_idx + 0.5 * PathManager::density); i++) {
             // check if car is on highway
             if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
-                density *= 1/1.33;
-                // PathManager::overtake_end_index_scaler *= 1.5;
+                // density *= 1/1.33;
+                density *= 1/Tunable::hw_speed_ratio;
                 on_highway = true;
-                // utils.debug("CHECK_CAR(): detected car is on right side of highway, if overtake, on left", 2);
                 break;
             }
             else if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
                 on_highway = true;
-                density *= 1/1.33;
+                // density *= 1/1.33;
+                density *= 1/Tunable::hw_speed_ratio;
                 right = true; 
-                // PathManager::overtake_end_index_scaler *= 1.5;
                 break;
             }
         }
@@ -1093,7 +1092,8 @@ public:
                 }
             }
         }
-        double min_car_dist = MIN_CAR_DIST;
+        // double min_car_dist = MIN_CAR_DIST;
+        double min_car_dist = Tunable::min_dist_to_consider_car;
         if (on_highway) min_car_dist *= 1.25;
         if (min_same_lane_dist > min_car_dist) {
             // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
