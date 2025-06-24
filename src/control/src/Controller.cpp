@@ -558,12 +558,12 @@ public:
             if (light_obj->last_detection_time < ros::Time::now() - ros::Duration(0.5)) continue;
             double dist = (light_obj->gt_pose.head(2) - x_current.head(2)).norm();
             if (dist > max_light_dist) continue;
-            if (light_obj->current_color == LightColor::RED) {
+            if (light_obj->current_color == LightColor::RED || light_obj->current_color == LightColor::YELLOW) {
                 wait_for_green_flag = true;
-                utils.debug("check_light(): red light detected at a distance of: " + helper::d2str(dist) + ", waiting for green...", 2);
+                utils.debug("check_light(): red or yellow light detected at a distance of: " + helper::d2str(dist) + ", waiting for green...", 2);
                 ros::Time start_wait_time = ros::Time::now();
-                while (ros::Time::now() - start_wait_time < ros::Duration(3.0)) {
-                    if (light_obj->current_color == LightColor::GREEN || light_obj->current_color == LightColor::YELLOW) {
+                while (ros::Time::now() - start_wait_time < ros::Duration(7.53)) {
+                    if (light_obj->current_color == LightColor::GREEN) {
                         utils.debug("check_light(): green light detected, proceeding...", 2);
                         break;
                     }
@@ -1095,10 +1095,10 @@ public:
         // double min_car_dist = MIN_CAR_DIST;
         double min_car_dist = Tunable::min_dist_to_consider_car;
         if (on_highway) min_car_dist *= 1.25;
-        if (min_same_lane_dist > min_car_dist) {
-            // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
-            return;
-        }
+        // if (min_same_lane_dist > min_car_dist) {
+        //     // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
+        //     return;
+        // }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
             if (!PathManager::attribute_cmp(min_same_lane_index, PathManager::ATTRIBUTE::INTERSECTION)) {
                 // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;

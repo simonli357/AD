@@ -575,7 +575,8 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
             // debug("process_lane_data(): lane_based_yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", yaw_error: " + helper::d2str(yaw_error*180/M_PI) + ", straight_lane_angle: " + helper::d2str(msg.straight_lane_angle*180/M_PI), 1);
             if (std::abs(yaw_error) < 1.5 * M_PI / 180.0) {
                 next_yaw_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_yaw_reset_cooldown);
-                debug("LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", straight_lane_angle: " + helper::d2str(avg_straight_lane_angle*180/M_PI), 1);
+                std::cout << msg.straight_lane_angle*180/M_PI << std::endl;
+                // debug("LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", straight_lane_angle: " + helper::d2str(avg_straight_lane_angle*180/M_PI), 1);
                 Sensing::reset_yaw(lane_based_yaw);
             }
         } else {
