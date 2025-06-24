@@ -50,3 +50,4 @@ real:
   min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
   lane_yaw_reset_thresh1: 2.0 # degrees
   lane_yaw_reset_thresh2: 1.5 # degrees
+  rel_speed_thresh: 0.15

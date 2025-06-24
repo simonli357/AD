@@ -34,6 +34,7 @@ namespace Tunable {
     inline bool use_encoder = false;
 
     // tunables
+    inline double rel_speed_thresh = 0.15;
     inline double cw_speed_ratio = 1.0;
     inline double hw_speed_ratio = 1.0;
     inline double sign_localization_threshold = 0.5;
@@ -144,6 +145,7 @@ namespace Tunable {
     //   std::string mode = real ? "/real" : "/sim";
       std::string mode = "real";
   
+      CHECK_PARAM(mode + "/rel_speed_thresh", rel_speed_thresh);
       CHECK_PARAM(mode + "/cw_speed_ratio", cw_speed_ratio);
       CHECK_PARAM(mode + "/hw_speed_ratio", hw_speed_ratio);
       CHECK_PARAM(mode + "/sign_localization_threshold", sign_localization_threshold);
