@@ -51,7 +51,8 @@ namespace Tunable {
     inline double intersection_localization_orientation_threshold = 15;
     inline double NORMAL_SPEED = 0.175;
     inline double change_lane_offset_scaler = 1.2;
-    inline double min_dist_to_car = 1.2;
+    inline double min_dist_to_car = 0.357;
+    inline double min_dist_to_consider_car = 1.0;
     inline double min_tailing_dist = 0.3; 
     
     inline bool lane_relocalize = false;
@@ -167,6 +168,7 @@ namespace Tunable {
       CHECK_PARAM(mode + "/has_light", has_light);
       CHECK_PARAM(mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
       CHECK_PARAM(mode + "/min_dist_to_car", min_dist_to_car);
+      CHECK_PARAM(mode + "/min_dist_to_consider_car", min_dist_to_consider_car);
       CHECK_PARAM(mode + "/min_tailing_dist", min_tailing_dist);
       CHECK_PARAM(mode + "/pedestrian_distance", pedestrian_distance);
       CHECK_PARAM(mode + "/pedestrian_threshold", pedestrian_threshold);
