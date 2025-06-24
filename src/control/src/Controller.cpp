@@ -1127,7 +1127,7 @@ public:
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
         }
         
-        if (can_overtake && relative_speed < 0.15) {
+        if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance) + ", ego_speed = " + helper::d2str(ego_speed) + ", car_speed = " + helper::d2str(car_speed), 2);
             can_overtake = false;
         }
