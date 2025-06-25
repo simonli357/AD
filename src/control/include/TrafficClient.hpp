@@ -38,10 +38,12 @@ class TrafficClient {
 	// Fields
 	int car_id = 6;
 	const milliseconds frequency = milliseconds(250);
+	const seconds gps_timeout = seconds(Tunable::gps_timeout);
 	const size_t num_points = Tunable::gps_points;
-	std::vector<std::pair<double, double>> car_positions;
+	std::vector<std::tuple<double, double, double>> car_positions;
 	size_t array_ptr = 0;
 	steady_clock::time_point last_send_time = steady_clock::now();
+	steady_clock::time_point start_time = steady_clock::now();
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
@@ -57,11 +59,11 @@ class TrafficClient {
 	void send_data();
 	void subscribeToLocationData();
 	bool can_send();
-	void handle_location_data(double x, double y, double z);
-	std::pair<double, double> calculate_mean(std::vector<std::pair<double, double>> &data);
-	std::pair<double, double> calculate_std_dev(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y);
-	std::vector<std::pair<double, double>> filter_outliers(std::vector<std::pair<double, double>> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma);
-	std::vector<std::vector<std::pair<double, double>>> cluster_points(const std::vector<std::pair<double, double>> &points, double radius);
+	void handle_location_data(double x, double y, double quality);
+	std::pair<double, double> calculate_mean(std::vector<std::tuple<double, double, double>> &data);
+	std::pair<double, double> calculate_weighted_mean(std::vector<std::tuple<double, double, double>> &data);
+	std::pair<double, double> calculate_std_dev(std::vector<std::tuple<double, double, double>> &data, double mean_x, double mean_y);
+	std::vector<std::tuple<double, double, double>> filter_outliers(std::vector<std::tuple<double, double, double>> &data, double mean_x, double mean_y, double std_x, double std_y, double sigma);
 	// Encode
 	std::string create_vehicle_pos(double x, double y);
 	std::string create_vehicle_rot(double yaw);
