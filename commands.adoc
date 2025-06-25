@@ -1,6 +1,10 @@
 = useful commands
 d3t2
 258722448dccdcda9d0e7b520ce2573326d8f758
+final morning
+d16c468c97c69d00dacb04f36cc2f22388e3dde9
+d4t1
+bf1e3a149ae61239ca95fc34f156121fab161dc7
 
 BOSCHFMC
 roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=false real:=true realsense:=true
