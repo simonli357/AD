@@ -144,11 +144,14 @@ std::pair<double, double> TrafficClient::get_car_position() {
     auto elapsed = duration_cast<seconds>(now - start_time);
 	while (!enough_points && elapsed < gps_timeout) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        now = steady_clock::now();
+        elapsed = duration_cast<seconds>(now - start_time);
 	}
 	auto [mean_x, mean_y] = calculate_mean(car_positions);
 	auto [std_x, std_y] = calculate_std_dev(car_positions, mean_x, mean_y);
 	auto filtered = filter_outliers(car_positions, mean_x, mean_y, std_x, std_y, 1.85);
 	auto [x, y] = calculate_weighted_mean(car_positions);
+    enough_points = true;
 	return {x, y};
 }
 
