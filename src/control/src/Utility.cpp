@@ -133,7 +133,7 @@ void Utility::fetch_run_params() {
         return;
     }
 
-    if (Tunable::real && traffic_client) {
+    if (Tunable::use_traffic_server && Tunable::useGps) {
         auto p = traffic_client->get_car_position();
         this->x0 = p.first;
         this->y0 = p.second;
