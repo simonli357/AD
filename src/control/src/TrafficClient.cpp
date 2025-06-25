@@ -149,6 +149,7 @@ std::pair<double, double> TrafficClient::get_car_position() {
 	auto [std_x, std_y] = calculate_std_dev(car_positions, mean_x, mean_y);
 	auto filtered = filter_outliers(car_positions, mean_x, mean_y, std_x, std_y, 1.85);
 	auto [x, y] = calculate_weighted_mean(car_positions);
+    std::cout << x "," << y << std::endl;
 	return {x, y};
 }
 
