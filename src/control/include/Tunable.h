@@ -23,7 +23,6 @@ namespace Tunable {
     inline bool use_tcp, use_traffic_server;
     inline int gps_id;
     inline int gps_points;
-    inline int gps_timeout;
     inline std::string traffic_server_ip, ip_address;
     inline bool testing;
     inline int debugLevel;
@@ -101,7 +100,6 @@ namespace Tunable {
       CHECK_PARAM("/use_encoder", use_encoder);
       CHECK_PARAM("/gps_id", gps_id);
       CHECK_PARAM("/gps_points", gps_points);
-      CHECK_PARAM("/gps_timeout", gps_timeout);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;
