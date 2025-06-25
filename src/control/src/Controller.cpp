@@ -176,6 +176,7 @@ public:
     OBJECT sign_flag = OBJECT::NONE;
     ros::Time sign_cooldown_timer = ros::Time::now();
     ros::Time highway_cooldown_timer = ros::Time::now();
+    ros::Time oneway_cooldown_timer = ros::Time::now();
     Eigen::Vector2d destination;
     int state = 0;
     
@@ -231,6 +232,26 @@ public:
         // std::cout << "INITIALIZE(): target waypoint index2: " << PathManager::target_waypoint_index << std::endl;
         PathManager::target_waypoint_index = 0;
         PathManager::find_intersections(utils);
+        if (Tunable::useGps) {
+            double initial_point_yaw = PathManager::state_refs(static_cast<int>(PathManager::target_waypoint_index + 0.2 * PathManager::density), 2);
+            double imu_yaw = Sensing::yaw;
+            double imu_nearest_direction_yaw = helper::nearest_direction(imu_yaw);
+            double initial_point_nearest_direction_yaw = helper::nearest_direction(initial_point_yaw);
+            double direction_error = helper::compare_yaw(imu_nearest_direction_yaw, initial_point_nearest_direction_yaw);
+            double yaw_error = helper::compare_yaw(imu_yaw, initial_point_yaw);
+            bool reset = (yaw_error) < 10 * M_PI / 180.0 && direction_error <3 * M_PI / 180.0;
+            utils.debug("INITIALIZE(): imu_yaw: " + helper::d2str(imu_yaw * 180 / M_PI) + ", initial_point_yaw: " + helper::d2str(initial_point_yaw * 180 / M_PI) + ", imu_nearest_direction_yaw: " + helper::d2str(imu_nearest_direction_yaw * 180 / M_PI) + ", initial_point_nearest_direction_yaw: " + helper::d2str(initial_point_nearest_direction_yaw * 180 / M_PI) + ", direction_error: " + helper::d2str(direction_error * 180 / M_PI) + ", yaw_error: " + helper::d2str(yaw_error * 180 / M_PI) + ", reset: " + (reset ? "true" : "false"), 1);
+            // std::cout << "INITIALIZE(): imu_yaw: " << imu_yaw * 180 / M_PI 
+            //     << ", initial_point_yaw: " << initial_point_yaw * 180 / M_PI 
+            //     << ", imu_nearest_direction_yaw: " << imu_nearest_direction_yaw * 180 / M_PI 
+            //     << ", initial_point_nearest_direction_yaw: " << initial_point_nearest_direction_yaw * 180 / M_PI 
+            //     << ", direction_error: " << direction_error * 180 / M_PI 
+            //     << ", yaw_error: " << yaw_error * 180 / M_PI 
+            //     << ", reset: " << (reset ? "true" : "false") << std::endl;
+            if (reset) {
+                Sensing::reset_yaw(imu_nearest_direction_yaw);
+            }
+        }
         mpc.reset_solver();
         initialized = true;
         
@@ -477,13 +498,13 @@ public:
                             ", no more intersections", 2);
             }
             if(sign_flag == OBJECT::STOPSIGN) {
-                utils.debug("intersection reached: CASE STOP SIGN, stopping for " + helper::d2str(stop_duration) + " seconds...", 2);
+                utils.debug("intersection reached: CASE STOP SIGN, stopping for 3 seconds...", 2);
                 mpc.reset_solver();
                 stop_for(stop_duration);
             } else if(sign_flag == OBJECT::NONE) {
-                utils.debug("intersection reached: WARNING: CASE NO SIGN, stopping for safety...", 2);
-                mpc.reset_solver();
-                stop_for(stop_duration * 0.75);
+                utils.debug("intersection reached: WARNING: CASE NO SIGN, not stopping for safety...", 2);
+                // mpc.reset_solver();
+                // stop_for(stop_duration * 0.75);
             } else {
                 utils.debug("intersection reached: CASE " + OBJECT_NAMES[sign_flag] + ", proceeding...", 2);
             }
@@ -537,12 +558,12 @@ public:
             if (light_obj->last_detection_time < ros::Time::now() - ros::Duration(0.5)) continue;
             double dist = (light_obj->gt_pose.head(2) - x_current.head(2)).norm();
             if (dist > max_light_dist) continue;
-            if (light_obj->current_color == LightColor::RED) {
+            if (light_obj->current_color == LightColor::RED || light_obj->current_color == LightColor::YELLOW) {
                 wait_for_green_flag = true;
-                utils.debug("check_light(): red light detected at a distance of: " + helper::d2str(dist) + ", waiting for green...", 2);
+                utils.debug("check_light(): red or yellow light detected at a distance of: " + helper::d2str(dist) + ", waiting for green...", 2);
                 ros::Time start_wait_time = ros::Time::now();
-                while (ros::Time::now() - start_wait_time < ros::Duration(3.0)) {
-                    if (light_obj->current_color == LightColor::GREEN || light_obj->current_color == LightColor::YELLOW) {
+                while (ros::Time::now() - start_wait_time < ros::Duration(7.53)) {
+                    if (light_obj->current_color == LightColor::GREEN) {
                         utils.debug("check_light(): green light detected, proceeding...", 2);
                         break;
                     }
@@ -553,6 +574,7 @@ public:
         }
     }
     void find_sign_for_relocalization() {
+        // for stopsigns, crosswalks, prios, roundabout only
         if (!sign_relocalize) return;
         // check cooldown
         if (sign_cooldown_timer > ros::Time::now()) return;
@@ -593,6 +615,33 @@ public:
         }
         return -1;
     }
+    void find_oneway_for_relocalization() {
+        if (!sign_relocalize) return;
+        if(oneway_cooldown_timer > ros::Time::now()) {
+            return;
+        }
+        auto known_static_objects = Tracking::get_road_known_static_objects();
+        for (auto& obj: known_static_objects) {
+            // check type
+            if (obj->type != OBJECT::ONEWAY) continue;
+            // check last detection time
+            if (obj->last_detection_time < ros::Time::now() - ros::Duration(Tunable::recency_thresholds[static_cast<int>(obj->type)])) {
+                continue;
+            }
+            // check confidence
+            if (obj->cumulative_confidence < obj->cumulative_confidence_thresh) {
+                continue;
+            }
+            double dist = (obj->gt_pose.head(2) - x_current.head(2)).norm();
+            // check distance
+            if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
+                continue;
+            }
+            oneway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
+            if (sign_based_relocalization2(obj)) obj->reset();
+            return;
+        }
+    }
     void find_highway_for_relocalization() {
         // TODO: move magic numbers to tunable
         if (!sign_relocalize) return;
@@ -616,7 +665,7 @@ public:
             if (dist > max_sign_dist * 2 || dist < min_sign_dist) {
                 continue;
             }
-            highway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
+            oneway_cooldown_timer = ros::Time::now() + ros::Duration(Tunable::highway_cooldown);
             if (sign_based_relocalization2(obj)) obj->reset();
             return;
         }
@@ -935,10 +984,17 @@ public:
         int closest_idx = PathManager::closest_waypoint_index;
         double safety_dist = 0.75; // meters
         bool can_overtake = true;
-        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) return;
+        if (std::max(0, static_cast<int>(closest_idx - safety_dist * PathManager::density)) < static_cast<int>(PathManager::overtake_end_index)) {
+            // std::cout << "CHECK_CAR(): cannot overtake, too close to end of overtaking zone: closest_idx: " 
+            //           << closest_idx << ", overtaking end index: " << PathManager::overtake_end_index 
+            //           << ", safety distance: " << safety_dist * PathManager::density << std::endl;
+            return;
+        }
         auto cars = Tracking::get_road_cars();
-        if (cars.size() == 0) return;
-        double min_adj_lane_dist = 1000.;
+        if (cars.size() == 0) {
+            return;
+        }
+        double min_adj_lane_dist = 1000.; // longitudinal distance to closest car in adjacent lane
         double min_adj_lane_lat_dist = 1000.;
         int min_adj_lane_index = 0;
         double min_same_lane_dist = 1000.;
@@ -953,17 +1009,16 @@ public:
         for (int i = start_idx; i < static_cast<int>(start_idx + 0.5 * PathManager::density); i++) {
             // check if car is on highway
             if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYRIGHT)) { // if on right side of highway, overtake on left
-                density *= 1/1.33;
-                // PathManager::overtake_end_index_scaler *= 1.5;
+                // density *= 1/1.33;
+                density *= 1/Tunable::hw_speed_ratio;
                 on_highway = true;
-                utils.debug("CHECK_CAR(): detected car is on right side of highway, if overtake, on left", 2);
                 break;
             }
             else if (PathManager::attribute_cmp(i, PathManager::ATTRIBUTE::HIGHWAYLEFT)) { // if on left side of highway, overtake on right
-                right = true; 
                 on_highway = true;
-                density *= 1/1.33;
-                // PathManager::overtake_end_index_scaler *= 1.5;
+                // density *= 1/1.33;
+                density *= 1/Tunable::hw_speed_ratio;
+                right = true; 
                 break;
             }
         }
@@ -985,14 +1040,19 @@ public:
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
             if (car_dist > min_same_lane_dist && car_dist > min_adj_lane_dist) continue;
-            double look_ahead_dist = car_dist  + 0.50;
+            double look_ahead_dist = car_dist + 0.50;
+            // std::cout << "car_pose: (" << car_pose(0) << ", " << car_pose(1) << "), car_yaw: " << car_yaw 
+            //           << ", car_dist: " << car_dist << ", look_ahead_dist: " << look_ahead_dist 
+            //           << ", x_current: (" << x_current(0) << ", " << x_current(1) << ")" << std::endl;
             int look_ahead_index = look_ahead_dist * PathManager::density + closest_idx;
-            double min_dist_sq = 1000.;
+            double min_dist_sq = 1000.; // distance to same lane
             int min_index = 0;
             double min_dist_sq_adj = 1000.; // distance to adjacent lane
             int min_index_adj = 0;
             int lateral_dist_sign = 1;
             int lateral_dist_sign_adj = 1;
+            // std::cout << "closest_idx: " << closest_idx << ", look_ahead_index: " << look_ahead_index 
+            //           << ", car_dist: " << car_dist << ", look_ahead_dist: " << look_ahead_dist << std::endl;
             for (int i = closest_idx; i < look_ahead_index; i++) { 
                 // iterate over waypoints in front of car, compute distance from car to waypoint, find closest waypoint and distance
                 if (i >= PathManager::state_refs.rows()) {
@@ -1014,7 +1074,10 @@ public:
             }
             double min_dist = std::sqrt(min_dist_sq);
             double min_dist_adj = std::sqrt(min_dist_sq_adj);
-            if (min_dist < min_dist_adj && min_dist < LANE_OFFSET) {
+            // std::cout << "min_dist: " << min_dist << ", min_dist_adj: " << min_dist_adj 
+            //           << ", car_dist: " << car_dist << ", min_same_lane_dist: " << min_same_lane_dist 
+            //           << ", min_adj_lane_dist: " << min_adj_lane_dist << std::endl;
+            if (min_dist < min_dist_adj + 0.03 && min_dist < LANE_OFFSET + 0.02) {
                 if (car_dist < min_same_lane_dist) {
                     min_same_lane_dist = car_dist;
                     Eigen::Vector2d same_point = PathManager::state_refs.block(min_index, 0, 1, 2).transpose().eval();
@@ -1044,17 +1107,19 @@ public:
                 }
             }
         }
-        double min_car_dist = MIN_CAR_DIST;
-        if (on_highway) min_car_dist *= 1.25;
-        if (min_same_lane_dist > min_car_dist) {
+        // double min_car_dist_to_consider = MIN_CAR_DIST;
+        double min_car_dist_to_consider = Tunable::min_dist_to_consider_car;
+        if (on_highway) min_car_dist_to_consider *= 1.25;
+        if (min_same_lane_dist > min_car_dist_to_consider) {
             // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
             return;
         }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
             if (!PathManager::attribute_cmp(min_same_lane_index, PathManager::ATTRIBUTE::INTERSECTION)) {
-                // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
+                std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
                 return;
             }
+            utils.debug("CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET), 2);
             can_overtake = false;
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
@@ -1071,14 +1136,18 @@ public:
         can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
-                            && PathManager::attribute_cmp2(closest_idx, end_idx);
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
         
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
         }
+
+        if (!PathManager::attribute_cmp2(closest_idx, end_idx)) {
+            can_overtake = false;
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + helper::d2str(PathManager::state_attributes(end_idx)) + " is not on the same lane as closest idx " + helper::d2str(PathManager::state_attributes(closest_idx)) + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
+        }
         
-        if (can_overtake && relative_speed < 0.15) {
+        if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance) + ", ego_speed = " + helper::d2str(ego_speed) + ", car_speed = " + helper::d2str(car_speed), 2);
             can_overtake = false;
         }
@@ -1096,14 +1165,17 @@ public:
             closest_idx = PathManager::find_closest_waypoint(x_current);
             int start_index = closest_idx + static_cast<int>(start_dist * density);
             // utils.debug("HEREEEEEE!!: start dist: " + helper::d2str(start_dist) + ", min_same_lane_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", density: " + helper::d2str(density) + ", num index: " + helper::d2str(static_cast<int>(start_dist * density)) + ", closest point: (" + helper::d2str(PathManager::state_refs(closest_idx, 0)) + ", " + helper::d2str(PathManager::state_refs(closest_idx, 1)) + "), min index: " + helper::d2str(min_same_lane_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist), 2);
-            if (start_index >= PathManager::state_refs.rows() || PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
-                utils.debug("CHECK_CAR(): WARNING: start or end index exceeds state_refs size, stopping...", 2);
+            if (start_index >= PathManager::state_refs.rows()) {
+                utils.debug("CHECK_CAR(): WARNING: start index exceeds state_refs size, stopping... start_index: " + helper::d2str(start_index) + ", state_refs size: " + helper::d2str(PathManager::state_refs.rows()), 2);
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
             utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
+            if (PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
+                PathManager::overtake_end_index = PathManager::state_refs.rows() - 1;
+            }
             return;
         } else {
             if (min_same_lane_dist - CAR_LENGTH < Tunable::min_tailing_dist) {
@@ -1273,9 +1345,10 @@ void StateMachine::run() {
             if (Tunable::sign) {
                 find_sign_for_relocalization();
                 find_highway_for_relocalization();
+                find_oneway_for_relocalization();
                 check_light();
                 int park_index = park_sign_detected();
-                if(park_index>=0 && park_count < 1) {
+                if(park_index>=0 && park_count <3) {
                     auto x1 = PARKING_SIGN_POSES1[0][0];
                     auto y1 = PARKING_SIGN_POSES1[0][1];
                     double distance_to_parking_spot = std::sqrt(std::pow((x_current[0] - x1), 2) + std::pow((x_current[1] - y1), 2));
@@ -1409,7 +1482,15 @@ void StateMachine::run() {
                         stop_for(stop_duration/2);
                         break;
                     }
-                    orientation_follow(orientation);
+                    
+                    if (Tunable::orientation_follow) {
+                        orientation_follow(orientation);
+                        temp_rate.sleep();
+                    } else {
+                        update_mpc_states();
+                        solve();
+                        rate->sleep();
+                    }
                     // solve();
                     // if (norm_sq > offset * offset * 0.2) {
                     //     orientation_follow(orientation);
@@ -1417,7 +1498,6 @@ void StateMachine::run() {
                     //     update_mpc_states();
                     //     solve();
                     // }
-                    temp_rate.sleep();
                 }
             }
             stop_for(stop_duration/2);

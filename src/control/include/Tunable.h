@@ -22,6 +22,7 @@ namespace Tunable {
     inline double x0, y0, yaw0, vref;
     inline bool use_tcp, use_traffic_server;
     inline int gps_id;
+    inline int gps_points;
     inline std::string traffic_server_ip, ip_address;
     inline bool testing;
     inline int debugLevel;
@@ -33,6 +34,7 @@ namespace Tunable {
     inline bool use_encoder = false;
 
     // tunables
+    inline double rel_speed_thresh = 0.15;
     inline double cw_speed_ratio = 1.0;
     inline double hw_speed_ratio = 1.0;
     inline double sign_localization_threshold = 0.5;
@@ -49,7 +51,8 @@ namespace Tunable {
     inline double intersection_localization_orientation_threshold = 15;
     inline double NORMAL_SPEED = 0.175;
     inline double change_lane_offset_scaler = 1.2;
-    inline double min_dist_to_car = 1.2;
+    inline double min_dist_to_car = 0.357;
+    inline double min_dist_to_consider_car = 1.0;
     inline double min_tailing_dist = 0.3; 
     
     inline bool lane_relocalize = false;
@@ -66,6 +69,7 @@ namespace Tunable {
     inline double sign_lon_offset;
     inline double sign_lon_offset_slope;
     inline double sign_lat_offset;
+    inline double sign_lat_offset_slope;
 
     inline double max_light_dist = 0.9;
     inline double max_sign_dist = 1.5;
@@ -73,10 +77,16 @@ namespace Tunable {
     inline double highway_cooldown = 3.0;
     inline double lane_localization_cooldown = 3.0;
     inline double sign_cooldown = 3.0;
-    inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5};
-    inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+    inline std::vector<float> cumulative_confidence_thresholds = {2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 10, 10, 10, 10};
+    inline std::vector<float> recency_thresholds = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1, 0.1};
     inline bool use_kf; // use Kalman filter for dynamic object tracking, else use EMA
     inline double odom_rate;
+    inline double rs_roll = 0.0;
+    inline double rs_pitch = 0.0;
+    inline double rs_yaw = 0.0;
+    inline bool orientation_follow = false;
+    inline double lane_yaw_reset_thresh1 = 2.0; // threshold 1 for lane yaw reset
+    inline double lane_yaw_reset_thresh2 = 1.5; // threshold 2 for lane yaw reset
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -89,6 +99,7 @@ namespace Tunable {
       CHECK_PARAM("/use_gps", useGps);
       CHECK_PARAM("/use_encoder", use_encoder);
       CHECK_PARAM("/gps_id", gps_id);
+      CHECK_PARAM("/gps_points", gps_points);
   
       std::string nodeName = ros::this_node::getName();
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;
@@ -134,6 +145,7 @@ namespace Tunable {
     //   std::string mode = real ? "/real" : "/sim";
       std::string mode = "real";
   
+      CHECK_PARAM(mode + "/rel_speed_thresh", rel_speed_thresh);
       CHECK_PARAM(mode + "/cw_speed_ratio", cw_speed_ratio);
       CHECK_PARAM(mode + "/hw_speed_ratio", hw_speed_ratio);
       CHECK_PARAM(mode + "/sign_localization_threshold", sign_localization_threshold);
@@ -158,12 +170,14 @@ namespace Tunable {
       CHECK_PARAM(mode + "/has_light", has_light);
       CHECK_PARAM(mode + "/change_lane_offset_scaler", change_lane_offset_scaler);
       CHECK_PARAM(mode + "/min_dist_to_car", min_dist_to_car);
+      CHECK_PARAM(mode + "/min_dist_to_consider_car", min_dist_to_consider_car);
       CHECK_PARAM(mode + "/min_tailing_dist", min_tailing_dist);
       CHECK_PARAM(mode + "/pedestrian_distance", pedestrian_distance);
       CHECK_PARAM(mode + "/pedestrian_threshold", pedestrian_threshold);
       CHECK_PARAM(mode + "/sign_lon_offset", sign_lon_offset);
       CHECK_PARAM(mode + "/sign_lon_offset_slope", sign_lon_offset_slope);
       CHECK_PARAM(mode + "/sign_lat_offset", sign_lat_offset);
+        CHECK_PARAM(mode + "/sign_lat_offset_slope", sign_lat_offset_slope);
       CHECK_PARAM(mode + "/max_light_dist", max_light_dist);
       CHECK_PARAM(mode + "/max_sign_dist", max_sign_dist);
       CHECK_PARAM(mode + "/min_sign_dist", min_sign_dist);
@@ -174,6 +188,12 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
+      CHECK_PARAM(mode + "/rs_roll", rs_roll);
+      CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
+      CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
+      CHECK_PARAM(mode + "/orientation_follow", orientation_follow);
+      CHECK_PARAM(mode + "/lane_yaw_reset_thresh1", lane_yaw_reset_thresh1);
+      CHECK_PARAM(mode + "/lane_yaw_reset_thresh2", lane_yaw_reset_thresh2);
         
       initialized = true;
       return true;

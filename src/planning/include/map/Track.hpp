@@ -58,6 +58,7 @@ class Track {
 	Vertex find_first_neighbor(const Vertex &u);
 	std::vector<Vertex> dikstra(int src, int tgt);
 	Vertex find_closest_node(double x_pos, double y_pos);
+	Vertex find_closest_node(double x_pos, double y_pos, double car_yaw);
 	Vertex find_node(int id);
 	double sqrt_dist(double x, double y, const Vertex &dest);
 	double sqrt_dist(const Vertex &src, const Vertex &dest);

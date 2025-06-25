@@ -14,12 +14,12 @@ class ImuMsg : public Encoder {
 	ImuMsg &operator=(const ImuMsg &) = delete;
 	~ImuMsg() = default;
 
-	double sys_calib;
-	double gyro_calib;
-	double mag_calib;
-	double accel_calib;
+	float sys_calib;
+	float gyro_calib;
+	float mag_calib;
+	float accel_calib;
 
-	void encode(double sys_calib, double gyro_calib, double mag_calib, double accel_calib);
+	void encode(float sys_calib, float gyro_calib, float mag_calib, float accel_calib);
 
   private:
 	const size_t bytes_length = 4;

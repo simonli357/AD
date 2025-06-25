@@ -45,6 +45,8 @@
   <param name="use_gps" value="$(arg use_gps)"/>
   <arg name="gps_id" default="1"/>
   <param name="gps_id" value="$(arg gps_id)"/>
+  <arg name="gps_points" default="25"/>
+  <param name="gps_points" value="$(arg gps_points)"/>
   <arg name="pub_wpts" default="true"/>
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
   <arg name="debug_level" default="2"/>
@@ -84,7 +86,7 @@
   <arg name="sign_rate" default="30"/>
   <arg name="pubImage" default="true"/>
   <arg name="thread" default="true"/>
-  <arg name="quality" default="100"/>
+  <arg name="quality" default="30"/>
   <param name="quality" value="$(arg quality)"/>
   <arg name="show_lane" default="false"/>
   <param name="show_lane" value="$(arg show_lane)"/>

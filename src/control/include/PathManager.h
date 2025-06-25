@@ -581,7 +581,7 @@ inline bool call_waypoint_service(double x, double y, double yaw, const std::sha
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;
 	std_msgs::Float32MultiArray wp_normals_in;
-	path_planner.set_constraints(v_ref, N, T, x, y, pathName, Tunable::useGps);
+	path_planner.set_constraints(v_ref, N, T, x, y, Sensing::yaw, pathName, Tunable::useGps);
 	path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
 	std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3
@@ -651,7 +651,7 @@ inline bool call_go_to_multiple_service(double x, double y, double yaw, const st
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;
 	std_msgs::Float32MultiArray wp_normals_in;
-	path_planner.set_constraints(v_ref, N, T, x, y, destinations);
+	path_planner.set_constraints(v_ref, N, T, x, y, Sensing::yaw, destinations);
 	path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
 	std::vector<double> state_refs_v(state_refs_in.data.begin(), state_refs_in.data.end());			 // N by 3

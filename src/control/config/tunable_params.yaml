@@ -3,8 +3,7 @@ real:
   intersection_relocalize: false
   lane_relocalize2: true
   sign_relocalize: true
-  lane_yaw_reset: false 
-  lane_yaw_reset_cooldown: 1.0
+  lane_yaw_reset: true 
   highway_cooldown: 3.0
   sign_cooldown: 0.5
   lane_localization_cooldown: 0.5
@@ -13,23 +12,22 @@ real:
   # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
   # sign_lat_offset: -0.1
-  sign_lat_offset: 0.0
-  change_lane_offset_scaler: 1.2
-  min_dist_to_car: 0.30 # min distance from ego car front to other car back
+  sign_lat_offset: -0.0086
+  sign_lat_offset_slope: -0.0119
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
   max_light_dist: 0.75
   max_sign_dist: 1.5
   min_sign_dist: 0.3
-  cumulative_confidence_thresholds: [7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 15, 5.37, 5.37, 5.37]
-  recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] # in seconds
-  stop_duration: 1.5
-  sign_localization_threshold: 0.735 #0.357
+  cumulative_confidence_thresholds: [7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 7.53, 5.37, 5.37, 5.37, 5.37, 5.37, 15, 5.37, 5.37, 5.37, 30, 30, 30, 30]
+  recency_thresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1, 0.1] # in seconds
+  stop_duration: 1.0
+  sign_localization_threshold: 0.90 #0.357
   sign_localization_orientation_threshold: 45.0 # degrees
   lane_localization_threshold: 0.15
   lane_localization_orientation_threshold: 7.53 # degrees
   intersection_localization_threshold: 0.1
   intersection_localization_orientation_threshold: 3.0 # degrees
-  parking_base_yaw_target: 0.245 # times pi
+  parking_base_yaw_target: 0.22 # times pi
   parking_base_speed: -0.2
   parking_base_thresh: 0.1
   cw_speed_ratio: 0.85
@@ -41,4 +39,15 @@ real:
   pedestrian_distance: 0.75
   pedestrian_threshold: 0.35
   has_light: false
-  use_kf: true
+  use_kf: false
+  rs_roll: -0.009774
+  rs_yaw: 0.011
+  rs_pitch: 0.03229
+  orientation_follow: false
+  min_dist_to_car: 0.34 # min distance from ego car front to other car back
+  change_lane_offset_scaler: 1.07
+  min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
+  lane_yaw_reset_thresh1: 1.1 # degrees
+  lane_yaw_reset_thresh2: 3.75 # degrees
+  lane_yaw_reset_cooldown: 30.0
+  rel_speed_thresh: 0.1

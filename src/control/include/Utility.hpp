@@ -384,16 +384,18 @@ public:
         // Estimate 3D coordinates in the camera frame
         // [forward = Z_c, right = –X_c]
         double X_c = x_norm * object_distance;
-        // double Y_c = y_norm * object_distance;
+        double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
 
         auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
-        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5];
-        double cam_roll = tf[3];
-        double cam_pitch = tf[4];
+        double tx    = tf[0], ty = tf[1], cam_yaw = Tunable::rs_yaw, cam_roll = Tunable::rs_roll, cam_pitch = Tunable::rs_pitch;
+
+        double cos_r = std::cos(cam_roll);
+        double sin_r = std::sin(cam_roll);
+        double X_c_roll =  cos_r * X_c + sin_r * Y_c;
 
         // flat ground‐plane ray in camera coords (forward, right)
-        Eigen::Vector2d P_cam_flat(Z_c, -X_c);
+        Eigen::Vector2d P_cam_flat(Z_c, -X_c_roll);
 
         // rotate by the camera’s yaw mount offset, then translate
         Eigen::Rotation2Dd R_cam_yaw(cam_yaw);
@@ -404,7 +406,7 @@ public:
         double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
         P_v2d.x()    -= latency * speed;
         P_v2d.x()    += sign_lon_offset_slope * P_v2d.x() + sign_lon_offset;
-        P_v2d.y()    += sign_lat_offset;
+        P_v2d.y()    += sign_lat_offset + sign_lat_offset_slope * P_v2d.y();
 
         // rotate into world frame and translate by vehicle pose
         Eigen::Matrix2d R_vw;
@@ -547,6 +549,9 @@ public:
         } else if (obj == OBJECT::PARK) {
             o_string = "PARKING SIGNS";
             return PARKING_SIGN_POSES1;
+        } else if (obj == OBJECT::ONEWAY) {
+            o_string = "ALL_ONEWAYS";
+            return ALL_ONEWAYS;
         }
         o_string = "UNKNOWN";
         return EMPTY;
