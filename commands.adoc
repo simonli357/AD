@@ -5,7 +5,7 @@ d3t2
 BOSCHFMC
 roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=false real:=true realsense:=true
 with traffic and gps
-roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=6
+roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
 
 HUAWEIP30
 roslaunch control controller.launch camera:=true ip:=192.168.43.143 use_gps:=false real:=true realsense:=true v:=35

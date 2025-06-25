@@ -984,10 +984,17 @@ public:
         int closest_idx = PathManager::closest_waypoint_index;
         double safety_dist = 0.75; // meters
         bool can_overtake = true;
-        if (closest_idx < PathManager::overtake_end_index + safety_dist * PathManager::density) return;
+        if (std::max(0, static_cast<int>(closest_idx - safety_dist * PathManager::density)) < static_cast<int>(PathManager::overtake_end_index)) {
+            // std::cout << "CHECK_CAR(): cannot overtake, too close to end of overtaking zone: closest_idx: " 
+            //           << closest_idx << ", overtaking end index: " << PathManager::overtake_end_index 
+            //           << ", safety distance: " << safety_dist * PathManager::density << std::endl;
+            return;
+        }
         auto cars = Tracking::get_road_cars();
-        if (cars.size() == 0) return;
-        double min_adj_lane_dist = 1000.;
+        if (cars.size() == 0) {
+            return;
+        }
+        double min_adj_lane_dist = 1000.; // longitudinal distance to closest car in adjacent lane
         double min_adj_lane_lat_dist = 1000.;
         int min_adj_lane_index = 0;
         double min_same_lane_dist = 1000.;
@@ -1033,14 +1040,19 @@ public:
             double car_yaw = car->yaw;
             double car_dist = (car_pose - x_current.head(2)).norm();
             if (car_dist > min_same_lane_dist && car_dist > min_adj_lane_dist) continue;
-            double look_ahead_dist = car_dist  + 0.50;
+            double look_ahead_dist = car_dist + 0.50;
+            // std::cout << "car_pose: (" << car_pose(0) << ", " << car_pose(1) << "), car_yaw: " << car_yaw 
+            //           << ", car_dist: " << car_dist << ", look_ahead_dist: " << look_ahead_dist 
+            //           << ", x_current: (" << x_current(0) << ", " << x_current(1) << ")" << std::endl;
             int look_ahead_index = look_ahead_dist * PathManager::density + closest_idx;
-            double min_dist_sq = 1000.;
+            double min_dist_sq = 1000.; // distance to same lane
             int min_index = 0;
             double min_dist_sq_adj = 1000.; // distance to adjacent lane
             int min_index_adj = 0;
             int lateral_dist_sign = 1;
             int lateral_dist_sign_adj = 1;
+            // std::cout << "closest_idx: " << closest_idx << ", look_ahead_index: " << look_ahead_index 
+            //           << ", car_dist: " << car_dist << ", look_ahead_dist: " << look_ahead_dist << std::endl;
             for (int i = closest_idx; i < look_ahead_index; i++) { 
                 // iterate over waypoints in front of car, compute distance from car to waypoint, find closest waypoint and distance
                 if (i >= PathManager::state_refs.rows()) {
@@ -1062,7 +1074,10 @@ public:
             }
             double min_dist = std::sqrt(min_dist_sq);
             double min_dist_adj = std::sqrt(min_dist_sq_adj);
-            if (min_dist < min_dist_adj && min_dist < LANE_OFFSET) {
+            // std::cout << "min_dist: " << min_dist << ", min_dist_adj: " << min_dist_adj 
+            //           << ", car_dist: " << car_dist << ", min_same_lane_dist: " << min_same_lane_dist 
+            //           << ", min_adj_lane_dist: " << min_adj_lane_dist << std::endl;
+            if (min_dist < min_dist_adj + 0.03 && min_dist < LANE_OFFSET + 0.02) {
                 if (car_dist < min_same_lane_dist) {
                     min_same_lane_dist = car_dist;
                     Eigen::Vector2d same_point = PathManager::state_refs.block(min_index, 0, 1, 2).transpose().eval();
@@ -1092,18 +1107,19 @@ public:
                 }
             }
         }
-        // double min_car_dist = MIN_CAR_DIST;
-        double min_car_dist = Tunable::min_dist_to_consider_car;
-        if (on_highway) min_car_dist *= 1.25;
-        // if (min_same_lane_dist > min_car_dist) {
-        //     // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
-        //     return;
-        // }
+        // double min_car_dist_to_consider = MIN_CAR_DIST;
+        double min_car_dist_to_consider = Tunable::min_dist_to_consider_car;
+        if (on_highway) min_car_dist_to_consider *= 1.25;
+        if (min_same_lane_dist > min_car_dist_to_consider) {
+            // std::cout << "CHECK_CAR(): detected car is too far: " + helper::d2str(min_same_lane_dist) + ", MAX_CAR_DIST: " + helper::d2str(MAX_CAR_DIST) << std::endl;
+            return;
+        }
         if (std::abs(min_same_lane_lat_dist) > LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
             if (!PathManager::attribute_cmp(min_same_lane_index, PathManager::ATTRIBUTE::INTERSECTION)) {
-                // std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
+                std::cout << "CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET) << std::endl;
                 return;
             }
+            utils.debug("CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: " + helper::d2str(min_same_lane_lat_dist) + ", LANE_OFFSET: " + helper::d2str(LANE_OFFSET), 2);
             can_overtake = false;
         }
         double min_dist_to_car = Tunable::min_dist_to_car;
@@ -1120,11 +1136,15 @@ public:
         can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
-                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK))
-                            && PathManager::attribute_cmp2(closest_idx, end_idx);
+                            || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED_CROSSWALK));
         
         if (!can_overtake) {
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
+        }
+
+        if (!PathManager::attribute_cmp2(closest_idx, end_idx)) {
+            can_overtake = false;
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + helper::d2str(PathManager::state_attributes(end_idx)) + " is not on the same lane as closest idx " + helper::d2str(PathManager::state_attributes(closest_idx)) + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
         }
         
         if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
@@ -1145,14 +1165,17 @@ public:
             closest_idx = PathManager::find_closest_waypoint(x_current);
             int start_index = closest_idx + static_cast<int>(start_dist * density);
             // utils.debug("HEREEEEEE!!: start dist: " + helper::d2str(start_dist) + ", min_same_lane_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", density: " + helper::d2str(density) + ", num index: " + helper::d2str(static_cast<int>(start_dist * density)) + ", closest point: (" + helper::d2str(PathManager::state_refs(closest_idx, 0)) + ", " + helper::d2str(PathManager::state_refs(closest_idx, 1)) + "), min index: " + helper::d2str(min_same_lane_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist), 2);
-            if (start_index >= PathManager::state_refs.rows() || PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
-                utils.debug("CHECK_CAR(): WARNING: start or end index exceeds state_refs size, stopping...", 2);
+            if (start_index >= PathManager::state_refs.rows()) {
+                utils.debug("CHECK_CAR(): WARNING: start index exceeds state_refs size, stopping... start_index: " + helper::d2str(start_index) + ", state_refs size: " + helper::d2str(PathManager::state_refs.rows()), 2);
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
             utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
+            if (PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
+                PathManager::overtake_end_index = PathManager::state_refs.rows() - 1;
+            }
             return;
         } else {
             if (min_same_lane_dist - CAR_LENGTH < Tunable::min_tailing_dist) {

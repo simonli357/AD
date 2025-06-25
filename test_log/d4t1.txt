@@ -1,0 +1,504 @@
+rgin, keep tailing: 0.983
+[ INFO] [1750788812.130690577]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2828.000, end idx: 2883.000
+[ INFO] [1750788812.131430650]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.972
+[ INFO] [1750788812.230882176]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2829.000, end idx: 2887.000
+[ INFO] [1750788812.231053782]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.966
+[ INFO] [1750788812.330676467]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2830.000, end idx: 2888.000
+[ INFO] [1750788812.330824993]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.935
+[ INFO] [1750788812.430420085]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2831.000, end idx: 2890.000
+[ INFO] [1750788812.430556160]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.930
+[ INFO] [1750788812.530701344]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2832.000, end idx: 2892.000
+[ INFO] [1750788812.531046573]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.921
+[ INFO] [1750788812.630438689]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2833.000, end idx: 2896.000
+[ INFO] [1750788812.630579021]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.914
+[ INFO] [1750788812.730039222]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2834.000, end idx: 2897.000
+[ INFO] [1750788812.731136559]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.881
+[ INFO] [1750788812.830640166]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2835.000, end idx: 2899.000
+[ INFO] [1750788812.831329407]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.875
+[ INFO] [1750788812.930641273]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2836.000, end idx: 2900.000
+[ INFO] [1750788812.930800267]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.864
+[ INFO] [1750788813.030648366]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2837.000, end idx: 2904.000
+[ INFO] [1750788813.031108447]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.861
+[ INFO] [1750788813.328401284]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2841.000, end idx: 2908.000, min_dist: 0.827, min_dist_adj: 1000.000, changing lane to the left in 0.112 meters. start pose: (13.574,11.110), end: (10.852, 11.660), cur: (13.664, 11.032), min_dist_to_car: 0.340, egospeed: 0.438, car_speed: 0.191, total_distance: 2.716
+Sending State
+Stopping CAR
+[ INFO] [1750788833.627941526]: LANE_RELOC2(): SUCCESS: errorx: -0.002, errory: 0.142, errory: 0.142, right_only: 0, on_highway: 0
+[ INFO] [1750788833.772604947]: Changing from MOVING to INIT
+[ INFO] [1750788834.177932652]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.055, errory: 0.055, right_only: 0, on_highway: 0
+[ INFO] [1750788834.727904347]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.012, errory: 0.012, right_only: 0, on_highway: 0
+[ INFO] [1750788835.261299529]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: -0.073, errory: -0.073, right_only: 0, on_highway: 0
+[ INFO] [1750788835.794555915]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.038, errory: 0.038, right_only: 0, on_highway: 0
+[ INFO] [1750788837.927923583]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.039, errory: 0.039, right_only: 0, on_highway: 0
+[ INFO] [1750788838.477929177]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.017, errory: -0.017, right_only: 0, on_highway: 0
+[ INFO] [1750788838.877928164]: process_lane_data(): lane_based_yaw: -0.118, current yaw: 0.722, yaw_error: 0.840, straight_lane_angle: 0.118
+0.1182
+[ INFO] [1750788838.878661387]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: -0.118, current yaw: 0.722, straight_lane_angle: 0.118
+[ INFO] [1750788839.011289243]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.013, errory: -0.013, right_only: 0, on_highway: 0
+[ INFO] [1750788839.544657409]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.002, errory: 0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788840.061458920]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788840.594627374]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788841.127938753]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788841.644611872]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788842.161311495]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788842.694636766]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: -0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788843.211281716]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: -0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788843.744624721]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788844.261278186]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788844.777957034]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788845.361231883]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788845.877885380]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788846.352156384]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750788846.394537276]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: -0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788846.911195157]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.004, errory: -0.004, right_only: 0, on_highway: 0
+[ INFO] [1750788847.444584129]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788847.652193762]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788848.011243093]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788848.528001710]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788849.061233544]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.002, errory: 0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788849.577910792]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788849.752199698]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750788850.111264169]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788850.644603205]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788851.052392324]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788851.177983598]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788851.652246120]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+[ INFO] [1750788853.252221999]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788853.452191307]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750788855.452196680]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788855.552172179]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750788856.411294875]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: 0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788856.852169928]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788856.944567651]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788857.477949836]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788858.011439448]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.002, errory: -0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788858.544635047]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788859.077946394]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.004, errory: 0.004, right_only: 0, on_highway: 0
+[ INFO] [1750788859.594671177]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.027, errory: 0.027, right_only: 0, on_highway: 0
+[ INFO] [1750788861.111207898]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.052, errory: -0.052, right_only: 0, on_highway: 0
+[ INFO] [1750788862.194637899]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.123, errory: 0.123, right_only: 0, on_highway: 0
+[ INFO] [1750788862.711193700]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.036, errory: 0.036, right_only: 0, on_highway: 0
+[ INFO] [1750788863.244553863]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: 0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788863.761220515]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.005, errory: 0.005, right_only: 0, on_highway: 0
+[ INFO] [1750788864.294581766]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.011, errory: -0.011, right_only: 0, on_highway: 0
+[ INFO] [1750788864.811203029]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.007, errory: -0.007, right_only: 0, on_highway: 0
+[ INFO] [1750788865.344642352]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788865.452132217]: check_emergency_stop(): emergency stop triggered
+[ INFO] [1750788868.444584233]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.003, errory: -0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788868.452143572]: check_emergency_stop(): emergency stop released
+[ INFO] [1750788868.961246276]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788869.494531599]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788870.077874758]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: 0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788874.977938330]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.004, errory: -0.004, right_only: 0, on_highway: 0
+[ INFO] [1750788875.494634175]: LANE_RELOC2(): SUCCESS: errorx: -0.003, errory: -0.101, errory: 0.101, right_only: 0, on_highway: 0
+[ INFO] [1750788876.027962296]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.023, errory: -0.023, right_only: 0, on_highway: 0
+[ INFO] [1750788876.561300212]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.008, errory: 0.008, right_only: 0, on_highway: 0
+[ INFO] [1750788877.077959534]: LANE_RELOC2(): SUCCESS: errorx: -0.002, errory: -0.058, errory: 0.059, right_only: 0, on_highway: 0
+[ INFO] [1750788877.611286374]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.040, errory: -0.040, right_only: 0, on_highway: 0
+[ INFO] [1750788878.144629828]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.008, errory: -0.008, right_only: 0, on_highway: 0
+[ INFO] [1750788878.677944600]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.002, errory: 0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788879.194577194]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.004, errory: -0.004, right_only: 0, on_highway: 0
+[ INFO] [1750788879.728025320]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.000, errory: -0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788880.261316565]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788880.794636075]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.002, errory: -0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788881.311205705]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.002, errory: 0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788881.844628736]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788882.377915563]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788882.894561185]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.000, errory: 0.000, right_only: 0, on_highway: 0
+[ INFO] [1750788883.427914050]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.002, errory: -0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788883.961307055]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.002, errory: 0.002, right_only: 0, on_highway: 0
+Sending State
+Starting CAR
+[ INFO] [1750788884.142801652]: Changing from INIT to MOVING
+[ INFO] [1750788884.494606719]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.021, errory: 0.021, right_only: 0, on_highway: 0
+[ INFO] [1750788885.011206950]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.009, errory: -0.009, right_only: 0, on_highway: 0
+[ INFO] [1750788885.544642849]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.032, errory: -0.032, right_only: 0, on_highway: 0
+[ INFO] [1750788886.077936687]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.016, errory: 0.016, right_only: 0, on_highway: 0
+[ INFO] [1750788886.611278636]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.030, errory: 0.030, right_only: 0, on_highway: 0
+[ INFO] [1750788887.127967503]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.009, errory: 0.009, right_only: 0, on_highway: 0
+[ INFO] [1750788891.061220820]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.039, errory: 0.039, right_only: 0, on_highway: 0
+[ INFO] [1750788891.194550561]: process_lane_data(): lane_based_yaw: 180.958, current yaw: -179.918, yaw_error: 0.877, straight_lane_angle: -0.958
+-0.9585
+[ INFO] [1750788891.194679690]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 180.958, current yaw: -179.918, straight_lane_angle: -0.958
+[ INFO] [1750788891.594579638]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.004, errory: 0.004, right_only: 0, on_highway: 0
+[ INFO] [1750788892.111231374]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788892.628700327]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.011, errory: -0.011, right_only: 0, on_highway: 0
+[ INFO] [1750788893.144625114]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: -0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788893.661223969]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788894.177978617]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.013, errory: 0.013, right_only: 0, on_highway: 0
+[ INFO] [1750788894.694630737]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.025, errory: -0.025, right_only: 0, on_highway: 0
+[ INFO] [1750788899.354507958]: CHECK_INTERSECTION(): sign found for intersection at (0.359, 10.558), sign: Stop Sign, cumulative confidence: 2.608, error: 0.000
+[ INFO] [1750788899.853634914]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (-0.187, 10.614), actual: (0.104, 10.635), error: (0.291, 0.021), error norm: 0.292, threshold: 0.900, old states: (0.507, 11.522), new states: (0.798, 11.543), yaw: -120.542, sign: Stop Sign, ID: 101
+[ INFO] [1750788900.653483434]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.016, 10.706), actual: (0.104, 10.635), error: (0.088, -0.071), error norm: 0.113, threshold: 0.900, old states: (0.623, 11.269), new states: (0.711, 11.197), yaw: -122.542, sign: Stop Sign, ID: 101
+[ INFO] [1750788901.353513752]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.127, 10.607), actual: (0.104, 10.635), error: (-0.023, 0.028), error norm: 0.036, threshold: 0.900, old states: (0.558, 10.975), new states: (0.535, 11.003), yaw: -125.042, sign: Stop Sign, ID: 101
+[ INFO] [1750788901.753383803]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (0.464, 10.857, 4.223), intersection: (0.359, 10.558), distance: 0.317, index: 17, next intersection: (0.359, 7.445, -1.571)
+[ INFO] [1750788901.753484795]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[ INFO] [1750788902.953394305]: CHECK_INTERSECTION(): sign found for intersection at (0.359, 7.445), sign: Priority, cumulative confidence: 6.498, error: 0.000
+[ INFO] [1750788906.477915838]: LANE_RELOC2(): SUCCESS: errorx: -0.002, errory: 0.000, errory: -0.002, right_only: 0, on_highway: 0
+[ INFO] [1750788906.994589341]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: -0.000, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788907.511209739]: LANE_RELOC2(): SUCCESS: errorx: 0.003, errory: -0.000, errory: 0.003, right_only: 0, on_highway: 0
+[ INFO] [1750788908.044647302]: LANE_RELOC2(): SUCCESS: errorx: 0.006, errory: -0.000, errory: 0.006, right_only: 0, on_highway: 0
+[ INFO] [1750788908.653456332]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.064, 7.508), actual: (0.104, 7.522), error: (0.040, 0.013), error norm: 0.042, threshold: 0.900, old states: (0.356, 8.976), new states: (0.395, 8.989), yaw: -91.842, sign: Priority, ID: 102
+[ INFO] [1750788909.153497240]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.100, 7.525), actual: (0.104, 7.522), error: (0.004, -0.003), error norm: 0.005, threshold: 0.900, old states: (0.386, 8.826), new states: (0.390, 8.823), yaw: -92.842, sign: Priority, ID: 102
+[ INFO] [1750788909.653578800]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.097, 7.521), actual: (0.104, 7.522), error: (0.007, 0.000), error norm: 0.007, threshold: 0.900, old states: (0.378, 8.661), new states: (0.385, 8.662), yaw: -94.942, sign: Priority, ID: 102
+[ INFO] [1750788910.253597479]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.122, 7.525), actual: (0.104, 7.522), error: (-0.018, -0.003), error norm: 0.018, threshold: 0.900, old states: (0.370, 8.471), new states: (0.353, 8.468), yaw: -94.142, sign: Priority, ID: 102
+[ INFO] [1750788910.753635378]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.105, 7.529), actual: (0.104, 7.522), error: (-0.001, -0.007), error norm: 0.007, threshold: 0.900, old states: (0.345, 8.309), new states: (0.345, 8.302), yaw: -92.742, sign: Priority, ID: 102
+[ INFO] [1750788911.353483636]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.104, 7.515), actual: (0.104, 7.522), error: (0.000, 0.007), error norm: 0.007, threshold: 0.900, old states: (0.343, 8.100), new states: (0.343, 8.107), yaw: -89.642, sign: Priority, ID: 102
+create_known_static_object(): LIGHT!!!!!!!!!!! type: Yellow Light, x: 2.245, y: 4.49, yaw: -1.563, confidence: 0.691
+[ INFO] [1750788911.853539940]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.094, 7.526), actual: (0.104, 7.522), error: (0.011, -0.004), error norm: 0.011, threshold: 0.900, old states: (0.346, 7.942), new states: (0.357, 7.938), yaw: -88.542, sign: Priority, ID: 102
+[ INFO] [1750788912.253417673]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (0.360, 7.805, 4.745), intersection: (0.359, 7.445), distance: 0.360, index: 18, next intersection: (1.976, 6.534, 0.000)
+[ INFO] [1750788912.253522026]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1750788918.754707822]: CHECK_INTERSECTION(None): REACHED: x_cur: (1.615, 6.564, 6.267), intersection: (1.976, 6.534), distance: 0.362, index: 19, next intersection: (2.522, 4.558, -1.571)
+[ INFO] [1750788918.755217871]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750788922.754530187]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.213, 4.625), actual: (2.216, 4.601), error: (0.003, -0.024), error norm: 0.024, threshold: 0.900, old states: (2.514, 5.835), new states: (2.517, 5.811), yaw: -80.842, sign: Lights, ID: 103
+[ INFO] [1750788923.254760499]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.108, 4.541), actual: (2.216, 4.601), error: (0.108, 0.060), error norm: 0.123, threshold: 0.900, old states: (2.526, 5.653), new states: (2.633, 5.713), yaw: -86.342, sign: Lights, ID: 103
+[ INFO] [1750788923.854489775]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.218, 4.623), actual: (2.216, 4.601), error: (-0.002, -0.022), error norm: 0.022, threshold: 0.900, old states: (2.618, 5.503), new states: (2.617, 5.481), yaw: -94.842, sign: Lights, ID: 103
+[ INFO] [1750788924.354699088]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.241, 4.594), actual: (2.216, 4.601), error: (-0.025, 0.007), error norm: 0.026, threshold: 0.900, old states: (2.593, 5.313), new states: (2.568, 5.320), yaw: -98.642, sign: Lights, ID: 103
+[ INFO] [1750788924.554841538]: check_light(): red or yellow light detected at a distance of: 0.737, waiting for green...
+[ INFO] [1750788931.052171272]: check_light(): green light detected, proceeding...
+[ INFO] [1750788931.154755145]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.245, 4.664), actual: (2.216, 4.601), error: (-0.029, -0.063), error norm: 0.070, threshold: 0.900, old states: (2.558, 5.247), new states: (2.529, 5.184), yaw: -98.642, sign: Lights, ID: 103
+[ INFO] [1750788931.754298282]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.225, 4.562), actual: (2.216, 4.601), error: (-0.009, 0.039), error norm: 0.040, threshold: 0.900, old states: (2.516, 5.012), new states: (2.507, 5.051), yaw: -95.342, sign: Lights, ID: 103
+[ INFO] [1750788932.154259242]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.503, 4.900, 4.680), intersection: (2.522, 4.558), distance: 0.343, index: 20, next intersection: (4.220, 3.645, 0.000)
+[ INFO] [1750788932.154399990]: intersection reached: CASE Lights, proceeding...
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.390, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.363, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.332, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.332, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.306, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.279, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.244, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.244, LANE_OFFSET: 0.394
+[ INFO] [1750788933.954924240]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788933.955941616]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 7.000, closest idx: 3498.000, end idx: 3632.000
+[ INFO] [1750788933.956702143]: CHECK_CAR(): cant overtake, dist = 0.637, stopping...
+[ INFO] [1750788940.054881669]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.055542901]: CHECK_CAR(): CANT OVERTAKE: end idx 10.773 is not on the same lane as closest idx 0.000, closest idx: 3542.000, end idx: -4472.000
+[ INFO] [1750788940.055848150]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.725
+[ INFO] [1750788940.154611395]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.154799582]: CHECK_CAR(): CANT OVERTAKE: end idx 3.013 is not on the same lane as closest idx 0.000, closest idx: 3543.000, end idx: -4471.000
+[ INFO] [1750788940.154870069]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.694
+[ INFO] [1750788940.254454437]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.254591504]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.740
+[ INFO] [1750788940.354297190]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.354884703]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.778
+[ INFO] [1750788940.454460204]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.455090451]: CHECK_CAR(): CANT OVERTAKE: end idx 2.000 is not on the same lane as closest idx 0.000, closest idx: 3546.000, end idx: 3285.000
+[ INFO] [1750788940.455398164]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.814
+[ INFO] [1750788940.553807826]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.553921494]: CHECK_CAR(): CANT OVERTAKE: end idx 2.000 is not on the same lane as closest idx 0.000, closest idx: 3547.000, end idx: 3286.000
+[ INFO] [1750788940.553973318]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.785
+[ INFO] [1750788940.654323079]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.654478680]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 0.000, closest idx: 3548.000, end idx: 3354.000
+[ INFO] [1750788940.654549166]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.826
+[ INFO] [1750788940.754483148]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.754762916]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.866
+[ INFO] [1750788940.855013190]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.855316710]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 0.000, closest idx: 3550.000, end idx: 3425.000
+[ INFO] [1750788940.855705280]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.909
+[ INFO] [1750788940.955743679]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.857, 3.685, 6.295), intersection: (4.220, 3.645), distance: 0.365, index: 21, next intersection: (4.767, 1.274, -1.571)
+[ INFO] [1750788940.956706766]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750788940.957400873]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788940.957970876]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 0.000, closest idx: 3551.000, end idx: 3426.000
+[ INFO] [1750788940.958778202]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.880
+[ INFO] [1750788941.054960892]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788941.055208393]: CHECK_CAR(): CANT OVERTAKE: end idx 2.000 is not on the same lane as closest idx 0.000, closest idx: 3552.000, end idx: 3439.000
+[ INFO] [1750788941.055315051]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.925
+[ INFO] [1750788941.154986487]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788941.155625984]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.967
+[ INFO] [1750788941.254748255]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788941.255355134]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.940
+[ INFO] [1750788941.354702275]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788941.355226760]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.985
+[ INFO] [1750788945.054675351]: CHECK_INTERSECTION(): sign found for intersection at (4.767, 1.274), sign: Stop Sign, cumulative confidence: 2.666, error: 0.000
+[ INFO] [1750788945.211293639]: LANE_RELOC2(): SUCCESS: errorx: 0.068, errory: 0.005, errory: 0.068, right_only: 0, on_highway: 0
+[ INFO] [1750788945.454635158]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.435, 1.267), actual: (4.512, 1.351), error: (0.076, 0.084), error norm: 0.114, threshold: 0.900, old states: (4.834, 2.774), new states: (4.910, 2.858), yaw: -87.742, sign: Stop Sign, ID: 110
+[ INFO] [1750788946.555074929]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.544, 1.344), actual: (4.512, 1.351), error: (-0.032, 0.007), error norm: 0.033, threshold: 0.900, old states: (4.845, 2.436), new states: (4.813, 2.442), yaw: -101.542, sign: Stop Sign, ID: 110
+[ INFO] [1750788947.355022776]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.558, 1.357), actual: (4.512, 1.351), error: (-0.046, -0.006), error norm: 0.046, threshold: 0.900, old states: (4.779, 2.164), new states: (4.733, 2.158), yaw: -96.442, sign: Stop Sign, ID: 110
+[ INFO] [1750788947.954727981]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.511, 1.350), actual: (4.512, 1.351), error: (0.001, 0.001), error norm: 0.001, threshold: 0.900, old states: (4.728, 1.968), new states: (4.729, 1.969), yaw: -91.242, sign: Stop Sign, ID: 110
+[ INFO] [1750788948.754718657]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.499, 1.350), actual: (4.512, 1.351), error: (0.013, 0.001), error norm: 0.013, threshold: 0.900, old states: (4.736, 1.699), new states: (4.749, 1.700), yaw: -87.642, sign: Stop Sign, ID: 110
+[ INFO] [1750788948.954911972]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (4.749, 1.631, 4.743), intersection: (4.767, 1.274), distance: 0.358, index: 22, next intersection: (3.431, 0.729, 3.142)
+[ INFO] [1750788948.955066805]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[ INFO] [1750788954.755510858]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.792, 0.712, 3.186), intersection: (3.431, 0.729), distance: 0.362, index: 23, next intersection: (2.892, 3.097, 1.571)
+[ INFO] [1750788954.755902918]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+create_known_static_object(): LIGHT!!!!!!!!!!! type: Green Light, x: 3.303, y: 3.142, yaw: 1.849, confidence: 0.8634
+[ INFO] [1750788959.011211649]: LANE_RELOC2(): SUCCESS: errorx: 0.006, errory: 0.000, errory: -0.006, right_only: 0, on_highway: 0
+[ INFO] [1750788959.253479967]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.243, 3.164), actual: (3.195, 3.031), error: (-0.048, -0.133), error norm: 0.141, threshold: 0.900, old states: (2.882, 1.646), new states: (2.834, 1.513), yaw: 92.658, sign: Lights, ID: 112
+[ INFO] [1750788959.853472398]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.192, 3.043), actual: (3.195, 3.031), error: (0.003, -0.012), error norm: 0.012, threshold: 0.900, old states: (2.842, 1.772), new states: (2.846, 1.760), yaw: 87.358, sign: Lights, ID: 112
+[ INFO] [1750788960.653467492]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.148, 3.018), actual: (3.195, 3.031), error: (0.047, 0.013), error norm: 0.049, threshold: 0.900, old states: (2.865, 2.074), new states: (2.912, 2.087), yaw: 86.858, sign: Lights, ID: 112
+[ INFO] [1750788961.553687924]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.184, 3.024), actual: (3.195, 3.031), error: (0.011, 0.007), error norm: 0.013, threshold: 0.900, old states: (2.911, 2.382), new states: (2.921, 2.389), yaw: 91.658, sign: Lights, ID: 112
+[ INFO] [1750788961.753628711]: check_light(): red or yellow light detected at a distance of: 0.641, waiting for green...
+[ INFO] [1750788968.852156792]: check_light(): green light detected, proceeding...
+[ INFO] [1750788968.953654626]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.193, 2.937), actual: (3.195, 3.031), error: (0.002, 0.094), error norm: 0.094, threshold: 0.900, old states: (2.918, 2.459), new states: (2.920, 2.553), yaw: 93.358, sign: Lights, ID: 112
+[ INFO] [1750788969.554064277]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.193, 3.066), actual: (3.195, 3.031), error: (0.002, -0.035), error norm: 0.035, threshold: 0.900, old states: (2.911, 2.704), new states: (2.912, 2.670), yaw: 93.558, sign: Lights, ID: 112
+[ INFO] [1750788969.754309000]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.908, 2.731, 1.636), intersection: (2.892, 3.097), distance: 0.366, index: 24, next intersection: (1.270, 4.011, 3.142)
+[ INFO] [1750788969.754455894]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1750788970.153466122]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.154072457]: CHECK_CAR(): CANT OVERTAKE: end idx 2.000 is not on the same lane as closest idx 0.000, closest idx: 3781.000, end idx: 3898.000
+[ INFO] [1750788970.154846877]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.961
+[ INFO] [1750788970.254999808]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.255894714]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.923
+[ INFO] [1750788970.355428762]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.355952511]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.882
+[ INFO] [1750788970.456536970]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.457124707]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.850
+[ INFO] [1750788970.555492564]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.556324346]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.807
+[ INFO] [1750788970.656320587]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.656771801]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.760
+[ INFO] [1750788970.755080728]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.755534439]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.729
+[ INFO] [1750788970.855026650]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.855468421]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.687
+[ INFO] [1750788970.954518381]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[ INFO] [1750788970.954716203]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 7.000, closest idx: 3789.000, end idx: 3943.000
+[ INFO] [1750788970.954905607]: CHECK_CAR(): cant overtake, dist = 0.647, stopping...
+[ INFO] [1750788978.353477278]: CHECK_INTERSECTION(None): REACHED: x_cur: (1.640, 4.036, 3.151), intersection: (1.270, 4.011), distance: 0.371, index: 25, next intersection: (1.976, 0.356, 0.000)
+[ INFO] [1750788978.353585280]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750788984.544602411]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.000, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750788985.077886966]: LANE_RELOC2(): SUCCESS: errorx: 0.019, errory: -0.000, errory: 0.019, right_only: 0, on_highway: 0
+[ INFO] [1750788985.594599521]: LANE_RELOC2(): SUCCESS: errorx: 0.009, errory: -0.000, errory: 0.009, right_only: 0, on_highway: 0
+[ INFO] [1750788994.653694961]: CHECK_INTERSECTION(None): REACHED: x_cur: (1.636, 0.339, 6.248), intersection: (1.976, 0.356), distance: 0.340, index: 26, next intersection: (4.220, 0.356, 0.000)
+[ INFO] [1750788994.653845696]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750788997.053706651]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (5.580, -0.005), actual: (5.391, 0.104), error: (-0.189, 0.109), error norm: 0.218, threshold: 0.900, old states: (2.415, 0.378), new states: (2.227, 0.486), yaw: 3.158, sign: Oneway, ID: 11
+[ INFO] [1750788998.153530740]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (3.962, 0.119), actual: (4.144, 0.101), error: (0.182, -0.017), error norm: 0.183, threshold: 0.900, old states: (2.712, 0.448), new states: (2.894, 0.430), yaw: -7.542, sign: Priority, ID: 10
+[ INFO] [1750788998.653654009]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.115, 0.144), actual: (4.144, 0.101), error: (0.029, -0.043), error norm: 0.052, threshold: 0.900, old states: (3.016, 0.418), new states: (3.045, 0.375), yaw: -6.042, sign: Priority, ID: 10
+[ INFO] [1750788999.253527075]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.146, 0.105), actual: (4.144, 0.101), error: (-0.003, -0.004), error norm: 0.004, threshold: 0.900, old states: (3.204, 0.368), new states: (3.201, 0.364), yaw: -3.542, sign: Priority, ID: 10
+[ INFO] [1750788999.753561740]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.164, 0.105), actual: (4.144, 0.101), error: (-0.021, -0.004), error norm: 0.021, threshold: 0.900, old states: (3.364, 0.364), new states: (3.344, 0.360), yaw: 0.058, sign: Priority, ID: 10
+[ INFO] [1750789000.153491522]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (5.418, 0.068), actual: (5.391, 0.104), error: (-0.027, 0.036), error norm: 0.045, threshold: 0.900, old states: (3.478, 0.363), new states: (3.451, 0.399), yaw: 2.158, sign: Oneway, ID: 11
+[ INFO] [1750789000.353464415]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.121, 0.109), actual: (4.144, 0.101), error: (0.022, -0.008), error norm: 0.024, threshold: 0.900, old states: (3.519, 0.400), new states: (3.541, 0.393), yaw: 2.358, sign: Priority, ID: 10
+[ INFO] [1750789000.953482519]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.132, 0.103), actual: (4.144, 0.101), error: (0.012, -0.002), error norm: 0.012, threshold: 0.900, old states: (3.745, 0.392), new states: (3.757, 0.390), yaw: -0.142, sign: Priority, ID: 10
+[ INFO] [1750789001.253541122]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (3.851, 0.389, 6.260), intersection: (4.220, 0.356), distance: 0.371, index: 27, next intersection: (8.200, 0.920, 0.000)
+[ INFO] [1750789001.253903892]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1750789003.154483186]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (5.363, 0.047), actual: (5.391, 0.104), error: (0.028, 0.057), error norm: 0.064, threshold: 0.900, old states: (4.475, 0.371), new states: (4.504, 0.428), yaw: -1.842, sign: Oneway, ID: 11
+[ INFO] [1750789012.053750624]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (8.166, 0.612), actual: (8.143, 0.703), error: (-0.024, 0.091), error norm: 0.094, threshold: 0.900, old states: (7.232, 0.901), new states: (7.209, 0.992), yaw: 10.258, sign: Crosswalk, ID: 12
+[ INFO] [1750789012.653462807]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (8.129, 0.621), actual: (8.143, 0.703), error: (0.014, 0.082), error norm: 0.084, threshold: 0.900, old states: (7.407, 0.998), new states: (7.421, 1.081), yaw: 1.758, sign: Crosswalk, ID: 12
+[ INFO] [1750789013.153492767]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (8.142, 0.708), actual: (8.143, 0.703), error: (0.000, -0.004), error norm: 0.004, threshold: 0.900, old states: (7.576, 1.063), new states: (7.576, 1.059), yaw: -5.042, sign: Crosswalk, ID: 12
+[ INFO] [1750789013.654163249]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (8.149, 0.714), actual: (8.143, 0.703), error: (-0.007, -0.011), error norm: 0.013, threshold: 0.900, old states: (7.736, 1.030), new states: (7.729, 1.019), yaw: -10.742, sign: Crosswalk, ID: 12
+[ INFO] [1750789014.053342394]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (7.862, 0.995, 6.094), intersection: (8.200, 0.920), distance: 0.347, index: 28, next intersection: (14.764, 0.924, 0.000)
+[ INFO] [1750789014.053484519]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1750789014.853177662]: SIGN_RELOC(PARKING): SUCCESS: estimated sign pose: (9.002, 1.222), actual: (8.937, 1.161), error: (-0.065, -0.061), error norm: 0.089, threshold: 0.900, old states: (8.120, 0.962), new states: (8.055, 0.900), yaw: -6.842
+[ INFO] [1750789014.853353141]: Changing from MOVING to PARKING
+[ INFO] [1750789015.452173812]: park sign detected at a distance of: 0.978, parking offset is: 2.162
+[ INFO] [1750789015.452593336]: orientation: 6.283
+[ INFO] [1750789015.452682132]: PARKING(): target spot: 0.000
+parking spot 0: 9.4, 0.56
+parking spot 1: 9.4, 1.3
+parking spot 2: 10.12, 0.56
+parking spot 3: 10.12, 1.3
+parking spot 4: 10.85, 0.56
+parking spot 5: 10.85, 1.3
+parking spot 6: 11.57, 0.56
+parking spot 7: 11.57, 1.3
+parking spot 8: 12.29, 0.56
+parking spot 9: 12.29, 1.3
+[ INFO] [1750789015.452998519]: PARKING(): car detected in spot: 0.000, error: 0.144
+[ INFO] [1750789015.453202616]: PARKING(): car detected in spot: 1.000, error: 0.127
+[ INFO] [1750789015.453348678]: PARKING(): car detected in spot: 2.000, error: 0.088
+[ INFO] [1750789015.453407736]: PARKING(): car detected in spot: 3.000, error: 0.053
+[ INFO] [1750789015.453576141]: PARKING(): car detected in spot: 4.000, error: 0.055
+[ INFO] [1750789015.453622492]: car in spot, changing to target spot 5 at (10.846, 1.300), right: false
+[ INFO] [1750789015.844560995]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.010, errory: -0.010, right_only: 0, on_highway: 0
+[ INFO] [1750789016.261310215]: process_lane_data(): lane_based_yaw: 359.983, current yaw: -0.542, yaw_error: 0.525, straight_lane_angle: 0.017
+0.01698
+[ INFO] [1750789016.261608549]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 359.983, current yaw: -0.542, straight_lane_angle: 0.017
+[ INFO] [1750789016.411241534]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.020, errory: 0.020, right_only: 0, on_highway: 0
+[ INFO] [1750789016.961237557]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.012, errory: 0.012, right_only: 0, on_highway: 0
+[ INFO] [1750789017.527899977]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.040, errory: 0.040, right_only: 0, on_highway: 0
+[ INFO] [1750789018.077920392]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.013, errory: -0.013, right_only: 0, on_highway: 0
+[ INFO] [1750789019.044642299]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+[ INFO] [1750789019.977984163]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.016, errory: 0.016, right_only: 0, on_highway: 0
+[ INFO] [1750789020.511229058]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.028, errory: 0.028, right_only: 0, on_highway: 0
+[ INFO] [1750789021.044601224]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.011, errory: 0.011, right_only: 0, on_highway: 0
+[ INFO] [1750789021.577963532]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.019, errory: -0.019, right_only: 0, on_highway: 0
+[ INFO] [1750789022.494662462]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.014, errory: 0.014, right_only: 0, on_highway: 0
+[ INFO] [1750789023.028012126]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.021, errory: 0.021, right_only: 0, on_highway: 0
+[ INFO] [1750789023.694565603]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.012, errory: 0.012, right_only: 0, on_highway: 0
+[ INFO] [1750789024.894603954]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.008, errory: -0.008, right_only: 0, on_highway: 0
+[ INFO] [1750789025.411283379]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.006, errory: -0.006, right_only: 0, on_highway: 0
+[ INFO] [1750789026.211287467]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.039, errory: 0.039, right_only: 0, on_highway: 0
+[ INFO] [1750789027.244557424]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.005, errory: 0.005, right_only: 0, on_highway: 0
+[ INFO] [1750789027.552137243]: x offset reached: (11.70, 0.97), ready for parking maneuver...
+[ INFO] [1750789027.777944828]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: 0.003, right_only: 0, on_highway: 0
+[ INFO] [1750789028.311501372]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: -0.001, right_only: 0, on_highway: 0
+targets: -0.6848      -0      -0, steerings: -20.5  20.5 -20.5, speeds: -0.2 -0.2  0.2, thresholds:     0.1     0.1 0.03333
+[ INFO] [1750789028.752253507]: parking_maneuver_hardcode(): park right: false, exit: 0.000
+[ INFO] [1750789028.752370344]: maneuver_hardcode(): initial yaw: 0.000, target yaws: -0.685, 0.000
+[ INFO] [1750789028.752429786]: maneuver_hardcode(): nearest direction: 0.000
+[ INFO] [1750789028.827898660]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: 0.001, right_only: 0, on_highway: 0
+[ INFO] [1750789034.302820160]: parked but x offset too large: 0.206, adjusting... orientation: 6.283
+[ INFO] [1750789035.083179345]: parking spot reached, stopping...
+[ INFO] [1750789035.083420253]: Changing from PARKING to PARKED
+[ INFO] [1750789036.083740735]: Changing from PARKED to EXITING_PARKING
+targets: -0.6566 -0.6566      -0, steerings: -20.5  20.5 -20.5, speeds: -0.2  0.2  0.2, thresholds: 0.5566    0.1    0.1
+[ INFO] [1750789036.083927194]: parking_maneuver_hardcode(): park right: false, exit: 1.000
+[ INFO] [1750789036.083968039]: maneuver_hardcode(): initial yaw: 0.000, target yaws: -0.657, -0.657
+[ INFO] [1750789036.083994703]: maneuver_hardcode(): nearest direction: 0.000
+exiting_park(): target waypoint index: 4353, at (11.71, 0.9391)
+exiting_park(): closest waypoint index: 4353, at (11.71, 0.9391)
+exiting_park(): current state: x: 11.68, y: 1.029, yaw: -0.08931
+[ INFO] [1750789041.234331128]: Changing from EXITING_PARKING to MOVING
+[ INFO] [1750789041.344556862]: LANE_RELOC2(): SUCCESS: errorx: -0.003, errory: -0.053, errory: -0.053, right_only: 0, on_highway: 0
+[ INFO] [1750789041.861216440]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.044, errory: 0.044, right_only: 0, on_highway: 0
+[ INFO] [1750789042.394559765]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.029, errory: 0.029, right_only: 0, on_highway: 0
+[ INFO] [1750789042.737302107]: WARNING: parking sign detected, but detected distance too large: 0.981, expected: 3.312, relocalizing...
+[ INFO] [1750789042.837313970]: WARNING: parking sign detected, but detected distance too large: 0.937, expected: 3.344, relocalizing...
+[ INFO] [1750789042.937273080]: WARNING: parking sign detected, but detected distance too large: 0.889, expected: 3.377, relocalizing...
+[ INFO] [1750789043.037364264]: WARNING: parking sign detected, but detected distance too large: 0.889, expected: 3.410, relocalizing...
+[ INFO] [1750789043.137325614]: WARNING: parking sign detected, but detected distance too large: 0.845, expected: 3.442, relocalizing...
+[ INFO] [1750789043.237308924]: WARNING: parking sign detected, but detected distance too large: 0.798, expected: 3.475, relocalizing...
+[ INFO] [1750789043.337286824]: WARNING: parking sign detected, but detected distance too large: 0.747, expected: 3.507, relocalizing...
+[ INFO] [1750789043.437347758]: WARNING: parking sign detected, but detected distance too large: 0.747, expected: 3.539, relocalizing...
+[ INFO] [1750789043.537279532]: WARNING: parking sign detected, but detected distance too large: 0.703, expected: 3.571, relocalizing...
+[ INFO] [1750789043.637201158]: WARNING: parking sign detected, but detected distance too large: 0.661, expected: 3.603, relocalizing...
+[ INFO] [1750789043.737181683]: WARNING: parking sign detected, but detected distance too large: 0.623, expected: 3.634, relocalizing...
+[ INFO] [1750789043.837337079]: WARNING: parking sign detected, but detected distance too large: 0.623, expected: 3.666, relocalizing...
+[ INFO] [1750789043.937225446]: WARNING: parking sign detected, but detected distance too large: 0.581, expected: 3.697, relocalizing...
+[ INFO] [1750789044.037234908]: WARNING: parking sign detected, but detected distance too large: 0.541, expected: 3.728, relocalizing...
+[ INFO] [1750789044.137224908]: WARNING: parking sign detected, but detected distance too large: 0.513, expected: 3.760, relocalizing...
+[ INFO] [1750789044.227918478]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.006, errory: 0.006, right_only: 0, on_highway: 0
+[ INFO] [1750789044.237428191]: WARNING: parking sign detected, but detected distance too large: 0.513, expected: 3.792, relocalizing...
+[ INFO] [1750789044.337307436]: WARNING: parking sign detected, but detected distance too large: 0.480, expected: 3.824, relocalizing...
+[ INFO] [1750789044.437209376]: WARNING: parking sign detected, but detected distance too large: 0.433, expected: 3.856, relocalizing...
+[ INFO] [1750789044.744530041]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.008, errory: 0.008, right_only: 0, on_highway: 0
+[ INFO] [1750789045.261256968]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.016, errory: 0.016, right_only: 0, on_highway: 0
+[ INFO] [1750789045.794564314]: LANE_RELOC2(): SUCCESS: errorx: -0.002, errory: -0.026, errory: -0.026, right_only: 0, on_highway: 0
+[ INFO] [1750789046.311208784]: LANE_RELOC2(): SUCCESS: errorx: 0.003, errory: 0.061, errory: 0.061, right_only: 0, on_highway: 0
+[ INFO] [1750789046.977916070]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.024, errory: -0.024, right_only: 0, on_highway: 0
+[ INFO] [1750789047.137502907]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (15.841, 0.571), actual: (15.634, 0.678), error: (-0.207, 0.107), error norm: 0.233, threshold: 0.900, old states: (13.651, 0.953), new states: (13.443, 1.060), yaw: -4.017, sign: Oneway, ID: 134
+[ INFO] [1750789049.537371480]: CHECK_INTERSECTION(None): REACHED: x_cur: (14.419, 0.946, 6.246), intersection: (14.764, 0.924), distance: 0.346, index: 29, next intersection: (17.110, 2.367, 1.571)
+[ INFO] [1750789049.537476634]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750789050.237432336]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (15.535, 0.689), actual: (15.634, 0.678), error: (0.099, -0.011), error norm: 0.099, threshold: 0.900, old states: (14.650, 0.943), new states: (14.749, 0.932), yaw: -0.017, sign: Oneway, ID: 134
+[ INFO] [1750789051.494610848]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.013, errory: -0.013, right_only: 0, on_highway: 0
+[ INFO] [1750789057.237343649]: SIGN_RELOC2(Crosswalk): FAILURE: yaw error too large: 52.017, thresh: 45.000, sign: Crosswalk, ID: 65
+[ INFO] [1750789057.737474089]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (17.330, 2.229), actual: (17.332, 2.288), error: (0.002, 0.059), error norm: 0.059, threshold: 0.900, old states: (16.973, 1.308), new states: (16.974, 1.366), yaw: 51.683, sign: Crosswalk, ID: 65
+[ INFO] [1750789058.337297603]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (17.331, 2.285), actual: (17.332, 2.288), error: (0.001, 0.003), error norm: 0.004, threshold: 0.900, old states: (17.050, 1.546), new states: (17.051, 1.550), yaw: 67.783, sign: Crosswalk, ID: 65
+[ INFO] [1750789058.937142980]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (17.350, 2.287), actual: (17.332, 2.288), error: (-0.018, 0.001), error norm: 0.018, threshold: 0.900, old states: (17.090, 1.744), new states: (17.073, 1.745), yaw: 79.383, sign: Crosswalk, ID: 65
+[ INFO] [1750789059.437191570]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (17.356, 2.273), actual: (17.332, 2.288), error: (-0.023, 0.015), error norm: 0.028, threshold: 0.900, old states: (17.088, 1.905), new states: (17.065, 1.920), yaw: 84.383, sign: Crosswalk, ID: 65
+[ INFO] [1750789059.737078887]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (17.071, 2.012, 7.794), intersection: (17.110, 2.367), distance: 0.357, index: 30, next intersection: (16.223, 4.015, 3.142)
+[ INFO] [1750789059.737184329]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1750789060.313307263]: LANE_RELOC2(): SUCCESS: errorx: -0.023, errory: 0.001, errory: 0.023, right_only: 0, on_highway: 0
+[ INFO] [1750789064.837449922]: SIGN_RELOC2(Stop Sign): FAILURE: yaw error too large: 82.617, thresh: 45.000, sign: Stop Sign, ID: 70
+[ INFO] [1750789065.337475272]: SIGN_RELOC2(Stop Sign): FAILURE: yaw error too large: 75.317, thresh: 45.000, sign: Stop Sign, ID: 70
+[ INFO] [1750789065.838823759]: SIGN_RELOC2(Stop Sign): FAILURE: yaw error too large: 63.817, thresh: 45.000, sign: Stop Sign, ID: 70
+[ INFO] [1750789066.438605212]: SIGN_RELOC2(Stop Sign): FAILURE: yaw error too large: 49.517, thresh: 45.000, sign: Stop Sign, ID: 70
+[ INFO] [1750789067.038151359]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (16.294, 4.288), actual: (16.299, 4.270), error: (0.005, -0.018), error norm: 0.019, threshold: 0.900, old states: (16.633, 3.869), new states: (16.638, 3.851), yaw: 145.083, sign: Stop Sign, ID: 70
+[ INFO] [1750789067.138354866]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (14.630, 4.354), actual: (14.634, 4.268), error: (0.004, -0.086), error norm: 0.086, threshold: 0.900, old states: (16.609, 3.866), new states: (16.613, 3.780), yaw: 147.383, sign: Oneway, ID: 71
+[ INFO] [1750789067.438572783]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (16.503, 3.835, 8.983), intersection: (16.223, 4.015), distance: 0.333, index: 31, next intersection: (9.500, 4.000, 3.142)
+[ INFO] [1750789067.439169483]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[ INFO] [1750789070.238029655]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (14.678, 4.283), actual: (14.634, 4.268), error: (-0.044, -0.015), error norm: 0.046, threshold: 0.900, old states: (15.958, 3.995), new states: (15.915, 3.980), yaw: 167.683, sign: Oneway, ID: 71
+[ INFO] [1750789071.427910697]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.027, errory: 0.027, right_only: 0, on_highway: 0
+[ INFO] [1750789071.961283343]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.016, errory: -0.016, right_only: 0, on_highway: 0
+[ INFO] [1750789072.477901949]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.015, errory: -0.015, right_only: 0, on_highway: 0
+[ INFO] [1750789073.027944514]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.015, errory: 0.015, right_only: 0, on_highway: 0
+[ INFO] [1750789073.337402332]: SIGN_RELOC2(Oneway): SUCCESS: estimated sign pose: (14.664, 4.285), actual: (14.634, 4.268), error: (-0.030, -0.017), error norm: 0.034, threshold: 0.900, old states: (14.894, 4.027), new states: (14.864, 4.010), yaw: -179.817, sign: Oneway, ID: 71
+[ INFO] [1750789073.577938937]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.011, errory: 0.011, right_only: 0, on_highway: 0
+[ INFO] [1750789074.127920619]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.012, errory: 0.012, right_only: 0, on_highway: 0
+[ INFO] [1750789074.677915009]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: -0.003, right_only: 0, on_highway: 0
+[ INFO] [1750789075.194557462]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.004, errory: -0.004, right_only: 0, on_highway: 0
+[ INFO] [1750789075.811391450]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.022, errory: 0.022, right_only: 0, on_highway: 0
+[ INFO] [1750789076.427985299]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.011, errory: 0.011, right_only: 0, on_highway: 0
+[ INFO] [1750789077.161244348]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.005, errory: 0.005, right_only: 0, on_highway: 0
+[ INFO] [1750789077.761315236]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.030, errory: 0.030, right_only: 0, on_highway: 0
+[ INFO] [1750789078.361316374]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.016, errory: 0.016, right_only: 0, on_highway: 0
+[ INFO] [1750789079.194652169]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.011, errory: -0.011, right_only: 0, on_highway: 0
+[ INFO] [1750789079.427943262]: process_lane_data(): lane_based_yaw: 179.613, current yaw: 175.883, yaw_error: 3.730, straight_lane_angle: 0.387
+0.3874
+[ INFO] [1750789079.428103600]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 179.613, current yaw: 175.883, straight_lane_angle: 0.387
+[ INFO] [1750789079.777966007]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.006, errory: -0.006, right_only: 0, on_highway: 0
+[ INFO] [1750789080.377956422]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.003, errory: -0.003, right_only: 0, on_highway: 0
+[ INFO] [1750789080.977907400]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.009, errory: -0.009, right_only: 0, on_highway: 0
+[ INFO] [1750789081.577954728]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.006, errory: 0.006, right_only: 0, on_highway: 0
+[ INFO] [1750789082.194601906]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.015, errory: 0.015, right_only: 0, on_highway: 0
+[ INFO] [1750789084.911274736]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.019, errory: 0.019, right_only: 0, on_highway: 0
+[ INFO] [1750789085.238559157]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.533, 4.218), actual: (9.546, 4.236), error: (0.013, 0.019), error norm: 0.023, threshold: 0.900, old states: (11.014, 4.007), new states: (11.026, 4.026), yaw: 179.213, sign: Crosswalk, ID: 140
+[ INFO] [1750789085.544587991]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.010, errory: -0.010, right_only: 0, on_highway: 0
+[ INFO] [1750789085.838371756]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.543, 4.235), actual: (9.546, 4.236), error: (0.003, 0.002), error norm: 0.003, threshold: 0.900, old states: (10.828, 4.040), new states: (10.830, 4.042), yaw: 178.713, sign: Crosswalk, ID: 140
+[ INFO] [1750789086.144631127]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.002, errory: 0.002, right_only: 0, on_highway: 0
+[ INFO] [1750789086.437299212]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.544, 4.228), actual: (9.546, 4.236), error: (0.002, 0.009), error norm: 0.009, threshold: 0.900, old states: (10.632, 4.039), new states: (10.634, 4.047), yaw: -178.987, sign: Crosswalk, ID: 140
+[ INFO] [1750789086.727969036]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.005, errory: -0.005, right_only: 0, on_highway: 0
+[ INFO] [1750789086.937449242]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.553, 4.255), actual: (9.546, 4.236), error: (-0.007, -0.018), error norm: 0.019, threshold: 0.900, old states: (10.471, 4.049), new states: (10.464, 4.031), yaw: -178.787, sign: Crosswalk, ID: 140
+[ INFO] [1750789087.437488132]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.548, 4.244), actual: (9.546, 4.236), error: (-0.002, -0.008), error norm: 0.008, threshold: 0.900, old states: (10.306, 4.030), new states: (10.304, 4.022), yaw: -179.387, sign: Crosswalk, ID: 140
+[ INFO] [1750789088.037305501]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.553, 4.240), actual: (9.546, 4.236), error: (-0.007, -0.004), error norm: 0.008, threshold: 0.900, old states: (10.115, 4.024), new states: (10.108, 4.021), yaw: 178.713, sign: Crosswalk, ID: 140
+[ INFO] [1750789088.637247228]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (9.544, 4.232), actual: (9.546, 4.236), error: (0.002, 0.004), error norm: 0.005, threshold: 0.900, old states: (9.922, 4.025), new states: (9.924, 4.030), yaw: 178.513, sign: Crosswalk, ID: 140
+[ INFO] [1750789088.837195986]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (9.862, 4.031, 9.401), intersection: (9.500, 4.000), distance: 0.363, index: 32, next intersection: (7.543, 4.015, 3.142)
+[ INFO] [1750789088.837290671]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1750789089.494618045]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.092, errory: -0.092, right_only: 0, on_highway: 0
+[ INFO] [1750789090.111208756]: LANE_RELOC2(): SUCCESS: errorx: 0.003, errory: -0.048, errory: 0.048, right_only: 0, on_highway: 0
+[ INFO] [1750789090.744555077]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: -0.009, errory: 0.009, right_only: 0, on_highway: 0
+[ INFO] [1750789091.294589320]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: 0.012, errory: -0.012, right_only: 0, on_highway: 0
+[ INFO] [1750789091.827942089]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.000, errory: -0.000, right_only: 0, on_highway: 0
+[ INFO] [1750789092.361240568]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.021, errory: -0.021, right_only: 0, on_highway: 0
+[ INFO] [1750789096.138721976]: CHECK_INTERSECTION(None): REACHED: x_cur: (7.898, 4.038, 9.437), intersection: (7.543, 4.015), distance: 0.356, index: 33, next intersection: (5.684, 4.014, 3.142)
+[ INFO] [1750789096.139291915]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+create_known_static_object(): LIGHT!!!!!!!!!!! type: Green Light, x: 3.237, y: 4.23, yaw: 3.128, confidence: 0.78
+[ INFO] [1750789101.737713887]: CHECK_INTERSECTION(None): REACHED: x_cur: (6.053, 4.043, 9.428), intersection: (5.684, 4.014), distance: 0.370, index: 34, next intersection: (3.429, 4.013, 3.142)
+[ INFO] [1750789101.738285843]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750789105.038793603]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.519, 4.242), actual: (3.541, 4.318), error: (0.022, 0.077), error norm: 0.080, threshold: 0.900, old states: (4.997, 4.043), new states: (5.020, 4.119), yaw: -179.887, sign: Lights, ID: 150
+[ INFO] [1750789105.494642169]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.008, errory: -0.008, right_only: 0, on_highway: 0
+[ INFO] [1750789105.638635331]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.503, 4.300), actual: (3.541, 4.318), error: (0.038, 0.018), error norm: 0.042, threshold: 0.900, old states: (4.800, 4.116), new states: (4.838, 4.134), yaw: -177.187, sign: Lights, ID: 150
+[ INFO] [1750789106.238541015]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.538, 4.322), actual: (3.541, 4.318), error: (0.003, -0.004), error norm: 0.005, threshold: 0.900, old states: (4.610, 4.109), new states: (4.613, 4.105), yaw: -172.287, sign: Lights, ID: 150
+[ INFO] [1750789106.838571730]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.559, 4.353), actual: (3.541, 4.318), error: (-0.018, -0.035), error norm: 0.039, threshold: 0.900, old states: (4.397, 4.082), new states: (4.379, 4.047), yaw: -173.587, sign: Lights, ID: 150
+[ INFO] [1750789107.438507344]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.542, 4.331), actual: (3.541, 4.318), error: (-0.001, -0.013), error norm: 0.013, threshold: 0.900, old states: (4.184, 4.037), new states: (4.183, 4.024), yaw: -176.587, sign: Lights, ID: 150
+[ INFO] [1750789107.938534103]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.545, 4.316), actual: (3.541, 4.318), error: (-0.004, 0.002), error norm: 0.004, threshold: 0.900, old states: (4.023, 4.023), new states: (4.020, 4.026), yaw: -178.987, sign: Lights, ID: 150
+[ INFO] [1750789108.538505087]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.537, 4.305), actual: (3.541, 4.318), error: (0.004, 0.013), error norm: 0.013, threshold: 0.900, old states: (3.814, 4.030), new states: (3.818, 4.043), yaw: 178.113, sign: Lights, ID: 150
+[ INFO] [1750789108.638115191]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (3.784, 4.043, 9.392), intersection: (3.429, 4.013), distance: 0.357, index: 35, next intersection: (2.519, 1.274, -1.571)
+[ INFO] [1750789108.638284173]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1750789114.427965639]: LANE_RELOC2(): SUCCESS: errorx: -0.100, errory: 0.008, errory: -0.101, right_only: 0, on_highway: 0
+[ INFO] [1750789114.961328266]: LANE_RELOC2(): SUCCESS: errorx: -0.015, errory: -0.001, errory: -0.015, right_only: 0, on_highway: 0
+[ INFO] [1750789115.038337241]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.345, 1.251), actual: (2.264, 1.351), error: (-0.080, 0.100), error norm: 0.128, threshold: 0.900, old states: (2.417, 2.815), new states: (2.337, 2.915), yaw: -86.487, sign: Stop Sign, ID: 9
+[ INFO] [1750789115.538352989]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.263, 1.359), actual: (2.264, 1.351), error: (0.002, -0.008), error norm: 0.008, threshold: 0.900, old states: (2.373, 2.711), new states: (2.375, 2.703), yaw: -79.587, sign: Stop Sign, ID: 9
+[ INFO] [1750789116.038370049]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.213, 1.358), actual: (2.264, 1.351), error: (0.051, -0.007), error norm: 0.052, threshold: 0.900, old states: (2.420, 2.506), new states: (2.471, 2.499), yaw: -75.987, sign: Stop Sign, ID: 9
+[ INFO] [1750789116.538563932]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.207, 1.371), actual: (2.264, 1.351), error: (0.057, -0.020), error norm: 0.061, threshold: 0.900, old states: (2.500, 2.322), new states: (2.557, 2.303), yaw: -79.587, sign: Stop Sign, ID: 9
+[ INFO] [1750789117.137383674]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.253, 1.354), actual: (2.264, 1.351), error: (0.012, -0.003), error norm: 0.012, threshold: 0.900, old states: (2.566, 2.112), new states: (2.577, 2.109), yaw: -87.187, sign: Stop Sign, ID: 9
+[ INFO] [1750789117.638015392]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.272, 1.346), actual: (2.264, 1.351), error: (-0.007, 0.005), error norm: 0.009, threshold: 0.900, old states: (2.571, 1.945), new states: (2.564, 1.950), yaw: -91.987, sign: Stop Sign, ID: 9
+[ INFO] [1750789118.138148296]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (2.280, 1.348), actual: (2.264, 1.351), error: (-0.016, 0.003), error norm: 0.016, threshold: 0.900, old states: (2.554, 1.788), new states: (2.538, 1.791), yaw: -94.087, sign: Stop Sign, ID: 9
+[ INFO] [1750789118.639135230]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (2.529, 1.633, 10.938), intersection: (2.519, 1.274), distance: 0.359, index: 36, next intersection: (0.727, 3.097, 1.571)
+[ INFO] [1750789118.639281868]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[ INFO] [1750789132.037504517]: CHECK_INTERSECTION(None): REACHED: x_cur: (0.730, 2.743, 7.863), intersection: (0.727, 3.097), distance: 0.354, index: 37, next intersection: (0.727, 5.988, 1.571)
+[ INFO] [1750789132.037601412]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1750789132.137477584]: CHECK_INTERSECTION(): sign found for intersection at (0.727, 5.988), sign: Priority, cumulative confidence: 2.904, error: 0.000
+[ INFO] [1750789135.561241291]: LANE_RELOC2(): SUCCESS: errorx: 0.094, errory: 0.001, errory: -0.094, right_only: 0, on_highway: 0
+[ INFO] [1750789136.111235969]: LANE_RELOC2(): SUCCESS: errorx: 0.024, errory: 0.001, errory: -0.024, right_only: 0, on_highway: 0
+[ INFO] [1750789137.238703447]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.940, 5.985), actual: (0.982, 5.911), error: (0.042, -0.074), error norm: 0.085, threshold: 0.900, old states: (0.782, 4.445), new states: (0.824, 4.372), yaw: 98.213, sign: Priority, ID: 116
+[ INFO] [1750789137.838383716]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.976, 5.912), actual: (0.982, 5.911), error: (0.006, -0.001), error norm: 0.006, threshold: 0.900, old states: (0.794, 4.600), new states: (0.800, 4.599), yaw: 98.113, sign: Priority, ID: 116
+[ INFO] [1750789138.437533130]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (1.003, 5.911), actual: (0.982, 5.911), error: (-0.020, 0.001), error norm: 0.021, threshold: 0.900, old states: (0.776, 4.812), new states: (0.756, 4.813), yaw: 96.113, sign: Priority, ID: 116
+[ INFO] [1750789138.938395160]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.986, 5.902), actual: (0.982, 5.911), error: (-0.004, 0.009), error norm: 0.010, threshold: 0.900, old states: (0.745, 4.976), new states: (0.741, 4.986), yaw: 94.313, sign: Priority, ID: 116
+[ INFO] [1750789139.438551304]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.985, 5.909), actual: (0.982, 5.911), error: (-0.003, 0.002), error norm: 0.004, threshold: 0.900, old states: (0.736, 5.143), new states: (0.733, 5.146), yaw: 92.213, sign: Priority, ID: 116
+[ INFO] [1750789140.038876320]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.981, 5.905), actual: (0.982, 5.911), error: (0.001, 0.007), error norm: 0.007, threshold: 0.900, old states: (0.732, 5.348), new states: (0.733, 5.355), yaw: 89.813, sign: Priority, ID: 116
+[ INFO] [1750789140.637509059]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.974, 5.917), actual: (0.982, 5.911), error: (0.008, -0.005), error norm: 0.010, threshold: 0.900, old states: (0.732, 5.549), new states: (0.741, 5.544), yaw: 90.213, sign: Priority, ID: 116
+[ INFO] [1750789140.937481875]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (0.740, 5.639, 7.866), intersection: (0.727, 5.988), distance: 0.349, index: 38, next intersection: (0.727, 9.098, 1.571)
+[ INFO] [1750789140.937577361]: intersection reached: CASE Priority, proceeding...
+[ INFO] [1750789144.494583134]: LANE_RELOC2(): SUCCESS: errorx: 0.055, errory: 0.001, errory: -0.055, right_only: 0, on_highway: 0
+[ INFO] [1750789144.627901288]: process_lane_data(): lane_based_yaw: 90.102, current yaw: 90.613, yaw_error: 0.511, straight_lane_angle: -0.102
+-0.1015
+[ INFO] [1750789144.628366362]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 90.102, current yaw: 90.613, straight_lane_angle: -0.102
+[ INFO] [1750789145.027905749]: LANE_RELOC2(): SUCCESS: errorx: -0.009, errory: -0.000, errory: 0.009, right_only: 0, on_highway: 0
+[ INFO] [1750789145.561256629]: LANE_RELOC2(): SUCCESS: errorx: -0.007, errory: -0.001, errory: 0.007, right_only: 0, on_highway: 0
+[ INFO] [1750789146.037312387]: CHECK_INTERSECTION(): sign found for intersection at (0.727, 9.098), sign: Stop Sign, cumulative confidence: 2.604, error: 0.000
+[ INFO] [1750789146.077937174]: LANE_RELOC2(): SUCCESS: errorx: 0.002, errory: 0.000, errory: -0.002, right_only: 0, on_highway: 0
+[ INFO] [1750789146.611253355]: LANE_RELOC2(): SUCCESS: errorx: 0.007, errory: 0.000, errory: -0.007, right_only: 0, on_highway: 0
+[ INFO] [1750789146.737371002]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.961, 9.055), actual: (0.982, 9.022), error: (0.021, -0.034), error norm: 0.040, threshold: 0.900, old states: (0.736, 7.550), new states: (0.757, 7.517), yaw: 90.202, sign: Stop Sign, ID: 151
+[ INFO] [1750789147.337319644]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.951, 9.013), actual: (0.982, 9.022), error: (0.031, 0.009), error norm: 0.033, threshold: 0.900, old states: (0.751, 7.723), new states: (0.783, 7.732), yaw: 92.102, sign: Stop Sign, ID: 151
+[ INFO] [1750789148.137446299]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.993, 9.013), actual: (0.982, 9.022), error: (-0.011, 0.009), error norm: 0.014, threshold: 0.900, old states: (0.764, 7.995), new states: (0.754, 8.004), yaw: 95.002, sign: Stop Sign, ID: 151
+[ INFO] [1750789148.937438448]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (1.007, 9.026), actual: (0.982, 9.022), error: (-0.025, -0.004), error norm: 0.026, threshold: 0.900, old states: (0.737, 8.270), new states: (0.712, 8.266), yaw: 92.902, sign: Stop Sign, ID: 151
+[ INFO] [1750789149.637246328]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.981, 9.019), actual: (0.982, 9.022), error: (0.001, 0.003), error norm: 0.003, threshold: 0.900, old states: (0.707, 8.497), new states: (0.708, 8.500), yaw: 90.402, sign: Stop Sign, ID: 151
+[ INFO] [1750789150.437422247]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (0.707, 8.749, 7.861), intersection: (0.727, 9.098), distance: 0.350, index: 39, next intersection: (1.220, 9.620, 0.000)
+[ INFO] [1750789150.437519333]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[ INFO] [1750789154.837437421]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (1.172, 9.605, 6.767), intersection: (1.220, 9.620), distance: 0.051, index: 40, next intersection: (4.750, 7.920, -1.571)
+[ INFO] [1750789154.837538156]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1750789167.137344712]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (4.548, 7.986), actual: (4.546, 7.963), error: (-0.002, -0.023), error norm: 0.023, threshold: 0.900, old states: (4.679, 8.619), new states: (4.677, 8.596), yaw: -69.898, sign: Crosswalk, ID: 152
+[ INFO] [1750789167.937526937]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (4.560, 7.953), actual: (4.546, 7.963), error: (-0.014, 0.010), error norm: 0.017, threshold: 0.900, old states: (4.738, 8.338), new states: (4.724, 8.348), yaw: -77.398, sign: Crosswalk, ID: 152
+[ INFO] [1750789168.137331745]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (4.735, 8.283, 4.910), intersection: (4.750, 7.920), distance: 0.363, index: 41, no more intersections
+[ INFO] [1750789168.137435970]: intersection reached: CASE Crosswalk, proceeding...
+[ INFO] [1750789170.237218123]: Changing from MOVING to DONE
+Sending State
+Stopping CAR
+[ INFO] [1750789171.729617647]: Changing from DONE to INIT
+^C[mpc_controller_jetson_9336_4049976488030587682-2] killing on exit
+^C[ERROR] [1750789196.071722988]: serial error: Operation canceled
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+scandy@jetson:~/AD$ 

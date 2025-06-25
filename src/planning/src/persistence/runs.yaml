@@ -67,8 +67,8 @@ run189:
 # - 173
 - 8
 runHighway502: # AI Path
-- 502
-- 402
+- 464
+- 404
 runHighway464: # AI Path
 - 464
 - 482
