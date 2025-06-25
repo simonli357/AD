@@ -50,31 +50,31 @@ double TrafficManager::random_speed() {
 }
 
 void TrafficManager::spawn_ego_car() {
-	std::vector<VD> candidates;
-	const auto &graph = planner->track.graph;
-	for (auto [vi, vend] = vertices(graph); vi != vend; ++vi) {
-		const auto &v = graph[*vi];
-		if (v.x >= spawn_area[0] && v.x <= spawn_area[2] && v.y >= spawn_area[1] && v.y <= spawn_area[3] && v.attribute != ATTR::INTERSECTION) {
-			candidates.push_back(*vi);
-		}
-	}
-	if (candidates.empty()) {
-		return;
-	}
-	static std::mt19937_64 rng{std::random_device{}()};
-	std::uniform_int_distribution<size_t> distr(0, candidates.size() - 1);
-	VD chosen = candidates[distr(rng)];
-	const auto &wp = graph[chosen];
-	double yaw = 0.0;
-	auto [ei, eend] = out_edges(chosen, graph);
-	if (ei != eend) {
-		VD next = target(*ei, graph);
-		const auto &wp2 = graph[next];
-		yaw = std::atan2(wp2.y - wp.y, wp2.x - wp.x);
-	}
-	double card = std::round(yaw / (M_PI / 2.0)) * (M_PI / 2.0);
-	move_car_to("car1", wp.x, wp.y, card);
-	ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
+	// std::vector<VD> candidates;
+	// const auto &graph = planner->track.graph;
+	// for (auto [vi, vend] = vertices(graph); vi != vend; ++vi) {
+	// 	const auto &v = graph[*vi];
+	// 	if (v.x >= spawn_area[0] && v.x <= spawn_area[2] && v.y >= spawn_area[1] && v.y <= spawn_area[3] && v.attribute != ATTR::INTERSECTION) {
+	// 		candidates.push_back(*vi);
+	// 	}
+	// }
+	// if (candidates.empty()) {
+	// 	return;
+	// }
+	// static std::mt19937_64 rng{std::random_device{}()};
+	// std::uniform_int_distribution<size_t> distr(0, candidates.size() - 1);
+	// VD chosen = candidates[distr(rng)];
+	// const auto &wp = graph[chosen];
+	// double yaw = 0.0;
+	// auto [ei, eend] = out_edges(chosen, graph);
+	// if (ei != eend) {
+	// 	VD next = target(*ei, graph);
+	// 	const auto &wp2 = graph[next];
+	// 	yaw = std::atan2(wp2.y - wp.y, wp2.x - wp.x);
+	// }
+	double card = std::round(90 / (M_PI / 2.0)) * (M_PI / 2.0);
+	move_car_to("car1", 5.12, 4.626, card);
+	// ROS_INFO("spawn_ego_car: placed car1 at (%.2f,%.2f) yaw=%.2f°", wp.x, wp.y, card * 180.0 / M_PI);
 }
 
 void TrafficManager::move_car_to(const std::string &car_name, double x, double y, double yaw) {
