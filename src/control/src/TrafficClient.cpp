@@ -119,7 +119,7 @@ void TrafficClient::listen() {
 bool TrafficClient::can_send() {
 	auto now = steady_clock::now();
 	auto elapsed = duration_cast<milliseconds>(now - last_send_time);
-	if (elapsed.count() >= 250) {
+	if (elapsed > frequency) {
 		last_send_time = now;
 		return true;
 	}
@@ -140,7 +140,9 @@ void TrafficClient::clear_positions() {
 }
 
 std::pair<double, double> TrafficClient::get_car_position() {
-	while (!enough_points) {
+    auto now = steady_clock::now();
+    auto elapsed = duration_cast<seconds>(now - start_time);
+	while (!enough_points && elapsed > gps_timeout) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 	auto [mean_x, mean_y] = calculate_mean(car_positions);

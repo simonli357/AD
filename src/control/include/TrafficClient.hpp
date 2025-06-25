@@ -38,10 +38,12 @@ class TrafficClient {
 	// Fields
 	int car_id = 6;
 	const milliseconds frequency = milliseconds(250);
+	const seconds gps_timeout = seconds(Tunable::gps_timeout);
 	const size_t num_points = Tunable::gps_points;
 	std::vector<std::tuple<double, double, double>> car_positions;
 	size_t array_ptr = 0;
 	steady_clock::time_point last_send_time = steady_clock::now();
+	steady_clock::time_point start_time = steady_clock::now();
 	const uint16_t tcp_port = 5000;
 	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
