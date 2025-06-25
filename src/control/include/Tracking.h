@@ -32,7 +32,7 @@ static const std::array<TrackingParams, 20> OBJECT_TRACKING_PARAMS = {{
     {MIN_SIGN_DIST, 0.0, 3600},  // PARK
     {MIN_SIGN_DIST, 0.0, 3600},  // CROSSWALK
     {MIN_SIGN_DIST, 0.0, 3600},  // NOENTRY
-    {MIN_SIGN_DIST, 0.0, 3600},  // HIGHWAYEXIT
+    {0.573, 0.0, 3600},  // HIGHWAYEXIT
     {MIN_SIGN_DIST, 0.0, 3600},    // PRIORITY
     {MIN_SIGN_DIST, 0.0, 3600},    // LIGHTS
     {MIN_SIGN_DIST, 0.0, 3600},    // BLOCK
