@@ -37,6 +37,7 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 ## 🏗️ Project Structure
 
 - **Embedded_Platform/** - Interfaces with STM32 for motor, servo, and sensor control.
+- **container/** - Nix container configuration files.
 - **src/** - Contains the main modules:
   - **control/** - Implements Model Predictive Control (MPC) and state machine logic.
   - **localization/** - Fuses sensor data using an Extended Kalman Filter (EKF).
@@ -53,6 +54,9 @@ Each of these modules is described in detail below, with figures where applicabl
 
 ### 🖥️ Embedded Platform
 This package contains firmware modified from Bosch’s provided code to interface with the **STM32 microcontroller**, controlling the vehicle’s **motor, servo, and sensors** (e.g., IMU, camera, encoders).
+
+### 󱄅 Container
+This package contains the nix flake for the development environment. To install, simply run the install script on any linux distribution. For Windows, install wsl2 and run the install script inside wsl2.
 
 ### 🏎️ Control
 - Uses **Model Predictive Control (MPC)** for smooth trajectory tracking.
