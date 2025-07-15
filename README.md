@@ -5,7 +5,7 @@
 
 ---
 
-## 🏎️ Description
+## Description
 
 This repository contains the Autonomous Driving (AD) pipeline developed for the Bosch Future Mobility Challenge. Designed for a 1:10 scale autonomous vehicle, the project includes core modules for:
 
@@ -18,7 +18,7 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 
 ---
 
-<h2>🎥 Demo Videos</h2>
+<h2>Demo Videos</h2>
 
 <div align="center">
   <a href="https://youtu.be/gsYTIXkuHi8" target="_blank">
@@ -34,7 +34,7 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 - **Embedded_Platform/** - Interfaces with STM32 for motor, servo, and sensor control.
 - **container/** - Nix container configuration files.
@@ -50,35 +50,35 @@ Each of these modules is described in detail below, with figures where applicabl
 
 ---
 
-## 🔍 Detailed Package Overview
+## Detailed Package Overview
 
-### 🖥️ Embedded Platform
+### Embedded Platform
 This package contains firmware modified from Bosch’s provided code to interface with the **STM32 microcontroller**, controlling the vehicle’s **motor, servo, and sensors** (e.g., IMU, camera, encoders).
 
 ### 󱄅 Container
 This package contains the nix flake for the development environment. To install, simply run the install script on any linux distribution. For Windows, install wsl2 and run the install script inside wsl2.
 
-### 🏎️ Control
+### Control
 - Uses **Model Predictive Control (MPC)** for smooth trajectory tracking.
 - Implements a **finite state machine** for handling autonomous behaviors.
 ![MPC Preview](assets/mpc_sim.gif)
 
-### 🌍 Localization
+### Localization
 - Employs the `robot_localization` package to integrate GPS, IMU, and odometry data using an **Extended Kalman Filter (EKF)**.
 - Simulated GPS delay and noise are added for realism in **Gazebo**.
 
-### 👀 Perception
+### Perception
 - **Lane Detection**: Uses a **histogram-based** approach.
 - **Sign Detection**:
   - **YOLOFastestV2 using NCNN (CPU inference)** or **YOLOv8 using TensorRT (GPU inference)** for real-time inference.
   - Detects competition-relevant **traffic signs, traffic lights (with color classification), vehicles, and pedestrian dolls**.
 
-### 🛤️ Planning
+### Planning
 - Loads **global waypoints** from a **GraphML file**.
 - Plans optimal path that goes through all desired destination points.
 - Uses **spline interpolation** to generate a smooth, drivable path.
 
-### 📊 GUI
+### GUI
 - Built with **PyQt5** for real-time visualization of:
   - Camera feed
   - Vehicle state estimation
@@ -94,40 +94,40 @@ This package contains the nix flake for the development environment. To install,
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
-### 🐧 Ubuntu 20.04
+### Ubuntu 20.04
 - Recommended OS. Not sure if ROS Noetic compatible with other versions.
 
-### 🔧 ROS Installation
+### ROS Installation
 - Follow the [ROS Installation Guide](http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html).
 
-### 🏁 Simulation Platform
+### Simulation Platform
 - Install the [Gazebo-based simulator](https://github.com/simonli357/Simulator).
 
-### 📷 OpenCV (4.6.0+)
+### OpenCV (4.6.0+)
 - Install using [this guide](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html) with `opencv_contrib`.
 - Build `cv_bridge`:
   ```bash
   catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
   ```
 
-### 📦 Required Python Libraries
+### Required Python Libraries
 - Install dependencies:
   ```bash
   pip install -r ~/AD/requirements.txt
   ```
 
-### 🛰️ Robot Localization
+### Robot Localization
 - Install:
   ```bash
   sudo apt update && sudo apt install ros-noetic-robot-localization
   ```
 
-### ⚡ NCNN for YOLO Deployment
+### NCNN for YOLO Deployment
 - Follow [this NCNN build guide](https://github.com/Tencent/ncnn/wiki/how-to-build).
 
-### 🚀 TensorRT for GPU Inference
+### TensorRT for GPU Inference
 - Follow `Cuda&TrtInstall.md` instructions for installation.
 - Add paths to `CMakeLists.txt`:
   ```bash
@@ -135,13 +135,13 @@ This package contains the nix flake for the development environment. To install,
   link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
   ```
 
-### 🎥 Intel RealSense
+### Intel RealSense
 - Install using [this guide](https://github.com/IntelRealSense/librealsense).
   ```bash
   sudo apt-get update && sudo apt-get install autoconf libudev-dev
   ```
 
-### 📏 Acados for Optimization
+### Acados for Optimization
 - Follow [Acados installation steps](https://github.com/acados/acados) to install dependencies.
 - Configure:
   ```bash
@@ -150,7 +150,7 @@ This package contains the nix flake for the development environment. To install,
 
 ---
 
-## 🔨 Build Instructions
+## Build Instructions
 
 1. Build the packages:
   ```bash
@@ -160,7 +160,7 @@ This package contains the nix flake for the development environment. To install,
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### Simulation
 
