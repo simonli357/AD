@@ -2,6 +2,7 @@
 
 **Autonomous Driving Pipeline for the Bosch Future Mobility Challenge**  
 [Official Challenge Website](https://boschfuturemobility.com/)
+[Aftermovie 2025](https://www.youtube.com/watch?v=Z-UhcBtfA_4&ab_channel=BoschRomania)
 
 ---
 
@@ -21,6 +22,11 @@ Built on **ROS (Robot Operating System)**, the pipeline supports both **simulati
 <h2>Demo Videos</h2>
 
 <div align="center">
+  <a href="https://www.youtube.com/watch?v=LlrHEnVoWC4" target="_blank">
+    <img src="https://img.youtube.com/vi/LlrHEnVoWC4/0.jpg" alt="Demo Video 1" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+    <p><em>BFMC 2025 Finals - Arena Run</em></p>
+  </a>
+
   <a href="https://youtu.be/gsYTIXkuHi8" target="_blank">
     <img src="https://img.youtube.com/vi/bx6XyxSAWaU/0.jpg" alt="Demo Video 1" width="75%" style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
     <p><em>BFMC 2025 Qualification Video</em></p>
