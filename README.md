@@ -180,33 +180,31 @@ roslaunch sim_pkg run132.launch
 
 ### Real Vehicle Run
 
-#### Activate ROS master
-```bash
-roscore
-```
-
-#### Run Path Planner Server
-```bash
-rosrun planning path2.py
-```
-
-#### Run Camera Node
-```bash
-roslaunch perception cameraNode.launch real:=true realsense:=true ip:=10.121.105.18
-```
-- replace 10.121.105.18 with the ip address of the computer running the gui
-
-#### Run Control Node
-```bash
-roslaunch control controller.launch real:=true v:=32 camera:=false ip:=10.121.105.18
-```
-- replace 10.121.105.18 by ip address of computer on which the gui is run
-- add debug:="valgrind --leak-check=full" or  debug:="gdb --args" to debug the code.
-- supported speed modes: 25, 32
- 
 #### Start GUI
 ```bash
 rosrun gui main.py
 ```
 - run this on another computer to see what the car is doing.
+
+#### Activate ROS master
+- ssh to the jetson orin nano and run roscore:
+```bash
+ssh scandy@{ip_address_of_jetson}
+roscore
+```
+#### Run Control Node
+- ssh to the jetson orin nano and run the controller:
+
+```bash
+ssh scandy@{ip_address_of_jetson}
+roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_id:=10
+```
+- replace 192.168.50.216 by ip address of computer on which the gui is run.
+- change gps_id according to the id of the gps module mounted on the car.
+
+#### Start the Run
+- if gps is used, the car should autonomously plan a path from the starting point to all destination points.
+- once the path is visible on the gui, press the start button to start the run.
+- if gps is not used, click on any destination point on the map in the gui, press the plan button to plan a path, then press the start button to start the run.
+
 
