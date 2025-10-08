@@ -1,4 +1,4 @@
-# Starting our BFMC2025 car
+# Starting with our BFMC2025 car
 
 ## Project Structure
 
@@ -144,6 +144,10 @@ roslaunch sim_pkg run132.launch
 - rest is the same as real run.
 
 ### Real Vehicle Run
+
+#### Power on
+- connect the Jetson to the battery bank via a USB A-to-C cable
+- switch on the power board (pulling the switch toward the back of the car)
 
 #### Start GUI
 ```bash
