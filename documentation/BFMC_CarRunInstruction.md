@@ -62,65 +62,6 @@ This package contains the nix flake for the development environment. To install,
   - **Real time object detection**
 ![MPC Preview](assets/gui.png)
 
-
----
-
-## Dependencies
-
-### Ubuntu 20.04
-- Recommended OS. Not sure if ROS Noetic compatible with other versions.
-
-### ROS Installation
-- Follow the [ROS Installation Guide](http://www.autolabor.com.cn/book/ROSTutorials/chapter1/12-roskai-fa-gong-ju-an-zhuang/124-an-zhuang-ros.html).
-
-### Simulation Platform
-- Install the [Gazebo-based simulator](https://github.com/simonli357/Simulator).
-
-### OpenCV (4.6.0+)
-- Install using [this guide](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html) with `opencv_contrib`.
-- Build `cv_bridge`:
-  ```bash
-  catkin_make -DOpenCV_DIR=/path/to/opencv-4.9.0/build
-  ```
-
-### Required Python Libraries
-- Install dependencies:
-  ```bash
-  pip install -r ~/AD/requirements.txt
-  ```
-
-### Robot Localization
-- Install:
-  ```bash
-  sudo apt update && sudo apt install ros-noetic-robot-localization
-  ```
-
-### NCNN for YOLO Deployment
-- Follow [this NCNN build guide](https://github.com/Tencent/ncnn/wiki/how-to-build).
-
-### TensorRT for GPU Inference
-- Follow `Cuda&TrtInstall.md` instructions for installation.
-- Add paths to `CMakeLists.txt`:
-  ```bash
-  include_directories(/home/{user}/TensorRT-8.6.1.6/include)
-  link_directories(/home/{user}/TensorRT-8.6.1.6/lib)
-  ```
-
-### Intel RealSense
-- Install using [this guide](https://github.com/IntelRealSense/librealsense).
-  ```bash
-  sudo apt-get update && sudo apt-get install autoconf libudev-dev
-  ```
-
-### Acados for Optimization
-- Follow [Acados installation steps](https://github.com/acados/acados) to install dependencies.
-- Configure:
-  ```bash
-  echo 'export ACADOS_SOURCE_DIR="/home/{user}/acados"' >> ~/.bashrc
-  ```
-
----
-
 ## Build Instructions
 
 1. Build the packages:
@@ -132,16 +73,6 @@ This package contains the nix flake for the development environment. To install,
 ---
 
 ## Usage
-
-### Simulation
-
-#### Start Simulation
-- cd to where the simulator workspace is located.
-```bash
-source devel/setup.bash
-roslaunch sim_pkg run132.launch
-```
-- rest is the same as real run.
 
 ### Real Vehicle Run
 
