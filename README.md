@@ -203,7 +203,7 @@ roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=tru
 - change gps_id according to the id of the gps module mounted on the car.
 
 #### Start the Run
-- prior to starting the run, align the car's heading to the north of the map, then press the reset button on STM32 board. Place the car in the starting direction after three seconds.
+
 - if gps is used, the car should autonomously plan a path from the starting point to all destination points.
 - once the path is visible on the gui, press the start button to start the run.
 - if gps is not used, click on any destination point on the map in the gui, press the plan button to plan a path, then press the start button to start the run.
