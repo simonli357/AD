@@ -14,6 +14,9 @@ roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=tru
 HUAWEIP30
 roslaunch control controller.launch camera:=true ip:=192.168.43.143 use_gps:=false real:=true realsense:=true v:=35
 
+== jetson ip
+10.121.116.244
+
 == webm to mp4
 input="screen-capture"
 ffmpeg -i ~/Downloads/"$input".webm ~/Downloads/"$input".mp4
