@@ -196,14 +196,22 @@ float CEncoder::readAngularSpeedKf()
             lastGoodSpeed = filteredCm; // update last good speed
         }
 
-        char buf[64];
+        char buf[128];
         // int n = std::snprintf(buf, sizeof(buf),
         //                     "@5:%.3f;%.3f;;\r\n",
         //                     sendSpeedCm,
         //                     _speedCommand);
         int n = std::snprintf(buf, sizeof(buf),
-                            "@5:%.3f;;\r\n",
-                            filteredCm);
+                            "@5:%.3f;%.3f;%.3f;%.3f;;\r\n",
+                            filteredCm,
+                            rawDeg,
+                            speedDegPerSec,
+                            _speedCommand);
+
+        // int n = std::snprintf(buf, sizeof(buf),
+        //         "@5:%.3f;;\r\n",
+        //         filteredCm);
+
         if (n > 0 && static_cast<size_t>(n) < sizeof(buf)) {
             m_serial.write(buf, n);
         }
