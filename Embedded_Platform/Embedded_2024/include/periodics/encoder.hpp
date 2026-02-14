@@ -8,7 +8,7 @@
 #include <algorithm>
 
 // Set to 1 for I2C angle reading, 0 for PWM duty-cycle reading
-#define ENCODER_USE_I2C  0
+#define ENCODER_USE_I2C  1
 
 #if !ENCODER_USE_I2C
 #include "PwmIn.h"

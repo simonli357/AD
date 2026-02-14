@@ -29,7 +29,7 @@ periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
 periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
 #if ENCODER_USE_I2C
-periodics::CEncoder g_encoder(1, 1, g_rpi, I2C_SDA, I2C_SCL);
+periodics::CEncoder g_encoder(1, 1, g_rpi, A4, A5);
 #else
 periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
 #endif
