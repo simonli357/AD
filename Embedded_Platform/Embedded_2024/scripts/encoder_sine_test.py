@@ -19,7 +19,7 @@ from pathlib import Path
 import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 
 MOTOR_ID   = 11
 CM_TO_DEG  = -146.0  # deg/s per cm/s (negative to fix sign)
