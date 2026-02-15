@@ -173,6 +173,7 @@ float CEncoder::readAngularSpeedKf()
         reportAccum = 0.0f;
 
         float filteredCm   = speedDegPerSec / DEGREE_PER_CM;
+        float unfilteredCm = speedDegPerSec / DEGREE_PER_CM;
 
         static float lastGoodSpeed = 0.0f;
         static std::deque<float> speedCommandHistory = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -203,7 +204,7 @@ float CEncoder::readAngularSpeedKf()
         //                     _speedCommand);
         int n = std::snprintf(buf, sizeof(buf),
                             "@5:%.3f;%.3f;%.3f;%.3f;;\r\n",
-                            filteredCm,
+                            unfilteredCm,
                             rawDeg,
                             speedDegPerSec,
                             _speedCommand);
@@ -216,7 +217,6 @@ float CEncoder::readAngularSpeedKf()
             m_serial.write(buf, n);
         }
 
-        // 5) for internal use, always keep the last “filtered” speed in deg/s
         lastPublishedSpeed = speedDegPerSec;
     }
 
