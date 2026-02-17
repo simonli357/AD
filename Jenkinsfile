@@ -1,10 +1,9 @@
 pipeline {
   agent {
     docker {
-      image 'slsecrets357/ros-noetic-5090-base:v1'
-      // IMPORTANT: disable entrypoint so Jenkins can run its "cat" keepalive
-      args "--entrypoint='' -u root --gpus all --privileged"
-      alwaysPull true
+        image 'slsecrets357/ros-noetic-5090-base:v2'
+        args "--entrypoint='' -u root --gpus all --privileged"
+        alwaysPull true
     }
   }
 
@@ -28,13 +27,7 @@ pipeline {
     stage('Build') {
       steps {
         sh '''
-          bash -lc '
-            set -eux
-            ls -la /opt/ros/noetic/setup.bash
-            source /opt/ros/noetic/setup.bash
-            which catkin_make
-            catkin_make -DCMAKE_BUILD_TYPE=Release
-          '
+        bash -lc "set -eux; source /opt/ros/noetic/setup.bash; which catkin_make; catkin_make -DCMAKE_BUILD_TYPE=Release"
         '''
       }
     }
