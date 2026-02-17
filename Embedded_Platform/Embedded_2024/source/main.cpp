@@ -28,7 +28,11 @@ drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
 periodics::CBlinker g_blinker(1, LED1);
 periodics::CTotalVoltage g_totalvoltage(1, A1, g_rpi);
 periodics::CImu g_imu(1, g_rpi, I2C_SDA, I2C_SCL);
+#if ENCODER_USE_I2C
+periodics::CEncoder g_encoder(1, 1, g_rpi, A4, A5);
+#else
 periodics::CEncoder g_encoder(1, 1, g_rpi, D2);
+#endif
 drivers::CSpeedingMotor g_speedingDriver(1,g_rpi,SPEEDING_DRIVER_PWM_PIN, g_encoder); //speed in cm/s
 drivers::CSteeringMotor g_steeringDriver(1, g_rpi, STEERING_DRIVER_PWM_PIN, g_imu, g_speedingDriver);
 brain::CRobotStateMachine g_robotstatemachine(1, g_rpi, g_steeringDriver, g_speedingDriver);

@@ -19,7 +19,7 @@ from pathlib import Path
 import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 
 MOTOR_ID   = 11
 CM_TO_DEG  = -146.0  # deg/s per cm/s (negative to fix sign)
@@ -194,7 +194,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Sine‑wave encoder test (cm/s)")
     ap.add_argument("--max",   type=float, default=75, help="Peak command speed [cm/s]")
     ap.add_argument("--steer", type=float, default=0,  help="Steering angle [deg]")
-    ap.add_argument("--dur",   type=float, default=20, help="Duration / sine period [s]")
+    ap.add_argument("--dur",   type=float, default=10, help="Duration / sine period [s]")
     ap.add_argument("--csv",   type=Path, help="Save raw data to CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)

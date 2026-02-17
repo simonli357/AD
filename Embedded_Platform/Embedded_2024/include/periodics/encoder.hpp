@@ -4,9 +4,15 @@
 
 #include "mbed.h"
 #include <utils/task.hpp>
-#include "PwmIn.h"
 #include <cmath>
 #include <algorithm>
+
+// Set to 1 for I2C angle reading, 0 for PWM duty-cycle reading
+#define ENCODER_USE_I2C  1
+
+#if !ENCODER_USE_I2C
+#include "PwmIn.h"
+#endif
 
 struct Kalman2D {
     // State estimate
@@ -66,8 +72,22 @@ namespace periodics {
 class CEncoder : public utils::CTask {
 public:
     float _speedCommand = 0.0f;  ///< speed command for the encoder
+#if ENCODER_USE_I2C
     /**
-     * @brief Constructor for PWM-based AS5048A encoder.
+     * @brief Constructor for I2C-based AS5600 encoder.
+     * @param f_periodTicks Task period in ticks
+     * @param g_baseTick    Base tick duration in seconds
+     * @param f_serial      Serial interface for debugging
+     * @param sda_pin       I2C SDA pin
+     * @param scl_pin       I2C SCL pin
+     */
+    CEncoder(uint32_t f_periodTicks,
+             float g_baseTick,
+             BufferedSerial& f_serial,
+             PinName sda_pin, PinName scl_pin);
+#else
+    /**
+     * @brief Constructor for PWM-based AS5600 encoder.
      * @param f_periodTicks Task period in ticks
      * @param g_baseTick    Base tick duration in seconds
      * @param f_serial      Serial interface for debugging
@@ -77,6 +97,7 @@ public:
              float g_baseTick,
              BufferedSerial& f_serial,
              PinName pwm_pin);
+#endif
 
     ~CEncoder();
 
@@ -113,7 +134,13 @@ public:
 private:
     virtual void _run() override;
 
+#if ENCODER_USE_I2C
+    I2C*                m_i2c;                ///< I2C bus (heap-allocated)
+    static constexpr int  AS5600_ADDR      = 0x36 << 1; // 8-bit I2C address
+    static constexpr char RAW_ANGLE_REG_H  = 0x0C;      // RAW ANGLE high byte
+#else
     PwmIn               m_pwm;                ///< PWM input
+#endif
     BufferedSerial&   m_serial;             ///< Serial for debug
     uint32_t            m_periodTicks;        ///< Task period in ticks
     float               m_dt;                 ///< dt in seconds
@@ -142,6 +169,7 @@ private:
         void reset() { z1 = z2 = 0.0f; }
     };
 
+    float getRawAngleDeg();
     float applyHysteresis(float angle);
     float applySpeedHysteresis(float speed);
 
