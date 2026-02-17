@@ -32,7 +32,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                bash -lc 'source /opt/ros/noetic/setup.bash && catkin_make -DCMAKE_BUILD_TYPE=Release'
+                bash -lc 'catkin_make -DCMAKE_BUILD_TYPE=Release'
                 '''
             }
         }
