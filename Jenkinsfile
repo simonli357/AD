@@ -25,11 +25,14 @@ pipeline {
     }
 
     stage('Build') {
-      steps {
-        sh '''
-        bash -lc "set -eux; source /opt/ros/noetic/setup.bash; which catkin_make; catkin_make -DCMAKE_BUILD_TYPE=Release"
-        '''
-      }
+        steps {
+            sh '''
+            bash -lc "set -ex; \
+                source /opt/ros/noetic/setup.bash; \
+                which catkin_make; \
+                catkin_make -DCMAKE_BUILD_TYPE=Release"
+            '''
+        }
     }
   }
 }
