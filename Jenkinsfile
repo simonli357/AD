@@ -1,17 +1,40 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'slsecrets357/ros-noetic-5090-base:v1'
+            args '--gpus all --privileged'
+        }
+    }
+
+    options {
+        ansiColor('xterm')
+    }
+
     stages {
-        stage('Build') {
+        stage('Clean') {
             steps {
-                sh 'echo "Building project..."'
-                sh 'ls -la'
-                // todo: add build stuff
+                sh '''
+                    rm -rf build devel install
+                '''
             }
         }
-        stage('Test') {
+
+        stage('Dependencies') {
             steps {
-                sh 'echo "Running tests..."'
-                // sh 'make test'
+                sh '''
+                    if [ -f requirements.txt ]; then
+                        pip3 install -r requirements.txt
+                    fi
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                    source /opt/ros/noetic/setup.bash
+                    catkin_make -DCMAKE_BUILD_TYPE=Release
+                '''
             }
         }
     }

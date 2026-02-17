@@ -65,13 +65,14 @@ find_package (Eigen3 REQUIRED )
 # For finding FindTensorRT.cmake
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-if (DEFINED ENV{ncnn_DIR})
-  message("-- NCNN found")
-  set(ncnn_INC ${ncnn_INCLUDE})
-else()
-  set(ncnn_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/ncnn/lib/cmake/ncnn)
-  set(ncnn_INC "include/ncnn/include")
+find_package(ncnn REQUIRED)
+if (${ncnn_FOUND})
+  message("-- NCNN found in system path")
+  # NCNN exports 'ncnn' target and variable 'ncnn_INCLUDE_DIRS'
+  include_directories(${ncnn_INCLUDE_DIRS})
+  # Note: ncnn usually links automatically via target_link_libraries(target ncnn)
 endif()
+
 find_package(ncnn REQUIRED)
 if (${ncnn_FOUND})
   message("-- NCNN found.")
