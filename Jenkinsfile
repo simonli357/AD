@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'slsecrets357/ros-noetic-5090-base:v1'
-            args '--gpus all --privileged'
+            args '-u root --entrypoint="" --gpus all --privileged'
         }
     }
 
