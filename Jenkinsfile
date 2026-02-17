@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'slsecrets357/ros-noetic-5090-base:v1'
-            args '-u root --entrypoint="" --gpus all --privileged'
+            args '-u root --gpus all --privileged'
         }
     }
 
@@ -32,7 +32,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                bash -lc 'catkin_make -DCMAKE_BUILD_TYPE=Release'
+                catkin_make -DCMAKE_BUILD_TYPE=Release
                 '''
             }
         }
