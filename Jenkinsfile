@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker {
-        image 'slsecrets357/ros-noetic-5090-base:v2'
+        image 'slsecrets357/ros-noetic-base:v1'
         args "--entrypoint='' -u root --gpus all --privileged"
         alwaysPull true
     }
