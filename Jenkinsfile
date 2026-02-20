@@ -4,24 +4,21 @@ pipeline {
 
   stages {
     stage('Pre-clean workspace') {
-      agent { label 'your-jenkins-node-label' }
+      agent any
       steps {
         sh '''
           set -ex
-          # remove problematic files even if root-owned (requires sudo rights)
-          sudo chown -R jenkins:jenkins "$WORKSPACE" || true
-          sudo chmod -R u+rwX,go+rX,go-w "$WORKSPACE" || true
           rm -rf "$WORKSPACE"/*
         '''
       }
     }
 
     stage('Checkout') {
-      agent { label 'your-jenkins-node-label' }
+      agent any
       steps { checkout scm }
     }
 
-    stage('Build in Docker') {
+    stage('Build') {
       agent {
         docker {
           image 'slsecrets357/ros-noetic-base:v1'
@@ -39,7 +36,6 @@ pipeline {
             sh '''
               bash -lc "set -ex; \
                 source /opt/ros/noetic/setup.bash; \
-                which catkin_make; \
                 catkin_make -DCMAKE_BUILD_TYPE=Release"
             '''
           }
