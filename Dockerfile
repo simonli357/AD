@@ -1,5 +1,4 @@
-# Base Image: CUDA 12.2 + cuDNN 8
-FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu20.04
+FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu20.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -8,15 +7,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nlohmann-json3-dev \
     libncurses5-dev \
     libncursesw5-dev \
-    python3-pip cmake \
+    python3-pip python3-dev python-is-python3 \
+    cmake \
     unzip pkg-config \
     libjpeg-dev libpng-dev libtiff-dev \
     libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
     libxvidcore-dev libx264-dev \
     libgtk-3-dev \
     libatlas-base-dev gfortran \
-    python3-dev \
     libssl-dev libusb-1.0-0-dev libudev-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
@@ -51,7 +51,7 @@ RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/refs/tags/4.10.0
           -D OPENCV_DNN_CUDA=ON \
           -D ENABLE_FAST_MATH=1 \
           -D CUDA_FAST_MATH=1 \
-          -D CUDA_ARCH_BIN="7.5,8.0,8.6,8.9,9.0" \
+          -D CUDA_ARCH_BIN="7.5,8.0,8.6,8.9,9.0,12.0" \
           -D OPENCV_GENERATE_PKGCONFIG=ON \
           -D BUILD_EXAMPLES=OFF \
           -D BUILD_TESTS=OFF \
@@ -81,7 +81,6 @@ RUN git clone https://github.com/Tencent/ncnn.git && \
 
 RUN apt-get update && \
     TRT_VER="8.6.1.6-1+cuda12.0" && \
-    echo "Installing TensorRT version: ${TRT_VER}" && \
     apt-get install -y --no-install-recommends \
     libnvinfer8="${TRT_VER}" \
     libnvinfer-plugin8="${TRT_VER}" \
@@ -107,8 +106,6 @@ RUN apt-get update && \
 WORKDIR /opt
 RUN git clone https://github.com/acados/acados.git
 WORKDIR /opt/acados
-
-# Checkout the last commit before Nov 1, 2023. 
 RUN git checkout $(git rev-list -n 1 --before="2023-11-01" HEAD) && \
     git submodule update --recursive --init
 
@@ -144,14 +141,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-rosinstall \
     python3-rosinstall-generator \
     python3-wstool \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-noetic-robot-localization
+    ros-noetic-robot-localization \
+    ros-noetic-grid-map \
+    ros-noetic-grid-map-* \
+    ros-noetic-pybind11-catkin \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN rosdep init && rosdep update
+RUN python3 -m pip install --no-cache-dir -U pip && \
+    python3 -m pip install --no-cache-dir \
+    scipy==1.7 \
+    ruamel.yaml \
+    simple-parsing \
+    scikit-image==0.19 \
+    catkin-tools \
+    networkx==3.0 \
+    shapely==1.7.1 \
+    scikit-learn==1.3.2 \
+    cupy-cuda12x
+
+RUN rosdep init || true && rosdep update
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
+
+RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p /opt/conda && \
+    rm -f /tmp/miniconda.sh
+
+ENV PATH=/opt/conda/bin:$PATH
+
+RUN conda config --set always_yes yes && \
+    conda config --set auto_activate_base no && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda create -n py310 python=3.10 && \
+    conda run -n py310 python -m pip install --upgrade pip && \
+    conda run -n py310 python -m pip install \
+      torch==2.10.0+cu128 torchvision torchaudio \
+      --index-url https://download.pytorch.org/whl/cu128 && \
+    conda run -n py310 python -m pip install ultralytics
 
 ENV PATH="/usr/src/tensorrt/bin:${PATH}"
 
