@@ -1,0 +1,358 @@
+scandy@ubuntu:~/AD$ roslaunch control controller.launch real:=true realsense:=true use_gps:=false ip:=10.121.91.145 emergency:=false
+... logging to /home/scandy/.ros/log/31a20daa-1044-11f1-8907-f83dc6571015/roslaunch-ubuntu-11285.log
+Checking log directory for disk usage. This may take a while.
+Press Ctrl-C to interrupt
+Done checking log file disk usage. Usage is <1GB.
+
+started roslaunch server http://localhost:33253/
+
+SUMMARY
+========
+
+PARAMETERS
+ * /N: 40
+ * /N_park: 49
+ * /T: 0.1
+ * /T_park: 0.05
+ * /adaptive_threshold_block_size: 199
+ * /adaptive_threshold_c: -25
+ * /async: True
+ * /camera: True
+ * /class_names: ['oneway', 'highw...
+ * /confidence_thresholds: [0.7, 0.6, 0.7, 0...
+ * /constraints/delta_max: 0.4363
+ * /constraints/delta_min: -0.37524579
+ * /constraints/v_max: 0.5
+ * /constraints/v_min: -0.5
+ * /constraints/v_ref: 0.32
+ * /constraints/x_max: 1000.0
+ * /constraints/x_min: -1000.0
+ * /constraints/y_max: 1000.0
+ * /constraints/y_min: -1000.0
+ * /constraints_park/delta_max: 0.4
+ * /constraints_park/delta_min: -0.4
+ * /constraints_park/v_max: 0.5
+ * /constraints_park/v_min: -0.5
+ * /constraints_park/v_ref: -0.5
+ * /constraints_park/x_max: 4
+ * /constraints_park/x_min: -4
+ * /constraints_park/y_max: 4
+ * /constraints_park/y_min: -4
+ * /costs/delta_steer_cost: 0.5
+ * /costs/delta_v_cost: 0.25
+ * /costs/steer_cost: 0.0
+ * /costs/v_cost: 1
+ * /costs/x_cost: 2
+ * /costs/y_cost: 2
+ * /costs/yaw_cost: 0.5
+ * /costs_park/delta_steer_cost: 0.0
+ * /costs_park/delta_v_cost: 0.0
+ * /costs_park/steer_cost: 0.05
+ * /costs_park/v_cost: 0.5
+ * /costs_park/x_cost: 1
+ * /costs_park/y_cost: 7
+ * /costs_park/yaw_cost: 1
+ * /counter_thresholds: [1, 1, 1, 1, 1, 1...
+ * /dashboard: True
+ * /debug_level: 2
+ * /emergency: False
+ * /emergency_height: 0.25
+ * /emergency_thresh: 450
+ * /emergency_width: 0.42
+ * /emergency_y: 0.03
+ * /exit_thresh: 0.1
+ * /far_m: 1.5
+ * /gps: False
+ * /gps_id: 1
+ * /gps_points: 25
+ * /hw: 1.33
+ * /ip: 10.121.91.145
+ * /is_real: True
+ * /kb: False
+ * /l_f: 0.155
+ * /l_r: 0.105
+ * /max_distance_thresholds: [3.0, 3.0, 3.0, 3...
+ * /median_thresholds: [0.25, 0.25, 0.25...
+ * /mpc_controller_ubuntu_11285_7351185968830435196/camera_rate: 50
+ * /mpc_controller_ubuntu_11285_7351185968830435196/ekf: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/flip: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/ground_dist: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/hasDepthImage: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/lane: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/lane_rate: 30
+ * /mpc_controller_ubuntu_11285_7351185968830435196/name: car1
+ * /mpc_controller_ubuntu_11285_7351185968830435196/ncnn: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/printDuration: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/printFlag: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/pub: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/pubImage: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/rate: 300
+ * /mpc_controller_ubuntu_11285_7351185968830435196/real: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/realsense: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/robot_name: car1
+ * /mpc_controller_ubuntu_11285_7351185968830435196/send_depth: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/showFlag: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/sign: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/sign_rate: 30
+ * /mpc_controller_ubuntu_11285_7351185968830435196/subModel: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/thread: True
+ * /mpc_controller_ubuntu_11285_7351185968830435196/use_emergency: False
+ * /mpc_controller_ubuntu_11285_7351185968830435196/vref: 0.35
+ * /mpc_controller_ubuntu_11285_7351185968830435196/x0: 3.83
+ * /mpc_controller_ubuntu_11285_7351185968830435196/y0: 0.376
+ * /mpc_controller_ubuntu_11285_7351185968830435196/yaw0: 3.14159
+ * /n_windows: 18
+ * /name: mobile_robot_35
+ * /ncnn_model: sissi753-opt
+ * /near_m: 0.48
+ * /parallel_park: offset_x = 0.63 o...
+ * /park_thresh: 0.1
+ * /path: run189
+ * /pub_wpts: True
+ * /quality: 30
+ * /real/NORMAL_SPEED: 0.23
+ * /real/change_lane_offset_scaler: 1.07
+ * /real/constant_distance_to_intersection_at_detection: 0.3725
+ * /real/cumulative_confidence_thresholds: [7.53, 5.37, 5.37...
+ * /real/cw_speed_ratio: 0.85
+ * /real/has_light: False
+ * /real/highway_cooldown: 3.0
+ * /real/hw_speed_ratio: 1.25
+ * /real/intersection_localization_orientation_threshold: 3.0
+ * /real/intersection_localization_threshold: 0.1
+ * /real/intersection_relocalize: False
+ * /real/lane_localization_cooldown: 0.5
+ * /real/lane_localization_orientation_threshold: 7.53
+ * /real/lane_localization_threshold: 0.15
+ * /real/lane_relocalize2: True
+ * /real/lane_relocalize: False
+ * /real/lane_yaw_reset: True
+ * /real/lane_yaw_reset_cooldown: 30.0
+ * /real/lane_yaw_reset_thresh1: 1.1
+ * /real/lane_yaw_reset_thresh2: 3.75
+ * /real/max_light_dist: 0.75
+ * /real/max_sign_dist: 1.5
+ * /real/min_dist_to_car: 0.34
+ * /real/min_dist_to_consider_car: 1.0
+ * /real/min_sign_dist: 0.3
+ * /real/min_tailing_dist: 0.3
+ * /real/odom_rate: 50
+ * /real/orientation_follow: False
+ * /real/parking_base_speed: -0.2
+ * /real/parking_base_thresh: 0.1
+ * /real/parking_base_yaw_target: 0.22
+ * /real/pedestrian_distance: 0.75
+ * /real/pedestrian_threshold: 0.35
+ * /real/pixel_center_offset: 0
+ * /real/recency_thresholds: [0.5, 0.5, 0.5, 0...
+ * /real/rel_speed_thresh: 0.1
+ * /real/rs_pitch: 0.03229
+ * /real/rs_roll: -0.009774
+ * /real/rs_yaw: 0.011
+ * /real/sign_cooldown: 0.5
+ * /real/sign_lat_offset: -0.0086
+ * /real/sign_lat_offset_slope: -0.0119
+ * /real/sign_localization_orientation_threshold: 45.0
+ * /real/sign_localization_threshold: 0.9
+ * /real/sign_lon_offset: -0.0
+ * /real/sign_lon_offset_slope: 0.0
+ * /real/sign_relocalize: True
+ * /real/stop_duration: 1.0
+ * /real/use_kf: False
+ * /realsense_imu: False
+ * /resolution: 300
+ * /rosdistro: noetic
+ * /rosversion: 1.17.0
+ * /show_lane: False
+ * /speed_offset: 0
+ * /steer_offset: 0
+ * /steer_offset_maximum: 9
+ * /steer_offset_minimum: 2
+ * /stopline_distance_threshold: 0.5
+ * /test: 0
+ * /traffic_server_ip: 192.168.50.2
+ * /use_beta: True
+ * /use_encoder: True
+ * /use_gps: False
+ * /use_tcp: True
+ * /use_traffic_server: False
+ * /v8_model: linxinya
+ * /vrefInt: 35
+ * /wheelbase: 0.26
+ * /width_m: 0.8
+ * /window_height: 0.1
+ * /window_margin_multiplier: 4
+ * /window_min_pixels: 8
+ * /x0: 3.83
+ * /y0: 0.376
+ * /yaw0: 3.14159
+
+NODES
+  /
+    mpc_controller_ubuntu_11285_7351185968830435196 (control/controller)
+
+auto-starting new master
+process[master]: started with pid [11302]
+ROS_MASTER_URI=http://localhost:11311
+
+setting /run_id to 31a20daa-1044-11f1-8907-f83dc6571015
+process[rosout-1]: started with pid [11322]
+started core service [/rosout]
+process[mpc_controller_ubuntu_11285_7351185968830435196-2]: started with pid [11329]
+LoadFromParams: nodeName: /mpc_controller_ubuntu_11285_7351185968830435196
+LoadFromParams: emergency: 0, pubWaypoints: 1, kb: 0, dashboard: 1, gps: 0, lane: 1, ekf: 0, sign: 1, T: 0.100, N: 40, v_ref: 0.320, robot_name: car1, vref: 0.350, x0: 3.830, y0: 0.376, yaw0: 3.142, T_park: 0.050, real: 1, use_beta: 1, async: 1, use_tcp: 1, test: 0
+LoadFromParams2: debug_level: 2, camera: 1, steer_offset: 0.000, speed_offset: 0.000, steer_offset_minimum: 2.000, steer_offset_maximum: 9.000, subModel: 0, rateVal: 300.000, realsense_imu: 0
+[GroundTruth] Initializing ground truth...
+[GroundTruth] Done Initializing ground truth...
+[ INFO] [1771802051.737457952]: Sensing: serial port opened and async IO started
+[ INFO] [1771802051.739398714]: Attempting to create TCP client...
+[ INFO] [1771802051.743169803]: TCP client created successfully.
+loaded confidence_thresholds size: 16
+loaded distance_thresholds size: 16
+loaded median_thresholds size: 16
+loaded counter_thresholds size: 16
+[ INFO] [1771802051.746829849]: class_names: oneway, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746865530]: class_names: highwayentrance, confidence thresh: 0.600, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746887003]: class_names: stopsign, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746908251]: class_names: roundabout, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746925980]: class_names: park, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746969789]: class_names: crosswalk, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.746998014]: class_names: noentry, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747017887]: class_names: highwayexit, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747035135]: class_names: priority, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747053280]: class_names: lights, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747069920]: class_names: block, confidence thresh: 0.650, distance_thresholds: 1.500, counter_thresholds: 1
+[ INFO] [1771802051.747086529]: class_names: pedestrian, confidence thresh: 0.700, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747105185]: class_names: car, confidence thresh: 0.700, distance_thresholds: 5.000, counter_thresholds: 1
+[ INFO] [1771802051.747121890]: class_names: green light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747138914]: class_names: yellow light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+[ INFO] [1771802051.747156323]: class_names: red light, confidence thresh: 0.650, distance_thresholds: 3.000, counter_thresholds: 1
+showFlag: 0
+printFlag: 0
+printDuration: 0
+class_names: 16
+confidence_thresholds: 16
+distance_thresholds: 16
+model: sissi753-opt
+hasDepthImage: true
+Searching for engine file with name: linxinya.engine.Orin.fp16.1.1
+Engine found, not regenerating...
+Using an engine plan file across different models of devices is not recommended and is likely to affect performance or even cause errors.
+[ INFO] [1771802053.832101186]: camera intrinsics: fx=609.63, fy=609.79, cx=329.53, cy=252.39
+[ INFO] [1771802053.832577488]: distortion coefficients: 0.00, 0.00, 0.00, 0.00, 0.00
+pub created
+[ INFO] [1771802053.835788272]: starting lane thread
+[ INFO] [1771802053.835975638]: starting sign thread
+[ INFO] [1771802053.836136251]: starting realsense thread
+Utility constructor
+[ INFO] [1771802053.838831531]: Utility constructor: Attempting to create TCP client...
+Connecting to GUI 
+
+[ INFO] [1771802053.839928972]: Utility constructor: TCP client created successfully.
+[ INFO] [1771802053.844031975]: Utility::initialize(): successful.
+[ INFO] [1771802053.844088585]: GPS not found, skipping
+MPC Constructor
+reference speed is 32cm/s
+rate: 10
+[ INFO] [1771802053.862814713]: start_bool server ready, mpc time step T = 0.100
+[ INFO] [1771802053.862871419]: state machine initialized
+Connection request established with GUI 
+
+utility_node_client successfully connected to GUI.
+
+Sending State
+Sending Run Parameters
+[ INFO] [1771802054.350928579]: GPS not found, skipping
+Resending Run Parameters to GUI
+Setting Waypoints
+PathPlanner::set_constraints: Path: run189
+[ INFO] [1771802056.024570487]: start(): x=1.550, y=6.906, yaw=-0.021
+PathPlanner::set_constraints: Path: run189
+[ INFO] [1771802059.681058642]: initialize(): Received waypoints of size 5696
+[ INFO] [1771802059.850704083]: Python node notified successfully.
+[ INFO] [1771802061.358185370]: initialize(): Received waypoints of size 5696
+[ INFO] [1771802061.498957497]: INITIALIZE(): start: 1.550, 6.906
+[ INFO] [1771802061.499053564]: INITIALIZE(): destination: 4.790, 7.471
+[ INFO] [1771802061.499259202]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 5696, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1771802061.499831251]: FIND_INTERSECTIONS(): SUCCESS: found 42 intersections. time: 511us
+[ INFO] [1771802061.499978583]: 0) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 0
+[ INFO] [1771802061.500026745]: 1) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 67
+[ INFO] [1771802061.500256831]: 2) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 140
+[ INFO] [1771802061.500413092]: 3) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 228
+[ INFO] [1771802061.500458821]: 4) [6.630, 3.468], yaw: 1.571, associated sign: None, stateref index: 396
+[ INFO] [1771802061.500697613]: 5) [5.682, 6.901], yaw: 3.142, associated sign: None, stateref index: 538
+[ INFO] [1771802061.500843633]: 6) [5.150, 7.380], yaw: 1.571, associated sign: Crosswalk, stateref index: 578
+[ INFO] [1771802061.500959444]: 7) [1.740, 10.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 727
+[ INFO] [1771802061.501018102]: 8) [15.009, 10.406], yaw: 0.000, associated sign: Roundabout, stateref index: 1211
+[ INFO] [1771802061.501138490]: 9) [15.928, 11.658], yaw: -1.571, associated sign: Roundabout, stateref index: 1639
+[ INFO] [1771802061.501275390]: 10) [15.312, 4.554], yaw: -1.571, associated sign: None, stateref index: 1876
+[ INFO] [1771802061.501320895]: 11) [15.300, 3.000], yaw: -1.571, associated sign: Crosswalk, stateref index: 1924
+[ INFO] [1771802061.501444067]: 12) [15.313, 1.472], yaw: -1.571, associated sign: None, stateref index: 1979
+[ INFO] [1771802061.501552134]: 13) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 2089
+[ INFO] [1771802061.501756908]: 14) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 2175
+[ INFO] [1771802061.501881808]: 15) [16.252, 9.531], yaw: 1.571, associated sign: Roundabout, stateref index: 2355
+[ INFO] [1771802061.501936497]: 16) [17.131, 10.781], yaw: 3.142, associated sign: Roundabout, stateref index: 2730
+[ INFO] [1771802061.502044885]: 17) [0.359, 10.558], yaw: -1.571, associated sign: None, stateref index: 3258
+[ INFO] [1771802061.502297916]: 18) [0.359, 7.445], yaw: -1.571, associated sign: None, stateref index: 3355
+[ INFO] [1771802061.502343390]: 19) [1.976, 6.534], yaw: 0.000, associated sign: None, stateref index: 3421
+[ INFO] [1771802061.502452417]: 20) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 3496
+[ INFO] [1771802061.502697224]: 21) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 3569
+[ INFO] [1771802061.502745226]: 22) [4.767, 1.274], yaw: -1.571, associated sign: None, stateref index: 3658
+[ INFO] [1771802061.502989521]: 23) [3.431, 0.729], yaw: 3.142, associated sign: None, stateref index: 3711
+[ INFO] [1771802061.503134101]: 24) [2.892, 3.097], yaw: 1.571, associated sign: Lights, stateref index: 3799
+[ INFO] [1771802061.503176118]: 25) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 3865
+[ INFO] [1771802061.503276601]: 26) [1.976, 0.356], yaw: 0.000, associated sign: None, stateref index: 4034
+[ INFO] [1771802061.503529953]: 27) [4.220, 0.356], yaw: 0.000, associated sign: None, stateref index: 4110
+[ INFO] [1771802061.503578626]: 28) [8.200, 0.920], yaw: 0.000, associated sign: Crosswalk, stateref index: 4240
+[ INFO] [1771802061.503687910]: 29) [14.764, 0.924], yaw: 0.000, associated sign: None, stateref index: 4456
+[ INFO] [1771802061.503936013]: 30) [17.110, 2.367], yaw: 1.571, associated sign: Crosswalk, stateref index: 4564
+[ INFO] [1771802061.503978926]: 31) [16.223, 4.015], yaw: 3.142, associated sign: None, stateref index: 4657
+[ INFO] [1771802061.504086961]: 32) [9.500, 4.000], yaw: 3.142, associated sign: Crosswalk, stateref index: 4859
+[ INFO] [1771802061.504128147]: 33) [7.543, 4.015], yaw: 3.142, associated sign: None, stateref index: 4928
+[ INFO] [1771802061.504399707]: 34) [5.684, 4.014], yaw: 3.142, associated sign: None, stateref index: 4990
+[ INFO] [1771802061.504444028]: 35) [3.429, 4.013], yaw: 3.142, associated sign: Lights, stateref index: 5059
+[ INFO] [1771802061.504679011]: 36) [2.519, 1.274], yaw: -1.571, associated sign: None, stateref index: 5160
+[ INFO] [1771802061.504805479]: 37) [0.727, 3.097], yaw: 1.571, associated sign: None, stateref index: 5294
+[ INFO] [1771802061.504848776]: 38) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 5391
+[ INFO] [1771802061.504876425]: 39) [0.727, 9.098], yaw: 1.571, associated sign: None, stateref index: 5488
+[ INFO] [1771802061.504981676]: 40) [1.220, 9.620], yaw: 0.000, associated sign: Crosswalk, stateref index: 5527
+[ INFO] [1771802061.505172722]: 41) [4.750, 7.920], yaw: -1.571, associated sign: Crosswalk, stateref index: 5661
+Async spinner started with 4 threads
+State Machine running...
+[ INFO] [1771802061.555500012]: Python node notified successfully.
+Setting States
+Planning Path
+[ INFO] [1771802083.075210520]: initialize(): Received waypoints of size 435
+[ INFO] [1771802083.075350588]: goto_command_callback(): start: 1.772360, 3.673689
+[ INFO] [1771802083.075562082]: goto_command_callback(): destination: 0.739475, 5.345014
+[ INFO] [1771802083.075601571]: FIND_INTERSECTIONS(): started
+FIND_INTERSECTIONS(): state_refs size: 435, threshold: 0.7235, density: 31.25, T: 0.1, v_ref: 0.32
+[ INFO] [1771802083.075680230]: FIND_INTERSECTIONS(): SUCCESS: found 7 intersections. time: 43us
+[ INFO] [1771802083.076177012]: 0) [1.976, 3.646], yaw: 0.000, associated sign: Lights, stateref index: 0
+[ INFO] [1771802083.076259223]: 1) [4.220, 3.645], yaw: 0.000, associated sign: None, stateref index: 62
+[ INFO] [1771802083.076293464]: 2) [5.136, 5.984], yaw: 1.571, associated sign: None, stateref index: 152
+[ INFO] [1771802083.076347033]: 3) [3.429, 6.902], yaw: 3.142, associated sign: None, stateref index: 218
+[ INFO] [1771802083.076758821]: 4) [2.522, 4.558], yaw: -1.571, associated sign: Lights, stateref index: 312
+[ INFO] [1771802083.076851080]: 5) [1.270, 4.011], yaw: 3.142, associated sign: None, stateref index: 361
+[ INFO] [1771802083.076895305]: 6) [0.727, 5.988], yaw: 1.571, associated sign: None, stateref index: 432
+Sending State
+Starting CAR
+[ INFO] [1771802086.944141498]: Changing from INIT to MOVING
+[ INFO] [1771802087.010087046]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (1.772, 3.674, -0.021), intersection: (1.976, 3.646), distance: 0.206, index: 1, next intersection: (4.220, 3.645, 0.000)
+[ INFO] [1771802087.010171241]: intersection reached: CASE Lights, proceeding...
+[ INFO] [1771802093.308845354]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.859, 3.658, 0.005), intersection: (4.220, 3.645), distance: 0.361, index: 2, next intersection: (5.136, 5.984, 1.571)
+[ INFO] [1771802093.308936653]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1771802101.608811978]: CHECK_INTERSECTION(None): REACHED: x_cur: (5.145, 5.631, 1.550), intersection: (5.136, 5.984), distance: 0.353, index: 3, next intersection: (3.429, 6.902, 3.142)
+[ INFO] [1771802101.608890253]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1771802108.208811583]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.782, 6.917, 3.122), intersection: (3.429, 6.902), distance: 0.353, index: 4, next intersection: (2.522, 4.558, -1.571)
+[ INFO] [1771802108.208903554]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[ INFO] [1771802116.909090057]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.506, 4.904, 4.655), intersection: (2.522, 4.558), distance: 0.346, index: 5, next intersection: (1.270, 4.011, 3.142)
+[ INFO] [1771802116.909187916]: intersection reached: CASE Lights, proceeding...
+Sending State
+Stopping CAR
+WARNING: PathManager::find_next_waypoint(): distance to closest waypoint is too large: 1.204
+WARNING: PathManager::find_next_waypoint(): distance to closest waypoint is too large: 1.234
+WARNING: PathManager::find_next_waypoint(): distance to closest waypoint is too large: 1.267
+WARNING: PathManager::find_next_waypoint(): distance to closest waypoint is too large: 1.296
+[ INFO] [1771802122.134368903]: Changing from MOVING to INIT

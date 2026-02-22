@@ -48,7 +48,6 @@ HOLD_TIME_S       = 5.0
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 
 
-
 MOTOR_ID = 13
 
 def build_cmd(speed_cm_s: float, angle_deg: float) -> bytes:

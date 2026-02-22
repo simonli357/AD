@@ -198,6 +198,9 @@ roscore
 ```bash
 ssh scandy@{ip_address_of_jetson}
 roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_id:=10
+
+
+roslaunch control controller.launch camera:=true  use_gps:=false real:=true realsense:=true use_traffic_server:=false gps_id:=10 print:=true emergency:=false
 ```
 - replace 192.168.50.216 by ip address of computer on which the gui is run.
 - change gps_id according to the id of the gps module mounted on the car.
