@@ -23,7 +23,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_i2c(nullptr),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-145.0f)
+      DEGREE_PER_CM(-158.18f)
 {
     m_i2c = new I2C(sda_pin, scl_pin);
     m_i2c->frequency(400000); // 400 kHz Fast-mode
@@ -217,7 +217,8 @@ float CEncoder::readAngularSpeedKf()
     if (reportAccum >= REPORT_INTERVAL_SEC) {
         reportAccum = 0.0f;
 
-        float filteredCm   = speedDegPerSec / DEGREE_PER_CM;
+        float filteredCm   = - speedDegPerSec / DEGREE_PER_CM;
+        float unfilteredCm   = - speedDegPerSec / DEGREE_PER_CM;
 
         static float lastGoodSpeed = 0.0f;
         static std::deque<float> speedCommandHistory = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -248,7 +249,7 @@ float CEncoder::readAngularSpeedKf()
         //                     _speedCommand);
         int n = std::snprintf(buf, sizeof(buf),
                             "@5:%.3f;%.3f;%.3f;%.3f;;\r\n",
-                            filteredCm,
+                            unfilteredCm,
                             rawDeg,
                             speedDegPerSec,
                             _speedCommand);

@@ -12,7 +12,8 @@ import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
 # ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+# ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 
 
 MOTOR_ID = 11
@@ -170,7 +171,7 @@ def save_plot(times: list[float], speeds: list[float], cmd_speed: float, delay: 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Constant‑speed noise test with delay estimation (cm/s)")
     ap.add_argument("--cmd", type=float, default=50, help="Commanded speed [cm/s]")
-    ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
+    ap.add_argument("--steer", type=float, default=-10, help="Steering angle [deg]")
     ap.add_argument("--dur", type=float, default=5, help="Duration [s]")
     ap.add_argument("--csv", action="store_true", help="Save data to CSV file")
     ap.add_argument("--port", default="/dev/ttyACM0")
