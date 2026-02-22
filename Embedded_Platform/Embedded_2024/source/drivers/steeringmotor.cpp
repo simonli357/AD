@@ -150,9 +150,9 @@ namespace drivers{
         // Previous input angle
         static float prev_angle = 0;
         // Zero default when returning from a left turn
-        ZD_left = 0.0772;
+        ZD_left = 0.0713;
         // Zero default when returning from a right turn
-        ZD_right = 0.0755;
+        ZD_right = 0.0713;
 
         // if(f_angle > 20.8) f_angle = 20.8; 
         // if(f_angle < -21.8) f_angle = -21.8;
@@ -160,26 +160,26 @@ namespace drivers{
         // Function to calculate the positive angle (LEFT TURN)
         if(f_angle > 0)
         {
-            // Polynomial Coefficients (Order 5):
-            // a5 = -0.0000000541430850
-            // a4 = 0.0000030924866654
-            // a3 = -0.0000624797374340
-            // a2 = 0.0005081835695535
-            // a1 = -0.0022800535753529
-            // c     = 0.0769733903210084
-            dutyCycle = -0.0000000541430850 * std::pow(f_angle, 5) + 0.0000030924866654 * std::pow(f_angle, 4) - 0.0000624797374340 * std::pow(f_angle, 3) + 0.0005081835695535 * std::pow(f_angle, 2) - 0.0022800535753529 * f_angle + 0.0769733903210084;
+            // a5 = -0.0000000732134966
+            // a4 = 0.0000046319276716
+            // a3 = -0.0001123448281922
+            // a2 = 0.0012860426402345
+            // a1 = -0.0077280546106053
+            // c     = 0.0895876959763474
+            
+            dutyCycle = -0.0000000732134966 * std::pow(f_angle, 5) + 0.0000046319276716 * std::pow(f_angle, 4) - 0.0001123448281922 * std::pow(f_angle, 3) + 0.0012860426402345 * std::pow(f_angle, 2) - 0.0077280546106053 * f_angle + 0.0895876959763474;
         }
         // Function to calculate the negative angles (RIGHT TURN)
         else if(f_angle < 0)
         {
             // Polynomial Coefficients (Order 5):
-            // a5 = -0.0000002441721872
-            // a4 = -0.0000121417422652
-            // a3 = -0.0002127002299692
-            // a2 = -0.0015072709396399
-            // a1 = -0.0046305612134746
-            // c     = 0.0765299449449109
-            dutyCycle = -0.0000002441721872 * std::pow(f_angle, 5) - 0.0000121417422652 * std::pow(f_angle, 4) - 0.0002127002299692 * std::pow(f_angle, 3) - 0.0015072709396399 * std::pow(f_angle, 2) - 0.0046305612134746 * f_angle + 0.0765299449449109;
+            // a5 = 0.0000012802151048
+            // a4 = -0.0000803755005760
+            // a3 = 0.0019179807196111
+            // a2 = -0.0210917411595012
+            // a1 = 0.1153818116831525
+            // c     = 0.5288576668971681
+            dutyCycle = 0.0000001312028949 * std::pow(f_angle, 5) - 0.0000082661562630 * std::pow(f_angle, 4) + 0.0001977723692401 * std::pow(f_angle, 3) - 0.0021795382597227 * std::pow(f_angle, 2) + 0.0119057795053834 * f_angle + 0.0574269602763454;
         }
         // Special case if we want to reset to 0 and set the car to go straight
         else if(std::abs(f_angle) < 0.1)
