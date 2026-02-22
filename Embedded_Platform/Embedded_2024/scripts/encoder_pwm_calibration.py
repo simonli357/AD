@@ -31,7 +31,7 @@ import serial
 # Fast status: "@5:<angle_deg>;<speed_cm_s>;;"
 # Cum. angle : "[Encoder] Total displacement = <deg>°"
 # ------------------------------------------------------------------------------
-ENC_PATTERN = re.compile(r"@5:([-0-9.]+);;")
+ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 TOT_PATTERN = re.compile(r"\[Encoder\]\s+Total displacement\s*=\s*([-0-9.]+)°")
 
 MOTOR_ID_SPEED = 11  # expects cm/s
@@ -214,7 +214,7 @@ def main() -> None:
     ap.add_argument("--steer", type=float, default=0, help="Steering angle [deg]")
     ap.add_argument("--pwm_steer", type=float, default=0.1400, help="Steering angle [deg]")
     # ap.add_argument("--pwm_steer", type=float, default=0.0835, help="Steering angle [deg]")
-    ap.add_argument("--dur",   type=float, default=60, help="Duration [s]")
+    ap.add_argument("--dur",   type=float, default=10, help="Duration [s]")
     ap.add_argument("--csv",   type=Path, help="Path to save raw data as CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)
