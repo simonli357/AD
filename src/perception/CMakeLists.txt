@@ -98,13 +98,6 @@ if(CURRENT_USER STREQUAL "slsecret")
   set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
   set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
 endif()
-# if (DEFINED ENV{TRT_LIBPATH})
-#   message(STATUS "Found TensorRT")
-# else()
-#   set(TENSORRT_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
-#   set(TENSORRT_INCLUDE_DIR "${TENSORRT_ROOT}/include")
-#   set(TENSORRT_LIB_DIR "${TENSORRT_ROOT}/lib")
-# endif()
 
 include_directories(
   include
@@ -116,9 +109,70 @@ include_directories(
 )
 include_directories(${Eigen3_INCLUDE_DIRS})
 
-include_directories(~/TensorRT-8.6.1.6/include)
-link_directories(~/TensorRT-8.6.1.6/lib)
-link_directories(${TENSORRT_LIB_DIR})
+set(_TRT8_FALLBACK_ROOT "$ENV{HOME}/TensorRT-8.6.1.6")
+if (EXISTS "${_TRT8_FALLBACK_ROOT}/include/NvInfer.h")
+  message(STATUS "TensorRT fallback detected at ${_TRT8_FALLBACK_ROOT}")
+endif()
+
+if (NOT TENSORRT_INCLUDE_DIR OR TENSORRT_INCLUDE_DIR STREQUAL "")
+  find_path(TENSORRT_INCLUDE_DIR NvInfer.h
+    HINTS
+      "${_TRT8_FALLBACK_ROOT}/include"
+      "/usr/include"
+      "/usr/include/x86_64-linux-gnu"
+      "/usr/local/include"
+  )
+endif()
+
+set(_TRT_LIB_HINTS "")
+if (TENSORRT_LIB_DIR AND NOT TENSORRT_LIB_DIR STREQUAL "")
+  list(APPEND _TRT_LIB_HINTS "${TENSORRT_LIB_DIR}")
+endif()
+if (TENSORRT_ROOT AND NOT TENSORRT_ROOT STREQUAL "")
+  list(APPEND _TRT_LIB_HINTS "${TENSORRT_ROOT}/lib" "${TENSORRT_ROOT}/lib64")
+endif()
+if (EXISTS "${_TRT8_FALLBACK_ROOT}/lib")
+  list(APPEND _TRT_LIB_HINTS "${_TRT8_FALLBACK_ROOT}/lib")
+endif()
+list(APPEND _TRT_LIB_HINTS
+  "/usr/lib" "/usr/lib64"
+  "/usr/lib/x86_64-linux-gnu" "/usr/lib/aarch64-linux-gnu"
+  "/usr/local/lib" "/usr/local/lib64"
+)
+
+find_library(TENSORRT_NVINFER_LIB     nvinfer     HINTS ${_TRT_LIB_HINTS} REQUIRED)
+find_library(TENSORRT_ONNX_PARSER_LIB nvonnxparser HINTS ${_TRT_LIB_HINTS})
+find_library(TENSORRT_PARSERS_LIB     nvparsers    HINTS ${_TRT_LIB_HINTS})  # optional
+find_library(TENSORRT_PLUGIN_LIB      nvinfer_plugin HINTS ${_TRT_LIB_HINTS}) # optional
+
+set(TENSORRT_LIBS ${TENSORRT_NVINFER_LIB})
+if (TENSORRT_ONNX_PARSER_LIB)
+  list(APPEND TENSORRT_LIBS ${TENSORRT_ONNX_PARSER_LIB})
+endif()
+if (TENSORRT_PARSERS_LIB)
+  list(APPEND TENSORRT_LIBS ${TENSORRT_PARSERS_LIB})
+endif()
+if (TENSORRT_PLUGIN_LIB)
+  list(APPEND TENSORRT_LIBS ${TENSORRT_PLUGIN_LIB})
+endif()
+
+message(STATUS "TensorRT include dir: ${TENSORRT_INCLUDE_DIR}")
+message(STATUS "TensorRT libs: ${TENSORRT_LIBS}")
+
+if (TENSORRT_INCLUDE_DIR AND NOT TENSORRT_INCLUDE_DIR STREQUAL "")
+  include_directories(${TENSORRT_INCLUDE_DIR})
+endif()
+
+if (EXISTS "${_TRT8_FALLBACK_ROOT}/include/NvInfer.h")
+  include_directories(${_TRT8_FALLBACK_ROOT}/include)
+endif()
+if (EXISTS "${_TRT8_FALLBACK_ROOT}/lib")
+  link_directories(${_TRT8_FALLBACK_ROOT}/lib)
+endif()
+
+if (TENSORRT_LIB_DIR AND NOT TENSORRT_LIB_DIR STREQUAL "")
+  link_directories(${TENSORRT_LIB_DIR})
+endif()
 
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
 link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
@@ -130,20 +184,18 @@ add_library(object_detection_lib
 )
 target_link_libraries(object_detection_lib PUBLIC
   ncnn
-  ${CUDA_LIBRARIES}    
-  nvinfer              
-  nvparsers
-  nvonnxparser
+  ${CUDA_LIBRARIES}
+  ${TENSORRT_LIBS}
   realsense2::realsense2
-  ${TENSORRT_LIB_DIR}
+  ${OpenCV_LIBS}
 )
 target_include_directories(object_detection_lib PUBLIC
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/include              
-  ${TENSORRT_INCLUDE_DIR}                      
-  ${ncnn_INCLUDE_DIR}                          
-  ${CUDA_INCLUDE_DIRS} 
+  ${PROJECT_SOURCE_DIR}/include
+  ${TENSORRT_INCLUDE_DIR}
+  ${ncnn_INCLUDE_DIR}
+  ${CUDA_INCLUDE_DIRS}
 )
 
 catkin_package(
@@ -163,49 +215,6 @@ catkin_package(
   alglib_pkg
   # CFG_EXTRAS perception-extras.cmake
 )
-# install(DIRECTORY include/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING
-#   PATTERN "*.h"
-#   PATTERN "*.hpp"
-# )
-# install(DIRECTORY include/ncnn/lib/
-#   DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   PATTERN "*.so"
-#   PATTERN "*.a"
-# )
-
-# configure_file(
-#   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in
-#   ${CMAKE_CURRENT_BINARY_DIR}/perception-extras.cmake
-#   @ONLY
-# )
-
-# add_executable(lane
-#   src/lane.cpp
-# )
-# target_link_libraries(lane
-#   ${catkin_LIBRARIES}
-# )
-
-# add_executable(signFastest
-#   src/signFastest.cpp
-#   src/yolo-fastestv2.cpp
-# )
-# target_link_libraries(signFastest
-#   ${catkin_LIBRARIES}
-#   ncnn ${OpenCV_LIBS}
-#   communication
-# )
-
-# add_executable(videoDetector
-#   src/videoDetector.cpp
-#   src/yolo-fastestv2.cpp
-# )
-# target_link_libraries(videoDetector
-#   ${catkin_LIBRARIES}
-#   ncnn ${OpenCV_LIBS}
-# )
 
 add_executable(cameraNode
   src/CameraNode.cpp
@@ -219,44 +228,8 @@ target_link_libraries(cameraNode
   ${OpenCV_LIBS}
   realsense2::realsense2
   ${CUDA_LIBRARIES}
-  nvinfer
-  nvparsers
-  nvonnxparser
+  ${TENSORRT_LIBS}
   alglib_pkg
   ${Python3_LIBRARIES}
   communication
 )
-# add_executable(rs
-#   src/rs.cpp
-# )
-# target_link_libraries(rs
-#   ${catkin_LIBRARIES}
-#   ${OpenCV_LIBS}
-#   realsense2::realsense2
-# )
-# add_executable(testNode
-#   src/testNode.cpp
-#   src/yolo-fastestv2.cpp
-#   src/engine.cpp
-#   src/yolov8.cpp
-# )
-# target_link_libraries(testNode
-#   ${catkin_LIBRARIES}
-#   ncnn
-#   ${OpenCV_LIBS}
-#   realsense2::realsense2
-#   ${CUDA_LIBRARIES}
-#   nvinfer
-#   nvparsers
-#   nvonnxparser
-#   alglib
-#   ${Python3_LIBRARIES}
-#   communication
-# )
-
-# configure_file(
-#   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/perception-extras.cmake.in
-#   ${CMAKE_CURRENT_BINARY_DIR}/perception-extras.cmake
-#   @ONLY
-# )
-

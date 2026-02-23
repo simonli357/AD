@@ -403,7 +403,12 @@ bool Engine::runInference(const std::vector<std::vector<cv::cuda::GpuMat>> &inpu
     for (int batch = 0; batch < batchSize; ++batch) {
         // Batch
         std::vector<std::vector<float>> batchOutputs{};
-        for (int32_t outputBinding = numInputs; outputBinding < m_engine->getNbBindings(); ++outputBinding) {
+#if NV_TENSORRT_MAJOR < 9
+        int nb = m_engine->getNbBindings();
+#else
+        int nb = m_engine->getNbIOTensors();
+#endif
+        for (int32_t outputBinding = numInputs; outputBinding < nb; ++outputBinding) {
             // We start at index m_inputDims.size() to account for the inputs in our m_buffers
             std::vector<float> output;
             auto outputLenFloat = m_outputLengthsFloat[outputBinding - numInputs];
