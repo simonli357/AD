@@ -701,8 +701,8 @@ class MapWidget(QtWidgets.QOpenGLWidget):
         print("state ref: ", self.main_window.state_refs_np.T[:, :3])
         path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         path = os.path.join(path, 'saved')
-        np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
-        print("saved state refs")
+        # np.savetxt(os.path.join(path, 'state_refs.txt'), self.main_window.state_refs_np.T, fmt='%.4f')
+        # print("saved state refs")
         self.main_window.server.tcp_client.send_trigger(TriggerRequest(), TriggerResponse(success=True, message="Parameters updated"))
 
     def road_objects_callback(self, road_object) -> None:
