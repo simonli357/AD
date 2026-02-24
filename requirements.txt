@@ -6,3 +6,5 @@ pandas
 tqdm
 scipy
 networkx
+freetype-py
+PyGLM
