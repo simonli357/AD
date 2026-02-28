@@ -38,7 +38,7 @@ namespace drivers
             /** @brief 0 default */
             float zero_default = 0.0765;
             float max_pwm = 0.1052;
-            float min_pwm = 0.042;
+            float min_pwm = 0.045;
     };
 
     class CSpeedingMotor;
