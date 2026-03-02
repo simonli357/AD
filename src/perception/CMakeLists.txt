@@ -180,15 +180,19 @@ link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
 # ==============================================================================
 # INTEGRATE EXTERNAL OBJECT DETECTION
 # ==============================================================================
-# 1. Allow CMake to use the submodule's FindTensorRT.cmake script
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ObjectDetection/cmake")
-# 2. Add the third-party libraries required by yolo_lib and tools
 add_subdirectory(third_party/ObjectDetection/external/spdlog)
 add_subdirectory(third_party/ObjectDetection/external/bytetrack)
 add_subdirectory(third_party/ObjectDetection/external/cxxopts)
-# 3. Add the actual targets you want (yolo_lib and onnx2engine tools)
 add_subdirectory(third_party/ObjectDetection/yolo_lib)
 add_subdirectory(third_party/ObjectDetection/tools)
+add_custom_target(copy_onnx2engine ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:onnx2engine>
+    "${CMAKE_CURRENT_SOURCE_DIR}/models/trt/"
+    DEPENDS onnx2engine
+    COMMENT "Copying onnx2engine to models/trt directory..."
+)
 
 add_library(object_detection_lib
   src/yolo-fastestv2.cpp

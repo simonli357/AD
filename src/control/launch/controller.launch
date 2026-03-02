@@ -118,6 +118,7 @@
     <param name="/hasDepthImage" value="$(arg depth)"/>
     <param name="/pub" value="$(arg pub)"/>
     <param name="/ncnn" value="$(arg ncnn)"/>
+    <param name="/use_yolov11" value="$(arg use_yolov11)"/>
     <param name="/realsense" value="$(arg realsense)"/>
     <param name="/camera_rate" value="$(arg camera_rate)"/>
     <!-- publish camera image if realsense enabled -->
