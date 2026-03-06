@@ -1,0 +1,3 @@
+[submodule "src/perception/third_party/ObjectDetection"]
+	path = src/perception/third_party/ObjectDetection
+	url = git@github.com:ScandyRobotics/ObjectDetection.git
