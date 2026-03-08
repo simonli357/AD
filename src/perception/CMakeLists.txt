@@ -177,6 +177,23 @@ endif()
 include_directories(/usr/local/cuda-11.4/targets/aarch64-linux/include)
 link_directories(/usr/local/cuda-11.4/targets/aarch64-linux/lib)
 
+# ==============================================================================
+# INTEGRATE EXTERNAL OBJECT DETECTION
+# ==============================================================================
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ObjectDetection/cmake")
+add_subdirectory(third_party/ObjectDetection/external/spdlog)
+add_subdirectory(third_party/ObjectDetection/external/bytetrack)
+add_subdirectory(third_party/ObjectDetection/external/cxxopts)
+add_subdirectory(third_party/ObjectDetection/yolo_lib)
+add_subdirectory(third_party/ObjectDetection/tools)
+add_custom_target(copy_onnx2engine ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:onnx2engine>
+    "${CMAKE_CURRENT_SOURCE_DIR}/models/trt/"
+    DEPENDS onnx2engine
+    COMMENT "Copying onnx2engine to models/trt directory..."
+)
+
 add_library(object_detection_lib
   src/yolo-fastestv2.cpp
   src/engine.cpp
@@ -188,6 +205,7 @@ target_link_libraries(object_detection_lib PUBLIC
   ${TENSORRT_LIBS}
   realsense2::realsense2
   ${OpenCV_LIBS}
+  yolo
 )
 target_include_directories(object_detection_lib PUBLIC
   ${catkin_INCLUDE_DIRS}
@@ -232,4 +250,5 @@ target_link_libraries(cameraNode
   alglib_pkg
   ${Python3_LIBRARIES}
   communication
+  yolo
 )

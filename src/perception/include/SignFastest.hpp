@@ -24,6 +24,7 @@
 #include "utils/constants.h"
 #include "utils/helper.h"
 #include "LightClassifier.hpp"
+#include "YOLOv11.h"
 
 using namespace std::chrono;
 using namespace VehicleConstants;
@@ -85,6 +86,7 @@ class SignFastest {
             nh.param(nodeName+"/hasDepthImage", hasDepthImage, false);
             nh.param(nodeName+"/real", real, false);
             nh.param(nodeName+"/ncnn", ncnn, false);
+            nh.param(nodeName+"/use_yolov11", use_yolov11, false);
             nh.param(nodeName+"/ground_dist", ground_dist, false);
             nh.param("/emergency_width", emergency_width, 0.0);
             nh.param("/emergency_height", emergency_height, 0.0);
@@ -117,6 +119,14 @@ class SignFastest {
                 const char* param = filePathParam.c_str();
 
                 yolo_fastestv2_api->loadModel(param, bin);
+            } else if (use_yolov11) {
+                std::string model_name;
+                nh.getParam("/v8_model", model_name); 
+                // model_name = "v2originalTRT"; 
+                std::string current_path = helper::getSourceDirectory();
+                std::string modelPath = current_path + "/../../../perception/models/trt/" + model_name + ".onnx";
+                yolov11 = std::make_unique<YOLOv11>(modelPath, 0.25f, 0.45f);
+                ROS_INFO("YOLOv11 initialized with model: %s", model_name.c_str());
             } else {
                 std::string model_name;
                 nh.getParam("/v8_model", model_name); 
@@ -149,6 +159,7 @@ class SignFastest {
         bool hasDepthImage;
         bool real;
         bool ncnn;
+        bool use_yolov11;
         bool publish_msg;
         bool use_emergency = false;
         bool ground_dist = false;
@@ -183,6 +194,9 @@ class SignFastest {
         // YoloV8Config config;
         YoloV8Config config;
         std::unique_ptr<YoloV8> yolov8;
+
+        std::unique_ptr<YOLOv11> yolov11;
+        std::vector<YoloDetection> v11_detections;
 
         static constexpr double SIGN_H2D_RATIO = 31.57;
         static constexpr double LIGHT_W2D_RATIO = 41.87;
@@ -314,7 +328,54 @@ class SignFastest {
             
             int hsy = 0; // count of detections that yield a valid refined depth
             std::vector<DetectedBox> detectedBoxes;
-            if (ncnn) {
+            if (use_yolov11) {
+                auto prep_info = yolov11->preprocess(image);
+                yolov11->infer();
+                v11_detections = yolov11->postprocess(prep_info);
+
+                for (auto& det : v11_detections) {
+                    int class_id = det.class_id;
+                    detected_indices[class_id] = 1;
+                    sign_counter[class_id]++;
+                    
+                    if (sign_counter[class_id] < counter_thresholds[class_id]) {
+                        ROS_INFO("%s detected but counter is only %d", class_names[class_id].c_str(), sign_counter[class_id]);
+                        continue;
+                    }
+
+                    if (class_id == OBJECT::LIGHTS) {
+                        int x1_valid = std::max(det.bounding_box.x, 0);
+                        int y1_valid = std::max(det.bounding_box.y, 0);
+                        int x2_valid = std::min(det.bounding_box.x + det.bounding_box.width, image.cols);
+                        int y2_valid = std::min(det.bounding_box.y + det.bounding_box.height, image.rows);
+                        int width = x2_valid - x1_valid;
+                        int height = y2_valid - y1_valid;
+                        
+                        if (width > 0 && height > 0) {
+                            cv::Rect valid_roi(x1_valid, y1_valid, width, height);
+                            cv::Mat detected_light = image(valid_roi);
+                            auto light_color = light_classifier.classify(detected_light);
+                            if (light_color != LightColor::UNDETERMINED) {
+                                class_id = (light_color == LightColor::RED) ? OBJECT::REDLIGHT :
+                                           (light_color == LightColor::GREEN) ? OBJECT::GREENLIGHT : OBJECT::YELLOWLIGHT;
+                                det.class_id = class_id; // Update for visualizer
+                            }
+                        }
+                    }
+
+                    if (det.confidence_score < confidence_thresholds[class_id])
+                        continue;
+
+                    DetectedBox db;
+                    db.class_id = class_id;
+                    db.confidence = det.confidence_score;
+                    db.x1 = det.bounding_box.x;
+                    db.y1 = det.bounding_box.y;
+                    db.x2 = det.bounding_box.x + det.bounding_box.width;
+                    db.y2 = det.bounding_box.y + det.bounding_box.height;
+                    detectedBoxes.push_back(db);
+                }
+            } else if (ncnn) {
                 yolo_fastestv2_api->detection(image, boxes);
                 for (const auto &box : boxes) {
                     int class_id = box.cate;

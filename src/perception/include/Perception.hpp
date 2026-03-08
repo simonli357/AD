@@ -22,6 +22,7 @@
 #include <vector>
 #include <optional>
 #include <condition_variable>
+#include "YOLOv11.h"
 
 using namespace std::chrono;
 

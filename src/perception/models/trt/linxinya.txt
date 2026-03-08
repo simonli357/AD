@@ -1,0 +1,13 @@
+oneway
+highwayentrance
+stopsign
+roundabout
+park
+crosswalk
+noentry
+highwayexit
+prio
+light
+block
+girl
+car
