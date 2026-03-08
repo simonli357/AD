@@ -150,15 +150,30 @@ namespace drivers{
         // Previous input angle
         static float prev_angle = 0;
         // Zero default when returning from a left turn
-        ZD_left = 0.0772;
+        ZD_left = zero_default;
         // Zero default when returning from a right turn
-        ZD_right = 0.0755;
+        ZD_right = zero_default;
 
-        // if(f_angle > 20.8) f_angle = 20.8; 
-        // if(f_angle < -21.8) f_angle = -21.8;
+        // Special case if we want to reset to 0 and set the car to go straight
+        if(std::abs(f_angle) < 0.1)
+        {
+            if(prev_angle >= 0) // Zero default for returning from LEFT turns
+            {
+                dutyCycle = ZD_left;
+            }
+            
+            if(prev_angle < 0) // Zero default for returning from RIGHT turns
+            {
+                dutyCycle = ZD_right;
+            }
+            else {
+            f_angle = 0.0f; // Set to zero if very small
+                dutyCycle = zero_default;
+            } 
+        }
 
         // Function to calculate the positive angle (LEFT TURN)
-        if(f_angle > 0)
+        else if(f_angle > 0)
         {
             // Polynomial Coefficients (Order 5):
             // a5 = -0.0000000723077151
@@ -179,24 +194,10 @@ namespace drivers{
             // a2 = 0.0000664166433002
             // a1 = -0.0003390196292946
             // c     = 0.0775218527577549
-            dutyCycle = -0.0000000128001809 * std::pow(f_angle, 5) - 0.0000003809216951 * std::pow(f_angle, 4) - 0.0000016674404606  * std::pow(f_angle, 3) - 0.0000664166433002 * std::pow(f_angle, 2) - 0.0003390196292946 * f_angle + 0.0775218527577549;
+            dutyCycle = -0.0000000128001809 * std::pow(f_angle, 5) - 0.0000003809216951 * std::pow(f_angle, 4) - 0.0000016674404606  * std::pow(f_angle, 3) + 0.0000664166433002 * std::pow(f_angle, 2) - 0.0003390196292946 * f_angle + 0.0775218527577549;
         }
-        // Special case if we want to reset to 0 and set the car to go straight
-        else if(std::abs(f_angle) < 0.1)
-        {
-            if(prev_angle >= 0) // Zero default for returning from LEFT turns
-            {
-                dutyCycle = ZD_left;
-            }
-            
-            if(prev_angle < 0) // Zero default for returning from RIGHT turns
-            {
-                dutyCycle = ZD_right;
-            }
-        } else {
-            f_angle = 0.0f; // Set to zero if very small
-            dutyCycle = zero_default;
-        }
+        
+        
         prev_angle = f_angle;
         return dutyCycle;
     };

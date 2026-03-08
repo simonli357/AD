@@ -86,13 +86,13 @@ namespace drivers{
             if (m_currentSpeed > 0.001f)
             {
                 // constexpr float a = 1289748.65f, b = -187718.55f, c = 6826.86f; // old
-                constexpr float a = 895099.49f, b = -135002.57f, c = 5071.03f;
-                duty = (-b - std::sqrt(b*b - 4*a*(c - m_currentSpeed)))/(2*a);
+                constexpr float a = 0.0000011816128f, b = -0.0001624163545f, c = 0.0718849715310f;
+                duty = (a*(m_currentSpeed*m_currentSpeed) + b*m_currentSpeed + c);
             }
             else if (m_currentSpeed < -0.001f)
             {
-                constexpr float a = 1798545.44f, b = -258826.54f, c = 9311.76f;
-                duty = 0.0055f + (-b + std::sqrt(b*b - 4*a*(c + m_currentSpeed)))/(2*a);
+                constexpr float a = -0.0000018220718f, b = -0.0002027991619f, c = 0.0772160919283f;
+                duty = (a*(m_currentSpeed*m_currentSpeed) + b*m_currentSpeed + c);
             }
             m_pwm_pin.write(duty);
             // --------------------------------------------------

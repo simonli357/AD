@@ -36,7 +36,7 @@ namespace drivers
             // Desired steer value
             float m_desiredSteer = 0;
             /** @brief 0 default */
-            float zero_default = 0.0765;
+            float zero_default = 0.0755;
             float max_pwm = 0.1052;
             float min_pwm = 0.045;
     };
