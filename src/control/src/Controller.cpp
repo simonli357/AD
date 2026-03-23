@@ -227,10 +227,9 @@ public:
         utils.debug("INITIALIZE(): start: " + helper::d2str(x) + ", " + helper::d2str(y), 2);
         utils.debug("INITIALIZE(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
 
-        // std::cout << "INITIALIZE(): target waypoint index: " << PathManager::target_waypoint_index << std::endl;
-        PathManager::target_waypoint_index = PathManager::find_closest_waypoint(x_current); // search from the beginning to the end
-        // std::cout << "INITIALIZE(): target waypoint index2: " << PathManager::target_waypoint_index << std::endl;
-        PathManager::target_waypoint_index = 0;
+        PathManager::reset_progress_to_route_start();
+        // PathManager::target_waypoint_index = PathManager::find_closest_waypoint(x_current); // search from the beginning to the end
+        // PathManager::target_waypoint_index = 0;
         PathManager::find_intersections(utils);
         if (Tunable::useGps) {
             double initial_point_yaw = PathManager::state_refs(static_cast<int>(PathManager::target_waypoint_index + 0.2 * PathManager::density), 2);
@@ -1211,7 +1210,7 @@ public:
         utils.debug("goto_command_callback(): start: " + helper::d2str(x_current(0)) + ", " + helper::d2str(x_current(1)), 2);
         utils.debug("goto_command_callback(): destination: " + helper::d2str(destination(0)) + ", " + helper::d2str(destination(1)), 2);
 
-        PathManager::target_waypoint_index = PathManager::find_closest_waypoint(x_current, 0, PathManager::state_refs.rows()-1); // search from the beginning to the end
+        PathManager::reset_progress_to_route_start();
         PathManager::find_intersections(utils);
         PathManager::overtake_end_index = 0;
         mpc.reset_solver();
@@ -1241,7 +1240,7 @@ public:
         utils.debug("goto_command_callback(): start: " + std::to_string(x_current(0)) + ", " + std::to_string(x_current(1)), 2);
         utils.debug("goto_command_callback(): destination: " + std::to_string(destination(0)) + ", " + std::to_string(destination(1)), 2);
         
-        PathManager::target_waypoint_index = PathManager::find_closest_waypoint(x_current, 0, PathManager::state_refs.rows() - 1); // search from the beginning to the end
+        PathManager::reset_progress_to_route_start();
         PathManager::find_intersections(utils);
         PathManager::overtake_end_index = 0;
         mpc.reset_solver();

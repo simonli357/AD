@@ -478,6 +478,13 @@ inline int find_closest_waypoint(const Eigen::Vector3d& x_current, int min_index
 }
 
 inline int find_next_waypoint_count = 5;
+inline void reset_progress_to_route_start() {
+	target_waypoint_index = 0;
+	last_waypoint_index = 0;
+	closest_waypoint_index = 0;
+	find_next_waypoint_count = 5;
+}
+
 inline int find_next_waypoint(int& output_target, const Eigen::Vector3d& i_current_state, int min_index = -1, int max_index = -1) {
   	int target = 0;
 		int lookahead = 1;
@@ -597,6 +604,7 @@ inline bool call_waypoint_service(double x, double y, double yaw, const std::sha
 	normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
 	ROS_INFO("initialize(): Received waypoints of size %d", N);
+	reset_progress_to_route_start();
 	tcp_client->send_waypoints_srv(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 	set_params(tcp_client);
 	return true;
@@ -636,9 +644,7 @@ inline bool call_go_to_service(double x, double y, double yaw, double dest_x, do
 		normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
 		ROS_INFO("initialize(): Received waypoints of size %d", N);
-		target_waypoint_index = 0;
-		last_waypoint_index = target_waypoint_index;
-		closest_waypoint_index = 0;
+		reset_progress_to_route_start();
 		return true;
 	} else {
 		ROS_INFO("ERROR: initialize(): Failed to call service waypoints");
@@ -668,9 +674,7 @@ inline bool call_go_to_multiple_service(double x, double y, double yaw, const st
 	normals = Eigen::Map<Eigen::MatrixXd>(wp_normals_v.data(), 2, N).transpose();
 
 	ROS_INFO("initialize(): Received waypoints of size %d", N);
-	target_waypoint_index = 0;
-	last_waypoint_index = target_waypoint_index;
-	closest_waypoint_index = 0;
+	reset_progress_to_route_start();
 	return true;
 }
 
