@@ -14,6 +14,8 @@ constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
 
 namespace periodics {
 
+#define ENCODER_REPORT_I2C_DIAG 0
+
 #if ENCODER_USE_I2C
 CEncoder::CEncoder(uint32_t f_periodTicks,
                 float g_baseTick,
@@ -225,6 +227,7 @@ float CEncoder::readAngularSpeedKf()
     float rawDeg = _prevGoodRaw;
     const bool angleReadOk = readRawAngleDeg(rawDeg);
     if (!angleReadOk) {
+#if ENCODER_REPORT_I2C_DIAG
         static float errorReportAccum = 0.0f;
         errorReportAccum += dt;
         if (errorReportAccum >= REPORT_INTERVAL_SEC) {
@@ -244,6 +247,7 @@ float CEncoder::readAngularSpeedKf()
                 m_serial.write(diag, dn);
             }
         }
+#endif
         return lastPublishedSpeed;
     }
 #else
@@ -318,7 +322,7 @@ float CEncoder::readAngularSpeedKf()
             m_serial.write(buf, n);
         }
 
-#if ENCODER_USE_I2C
+#if ENCODER_USE_I2C && ENCODER_REPORT_I2C_DIAG
         uint8_t status = m_lastAs5600Status;
         const bool statusReadOk = readAs5600Status(status);
 
