@@ -82,26 +82,55 @@ CEncoder::~CEncoder() {
 #endif
 }
 
+#if ENCODER_USE_I2C
+bool CEncoder::readRegister(char reg, char* data, int length) {
+    const int writeResult = m_i2c->write(AS5600_ADDR, &reg, 1, true);
+    if (writeResult != 0) {
+        ++m_i2cErrorCount;
+        return false;
+    }
+
+    const int readResult = m_i2c->read(AS5600_ADDR, data, length);
+    if (readResult != 0) {
+        ++m_i2cErrorCount;
+        return false;
+    }
+
+    return true;
+}
+
+bool CEncoder::readRawAngleDeg(float& angleDeg) {
+    char data[2] = {0};
+    if (!readRegister(RAW_ANGLE_REG_H, data, 2)) {
+        m_lastAngleReadOk = false;
+        return false;
+    }
+
+    const uint16_t raw12 = (static_cast<uint8_t>(data[0]) & 0x0F) << 8
+                         |  static_cast<uint8_t>(data[1]);
+    angleDeg = raw12 * 360.0f / 4096.0f;
+    _prevGoodRaw = angleDeg;
+    m_lastAngleReadOk = true;
+    return true;
+}
+
+bool CEncoder::readAs5600Status(uint8_t& status) {
+    char data = 0;
+    const bool ok = readRegister(AS5600_STATUS_REG, &data, 1);
+    m_lastStatusReadOk = ok;
+    if (ok) {
+        status = static_cast<uint8_t>(data);
+        m_lastAs5600Status = status;
+    }
+    return ok;
+}
+#endif
+
 float CEncoder::getRawAngleDeg() {
 #if ENCODER_USE_I2C
-    // Register 0x0C: RAW ANGLE bits [11:8] (high nibble)
-    // Register 0x0D: RAW ANGLE bits [7:0]  (low byte)
-    char cmd[1];
-    char data[2] = {0};
-
-    // Read high byte from register 0x0C
-    cmd[0] = RAW_ANGLE_REG_H;              // 0x0C
-    m_i2c->write(AS5600_ADDR, cmd, 1);
-    m_i2c->read(AS5600_ADDR, &data[0], 1);
-
-    // Read low byte from register 0x0D
-    cmd[0] = RAW_ANGLE_REG_H + 1;          // 0x0D
-    m_i2c->write(AS5600_ADDR, cmd, 1);
-    m_i2c->read(AS5600_ADDR, &data[1], 1);
-
-    uint16_t raw12 = (static_cast<uint8_t>(data[0]) & 0x0F) << 8
-                   |  static_cast<uint8_t>(data[1]);
-    return raw12 * 360.0f / 4096.0f;
+    float angleDeg = _prevGoodRaw;
+    readRawAngleDeg(angleDeg);
+    return angleDeg;
 #else
     return m_pwm.dutycycle() * 360.0f;
 #endif
@@ -192,7 +221,34 @@ float CEncoder::readAngularSpeedKf()
     last_us = now_us;
 
     /* ───────────── 2. raw angle in degrees ─────────────────────── */
+#if ENCODER_USE_I2C
+    float rawDeg = _prevGoodRaw;
+    const bool angleReadOk = readRawAngleDeg(rawDeg);
+    if (!angleReadOk) {
+        static float errorReportAccum = 0.0f;
+        errorReportAccum += dt;
+        if (errorReportAccum >= REPORT_INTERVAL_SEC) {
+            errorReportAccum = 0.0f;
+
+            uint8_t status = m_lastAs5600Status;
+            const bool statusReadOk = readAs5600Status(status);
+
+            char diag[96];
+            const int dn = std::snprintf(diag, sizeof(diag),
+                    "@6:%d;%d;%u;%lu;;\r\n",
+                    0,
+                    statusReadOk ? 1 : 0,
+                    static_cast<unsigned>(status),
+                    m_i2cErrorCount);
+            if (dn > 0 && static_cast<size_t>(dn) < sizeof(diag)) {
+                m_serial.write(diag, dn);
+            }
+        }
+        return lastPublishedSpeed;
+    }
+#else
     float rawDeg = getRawAngleDeg();
+#endif
 
     /* ───────────── 3. unwrap (always use raw for correct topology) ─── */
     static float prevRawForUnwrap = 0.0f;
@@ -261,6 +317,22 @@ float CEncoder::readAngularSpeedKf()
         if (n > 0 && static_cast<size_t>(n) < sizeof(buf)) {
             m_serial.write(buf, n);
         }
+
+#if ENCODER_USE_I2C
+        uint8_t status = m_lastAs5600Status;
+        const bool statusReadOk = readAs5600Status(status);
+
+        char diag[96];
+        const int dn = std::snprintf(diag, sizeof(diag),
+                "@6:%d;%d;%u;%lu;;\r\n",
+                angleReadOk ? 1 : 0,
+                statusReadOk ? 1 : 0,
+                static_cast<unsigned>(status),
+                m_i2cErrorCount);
+        if (dn > 0 && static_cast<size_t>(dn) < sizeof(diag)) {
+            m_serial.write(diag, dn);
+        }
+#endif
 
         // 5) for internal use, always keep the last "filtered" speed in deg/s
         lastPublishedSpeed = speedDegPerSec;

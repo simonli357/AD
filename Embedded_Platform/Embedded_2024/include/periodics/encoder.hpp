@@ -137,7 +137,15 @@ private:
 #if ENCODER_USE_I2C
     I2C*                m_i2c;                ///< I2C bus (heap-allocated)
     static constexpr int  AS5600_ADDR      = 0x36 << 1; // 8-bit I2C address
+    static constexpr char AS5600_STATUS_REG = 0x0B;      // STATUS: MD/ML/MH bits
     static constexpr char RAW_ANGLE_REG_H  = 0x0C;      // RAW ANGLE high byte
+    bool readRegister(char reg, char* data, int length);
+    bool readRawAngleDeg(float& angleDeg);
+    bool readAs5600Status(uint8_t& status);
+    unsigned long m_i2cErrorCount{0};
+    uint8_t       m_lastAs5600Status{0};
+    bool          m_lastAngleReadOk{false};
+    bool          m_lastStatusReadOk{false};
 #else
     PwmIn               m_pwm;                ///< PWM input
 #endif
