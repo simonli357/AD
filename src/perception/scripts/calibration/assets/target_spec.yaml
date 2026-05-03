@@ -1,0 +1,21 @@
+version: 1
+dictionary: DICT_4X4_100
+squares_x: 8
+squares_y: 6
+square_size_m: 0.03
+marker_size_m: 0.022
+dpi: 300
+board_width_m: 0.24
+board_height_m: 0.18
+scale_bar_m: 0.1
+pages:
+  letter:
+    name: Letter landscape
+    width_mm: 279.4
+    height_mm: 215.9
+    file: charuco_ground_target_letter_300dpi.png
+  a4:
+    name: A4 landscape
+    width_mm: 297.0
+    height_mm: 210.0
+    file: charuco_ground_target_a4_300dpi.png

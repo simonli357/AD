@@ -1,0 +1,9 @@
+numpy
+pyyaml
+pillow
+pyrealsense2
+
+# OpenCV must include cv2.aruco / ChArUco support.
+# Prefer the system ROS/OpenCV package if it already has cv2.aruco.
+# If it does not, use an isolated calibration environment and install:
+# opencv-contrib-python
