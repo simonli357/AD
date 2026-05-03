@@ -1,0 +1,224 @@
+created_at: '2026-05-03T18:35:06'
+runtime_flip: rotate180
+print_scale_mm: 127.0
+print_scale: 1.27
+target_spec:
+  version: 1
+  dictionary: DICT_4X4_100
+  squares_x: 8
+  squares_y: 6
+  square_size_m: 0.03
+  marker_size_m: 0.022
+  dpi: 300
+  board_width_m: 0.24
+  board_height_m: 0.18
+  scale_bar_m: 0.1
+  pages:
+    letter:
+      name: Letter landscape
+      width_mm: 279.4
+      height_mm: 215.9
+      file: charuco_ground_target_letter_300dpi.png
+    a4:
+      name: A4 landscape
+      width_mm: 297.0
+      height_mm: 210.0
+      file: charuco_ground_target_a4_300dpi.png
+    a2_large2x:
+      name: A2 landscape, 2x floor target
+      width_mm: 594.0
+      height_mm: 420.0
+      file: charuco_ground_target_a2_large_2x_300dpi.png
+      target_scale: 2.0
+camera:
+  width: 1920
+  height: 1080
+  fx: 1371.6568603515625
+  fy: 1372.0181884765625
+  cx: 981.4447631835938
+  cy: 567.8754272460938
+  distortion_model: distortion.inverse_brown_conrady
+  dist_coeffs_raw:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  camera_matrix:
+  - - 1371.6568603515625
+    - 0.0
+    - 937.5552368164062
+  - - 0.0
+    - 1372.0181884765625
+    - 511.12457275390625
+  - - 0.0
+    - 0.0
+    - 1.0
+  dist_coeffs:
+  - 0.0
+  - 0.0
+  - -0.0
+  - -0.0
+  - 0.0
+  intrinsics_note: camera_matrix/dist_coeffs are adjusted for runtime_flip
+frames:
+- file: images/frame_000.png
+  detection_preview: detections/frame_000_detection.png
+  charuco_corners: 17
+  aruco_markers: 16
+- file: images/frame_001.png
+  detection_preview: detections/frame_001_detection.png
+  charuco_corners: 16
+  aruco_markers: 16
+- file: images/frame_002.png
+  detection_preview: detections/frame_002_detection.png
+  charuco_corners: 12
+  aruco_markers: 13
+- file: images/frame_003.png
+  detection_preview: detections/frame_003_detection.png
+  charuco_corners: 12
+  aruco_markers: 14
+- file: images/frame_004.png
+  detection_preview: detections/frame_004_detection.png
+  charuco_corners: 13
+  aruco_markers: 13
+- file: images/frame_005.png
+  detection_preview: detections/frame_005_detection.png
+  charuco_corners: 17
+  aruco_markers: 16
+- file: images/frame_006.png
+  detection_preview: detections/frame_006_detection.png
+  charuco_corners: 18
+  aruco_markers: 16
+- file: images/frame_007.png
+  detection_preview: detections/frame_007_detection.png
+  charuco_corners: 12
+  aruco_markers: 15
+- file: images/frame_008.png
+  detection_preview: detections/frame_008_detection.png
+  charuco_corners: 15
+  aruco_markers: 15
+- file: images/frame_009.png
+  detection_preview: detections/frame_009_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_010.png
+  detection_preview: detections/frame_010_detection.png
+  charuco_corners: 17
+  aruco_markers: 15
+- file: images/frame_011.png
+  detection_preview: detections/frame_011_detection.png
+  charuco_corners: 19
+  aruco_markers: 16
+- file: images/frame_012.png
+  detection_preview: detections/frame_012_detection.png
+  charuco_corners: 14
+  aruco_markers: 14
+- file: images/frame_013.png
+  detection_preview: detections/frame_013_detection.png
+  charuco_corners: 17
+  aruco_markers: 16
+- file: images/frame_014.png
+  detection_preview: detections/frame_014_detection.png
+  charuco_corners: 13
+  aruco_markers: 13
+- file: images/frame_015.png
+  detection_preview: detections/frame_015_detection.png
+  charuco_corners: 18
+  aruco_markers: 16
+- file: images/frame_016.png
+  detection_preview: detections/frame_016_detection.png
+  charuco_corners: 16
+  aruco_markers: 15
+- file: images/frame_017.png
+  detection_preview: detections/frame_017_detection.png
+  charuco_corners: 12
+  aruco_markers: 14
+- file: images/frame_018.png
+  detection_preview: detections/frame_018_detection.png
+  charuco_corners: 19
+  aruco_markers: 16
+- file: images/frame_019.png
+  detection_preview: detections/frame_019_detection.png
+  charuco_corners: 16
+  aruco_markers: 15
+- file: images/frame_020.png
+  detection_preview: detections/frame_020_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_021.png
+  detection_preview: detections/frame_021_detection.png
+  charuco_corners: 14
+  aruco_markers: 15
+- file: images/frame_022.png
+  detection_preview: detections/frame_022_detection.png
+  charuco_corners: 12
+  aruco_markers: 14
+- file: images/frame_023.png
+  detection_preview: detections/frame_023_detection.png
+  charuco_corners: 17
+  aruco_markers: 15
+- file: images/frame_024.png
+  detection_preview: detections/frame_024_detection.png
+  charuco_corners: 13
+  aruco_markers: 17
+- file: images/frame_025.png
+  detection_preview: detections/frame_025_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_026.png
+  detection_preview: detections/frame_026_detection.png
+  charuco_corners: 12
+  aruco_markers: 13
+- file: images/frame_027.png
+  detection_preview: detections/frame_027_detection.png
+  charuco_corners: 14
+  aruco_markers: 14
+- file: images/frame_028.png
+  detection_preview: detections/frame_028_detection.png
+  charuco_corners: 15
+  aruco_markers: 14
+- file: images/frame_029.png
+  detection_preview: detections/frame_029_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_030.png
+  detection_preview: detections/frame_030_detection.png
+  charuco_corners: 17
+  aruco_markers: 16
+- file: images/frame_031.png
+  detection_preview: detections/frame_031_detection.png
+  charuco_corners: 18
+  aruco_markers: 16
+- file: images/frame_032.png
+  detection_preview: detections/frame_032_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_033.png
+  detection_preview: detections/frame_033_detection.png
+  charuco_corners: 13
+  aruco_markers: 14
+- file: images/frame_034.png
+  detection_preview: detections/frame_034_detection.png
+  charuco_corners: 12
+  aruco_markers: 14
+- file: images/frame_035.png
+  detection_preview: detections/frame_035_detection.png
+  charuco_corners: 14
+  aruco_markers: 15
+- file: images/frame_036.png
+  detection_preview: detections/frame_036_detection.png
+  charuco_corners: 12
+  aruco_markers: 13
+- file: images/frame_037.png
+  detection_preview: detections/frame_037_detection.png
+  charuco_corners: 14
+  aruco_markers: 15
+- file: images/frame_038.png
+  detection_preview: detections/frame_038_detection.png
+  charuco_corners: 12
+  aruco_markers: 15
+- file: images/frame_039.png
+  detection_preview: detections/frame_039_detection.png
+  charuco_corners: 13
+  aruco_markers: 15

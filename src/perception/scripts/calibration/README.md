@@ -29,7 +29,17 @@ Regenerate the target files if needed:
 python3 src/perception/scripts/calibration/calibrate_realsense_mount.py make-target
 ```
 
-Print one of these files:
+For this car's low-mounted camera, print the larger floor target if possible:
+
+- `assets/charuco_ground_target_a2_large_2x_300dpi.png`
+
+It is an A2 landscape target. Print it at `Actual size / 100% / no fit to
+page`. Its board is about `48 cm x 36 cm`; the base `100 mm` scale bar should
+measure about `200 mm`. Enter the actual measured scale-bar length when the
+wizard asks.
+
+The smaller files are kept for close-range checks, but they are usually too
+small for floor calibration with the car camera:
 
 - `assets/charuco_ground_target_letter_300dpi.png`
 - `assets/charuco_ground_target_a4_300dpi.png`
@@ -39,10 +49,14 @@ Printer settings:
 - Print at `Actual size`, `100%`, or `no fit to page`.
 - Use landscape orientation.
 - Do not scale.
-- After printing, measure the `100 mm SCALE CHECK` bar. You will enter that
-  value into the wizard.
+- After printing, measure the scale check bar. You will enter that value into
+  the wizard. For the recommended large target, this should be around `200 mm`.
 
 Tape the page flat to stiff backing. A warped target gives bad calibration.
+
+The scale-bar correction handles uniform printer scaling. It does not solve the
+visibility problem caused by tiny markers. The target must be large and sharp
+enough that OpenCV can detect at least 12 ChArUco corners from the car camera.
 
 ## 3. Place The Target
 
@@ -76,6 +90,13 @@ For automatic capture:
 
 ```bash
 python3 src/perception/scripts/calibration/calibrate_realsense_mount.py wizard --auto
+```
+
+If the checker sees too few corners at the default runtime resolution, capture
+at a higher RealSense color resolution:
+
+```bash
+python3 src/perception/scripts/calibration/calibrate_realsense_mount.py capture --auto --no-window --color-width 1920 --color-height 1080
 ```
 
 ## 5. Use The Result

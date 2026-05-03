@@ -19,3 +19,9 @@ pages:
     width_mm: 297.0
     height_mm: 210.0
     file: charuco_ground_target_a4_300dpi.png
+  a2_large2x:
+    name: A2 landscape, 2x floor target
+    width_mm: 594.0
+    height_mm: 420.0
+    file: charuco_ground_target_a2_large_2x_300dpi.png
+    target_scale: 2.0

@@ -1,6 +1,15 @@
 # Print This Target First
 
-Print one of these files at `Actual size / 100% / no fit to page`:
+For floor calibration on the car, print this larger target first:
+
+- `charuco_ground_target_a2_large_2x_300dpi.png`
+
+Print at `Actual size / 100% / no fit to page`. The board should be about
+`48 cm x 36 cm`, and the base `100 mm` scale bar should measure about `200 mm`.
+Enter the actual measured scale-bar length in the wizard.
+
+The smaller targets are for close-range checks and may be too small on the
+floor:
 
 - `charuco_ground_target_letter_300dpi.png`
 - `charuco_ground_target_a4_300dpi.png`
@@ -9,7 +18,7 @@ Use landscape orientation. Do not scale to fit.
 
 After printing:
 
-1. Measure the `100 mm SCALE CHECK` bar.
+1. Measure the scale check bar.
 2. Tape the paper flat to stiff backing.
 3. Place the target flat on the ground in front of the car.
 4. Point `+X CAR FORWARD` in the car's forward direction.

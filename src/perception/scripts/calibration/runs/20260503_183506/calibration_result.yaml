@@ -1,0 +1,222 @@
+created_at: '2026-05-03T18:38:13'
+run_dir: /home/scandy/AD/src/perception/scripts/calibration/runs/20260503_183506
+runtime_flip: rotate180
+capture_camera_params:
+- 1371.6568603515625
+- 1372.0181884765625
+- 937.5552368164062
+- 511.12457275390625
+runtime_image_size:
+  width: 640
+  height: 480
+valid_frames: 40
+observations: 580
+rvec_target_to_camera:
+- 1.204407073431489
+- -1.192654912318307
+- 1.195075873457821
+tvec_target_to_camera_m:
+- -0.022190219493491967
+- 0.26577524702106253
+- 0.7584252998508669
+rotation_target_to_camera:
+- - 0.017686135057108032
+  - -0.9998131322710501
+  - -0.007803919854387941
+- - 0.009831357043012232
+  - 0.007978663951207055
+  - -0.999919839457267
+- - 0.9997952515617559
+  - 0.017607994204499353
+  - 0.009970631607865554
+euler_repo_convention:
+  roll_rad: 0.007979134237462005
+  pitch_rad: -0.00983151542582286
+  yaw_rad: 0.017687912149770276
+  roll_deg: 0.4571707159749093
+  pitch_deg: -0.5633043401174143
+  yaw_deg: 1.0134427145800078
+camera_params_real:
+- 607.40564
+- 607.05829
+- 316.02777
+- 234.60602
+camera_params_real_note: Patch intrinsics target the runtime image size, not the capture
+  resolution.
+realsense_tf_real:
+- -0.09
+- -0.032
+- 0.26
+- 0.007979134237462005
+- -0.00983151542582286
+- 0.017687912149770276
+preserved_translation_xyz_m:
+- -0.09
+- -0.032
+- 0.26
+reprojection_error_px:
+  median: 0.3370593190193176
+  mean: 0.4233193099498749
+  max: 2.9300012588500977
+frame_stats:
+  images/frame_000.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 16
+  images/frame_001.png:
+    accepted: true
+    charuco_corners: 16
+    aruco_markers: 16
+  images/frame_002.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 13
+  images/frame_003.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 14
+  images/frame_004.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 13
+  images/frame_005.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 16
+  images/frame_006.png:
+    accepted: true
+    charuco_corners: 18
+    aruco_markers: 16
+  images/frame_007.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 15
+  images/frame_008.png:
+    accepted: true
+    charuco_corners: 15
+    aruco_markers: 15
+  images/frame_009.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_010.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 15
+  images/frame_011.png:
+    accepted: true
+    charuco_corners: 19
+    aruco_markers: 16
+  images/frame_012.png:
+    accepted: true
+    charuco_corners: 14
+    aruco_markers: 14
+  images/frame_013.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 16
+  images/frame_014.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 13
+  images/frame_015.png:
+    accepted: true
+    charuco_corners: 18
+    aruco_markers: 16
+  images/frame_016.png:
+    accepted: true
+    charuco_corners: 16
+    aruco_markers: 15
+  images/frame_017.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 14
+  images/frame_018.png:
+    accepted: true
+    charuco_corners: 19
+    aruco_markers: 16
+  images/frame_019.png:
+    accepted: true
+    charuco_corners: 16
+    aruco_markers: 15
+  images/frame_020.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_021.png:
+    accepted: true
+    charuco_corners: 14
+    aruco_markers: 15
+  images/frame_022.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 14
+  images/frame_023.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 15
+  images/frame_024.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 17
+  images/frame_025.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_026.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 13
+  images/frame_027.png:
+    accepted: true
+    charuco_corners: 14
+    aruco_markers: 14
+  images/frame_028.png:
+    accepted: true
+    charuco_corners: 15
+    aruco_markers: 14
+  images/frame_029.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_030.png:
+    accepted: true
+    charuco_corners: 17
+    aruco_markers: 16
+  images/frame_031.png:
+    accepted: true
+    charuco_corners: 18
+    aruco_markers: 16
+  images/frame_032.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_033.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 14
+  images/frame_034.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 14
+  images/frame_035.png:
+    accepted: true
+    charuco_corners: 14
+    aruco_markers: 15
+  images/frame_036.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 13
+  images/frame_037.png:
+    accepted: true
+    charuco_corners: 14
+    aruco_markers: 15
+  images/frame_038.png:
+    accepted: true
+    charuco_corners: 12
+    aruco_markers: 15
+  images/frame_039.png:
+    accepted: true
+    charuco_corners: 13
+    aruco_markers: 15
+warnings: []

@@ -1,0 +1,15 @@
+// Copy these replacements into src/utils/include/utils/constants.h.
+// The script does not edit source files automatically.
+
+static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {+607.405640000, +607.058290000, +316.027770000, +234.606020000};
+static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.090000000, -0.032000000, +0.260000000, +0.007979134, -0.009831515, +0.017687912};
+
+// Angles:
+//   roll  = +0.007979134 rad (+0.457171 deg)
+//   pitch = -0.009831515 rad (-0.563304 deg)
+//   yaw   = +0.017687912 rad (+1.013443 deg)
+//
+// Reprojection:
+//   median = 0.3371 px
+//   mean   = 0.4233 px
+//   max    = 2.9300 px

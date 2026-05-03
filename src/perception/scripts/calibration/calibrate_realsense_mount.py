@@ -60,6 +60,13 @@ DEFAULT_SPEC: Dict[str, Any] = {
             "height_mm": 210.0,
             "file": "charuco_ground_target_a4_300dpi.png",
         },
+        "a2_large2x": {
+            "name": "A2 landscape, 2x floor target",
+            "width_mm": 594.0,
+            "height_mm": 420.0,
+            "file": "charuco_ground_target_a2_large_2x_300dpi.png",
+            "target_scale": 2.0,
+        },
     },
 }
 
@@ -190,8 +197,13 @@ def draw_board(spec: Dict[str, Any], width_px: int, height_px: int) -> np.ndarra
     return image
 
 
-def charuco_id_to_target_point(corner_id: int, spec: Dict[str, Any], print_scale: float = 1.0) -> np.ndarray:
-    """Return a ChArUco corner in the target frame: +X forward, +Y left, +Z up."""
+def charuco_id_to_target_point(
+    corner_id: int,
+    spec: Dict[str, Any],
+    print_scale: float = 1.0,
+    target_placement: str = "ground",
+) -> np.ndarray:
+    """Return a ChArUco corner in the vehicle-aligned target frame."""
     squares_x = int(spec["squares_x"])
     square = float(spec["square_size_m"]) * float(print_scale)
     board_width = squares_x * square
@@ -201,14 +213,24 @@ def charuco_id_to_target_point(corner_id: int, spec: Dict[str, Any], print_scale
     row = int(corner_id) // inner_cols
     board_x = (col + 1) * square
     board_y = (row + 1) * square
-    x_forward = board_height / 2.0 - board_y
     y_left = board_width / 2.0 - board_x
-    return np.array([x_forward, y_left, 0.0], dtype=np.float32)
+    if target_placement == "ground":
+        x_forward = board_height / 2.0 - board_y
+        return np.array([x_forward, y_left, 0.0], dtype=np.float32)
+    if target_placement == "vertical-front":
+        z_up = board_height / 2.0 - board_y
+        return np.array([0.0, y_left, z_up], dtype=np.float32)
+    raise ValueError(f"Unsupported target placement: {target_placement}")
 
 
-def object_points_for_ids(ids: np.ndarray, spec: Dict[str, Any], print_scale: float) -> np.ndarray:
+def object_points_for_ids(
+    ids: np.ndarray,
+    spec: Dict[str, Any],
+    print_scale: float,
+    target_placement: str = "ground",
+) -> np.ndarray:
     return np.array(
-        [charuco_id_to_target_point(int(i), spec, print_scale) for i in ids.reshape(-1)],
+        [charuco_id_to_target_point(int(i), spec, print_scale, target_placement) for i in ids.reshape(-1)],
         dtype=np.float32,
     )
 
@@ -407,10 +429,11 @@ def draw_arrow(image: np.ndarray, start: Tuple[int, int], end: Tuple[int, int], 
 def draw_target_page(spec: Dict[str, Any], page_key: str, output_path: Path) -> None:
     page = spec["pages"][page_key]
     dpi = int(spec["dpi"])
+    target_scale = float(page.get("target_scale", 1.0))
     page_w = mm_to_px(float(page["width_mm"]), dpi)
     page_h = mm_to_px(float(page["height_mm"]), dpi)
-    board_w = m_to_px(float(spec["board_width_m"]), dpi)
-    board_h = m_to_px(float(spec["board_height_m"]), dpi)
+    board_w = m_to_px(float(spec["board_width_m"]) * target_scale, dpi)
+    board_h = m_to_px(float(spec["board_height_m"]) * target_scale, dpi)
     board_left = (page_w - board_w) // 2
     board_top = (page_h - board_h) // 2
     board_right = board_left + board_w
@@ -437,14 +460,18 @@ def draw_target_page(spec: Dict[str, Any], page_key: str, output_path: Path) -> 
     y_arrow_end = (max(mm_to_px(4.0, dpi), board_left - mm_to_px(15.0, dpi)), center_y)
     draw_arrow(canvas, y_arrow_start, y_arrow_end, "+Y CAR LEFT")
 
-    scale_len = m_to_px(float(spec["scale_bar_m"]), dpi)
+    scale_len = m_to_px(float(spec["scale_bar_m"]) * target_scale, dpi)
     scale_y = page_h - mm_to_px(6.0, dpi)
     scale_x0 = center_x - scale_len // 2
     scale_x1 = scale_x0 + scale_len
     cv2.line(canvas, (scale_x0, scale_y), (scale_x1, scale_y), (0, 0, 0), 5)
     cv2.line(canvas, (scale_x0, scale_y - tick // 2), (scale_x0, scale_y + tick // 2), (0, 0, 0), 4)
     cv2.line(canvas, (scale_x1, scale_y - tick // 2), (scale_x1, scale_y + tick // 2), (0, 0, 0), 4)
-    put_centered_text(canvas, "100 mm SCALE CHECK", (center_x, scale_y - mm_to_px(5.0, dpi)), 0.55, thickness=1)
+    if abs(target_scale - 1.0) < 1e-9:
+        scale_label = "100 mm SCALE CHECK"
+    else:
+        scale_label = f"100 mm BASE SCALE - EXPECT {target_scale * 100.0:.0f} mm"
+    put_centered_text(canvas, scale_label, (center_x, scale_y - mm_to_px(5.0, dpi)), 0.55, thickness=1)
 
     save_png_with_dpi(output_path, canvas, dpi)
 
@@ -504,7 +531,8 @@ def cmd_make_target(_: argparse.Namespace) -> int:
     for page in spec["pages"].values():
         print(f"  {ASSETS_DIR / str(page['file'])}")
     print(f"  {ASSETS_DIR / 'target_spec.yaml'}")
-    print("Print one target at Actual size / 100% / no fit to page.")
+    print("For floor calibration, prefer the A2 2x target.")
+    print("Print at Actual size / 100% / no fit to page.")
     return 0
 
 
@@ -560,7 +588,13 @@ def capture_realsense(args: argparse.Namespace) -> Path:
 
     pipeline = rs.pipeline()
     config = rs.config()
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(
+        rs.stream.color,
+        int(args.color_width),
+        int(args.color_height),
+        rs.format.bgr8,
+        int(args.color_fps),
+    )
 
     print("\nStarting RealSense color stream...")
     profile = pipeline.start(config)
@@ -597,11 +631,17 @@ def capture_realsense(args: argparse.Namespace) -> Path:
     print("  SPACE: save a frame when the board is detected")
     print("  q: finish")
     print("Keep the car and target fixed while capturing.")
+    if args.max_seconds:
+        print(f"Capture will stop after {float(args.max_seconds):.1f} seconds even if fewer frames are saved.")
 
     try:
         for _ in range(int(args.warmup)):
             pipeline.wait_for_frames()
+        started_at = time.time()
         while saved < int(args.frames):
+            if args.max_seconds and time.time() - started_at >= float(args.max_seconds):
+                print("Reached capture time limit.")
+                break
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             if not color_frame:
@@ -774,7 +814,26 @@ static constexpr std::array<double, 6> REALSENSE_TF_REAL = {format_cpp_array(tf_
     path.write_text(text, encoding="utf-8")
 
 
-def solve_run(run_dir: Path, min_corners: int, constants_path: Path) -> Dict[str, Any]:
+def runtime_camera_params_from_constants(
+    constants_camera: Sequence[float],
+    runtime_flip: str,
+    runtime_width: int,
+    runtime_height: int,
+) -> List[float]:
+    fx, fy, cx, cy = [float(v) for v in constants_camera[:4]]
+    if runtime_flip == "rotate180":
+        cx = float(runtime_width - 1) - cx
+        cy = float(runtime_height - 1) - cy
+    return [fx, fy, cx, cy]
+
+
+def solve_run(
+    run_dir: Path,
+    min_corners: int,
+    constants_path: Path,
+    runtime_width: int = 640,
+    runtime_height: int = 480,
+) -> Dict[str, Any]:
     dataset = load_dataset(run_dir)
     camera = dataset.get("camera") or {}
     if "camera_matrix" not in camera or "dist_coeffs" not in camera:
@@ -835,13 +894,14 @@ def solve_run(run_dir: Path, min_corners: int, constants_path: Path) -> Dict[str
     errors = np.linalg.norm(projected - image_points, axis=1)
     rotation, _ = cv2.Rodrigues(rvec)
     roll, pitch, yaw = extract_repo_euler(rotation)
-    _, existing_tf = read_existing_constants(constants_path)
-    new_camera = [
-        float(camera_matrix[0, 0]),
-        float(camera_matrix[1, 1]),
-        float(camera_matrix[0, 2]),
-        float(camera_matrix[1, 2]),
-    ]
+    existing_camera, existing_tf = read_existing_constants(constants_path)
+    runtime_flip = str(dataset.get("runtime_flip", "unknown"))
+    new_camera = runtime_camera_params_from_constants(
+        existing_camera,
+        runtime_flip,
+        int(runtime_width),
+        int(runtime_height),
+    )
     new_tf = [
         float(existing_tf[0]),
         float(existing_tf[1]),
@@ -859,7 +919,14 @@ def solve_run(run_dir: Path, min_corners: int, constants_path: Path) -> Dict[str
     result: Dict[str, Any] = {
         "created_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "run_dir": str(run_dir),
-        "runtime_flip": dataset.get("runtime_flip", "unknown"),
+        "runtime_flip": runtime_flip,
+        "capture_camera_params": [
+            float(camera_matrix[0, 0]),
+            float(camera_matrix[1, 1]),
+            float(camera_matrix[0, 2]),
+            float(camera_matrix[1, 2]),
+        ],
+        "runtime_image_size": {"width": int(runtime_width), "height": int(runtime_height)},
         "valid_frames": int(valid_frames),
         "observations": int(len(observations)),
         "rvec_target_to_camera": vector_to_list(rvec),
@@ -874,6 +941,7 @@ def solve_run(run_dir: Path, min_corners: int, constants_path: Path) -> Dict[str
             "yaw_deg": float(math.degrees(yaw)),
         },
         "camera_params_real": new_camera,
+        "camera_params_real_note": "Patch intrinsics target the runtime image size, not the capture resolution.",
         "realsense_tf_real": new_tf,
         "preserved_translation_xyz_m": new_tf[:3],
         "reprojection_error_px": {
@@ -954,7 +1022,13 @@ def write_validation_report(path: Path, result: Dict[str, Any]) -> None:
 
 def cmd_solve(args: argparse.Namespace) -> int:
     run_dir = resolve_run_dir(args.run_dir)
-    result = solve_run(run_dir, int(args.min_corners), Path(args.constants_path).expanduser().resolve())
+    result = solve_run(
+        run_dir,
+        int(args.min_corners),
+        Path(args.constants_path).expanduser().resolve(),
+        int(args.runtime_width),
+        int(args.runtime_height),
+    )
     euler = result["euler_repo_convention"]
     err = result["reprojection_error_px"]
     print(f"Solved calibration for {run_dir}")
@@ -970,7 +1044,13 @@ def cmd_solve(args: argparse.Namespace) -> int:
 
 def cmd_validate(args: argparse.Namespace) -> int:
     run_dir = resolve_run_dir(args.run_dir)
-    result = solve_run(run_dir, int(args.min_corners), Path(args.constants_path).expanduser().resolve())
+    result = solve_run(
+        run_dir,
+        int(args.min_corners),
+        Path(args.constants_path).expanduser().resolve(),
+        int(args.runtime_width),
+        int(args.runtime_height),
+    )
     print(f"Validation report refreshed: {run_dir / 'validation_report.md'}")
     for warning in result.get("warnings", []):
         print(f"  warning: {warning}")
@@ -988,9 +1068,12 @@ def cmd_wizard(args: argparse.Namespace) -> int:
 
     make_targets()
     print("\nStep 1: Print the target")
-    print(f"  Letter: {ASSETS_DIR / DEFAULT_SPEC['pages']['letter']['file']}")
-    print(f"  A4:     {ASSETS_DIR / DEFAULT_SPEC['pages']['a4']['file']}")
+    print(f"  Recommended floor target: {ASSETS_DIR / DEFAULT_SPEC['pages']['a2_large2x']['file']}")
+    print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['letter']['file']}")
+    print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['a4']['file']}")
+    print("For the low car camera, use the A2 2x target if possible.")
     print("Print at Actual size / 100% / no fit to page. Do not scale.")
+    print("On the A2 2x target, the base 100 mm scale bar should measure about 200 mm.")
     input("Press Enter after the target is printed and taped flat to stiff backing...")
 
     measured_mm = ask_float("Measure the printed 100 mm scale bar. Enter measured length in mm", 100.0)
@@ -1017,10 +1100,20 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         interval=args.interval,
         no_window=args.no_window,
         warmup=args.warmup,
+        max_seconds=args.max_seconds,
+        color_width=args.color_width,
+        color_height=args.color_height,
+        color_fps=args.color_fps,
     )
     run_dir = capture_realsense(capture_args)
     print("\nStep 3: Solve")
-    result = solve_run(run_dir, int(args.min_corners), Path(args.constants_path).expanduser().resolve())
+    result = solve_run(
+        run_dir,
+        int(args.min_corners),
+        Path(args.constants_path).expanduser().resolve(),
+        int(args.runtime_width),
+        int(args.runtime_height),
+    )
     euler = result["euler_repo_convention"]
     print("\nDone.")
     print(f"  roll  {euler['roll_rad']:+.9f} rad ({euler['roll_deg']:+.6f} deg)")
@@ -1051,17 +1144,23 @@ def build_parser() -> argparse.ArgumentParser:
     solve.add_argument("run_dir", nargs="?", help="Run directory. Defaults to the latest run.")
     solve.add_argument("--min-corners", type=int, default=MIN_CHARUCO_CORNERS)
     solve.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    solve.add_argument("--runtime-width", type=int, default=640)
+    solve.add_argument("--runtime-height", type=int, default=480)
     solve.set_defaults(func=cmd_solve)
 
     validate = sub.add_parser("validate", help="Refresh validation outputs for a run directory.")
     validate.add_argument("run_dir", nargs="?", help="Run directory. Defaults to the latest run.")
     validate.add_argument("--min-corners", type=int, default=MIN_CHARUCO_CORNERS)
     validate.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    validate.add_argument("--runtime-width", type=int, default=640)
+    validate.add_argument("--runtime-height", type=int, default=480)
     validate.set_defaults(func=cmd_validate)
 
     wizard = sub.add_parser("wizard", help="Run the guided end-to-end calibration flow.")
     add_capture_args(wizard)
     wizard.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    wizard.add_argument("--runtime-width", type=int, default=640)
+    wizard.add_argument("--runtime-height", type=int, default=480)
     wizard.set_defaults(func=cmd_wizard)
 
     return parser
@@ -1077,6 +1176,10 @@ def add_capture_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--interval", type=float, default=0.4, help="Seconds between auto-saved frames.")
     parser.add_argument("--no-window", action="store_true", help="Do not open an OpenCV preview window.")
     parser.add_argument("--warmup", type=int, default=30, help="Frames to discard after stream start.")
+    parser.add_argument("--max-seconds", type=float, default=0.0, help="Stop capture after this many seconds.")
+    parser.add_argument("--color-width", type=int, default=640, help="RealSense color stream width.")
+    parser.add_argument("--color-height", type=int, default=480, help="RealSense color stream height.")
+    parser.add_argument("--color-fps", type=int, default=30, help="RealSense color stream FPS.")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

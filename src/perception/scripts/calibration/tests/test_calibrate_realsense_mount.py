@@ -59,6 +59,18 @@ class CalibrationMathTest(unittest.TestCase):
             if path.exists():
                 path.unlink()
 
+    def test_runtime_patch_intrinsics_use_runtime_size(self):
+        params = calib.runtime_camera_params_from_constants(
+            [607.4, 607.0, 322.9, 244.4],
+            "rotate180",
+            640,
+            480,
+        )
+        self.assertAlmostEqual(params[0], 607.4)
+        self.assertAlmostEqual(params[1], 607.0)
+        self.assertAlmostEqual(params[2], 316.1)
+        self.assertAlmostEqual(params[3], 234.6)
+
 
 if __name__ == "__main__":
     unittest.main()
