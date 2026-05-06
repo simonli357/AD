@@ -14,7 +14,7 @@ constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
 
 namespace periodics {
 
-#define ENCODER_REPORT_I2C_DIAG 0
+#define ENCODER_REPORT_I2C_DIAG 1
 
 #if ENCODER_USE_I2C
 CEncoder::CEncoder(uint32_t f_periodTicks,
