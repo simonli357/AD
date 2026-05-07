@@ -25,7 +25,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_i2c(nullptr),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-152.47f)
+      DEGREE_PER_CM(-140.6f)
 {
     m_i2c = new I2C(sda_pin, scl_pin);
     m_i2c->frequency(400000); // 400 kHz Fast-mode
@@ -38,7 +38,7 @@ CEncoder::CEncoder(uint32_t f_periodTicks,
       m_pwm(pwm_pin),
       m_serial(f_serial),
       m_periodTicks(f_periodTicks),
-      DEGREE_PER_CM(-152.47f)
+      DEGREE_PER_CM(-140.6f)
 {
 #endif
     _kf.Q_angle = 0.005f;    // deg²  (slow wander)

@@ -176,25 +176,35 @@ namespace drivers{
         else if(f_angle > 0)
         {
             // Polynomial Coefficients (Order 5):
-            // a5 = -0.0000000723077151
-            // a4 = 0.0000045598049248
-            // a3 = -0.0001070106962818
-            // a2 = 0.0011415342528316
-            // a1 = -0.0062954212310300
-            // c     = 0.0845437992563060
-            dutyCycle = -0.0000000723077151 * std::pow(f_angle, 5) + 0.0000045598049248 * std::pow(f_angle, 4) - 0.0001070106962818 * std::pow(f_angle, 3) + 0.0011415342528316 * std::pow(f_angle, 2) - 0.0062954212310300 * f_angle + 0.0845437992563060;
+            const float a5 = -0.0000000094286134f;
+            const float a4 =  0.0000002006492730f;
+            const float a3 =  0.0000001106130999f;
+            const float a2 = -0.0000120192007872f;
+            const float a1 = -0.0009293191400372f;
+            const float c  =  0.0735989541715659f;
+            dutyCycle = a5 * std::pow(f_angle, 5)
+                      + a4 * std::pow(f_angle, 4)
+                      + a3 * std::pow(f_angle, 3)
+                      + a2 * std::pow(f_angle, 2)
+                      + a1 * f_angle
+                      + c;
         }
         // Function to calculate the negative angles (RIGHT TURN)
         else if(f_angle < 0)
         {
             // Polynomial Coefficients (Order 5):
-            // a5 = -0.0000000128001809
-            // a4 = -0.0000003809216951
-            // a3 = -0.0000016674404606
-            // a2 = 0.0000664166433002
-            // a1 = -0.0003390196292946
-            // c     = 0.0775218527577549
-            dutyCycle = -0.0000000128001809 * std::pow(f_angle, 5) - 0.0000003809216951 * std::pow(f_angle, 4) - 0.0000016674404606  * std::pow(f_angle, 3) + 0.0000664166433002 * std::pow(f_angle, 2) - 0.0003390196292946 * f_angle + 0.0775218527577549;
+            const float a5 = -0.0000000531700515f;
+            const float a4 = -0.0000026669403507f;
+            const float a3 = -0.0000494748305042f;
+            const float a2 = -0.0003773312839989f;
+            const float a1 = -0.0020148232875700f;
+            const float c  =  0.0735846340596389f;
+            dutyCycle = a5 * std::pow(f_angle, 5)
+                      + a4 * std::pow(f_angle, 4)
+                      + a3 * std::pow(f_angle, 3)
+                      + a2 * std::pow(f_angle, 2)
+                      + a1 * f_angle
+                      + c;
         }
         
         
