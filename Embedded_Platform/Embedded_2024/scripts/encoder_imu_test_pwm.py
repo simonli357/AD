@@ -15,11 +15,11 @@ ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
 IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\s*(\d+);;")
 
 MOTOR_ID = 10
-CM_TO_DEG = -146.0  # deg/s per cm/s (negative to fix sign)
+CM_TO_DEG = 140.63  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 
-ZERO_STEER_PWM = 0.0732
+ZERO_STEER_PWM = 0.0736
 ZERO_SPEED_PWM = 0.074568
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -77,11 +77,11 @@ def run_test(port: str, baud: int, speed_pwm: float, duration: float, steer: flo
 
     except KeyboardInterrupt:
         print("\nInterrupted by user — stopping motor.")
-        ser.write(build_cmd(ZERO_SPEED_PWM, ZERO_STEER_PWM))
+        ser.write(build_cmd(ZERO_SPEED_PWM, steer))
         time.sleep(0.1)
 
     finally:
-        ser.write(build_cmd(ZERO_SPEED_PWM, ZERO_STEER_PWM))
+        ser.write(build_cmd(ZERO_SPEED_PWM, steer))
         ser.close()
         print("\nSerial closed.")
 
@@ -226,7 +226,7 @@ def main() -> None:
     ap.add_argument("--steer", type=float, default=ZERO_STEER_PWM, help="Steering angle [Duty Cycle %]")
     ap.add_argument("--dur", type=float, default=5, help="Duration [s]")
     ap.add_argument("--csv", action="store_true", help="Save data to CSV files")
-    ap.add_argument("--port", default="/dev/ttyACM1")
+    ap.add_argument("--port", default="/dev/ttyACM0")
     ap.add_argument("--baud", type=int, default=115200)
     args = ap.parse_args()
 
