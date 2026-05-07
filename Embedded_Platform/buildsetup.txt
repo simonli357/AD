@@ -12,3 +12,11 @@ cp "$HOME/AD/Embedded_Platform/Embedded_2022/cmake_build/B_L4S5I_IOT01A/develop/
 g++ -o test test.cpp
 export PATH=/home/antoinedeng/Downloads/cmake-3.29.0-rc3-linux-x86_64/bin:$PATH
 mbed-tools compile -m NUCLEO_F401RE -t GCC_ARM
+
+
+#Monitor serial
+sudo minicom -D /dev/ttyACM0 -b 115200D
+
+or if device changed
+
+sudo minicom -D /dev/ttyACM1 -b 115200D

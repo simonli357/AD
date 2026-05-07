@@ -23,6 +23,13 @@ BufferedSerial g_rpi(USBTX, USBRX, 115200);
 #define SPEEDING_DRIVER_PWM_PIN D3
 #define STEERING_DRIVER_PWM_PIN D4
 
+// Drive the steering servo signal line LOW as early as possible during
+// static init, before g_steeringDriver's PwmOut takes over the pin. This
+// closes the post-reset floating window where noise on a high-Z pin can
+// be decoded as phantom servo pulses and slew the horn past its mechanical
+// stops. Must remain declared BEFORE g_steeringDriver.
+static DigitalOut g_steeringIdleHold(STEERING_DRIVER_PWM_PIN, 0);
+
 drivers::CMotorDriverVnh g_motorVnhDriver(PIN_PWM, PIN_INA, PIN_INB,
                                                     -0.30f, 0.30f);
 periodics::CBlinker g_blinker(1, LED1);
