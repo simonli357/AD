@@ -1,0 +1,4 @@
+Car function test — 2026-05-11T10:19:36
+============================================================
+[PASS] 1.1_communication
+[PASS] 1.2_forward_ramp
