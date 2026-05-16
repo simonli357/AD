@@ -1,8 +1,11 @@
-// Copy these replacements into src/utils/include/utils/constants.h.
+// Copy CAMERA_PARAMS_REAL into src/utils/include/utils/constants.h.
+// Copy realsense_tf_real into src/control/config/tunable_params.yaml.
 // The script does not edit source files automatically.
 
 static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {+607.405640000, +607.058290000, +316.027770000, +234.606020000};
-static constexpr std::array<double, 6> REALSENSE_TF_REAL = {-0.090000000, -0.032000000, +0.260000000, +0.007979134, -0.009831515, +0.017687912};
+
+real:
+  realsense_tf_real: [-0.090000000, -0.032000000, +0.260000000, +0.007979134, -0.009831515, +0.017687912] # x, y, z, roll, pitch, yaw
 
 // Angles:
 //   roll  = +0.007979134 rad (+0.457171 deg)

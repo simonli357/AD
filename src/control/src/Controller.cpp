@@ -11,6 +11,7 @@
 #include <mutex>
 #include <chrono>
 #include "Database.hpp"
+#include "queries/CameraQueries.hpp"
 #include "queries/GraphQueries.hpp"
 #include "std_srvs/SetBoolRequest.h"
 #include "Utility.hpp"
@@ -1768,13 +1769,15 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "mpc_node", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     ros::NodeHandle nh;
 
-    Database db;
-    VehicleConstants::init_params(db);
-
     if (!Tunable::loadFromParams(nh)) {
         std::cout << "FATAL ERROR: Failed to load tunable parameters" << std::endl;
         exit(1);
     }
+
+    Database db;
+    VehicleConstants::init_params(db);
+    db.cam_queries->set_realsense_tf_real_params(Tunable::realsenseTfReal());
+
     GroundTruth::initialize_ground_truth();
     Tracking::initialize_tracking();
     Sensing::initialize_sensing(nh);
