@@ -1,5 +1,4 @@
 import importlib.util
-import math
 from pathlib import Path
 import sys
 import unittest
@@ -48,13 +47,29 @@ class CalibrationMathTest(unittest.TestCase):
         path = Path(__file__).with_name("_tmp_constants.h")
         try:
             path.write_text(
-                "static constexpr std::array<double, 6> REALSENSE_TF_REAL = "
-                "{-0.09, -0.032, 0.260, -0.009774, 1.85*M_PI/180.0, 0.011};\n",
+                "static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = "
+                "{607.40564, 607.05829, 316.02777, 234.60602};\n",
                 encoding="utf-8",
             )
-            values = calib.parse_numeric_array_from_constants(path, "REALSENSE_TF_REAL")
+            values = calib.parse_numeric_array_from_constants(path, "CAMERA_PARAMS_REAL")
             self.assertIsNotNone(values)
-            self.assertAlmostEqual(values[4], 1.85 * math.pi / 180.0)
+            self.assertAlmostEqual(values[2], 316.02777)
+        finally:
+            if path.exists():
+                path.unlink()
+
+    def test_tunable_realsense_tf_parser(self):
+        path = Path(__file__).with_name("_tmp_tunable_params.yaml")
+        try:
+            path.write_text(
+                "real:\n"
+                "  realsense_tf_real: [-0.09, -0.032, 0.260, -0.009774, 1.85e-2, 0.011]\n",
+                encoding="utf-8",
+            )
+            values = calib.parse_realsense_tf_from_tunables(path)
+            self.assertIsNotNone(values)
+            self.assertAlmostEqual(values[3], -0.009774)
+            self.assertAlmostEqual(values[4], 1.85e-2)
         finally:
             if path.exists():
                 path.unlink()

@@ -13,6 +13,7 @@
 #include "sensor_msgs/image_encodings.h"
 #include "std_msgs/Header.h"
 #include <chrono>
+#include <array>
 #include <vector>
 #include <std_msgs/Float32MultiArray.h>
 #include <utils/Sign.h>
@@ -22,6 +23,7 @@
 #include <memory>
 #include <eigen3/Eigen/Dense>
 #include "utils/constants.h"
+#include "utils/realsense_tunables.h"
 #include "utils/helper.h"
 #include "LightClassifier.hpp"
 #include "YOLOv11.h"
@@ -88,6 +90,22 @@ class SignFastest {
             nh.param(nodeName+"/ncnn", ncnn, false);
             nh.param(nodeName+"/use_yolov11", use_yolov11, false);
             nh.param(nodeName+"/ground_dist", ground_dist, false);
+            if (ground_dist) {
+                std::vector<double> realsense_tf_values;
+                if (!nh.getParam("/real/realsense_tf_real", realsense_tf_values)) {
+                    ROS_ERROR("Missing param: /real/realsense_tf_real");
+                    exit(1);
+                }
+                try {
+                    realsense_tf_real = VehicleTunables::to_realsense_tf_array(
+                        realsense_tf_values,
+                        "/real/realsense_tf_real"
+                    );
+                } catch (const std::exception& exc) {
+                    ROS_ERROR_STREAM(exc.what());
+                    exit(1);
+                }
+            }
             nh.param("/emergency_width", emergency_width, 0.0);
             nh.param("/emergency_height", emergency_height, 0.0);
             nh.param("/emergency_y", emergency_y, 0.0);
@@ -163,6 +181,7 @@ class SignFastest {
         bool publish_msg;
         bool use_emergency = false;
         bool ground_dist = false;
+        std::array<double, 6> realsense_tf_real{};
         double emergency_width, emergency_height, emergency_y;
 
         cv::Mat normalizedDepthImage;
@@ -483,7 +502,7 @@ class SignFastest {
                 // }
                 if (ground_dist) {
                     double object_height = VehicleConstants::OBJECT_HEIGHTS[db.class_id];
-                    finalDepth = std::sqrt(finalDepth * finalDepth - std::pow(VehicleConstants::REALSENSE_TF_REAL[2] - object_height, 2));
+                    finalDepth = std::sqrt(finalDepth * finalDepth - std::pow(realsense_tf_real[2] - object_height, 2));
                 }
                 // Populate the sign message.
                 sign_msg.data.push_back(db.x1);
