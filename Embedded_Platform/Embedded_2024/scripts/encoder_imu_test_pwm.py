@@ -12,7 +12,7 @@ import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
-IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\s*(\d+);;")
+IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\s*(\d+)(?:;\s*([-0-9.]+)(?:;\s*(\d+))?)?;;")
 
 MOTOR_ID = 10
 CM_TO_DEG = 140.63  # deg/s per cm/s (negative to fix sign)
@@ -42,6 +42,8 @@ def run_test(port: str, baud: int, speed_pwm: float, duration: float, steer: flo
 
     imu_times: list[float] = []
     yaws: list[float] = []
+    gyro_zs: list[float] = []
+    imu_time_uss: list[float] = []
 
     print(f"Running {duration}s at {speed_pwm:.4f} PWM …")
     try:
@@ -69,6 +71,8 @@ def run_test(port: str, baud: int, speed_pwm: float, duration: float, steer: flo
                 m = IMU_PATTERN.match(line)
                 if m:
                     yaws.append(float(m.group(2)))
+                    gyro_zs.append(float(m.group(7)) if m.group(7) is not None else float("nan"))
+                    imu_time_uss.append(float(m.group(8)) if m.group(8) is not None else float("nan"))
                     imu_times.append(elapsed)
 
             if int(elapsed) % 1 == 0:
@@ -85,7 +89,7 @@ def run_test(port: str, baud: int, speed_pwm: float, duration: float, steer: flo
         ser.close()
         print("\nSerial closed.")
 
-    return times, speeds_cm, cmd_speeds_cm, imu_times, yaws
+    return times, speeds_cm, cmd_speeds_cm, imu_times, yaws, gyro_zs, imu_time_uss
 
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -140,12 +144,12 @@ def save_csv(times: list[float], speeds: list[float], cmds: list[float], path: P
     print(f"CSV saved ➜ {path}")
 
 
-def save_imu_csv(imu_times: list[float], yaws: list[float], path: Path) -> None:
+def save_imu_csv(imu_times: list[float], yaws: list[float], gyro_zs: list[float], imu_time_uss: list[float], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["time_s", "yaw_deg"])
-        writer.writerows(zip(imu_times, yaws))
+        writer.writerow(["time_s", "yaw_deg", "gyro_z_rad_s", "imu_time_us"])
+        writer.writerows(zip(imu_times, yaws, gyro_zs, imu_time_uss))
     print(f"IMU CSV saved ➜ {path}")
 
 
@@ -230,7 +234,7 @@ def main() -> None:
     ap.add_argument("--baud", type=int, default=115200)
     args = ap.parse_args()
 
-    times, speeds, cmd_speeds, imu_times, yaws = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
+    times, speeds, cmd_speeds, imu_times, yaws, gyro_zs, imu_time_uss = run_test(args.port, args.baud, args.cmd, args.dur, args.steer)
 
     script_dir = Path(__file__).parent
     tag = f"v{int(args.cmd)}_d{int(args.dur)}"
@@ -252,7 +256,7 @@ def main() -> None:
         print("Insufficient encoder samples.")
 
     if args.csv:
-        save_imu_csv(imu_times, yaws, script_dir / "data" / f"imu_yaw_{tag}.csv")
+        save_imu_csv(imu_times, yaws, gyro_zs, imu_time_uss, script_dir / "data" / f"imu_yaw_{tag}.csv")
     #save_imu_plot(imu_times, yaws, script_dir / "plots" / f"imu_yaw_{tag}.png")
 
 

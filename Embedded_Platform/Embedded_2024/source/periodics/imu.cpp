@@ -634,7 +634,7 @@ namespace periodics{
             execTimer.start();
             timerStarted = true;
         }
-        uint32_t ts_us = execTimer.read_us();
+        const uint64_t ts_us = static_cast<uint64_t>(execTimer.elapsed_time().count());
     
         // 2) Sensor reads + immediate error check
         s32 res;
@@ -687,10 +687,11 @@ namespace periodics{
 
         // printf("@7:%.1f;%.1f;;\r\n",
         //        pitch, yaw);
-        char out[48];
+        char out[96];
         snprintf(out, sizeof(out),
-                "@7:%.1f;%.1f; %d; %d; %d; %d;;\r\n",
-                pitch, yaw, sys_calib, gyro_calib, mag_calib, accel_calib);
+                "@7:%.1f;%.1f; %d; %d; %d; %d; %.6f; %llu;;\r\n",
+                pitch, yaw, sys_calib, gyro_calib, mag_calib, accel_calib, gz,
+                static_cast<unsigned long long>(ts_us));
         m_serial.write(out, strlen(out));
 
     }

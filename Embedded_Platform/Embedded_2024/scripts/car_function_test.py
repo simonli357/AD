@@ -33,7 +33,7 @@ import serial
 
 # ────────────────────────────────────────────────────────────────────────────────
 ENC_PATTERN = re.compile(r"@5:([-0-9.]+);([-0-9.]+);([-0-9.]+);([-0-9.]+);;")
-IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\s*(\d+);;")
+IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\s*(\d+)(?:;\s*([-0-9.]+)(?:;\s*(\d+))?)?;;")
 
 MOTOR_ID = 11
 CMD_PERIOD_S = 0.1            # 10 Hz command rate
@@ -54,6 +54,8 @@ class Sample:
     enc_speed: float = float("nan")
     enc_cmd_speed: float = float("nan")
     yaw: float = float("nan")
+    gyro_z: float = float("nan")
+    imu_time_us: float = float("nan")
 
 
 @dataclass
@@ -75,6 +77,8 @@ class CarLink:
         self.last_enc_speed: float = float("nan")
         self.last_enc_cmd: float = float("nan")
         self.last_yaw: float = float("nan")
+        self.last_gyro_z: float = float("nan")
+        self.last_imu_time_us: float = float("nan")
         self.enc_seen = False
         self.imu_seen = False
 
@@ -93,6 +97,8 @@ class CarLink:
             m = IMU_PATTERN.match(line)
             if m:
                 self.last_yaw = float(m.group(2))
+                self.last_gyro_z = float(m.group(7)) if m.group(7) is not None else float("nan")
+                self.last_imu_time_us = float(m.group(8)) if m.group(8) is not None else float("nan")
                 self.imu_seen = True
 
     def stop(self) -> None:
@@ -144,6 +150,8 @@ def run_segment(
                 enc_speed=link.last_enc_speed,
                 enc_cmd_speed=link.last_enc_cmd,
                 yaw=link.last_yaw,
+                gyro_z=link.last_gyro_z,
+                imu_time_us=link.last_imu_time_us,
             )
         )
 
@@ -219,9 +227,9 @@ def save_csv(record: TestRecord, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["t_s", "cmd_speed_cm_s", "cmd_steer_deg", "enc_speed_cm_s", "enc_cmd_speed_cm_s", "yaw_deg"])
+        w.writerow(["t_s", "cmd_speed_cm_s", "cmd_steer_deg", "enc_speed_cm_s", "enc_cmd_speed_cm_s", "yaw_deg", "gyro_z_rad_s", "imu_time_us"])
         for s in record.samples:
-            w.writerow([f"{s.t:.4f}", s.cmd_speed, s.cmd_steer, s.enc_speed, s.enc_cmd_speed, s.yaw])
+            w.writerow([f"{s.t:.4f}", s.cmd_speed, s.cmd_steer, s.enc_speed, s.enc_cmd_speed, s.yaw, s.gyro_z, s.imu_time_us])
 
 
 def save_plot(record: TestRecord, path: Path, *, plot_steer: bool = False, plot_yaw: bool = False) -> None:
