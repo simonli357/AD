@@ -1,9 +1,9 @@
-# Useful commands for Cluj 2026
+# Useful commands for 2026
 
 ## Jetson IPs
 
 - BoschFMC: `192.168.50.110`
-- hotspot:
+- hotspot: 
 
 ## Command laptop IP (Dell)
 
