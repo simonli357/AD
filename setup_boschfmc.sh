@@ -7,9 +7,9 @@ set -euo pipefail
 JETSON_USER="${JETSON_USER:-scandy}"
 JETSON_PASSWORD="${JETSON_PASSWORD:-alex}"
 JETSON_USB_IP="${JETSON_USB_IP:-192.168.55.1}"
+JETSON_HOTSPOT_IP="${JETSON_HOTSPOT_IP:-10.89.16.119}"
 JETSON_WIFI_IP="${JETSON_WIFI_IP:-}"
 JETSON_WIFI_IP_FALLBACK="${JETSON_WIFI_IP_FALLBACK:-192.168.50.110}"
-JETSON_HOTSPOT_IP="${JETSON_HOTSPOT_IP:-10.89.16.119}"
 JETSON_REPO="${JETSON_REPO:-/home/${JETSON_USER}/AD}"
 
 WIFI_SSID="${WIFI_SSID:-BoschFMC}"
@@ -203,6 +203,7 @@ if ! command -v catkin_make >/dev/null 2>&1; then
   done
 fi
 
+git checkout main
 git pull
 catkin_make
 REMOTE
@@ -271,7 +272,17 @@ REMOTE
     elif [ -z "$JETSON_WIFI_IP" ]; then
       JETSON_WIFI_IP="$JETSON_WIFI_IP_FALLBACK"
     fi
+  else
+    if [ "$initial_jetson_label" = "current hotspot" ]; then
+      log "Hotspot SSH dropped while switching Jetson to ${WIFI_SSID}; trying known ${WIFI_SSID} IP."
+      JETSON_WIFI_IP="${JETSON_WIFI_IP:-$JETSON_WIFI_IP_FALLBACK}"
+    else
+      boschfmc_failure_message="Could not switch Jetson to ${WIFI_SSID}. Staying on ${initial_jetson_label}."
+      log "$boschfmc_failure_message"
+    fi
+  fi
 
+  if [ -n "$JETSON_WIFI_IP" ]; then
     log "Jetson ${WIFI_SSID} IP: ${JETSON_WIFI_IP}"
 
     if connect_wifi_local; then
@@ -290,9 +301,6 @@ REMOTE
       final_ssh_ip="$initial_jetson_host"
       final_ssh_label="$initial_jetson_label"
     fi
-  else
-    boschfmc_failure_message="Could not switch Jetson to ${WIFI_SSID}. Staying on the current hotspot."
-    log "$boschfmc_failure_message"
   fi
 fi
 
