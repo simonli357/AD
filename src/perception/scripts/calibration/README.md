@@ -109,8 +109,9 @@ src/perception/scripts/calibration/runs/YYYYMMDD_HHMMSS/
 
 Important outputs:
 
-- `constants_patch.txt`: copy these replacement constants into
-  `src/utils/include/utils/constants.h`.
+- `constants_patch.txt`: copy `CAMERA_PARAMS_REAL` into
+  `src/utils/include/utils/constants.h`, and `realsense_tf_real` into
+  `src/control/config/tunable_params.yaml`.
 - `calibration_result.yaml`: full numeric result.
 - `validation_report.md`: concise human-readable report.
 - `reprojection_errors.csv`: per-corner reprojection errors.

@@ -35,6 +35,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = SCRIPT_DIR / "assets"
 RUNS_DIR = SCRIPT_DIR / "runs"
 DEFAULT_CONSTANTS_PATH = SCRIPT_DIR.parents[3] / "src" / "utils" / "include" / "utils" / "constants.h"
+DEFAULT_TUNABLES_PATH = SCRIPT_DIR.parents[3] / "src" / "control" / "config" / "tunable_params.yaml"
 
 DEFAULT_SPEC: Dict[str, Any] = {
     "version": 1,
@@ -774,9 +775,22 @@ def parse_numeric_array_from_constants(path: Path, symbol: str) -> Optional[List
     return values
 
 
-def read_existing_constants(path: Path) -> Tuple[List[float], List[float]]:
+def parse_realsense_tf_from_tunables(path: Path) -> Optional[List[float]]:
+    if yaml is None or not path.exists():
+        return None
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    values = data.get("real", {}).get("realsense_tf_real")
+    if not isinstance(values, list) or len(values) < 6:
+        return None
+    try:
+        return [float(value) for value in values[:6]]
+    except (TypeError, ValueError):
+        return None
+
+
+def read_existing_constants(path: Path, tunables_path: Path = DEFAULT_TUNABLES_PATH) -> Tuple[List[float], List[float]]:
     camera = parse_numeric_array_from_constants(path, "CAMERA_PARAMS_REAL")
-    tf = parse_numeric_array_from_constants(path, "REALSENSE_TF_REAL")
+    tf = parse_realsense_tf_from_tunables(tunables_path)
     if camera is None or len(camera) < 4:
         camera = [607.40564, 607.05829, 322.97223, 244.39398]
     if tf is None or len(tf) < 6:
@@ -795,11 +809,14 @@ def write_constants_patch(
     result: Dict[str, Any],
 ) -> None:
     roll, pitch, yaw = tf_params[3], tf_params[4], tf_params[5]
-    text = f"""// Copy these replacements into src/utils/include/utils/constants.h.
+    text = f"""// Copy CAMERA_PARAMS_REAL into src/utils/include/utils/constants.h.
+// Copy realsense_tf_real into src/control/config/tunable_params.yaml.
 // The script does not edit source files automatically.
 
 static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {format_cpp_array(camera_params)};
-static constexpr std::array<double, 6> REALSENSE_TF_REAL = {format_cpp_array(tf_params)};
+
+real:
+  realsense_tf_real: [{", ".join(f"{float(v):+.9f}" for v in tf_params)}] # x, y, z, roll, pitch, yaw
 
 // Angles:
 //   roll  = {roll:+.9f} rad ({math.degrees(roll):+.6f} deg)
@@ -831,6 +848,7 @@ def solve_run(
     run_dir: Path,
     min_corners: int,
     constants_path: Path,
+    tunables_path: Path,
     runtime_width: int = 640,
     runtime_height: int = 480,
 ) -> Dict[str, Any]:
@@ -894,7 +912,7 @@ def solve_run(
     errors = np.linalg.norm(projected - image_points, axis=1)
     rotation, _ = cv2.Rodrigues(rvec)
     roll, pitch, yaw = extract_repo_euler(rotation)
-    existing_camera, existing_tf = read_existing_constants(constants_path)
+    existing_camera, existing_tf = read_existing_constants(constants_path, tunables_path)
     runtime_flip = str(dataset.get("runtime_flip", "unknown"))
     new_camera = runtime_camera_params_from_constants(
         existing_camera,
@@ -1026,6 +1044,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
         run_dir,
         int(args.min_corners),
         Path(args.constants_path).expanduser().resolve(),
+        Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
     )
@@ -1048,6 +1067,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
         run_dir,
         int(args.min_corners),
         Path(args.constants_path).expanduser().resolve(),
+        Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
     )
@@ -1111,6 +1131,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         run_dir,
         int(args.min_corners),
         Path(args.constants_path).expanduser().resolve(),
+        Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
     )
@@ -1144,6 +1165,7 @@ def build_parser() -> argparse.ArgumentParser:
     solve.add_argument("run_dir", nargs="?", help="Run directory. Defaults to the latest run.")
     solve.add_argument("--min-corners", type=int, default=MIN_CHARUCO_CORNERS)
     solve.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    solve.add_argument("--tunables-path", default=str(DEFAULT_TUNABLES_PATH))
     solve.add_argument("--runtime-width", type=int, default=640)
     solve.add_argument("--runtime-height", type=int, default=480)
     solve.set_defaults(func=cmd_solve)
@@ -1152,6 +1174,7 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("run_dir", nargs="?", help="Run directory. Defaults to the latest run.")
     validate.add_argument("--min-corners", type=int, default=MIN_CHARUCO_CORNERS)
     validate.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    validate.add_argument("--tunables-path", default=str(DEFAULT_TUNABLES_PATH))
     validate.add_argument("--runtime-width", type=int, default=640)
     validate.add_argument("--runtime-height", type=int, default=480)
     validate.set_defaults(func=cmd_validate)
@@ -1159,6 +1182,7 @@ def build_parser() -> argparse.ArgumentParser:
     wizard = sub.add_parser("wizard", help="Run the guided end-to-end calibration flow.")
     add_capture_args(wizard)
     wizard.add_argument("--constants-path", default=str(DEFAULT_CONSTANTS_PATH))
+    wizard.add_argument("--tunables-path", default=str(DEFAULT_TUNABLES_PATH))
     wizard.add_argument("--runtime-width", type=int, default=640)
     wizard.add_argument("--runtime-height", type=int, default=480)
     wizard.set_defaults(func=cmd_wizard)

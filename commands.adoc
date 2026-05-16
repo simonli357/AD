@@ -1,3 +1,49 @@
+= Useful commands for Cluj 2026
+
+JETSON IPs
+- BoschFMC: 192.168.50.110
+- hotspot:
+
+COMMAND LAPTOP IP (DELL)
+- hotspot: 10.89.16.85
+- BoschFMC:192.168.50.175
+
+== SSH to Jetson over USB-c
+
+ssh scandy@192.168.55.1
+
+# Make sure the WiFi radio is on
+nmcli radio wifi on
+
+# Scan for available networks
+nmcli device wifi list
+
+# Connect to one
+sudo nmcli device wifi connect "BoschFMC" password "bosch23581321"
+sudo nmcli device wifi connect "slsecret357" password "simonli357"
+
+# Create Persistant Connection
+sudo nmcli connection modify "BoschFMC" connection.autoconnect yes
+
+# Show Jetson IP
+ip a show wlan0
+
+sudo nvpmodel -m 0      # set power mode to MAXN (max performance profile)
+sudo jetson_clocks 
+
+#Monitor serial
+sudo minicom -D /dev/ttyACM0 -b 115200D
+#or if device changed
+sudo minicom -D /dev/ttyACM1 -b 115200D
+
+#controller launch
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true
+with traffic and gps
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
+
+#gui 
+rosrun gui main.py
+-------------------------------
 = useful commands
 d3t2
 258722448dccdcda9d0e7b520ce2573326d8f758
@@ -6,13 +52,10 @@ d16c468c97c69d00dacb04f36cc2f22388e3dde9
 d4t1
 bf1e3a149ae61239ca95fc34f156121fab161dc7
 
-sudo nvpmodel -m 0      # set power mode to MAXN (max performance profile)
-sudo jetson_clocks 
-
 BOSCHFMC
-roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=false real:=true realsense:=true
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true
 with traffic and gps
-roslaunch control controller.launch camera:=true ip:=192.168.50.216 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
 
 HUAWEIP30
 roslaunch control controller.launch camera:=true ip:=192.168.43.143 use_gps:=false real:=true realsense:=true v:=35
@@ -47,7 +90,7 @@ ffmpeg -i "$HOME/Downloads/${input}.webm" \
 -c:v libx264 -c:a aac \
 "$HOME/Downloads/${input}_cropped.mp4"
 
-== mp4 to gif
+== mp4 to gif 
 input="output"
 ffmpeg -i "$input".mp4 -vf "fps=20,scale=iw:ih:flags=lanczos" -c:v gif "$input".gif
 

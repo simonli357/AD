@@ -1,6 +1,10 @@
 #pragma once
 #include <ros/ros.h>
+#include <array>
+#include <iostream>
 #include <string>
+#include <vector>
+#include "utils/realsense_tunables.h"
 
 #define CHECK_PARAM(param_name, var) \
     if (!nh.getParam(param_name, var)) { \
@@ -84,9 +88,17 @@ namespace Tunable {
     inline double rs_roll = 0.0;
     inline double rs_pitch = 0.0;
     inline double rs_yaw = 0.0;
+    inline std::vector<double> realsense_tf_real = {
+        -0.090000000, -0.032000000, 0.260000000,
+        0.007979134, -0.009831515, 0.017687912
+    };
     inline bool orientation_follow = false;
     inline double lane_yaw_reset_thresh1 = 2.0; // threshold 1 for lane yaw reset
     inline double lane_yaw_reset_thresh2 = 1.5; // threshold 2 for lane yaw reset
+
+    inline std::array<double, 6> realsenseTfReal() {
+      return VehicleTunables::to_realsense_tf_array(realsense_tf_real, "/real/realsense_tf_real");
+    }
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
   
@@ -188,9 +200,16 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
-      CHECK_PARAM(mode + "/rs_roll", rs_roll);
-      CHECK_PARAM(mode + "/rs_pitch", rs_pitch);
-      CHECK_PARAM(mode + "/rs_yaw", rs_yaw);
+      CHECK_PARAM(mode + "/realsense_tf_real", realsense_tf_real);
+      try {
+        const auto tf = realsenseTfReal();
+        rs_roll = tf[3];
+        rs_pitch = tf[4];
+        rs_yaw = tf[5];
+      } catch (const std::exception& exc) {
+        ROS_ERROR_STREAM(exc.what());
+        return false;
+      }
       CHECK_PARAM(mode + "/orientation_follow", orientation_follow);
       CHECK_PARAM(mode + "/lane_yaw_reset_thresh1", lane_yaw_reset_thresh1);
       CHECK_PARAM(mode + "/lane_yaw_reset_thresh2", lane_yaw_reset_thresh2);
