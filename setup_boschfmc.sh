@@ -15,7 +15,7 @@ JETSON_REPO="${JETSON_REPO:-/home/${JETSON_USER}/AD}"
 WIFI_SSID="${WIFI_SSID:-BoschFMC}"
 WIFI_PASSWORD="${WIFI_PASSWORD:-bosch23581321}"
 
-SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-10}"
+SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-7}"
 SSH_INITIAL_ATTEMPTS="${SSH_INITIAL_ATTEMPTS:-3}"
 SSH_WAIT_ATTEMPTS="${SSH_WAIT_ATTEMPTS:-30}"
 SSH_WAIT_SLEEP_SECONDS="${SSH_WAIT_SLEEP_SECONDS:-2}"
@@ -146,7 +146,8 @@ open_interactive_ssh() {
 
   printf '\nJetson IP: %s\n' "$host"
   log "Opening interactive SSH to Jetson on ${label}"
-  exec env SSHPASS="$JETSON_PASSWORD" sshpass -e ssh "${SSH_OPTS[@]}" "${JETSON_USER}@${host}"
+  exec env SSHPASS="$JETSON_PASSWORD" sshpass -e ssh "${SSH_OPTS[@]}" "${JETSON_USER}@${host}" \
+    -t "bash -lc 'cd $(shell_quote "$JETSON_REPO") && source devel/setup.bash && exec bash -i'"
 }
 
 need_cmd ssh
@@ -192,7 +193,9 @@ if ! command -v catkin_make >/dev/null 2>&1; then
     [ -f "$setup_file" ] || continue
     # catkin_make is often only available after the ROS environment is sourced.
     # shellcheck disable=SC1090
+    set +u
     . "$setup_file"
+    set -u
     break
   done
 fi
