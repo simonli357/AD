@@ -70,10 +70,14 @@ namespace Tunable {
     inline double pedestrian_distance = 0.5;
     inline double pedestrian_threshold = 0.4;
 
-    inline double sign_lon_offset;
-    inline double sign_lon_offset_slope;
-    inline double sign_lat_offset;
-    inline double sign_lat_offset_slope;
+    inline double sign_lon_correction_offset;
+    inline double sign_lon_correction_lon_coeff;
+    inline double sign_lon_correction_lat_coeff;
+    inline double sign_lon_correction_abs_lat_coeff;
+    inline double sign_lat_correction_offset;
+    inline double sign_lat_correction_lat_coeff;
+    inline double sign_lat_correction_lon_coeff;
+    inline double sign_lat_correction_abs_lat_coeff;
 
     inline double max_light_dist = 0.9;
     inline double max_sign_dist = 1.5;
@@ -186,10 +190,14 @@ namespace Tunable {
       CHECK_PARAM(mode + "/min_tailing_dist", min_tailing_dist);
       CHECK_PARAM(mode + "/pedestrian_distance", pedestrian_distance);
       CHECK_PARAM(mode + "/pedestrian_threshold", pedestrian_threshold);
-      CHECK_PARAM(mode + "/sign_lon_offset", sign_lon_offset);
-      CHECK_PARAM(mode + "/sign_lon_offset_slope", sign_lon_offset_slope);
-      CHECK_PARAM(mode + "/sign_lat_offset", sign_lat_offset);
-        CHECK_PARAM(mode + "/sign_lat_offset_slope", sign_lat_offset_slope);
+      CHECK_PARAM(mode + "/sign_lon_correction_offset", sign_lon_correction_offset);
+      CHECK_PARAM(mode + "/sign_lon_correction_lon_coeff", sign_lon_correction_lon_coeff);
+      CHECK_PARAM(mode + "/sign_lon_correction_lat_coeff", sign_lon_correction_lat_coeff);
+      CHECK_PARAM(mode + "/sign_lon_correction_abs_lat_coeff", sign_lon_correction_abs_lat_coeff);
+      CHECK_PARAM(mode + "/sign_lat_correction_offset", sign_lat_correction_offset);
+      CHECK_PARAM(mode + "/sign_lat_correction_lat_coeff", sign_lat_correction_lat_coeff);
+      CHECK_PARAM(mode + "/sign_lat_correction_lon_coeff", sign_lat_correction_lon_coeff);
+      CHECK_PARAM(mode + "/sign_lat_correction_abs_lat_coeff", sign_lat_correction_abs_lat_coeff);
       CHECK_PARAM(mode + "/max_light_dist", max_light_dist);
       CHECK_PARAM(mode + "/max_sign_dist", max_sign_dist);
       CHECK_PARAM(mode + "/min_sign_dist", min_sign_dist);

@@ -408,8 +408,19 @@ public:
         double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
         std::cout << "latency: " << latency << "s, speed: " << speed << "m/s" << std::endl;
         P_v2d.x()    -= latency * speed;
-        P_v2d.x()    += sign_lon_offset_slope * P_v2d.x() + sign_lon_offset;
-        P_v2d.y()    += sign_lat_offset + sign_lat_offset_slope * P_v2d.y();
+        const double raw_lon = P_v2d.x();
+        const double raw_lat = P_v2d.y();
+        const double abs_raw_lat = std::abs(raw_lat);
+        P_v2d.x() =
+            sign_lon_correction_offset +
+            sign_lon_correction_lon_coeff * raw_lon +
+            sign_lon_correction_lat_coeff * raw_lat +
+            sign_lon_correction_abs_lat_coeff * abs_raw_lat;
+        P_v2d.y() =
+            sign_lat_correction_offset +
+            sign_lat_correction_lat_coeff * raw_lat +
+            sign_lat_correction_lon_coeff * raw_lon +
+            sign_lat_correction_abs_lat_coeff * abs_raw_lat;
 
         // rotate into world frame and translate by vehicle pose
         Eigen::Matrix2d R_vw;

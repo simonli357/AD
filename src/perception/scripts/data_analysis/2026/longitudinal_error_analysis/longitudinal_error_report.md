@@ -8,16 +8,13 @@ All equations use the numeric units already present in the CSV; no unit conversi
 
 ## Data Quality
 
-- Total complete samples used before outlier screening: 28
-- Incomplete CSV lines excluded because the estimate is missing: 11, 12
-- Influential line flagged by Cook's distance/studentized residual: 30
+- Total complete samples used before outlier screening: 27
+- Incomplete CSV lines excluded because the estimate is missing: none
+- Rows excluded from clean fits: none
+- High-influence diagnostic rows retained for review: 18
 - Clean-fit sample count: 27
 
-Line 30 is treated as a diagnostic outlier, not silently deleted. It records
-`measured_lateral=-35`, `measured_longitudinal=140`, `estimated_longitudinal=140`,
-so its longitudinal error is `0`. The neighboring trends at the same distance
-predict about 8 to 10 units of positive error, which makes this row inconsistent
-with the rest of the sweep.
+No row exceeded the exclusion threshold of absolute externally studentized residual greater than 3. High-Cook-distance endpoint rows are shown in the influence table for review, but are retained.
 
 ## Main Result
 
@@ -45,7 +42,7 @@ estimated_longitudinal = -3.519176 +1.085018*measured_longitudinal -0.020976*mea
 
 Interpretation:
 
-- The distance coefficient is about `+0.0850` error units per measured longitudinal unit, i.e. about an 8.5% range over-estimate after the offset.
+- The distance coefficient is about `+0.0850` error units per measured longitudinal unit, i.e. about a `8.5%` range over-estimate after the offset.
 - The fitted offset is `-3.519` units.
 - Lateral position matters, but less than distance. The signed lateral coefficient is `-0.0210` error units per lateral unit, and the off-center coefficient is `+0.0247` per `abs(lateral)` unit.
 
@@ -73,16 +70,15 @@ below; it is slightly worse but avoids the absolute-lateral term.
 
 | model | equation | adj R2 | RMSE | MAE | median AE | LOOCV RMSE | LOOCV MAE | max LOOCV AE |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| offset only | longitudinal_error = +5.08214 | 0.0000 | 2.5196 | 2.0997 | 1.9000 | 2.6130 | 2.1775 | 5.2704 |
-| measured longitudinal | longitudinal_error = -1.08067 +0.06275*measured_longitudinal | 0.4299 | 1.8669 | 1.1950 | 1.0000 | 2.0874 | 1.3060 | 8.7694 |
-| measured lateral | longitudinal_error = +5.09200 +0.00394*measured_lateral | -0.0365 | 2.5172 | 2.1019 | 1.9000 | 2.7339 | 2.2720 | 5.5087 |
-| abs measured lateral | longitudinal_error = +4.60000 +0.02143*abs(measured_lateral) | -0.0173 | 2.4939 | 2.1179 | 1.8500 | 2.6711 | 2.2764 | 5.6647 |
-| measured longitudinal + signed lateral | longitudinal_error = -1.15071 +0.06335*measured_longitudinal -0.00431*measured_lateral | 0.4095 | 1.8631 | 1.1377 | 0.8491 | 2.2465 | 1.3221 | 9.7148 |
-| measured longitudinal + abs lateral | longitudinal_error = -1.33039 +0.06210*measured_longitudinal +0.01394*abs(measured_lateral) | 0.4163 | 1.8523 | 1.1410 | 0.8614 | 2.1119 | 1.2807 | 9.0837 |
-| measured longitudinal + signed lateral + abs lateral | longitudinal_error = -1.38168 +0.06264*measured_longitudinal -0.00368*measured_lateral +0.01346*abs(measured_lateral) | 0.3938 | 1.8495 | 1.1001 | 0.7961 | 2.2713 | 1.3152 | 9.9814 |
+| offset only | longitudinal_error = +5.27037 | -0.0000 | 2.3647 | 2.0241 | 1.7704 | 2.4556 | 2.1020 | 4.9115 |
+| measured longitudinal | longitudinal_error = -2.53505 +0.08075*measured_longitudinal | 0.7931 | 1.0547 | 0.9264 | 0.8544 | 1.1484 | 1.0053 | 2.2569 |
+| measured lateral | longitudinal_error = +5.26507 -0.00409*measured_lateral | -0.0376 | 2.3620 | 2.0179 | 1.7651 | 2.5689 | 2.1852 | 5.4228 |
+| abs measured lateral | longitudinal_error = +4.60000 +0.03042*abs(measured_lateral) | 0.0092 | 2.3081 | 2.0379 | 2.1000 | 2.4840 | 2.1980 | 4.6063 |
+| measured longitudinal + signed lateral | longitudinal_error = -3.04374 +0.08572*measured_longitudinal -0.02166*measured_lateral | 0.8512 | 0.8765 | 0.7665 | 0.6289 | 1.0039 | 0.8692 | 2.1790 |
+| measured longitudinal + abs lateral | longitudinal_error = -3.05619 +0.08017*measured_longitudinal +0.02618*abs(measured_lateral) | 0.8224 | 0.9575 | 0.7673 | 0.6591 | 1.0636 | 0.8588 | 1.9950 |
+| measured longitudinal + signed lateral + abs lateral | longitudinal_error = -3.51918 +0.08502*measured_longitudinal -0.02098*measured_lateral +0.02469*abs(measured_lateral) | 0.8798 | 0.7712 | 0.6689 | 0.7451 | 0.9149 | 0.7906 | 1.8457 |
 
-The all-row table is dominated by the inconsistent line 30, which suppresses the
-distance slope and reduces the apparent quality of all fits.
+No rows were excluded, so the all-row and clean-fit tables should match.
 
 ## Model Comparison: Clean Explanatory Fits
 
@@ -126,14 +122,14 @@ distance slope and reduces the apparent quality of all fits.
 
 | line | meas lat | meas long | error | fitted | residual | studentized | Cook D |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 30 | -35.0 | 140.0 | 0.0000 | 7.9873 | -7.9873 | -10.6858 | 1.2468 |
-| 10 | -35.0 | 130.0 | 10.0000 | 7.3609 | 2.6391 | 1.4763 | 0.0989 |
-| 31 | 35.0 | 140.0 | 10.0000 | 7.7297 | 2.2703 | 1.2766 | 0.0911 |
-| 19 | 35.0 | 130.0 | 8.9000 | 7.1034 | 1.7966 | 0.9783 | 0.0445 |
-| 9 | -35.0 | 120.0 | 8.5000 | 6.7346 | 1.7654 | 0.9455 | 0.0336 |
-| 18 | 35.0 | 120.0 | 8.0000 | 6.4770 | 1.5230 | 0.8145 | 0.0266 |
-| 14 | 35.0 | 80.0 | 2.6000 | 3.9716 | -1.3716 | -0.7405 | 0.0259 |
-| 13 | 35.0 | 70.0 | 2.3000 | 3.3453 | -1.0453 | -0.5720 | 0.0193 |
+| 18 | 35.0 | 140.0 | 10.0000 | 8.5131 | 1.4869 | 2.1295 | 0.2372 |
+| 17 | 35.0 | 130.0 | 8.9000 | 7.6629 | 1.2371 | 1.6783 | 0.1247 |
+| 19 | 0.0 | 55.0 | 2.2000 | 1.1568 | 1.0432 | 1.4201 | 0.1154 |
+| 16 | 35.0 | 120.0 | 8.0000 | 6.8128 | 1.1872 | 1.5790 | 0.0935 |
+| 10 | -35.0 | 130.0 | 10.0000 | 9.1312 | 0.8688 | 1.1713 | 0.0840 |
+| 20 | 0.0 | 60.0 | 2.5000 | 1.5819 | 0.9181 | 1.2198 | 0.0754 |
+| 14 | 35.0 | 100.0 | 4.0000 | 5.1124 | -1.1124 | -1.4589 | 0.0734 |
+| 3 | -35.0 | 60.0 | 4.0000 | 3.1800 | 0.8200 | 1.0770 | 0.0565 |
 
 ## Plots
 
