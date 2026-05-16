@@ -2,20 +2,21 @@
 
 set -euo pipefail
 
-# Run this on the laptop while the Jetson is connected over USB-C.
+# Run this on the laptop. USB-C SSH is preferred; current-hotspot SSH is the fallback.
 
 JETSON_USER="${JETSON_USER:-scandy}"
 JETSON_PASSWORD="${JETSON_PASSWORD:-alex}"
 JETSON_USB_IP="${JETSON_USB_IP:-192.168.55.1}"
 JETSON_WIFI_IP="${JETSON_WIFI_IP:-}"
 JETSON_WIFI_IP_FALLBACK="${JETSON_WIFI_IP_FALLBACK:-192.168.50.110}"
-JETSON_HOTSPOT_IP="${JETSON_HOTSPOT_IP:-}"
+JETSON_HOTSPOT_IP="${JETSON_HOTSPOT_IP:-10.89.16.119}"
 JETSON_REPO="${JETSON_REPO:-/home/${JETSON_USER}/AD}"
 
 WIFI_SSID="${WIFI_SSID:-BoschFMC}"
 WIFI_PASSWORD="${WIFI_PASSWORD:-bosch23581321}"
 
 SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-10}"
+SSH_INITIAL_ATTEMPTS="${SSH_INITIAL_ATTEMPTS:-3}"
 SSH_WAIT_ATTEMPTS="${SSH_WAIT_ATTEMPTS:-30}"
 SSH_WAIT_SLEEP_SECONDS="${SSH_WAIT_SLEEP_SECONDS:-2}"
 
@@ -89,19 +90,38 @@ connect_wifi_local() {
 
 wait_for_ssh() {
   local host="$1"
+  local max_attempts="${2:-$SSH_WAIT_ATTEMPTS}"
   local attempt
 
-  for ((attempt = 1; attempt <= SSH_WAIT_ATTEMPTS; attempt++)); do
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
     if SSHPASS="$JETSON_PASSWORD" sshpass -e ssh "${SSH_OPTS[@]}" \
       "${JETSON_USER}@${host}" true >/dev/null 2>&1; then
       return 0
     fi
 
-    printf 'Waiting for SSH on %s (%d/%d)\n' "$host" "$attempt" "$SSH_WAIT_ATTEMPTS"
+    printf 'Waiting for SSH on %s (%d/%d)\n' "$host" "$attempt" "$max_attempts"
     sleep "$SSH_WAIT_SLEEP_SECONDS"
   done
 
   return 1
+}
+
+confirm() {
+  local prompt="$1"
+  local reply=""
+
+  if [ -r /dev/tty ]; then
+    printf '%s [y/N] ' "$prompt" > /dev/tty
+    IFS= read -r reply < /dev/tty || reply=""
+  else
+    printf '%s [y/N] ' "$prompt"
+    IFS= read -r reply || reply=""
+  fi
+
+  case "$reply" in
+    y|Y|yes|YES|Yes) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 run_jetson_performance_mode() {
@@ -135,10 +155,34 @@ need_cmd nmcli
 need_cmd sudo
 
 log "Checking USB-C SSH to Jetson at ${JETSON_USB_IP}"
-wait_for_ssh "$JETSON_USB_IP"
+initial_jetson_host=""
+initial_jetson_label=""
 
-log "Updating and building Jetson repo over USB-C"
-remote_exec "$JETSON_USB_IP" <<'REMOTE'
+if wait_for_ssh "$JETSON_USB_IP" "$SSH_INITIAL_ATTEMPTS"; then
+  initial_jetson_host="$JETSON_USB_IP"
+  initial_jetson_label="USB-C"
+else
+  log "USB-C Jetson was not found at ${JETSON_USB_IP}"
+  log "Checking current hotspot SSH to Jetson at ${JETSON_HOTSPOT_IP}"
+
+  if wait_for_ssh "$JETSON_HOTSPOT_IP" "$SSH_INITIAL_ATTEMPTS"; then
+    if confirm "Found Jetson on current hotspot at ${JETSON_HOTSPOT_IP}. Continue using this connection?"; then
+      initial_jetson_host="$JETSON_HOTSPOT_IP"
+      initial_jetson_label="current hotspot"
+    else
+      log "Stopped before running Jetson setup."
+      exit 1
+    fi
+  else
+    printf 'Could not reach Jetson over USB-C (%s) or hotspot (%s).\n' "$JETSON_USB_IP" "$JETSON_HOTSPOT_IP" >&2
+    exit 1
+  fi
+fi
+
+log "Using Jetson connection: ${initial_jetson_label} (${initial_jetson_host})"
+
+log "Updating and building Jetson repo over ${initial_jetson_label}"
+remote_exec "$initial_jetson_host" <<'REMOTE'
 set -euo pipefail
 
 cd "$JETSON_REPO"
@@ -157,8 +201,12 @@ git pull
 catkin_make
 REMOTE
 
-current_jetson_wifi_ip="${JETSON_HOTSPOT_IP:-$(remote_wlan_ip "$JETSON_USB_IP" || true)}"
+current_jetson_wifi_ip="$(remote_wlan_ip "$initial_jetson_host" || true)"
 current_jetson_wifi_ip="${current_jetson_wifi_ip//$'\r'/}"
+
+if [ -z "$current_jetson_wifi_ip" ] && [ "$initial_jetson_label" = "current hotspot" ]; then
+  current_jetson_wifi_ip="$initial_jetson_host"
+fi
 
 if [ -n "$current_jetson_wifi_ip" ]; then
   log "Current Jetson Wi-Fi IP: ${current_jetson_wifi_ip}"
@@ -172,9 +220,9 @@ final_ssh_label=""
 if ! wifi_visible_local "$WIFI_SSID"; then
   log "${WIFI_SSID} network was not found from the laptop. Staying on the current hotspot."
 else
-  log "Switching Jetson Wi-Fi to ${WIFI_SSID} over USB-C"
+  log "Switching Jetson Wi-Fi to ${WIFI_SSID} over ${initial_jetson_label}"
   jetson_wifi_result="$(
-  remote_exec "$JETSON_USB_IP" <<'REMOTE'
+  remote_exec "$initial_jetson_host" <<'REMOTE' || true
 set -euo pipefail
 
 sudo_cmd() {
@@ -222,14 +270,14 @@ REMOTE
         final_ssh_ip="$JETSON_WIFI_IP"
         final_ssh_label="$WIFI_SSID"
       else
-        log "Could not reach Jetson at ${JETSON_WIFI_IP} on ${WIFI_SSID}. Falling back to USB-C SSH."
-        final_ssh_ip="$JETSON_USB_IP"
-        final_ssh_label="USB-C"
+        log "Could not reach Jetson at ${JETSON_WIFI_IP} on ${WIFI_SSID}. Falling back to ${initial_jetson_label} SSH."
+        final_ssh_ip="$initial_jetson_host"
+        final_ssh_label="$initial_jetson_label"
       fi
     else
-      log "Laptop saw ${WIFI_SSID}, but could not connect to it. Falling back to USB-C SSH."
-      final_ssh_ip="$JETSON_USB_IP"
-      final_ssh_label="USB-C"
+      log "Laptop saw ${WIFI_SSID}, but could not connect to it. Falling back to ${initial_jetson_label} SSH."
+      final_ssh_ip="$initial_jetson_host"
+      final_ssh_label="$initial_jetson_label"
     fi
   else
     log "Could not switch Jetson to ${WIFI_SSID}. Staying on the current hotspot."
@@ -241,9 +289,9 @@ if [ -z "$final_ssh_ip" ]; then
     final_ssh_ip="$current_jetson_wifi_ip"
     final_ssh_label="current hotspot"
   else
-    log "Could not reach Jetson on the current hotspot. Falling back to USB-C SSH."
-    final_ssh_ip="$JETSON_USB_IP"
-    final_ssh_label="USB-C"
+    log "Could not reach Jetson on the current hotspot. Falling back to ${initial_jetson_label} SSH."
+    final_ssh_ip="$initial_jetson_host"
+    final_ssh_label="$initial_jetson_label"
   fi
 fi
 
