@@ -171,9 +171,10 @@ Setup:
 - The wall must be flat and perpendicular to the car centerline.
 - The selected image ROI must contain only the wall, not the target paper edge,
   tape, floor, car bumper, or other objects.
-- Default output uses `--runtime-flip rotate180`, matching the default
-  perception camera convention. Positive yaw means the camera points left, and
-  the right side of the runtime image should be closer than the left side.
+- Default output uses raw RealSense depth geometry. Positive yaw means the
+  camera points left, and the right side of the raw depth image should be
+  closer than the left side. This is the value to compare against
+  `realsense_tf_real` yaw.
 
 Run on the machine connected to the RealSense:
 
@@ -186,10 +187,10 @@ Useful options:
 
 ```bash
 python3 src/perception/scripts/calibration/depth_wall_yaw.py run \
-  --frames 90 \
+  --frames 120 \
   --width 848 --height 480 \
   --min-distance 0.8 --max-distance 1.8 \
-  --roi 0.12 0.25 0.88 0.75
+  --roi 0.25 0.30 0.75 0.70
 ```
 
 Outputs are written under `runs/YYYYMMDD_HHMMSS_depth_wall_yaw/`:

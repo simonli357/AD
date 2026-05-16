@@ -7,8 +7,9 @@ Setup assumption:
   - The wall fills the selected depth ROI.
   - The RealSense is mounted normally.
 
-The default output convention matches the repo's runtime camera path, where
-frames are rotated 180 degrees before perception uses them.
+The default output convention uses the raw RealSense depth coordinate frame.
+That is the physical camera frame and is the value to compare to
+realsense_tf_real yaw.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import datetime as _dt
 import math
 import sys
 import time
+import warnings as _warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -424,8 +426,8 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
         warnings.append(f"Frame-to-frame yaw stddev is {yaw_std_deg:.3f} deg; target or depth may be unstable.")
     if residual_p95_median > TARGET_RESIDUAL_WARN_M:
         warnings.append(f"Median p95 plane residual is {residual_p95_median * 1000.0:.1f} mm; wall ROI may include clutter or depth noise.")
-    if args.runtime_flip != "rotate180":
-        warnings.append("runtime_flip is not rotate180; reported yaw may not match the default perception camera convention.")
+    if args.runtime_flip != "none":
+        warnings.append("runtime_flip is not none; this is an image-convention diagnostic, not the physical depth yaw.")
 
     left_depths = [r.left_depth_m for r in results if r.left_depth_m is not None]
     right_depths = [r.right_depth_m for r in results if r.right_depth_m is not None]
@@ -441,7 +443,7 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
         "wall_yaw_repo_convention": {
             "rad": float(weighted_yaw_rad),
             "deg": float(math.degrees(weighted_yaw_rad)),
-            "note": "Positive means the camera points left relative to the car centerline; with rotate180 this matches realsense_tf_real yaw.",
+            "note": "Positive means the camera points left relative to the car centerline. Use runtime_flip=none for physical yaw comparable to realsense_tf_real.",
         },
         "wall_yaw_frame_median": {
             "rad": float(np.median(yaws_rad)),
@@ -456,7 +458,7 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
             "right_minus_left_depth_m_median": float(np.median(right_minus_left)) if right_minus_left else None,
             "yaw_from_left_right_rad_median": float(np.median(lr_yaws_rad)) if lr_yaws_rad.size else None,
             "yaw_from_left_right_deg_median": float(math.degrees(float(np.median(lr_yaws_rad)))) if lr_yaws_rad.size else None,
-            "note": "For positive yaw, the right side of the runtime image should usually be closer than the left side.",
+            "note": "With raw depth, positive yaw usually means the right side is closer than the left side. rotate180 reverses the image-side interpretation.",
         },
         "plane": {
             "normal_weighted_mean": [float(v) for v in weighted_normal],
@@ -687,7 +689,8 @@ def capture_and_solve(args: argparse.Namespace) -> Dict[str, Any]:
 def temporal_median_depth(raw_depth_frames: Sequence[np.ndarray], depth_scale: float) -> np.ndarray:
     stack = np.stack(raw_depth_frames, axis=0).astype(np.float32)
     stack[stack <= 0.0] = np.nan
-    with np.errstate(all="ignore"):
+    with np.errstate(all="ignore"), _warnings.catch_warnings():
+        _warnings.simplefilter("ignore", category=RuntimeWarning)
         median_raw = np.nanmedian(stack, axis=0)
     median_raw = np.nan_to_num(median_raw, nan=0.0)
     return median_raw.astype(np.float64) * float(depth_scale)
@@ -747,12 +750,17 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--width", type=int, default=848, help="RealSense depth stream width.")
     run.add_argument("--height", type=int, default=480, help="RealSense depth stream height.")
     run.add_argument("--fps", type=int, default=30, help="RealSense depth stream FPS.")
-    run.add_argument("--runtime-flip", choices=["rotate180", "none"], default="rotate180")
+    run.add_argument(
+        "--runtime-flip",
+        choices=["rotate180", "none"],
+        default="none",
+        help="Use none for physical yaw. rotate180 is only for matching a flipped image diagnostic.",
+    )
     run.add_argument(
         "--roi",
         type=float,
         nargs=4,
-        default=[0.12, 0.25, 0.88, 0.75],
+        default=[0.25, 0.30, 0.75, 0.70],
         metavar=("X0", "Y0", "X1", "Y1"),
         help="Normalized ROI containing only the flat wall.",
     )
