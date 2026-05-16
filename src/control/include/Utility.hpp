@@ -422,23 +422,35 @@ public:
             sign_lat_correction_lon_coeff * raw_lon +
             sign_lat_correction_abs_lat_coeff * abs_raw_lat;
 
+        if (sign_debug) {
+            printf(
+                "sign relative position raw: lon %.3f, lat %.3f; corrected: lon %.3f, lat %.3f\n",
+                raw_lon, raw_lat, P_v2d.x(), P_v2d.y()
+            );
+        }
+
         // rotate into world frame and translate by vehicle pose
         Eigen::Matrix2d R_vw;
         R_vw << cos(yaw), -sin(yaw),
                 sin(yaw),  cos(yaw);
         // std::cout << "object_distance4: " << P_v2d[0] << std::endl;
 
-        static std::vector<std::vector<double>> history;
-        double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-            return sum + vec[0];
-        }) / history.size();
-        double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-            return sum + vec[1];
-        }) / history.size();
-        history.push_back({P_v2d[0], P_v2d[1]});
-        if (history.size() > 3) {
-            history.erase(history.begin());
-            printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
+        if (sign_debug) {
+            static std::vector<std::vector<double>> history;
+            history.push_back({P_v2d[0], P_v2d[1]});
+            if (history.size() > 3) {
+                history.erase(history.begin());
+            }
+
+            if (history.size() == 3) {
+                double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+                    return sum + vec[0];
+                }) / history.size();
+                double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+                    return sum + vec[1];
+                }) / history.size();
+                printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
+            }
         }
 
         return Eigen::Vector2d(x, y) + R_vw * P_v2d;

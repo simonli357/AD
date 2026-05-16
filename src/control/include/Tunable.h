@@ -36,6 +36,7 @@ namespace Tunable {
     inline double rateVal;
     inline bool realsense_imu;
     inline bool use_encoder = false;
+    inline bool sign_debug = false;
 
     // tunables
     inline double rel_speed_thresh = 0.15;
@@ -150,13 +151,14 @@ namespace Tunable {
       CHECK_PARAM("/steer_offset_maximum", steer_offset_maximum);
       CHECK_PARAM(nodeName+"/subModel", subModel);
       CHECK_PARAM(nodeName+"/rate", rateVal);
+      CHECK_PARAM(nodeName + "/sign_debug", sign_debug);
       CHECK_PARAM("/realsense_imu", realsense_imu);
   
       printf("LoadFromParams: emergency: %d, pubWaypoints: %d, kb: %d, dashboard: %d, gps: %d, lane: %d, ekf: %d, sign: %d, T: %.3f, N: %d, v_ref: %.3f, robot_name: %s, vref: %.3f, x0: %.3f, y0: %.3f, yaw0: %.3f, T_park: %.3f, real: %d, use_beta: %d, async: %d, use_tcp: %d, test: %d\n",
           emergency, pubWaypoints, keyboardControl, dashboard, hasGps, lane, ekf, sign, T, N, v_ref,
           robot_name.c_str(), vref, x0, y0, yaw0, T_park, real, use_beta, async, use_tcp, testing);
-      printf("LoadFromParams2: debug_level: %d, camera: %d, steer_offset: %.3f, speed_offset: %.3f, steer_offset_minimum: %.3f, steer_offset_maximum: %.3f, subModel: %d, rateVal: %.3f, realsense_imu: %d\n",
-          debugLevel, camera, steer_offset, speed_offset, steer_offset_minimum, steer_offset_maximum, subModel, rateVal, realsense_imu);
+      printf("LoadFromParams2: debug_level: %d, camera: %d, steer_offset: %.3f, speed_offset: %.3f, steer_offset_minimum: %.3f, steer_offset_maximum: %.3f, subModel: %d, rateVal: %.3f, realsense_imu: %d, sign_debug: %d\n",
+          debugLevel, camera, steer_offset, speed_offset, steer_offset_minimum, steer_offset_maximum, subModel, rateVal, realsense_imu, sign_debug);
       // Tunables
     //   std::string mode = real ? "/real" : "/sim";
       std::string mode = "real";

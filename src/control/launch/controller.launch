@@ -51,6 +51,7 @@
   <param name="pub_wpts" value="$(arg pub_wpts)"/>
   <arg name="debug_level" default="2"/>
   <param name="debug_level" value="$(arg debug_level)"/>
+  <arg name="sign_debug" default="false"/>
   <arg name="emergency" default="true"/>
   <param name="emergency" value="$(arg emergency)"/>
   <arg name="use_tcp" default="true"/>
@@ -110,6 +111,7 @@
     <param name="real" value="$(arg real)"/>
     <param name="subModel" value="$(arg subModel)"/>
     <param name="rate" value="$(arg rate)"/>
+    <param name="sign_debug" value="$(arg sign_debug)"/>
     <!-- cameraNode params -->
     <param name="/use_emergency" value="$(arg emergency)"/>
     <param name="/showFlag" value="$(arg show)"/>
