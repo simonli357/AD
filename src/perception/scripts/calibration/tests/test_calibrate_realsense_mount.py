@@ -36,6 +36,13 @@ class CalibrationMathTest(unittest.TestCase):
         np.testing.assert_allclose(first, [0.06, 0.09, 0.0], atol=1e-7)
         np.testing.assert_allclose(last, [-0.06, -0.09, 0.0], atol=1e-7)
 
+    def test_vertical_front_charuco_corner_id_mapping(self):
+        spec = calib.normalize_target_spec(dict(calib.DEFAULT_SPEC))
+        first = calib.charuco_id_to_target_point(0, spec, target_placement="vertical-front")
+        last = calib.charuco_id_to_target_point(34, spec, target_placement="vertical-front")
+        np.testing.assert_allclose(first, [0.0, 0.09, 0.06], atol=1e-7)
+        np.testing.assert_allclose(last, [0.0, -0.09, -0.06], atol=1e-7)
+
     def test_repo_euler_round_trip(self):
         expected = (0.11, -0.07, 0.025)
         rotation = calib.compose_repo_rotation(*expected)

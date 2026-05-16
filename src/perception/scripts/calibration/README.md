@@ -33,6 +33,10 @@ For this car's low-mounted camera, print the larger floor target if possible:
 
 - `assets/charuco_ground_target_a2_large_2x_300dpi.png`
 
+For the alternate wall-mounted procedure, print:
+
+- `assets/charuco_wall_target_a2_large_2x_300dpi.png`
+
 It is an A2 landscape target. Print it at `Actual size / 100% / no fit to
 page`. Its board is about `48 cm x 36 cm`; the base `100 mm` scale bar should
 measure about `200 mm`. Enter the actual measured scale-bar length when the
@@ -43,6 +47,8 @@ small for floor calibration with the car camera:
 
 - `assets/charuco_ground_target_letter_300dpi.png`
 - `assets/charuco_ground_target_a4_300dpi.png`
+- `assets/charuco_wall_target_letter_300dpi.png`
+- `assets/charuco_wall_target_a4_300dpi.png`
 
 Printer settings:
 
@@ -62,6 +68,8 @@ enough that OpenCV can detect at least 12 ChArUco corners from the car camera.
 
 Park the car on a flat surface with the camera mounted normally.
 
+### Ground Procedure
+
 Place the target flat on the ground in front of the car:
 
 - `+X CAR FORWARD` points in the car's forward direction.
@@ -70,6 +78,25 @@ Place the target flat on the ground in front of the car:
 - The car and target do not move during capture.
 
 Yaw accuracy depends mostly on this physical alignment.
+
+### Wall Procedure
+
+Use this when the floor target is hard to keep flat or too close to the bottom
+of the image. The target must be on a rigid, flat, vertical surface in front of
+the car.
+
+Place the wall target facing the camera:
+
+- The target plane is perpendicular to the car centerline.
+- `+Z CAR UP` points upward.
+- `+Y CAR LEFT` points toward the car's left side.
+- The target vertical centerline is aligned with the car centerline.
+- The car and target do not move during capture.
+
+The wall method can improve marker detection because the board is flatter and
+more visible. It is not automatically more accurate: yaw accuracy now depends
+on the wall or backing board being square to the car centerline. Use a level
+and a centerline/string/laser reference if possible.
 
 ## 4. Run The Wizard
 
@@ -92,11 +119,23 @@ For automatic capture:
 python3 src/perception/scripts/calibration/calibrate_realsense_mount.py wizard --auto
 ```
 
+For the wall procedure:
+
+```bash
+python3 src/perception/scripts/calibration/calibrate_realsense_mount.py wizard --target-placement vertical-front --auto
+```
+
 If the checker sees too few corners at the default runtime resolution, capture
 at a higher RealSense color resolution:
 
 ```bash
 python3 src/perception/scripts/calibration/calibrate_realsense_mount.py capture --auto --no-window --color-width 1920 --color-height 1080
+```
+
+For high-resolution wall capture without the wizard:
+
+```bash
+python3 src/perception/scripts/calibration/calibrate_realsense_mount.py capture --target-placement vertical-front --auto --no-window --color-width 1920 --color-height 1080
 ```
 
 ## 5. Use The Result
