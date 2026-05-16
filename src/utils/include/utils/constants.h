@@ -315,10 +315,10 @@ namespace VehicleConstants {
         240
     };
     static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {
-        607.40564,  // fx
-        607.05829,  // fy
-        322.97223,  // cx
-        244.39398  
+        609.625305176,  // fx
+        609.785827637,  // fy
+        329.530975342,  // cx
+        252.389083862
     };
     static constexpr std::array<double, 6> REALSENSE_TF = {-0.090, -0.032, 0.260, -0.009774, 1.85*M_PI/180.0, 0.011}; // x, y, z, roll, pitch, yaw
     static constexpr double CAM_TO_CAR_FRONT = 0.30;
