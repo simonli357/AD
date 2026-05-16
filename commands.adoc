@@ -1,3 +1,42 @@
+= Useful commands for Cluj 2026
+
+
+JETSON IPs
+- in Office
+- on Test Floor
+- on cellular hotspot
+
+COMMAND LAPTOP IP
+
+
+== SSH to Jetson over USB-c
+
+ssh scandy@192.168.55.1
+
+# Make sure the WiFi radio is on
+nmcli radio wifi on
+
+# Scan for available networks
+nmcli device wifi list
+
+# Connect to one
+sudo nmcli device wifi connect "YourSSID" password "YourPassword"
+
+# Create Persistant Connection
+sudo nmcli connection modify "YourSSID" connection.autoconnect yes
+
+# Show Jetson IP
+ip a show wlan0
+
+
+
+#Monitor serial
+sudo minicom -D /dev/ttyACM0 -b 115200D
+#or if device changed
+sudo minicom -D /dev/ttyACM1 -b 115200D
+
+
+-------------------------------
 = useful commands
 d3t2
 258722448dccdcda9d0e7b520ce2573326d8f758
@@ -47,7 +86,7 @@ ffmpeg -i "$HOME/Downloads/${input}.webm" \
 -c:v libx264 -c:a aac \
 "$HOME/Downloads/${input}_cropped.mp4"
 
-== mp4 to gif
+== mp4 to gif 
 input="output"
 ffmpeg -i "$input".mp4 -vf "fps=20,scale=iw:ih:flags=lanczos" -c:v gif "$input".gif
 
