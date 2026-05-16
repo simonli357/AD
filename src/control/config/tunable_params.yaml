@@ -40,7 +40,7 @@ real:
   pedestrian_threshold: 0.35
   has_light: false
   use_kf: false
-  realsense_tf_real: [-0.090000000, -0.032000000, 0.260000000, -0.004725551, 0.000749744, -0.008867030] # x, y, z, roll, pitch, yaw
+  realsense_tf_real: [-0.090000000, -0.032000000, 0.265000000, -0.004725551, 0.000749744, -0.008867030] # x, y, z, roll, pitch, yaw
   orientation_follow: false
   min_dist_to_car: 0.34 # min distance from ego car front to other car back
   change_lane_offset_scaler: 1.07
