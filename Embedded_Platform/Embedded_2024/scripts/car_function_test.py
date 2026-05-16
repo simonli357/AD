@@ -37,7 +37,7 @@ IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\
 
 MOTOR_ID = 11
 CMD_PERIOD_S = 0.1            # 10 Hz command rate
-DEFAULT_MAX_STEER_DEG = 25.0  # firmware-side limit; user can override
+DEFAULT_MAX_STEER_DEG = 20.0  # firmware-side limit; user can override
 RUNAWAY_FACTOR = 2.5          # abort if |enc_speed| > factor * |cmd_speed| + 10 cm/s
 
 

@@ -1,0 +1,6 @@
+Car function test — 2026-05-11T10:30:09
+============================================================
+[PASS] 1.1_communication
+[PASS] 1.2_forward_ramp
+[PASS] 1.3_reverse_ramp
+[PASS] 1.4_steering_sweep
