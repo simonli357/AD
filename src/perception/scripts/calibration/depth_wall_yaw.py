@@ -184,6 +184,48 @@ def sample_depth_points(
     return points, pixels
 
 
+def sample_binned_depth_points(
+    depth_m: np.ndarray,
+    intrinsics: DepthIntrinsics,
+    roi_px: Tuple[int, int, int, int],
+    bin_cols: int,
+    bin_rows: int,
+    min_distance_m: float,
+    max_distance_m: float,
+    min_bin_points: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+    x0, y0, x1, y1 = roi_px
+    xs = np.linspace(x0, x1, int(bin_cols) + 1, dtype=np.int32)
+    ys = np.linspace(y0, y1, int(bin_rows) + 1, dtype=np.int32)
+    points: List[List[float]] = []
+    pixels: List[List[float]] = []
+
+    for row in range(int(bin_rows)):
+        by0, by1 = int(ys[row]), int(ys[row + 1])
+        if by1 <= by0:
+            continue
+        for col in range(int(bin_cols)):
+            bx0, bx1 = int(xs[col]), int(xs[col + 1])
+            if bx1 <= bx0:
+                continue
+            patch = depth_m[by0:by1, bx0:bx1]
+            valid = np.isfinite(patch) & (patch >= float(min_distance_m)) & (patch <= float(max_distance_m))
+            if int(np.count_nonzero(valid)) < int(min_bin_points):
+                continue
+            z = float(np.median(patch[valid]))
+            valid_y, valid_x = np.nonzero(valid)
+            u = float(bx0 + np.median(valid_x))
+            v = float(by0 + np.median(valid_y))
+            x = (u - intrinsics.ppx) / intrinsics.fx * z
+            y = (v - intrinsics.ppy) / intrinsics.fy * z
+            points.append([x, y, z])
+            pixels.append([u, v])
+
+    if not points:
+        return np.empty((0, 3), dtype=np.float64), np.empty((0, 2), dtype=np.float64)
+    return np.asarray(points, dtype=np.float64), np.asarray(pixels, dtype=np.float64)
+
+
 def normalize_plane(normal: np.ndarray, d: float) -> Tuple[np.ndarray, float]:
     normal = np.asarray(normal, dtype=np.float64).reshape(3)
     scale = np.linalg.norm(normal)
@@ -303,16 +345,28 @@ def solve_frame(
         active_intrinsics = adjust_intrinsics_for_rotate180(intrinsics)
 
     roi_px = normalized_roi(args.roi, active_intrinsics.width, active_intrinsics.height)
-    points, pixels = sample_depth_points(
-        depth_m,
-        active_intrinsics,
-        roi_px,
-        int(args.stride),
-        float(args.min_distance),
-        float(args.max_distance),
-        int(args.max_points),
-        rng,
-    )
+    if int(args.bin_cols) > 0 and int(args.bin_rows) > 0:
+        points, pixels = sample_binned_depth_points(
+            depth_m,
+            active_intrinsics,
+            roi_px,
+            int(args.bin_cols),
+            int(args.bin_rows),
+            float(args.min_distance),
+            float(args.max_distance),
+            int(args.min_bin_points),
+        )
+    else:
+        points, pixels = sample_depth_points(
+            depth_m,
+            active_intrinsics,
+            roi_px,
+            int(args.stride),
+            float(args.min_distance),
+            float(args.max_distance),
+            int(args.max_points),
+            rng,
+        )
     if points.shape[0] < int(args.min_points):
         return None
 
@@ -366,7 +420,7 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
     warnings: List[str] = []
     yaw_std_deg = float(np.std(np.degrees(yaws_rad)))
     residual_p95_median = float(np.median(residual_p95s))
-    if yaw_std_deg > TARGET_YAW_STD_WARN_DEG:
+    if len(results) > 1 and yaw_std_deg > TARGET_YAW_STD_WARN_DEG:
         warnings.append(f"Frame-to-frame yaw stddev is {yaw_std_deg:.3f} deg; target or depth may be unstable.")
     if residual_p95_median > TARGET_RESIDUAL_WARN_M:
         warnings.append(f"Median p95 plane residual is {residual_p95_median * 1000.0:.1f} mm; wall ROI may include clutter or depth noise.")
@@ -383,6 +437,7 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
         "roi_normalized": [float(v) for v in args.roi],
         "frames_requested": int(args.frames),
         "valid_frames": int(len(results)),
+        "temporal_median": bool(args.temporal_median),
         "wall_yaw_repo_convention": {
             "rad": float(weighted_yaw_rad),
             "deg": float(math.degrees(weighted_yaw_rad)),
@@ -415,6 +470,9 @@ def summarize_results(results: Sequence[FrameYawResult], args: argparse.Namespac
             "max_distance_m": float(args.max_distance),
             "stride": int(args.stride),
             "max_points": int(args.max_points),
+            "bin_cols": int(args.bin_cols),
+            "bin_rows": int(args.bin_rows),
+            "min_bin_points": int(args.min_bin_points),
             "ransac_threshold_m": float(args.ransac_threshold_m),
             "ransac_iterations": int(args.ransac_iterations),
         },
@@ -481,7 +539,9 @@ def write_report(path: Path, result: Dict[str, Any]) -> None:
         "# Depth Wall Yaw Report",
         "",
         f"Runtime flip: `{result['runtime_flip']}`",
-        f"Valid frames: {result['valid_frames']} / {result['frames_requested']}",
+        f"Depth frames used: {result.get('depth_frames_used', result['valid_frames'])} / {result['frames_requested']}",
+        f"Plane fits: {result['valid_frames']}",
+        f"Temporal median: `{result.get('temporal_median', False)}`",
         "",
         "## Result",
         "",
@@ -557,12 +617,13 @@ def capture_and_solve(args: argparse.Namespace) -> Dict[str, Any]:
     intrinsics = intrinsics_from_rs(stream.get_intrinsics())
 
     results: List[FrameYawResult] = []
+    raw_depth_frames: List[np.ndarray] = []
     frame_index = 0
     started_at = time.time()
     try:
         for _ in range(int(args.warmup)):
             pipeline.wait_for_frames()
-        while len(results) < int(args.frames):
+        while (len(raw_depth_frames) if args.temporal_median else len(results)) < int(args.frames):
             if args.max_seconds and time.time() - started_at >= float(args.max_seconds):
                 print("Reached capture time limit.")
                 break
@@ -570,7 +631,11 @@ def capture_and_solve(args: argparse.Namespace) -> Dict[str, Any]:
             depth_frame = frames.get_depth_frame()
             if not depth_frame:
                 continue
-            depth_raw = np.asanyarray(depth_frame.get_data())
+            depth_raw = np.asanyarray(depth_frame.get_data()).copy()
+            if args.temporal_median:
+                raw_depth_frames.append(depth_raw)
+                print(f"Captured depth frame {len(raw_depth_frames):03d}/{args.frames}")
+                continue
             depth_m = depth_raw.astype(np.float64) * depth_scale
             frame_result = solve_frame(frame_index, depth_m, intrinsics, args, rng)
             frame_index += 1
@@ -588,8 +653,24 @@ def capture_and_solve(args: argparse.Namespace) -> Dict[str, Any]:
     finally:
         pipeline.stop()
 
+    if args.temporal_median:
+        if not raw_depth_frames:
+            raise RuntimeError("No depth frames captured.")
+        depth_m = temporal_median_depth(raw_depth_frames, depth_scale)
+        frame_result = solve_frame(-1, depth_m, intrinsics, args, rng)
+        if frame_result is None:
+            raise RuntimeError("Temporal median depth image did not contain enough valid wall points.")
+        results.append(frame_result)
+        print(
+            "Temporal median solve: "
+            f"yaw={frame_result.yaw_deg:+.4f} deg, "
+            f"p95={frame_result.residual_p95_m * 1000.0:.1f} mm, "
+            f"inliers={frame_result.inlier_ratio:.2f}"
+        )
+
     summary = summarize_results(results, args)
     summary["run_dir"] = str(run_dir)
+    summary["depth_frames_used"] = int(len(raw_depth_frames) if args.temporal_median else len(results))
     summary["depth_intrinsics_raw"] = intrinsics_to_dict(intrinsics)
     summary["depth_intrinsics_runtime"] = intrinsics_to_dict(
         adjust_intrinsics_for_rotate180(intrinsics) if args.runtime_flip == "rotate180" else intrinsics
@@ -601,6 +682,15 @@ def capture_and_solve(args: argparse.Namespace) -> Dict[str, Any]:
     write_frame_csv(run_dir / "depth_wall_yaw_frames.csv", results)
     write_report(run_dir / "depth_wall_yaw_report.md", summary)
     return summary
+
+
+def temporal_median_depth(raw_depth_frames: Sequence[np.ndarray], depth_scale: float) -> np.ndarray:
+    stack = np.stack(raw_depth_frames, axis=0).astype(np.float32)
+    stack[stack <= 0.0] = np.nan
+    with np.errstate(all="ignore"):
+        median_raw = np.nanmedian(stack, axis=0)
+    median_raw = np.nan_to_num(median_raw, nan=0.0)
+    return median_raw.astype(np.float64) * float(depth_scale)
 
 
 def cmd_check(_: argparse.Namespace) -> int:
@@ -671,12 +761,17 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--max-distance", type=float, default=2.2, help="Reject depth points farther than this.")
     run.add_argument("--stride", type=int, default=4, help="Pixel sampling stride in the ROI.")
     run.add_argument("--max-points", type=int, default=12000, help="Maximum sampled points per frame.")
-    run.add_argument("--min-points", type=int, default=1000, help="Minimum valid points required for a frame.")
+    run.add_argument("--min-points", type=int, default=200, help="Minimum valid points required for a plane fit.")
+    run.add_argument("--bin-cols", type=int, default=48, help="Median depth bins across the ROI. Use 0 to disable binning.")
+    run.add_argument("--bin-rows", type=int, default=24, help="Median depth bins down the ROI. Use 0 to disable binning.")
+    run.add_argument("--min-bin-points", type=int, default=8, help="Minimum valid depth pixels per median bin.")
     run.add_argument("--ransac-threshold-m", type=float, default=0.012, help="Plane inlier threshold.")
     run.add_argument("--ransac-iterations", type=int, default=160)
     run.add_argument("--emitter", choices=["auto", "on", "off"], default="on")
     run.add_argument("--seed", type=int, default=7)
+    run.add_argument("--no-temporal-median", dest="temporal_median", action="store_false")
     run.add_argument("--verbose", action="store_true")
+    run.set_defaults(temporal_median=True)
     run.set_defaults(func=cmd_run)
     return parser
 
