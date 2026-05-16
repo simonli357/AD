@@ -73,6 +73,7 @@ sudo minicom -D /dev/ttyACM1 -b 115200D
 
 ```bash
 roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true
+roslaunch control controller.launch camera:=true ip:=10.89.16.85 use_gps:=false real:=true realsense:=true
 ```
 
 With traffic and GPS:

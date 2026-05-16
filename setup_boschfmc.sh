@@ -15,8 +15,8 @@ JETSON_REPO="${JETSON_REPO:-/home/${JETSON_USER}/AD}"
 WIFI_SSID="${WIFI_SSID:-BoschFMC}"
 WIFI_PASSWORD="${WIFI_PASSWORD:-bosch23581321}"
 
-SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-7}"
-SSH_INITIAL_ATTEMPTS="${SSH_INITIAL_ATTEMPTS:-3}"
+SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-5}"
+SSH_INITIAL_ATTEMPTS="${SSH_INITIAL_ATTEMPTS:-2}"
 SSH_WAIT_ATTEMPTS="${SSH_WAIT_ATTEMPTS:-30}"
 SSH_WAIT_SLEEP_SECONDS="${SSH_WAIT_SLEEP_SECONDS:-2}"
 
@@ -143,11 +143,14 @@ REMOTE
 open_interactive_ssh() {
   local host="$1"
   local label="$2"
+  local remote_startup
 
   printf '\nJetson IP: %s\n' "$host"
   log "Opening interactive SSH to Jetson on ${label}"
-  exec env SSHPASS="$JETSON_PASSWORD" sshpass -e ssh "${SSH_OPTS[@]}" "${JETSON_USER}@${host}" \
-    -t "bash -lc 'cd $(shell_quote "$JETSON_REPO") && source devel/setup.bash && exec bash -i'"
+
+  remote_startup="cd $(shell_quote "$JETSON_REPO") && source devel/setup.bash && printf 'Sourced %s/devel/setup.bash\n' $(shell_quote "$JETSON_REPO") && exec bash --noprofile --norc -i"
+  exec env SSHPASS="$JETSON_PASSWORD" sshpass -e ssh "${SSH_OPTS[@]}" -t "${JETSON_USER}@${host}" \
+    "bash -lc $(shell_quote "$remote_startup")"
 }
 
 need_cmd ssh
@@ -219,9 +222,11 @@ fi
 
 final_ssh_ip=""
 final_ssh_label=""
+boschfmc_failure_message=""
 
 if ! wifi_visible_local "$WIFI_SSID"; then
-  log "${WIFI_SSID} network was not found from the laptop. Staying on the current hotspot."
+  boschfmc_failure_message="${WIFI_SSID} network was not found from the laptop. Staying on the current hotspot."
+  log "$boschfmc_failure_message"
 else
   log "Switching Jetson Wi-Fi to ${WIFI_SSID} over ${initial_jetson_label}"
   jetson_wifi_result="$(
@@ -256,7 +261,8 @@ REMOTE
   jetson_wifi_result="${jetson_wifi_result//$'\r'/}"
 
   if [ "$jetson_wifi_result" = "NOT_FOUND" ]; then
-    log "${WIFI_SSID} network was not found from the Jetson. Staying on the current hotspot."
+    boschfmc_failure_message="${WIFI_SSID} network was not found from the Jetson. Staying on the current hotspot."
+    log "$boschfmc_failure_message"
   elif [[ "$jetson_wifi_result" == CONNECTED:* ]]; then
     observed_jetson_wifi_ip="${jetson_wifi_result#CONNECTED:}"
 
@@ -273,17 +279,20 @@ REMOTE
         final_ssh_ip="$JETSON_WIFI_IP"
         final_ssh_label="$WIFI_SSID"
       else
-        log "Could not reach Jetson at ${JETSON_WIFI_IP} on ${WIFI_SSID}. Falling back to ${initial_jetson_label} SSH."
+        boschfmc_failure_message="Could not reach Jetson at ${JETSON_WIFI_IP} on ${WIFI_SSID}. Falling back to ${initial_jetson_label} SSH."
+        log "$boschfmc_failure_message"
         final_ssh_ip="$initial_jetson_host"
         final_ssh_label="$initial_jetson_label"
       fi
     else
-      log "Laptop saw ${WIFI_SSID}, but could not connect to it. Falling back to ${initial_jetson_label} SSH."
+      boschfmc_failure_message="Laptop saw ${WIFI_SSID}, but could not connect to it. Falling back to ${initial_jetson_label} SSH."
+      log "$boschfmc_failure_message"
       final_ssh_ip="$initial_jetson_host"
       final_ssh_label="$initial_jetson_label"
     fi
   else
-    log "Could not switch Jetson to ${WIFI_SSID}. Staying on the current hotspot."
+    boschfmc_failure_message="Could not switch Jetson to ${WIFI_SSID}. Staying on the current hotspot."
+    log "$boschfmc_failure_message"
   fi
 fi
 
@@ -296,6 +305,10 @@ if [ -z "$final_ssh_ip" ]; then
     final_ssh_ip="$initial_jetson_host"
     final_ssh_label="$initial_jetson_label"
   fi
+fi
+
+if [ -n "$boschfmc_failure_message" ]; then
+  log "Final network note: ${boschfmc_failure_message}"
 fi
 
 run_jetson_performance_mode "$final_ssh_ip"
