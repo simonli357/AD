@@ -3,12 +3,12 @@
 ## Jetson IPs
 
 - BoschFMC: `192.168.50.110`
-- hotspot: 
+- hotspot: 10.89.16.119
 
 ## Command laptop IP (Dell)
 
-- hotspot: `10.89.16.85`
 - BoschFMC: `192.168.50.175`
+- hotspot: `10.89.16.85`
 
 ## SSH to Jetson over USB-C
 
