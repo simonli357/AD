@@ -7,13 +7,12 @@ real:
   highway_cooldown: 3.0
   sign_cooldown: 0.5
   lane_localization_cooldown: 0.5
-  # sign_lon_offset: -0.01
   sign_lon_offset: -0.0
-  # sign_lon_offset_slope: 0.05
   sign_lon_offset_slope: 0.0
-  # sign_lat_offset: -0.1
-  sign_lat_offset: -0.0086
-  sign_lat_offset_slope: -0.0119
+  # sign_lat_offset: -0.0086
+  # sign_lat_offset_slope: -0.0119
+  sign_lat_offset: 0
+  sign_lat_offset_slope: 0
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
   max_light_dist: 0.75
   max_sign_dist: 1.5

@@ -388,6 +388,8 @@ public:
         double Z_c = object_distance;
 
         std::array<double, 6> tf = Tunable::real ? Tunable::realsenseTfReal() : REALSENSE_TF;
+        //print tf
+        std::cout << "tf: " << tf[0] << ", " << tf[1] << ", " << tf[2] << ", " << tf[3] << ", " << tf[4] << ", " << tf[5] << std::endl;
         double tx    = tf[0], ty = tf[1], cam_yaw = tf[5], cam_roll = tf[3];
 
         double cos_r = std::cos(cam_roll);
@@ -404,6 +406,7 @@ public:
         // latency & motion compensation
         double latency = (ros::Time::now() - object_detection_time).toSec();
         double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
+        std::cout << "latency: " << latency << "s, speed: " << speed << "m/s" << std::endl;
         P_v2d.x()    -= latency * speed;
         P_v2d.x()    += sign_lon_offset_slope * P_v2d.x() + sign_lon_offset;
         P_v2d.y()    += sign_lat_offset + sign_lat_offset_slope * P_v2d.y();
@@ -414,18 +417,18 @@ public:
                 sin(yaw),  cos(yaw);
         // std::cout << "object_distance4: " << P_v2d[0] << std::endl;
 
-        // static std::vector<std::vector<double>> history;
-        // double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-        //     return sum + vec[0];
-        // }) / history.size();
-        // double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
-        //     return sum + vec[1];
-        // }) / history.size();
-        // history.push_back({P_v2d[0], P_v2d[1]});
-        // if (history.size() > 3) {
-        //     history.erase(history.begin());
-        //     printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
-        // }
+        static std::vector<std::vector<double>> history;
+        double avg_x = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+            return sum + vec[0];
+        }) / history.size();
+        double avg_y = std::accumulate(history.begin(), history.end(), 0.0, [](double sum, const std::vector<double>& vec) {
+            return sum + vec[1];
+        }) / history.size();
+        history.push_back({P_v2d[0], P_v2d[1]});
+        if (history.size() > 3) {
+            history.erase(history.begin());
+            printf("avg relative position: %.3f, %.3f\n", avg_x, avg_y);
+        }
 
         return Eigen::Vector2d(x, y) + R_vw * P_v2d;
     }
