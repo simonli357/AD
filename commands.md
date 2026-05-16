@@ -79,7 +79,7 @@ roslaunch control controller.launch camera:=true ip:=10.89.16.85 use_gps:=false 
 With traffic and GPS:
 
 ```bash
-roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=6
 roslaunch control controller.launch camera:=true ip:=10.89.16.85 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=10
 ```
 
