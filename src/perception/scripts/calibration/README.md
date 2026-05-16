@@ -160,6 +160,47 @@ The tool preserves the existing camera `x/y/z` translation and only replaces
 the calibrated roll, pitch, and yaw. It also prints the effective camera
 intrinsics used for the runtime-flipped image.
 
+## 6. Depth-Only Wall Yaw Check
+
+`depth_wall_yaw.py` estimates yaw from the D435i depth image only. Use it as an
+independent yaw sanity check when the car is square to a flat wall about
+`1.0-1.5 m` away.
+
+Setup:
+
+- The wall must be flat and perpendicular to the car centerline.
+- The selected image ROI must contain only the wall, not the target paper edge,
+  tape, floor, car bumper, or other objects.
+- Default output uses `--runtime-flip rotate180`, matching the default
+  perception camera convention. Positive yaw means the camera points left, and
+  the right side of the runtime image should be closer than the left side.
+
+Run on the machine connected to the RealSense:
+
+```bash
+python3 src/perception/scripts/calibration/depth_wall_yaw.py check
+python3 src/perception/scripts/calibration/depth_wall_yaw.py run
+```
+
+Useful options:
+
+```bash
+python3 src/perception/scripts/calibration/depth_wall_yaw.py run \
+  --frames 90 \
+  --width 848 --height 480 \
+  --min-distance 0.8 --max-distance 1.8 \
+  --roi 0.12 0.25 0.88 0.75
+```
+
+Outputs are written under `runs/YYYYMMDD_HHMMSS_depth_wall_yaw/`:
+
+- `depth_wall_yaw_report.md`: human-readable yaw and left/right depth summary.
+- `depth_wall_yaw_result.yaml`: full numeric result.
+- `depth_wall_yaw_frames.csv`: per-frame plane-fit details.
+
+This method estimates yaw only. It does not replace the ChArUco workflow for
+roll/pitch, and it still depends on the wall being square to the car.
+
 ## Useful Commands
 
 Solve the latest captured run again:
