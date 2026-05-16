@@ -68,12 +68,35 @@ DEFAULT_SPEC: Dict[str, Any] = {
             "file": "charuco_ground_target_a2_large_2x_300dpi.png",
             "target_scale": 2.0,
         },
+        "wall_letter": {
+            "name": "Letter landscape wall target",
+            "width_mm": 279.4,
+            "height_mm": 215.9,
+            "file": "charuco_wall_target_letter_300dpi.png",
+            "target_placement": "vertical-front",
+        },
+        "wall_a4": {
+            "name": "A4 landscape wall target",
+            "width_mm": 297.0,
+            "height_mm": 210.0,
+            "file": "charuco_wall_target_a4_300dpi.png",
+            "target_placement": "vertical-front",
+        },
+        "wall_a2_large2x": {
+            "name": "A2 landscape, 2x wall target",
+            "width_mm": 594.0,
+            "height_mm": 420.0,
+            "file": "charuco_wall_target_a2_large_2x_300dpi.png",
+            "target_scale": 2.0,
+            "target_placement": "vertical-front",
+        },
     },
 }
 
 MIN_VALID_FRAMES = 15
 MIN_CHARUCO_CORNERS = 12
 DEFAULT_FRAME_COUNT = 40
+TARGET_PLACEMENTS = ("ground", "vertical-front")
 
 
 @dataclass
@@ -429,6 +452,7 @@ def draw_arrow(image: np.ndarray, start: Tuple[int, int], end: Tuple[int, int], 
 
 def draw_target_page(spec: Dict[str, Any], page_key: str, output_path: Path) -> None:
     page = spec["pages"][page_key]
+    target_placement = str(page.get("target_placement", "ground"))
     dpi = int(spec["dpi"])
     target_scale = float(page.get("target_scale", 1.0))
     page_w = mm_to_px(float(page["width_mm"]), dpi)
@@ -455,7 +479,17 @@ def draw_target_page(spec: Dict[str, Any], page_key: str, output_path: Path) -> 
 
     x_arrow_start = (center_x, max(mm_to_px(13.0, dpi), board_top - mm_to_px(3.0, dpi)))
     x_arrow_end = (center_x, max(mm_to_px(5.0, dpi), board_top - mm_to_px(13.0, dpi)))
-    draw_arrow(canvas, x_arrow_start, x_arrow_end, "+X CAR FORWARD")
+    if target_placement == "vertical-front":
+        draw_arrow(canvas, x_arrow_start, x_arrow_end, "+Z CAR UP")
+        put_centered_text(
+            canvas,
+            "WALL: BOARD PLANE SQUARE TO CAR CENTERLINE",
+            (center_x, min(page_h - mm_to_px(18.0, dpi), board_bottom + mm_to_px(18.0, dpi))),
+            0.5,
+            thickness=1,
+        )
+    else:
+        draw_arrow(canvas, x_arrow_start, x_arrow_end, "+X CAR FORWARD")
 
     y_arrow_start = (max(mm_to_px(14.0, dpi), board_left - mm_to_px(4.0, dpi)), center_y)
     y_arrow_end = (max(mm_to_px(4.0, dpi), board_left - mm_to_px(15.0, dpi)), center_y)
@@ -532,9 +566,16 @@ def cmd_make_target(_: argparse.Namespace) -> int:
     for page in spec["pages"].values():
         print(f"  {ASSETS_DIR / str(page['file'])}")
     print(f"  {ASSETS_DIR / 'target_spec.yaml'}")
-    print("For floor calibration, prefer the A2 2x target.")
+    print("For floor or wall calibration, prefer the A2 2x target.")
     print("Print at Actual size / 100% / no fit to page.")
     return 0
+
+
+def normalized_target_placement(value: Optional[str]) -> str:
+    target_placement = str(value or "ground")
+    if target_placement not in TARGET_PLACEMENTS:
+        raise ValueError(f"Unsupported target placement: {target_placement}")
+    return target_placement
 
 
 def resolve_run_dir(path_text: Optional[str]) -> Path:
@@ -585,6 +626,7 @@ def capture_realsense(args: argparse.Namespace) -> Path:
     run_dir = create_run_dir(args.run_dir)
     print_scale = float(args.print_scale_mm) / 100.0
     runtime_flip = str(args.runtime_flip)
+    target_placement = normalized_target_placement(getattr(args, "target_placement", "ground"))
     min_corners = int(args.min_corners)
 
     pipeline = rs.pipeline()
@@ -610,6 +652,7 @@ def capture_realsense(args: argparse.Namespace) -> Path:
     dataset: Dict[str, Any] = {
         "created_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "runtime_flip": runtime_flip,
+        "target_placement": target_placement,
         "print_scale_mm": float(args.print_scale_mm),
         "print_scale": print_scale,
         "target_spec": spec,
@@ -632,6 +675,7 @@ def capture_realsense(args: argparse.Namespace) -> Path:
     print("  SPACE: save a frame when the board is detected")
     print("  q: finish")
     print("Keep the car and target fixed while capturing.")
+    print(f"Target placement model: {target_placement}")
     if args.max_seconds:
         print(f"Capture will stop after {float(args.max_seconds):.1f} seconds even if fewer frames are saved.")
 
@@ -710,9 +754,11 @@ def collect_observations(
     run_dir: Path,
     dataset: Dict[str, Any],
     min_corners: int,
+    target_placement_override: Optional[str] = None,
 ) -> Tuple[List[Observation], Dict[str, Dict[str, Any]]]:
     spec = normalize_target_spec(dataset.get("target_spec") or load_target_spec())
     print_scale = float(dataset.get("print_scale", 1.0))
+    target_placement = normalized_target_placement(target_placement_override or dataset.get("target_placement", "ground"))
     observations: List[Observation] = []
     frame_stats: Dict[str, Dict[str, Any]] = {}
     detections_dir = run_dir / "detections"
@@ -738,7 +784,7 @@ def collect_observations(
         }
         if not accepted:
             continue
-        object_points = object_points_for_ids(detection.charuco_ids, spec, print_scale)
+        object_points = object_points_for_ids(detection.charuco_ids, spec, print_scale, target_placement)
         for charuco_id, object_point, image_point in zip(
             detection.charuco_ids.reshape(-1),
             object_points,
@@ -851,6 +897,7 @@ def solve_run(
     tunables_path: Path,
     runtime_width: int = 640,
     runtime_height: int = 480,
+    target_placement_override: Optional[str] = None,
 ) -> Dict[str, Any]:
     dataset = load_dataset(run_dir)
     camera = dataset.get("camera") or {}
@@ -859,7 +906,8 @@ def solve_run(
 
     camera_matrix = np.asarray(camera["camera_matrix"], dtype=np.float64).reshape(3, 3)
     dist_coeffs = np.asarray(camera["dist_coeffs"], dtype=np.float64).reshape(-1)
-    observations, frame_stats = collect_observations(run_dir, dataset, min_corners)
+    target_placement = normalized_target_placement(target_placement_override or dataset.get("target_placement", "ground"))
+    observations, frame_stats = collect_observations(run_dir, dataset, min_corners, target_placement)
     valid_frames = len({obs.image_name for obs in observations})
     if len(observations) < 6:
         raise RuntimeError(f"Need at least 6 ChArUco observations; found {len(observations)}")
@@ -938,6 +986,7 @@ def solve_run(
         "created_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "run_dir": str(run_dir),
         "runtime_flip": runtime_flip,
+        "target_placement": target_placement,
         "capture_camera_params": [
             float(camera_matrix[0, 0]),
             float(camera_matrix[1, 1]),
@@ -1009,6 +1058,7 @@ def write_validation_report(path: Path, result: Dict[str, Any]) -> None:
         "",
         f"Run: `{result['run_dir']}`",
         f"Runtime flip: `{result['runtime_flip']}`",
+        f"Target placement: `{result.get('target_placement', 'ground')}`",
         f"Valid frames: {result['valid_frames']}",
         f"ChArUco observations: {result['observations']}",
         "",
@@ -1047,6 +1097,7 @@ def cmd_solve(args: argparse.Namespace) -> int:
         Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
+        getattr(args, "target_placement", None),
     )
     euler = result["euler_repo_convention"]
     err = result["reprojection_error_px"]
@@ -1070,6 +1121,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
         Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
+        getattr(args, "target_placement", None),
     )
     print(f"Validation report refreshed: {run_dir / 'validation_report.md'}")
     for warning in result.get("warnings", []):
@@ -1087,10 +1139,16 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         return check_code
 
     make_targets()
+    target_placement = normalized_target_placement(getattr(args, "target_placement", "ground"))
     print("\nStep 1: Print the target")
-    print(f"  Recommended floor target: {ASSETS_DIR / DEFAULT_SPEC['pages']['a2_large2x']['file']}")
-    print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['letter']['file']}")
-    print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['a4']['file']}")
+    if target_placement == "vertical-front":
+        print(f"  Recommended wall target: {ASSETS_DIR / DEFAULT_SPEC['pages']['wall_a2_large2x']['file']}")
+        print(f"  Small reference target:  {ASSETS_DIR / DEFAULT_SPEC['pages']['wall_letter']['file']}")
+        print(f"  Small reference target:  {ASSETS_DIR / DEFAULT_SPEC['pages']['wall_a4']['file']}")
+    else:
+        print(f"  Recommended floor target: {ASSETS_DIR / DEFAULT_SPEC['pages']['a2_large2x']['file']}")
+        print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['letter']['file']}")
+        print(f"  Small reference target:   {ASSETS_DIR / DEFAULT_SPEC['pages']['a4']['file']}")
     print("For the low car camera, use the A2 2x target if possible.")
     print("Print at Actual size / 100% / no fit to page. Do not scale.")
     print("On the A2 2x target, the base 100 mm scale bar should measure about 200 mm.")
@@ -1102,10 +1160,17 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         print(f"Print scale correction will be {print_scale:.5f}.")
 
     print("\nStep 2: Place the target")
-    print("  Put it flat on the ground in front of the car.")
-    print("  Aim +X CAR FORWARD in the car's forward direction.")
-    print("  Aim +Y CAR LEFT toward the car's left side.")
-    print("  Align the target centerline to the car centerline.")
+    if target_placement == "vertical-front":
+        print("  Mount it flat and vertical on a rigid wall or board facing the car.")
+        print("  Make the target plane perpendicular to the car centerline.")
+        print("  Aim +Z CAR UP upward.")
+        print("  Aim +Y CAR LEFT toward the car's left side.")
+        print("  Align the target vertical centerline to the car centerline.")
+    else:
+        print("  Put it flat on the ground in front of the car.")
+        print("  Aim +X CAR FORWARD in the car's forward direction.")
+        print("  Aim +Y CAR LEFT toward the car's left side.")
+        print("  Align the target centerline to the car centerline.")
     print("  Keep the car and target fixed until capture is finished.")
     input("Press Enter when the target is placed...")
 
@@ -1114,6 +1179,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         run_dir=args.run_dir,
         frames=frames,
         runtime_flip=args.runtime_flip,
+        target_placement=target_placement,
         print_scale_mm=measured_mm,
         min_corners=args.min_corners,
         auto=args.auto,
@@ -1134,6 +1200,7 @@ def cmd_wizard(args: argparse.Namespace) -> int:
         Path(args.tunables_path).expanduser().resolve(),
         int(args.runtime_width),
         int(args.runtime_height),
+        target_placement,
     )
     euler = result["euler_repo_convention"]
     print("\nDone.")
@@ -1168,6 +1235,11 @@ def build_parser() -> argparse.ArgumentParser:
     solve.add_argument("--tunables-path", default=str(DEFAULT_TUNABLES_PATH))
     solve.add_argument("--runtime-width", type=int, default=640)
     solve.add_argument("--runtime-height", type=int, default=480)
+    solve.add_argument(
+        "--target-placement",
+        choices=TARGET_PLACEMENTS,
+        help="Override target placement saved in dataset.yaml.",
+    )
     solve.set_defaults(func=cmd_solve)
 
     validate = sub.add_parser("validate", help="Refresh validation outputs for a run directory.")
@@ -1177,6 +1249,11 @@ def build_parser() -> argparse.ArgumentParser:
     validate.add_argument("--tunables-path", default=str(DEFAULT_TUNABLES_PATH))
     validate.add_argument("--runtime-width", type=int, default=640)
     validate.add_argument("--runtime-height", type=int, default=480)
+    validate.add_argument(
+        "--target-placement",
+        choices=TARGET_PLACEMENTS,
+        help="Override target placement saved in dataset.yaml.",
+    )
     validate.set_defaults(func=cmd_validate)
 
     wizard = sub.add_parser("wizard", help="Run the guided end-to-end calibration flow.")
@@ -1194,6 +1271,12 @@ def add_capture_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--run-dir", help="Output run directory. Defaults to runs/YYYYMMDD_HHMMSS.")
     parser.add_argument("--frames", type=int, default=DEFAULT_FRAME_COUNT)
     parser.add_argument("--runtime-flip", choices=["rotate180", "none"], default="rotate180")
+    parser.add_argument(
+        "--target-placement",
+        choices=TARGET_PLACEMENTS,
+        default="ground",
+        help="Physical target model: ground plane, or vertical wall in front of the car.",
+    )
     parser.add_argument("--print-scale-mm", type=float, default=100.0, help="Measured length of the 100 mm bar.")
     parser.add_argument("--min-corners", type=int, default=MIN_CHARUCO_CORNERS)
     parser.add_argument("--auto", action="store_true", help="Auto-save detected frames instead of using SPACE.")
