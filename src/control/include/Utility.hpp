@@ -387,8 +387,8 @@ public:
         double Y_c = y_norm * object_distance;
         double Z_c = object_distance;
 
-        auto const& tf      = Tunable::real ? REALSENSE_TF_REAL : REALSENSE_TF;
-        double tx    = tf[0], ty = tf[1], cam_yaw = Tunable::rs_yaw, cam_roll = Tunable::rs_roll, cam_pitch = Tunable::rs_pitch;
+        std::array<double, 6> tf = Tunable::real ? Tunable::realsenseTfReal() : REALSENSE_TF;
+        double tx    = tf[0], ty = tf[1], cam_yaw = tf[5], cam_roll = tf[3];
 
         double cos_r = std::cos(cam_roll);
         double sin_r = std::sin(cam_roll);

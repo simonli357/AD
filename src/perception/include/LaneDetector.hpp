@@ -4,6 +4,7 @@
 #include "utils/Lane3.h"
 #include "std_msgs/Float32.h"
 #include "utils/constants.h"
+#include "utils/realsense_tunables.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <chrono>
@@ -28,6 +29,22 @@ class IPMCamera {
 			{
 
 					using namespace VehicleConstants;
+					std::vector<double> realsense_tf_values;
+					if (!nh.getParam("/real/realsense_tf_real", realsense_tf_values)) {
+							ROS_ERROR("Missing param: /real/realsense_tf_real");
+							exit(1);
+					}
+					std::array<double, 6> realsense_tf_real;
+					try {
+							realsense_tf_real = VehicleTunables::to_realsense_tf_array(
+									realsense_tf_values,
+									"/real/realsense_tf_real"
+							);
+					} catch (const std::exception& exc) {
+							ROS_ERROR_STREAM(exc.what());
+							exit(1);
+					}
+
 					// 1) build intrinsic K
 					double fx = CAMERA_PARAMS_REAL[0], fy = CAMERA_PARAMS_REAL[1],
 								 cx = CAMERA_PARAMS_REAL[2], cy = CAMERA_PARAMS_REAL[3];
@@ -37,9 +54,9 @@ class IPMCamera {
 							 0,  0,  1);
 	
 					// 2) build rotation R from yaw/pitch/roll (in radians)
-					double yaw   = REALSENSE_TF_REAL[5];
-					double pitch = REALSENSE_TF_REAL[4];
-					double roll  = REALSENSE_TF_REAL[3];
+					double yaw   = realsense_tf_real[5];
+					double pitch = realsense_tf_real[4];
+					double roll  = realsense_tf_real[3];
 	
 					cv::Mat Rz = (cv::Mat_<double>(3,3) <<
 							std::cos(-yaw), -std::sin(-yaw), 0,
@@ -65,12 +82,9 @@ class IPMCamera {
 					cv::Mat R = Rs * (Rz * (Ry * Rx));
 	
 					// 3) build translation t = –R * C
-					cv::Mat C = (cv::Mat_<double>(3,1) << REALSENSE_TF_REAL[0],
-							REALSENSE_TF_REAL[1],
-							REALSENSE_TF_REAL[2]);
-					// cv::Mat C = (cv::Mat_<double>(3,1) << 0,
-					// 		0,
-					// 		REALSENSE_TF_REAL[2]);
+					cv::Mat C = (cv::Mat_<double>(3,1) << realsense_tf_real[0],
+							realsense_tf_real[1],
+							realsense_tf_real[2]);
 					cv::Mat t = -R * C;
 	
 					// 4) form [R|t] and projection P = K * [R|t]
@@ -714,11 +728,6 @@ class LaneDetector {
 			double pixel_value = (img_height - stop_loc);
 			stopline_dist = pixel_to_meter_y(pixel_value) + ipm_camera.near_m; // distance from line to car center
 			stopline_dist_to_front = stopline_dist;
-			// if (real) {
-			// 	stopline_dist_to_front += VehicleConstants::REALSENSE_TF_REAL[0];
-			// } else {
-			// 	stopline_dist_to_front += VehicleConstants::REALSENSE_TF[0];
-			// }
 			stopline_dist_to_front -= VehicleConstants::CAR_LENGTH / 2;
 			if (stopline_dist_to_front > 0.0) {
 				stopline = true;
