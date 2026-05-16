@@ -3,7 +3,7 @@
 ## Jetson IPs
 
 - BoschFMC: `192.168.50.110`
-- hotspot: 10.89.16.119
+- hotspot: `10.89.16.119`
 
 ## Command laptop IP (Dell)
 
@@ -41,6 +41,7 @@ Create a persistent connection:
 
 ```bash
 sudo nmcli connection modify "BoschFMC" connection.autoconnect yes
+sudo nmcli connection modify "slsecret357" connection.autoconnect yes
 ```
 
 Show the Jetson IP:
