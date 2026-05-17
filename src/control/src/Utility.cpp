@@ -349,8 +349,9 @@ void Utility::process_sign_data(const utils::Sign& msg) {
         if (dist > 1.25) { // emergency might be triggered by the fog, which is not a real object
             // std::cout << "fog: (" << fog_x << ", " << fog_y << "), ego: (" << x << ", " << y << "), dist: " << dist << std::endl;
             emergency = true;
+            double preserved_steer = steer_command;
             for(int i = 0; i <3; i++) {
-                publish_cmd_vel(0.0, 0.0);
+                publish_cmd_vel(preserved_steer, 0.0);
             }
         } else {
             debug("process_sign_data(): emergency triggered by fog, ignoring. distance: " + std::to_string(dist), 1);
