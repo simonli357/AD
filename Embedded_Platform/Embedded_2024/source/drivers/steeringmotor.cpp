@@ -176,12 +176,12 @@ namespace drivers{
         else if(f_angle > 0)
         {
             // Polynomial Coefficients (Order 5):
-            const float a5 = -0.0000000094286134f;
-            const float a4 =  0.0000002006492730f;
-            const float a3 =  0.0000001106130999f;
-            const float a2 = -0.0000120192007872f;
-            const float a1 = -0.0009293191400372f;
-            const float c  =  0.0735989541715659f;
+            const float a5 = -0.0000000491593484f;
+            const float a4 =  0.0000029126164583f;
+            const float a3 = -0.0000605693952073f;
+            const float a2 =  0.0005174370310037f;
+            const float a1 = -0.0022750131493870f;
+            const float c  =  0.0742195442986335f;
             dutyCycle = a5 * std::pow(f_angle, 5)
                       + a4 * std::pow(f_angle, 4)
                       + a3 * std::pow(f_angle, 3)
@@ -193,12 +193,12 @@ namespace drivers{
         else if(f_angle < 0)
         {
             // Polynomial Coefficients (Order 5):
-            const float a5 = -0.0000000531700515f;
-            const float a4 = -0.0000026669403507f;
-            const float a3 = -0.0000494748305042f;
-            const float a2 = -0.0003773312839989f;
-            const float a1 = -0.0020148232875700f;
-            const float c  =  0.0735846340596389f;
+            const float a5 =  0.0000000122413079f;
+            const float a4 =  0.0000009330390902f;
+            const float a3 =  0.0000235967948482f;
+            const float a2 =  0.0002401414893122f;
+            const float a1 = -0.0000662954160231f;
+            const float c  =  0.0741971583466842f;
             dutyCycle = a5 * std::pow(f_angle, 5)
                       + a4 * std::pow(f_angle, 4)
                       + a3 * std::pow(f_angle, 3)
