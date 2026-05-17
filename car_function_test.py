@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Interactive car function test.
+"""Car function test.
 
 Walks through every actuator/sensor on the embedded platform one at a time and
-asks the user to confirm correct behaviour after each step. Results, CSVs and
-plots are written to a per-run timestamped folder under ./car_function_results/.
+records telemetry. Results, CSVs and plots are written to a per-run timestamped
+folder under ./car_function_results/.
 
 Set 1  car on a box (wheels free):
     1.1  Communication check
@@ -204,12 +204,6 @@ def yes_no(prompt: str, default_yes: bool = True) -> bool:
             return False
 
 
-def confirm_pass(record: TestRecord) -> None:
-    ok = yes_no(f"  → Did '{record.name}' behave correctly?", default_yes=True)
-    record.user_pass = ok
-    record.user_note = input("  → Optional note (press Enter to skip): ").strip()
-
-
 def wait_enter(prompt: str) -> None:
     input(f"{prompt} (press Enter to continue) ")
 
@@ -307,7 +301,14 @@ def test_communication(link: CarLink) -> TestRecord:
     print(f"  IMU messages seen     : {'YES' if link.imu_seen else 'NO'}")
     if not link.enc_seen:
         print("  WARNING: no encoder telemetry — downstream tests will be uninformative.")
-    confirm_pass(rec)
+    rec.user_pass = link.enc_seen and link.imu_seen
+    if not rec.user_pass:
+        missing = []
+        if not link.enc_seen:
+            missing.append("encoder")
+        if not link.imu_seen:
+            missing.append("imu")
+        rec.user_note = "missing telemetry: " + ", ".join(missing)
     return rec
 
 
@@ -318,35 +319,38 @@ def test_forward_ramp(link: CarLink, vmax: float) -> TestRecord:
         rec.user_note = "user aborted: car not on box"
         rec.user_pass = False
         return rec
-    wait_enter("Starting in")
     ramp_t = 6.0
     if not ramp(link, rec, 0.0, vmax, 0.0, ramp_t, label="ramp-up"):
-        link.stop(); confirm_pass(rec); return rec
+        link.stop()
+        rec.user_pass = False
+        rec.user_note = "runaway detected"
+        return rec
     hold(link, rec, vmax, 0.0, 2.0, label="hold")
     ramp(link, rec, vmax, 0.0, 0.0, ramp_t, label="ramp-down")
     link.stop()
-    confirm_pass(rec)
+    rec.user_pass = True
     return rec
 
 
 def test_reverse_ramp(link: CarLink, vmax: float) -> TestRecord:
     rec = TestRecord(name="1.3_reverse_ramp")
     print(f"\n=== Test 1.3 — Reverse ramp 0 → -{vmax:.0f} cm/s → 0 (car on box) ===")
-    wait_enter("Starting in")
     ramp_t = 6.0
     if not ramp(link, rec, 0.0, -vmax, 0.0, ramp_t, label="ramp-up"):
-        link.stop(); confirm_pass(rec); return rec
+        link.stop()
+        rec.user_pass = False
+        rec.user_note = "runaway detected"
+        return rec
     hold(link, rec, -vmax, 0.0, 2.0, label="hold")
     ramp(link, rec, -vmax, 0.0, 0.0, ramp_t, label="ramp-down")
     link.stop()
-    confirm_pass(rec)
+    rec.user_pass = True
     return rec
 
 
 def test_steering_sweep(link: CarLink, max_steer: float) -> TestRecord:
     rec = TestRecord(name="1.4_steering_sweep")
     print(f"\n=== Test 1.4 — Steering sweep at 5 cm/s, ±{max_steer:.1f}° (car on box) ===")
-    wait_enter("Starting in")
     sweep_t = 4.0
     speed = 5.0
     # 0 → -max (left)
@@ -358,7 +362,7 @@ def test_steering_sweep(link: CarLink, max_steer: float) -> TestRecord:
     # +max → 0
     steer_ramp(link, rec, speed, +max_steer, 0.0, sweep_t, label="→ centre")
     link.stop()
-    confirm_pass(rec)
+    rec.user_pass = True
     return rec
 
 
@@ -371,14 +375,13 @@ def test_straight_4m(link: CarLink) -> TestRecord:
     print("Place the car on the ground at the start mark, wheels straight.")
     if not yes_no("Is the car on the ground with a clear ~5 m runway?", True):
         rec.user_pass = False; rec.user_note = "user aborted: not on ground"; return rec
-    wait_enter("Starting in")
     ramp(link, rec, 0.0, speed, 0.0, 1.5, label="accel")
     hold(link, rec, speed, 0.0, drive_t, label="cruise")
     ramp(link, rec, speed, 0.0, 0.0, 1.0, label="decel")
     link.stop()
     measured = input("  → Measured forward distance [cm] (Enter to skip): ").strip()
     rec.user_note = f"measured_distance_cm={measured}" if measured else ""
-    confirm_pass(rec)
+    rec.user_pass = True
     return rec
 
 
@@ -409,7 +412,7 @@ def test_half_circle(link: CarLink, side: str, max_steer: float) -> TestRecord:
     link.stop()
     diam = input(f"  → Measured arc diameter [cm] for {side} turn (Enter to skip): ").strip()
     rec.user_note = f"arc_diameter_cm={diam}" if diam else ""
-    confirm_pass(rec)
+    rec.user_pass = True
     return rec
 
 
@@ -446,10 +449,9 @@ def main() -> None:
         # ── Set 2 ──────────────────────────────────────────────────────────────
         if not args.skip_set2:
             print("\n############### SET 2 — car on ground ###############")
-            if yes_no("Proceed with on-ground tests?", True):
-                records.append(test_straight_4m(link))
-                records.append(test_half_circle(link, "left", args.max_steer))
-                records.append(test_half_circle(link, "right", args.max_steer))
+            records.append(test_straight_4m(link))
+            records.append(test_half_circle(link, "left", args.max_steer))
+            records.append(test_half_circle(link, "right", args.max_steer))
 
     except KeyboardInterrupt:
         print("\n!! Interrupted — stopping motor.")
