@@ -19,7 +19,7 @@ CM_TO_DEG = 140.63  # deg/s per cm/s (negative to fix sign)
 BAND_TOL = 0.15     # ±10 % tolerance band for delay detection
 HOLD_S   = 0.5      # must remain inside band for this long to count as settled
 
-ZERO_STEER_PWM = 0.0736
+ZERO_STEER_PWM = 0.0742
 ZERO_SPEED_PWM = 0.074568
 
 # ────────────────────────────────────────────────────────────────────────────────
