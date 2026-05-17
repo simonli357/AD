@@ -5,11 +5,13 @@
 #include <chrono>
 #include <cstdint>
 #include <netinet/in.h>
+#include <string>
 #include <std_msgs/Float32MultiArray.h>
 #include <sys/types.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
+#include <vector>
 
 using namespace std::chrono;
 using namespace VehicleConstants;
@@ -47,8 +49,9 @@ class TrafficClient {
 	const size_t buffer_size = 1024;
 	bool alive = true;
 	bool connected = false;
-	sockaddr_in tcp_address;
-	int tcp_socket;
+	sockaddr_in tcp_address{};
+	int tcp_socket = -1;
+	std::string receive_buffer;
 	std::thread main;
 	std::unique_ptr<tbb::task_group> tasks;
 	// Utility Methods

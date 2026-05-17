@@ -7,16 +7,16 @@ real:
   highway_cooldown: 3.0
   sign_cooldown: 0.5
   lane_localization_cooldown: 0.5
-  # Sign/object pose correction from src/perception/scripts/data_analysis/2026/long.csv.
+  # Sign/object pose correction from src/perception/scripts/data_analysis/2026/long.csv + long2.csv.
   # CSV distances were recorded in cm; offsets below are converted to meters.
-  sign_lon_correction_offset: 0.03375991
-  sign_lon_correction_lon_coeff: 0.920732
-  sign_lon_correction_lat_coeff: 0.023004
-  sign_lon_correction_abs_lat_coeff: -0.026925
-  sign_lat_correction_offset: -0.00028418
-  sign_lat_correction_lat_coeff: 0.972237
-  sign_lat_correction_lon_coeff: -0.048296
-  sign_lat_correction_abs_lat_coeff: -0.018260
+  sign_lon_correction_offset: 0.03834467
+  sign_lon_correction_lon_coeff: 0.915505
+  sign_lon_correction_lat_coeff: 0.020577
+  sign_lon_correction_abs_lat_coeff: -0.021821
+  sign_lat_correction_offset: -0.01700339
+  sign_lat_correction_lat_coeff: 0.950035
+  sign_lat_correction_lon_coeff: -0.037676
+  sign_lat_correction_abs_lat_coeff: 0.016156
   # sign_lon_correction_offset: 0
   # sign_lon_correction_lon_coeff: 1
   # sign_lon_correction_lat_coeff: 0.

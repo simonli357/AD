@@ -1,27 +1,127 @@
 #include "TrafficClient.hpp"
 #include "utils/constants.h"
+#include <algorithm>
 #include <arpa/inet.h>
+#include <array>
+#include <cerrno>
 #include <chrono>
 #include <cstring>
 #include <cv_bridge/cv_bridge.h>
+#include <exception>
 #include <fcntl.h>
+#include <cmath>
+#include <iostream>
 #include <netinet/in.h>
 #include <nlohmann/json.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
+#include <optional>
 #include <ostream>
 #include <ros/ros.h>
+#include <string>
 #include <sys/socket.h>
 #include <tuple>
+#include <unistd.h>
+#include <vector>
 
 using json = nlohmann::json;
 
+namespace {
+constexpr size_t max_receive_buffer_size = 64 * 1024;
+constexpr double millimeter_coordinate_threshold = 100.0;
+
+std::vector<std::string> extract_json_objects(std::string &buffer) {
+	std::vector<std::string> objects;
+	size_t object_start = std::string::npos;
+	int depth = 0;
+	bool in_string = false;
+	bool escaped = false;
+
+	for (size_t i = 0; i < buffer.size(); ++i) {
+		const char c = buffer[i];
+
+		if (in_string) {
+			if (escaped) {
+				escaped = false;
+			} else if (c == '\\') {
+				escaped = true;
+			} else if (c == '"') {
+				in_string = false;
+			}
+			continue;
+		}
+
+		if (c == '"') {
+			in_string = true;
+			continue;
+		}
+
+		if (c == '{') {
+			if (depth == 0) {
+				object_start = i;
+			}
+			++depth;
+		} else if (c == '}' && depth > 0) {
+			--depth;
+			if (depth == 0 && object_start != std::string::npos) {
+				objects.emplace_back(buffer.substr(object_start, i - object_start + 1));
+				object_start = std::string::npos;
+			}
+		}
+	}
+
+	if (depth > 0 && object_start != std::string::npos) {
+		buffer.erase(0, object_start);
+	} else {
+		buffer.clear();
+	}
+
+	if (buffer.size() > max_receive_buffer_size) {
+		std::cerr << "TrafficClient: dropping oversized partial TCP JSON buffer" << std::endl;
+		buffer.clear();
+	}
+
+	return objects;
+}
+
+double location_unit_scale(double x, double y, double z) {
+	const double max_abs_coordinate = std::max({std::abs(x), std::abs(y), std::abs(z)});
+	return max_abs_coordinate > millimeter_coordinate_threshold ? 0.001 : 1.0;
+}
+
+std::optional<double> read_json_double(const nlohmann::json &msg, const char *key) {
+	if (!msg.contains(key) || msg.at(key).is_null()) {
+		return std::nullopt;
+	}
+
+	const auto &value = msg.at(key);
+	if (value.is_number()) {
+		return value.get<double>();
+	}
+
+	if (value.is_string()) {
+		try {
+			const std::string raw = value.get<std::string>();
+			size_t parsed_length = 0;
+			const double parsed = std::stod(raw, &parsed_length);
+			if (parsed_length == raw.size()) {
+				return parsed;
+			}
+		} catch (const std::exception &) {
+			return std::nullopt;
+		}
+	}
+
+	return std::nullopt;
+}
+} // namespace
+
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
+	tasks = std::make_unique<tbb::task_group>();
+	this->car_id = Tunable::gps_id;
+	this->car_positions.reserve(num_points);
+	this->car_positions.resize(num_points);
 	main = std::thread(&TrafficClient::initialize, this);
-	ThreadPools::communication.execute([this] { tasks = std::make_unique<tbb::task_group>(); });
-    this->car_id = Tunable::gps_id;
-    this->car_positions.reserve(num_points);
-    this->car_positions.resize(num_points);
 }
 
 TrafficClient::~TrafficClient() {
@@ -78,29 +178,53 @@ void TrafficClient::listen() {
 		ssize_t bytes = recv(tcp_socket, buffer.data(), buffer.size(), 0);
 
 		if (bytes > 0) {
-			uint8_t *begin = buffer.data();
-			uint8_t *end = buffer.data() + bytes;
-			uint8_t *json_start = std::find(begin, end, '{');
+			receive_buffer.append(reinterpret_cast<char *>(buffer.data()), bytes);
 
-			if (json_start == end) {
-				continue;
+			for (const auto &payload : extract_json_objects(receive_buffer)) {
+				nlohmann::json msg = nlohmann::json::parse(payload, nullptr, false);
+				if (msg.is_discarded()) {
+					std::cerr << "TrafficClient: received invalid JSON from Traffic Server: " << payload << std::endl;
+					continue;
+				}
+
+				if (msg.contains("error")) {
+					std::cerr << "TrafficClient: Traffic Server rejected message: " << msg.dump() << std::endl;
+					continue;
+				}
+
+				const std::string type = msg.value("type", "");
+				if (!type.empty() && type != "location") {
+					std::cout << "TrafficClient: non-location message from Traffic Server: " << msg.dump() << std::endl;
+					continue;
+				}
+
+				const auto x = read_json_double(msg, "x");
+				const auto y = read_json_double(msg, "y");
+				const auto z = read_json_double(msg, "z").value_or(0.0);
+
+				if (!x || !y) {
+					std::cerr << "TrafficClient: location message missing x/y: " << msg.dump() << std::endl;
+					continue;
+				}
+
+				if (!std::isfinite(*x) || !std::isfinite(*y) || !std::isfinite(z)) {
+					std::cerr << "TrafficClient: non-finite location payload: " << msg.dump() << std::endl;
+					continue;
+				}
+
+				const double scale = location_unit_scale(*x, *y, z);
+				if (scale != 1.0) {
+					static bool logged_mm_scale = false;
+					if (!logged_mm_scale) {
+						std::cout << "TrafficClient: detected millimetre-scale location payload; converting to metres" << std::endl;
+						logged_mm_scale = true;
+					}
+				}
+
+				std::cout << "GPS DATA: " << msg.dump() << std::endl;
+
+				handle_location_data(*x * scale, *y * scale, z * scale);
 			}
-
-			std::string_view json_view(reinterpret_cast<char *>(json_start), end - json_start);
-
-			if (!nlohmann::json::accept(json_view)) {
-				continue;
-			}
-
-			nlohmann::json msg = nlohmann::json::parse(json_view);
-
-			double x = msg.value("x", 0.0);
-			double y = msg.value("y", 0.0);
-			double z = msg.value("z", 0.0);
-
-			std::cout << "GPS DATA: " << msg.dump() << std::endl;
-
-			handle_location_data(x / 1000, y / 1000, z / 1000);
 		} else if (bytes == 0) {
 			connected = false; // connection closed
 			break;
