@@ -389,7 +389,7 @@ public:
 
         std::array<double, 6> tf = Tunable::real ? Tunable::realsenseTfReal() : REALSENSE_TF;
         //print tf
-        std::cout << "tf: " << tf[0] << ", " << tf[1] << ", " << tf[2] << ", " << tf[3] << ", " << tf[4] << ", " << tf[5] << std::endl;
+        // std::cout << "tf: " << tf[0] << ", " << tf[1] << ", " << tf[2] << ", " << tf[3] << ", " << tf[4] << ", " << tf[5] << std::endl;
         double tx    = tf[0], ty = tf[1], cam_yaw = tf[5], cam_roll = tf[3];
 
         double cos_r = std::cos(cam_roll);
@@ -406,7 +406,7 @@ public:
         // latency & motion compensation
         double latency = (ros::Time::now() - object_detection_time).toSec();
         double speed   = Tunable::use_encoder ? filtered_encoder_speed : velocity_command;
-        std::cout << "latency: " << latency << "s, speed: " << speed << "m/s" << std::endl;
+        // std::cout << "latency: " << latency << "s, speed: " << speed << "m/s" << std::endl;
         P_v2d.x()    -= latency * speed;
         const double raw_lon = P_v2d.x();
         const double raw_lat = P_v2d.y();
