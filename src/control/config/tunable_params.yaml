@@ -17,6 +17,14 @@ real:
   sign_lat_correction_lat_coeff: 0.972237
   sign_lat_correction_lon_coeff: -0.048296
   sign_lat_correction_abs_lat_coeff: -0.018260
+  # sign_lon_correction_offset: 0
+  # sign_lon_correction_lon_coeff: 1
+  # sign_lon_correction_lat_coeff: 0.
+  # sign_lon_correction_abs_lat_coeff: 0
+  # sign_lat_correction_offset: 0
+  # sign_lat_correction_lat_coeff: 1
+  # sign_lat_correction_lon_coeff: 0
+  # sign_lat_correction_abs_lat_coeff: 0
   min_tailing_dist: 0.3 # max distance from ego car front to other car back
   max_light_dist: 0.75
   max_sign_dist: 1.5
