@@ -54,13 +54,17 @@ class CalibrationMathTest(unittest.TestCase):
         path = Path(__file__).with_name("_tmp_constants.h")
         try:
             path.write_text(
-                "static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = "
-                "{607.40564, 607.05829, 316.02777, 234.60602};\n",
+                "static constexpr std::array<double, 4> CAMERA_PARAMS_REAL = {\n"
+                "    609.625305176,  // fx\n"
+                "    609.785827637,  // fy\n"
+                "    329.530975342,  // cx\n"
+                "    252.389083862\n"
+                "};\n",
                 encoding="utf-8",
             )
             values = calib.parse_numeric_array_from_constants(path, "CAMERA_PARAMS_REAL")
             self.assertIsNotNone(values)
-            self.assertAlmostEqual(values[2], 316.02777)
+            self.assertAlmostEqual(values[2], 329.530975342)
         finally:
             if path.exists():
                 path.unlink()

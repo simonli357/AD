@@ -808,10 +808,10 @@ def parse_numeric_array_from_constants(path: Path, symbol: str) -> Optional[List
     match = re.search(rf"{re.escape(symbol)}\s*=\s*\{{([^}}]+)\}}", text, flags=re.MULTILINE)
     if not match:
         return None
-    raw = match.group(1)
+    raw = "\n".join(line.split("//", 1)[0] for line in match.group(1).splitlines())
     values: List[float] = []
     for part in raw.split(","):
-        expr = part.split("//", 1)[0].strip()
+        expr = part.strip()
         if not expr:
             continue
         try:
