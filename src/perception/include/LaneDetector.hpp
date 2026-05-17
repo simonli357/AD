@@ -188,6 +188,8 @@ class LaneDetector {
 		nh.getParam("window_min_pixels", WINDOW_MIN_PIXELS);
 		nh.getParam("window_height", window_height);
 		n_windows = int((ipm_camera.far_m - ipm_camera.near_m) / window_height);
+		nh.param("window_fit_min_ratio", window_fit_min_ratio, 0.8);
+		window_fit_min_ratio = std::clamp(window_fit_min_ratio, 0.0, 1.0);
 		nh.getParam("stopline_distance_threshold", stopline_distance_threshold);
 		if(!nh.getParam("show_lane", showlane)) {
 			std::cerr << "show_lane parameter not found, exiting." << std::endl;
@@ -221,6 +223,7 @@ class LaneDetector {
 	double window_height = 0.2;
 	int WINDOW_MARGIN = 50;
 	int WINDOW_MIN_PIXELS = 50;
+	double window_fit_min_ratio = 0.8;
 
 	IPMCamera ipm_camera;
 
@@ -481,12 +484,12 @@ class LaneDetector {
 			preprocess(image, processed_image);
 			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return {};
 
-			// ipm_camera.getIPM(image, ipm_color);
-			// cv::imshow("ipm color", ipm_color);
+			ipm_camera.getIPM(image, ipm_color);
+			cv::imshow("ipm color", ipm_color);
 			
-			// cv::imshow("processed image", processed_image);
-			// cv::imshow("processed ipm", ipm_processed);
-			// cv::waitKey(1);
+			cv::imshow("processed image", processed_image);
+			cv::imshow("processed ipm", ipm_processed);
+			cv::waitKey(1);
 			// return;
 
 			// StopLineOut sl = detectStopLineColumns(ipm_processed,
@@ -617,7 +620,7 @@ class LaneDetector {
 					if (i == 0 && good_left && good_right) {
 						double estimated_lane_width = std::abs(left_x - right_x);
 						if (std::abs(estimated_lane_width-LANE_WIDTH_PIXEL) > 0.25 * LANE_WIDTH_PIXEL) {
-							// std::cout << "Inconsistent lane width detected, ratio: " << std::abs(estimated_lane_width-LANE_WIDTH_PIXEL)/LANE_WIDTH_PIXEL << ", LANE_WIDTH_PIXEL: " << LANE_WIDTH_PIXEL << ", estimated: " << estimated_lane_width << std::endl;
+							std::cout << "Inconsistent lane width detected, ratio: " << std::abs(estimated_lane_width-LANE_WIDTH_PIXEL)/LANE_WIDTH_PIXEL << ", LANE_WIDTH_PIXEL: " << LANE_WIDTH_PIXEL << ", estimated: " << estimated_lane_width << std::endl;
 							good_left = false;
 							good_right = false;
 							return {};
@@ -1050,7 +1053,7 @@ class LaneDetector {
 		}
 
 		// DISPLAY
-		// cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
+		cv::Mat out_img = cv::Mat::zeros(binary_warped.size(), CV_8UC3);
 
 		int window_height = static_cast<int>(binary_warped.rows / n_windows); // Caclulate height of parsing windows
 		static std::vector<cv::Point> nonzero;
@@ -1088,9 +1091,9 @@ class LaneDetector {
 				int win_xleft_high = leftx_current + WINDOW_MARGIN;
 				
 				// DISPLAY
-				// cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low),
-        //           cv::Point(win_xleft_high, win_y_high),
-        //           cv::Scalar(0, 255, 0), 2);
+				cv::rectangle(out_img, cv::Point(win_xleft_low, win_y_low),
+                  cv::Point(win_xleft_high, win_y_high),
+                  cv::Scalar(0, 255, 0), 2);
 
 				int sum_left = 0;
 				std::vector<int> good_left_inds;
@@ -1104,16 +1107,16 @@ class LaneDetector {
 				if (good_left_inds.size() > WINDOW_MIN_PIXELS) { // Recenter mean for the next bounding box
 					int mean_left = sum_left / good_left_inds.size();
 					if (mean_left - WINDOW_MARGIN/2 > img_width || mean_left + WINDOW_MARGIN/2 < 0) {
-						// std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
+						std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
 						left_done = true;
 					} else {
 						num_left_windows++;
 						left_lane_inds.insert(left_lane_inds.end(), good_left_inds.begin(), good_left_inds.end()); // Append all good indices together
 						// DISPLAY
-						// cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
+						cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_left = mean_left- mean_left_prev;
 						mean_left_prev = mean_left;
-						// std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
+						std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
 						if (window == 0) {
 							leftx_current = mean_left;
 						} else {
@@ -1121,7 +1124,7 @@ class LaneDetector {
 						}
 					}
 				} else {
-					// std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
+					std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
 					left_done = true;
 				}
 			}
@@ -1132,9 +1135,9 @@ class LaneDetector {
 				int win_xright_high = rightx_current + WINDOW_MARGIN;
 
 				// DISPLAY
-				// cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low),
-				// 					cv::Point(win_xright_high, win_y_high),
-				// 					cv::Scalar(0, 255, 0), 2);  // Green for right lane window
+				cv::rectangle(out_img, cv::Point(win_xright_low, win_y_low),
+									cv::Point(win_xright_high, win_y_high),
+									cv::Scalar(0, 255, 0), 2);  // Green for right lane window
 
 				int sum_right = 0;
 				std::vector<int> good_right_inds; // x values of pixels within the bounding boxes
@@ -1153,10 +1156,10 @@ class LaneDetector {
 						num_right_windows++;
 						right_lane_inds.insert(right_lane_inds.end(), good_right_inds.begin(), good_right_inds.end()); // Append all good indices together
 						// DISPLAY
-						// cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
+						cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_right = mean_right - mean_right_prev;
 						mean_right_prev = mean_right;
-						// std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
+						std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
 						if (window == 0) {
 							rightx_current = mean_right;
 						} else {
@@ -1169,23 +1172,23 @@ class LaneDetector {
 			}
 		}
 		// DISPLAY
-		// for (int i = 0; i < left_lane_inds.size(); ++i) {
-		// 	cv::circle(out_img, cv::Point(nonzerox[left_lane_inds[i]], nonzeroy[left_lane_inds[i]]), 2, cv::Scalar(0, 0, 255), -1);
-		// }
-		// for (int i = 0; i < right_lane_inds.size(); ++i) {
-		// 	cv::circle(out_img, cv::Point(nonzerox[right_lane_inds[i]], nonzeroy[right_lane_inds[i]]), 2, cv::Scalar(255, 0, 0), -1);
-		// }
-		// cv::imshow("Detected Pixels", out_img);
-		// cv::waitKey(1);
+		for (int i = 0; i < left_lane_inds.size(); ++i) {
+			cv::circle(out_img, cv::Point(nonzerox[left_lane_inds[i]], nonzeroy[left_lane_inds[i]]), 2, cv::Scalar(0, 0, 255), -1);
+		}
+		for (int i = 0; i < right_lane_inds.size(); ++i) {
+			cv::circle(out_img, cv::Point(nonzerox[right_lane_inds[i]], nonzeroy[right_lane_inds[i]]), 2, cv::Scalar(255, 0, 0), -1);
+		}
+		cv::imshow("Detected Pixels", out_img);
+		cv::waitKey(1);
 
-		// std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
+		std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
 		// Declare vectors to contain the pixel coordinates to fit
 		VectorXd leftx;
 		VectorXd lefty;
 		VectorXd rightx;
 		VectorXd righty;
 
-		static constexpr int num_window_thresh = 10;
+		const int num_window_thresh = std::max(1, static_cast<int>(std::ceil(window_fit_min_ratio * n_windows)));
 		good_left  = false;
 		good_right = false;
 

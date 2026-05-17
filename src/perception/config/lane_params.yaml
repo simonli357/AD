@@ -5,7 +5,8 @@ far_m: 1.5
 
 window_min_pixels: 8
 window_margin_multiplier: 4
-n_windows: 18
+window_fit_min_ratio: 0.8
+# n_windows: 18
 window_height: 0.1
 stopline_distance_threshold: 0.5 # distance to front of car
 

@@ -284,7 +284,8 @@ class MainWindow(QMainWindow):
                 now = time.time()
                 # if abs(self.car_widget.speed) > 0.02:
                 print(f"Recording frame at {now}")
-                filename = self.recording_path + f"/frame_{int(now)}.jpg"
+                os.makedirs(self.recording_path, exist_ok=True)
+                filename = os.path.join(self.recording_path, f"frame_{int(now)}.jpg")
                 rgb_image.save(filename, 'JPG', quality=100)
 
     def closeEvent(self, event):
