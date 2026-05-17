@@ -257,8 +257,10 @@ namespace VehicleConstants {
         {{6.332, 11.551, 0}},
     };
     static const std::vector<std::vector<double>> ALL_HIGHWAYEXITS = {
-        {{6.488, 12.474, M_PI}},
-        {{14.233, 10.066, 0}},
+        // {{6.488, 12.474, M_PI}}, // 2025
+        // {{14.233, 10.066, 0}}, // 2025
+        {{7.053, 12.87, M_PI}}, // 2026
+        {{13.649, 9.71, 0}}, //2026
     };
     static const std::vector<std::vector<double>> ALL_ONEWAYS = {
         {{5.391, 0.104, 0}},
