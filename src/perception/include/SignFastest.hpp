@@ -92,14 +92,18 @@ class SignFastest {
             nh.param(nodeName+"/ground_dist", ground_dist, false);
             if (ground_dist) {
                 std::vector<double> realsense_tf_values;
-                if (!nh.getParam("/real/realsense_tf_real", realsense_tf_values)) {
-                    ROS_ERROR("Missing param: /real/realsense_tf_real");
+                std::string realsense_tf_param = "/real/realsense_tf_real_sign";
+                if (!nh.getParam(realsense_tf_param, realsense_tf_values)) {
+                    realsense_tf_param = "/real/realsense_tf_real";
+                }
+                if (!nh.getParam(realsense_tf_param, realsense_tf_values)) {
+                    ROS_ERROR("Missing param: /real/realsense_tf_real_sign");
                     exit(1);
                 }
                 try {
                     realsense_tf_real = VehicleTunables::to_realsense_tf_array(
                         realsense_tf_values,
-                        "/real/realsense_tf_real"
+                        realsense_tf_param
                     );
                 } catch (const std::exception& exc) {
                     ROS_ERROR_STREAM(exc.what());

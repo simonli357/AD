@@ -1,4 +1,4 @@
-resolution: 600
+resolution: 750
 width_m: 0.8
 near_m: 0.48 # relative to car
 far_m: 1.5

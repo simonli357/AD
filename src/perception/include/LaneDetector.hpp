@@ -30,15 +30,19 @@ class IPMCamera {
 
 					using namespace VehicleConstants;
 					std::vector<double> realsense_tf_values;
-					if (!nh.getParam("/real/realsense_tf_real", realsense_tf_values)) {
-							ROS_ERROR("Missing param: /real/realsense_tf_real");
+					std::string realsense_tf_param = "/real/realsense_tf_real_lane";
+					if (!nh.getParam(realsense_tf_param, realsense_tf_values)) {
+							realsense_tf_param = "/real/realsense_tf_real";
+					}
+					if (!nh.getParam(realsense_tf_param, realsense_tf_values)) {
+							ROS_ERROR("Missing param: /real/realsense_tf_real_lane");
 							exit(1);
 					}
 					std::array<double, 6> realsense_tf_real;
 					try {
 							realsense_tf_real = VehicleTunables::to_realsense_tf_array(
 									realsense_tf_values,
-									"/real/realsense_tf_real"
+									realsense_tf_param
 							);
 					} catch (const std::exception& exc) {
 							ROS_ERROR_STREAM(exc.what());

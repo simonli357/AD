@@ -1,6 +1,6 @@
 # RealSense IPM RPY Tuning Procedure
 
-This procedure tunes `realsense_tf_real` for lane IPM accuracy using measured
+This procedure tunes `realsense_tf_real_lane` for lane IPM accuracy using measured
 lane/ground geometry. Use it for final validation after the ChArUco and wall
 calibration runs.
 
@@ -24,7 +24,7 @@ Tune these values in:
 
 ```yaml
 real:
-  realsense_tf_real: [x, y, z, roll, pitch, yaw]
+  realsense_tf_real_lane: [x, y, z, roll, pitch, yaw]
 ```
 
 Angles are radians.
@@ -32,17 +32,17 @@ Angles are radians.
 ## 2. Start From A Baseline
 
 Start from the latest board/wall calibration or the best current lane-test RPY.
-Use this order:
+For the finals lane grid, use this order:
 
 ```text
-coarse pitch/height check -> yaw -> pitch -> roll -> repeat once
+pitch from stopline distances -> yaw -> roll -> pitch/yaw/roll recheck
 ```
 
-Do not force yaw from lane-line angle if the forward-distance markers are already
-off by several centimeters. Bad pitch, camera height, intrinsics, or flip
-convention can bias the apparent lane angle in IPM. First make sure centerline
-ground markers land at roughly the right forward distances. Then tune yaw from
-lane direction. Use pitch for forward scale and roll for left/right asymmetry.
+This assumes the RealSense intrinsics, camera height `z`, camera forward offset
+`x`, vehicle-frame reference, and physical car alignment are trusted. Under those
+assumptions, tuning pitch first from the measured stopline distances is the
+right first step. Do not force yaw from lane-line angle while the stopline
+forward distances are still off by several centimeters.
 
 Keep `near_m` and `far_m` fixed during calibration unless the desired controller
 ROI has changed. They define the output IPM crop, not the physical camera pose.
@@ -83,33 +83,45 @@ Avoid markers exactly at `near_m` or `far_m`; edge pixels are sensitive to FOV
 and cropping. With the current `near_m = 0.48` and `far_m = 1.5`, the most useful
 stoplines are the ones clearly inside that range.
 
-## 4. Coarse Pitch/Height Check
+## 4. Tune Pitch From Stopline Distances
 
-Before tuning yaw, verify that the IPM forward scale is approximately correct.
-Keep `near_m` and `far_m` fixed, then measure stoplines near the bottom, middle,
-and top of the IPM. Prefer stoplines clearly inside the range, for example near:
+Tune pitch first using all visible stoplines. Keep `near_m` and `far_m` fixed,
+then measure stoplines near the bottom, middle, and top of the IPM. Prefer
+stoplines clearly inside the range, for example near:
 
 ```text
 0.60 m, 0.80 m, 1.00 m, 1.20 m, 1.40 m
 ```
 
 Use the center of the lane for this check. If absolute stopline distances are
-known, compare each measured IPM forward distance to the real distance. If only
-spacing is trusted, compare adjacent stopline spacing to `0.20 m`.
+known, compare each measured IPM forward distance to the real distance. This is
+the best pitch signal when `z`, `x`, intrinsics, and vehicle reference are known.
+If only spacing is trusted, compare adjacent stopline spacing to `0.20 m`.
+
+Pitch objective:
+
+```text
+minimize sum of forward distance errors across all visible stoplines
+```
+
+Equivalently, find the pitch value that makes each stopline's measured IPM
+forward coordinate match its real-world forward coordinate.
 
 Interpret the first check this way:
 
 ```text
-spacing is close to 0.20 m everywhere -> pitch/height is close enough to tune yaw
-spacing grows or shrinks with distance -> pitch/height/intrinsics issue
+absolute stopline distances match -> pitch is close enough to tune yaw
+spacing is close to 0.20 m everywhere -> pitch/scale is internally consistent
+spacing grows or shrinks with distance -> pitch issue, assuming z/intrinsics are correct
 all stoplines shifted by about the same amount -> vehicle origin, camera x, or near_m reference issue
 top/bottom edge only is wrong -> ignore edge first; use interior stoplines
 ```
 
 Do not tune pitch only to make the `near_m` and `far_m` boundaries match two
-measurements. Two boundary points can be fit by the wrong pitch/height
-combination and the IPM can still be distorted in the middle. Use all visible
-stoplines and minimize the error across the whole 1.6 m grid.
+measurements. Use the actual measured distances of all visible stoplines and
+minimize the total error across the whole 1.6 m grid. Boundary lines can be used,
+but interior lines should carry more weight because the top and bottom of the IPM
+are more sensitive to FOV and cropping.
 
 ## 5. Use IPM Images, Not Screenshots
 

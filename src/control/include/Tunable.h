@@ -97,12 +97,22 @@ namespace Tunable {
         -0.090000000, -0.032000000, 0.260000000,
         0.007979134, -0.009831515, 0.017687912
     };
+    inline std::vector<double> realsense_tf_real_lane = realsense_tf_real;
+    inline std::vector<double> realsense_tf_real_sign = realsense_tf_real;
     inline bool orientation_follow = false;
     inline double lane_yaw_reset_thresh1 = 2.0; // threshold 1 for lane yaw reset
     inline double lane_yaw_reset_thresh2 = 1.5; // threshold 2 for lane yaw reset
 
+    inline std::array<double, 6> realsenseTfRealLane() {
+      return VehicleTunables::to_realsense_tf_array(realsense_tf_real_lane, "/real/realsense_tf_real_lane");
+    }
+
+    inline std::array<double, 6> realsenseTfRealSign() {
+      return VehicleTunables::to_realsense_tf_array(realsense_tf_real_sign, "/real/realsense_tf_real_sign");
+    }
+
     inline std::array<double, 6> realsenseTfReal() {
-      return VehicleTunables::to_realsense_tf_array(realsense_tf_real, "/real/realsense_tf_real");
+      return realsenseTfRealLane();
     }
 
     inline bool loadFromParams(ros::NodeHandle& nh) {
@@ -210,9 +220,18 @@ namespace Tunable {
       CHECK_PARAM(mode + "/recency_thresholds", recency_thresholds);
       CHECK_PARAM(mode + "/use_kf", use_kf);
       CHECK_PARAM(mode + "/odom_rate", odom_rate);
-      CHECK_PARAM(mode + "/realsense_tf_real", realsense_tf_real);
+      if (!nh.getParam(mode + "/realsense_tf_real", realsense_tf_real)) {
+        std::cout << "Missing param: " << mode << "/realsense_tf_real" << std::endl;
+        exit(1);
+      }
+      if (!nh.getParam(mode + "/realsense_tf_real_lane", realsense_tf_real_lane)) {
+        realsense_tf_real_lane = realsense_tf_real;
+      }
+      if (!nh.getParam(mode + "/realsense_tf_real_sign", realsense_tf_real_sign)) {
+        realsense_tf_real_sign = realsense_tf_real;
+      }
       try {
-        const auto tf = realsenseTfReal();
+        const auto tf = realsenseTfRealLane();
         rs_roll = tf[3];
         rs_pitch = tf[4];
         rs_yaw = tf[5];
