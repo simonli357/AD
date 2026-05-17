@@ -199,6 +199,7 @@ class LaneDetector {
 			std::cerr << "show_lane parameter not found, exiting." << std::endl;
 			exit(1);
 		}
+		nh.param("debug_lane", debug_lane, false);
 		LANE_WIDTH_PIXEL = 0.37 / METER_PER_PIXEL_X;
 		LANE_WIDTH_PIXEL = LANE_WIDTH_PIXEL;
 
@@ -236,7 +237,7 @@ class LaneDetector {
 	ros::Publisher center_offset_pub;
 	ros::Publisher waypoints_pub;
 
-	bool showflag, printflag, printDuration, publish, real, showlane = false;
+	bool showflag, printflag, printDuration, publish, real, showlane = false, debug_lane = false;
 
 	// NEW LANE
 	cv::Mat processed_image = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
@@ -489,11 +490,12 @@ class LaneDetector {
 			if (!ipm_camera.getIPM(processed_image, ipm_processed)) return {};
 
 			ipm_camera.getIPM(image, ipm_color);
-			cv::imshow("ipm color", ipm_color);
-			
-			cv::imshow("processed image", processed_image);
-			cv::imshow("processed ipm", ipm_processed);
-			cv::waitKey(1);
+			if (debug_lane) {
+				cv::imshow("ipm color", ipm_color);
+				cv::imshow("processed image", processed_image);
+				cv::imshow("processed ipm", ipm_processed);
+				cv::waitKey(1);
+			}
 			// return;
 
 			// StopLineOut sl = detectStopLineColumns(ipm_processed,
@@ -624,7 +626,9 @@ class LaneDetector {
 					if (i == 0 && good_left && good_right) {
 						double estimated_lane_width = std::abs(left_x - right_x);
 						if (std::abs(estimated_lane_width-LANE_WIDTH_PIXEL) > 0.25 * LANE_WIDTH_PIXEL) {
-							std::cout << "Inconsistent lane width detected, ratio: " << std::abs(estimated_lane_width-LANE_WIDTH_PIXEL)/LANE_WIDTH_PIXEL << ", LANE_WIDTH_PIXEL: " << LANE_WIDTH_PIXEL << ", estimated: " << estimated_lane_width << std::endl;
+							if (debug_lane) {
+								std::cout << "Inconsistent lane width detected, ratio: " << std::abs(estimated_lane_width-LANE_WIDTH_PIXEL)/LANE_WIDTH_PIXEL << ", LANE_WIDTH_PIXEL: " << LANE_WIDTH_PIXEL << ", estimated: " << estimated_lane_width << std::endl;
+							}
 							good_left = false;
 							good_right = false;
 							return {};
@@ -1111,7 +1115,9 @@ class LaneDetector {
 				if (good_left_inds.size() > WINDOW_MIN_PIXELS) { // Recenter mean for the next bounding box
 					int mean_left = sum_left / good_left_inds.size();
 					if (mean_left - WINDOW_MARGIN/2 > img_width || mean_left + WINDOW_MARGIN/2 < 0) {
-						std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
+						if (debug_lane) {
+							std::cout << "left lane done at window: " << window << ", mean_left: " << mean_left << ", leftx_current: " << leftx_current << std::endl;
+						}
 						left_done = true;
 					} else {
 						num_left_windows++;
@@ -1120,7 +1126,9 @@ class LaneDetector {
 						cv::circle(out_img, cv::Point(mean_left, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_left = mean_left- mean_left_prev;
 						mean_left_prev = mean_left;
-						std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
+						if (debug_lane) {
+							std::cout << window << ") mean_left: " << mean_left << ", leftx_current: " << leftx_current << ", delta_left: " << delta_left << ", size: " << good_left_inds.size() << std::endl;
+						}
 						if (window == 0) {
 							leftx_current = mean_left;
 						} else {
@@ -1128,7 +1136,9 @@ class LaneDetector {
 						}
 					}
 				} else {
-					std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
+					if (debug_lane) {
+						std::cout << "left lane done at window: " << window << ", good_left_inds.size(): " << good_left_inds.size() << ", min pixels: " << WINDOW_MIN_PIXELS << std::endl;
+					}
 					left_done = true;
 				}
 			}
@@ -1163,7 +1173,9 @@ class LaneDetector {
 						cv::circle(out_img, cv::Point(mean_right, (win_y_low + win_y_high) / 2), 10, cv::Scalar(0, 255, 255), -1);
 						int delta_right = mean_right - mean_right_prev;
 						mean_right_prev = mean_right;
-						std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
+						if (debug_lane) {
+							std::cout << window << ") mean_right: " << mean_right << ", rightx_current: " << rightx_current << ", delta_right: " << delta_right << ", size: " << good_right_inds.size() << std::endl;
+						}
 						if (window == 0) {
 							rightx_current = mean_right;
 						} else {
@@ -1182,10 +1194,12 @@ class LaneDetector {
 		for (int i = 0; i < right_lane_inds.size(); ++i) {
 			cv::circle(out_img, cv::Point(nonzerox[right_lane_inds[i]], nonzeroy[right_lane_inds[i]]), 2, cv::Scalar(255, 0, 0), -1);
 		}
-		cv::imshow("Detected Pixels", out_img);
-		cv::waitKey(1);
+		if (debug_lane) {
+			cv::imshow("Detected Pixels", out_img);
+			cv::waitKey(1);
 
-		std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
+			std::cout << "num_left_windows: " << num_left_windows << ", num_right_windows: " << num_right_windows << std::endl;
+		}
 		// Declare vectors to contain the pixel coordinates to fit
 		VectorXd leftx;
 		VectorXd lefty;

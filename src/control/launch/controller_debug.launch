@@ -92,6 +92,8 @@
   <param name="quality" value="$(arg quality)"/>
   <arg name="show_lane" default="false"/>
   <param name="show_lane" value="$(arg show_lane)"/>
+  <arg name="debug_lane" default="false"/>
+  <param name="debug_lane" value="$(arg debug_lane)"/>
   <arg name="flip" default="true"/>
   <arg name="send_depth" default="false"/>
   <arg name="ground_dist" default="false"/>
