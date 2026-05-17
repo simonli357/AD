@@ -10,7 +10,7 @@ real:
   # Sign/object pose correction from src/perception/scripts/data_analysis/2026/long.csv + long2.csv.
   # CSV distances were recorded in cm; offsets below are converted to meters.
   # sign_lon_correction_offset: 0.03834467
-  sign_lon_correction_offset: 0.02334467 # reduced by 1.5 cm
+  sign_lon_correction_offset: 0.01334467 # reduced by 2.5 cm
   sign_lon_correction_lon_coeff: 0.915505
   sign_lon_correction_lat_coeff: 0.020577
   sign_lon_correction_abs_lat_coeff: -0.021821
