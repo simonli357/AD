@@ -26,8 +26,8 @@ IMU_PATTERN = re.compile(r"@7:([-0-9.]+);([-0-9.]+);\s*(\d+);\s*(\d+);\s*(\d+);\
 
 MOTOR_ID = 11
 CMD_PERIOD_S = 0.1            # 10 Hz command rate
-DEFAULT_MAX_STEER_DEG = 25.0
-SLOW_FORWARD_CM_S = 5.0       # slow forward speed during steering sweep
+DEFAULT_MAX_STEER_DEG = 20.0
+SLOW_FORWARD_CM_S = 10.0       # slow forward speed during steering sweep
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -262,43 +262,43 @@ def write_summary(records: list[TestRecord], path: Path) -> None:
 
 
 # ────────────────────────────────────────────────────────────────────────────────
-def test_communication(link: CarLink) -> TestRecord:
-    rec = TestRecord(name="1.1_communication")
-    print("\n=== Test 1.1 — Communication check ===")
-    print("Listening for encoder/IMU telemetry for 3 s while sending zero command…")
-    t0 = time.time()
-    while time.time() - t0 < 3.0:
-        link.send(0.0, 0.0)
-        link.drain()
-        time.sleep(CMD_PERIOD_S)
+def test_combined(link: CarLink, max_steer: float, speed: float) -> list[TestRecord]:
+    """Comm check + steering sweep in one pass.
+
+    The sweep itself drains encoder/IMU telemetry continuously, so the
+    communication check is satisfied implicitly — we just inspect the
+    enc_seen/imu_seen flags afterwards.
+    """
+    comm_rec = TestRecord(name="1.1_communication")
+    sweep_rec = TestRecord(name="1.4_steering_sweep")
+    print(f"\n=== Combined test 1.1 + 1.4 — comm check + steering sweep at {speed:.1f} cm/s, ±{max_steer:.1f}° ===")
+    if not yes_no("Is the car on the box with wheels free (or otherwise safe to drive slowly)?", True):
+        for rec in (comm_rec, sweep_rec):
+            rec.user_note = "user aborted"
+            rec.user_pass = False
+        return [comm_rec, sweep_rec]
+
+    sweep_t = 4.0
+    # 0 → -max (left)
+    steer_ramp(link, sweep_rec, speed, 0.0, -max_steer, sweep_t, label="→ left")
+    hold(link, sweep_rec, speed, -max_steer, 1.5, label="hold left")
+    # -max → +max
+    steer_ramp(link, sweep_rec, speed, -max_steer, +max_steer, 2 * sweep_t, label="left → right")
+    hold(link, sweep_rec, speed, +max_steer, 1.5, label="hold right")
+    # +max → 0
+    steer_ramp(link, sweep_rec, speed, +max_steer, 0.0, sweep_t, label="→ centre")
+    link.stop()
+
     print(f"  Encoder messages seen : {'YES' if link.enc_seen else 'NO'}")
     print(f"  IMU messages seen     : {'YES' if link.imu_seen else 'NO'}")
     if not link.enc_seen:
-        print("  WARNING: no encoder telemetry — downstream tests will be uninformative.")
-    confirm_pass(rec)
-    return rec
+        print("  WARNING: no encoder telemetry — sweep data is uninformative.")
 
-
-def test_steering_sweep(link: CarLink, max_steer: float, speed: float) -> TestRecord:
-    rec = TestRecord(name="1.4_steering_sweep")
-    print(f"\n=== Test 1.4 — Steering sweep at {speed:.1f} cm/s forward, ±{max_steer:.1f}° ===")
-    if not yes_no("Is the car on the box with wheels free (or otherwise safe to drive slowly)?", True):
-        rec.user_note = "user aborted"
-        rec.user_pass = False
-        return rec
-    wait_enter("Starting in")
-    sweep_t = 4.0
-    # 0 → -max (left)
-    steer_ramp(link, rec, speed, 0.0, -max_steer, sweep_t, label="→ left")
-    hold(link, rec, speed, -max_steer, 1.5, label="hold left")
-    # -max → +max
-    steer_ramp(link, rec, speed, -max_steer, +max_steer, 2 * sweep_t, label="left → right")
-    hold(link, rec, speed, +max_steer, 1.5, label="hold right")
-    # +max → 0
-    steer_ramp(link, rec, speed, +max_steer, 0.0, sweep_t, label="→ centre")
-    link.stop()
-    confirm_pass(rec)
-    return rec
+    # Auto-pass the comm test on telemetry, mirror the user's verdict on the sweep.
+    comm_rec.user_pass = link.enc_seen and link.imu_seen
+    comm_rec.user_note = "auto: telemetry seen during sweep" if comm_rec.user_pass else "auto: missing telemetry"
+    confirm_pass(sweep_rec)
+    return [comm_rec, sweep_rec]
 
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -321,8 +321,7 @@ def main() -> None:
     records: list[TestRecord] = []
 
     try:
-        records.append(test_communication(link))
-        records.append(test_steering_sweep(link, args.max_steer, args.speed))
+        records.extend(test_combined(link, args.max_steer, args.speed))
     except KeyboardInterrupt:
         print("\n!! Interrupted — stopping motor.")
     finally:

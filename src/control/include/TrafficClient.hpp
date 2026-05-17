@@ -44,7 +44,8 @@ class TrafficClient {
 	std::vector<std::pair<double, double>> car_positions;
 	size_t array_ptr = 0;
 	steady_clock::time_point last_send_time = steady_clock::now();
-	const uint16_t tcp_port = 5000;
+	uint16_t tcp_port = 5000;
+	const uint16_t udp_discovery_port = 9000;
 	std::string server_address = "192.168.50.2";
 	const size_t buffer_size = 1024;
 	bool alive = true;
@@ -55,7 +56,9 @@ class TrafficClient {
 	std::thread main;
 	std::unique_ptr<tbb::task_group> tasks;
 	// Utility Methods
+	bool discover_traffic_server(milliseconds timeout);
 	void create_tcp_socket();
+	bool connect_tcp_socket(milliseconds timeout);
 	void listen();
 	void send_data();
 	void subscribeToLocationData();
