@@ -14,6 +14,7 @@
 #include <std_msgs/Header.h>
 #include <sensor_msgs/Imu.h>
 #include <gazebo_msgs/ModelStates.h>
+#include <stdexcept>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -134,6 +135,9 @@ void Utility::fetch_run_params() {
     }
 
     if (Tunable::real) {
+        if (!traffic_client) {
+            throw std::runtime_error("Real GPS initialization requires use_traffic_server:=true so the Traffic Server can provide the initial localization position.");
+        }
         auto p = traffic_client->get_car_position();
         while (p.first == 0.0 || p.second == 0.0) {
             p = traffic_client->get_car_position();
