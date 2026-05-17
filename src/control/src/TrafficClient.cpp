@@ -17,6 +17,7 @@
 #include <opencv2/opencv.hpp>
 #include <optional>
 #include <ostream>
+#include <poll.h>
 #include <ros/ros.h>
 #include <string>
 #include <sys/socket.h>
@@ -114,6 +115,32 @@ std::optional<double> read_json_double(const nlohmann::json &msg, const char *ke
 
 	return std::nullopt;
 }
+
+bool set_nonblocking(int socket_fd) {
+	const int flags = fcntl(socket_fd, F_GETFL, 0);
+	if (flags == -1) {
+		return false;
+	}
+	return fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK) != -1;
+}
+
+std::optional<uint16_t> parse_discovery_port(const std::string &payload) {
+	const size_t colon = payload.rfind(':');
+	if (colon == std::string::npos || colon + 1 >= payload.size()) {
+		return std::nullopt;
+	}
+
+	try {
+		const int parsed_port = std::stoi(payload.substr(colon + 1));
+		if (parsed_port > 0 && parsed_port <= 65535) {
+			return static_cast<uint16_t>(parsed_port);
+		}
+	} catch (const std::exception &) {
+		return std::nullopt;
+	}
+
+	return std::nullopt;
+}
 } // namespace
 
 TrafficClient::TrafficClient(const std::string ip_address) : server_address(ip_address) {
@@ -139,31 +166,165 @@ TrafficClient::~TrafficClient() {
 // Utility Methods
 // ------------------- //
 
+bool TrafficClient::discover_traffic_server(milliseconds timeout) {
+	const int udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (udp_socket == -1) {
+		std::cerr << "TrafficClient: failed to create UDP discovery socket: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+
+	const int reuse = 1;
+	setsockopt(udp_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+	sockaddr_in listen_address{};
+	listen_address.sin_family = AF_INET;
+	listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	listen_address.sin_port = htons(udp_discovery_port);
+
+	if (bind(udp_socket, (struct sockaddr *)&listen_address, sizeof(listen_address)) != 0) {
+		std::cerr << "TrafficClient: failed to bind UDP discovery port " << udp_discovery_port << ": " << std::strerror(errno) << std::endl;
+		close(udp_socket);
+		return false;
+	}
+
+	pollfd socket_poll{};
+	socket_poll.fd = udp_socket;
+	socket_poll.events = POLLIN;
+
+	const int poll_result = poll(&socket_poll, 1, static_cast<int>(timeout.count()));
+	if (poll_result <= 0) {
+		close(udp_socket);
+		return false;
+	}
+
+	std::array<char, 2048> buffer{};
+	sockaddr_in sender_address{};
+	socklen_t sender_length = sizeof(sender_address);
+	const ssize_t bytes = recvfrom(udp_socket, buffer.data(), buffer.size(), 0, (struct sockaddr *)&sender_address, &sender_length);
+	close(udp_socket);
+
+	if (bytes <= 0) {
+		return false;
+	}
+
+	const std::string datagram(buffer.data(), bytes);
+	const std::string separator = "(-.-)";
+	const size_t separator_pos = datagram.find(separator);
+	if (separator_pos == std::string::npos) {
+		std::cerr << "TrafficClient: UDP discovery datagram missing signature separator" << std::endl;
+		return false;
+	}
+
+	const std::string payload = datagram.substr(separator_pos + separator.size());
+	const auto discovered_port = parse_discovery_port(payload);
+	if (!discovered_port) {
+		std::cerr << "TrafficClient: UDP discovery payload did not contain a valid port: " << payload << std::endl;
+		return false;
+	}
+
+	std::array<char, INET_ADDRSTRLEN> discovered_ip{};
+	if (!inet_ntop(AF_INET, &sender_address.sin_addr, discovered_ip.data(), discovered_ip.size())) {
+		return false;
+	}
+
+	server_address = discovered_ip.data();
+	tcp_port = *discovered_port;
+	std::cout << "TrafficClient: discovered Traffic Server at " << server_address << ":" << tcp_port << std::endl;
+	return true;
+}
+
 void TrafficClient::create_tcp_socket() {
+	if (tcp_socket != -1) {
+		close(tcp_socket);
+		tcp_socket = -1;
+	}
 	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (tcp_socket == -1) {
+		std::cerr << "TrafficClient: failed to create TCP socket: " << std::strerror(errno) << std::endl;
+		return;
+	}
 	tcp_address.sin_family = AF_INET;
 	tcp_address.sin_port = htons(tcp_port);
-	inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr);
-	int flags = fcntl(tcp_socket, F_GETFL, 0);
-	fcntl(tcp_socket, F_SETFL, flags | O_NONBLOCK);
+	if (inet_pton(AF_INET, server_address.c_str(), &tcp_address.sin_addr) != 1) {
+		std::cerr << "TrafficClient: invalid Traffic Server IP address: " << server_address << std::endl;
+		close(tcp_socket);
+		tcp_socket = -1;
+	}
+}
+
+bool TrafficClient::connect_tcp_socket(milliseconds timeout) {
+	if (tcp_socket == -1) {
+		return false;
+	}
+
+	if (!set_nonblocking(tcp_socket)) {
+		std::cerr << "TrafficClient: failed to set TCP socket non-blocking: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+
+	const int rc = connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address));
+	if (rc == 0 || errno == EISCONN) {
+		return true;
+	}
+
+	if (errno != EINPROGRESS && errno != EALREADY) {
+		std::cerr << "TrafficClient: connect failed: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+
+	pollfd socket_poll{};
+	socket_poll.fd = tcp_socket;
+	socket_poll.events = POLLOUT;
+
+	const int poll_result = poll(&socket_poll, 1, static_cast<int>(timeout.count()));
+	if (poll_result == 0) {
+		std::cerr << "TrafficClient: connect timed out" << std::endl;
+		return false;
+	}
+	if (poll_result < 0) {
+		std::cerr << "TrafficClient: connect poll failed: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+
+	int socket_error = 0;
+	socklen_t socket_error_len = sizeof(socket_error);
+	if (getsockopt(tcp_socket, SOL_SOCKET, SO_ERROR, &socket_error, &socket_error_len) != 0) {
+		std::cerr << "TrafficClient: failed to read connect status: " << std::strerror(errno) << std::endl;
+		return false;
+	}
+	if (socket_error != 0) {
+		std::cerr << "TrafficClient: connect failed: " << std::strerror(socket_error) << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 void TrafficClient::initialize() {
 	while (alive) {
+		discover_traffic_server(std::chrono::milliseconds(1200));
 		create_tcp_socket();
-		std::cout << "Connecting to Traffic Server \n" << std::endl;
-		while (true) {
-			if (connect(tcp_socket, (struct sockaddr *)&tcp_address, sizeof(tcp_address)) != -1) {
-				break;
+		std::cout << "Connecting to Traffic Server at " << server_address << ":" << tcp_port << "\n" << std::endl;
+
+		if (!connect_tcp_socket(std::chrono::milliseconds(1000))) {
+			if (tcp_socket != -1) {
+				close(tcp_socket);
+				tcp_socket = -1;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			continue;
 		}
+
 		std::cout << "Successfully connected to Traffic Server \n" << std::endl;
 		connected = true;
 		subscribeToLocationData();
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 		tcp_can_send = true;
 		listen();
+		if (tcp_socket != -1) {
+			close(tcp_socket);
+			tcp_socket = -1;
+		}
 	}
 }
 

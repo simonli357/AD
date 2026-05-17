@@ -14,6 +14,7 @@ JETSON_REPO="${JETSON_REPO:-/home/${JETSON_USER}/AD}"
 
 WIFI_SSID="${WIFI_SSID:-BoschFMC}"
 WIFI_PASSWORD="${WIFI_PASSWORD:-bosch23581321}"
+WIFI_BAND="${WIFI_BAND:-bg}" # bg = 2.4 GHz, a = 5 GHz
 
 SSH_CONNECT_TIMEOUT="${SSH_CONNECT_TIMEOUT:-5}"
 SSH_INITIAL_ATTEMPTS="${SSH_INITIAL_ATTEMPTS:-2}"
@@ -43,11 +44,12 @@ shell_quote() {
 }
 
 remote_env() {
-  printf 'JETSON_PASSWORD=%s JETSON_REPO=%s WIFI_SSID=%s WIFI_PASSWORD=%s ' \
+  printf 'JETSON_PASSWORD=%s JETSON_REPO=%s WIFI_SSID=%s WIFI_PASSWORD=%s WIFI_BAND=%s ' \
     "$(shell_quote "$JETSON_PASSWORD")" \
     "$(shell_quote "$JETSON_REPO")" \
     "$(shell_quote "$WIFI_SSID")" \
-    "$(shell_quote "$WIFI_PASSWORD")"
+    "$(shell_quote "$WIFI_PASSWORD")" \
+    "$(shell_quote "$WIFI_BAND")"
 }
 
 remote_exec() {
@@ -73,19 +75,31 @@ wifi_visible_local() {
 }
 
 connect_wifi_local() {
-  log "Switching laptop Wi-Fi to ${WIFI_SSID}"
+  local wifi_device
+
+  log "Switching laptop Wi-Fi to ${WIFI_SSID} on 2.4 GHz"
 
   sudo nmcli radio wifi on
+  wifi_device="$(nmcli -t -f DEVICE,TYPE device status | awk -F: '$2 == "wifi" { print $1; exit }')"
 
   if nmcli -g NAME connection show | grep -Fxq "$WIFI_SSID"; then
-    if ! sudo nmcli connection up "$WIFI_SSID"; then
+    sudo nmcli connection modify "$WIFI_SSID" \
+      wifi-sec.key-mgmt wpa-psk \
+      wifi-sec.psk "$WIFI_PASSWORD" \
+      connection.autoconnect yes \
+      802-11-wireless.band "$WIFI_BAND" || return 1
+  else
+    if [ -n "$wifi_device" ]; then
+      sudo nmcli connection add type wifi ifname "$wifi_device" con-name "$WIFI_SSID" ssid "$WIFI_SSID" || return 1
+      sudo nmcli connection modify "$WIFI_SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD" || return 1
+    else
       sudo nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" || return 1
     fi
-  else
-    sudo nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" || return 1
+    sudo nmcli connection modify "$WIFI_SSID" connection.autoconnect yes 802-11-wireless.band "$WIFI_BAND" || return 1
   fi
 
-  sudo nmcli connection modify "$WIFI_SSID" connection.autoconnect yes || return 1
+  sudo nmcli connection down "$WIFI_SSID" >/dev/null 2>&1 || true
+  sudo nmcli connection up "$WIFI_SSID" || return 1
 }
 
 wait_for_ssh() {
@@ -246,14 +260,22 @@ if ! nmcli -g SSID device wifi list | grep -Fxq "$WIFI_SSID"; then
   exit 0
 fi
 
+wifi_device="$(nmcli -t -f DEVICE,TYPE device status | awk -F: '$2 == "wifi" { print $1; exit }')"
+wifi_device="${wifi_device:-wlan0}"
+
 if nmcli -g NAME connection show | grep -Fxq "$WIFI_SSID"; then
-  sudo_cmd nmcli connection up "$WIFI_SSID" >&2 || \
-    sudo_cmd nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" >&2
+  sudo_cmd nmcli connection modify "$WIFI_SSID" \
+    wifi-sec.key-mgmt wpa-psk \
+    wifi-sec.psk "$WIFI_PASSWORD" \
+    connection.autoconnect yes \
+    802-11-wireless.band "$WIFI_BAND" >&2
 else
-  sudo_cmd nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PASSWORD" >&2
+  sudo_cmd nmcli connection add type wifi ifname "$wifi_device" con-name "$WIFI_SSID" ssid "$WIFI_SSID" >&2
+  sudo_cmd nmcli connection modify "$WIFI_SSID" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD" connection.autoconnect yes 802-11-wireless.band "$WIFI_BAND" >&2
 fi
 
-sudo_cmd nmcli connection modify "$WIFI_SSID" connection.autoconnect yes >&2
+sudo_cmd nmcli connection down "$WIFI_SSID" >/dev/null 2>&1 || true
+sudo_cmd nmcli connection up "$WIFI_SSID" >&2
 ip_addr="$(ip -4 -o addr show wlan0 | awk '{ split($4, a, "/"); print a[1]; exit }')"
 echo "CONNECTED:${ip_addr}"
 REMOTE

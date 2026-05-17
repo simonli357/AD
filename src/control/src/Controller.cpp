@@ -301,7 +301,9 @@ public:
     void stop_for(double duration) {
         ros::Time timer = ros::Time::now() + ros::Duration(duration);
         while (ros::Time::now() < timer) {
-            utils.publish_cmd_vel(0.0, 0.0);
+            double current_steer = utils.steer_command;
+            // utils.publish_cmd_vel(0.0, 0.0);
+            utils.publish_cmd_vel(current_steer, 0.0);
             rate->sleep();
         }
     }
