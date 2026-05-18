@@ -1,0 +1,910 @@
+[INFO] [1779110146.484861983]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.860
+[INFO] [1779110146.584440689]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1897.000, end idx: 1942.000
+[INFO] [1779110146.584521631]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.824
+[INFO] [1779110146.684425035]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1898.000, end idx: 1944.000
+[INFO] [1779110146.684503866]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.806
+[INFO] [1779110146.784445484]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1899.000, end idx: 1948.000
+[INFO] [1779110146.784522714]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.792
+[INFO] [1779110146.884428295]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1900.000, end idx: 1949.000
+[INFO] [1779110146.884520631]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.774
+[INFO] [1779110146.984430436]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1901.000, end idx: 1952.000
+[INFO] [1779110146.984508626]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.757
+[INFO] [1779110147.084431074]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1902.000, end idx: 1954.000
+[INFO] [1779110147.084509424]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.743
+[INFO] [1779110147.184502636]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1903.000, end idx: 1956.000
+[INFO] [1779110147.184624098]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.728
+[INFO] [1779110147.284448896]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1904.000, end idx: 1957.000
+[INFO] [1779110147.284530158]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.691
+[INFO] [1779110147.384429786]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 1905.000, end idx: 1960.000
+[INFO] [1779110147.384521802]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.678
+[INFO] [1779110147.683550805]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 1908.000, end idx: 1963.000, min_dist: 0.661, min_dist_adj: 1000.000, changing lane to the left in 0.051 meters. start pose: (7.006,11.508), end: (9.516, 11.062), cur: (6.968, 11.545), min_dist_to_car: 0.340, egospeed: 0.465, car_speed: 0.190, total_distance: 2.591
+[INFO] [1779110148.683518164]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779110150.083527473]: check_emergency_stop(): emergency stop released
+[INFO] [1779110157.984497579]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.709, 9.814), actual: (13.649, 9.710), error: (-0.060, -0.104), error norm: 0.120, threshold: 0.900, old states: (10.853, 10.354), new states: (10.793, 10.250), yaw: -24.796, sign: Highway Exit, ID: 23
+[INFO] [1779110159.384690440]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.619, 9.795), actual: (13.649, 9.710), error: (0.030, -0.085), error norm: 0.090, threshold: 0.900, old states: (11.454, 10.098), new states: (11.483, 10.013), yaw: -8.196, sign: Highway Exit, ID: 23
+[INFO] [1779110159.900668287]: LANE_RELOC2(): SUCCESS: errorx: 0.004, errory: 0.047, errory: 0.047, right_only: 0, on_highway: 1
+[INFO] [1779110160.084693430]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.629, 9.765), actual: (13.649, 9.710), error: (0.020, -0.055), error norm: 0.059, threshold: 0.900, old states: (11.823, 10.033), new states: (11.843, 9.978), yaw: -2.396, sign: Highway Exit, ID: 23
+[INFO] [1779110160.484004176]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.041, errory: 0.041, right_only: 0, on_highway: 1
+[INFO] [1779110160.784523941]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.605, 9.725), actual: (13.649, 9.710), error: (0.044, -0.015), error norm: 0.047, threshold: 0.900, old states: (12.174, 10.010), new states: (12.218, 9.995), yaw: -0.096, sign: Highway Exit, ID: 23
+[INFO] [1779110161.067324862]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.032, errory: 0.032, right_only: 0, on_highway: 1
+[INFO] [1779110161.484617251]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.649, 9.712), actual: (13.649, 9.710), error: (0.000, -0.002), error norm: 0.002, threshold: 0.900, old states: (12.527, 10.013), new states: (12.527, 10.010), yaw: -2.996, sign: Highway Exit, ID: 23
+[INFO] [1779110162.184577289]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.648, 9.731), actual: (13.649, 9.710), error: (0.001, -0.021), error norm: 0.021, threshold: 0.900, old states: (12.864, 9.992), new states: (12.865, 9.970), yaw: -2.696, sign: Highway Exit, ID: 23
+[INFO] [1779110162.784535634]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (13.656, 9.724), actual: (13.649, 9.710), error: (-0.007, -0.014), error norm: 0.016, threshold: 0.900, old states: (13.144, 9.982), new states: (13.137, 9.968), yaw: 3.204, sign: Highway Exit, ID: 23
+[INFO] [1779110163.484566564]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (14.933, 10.243), actual: (14.924, 10.155), error: (-0.009, -0.088), error norm: 0.088, threshold: 0.900, old states: (13.458, 10.034), new states: (13.449, 9.946), yaw: 12.804, sign: Roundabout, ID: 24
+[INFO] [1779110164.084584664]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (14.925, 10.173), actual: (14.924, 10.155), error: (-0.001, -0.018), error norm: 0.018, threshold: 0.900, old states: (13.702, 10.059), new states: (13.701, 10.041), yaw: 26.604, sign: Roundabout, ID: 24
+[INFO] [1779110164.684699100]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (14.927, 10.116), actual: (14.924, 10.155), error: (-0.003, 0.040), error norm: 0.040, threshold: 0.900, old states: (13.938, 10.179), new states: (13.935, 10.219), yaw: 31.604, sign: Roundabout, ID: 24
+[INFO] [1779110166.784552330]: CHECK_INTERSECTION(Roundabout): REACHED: x_cur: (14.651, 10.404, 0.070), intersection: (15.009, 10.406), distance: 0.358, index: 14, next intersection: (15.928, 11.658, -1.571)
+[INFO] [1779110166.784631032]: intersection reached: CASE Roundabout, proceeding...
+[INFO] [1779110175.033992522]: LANE_RELOC2(): SUCCESS: errorx: 0.005, errory: -0.071, errory: -0.071, right_only: 0, on_highway: 0
+[INFO] [1779110177.183973933]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: -0.007, errory: -0.007, right_only: 0, on_highway: 0
+[INFO] [1779110177.783970908]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.002, errory: -0.002, right_only: 0, on_highway: 0
+[INFO] [1779110193.483998494]: LANE_RELOC2(): SUCCESS: errorx: 0.002, errory: 0.021, errory: -0.021, right_only: 0, on_highway: 0
+[INFO] [1779110194.067319309]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.001, errory: -0.001, right_only: 0, on_highway: 0
+[INFO] [1779110194.650630329]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.006, errory: 0.006, right_only: 0, on_highway: 0
+[INFO] [1779110195.233971563]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.003, errory: -0.003, right_only: 0, on_highway: 0
+[INFO] [1779110196.284333776]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.097, total distance = -5.171, ego_speed = 0.350, car_speed = 0.447
+[INFO] [1779110196.284419871]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.995
+[INFO] [1779110196.384332045]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.078, total distance = -6.415, ego_speed = 0.350, car_speed = 0.428
+[INFO] [1779110196.384412059]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.976
+[INFO] [1779110196.484354382]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.078, total distance = -6.415, ego_speed = 0.350, car_speed = 0.428
+[INFO] [1779110196.484440221]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.942
+[INFO] [1779110196.584345226]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2388.000, end idx: 2087.000
+[INFO] [1779110196.584423256]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.913
+[INFO] [1779110196.684579025]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2389.000, end idx: 2006.000
+[INFO] [1779110196.685071401]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.893
+[INFO] [1779110196.784325089]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 8.000, closest idx: 2390.000, end idx: 2111.000
+[INFO] [1779110196.784406415]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.896
+[INFO] [1779110196.884337888]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2391.000, end idx: 2120.000
+[INFO] [1779110196.884420623]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.899
+[INFO] [1779110196.984354273]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 8.000, closest idx: 2392.000, end idx: 2106.000
+[INFO] [1779110196.984444913]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.907
+[INFO] [1779110197.084346685]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2393.000, end idx: 1893.000
+[INFO] [1779110197.084483573]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.896
+[INFO] [1779110197.184370494]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2394.000, end idx: 1894.000
+[INFO] [1779110197.184458222]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.861
+[INFO] [1779110197.200613042]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.040, errory: -0.040, right_only: 0, on_highway: 0
+[INFO] [1779110197.284399617]: CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = -0.011, total distance = -46.459, ego_speed = 0.350, car_speed = 0.361
+[INFO] [1779110197.284481167]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.850
+[INFO] [1779110197.384437221]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 8.000, closest idx: 2396.000, end idx: 1923.000
+[INFO] [1779110197.384526837]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.856
+[INFO] [1779110197.484354451]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2397.000, end idx: 899.000
+[INFO] [1779110197.484442243]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.856
+[INFO] [1779110197.584348592]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2398.000, end idx: 3187.000
+[INFO] [1779110197.584436831]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.844
+[INFO] [1779110197.684350285]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2399.000, end idx: 2961.000
+[INFO] [1779110197.684440061]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.846
+[INFO] [1779110197.784333447]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2400.000, end idx: 2645.000
+[INFO] [1779110197.784414614]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.827
+[INFO] [1779110197.884349736]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2401.000, end idx: 2577.000
+[INFO] [1779110197.884436983]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.805
+[INFO] [1779110197.984350949]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2402.000, end idx: 2578.000
+[INFO] [1779110197.984437397]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.770
+[INFO] [1779110198.084343457]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2403.000, end idx: 2531.000
+[INFO] [1779110198.084425264]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.740
+[INFO] [1779110198.184336893]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2404.000, end idx: 2537.000
+[INFO] [1779110198.184428782]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.737
+[INFO] [1779110198.284417673]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2405.000, end idx: 2564.000
+[INFO] [1779110198.284500536]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.752
+[INFO] [1779110198.384432265]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2406.000, end idx: 2573.000
+[INFO] [1779110198.384521177]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.753
+[INFO] [1779110198.484456171]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2407.000, end idx: 2563.000
+[INFO] [1779110198.484536825]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.733
+[INFO] [1779110198.584422018]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2408.000, end idx: 2549.000
+[INFO] [1779110198.584500432]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.704
+[INFO] [1779110198.684435106]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2409.000, end idx: 2533.000
+[INFO] [1779110198.684513264]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.680
+[INFO] [1779110198.784440448]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2410.000, end idx: 2534.000
+[INFO] [1779110198.784566038]: CHECK_CAR(): cant overtake, dist = 0.646, stopping...
+[INFO] [1779110200.984682640]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2411.000, end idx: 2462.000
+[INFO] [1779110200.984759838]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.835
+[INFO] [1779110201.085399406]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2412.000, end idx: 2463.000
+[INFO] [1779110201.085479068]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.838
+[INFO] [1779110201.185401099]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2413.000, end idx: 2464.000
+[INFO] [1779110201.185519681]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.855
+[INFO] [1779110201.284627615]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2414.000, end idx: 2466.000
+[INFO] [1779110201.284952121]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.826
+[INFO] [1779110201.384614970]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 8.000, closest idx: 2415.000, end idx: 2477.000
+[INFO] [1779110201.384749810]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.815
+[INFO] [1779110201.484451002]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 8.000, closest idx: 2416.000, end idx: 2490.000
+[INFO] [1779110201.484531912]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.819
+[INFO] [1779110201.584628983]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 8.000, closest idx: 2417.000, end idx: 2492.000
+[INFO] [1779110201.584755853]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.808
+[INFO] [1779110201.684758763]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 8.000, closest idx: 2418.000, end idx: 2494.000
+[INFO] [1779110201.685150321]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.790
+[INFO] [1779110201.784519550]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2419.000, end idx: 2500.000
+[INFO] [1779110201.784609326]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.772
+[INFO] [1779110201.884543648]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2420.000, end idx: 2500.000
+[INFO] [1779110201.884640465]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.752
+[INFO] [1779110201.984528378]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2421.000, end idx: 2501.000
+[INFO] [1779110201.984600487]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.709
+[INFO] [1779110202.084499986]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2422.000, end idx: 2501.000
+[INFO] [1779110202.084575744]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.694
+[INFO] [1779110202.184737306]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 8.000, closest idx: 2423.000, end idx: 2497.000
+[INFO] [1779110202.184856303]: CHECK_CAR(): cant overtake, dist = 0.672, stopping...
+[INFO] [1779110205.684597476]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110205.684718969]: CHECK_CAR(): CANT OVERTAKE: end idx 5.000 is not on the same lane as closest idx 0.000, closest idx: 2437.000, end idx: 3060.000
+[INFO] [1779110205.684767170]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 1.000
+[INFO] [1779110205.784594016]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110205.784728633]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.995
+[INFO] [1779110205.884606688]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110205.884735767]: CHECK_CAR(): CANT OVERTAKE: end idx 2.000 is not on the same lane as closest idx 0.000, closest idx: 2439.000, end idx: 3835.000
+[INFO] [1779110205.885069907]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.991
+[INFO] [1779110205.984705071]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110205.984833702]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 0.000, closest idx: 2440.000, end idx: 4096.000
+[INFO] [1779110205.984896849]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.989
+[INFO] [1779110206.084781434]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.084904400]: CHECK_CAR(): CANT OVERTAKE: end idx 7.000 is not on the same lane as closest idx 0.000, closest idx: 2441.000, end idx: 4097.000
+[INFO] [1779110206.084979613]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.953
+[INFO] [1779110206.184579347]: SIGN_RELOC2(Roundabout): FAILURE: yaw error too large: 45.996, thresh: 45.000, sign: Roundabout, ID: 27
+[INFO] [1779110206.184695048]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.184743376]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2442.000, end idx: 3941.000
+[INFO] [1779110206.184792537]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.943
+[INFO] [1779110206.285089804]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.285390817]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 0.000, closest idx: 2443.000, end idx: 11551.000
+[INFO] [1779110206.285583428]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.936
+[INFO] [1779110206.384627030]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.384772016]: CHECK_CAR(): CANT OVERTAKE: end idx 6.289 is not on the same lane as closest idx 0.000, closest idx: 2444.000, end idx: -865.000
+[INFO] [1779110206.384813080]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.933
+[INFO] [1779110206.484633429]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.484770989]: CHECK_CAR(): CANT OVERTAKE: end idx 3.146 is not on the same lane as closest idx 0.000, closest idx: 2445.000, end idx: -1915.000
+[INFO] [1779110206.484837561]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.923
+[INFO] [1779110206.584711840]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.584798832]: CHECK_CAR(): CANT OVERTAKE: end idx 3.000 is not on the same lane as closest idx 0.000, closest idx: 2446.000, end idx: 1174.000
+[INFO] [1779110206.584840727]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.913
+[INFO] [1779110206.684578406]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.684693850]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.887
+[INFO] [1779110206.784765636]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (15.671, 11.674), actual: (15.629, 11.744), error: (-0.042, 0.070), error norm: 0.082, threshold: 0.900, old states: (16.084, 12.868), new states: (16.042, 12.938), yaw: -124.296, sign: Roundabout, ID: 27
+[INFO] [1779110206.784909342]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.784969577]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2448.000, end idx: 2704.000
+[INFO] [1779110206.785025459]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.919
+[INFO] [1779110206.884776036]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.884904026]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2449.000, end idx: 2705.000
+[INFO] [1779110206.884985865]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.888
+[INFO] [1779110206.984577822]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110206.984675407]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2450.000, end idx: 2570.000
+[INFO] [1779110206.984758526]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.820
+[INFO] [1779110207.084710419]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.084803651]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2451.000, end idx: 2562.000
+[INFO] [1779110207.084886610]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.769
+[INFO] [1779110207.184593435]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.184718513]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2452.000, end idx: 2558.000
+[INFO] [1779110207.184758585]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.729
+[INFO] [1779110207.284506633]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.284588343]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2453.000, end idx: 2557.000
+[INFO] [1779110207.284623934]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.713
+[INFO] [1779110207.384429272]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (15.620, 11.746), actual: (15.629, 11.744), error: (0.009, -0.002), error norm: 0.009, threshold: 0.900, old states: (15.963, 12.736), new states: (15.972, 12.734), yaw: -110.896, sign: Roundabout, ID: 27
+[INFO] [1779110207.384547950]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.384591157]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2454.000, end idx: 2574.000
+[INFO] [1779110207.384619994]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.720
+[INFO] [1779110207.484544714]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.484649245]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2455.000, end idx: 2591.000
+[INFO] [1779110207.484701382]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.736
+[INFO] [1779110207.584667069]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.584756589]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2456.000, end idx: 2592.000
+[INFO] [1779110207.584793556]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.701
+[INFO] [1779110207.684344225]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.684446131]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2457.000, end idx: 2594.000
+[INFO] [1779110207.684484154]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.713
+[INFO] [1779110207.784430414]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.784536289]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.734
+[INFO] [1779110207.884455600]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (15.605, 11.756), actual: (15.629, 11.744), error: (0.024, -0.012), error norm: 0.027, threshold: 0.900, old states: (15.934, 12.558), new states: (15.958, 12.546), yaw: -102.896, sign: Roundabout, ID: 27
+[INFO] [1779110207.884578342]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.884623278]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.743
+[INFO] [1779110207.984432041]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110207.984538812]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.765
+[INFO] [1779110208.084429638]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.084672273]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2461.000, end idx: 2674.000
+[INFO] [1779110208.084724506]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.790
+[INFO] [1779110208.184330225]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.184579838]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2462.000, end idx: 2675.000
+[INFO] [1779110208.184628871]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.756
+[INFO] [1779110208.284346674]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.284555383]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2463.000, end idx: 2716.000
+[INFO] [1779110208.284606016]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.781
+[INFO] [1779110208.384358961]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.384581913]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2464.000, end idx: 2755.000
+[INFO] [1779110208.384631426]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.803
+[INFO] [1779110208.484434716]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (15.607, 11.740), actual: (15.629, 11.744), error: (0.023, 0.004), error norm: 0.023, threshold: 0.900, old states: (15.930, 12.343), new states: (15.953, 12.347), yaw: -97.496, sign: Roundabout, ID: 27
+[INFO] [1779110208.484855463]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.484924723]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2465.000, end idx: 2833.000
+[INFO] [1779110208.485149372]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.828
+[INFO] [1779110208.584427096]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.584521321]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2466.000, end idx: 2863.000
+[INFO] [1779110208.584571666]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.839
+[INFO] [1779110208.684439736]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.684530376]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.851
+[INFO] [1779110208.784306973]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.784764847]: CHECK_CAR(): CANT OVERTAKE: end idx 3.594 is not on the same lane as closest idx 0.000, closest idx: 2468.000, end idx: -11644.000
+[INFO] [1779110208.784990551]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.865
+[INFO] [1779110208.884323453]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.884780015]: CHECK_CAR(): CANT OVERTAKE: end idx 3.630 is not on the same lane as closest idx 0.000, closest idx: 2469.000, end idx: -11643.000
+[INFO] [1779110208.884856381]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.831
+[INFO] [1779110208.985409661]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (15.617, 11.743), actual: (15.629, 11.744), error: (0.012, 0.002), error norm: 0.012, threshold: 0.900, old states: (15.936, 12.178), new states: (15.947, 12.180), yaw: -95.296, sign: Roundabout, ID: 27
+[INFO] [1779110208.985571130]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110208.985973985]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2470.000, end idx: 2150.000
+[INFO] [1779110208.986016553]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.851
+[INFO] [1779110209.084370240]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.084444686]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2471.000, end idx: 2291.000
+[INFO] [1779110209.084479732]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.871
+[INFO] [1779110209.184425384]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.184519096]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2472.000, end idx: 2340.000
+[INFO] [1779110209.184609897]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.892
+[INFO] [1779110209.284343382]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.284422949]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2473.000, end idx: 2357.000
+[INFO] [1779110209.284454730]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.909
+[INFO] [1779110209.384350069]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.384437188]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2474.000, end idx: 2366.000
+[INFO] [1779110209.384470058]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.929
+[INFO] [1779110209.484380088]: CHECK_INTERSECTION(Roundabout): REACHED: x_cur: (15.930, 12.008, 4.618), intersection: (15.928, 11.658), distance: 0.350, index: 15, next intersection: (17.131, 10.781, 3.142)
+[INFO] [1779110209.484463238]: intersection reached: CASE Roundabout, proceeding...
+[INFO] [1779110209.484529042]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.484569817]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2475.000, end idx: 2365.000
+[INFO] [1779110209.484605120]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.945
+[INFO] [1779110209.584331628]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.584585786]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2476.000, end idx: 2368.000
+[INFO] [1779110209.584636163]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.962
+[INFO] [1779110209.684355214]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.684453567]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2477.000, end idx: 2369.000
+[INFO] [1779110209.684491398]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.927
+[INFO] [1779110209.784297249]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.784512647]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2478.000, end idx: 2369.000
+[INFO] [1779110209.784647743]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.946
+[INFO] [1779110209.884319938]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.884432470]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2479.000, end idx: 2355.000
+[INFO] [1779110209.884479199]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.948
+[INFO] [1779110209.984324000]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110209.984407247]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2480.000, end idx: 2353.000
+[INFO] [1779110209.984446966]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.954
+[INFO] [1779110210.084335584]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110210.084463254]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2481.000, end idx: 2368.000
+[INFO] [1779110210.084529250]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.982
+[INFO] [1779110210.284425386]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110210.284527613]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2483.000, end idx: 2371.000
+[INFO] [1779110210.284567684]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.975
+[INFO] [1779110217.083478572]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779110219.083494137]: check_emergency_stop(): emergency stop released
+[INFO] [1779110219.084794369]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110219.084926297]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 6.000, closest idx: 2558.000, end idx: 2662.000
+[INFO] [1779110219.084967200]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.694
+[INFO] [1779110219.184707567]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110219.184835270]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 6.000, closest idx: 2558.000, end idx: 2662.000
+[INFO] [1779110219.184895089]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.684
+[INFO] [1779110219.284869705]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110219.284999809]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 6.000, closest idx: 2559.000, end idx: 2663.000
+[INFO] [1779110219.285090673]: CHECK_CAR(): cant overtake, dist = 0.649, stopping...
+[INFO] [1779110226.184414624]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.184498063]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.980
+[INFO] [1779110226.284435105]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.284515631]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.964
+[INFO] [1779110226.384407513]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.384521294]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.954
+[INFO] [1779110226.484531245]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.484819328]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.934
+[INFO] [1779110226.584508870]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.584819934]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2614.000, end idx: 2672.000
+[INFO] [1779110226.584874183]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.923
+[INFO] [1779110226.684529255]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.684647964]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2615.000, end idx: 2678.000
+[INFO] [1779110226.684727819]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.913
+[INFO] [1779110226.785094409]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.786071736]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2616.000, end idx: 2679.000
+[INFO] [1779110226.786149158]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.881
+[INFO] [1779110226.884848731]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.885162259]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2617.000, end idx: 2684.000
+[INFO] [1779110226.885217021]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.877
+[INFO] [1779110226.984719617]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110226.984829941]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2618.000, end idx: 2688.000
+[INFO] [1779110226.984869468]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.873
+[INFO] [1779110227.084628334]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.084896862]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2619.000, end idx: 2694.000
+[INFO] [1779110227.084952424]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.872
+[INFO] [1779110227.184604775]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.184887706]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2620.000, end idx: 2703.000
+[INFO] [1779110227.185137318]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.873
+[INFO] [1779110227.284743773]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.284858066]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2621.000, end idx: 2711.000
+[INFO] [1779110227.284923294]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.872
+[INFO] [1779110227.384597249]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.384755965]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2622.000, end idx: 2722.000
+[INFO] [1779110227.384846445]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.874
+[INFO] [1779110227.484935866]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.485060657]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2623.000, end idx: 2732.000
+[INFO] [1779110227.485121916]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.874
+[INFO] [1779110227.584706639]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.584834790]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2624.000, end idx: 2743.000
+[INFO] [1779110227.584965949]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.876
+[INFO] [1779110227.684532141]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.684621405]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2625.000, end idx: 2753.000
+[INFO] [1779110227.684693674]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.873
+[INFO] [1779110227.784523177]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.784630780]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2626.000, end idx: 2754.000
+[INFO] [1779110227.784713675]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.841
+[INFO] [1779110227.884610998]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.884877189]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2627.000, end idx: 2768.000
+[INFO] [1779110227.885017374]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.840
+[INFO] [1779110227.984637912]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110227.984889285]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2628.000, end idx: 2800.000
+[INFO] [1779110227.985068453]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.840
+[INFO] [1779110228.084516287]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.084629780]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2629.000, end idx: 2799.000
+[INFO] [1779110228.084742088]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.837
+[INFO] [1779110228.184518429]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.184604109]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2630.000, end idx: 2819.000
+[INFO] [1779110228.184642899]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.832
+[INFO] [1779110228.284621453]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.284760166]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2631.000, end idx: 2831.000
+[INFO] [1779110228.284803789]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.828
+[INFO] [1779110228.384602151]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.384778726]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2632.000, end idx: 2855.000
+[INFO] [1779110228.384875672]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.827
+[INFO] [1779110228.484731003]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.484836910]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2633.000, end idx: 2910.000
+[INFO] [1779110228.484899897]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.823
+[INFO] [1779110228.584750396]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.584880403]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2634.000, end idx: 2911.000
+[INFO] [1779110228.584946079]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.792
+[INFO] [1779110228.685035788]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.685186791]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2635.000, end idx: 2918.000
+[INFO] [1779110228.685254099]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.789
+[INFO] [1779110228.784715632]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.784859722]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2636.000, end idx: 2944.000
+[INFO] [1779110228.784911283]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.789
+[INFO] [1779110228.884828034]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.884953304]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2637.000, end idx: 2918.000
+[INFO] [1779110228.885000961]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.785
+[INFO] [1779110228.984934706]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110228.985059977]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2638.000, end idx: 2912.000
+[INFO] [1779110228.985105617]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.780
+[INFO] [1779110229.084775859]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.084931727]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2639.000, end idx: 2895.000
+[INFO] [1779110229.084981944]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.775
+[INFO] [1779110229.184861792]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.185037983]: CHECK_CAR(): CANT OVERTAKE: end idx 6.000 is not on the same lane as closest idx 0.000, closest idx: 2640.000, end idx: 2896.000
+[INFO] [1779110229.185106251]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.742
+[INFO] [1779110229.284762187]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.284994805]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2641.000, end idx: 2855.000
+[INFO] [1779110229.285178806]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.728
+[INFO] [1779110229.384614798]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.384748934]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2642.000, end idx: 2849.000
+[INFO] [1779110229.384793262]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.717
+[INFO] [1779110229.484593096]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.484828082]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2643.000, end idx: 2816.000
+[INFO] [1779110229.484951272]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.698
+[INFO] [1779110229.584595750]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.584696248]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2644.000, end idx: 2813.000
+[INFO] [1779110229.584737311]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.681
+[INFO] [1779110229.684698389]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110229.684816042]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2645.000, end idx: 2799.000
+[INFO] [1779110229.684901402]: CHECK_CAR(): cant overtake, dist = 0.666, stopping...
+[INFO] [1779110231.884571268]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110231.884676983]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2646.000, end idx: 2715.000
+[INFO] [1779110231.884717502]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.877
+[INFO] [1779110231.984650639]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110231.984781671]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2647.000, end idx: 2719.000
+[INFO] [1779110231.984839313]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.888
+[INFO] [1779110232.084695669]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.084808361]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2648.000, end idx: 2721.000
+[INFO] [1779110232.084860530]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.880
+[INFO] [1779110232.184574909]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.184702515]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2649.000, end idx: 2732.000
+[INFO] [1779110232.184773376]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.867
+[INFO] [1779110232.284691535]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.284777694]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2650.000, end idx: 2732.000
+[INFO] [1779110232.284812004]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.841
+[INFO] [1779110232.384787229]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.384871500]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2651.000, end idx: 2733.000
+[INFO] [1779110232.384905234]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.807
+[INFO] [1779110232.484647297]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.484750932]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2652.000, end idx: 2733.000
+[INFO] [1779110232.484790555]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.775
+[INFO] [1779110232.584875624]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.584992828]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2653.000, end idx: 2732.000
+[INFO] [1779110232.585039237]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.748
+[INFO] [1779110232.684797975]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.684925806]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2654.000, end idx: 2727.000
+[INFO] [1779110232.684988857]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.716
+[INFO] [1779110232.784774928]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.784926283]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2656.000, end idx: 2727.000
+[INFO] [1779110232.785095690]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.687
+[INFO] [1779110232.884644726]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110232.884938379]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2657.000, end idx: 2727.000
+[INFO] [1779110232.885079588]: CHECK_CAR(): cant overtake, dist = 0.665, stopping...
+[INFO] [1779110235.084552747]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110235.084664671]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2658.000, end idx: 2706.000
+[INFO] [1779110235.084772306]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.715
+[INFO] [1779110235.184844093]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110235.184971411]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2659.000, end idx: 2710.000
+[INFO] [1779110235.185021724]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.725
+[INFO] [1779110235.284432752]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110235.284562952]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2660.000, end idx: 2711.000
+[INFO] [1779110235.284612176]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.688
+[INFO] [1779110235.384524382]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110235.384618543]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2661.000, end idx: 2720.000
+[INFO] [1779110235.384755079]: CHECK_CAR(): cant overtake, dist = 0.673, stopping...
+[INFO] [1779110237.584574508]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110237.584708868]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2662.000, end idx: 2725.000
+[INFO] [1779110237.584776112]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.905
+[INFO] [1779110237.684632660]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110237.684756170]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2663.000, end idx: 2733.000
+[INFO] [1779110237.684812148]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.924
+[INFO] [1779110237.784612462]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110237.784758472]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2664.000, end idx: 2743.000
+[INFO] [1779110237.784833045]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.926
+[INFO] [1779110237.884766823]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110237.885495881]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2665.000, end idx: 2744.000
+[INFO] [1779110237.886217450]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.879
+[INFO] [1779110237.984438985]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110237.984558783]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2666.000, end idx: 2761.000
+[INFO] [1779110237.984617961]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.879
+[INFO] [1779110238.084447080]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110238.084569470]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2667.000, end idx: 2766.000
+[INFO] [1779110238.084611398]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.882
+[INFO] [1779110238.184352373]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110238.184474058]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2668.000, end idx: 2761.000
+[INFO] [1779110238.184516594]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.868
+[INFO] [1779110238.284347761]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110238.284476840]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2669.000, end idx: 2767.000
+[INFO] [1779110238.284526321]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.849
+[INFO] [1779110238.384416571]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110238.384539153]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2670.000, end idx: 2771.000
+[INFO] [1779110238.384603004]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.836
+[INFO] [1779110238.484352109]: CHECK_CAR(): CANT OVERTAKE: detected car is on solid line
+[INFO] [1779110238.484440540]: CHECK_CAR(): CANT OVERTAKE: end idx 8.000 is not on the same lane as closest idx 0.000, closest idx: 2671.000, end idx: 2772.000
+[INFO] [1779110238.484742738]: CHECK_CAR(): cant overtake, car pretty far and within safety margin, keep tailing: 0.799
+[INFO] [1779110238.717351019]: LANE_RELOC2(): SUCCESS: errorx: 0.005, errory: -0.070, errory: -0.070, right_only: 0, on_highway: 0
+[INFO] [1779110238.783578939]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 2675.000, end idx: 2778.000, min_dist: 0.789, min_dist_adj: 1000.000, changing lane to the left in 0.074 meters. start pose: (17.344,13.104), end: (20.017, 11.862), cur: (17.241, 13.005), min_dist_to_car: 0.340, egospeed: 0.350, car_speed: 0.212, total_distance: 3.639
+[INFO] [1779110254.533999137]: LANE_RELOC2(): SUCCESS: errorx: 0.005, errory: -0.062, errory: 0.062, right_only: 0, on_highway: 0
+[INFO] [1779110254.900614414]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 180.478, current yaw: -178.196, straight_lane_angle: -0.478
+[INFO] [1779110255.084431712]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.092, 11.010), actual: (17.218, 11.036), error: (0.126, 0.026), error norm: 0.128, threshold: 0.900, old states: (18.681, 10.717), new states: (18.807, 10.743), yaw: 178.478, sign: Roundabout, ID: 42
+[INFO] [1779110255.133993008]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.040, errory: 0.040, right_only: 0, on_highway: 0
+[INFO] [1779110255.584442869]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.222, 10.987), actual: (17.218, 11.036), error: (-0.004, 0.049), error norm: 0.049, threshold: 0.900, old states: (18.595, 10.715), new states: (18.591, 10.764), yaw: 176.478, sign: Roundabout, ID: 42
+[INFO] [1779110255.734003010]: LANE_RELOC2(): SUCCESS: errorx: -0.003, errory: -0.051, errory: 0.051, right_only: 0, on_highway: 0
+[INFO] [1779110256.184325840]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.210, 10.968), actual: (17.218, 11.036), error: (0.008, 0.068), error norm: 0.068, threshold: 0.900, old states: (18.339, 10.727), new states: (18.347, 10.795), yaw: 177.078, sign: Roundabout, ID: 42
+[INFO] [1779110256.333977517]: LANE_RELOC2(): SUCCESS: errorx: -0.002, errory: -0.038, errory: 0.038, right_only: 0, on_highway: 0
+[INFO] [1779110256.684432533]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.227, 10.990), actual: (17.218, 11.036), error: (-0.009, 0.045), error norm: 0.046, threshold: 0.900, old states: (18.153, 10.761), new states: (18.144, 10.807), yaw: 178.878, sign: Roundabout, ID: 42
+[INFO] [1779110257.284436486]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.208, 11.030), actual: (17.218, 11.036), error: (0.009, 0.006), error norm: 0.011, threshold: 0.900, old states: (17.927, 10.801), new states: (17.936, 10.806), yaw: -177.622, sign: Roundabout, ID: 42
+[INFO] [1779110257.884438806]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.216, 11.050), actual: (17.218, 11.036), error: (0.002, -0.014), error norm: 0.014, threshold: 0.900, old states: (17.720, 10.795), new states: (17.722, 10.781), yaw: -176.522, sign: Roundabout, ID: 42
+[INFO] [1779110258.484372122]: SIGN_RELOC2(Roundabout): SUCCESS: estimated sign pose: (17.212, 11.028), actual: (17.218, 11.036), error: (0.005, 0.007), error norm: 0.009, threshold: 0.900, old states: (17.512, 10.779), new states: (17.517, 10.787), yaw: -179.022, sign: Roundabout, ID: 42
+[INFO] [1779110258.584338098]: CHECK_INTERSECTION(Roundabout): REACHED: x_cur: (17.482, 10.788, 3.145), intersection: (17.131, 10.781), distance: 0.350, index: 16, next intersection: (0.359, 10.558, -1.571)
+[INFO] [1779110258.584446245]: intersection reached: CASE Roundabout, proceeding...
+[INFO] [1779110259.784357973]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.278, 11.075), actual: (14.362, 11.028), error: (0.084, -0.047), error norm: 0.097, threshold: 0.900, old states: (17.069, 10.838), new states: (17.153, 10.791), yaw: 170.678, sign: Highway Entrance, ID: 43
+[INFO] [1779110261.184644771]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.454, 10.973), actual: (14.362, 11.028), error: (-0.092, 0.055), error norm: 0.107, threshold: 0.900, old states: (16.666, 10.985), new states: (16.574, 11.040), yaw: 154.578, sign: Highway Entrance, ID: 43
+[INFO] [1779110261.884753316]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.378, 10.955), actual: (14.362, 11.028), error: (-0.016, 0.073), error norm: 0.075, threshold: 0.900, old states: (16.399, 11.107), new states: (16.383, 11.180), yaw: 157.978, sign: Highway Entrance, ID: 43
+[INFO] [1779110262.784817527]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.399, 10.978), actual: (14.362, 11.028), error: (-0.037, 0.050), error norm: 0.062, threshold: 0.900, old states: (16.116, 11.201), new states: (16.080, 11.250), yaw: 177.178, sign: Highway Entrance, ID: 43
+[INFO] [1779110263.684462496]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.365, 11.054), actual: (14.362, 11.028), error: (-0.003, -0.026), error norm: 0.026, threshold: 0.900, old states: (15.810, 11.174), new states: (15.808, 11.148), yaw: -161.222, sign: Highway Entrance, ID: 43
+[INFO] [1779110264.384441865]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.344, 11.096), actual: (14.362, 11.028), error: (0.018, -0.068), error norm: 0.070, threshold: 0.900, old states: (15.593, 11.049), new states: (15.611, 10.982), yaw: -154.322, sign: Highway Entrance, ID: 43
+[INFO] [1779110264.984796505]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.361, 11.088), actual: (14.362, 11.028), error: (0.001, -0.060), error norm: 0.060, threshold: 0.900, old states: (15.421, 10.909), new states: (15.421, 10.848), yaw: -159.122, sign: Highway Entrance, ID: 43
+[INFO] [1779110265.684534903]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.372, 11.027), actual: (14.362, 11.028), error: (-0.010, 0.001), error norm: 0.010, threshold: 0.900, old states: (15.190, 10.802), new states: (15.180, 10.803), yaw: -169.622, sign: Highway Entrance, ID: 43
+[INFO] [1779110266.384460023]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.355, 11.002), actual: (14.362, 11.028), error: (0.007, 0.026), error norm: 0.027, threshold: 0.900, old states: (14.944, 10.786), new states: (14.951, 10.812), yaw: -176.822, sign: Highway Entrance, ID: 43
+[INFO] [1779110266.984383642]: SIGN_RELOC2(Highway Entrance): SUCCESS: estimated sign pose: (14.356, 11.018), actual: (14.362, 11.028), error: (0.006, 0.010), error norm: 0.012, threshold: 0.900, old states: (14.748, 10.811), new states: (14.754, 10.822), yaw: -179.322, sign: Highway Entrance, ID: 43
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.387, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.388, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.388, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.391, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.392, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.386, LANE_OFFSET: 0.394
+[INFO] [1779110271.650696702]: LANE_RELOC2(): SUCCESS: errorx: 0.002, errory: 0.025, errory: -0.025, right_only: 0, on_highway: 1
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.390, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.386, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.379, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.379, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.369, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.358, LANE_OFFSET: 0.394
+[INFO] [1779110272.250657927]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.001, errory: 0.001, right_only: 0, on_highway: 1
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.345, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.332, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.317, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.317, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.302, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.286, LANE_OFFSET: 0.394
+[INFO] [1779110272.834016060]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.006, errory: 0.006, right_only: 0, on_highway: 1
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.270, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.253, LANE_OFFSET: 0.394
+CHECK_CAR(): detected car is not considered on the same lane, min_same_lane_lat_dist: -0.238, LANE_OFFSET: 0.394
+[INFO] [1779110273.184518668]: CHECK_CAR(): CANT OVERTAKE: end idx 0.000 is not on the same lane as closest idx 5.000, closest idx: 3020.000, end idx: -1508.000
+[INFO] [1779110273.184638978]: CHECK_CAR(): cant overtake, dist = 0.567, stopping...
+[INFO] [1779110273.417321831]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: 0.020, errory: -0.020, right_only: 0, on_highway: 1
+[INFO] [1779110274.100663351]: LANE_RELOC2(): SUCCESS: errorx: -0.001, errory: -0.015, errory: 0.015, right_only: 0, on_highway: 1
+[INFO] [1779110275.583574468]: CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: 3031.000, end idx: 3145.000, min_dist: 1.172, min_dist_adj: 1000.000, changing lane to the left in 0.457 meters. start pose: (11.785,11.284), end: (6.753, 12.326), cur: (12.282, 11.222), min_dist_to_car: 0.340, egospeed: 0.465, car_speed: 0.332, total_distance: 5.325
+[INFO] [1779110283.384446575]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (6.941, 12.848), actual: (7.053, 12.870), error: (0.112, 0.022), error norm: 0.114, threshold: 0.900, old states: (8.770, 12.127), new states: (8.882, 12.149), yaw: 169.278, sign: Highway Exit, ID: 51
+[INFO] [1779110284.084620860]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (7.127, 12.847), actual: (7.053, 12.870), error: (-0.074, 0.023), error norm: 0.077, threshold: 0.900, old states: (8.550, 12.190), new states: (8.476, 12.213), yaw: 174.978, sign: Highway Exit, ID: 51
+[INFO] [1779110284.784460108]: SIGN_RELOC2(Highway Exit): SUCCESS: estimated sign pose: (7.109, 12.877), actual: (7.053, 12.870), error: (-0.056, -0.007), error norm: 0.057, threshold: 0.900, old states: (8.172, 12.229), new states: (8.116, 12.222), yaw: 178.078, sign: Highway Exit, ID: 51
+[INFO] [1779110287.834010091]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 180.092, current yaw: -179.422, straight_lane_angle: -0.092
+[INFO] [1779110292.150660565]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.007, errory: -0.007, right_only: 0, on_highway: 0
+[INFO] [1779110292.734012840]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.007, errory: -0.007, right_only: 0, on_highway: 0
+[INFO] [1779110293.333972049]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.001, errory: 0.001, right_only: 0, on_highway: 0
+[INFO] [1779110293.917313539]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.010, errory: -0.010, right_only: 0, on_highway: 0
+[INFO] [1779110294.500619630]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.002, errory: 0.002, right_only: 0, on_highway: 0
+[INFO] [1779110297.917372355]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: -0.013, errory: 0.013, right_only: 0, on_highway: 0
+[INFO] [1779110298.500645160]: LANE_RELOC2(): SUCCESS: errorx: 0.000, errory: 0.015, errory: -0.015, right_only: 0, on_highway: 0
+[INFO] [1779110299.084011615]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.013, errory: -0.013, right_only: 0, on_highway: 0
+[INFO] [1779110299.667309513]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.004, errory: -0.004, right_only: 0, on_highway: 0
+[INFO] [1779110300.250660796]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.003, errory: -0.003, right_only: 0, on_highway: 0
+[INFO] [1779110300.817353810]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.010, errory: -0.010, right_only: 0, on_highway: 0
+[INFO] [1779110301.417339999]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: 0.013, errory: -0.013, right_only: 0, on_highway: 0
+[INFO] [1779110305.684638366]: SIGN_RELOC2(Stop Sign): FAILURE: yaw error too large: 48.308, thresh: 45.000, sign: Stop Sign, ID: 52
+[INFO] [1779110306.284623724]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.199, 10.592), actual: (0.104, 10.635), error: (-0.095, 0.043), error norm: 0.104, threshold: 0.900, old states: (0.580, 11.643), new states: (0.485, 11.686), yaw: -128.008, sign: Stop Sign, ID: 52
+[INFO] [1779110306.784810784]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.118, 10.635), actual: (0.104, 10.635), error: (-0.014, -0.000), error norm: 0.014, threshold: 0.900, old states: (0.414, 11.531), new states: (0.400, 11.530), yaw: -117.308, sign: Stop Sign, ID: 52
+[INFO] [1779110307.384459601]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.076, 10.638), actual: (0.104, 10.635), error: (0.028, -0.003), error norm: 0.028, threshold: 0.900, old states: (0.351, 11.328), new states: (0.379, 11.325), yaw: -103.808, sign: Stop Sign, ID: 52
+[INFO] [1779110307.984363600]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.081, 10.635), actual: (0.104, 10.635), error: (0.023, -0.000), error norm: 0.023, threshold: 0.900, old states: (0.353, 11.117), new states: (0.376, 11.116), yaw: -96.608, sign: Stop Sign, ID: 52
+[INFO] [1779110308.484502203]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (0.095, 10.627), actual: (0.104, 10.635), error: (0.009, 0.008), error norm: 0.012, threshold: 0.900, old states: (0.364, 10.942), new states: (0.374, 10.950), yaw: -93.408, sign: Stop Sign, ID: 52
+[INFO] [1779110308.584345533]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (0.372, 10.915, 4.663), intersection: (0.359, 10.558), distance: 0.357, index: 17, next intersection: (1.220, 9.620, 0.000)
+[INFO] [1779110308.584427659]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[INFO] [1779110313.784634502]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (0.895, 9.731, 5.821), intersection: (1.220, 9.620), distance: 0.344, index: 18, next intersection: (4.750, 7.920, -1.571)
+[INFO] [1779110313.784738264]: intersection reached: CASE Crosswalk, proceeding...
+[INFO] [1779110315.683985023]: LANE_RELOC2(): SUCCESS: errorx: 0.001, errory: -0.041, errory: -0.041, right_only: 0, on_highway: 0
+[INFO] [1779110325.884372244]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (4.523, 8.007), actual: (4.546, 7.963), error: (0.023, -0.045), error norm: 0.050, threshold: 0.900, old states: (4.633, 8.716), new states: (4.656, 8.672), yaw: -66.008, sign: Crosswalk, ID: 98
+[INFO] [1779110326.484398216]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (4.538, 7.984), actual: (4.546, 7.963), error: (0.008, -0.022), error norm: 0.023, threshold: 0.900, old states: (4.712, 8.483), new states: (4.720, 8.461), yaw: -73.708, sign: Crosswalk, ID: 98
+[INFO] [1779110327.084344175]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (4.756, 8.261, 4.885), intersection: (4.750, 7.920), distance: 0.341, index: 19, next intersection: (4.768, 4.556, -1.571)
+[INFO] [1779110327.084427358]: intersection reached: CASE Crosswalk, proceeding...
+[INFO] [1779110331.983995086]: LANE_RELOC2(): SUCCESS: errorx: -0.044, errory: 0.001, errory: -0.044, right_only: 0, on_highway: 0
+[INFO] [1779110331.984083806]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 269.689, current yaw: -90.808, straight_lane_angle: 0.311
+[INFO] [1779110332.550693764]: LANE_RELOC2(): SUCCESS: errorx: -0.003, errory: -0.000, errory: -0.003, right_only: 0, on_highway: 0
+[INFO] [1779110333.117375288]: LANE_RELOC2(): SUCCESS: errorx: 0.007, errory: 0.000, errory: 0.007, right_only: 0, on_highway: 0
+[INFO] [1779110333.384357929]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.476, 4.594), actual: (4.513, 4.633), error: (0.037, 0.038), error norm: 0.053, threshold: 0.900, old states: (4.741, 6.082), new states: (4.778, 6.120), yaw: -86.611, sign: Priority, ID: 99
+[INFO] [1779110333.984339766]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.496, 4.648), actual: (4.513, 4.633), error: (0.017, -0.015), error norm: 0.023, threshold: 0.900, old states: (4.779, 5.896), new states: (4.796, 5.881), yaw: -90.011, sign: Priority, ID: 99
+[INFO] [1779110334.584327140]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.525, 4.637), actual: (4.513, 4.633), error: (-0.012, -0.005), error norm: 0.013, threshold: 0.900, old states: (4.788, 5.666), new states: (4.776, 5.661), yaw: -92.011, sign: Priority, ID: 99
+[INFO] [1779110335.084339384]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.520, 4.627), actual: (4.513, 4.633), error: (-0.007, 0.006), error norm: 0.010, threshold: 0.900, old states: (4.769, 5.487), new states: (4.762, 5.493), yaw: -92.211, sign: Priority, ID: 99
+[INFO] [1779110335.584455872]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.520, 4.626), actual: (4.513, 4.633), error: (-0.006, 0.007), error norm: 0.009, threshold: 0.900, old states: (4.759, 5.318), new states: (4.752, 5.325), yaw: -90.711, sign: Priority, ID: 99
+[INFO] [1779110336.084502139]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.508, 4.630), actual: (4.513, 4.633), error: (0.005, 0.002), error norm: 0.006, threshold: 0.900, old states: (4.753, 5.152), new states: (4.758, 5.155), yaw: -89.311, sign: Priority, ID: 99
+[INFO] [1779110336.584936667]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.509, 4.627), actual: (4.513, 4.633), error: (0.004, 0.006), error norm: 0.007, threshold: 0.900, old states: (4.759, 4.986), new states: (4.762, 4.991), yaw: -89.311, sign: Priority, ID: 99
+[INFO] [1779110336.784869130]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (4.761, 4.925, 4.719), intersection: (4.768, 4.556), distance: 0.369, index: 20, next intersection: (3.429, 4.013, 3.142)
+[INFO] [1779110336.784946263]: intersection reached: CASE Priority, proceeding...
+[INFO] [1779110341.184909371]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (3.774, 4.043, 3.185), intersection: (3.429, 4.013), distance: 0.346, index: 21, next intersection: (2.892, 5.986, 1.571)
+[INFO] [1779110341.184990090]: intersection reached: CASE Lights, proceeding...
+[INFO] [1779110344.984539636]: CHECK_INTERSECTION(): sign found for intersection at (2.892, 5.986), sign: Stop Sign, cumulative confidence: 2.762, error: 0.000
+[INFO] [1779110345.284427800]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.218, 5.960), actual: (3.147, 5.909), error: (-0.071, -0.051), error norm: 0.087, threshold: 0.900, old states: (2.885, 4.937), new states: (2.814, 4.886), yaw: 96.389, sign: Stop Sign, ID: 154
+[INFO] [1779110345.984353112]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.138, 5.917), actual: (3.147, 5.909), error: (0.010, -0.007), error norm: 0.012, threshold: 0.900, old states: (2.816, 5.153), new states: (2.826, 5.145), yaw: 88.589, sign: Stop Sign, ID: 154
+[INFO] [1779110346.785705844]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.126, 5.932), actual: (3.147, 5.909), error: (0.021, -0.023), error norm: 0.031, threshold: 0.900, old states: (2.841, 5.442), new states: (2.862, 5.420), yaw: 86.989, sign: Stop Sign, ID: 154
+[INFO] [1779110347.384584924]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (2.872, 5.634, 1.534), intersection: (2.892, 5.986), distance: 0.352, index: 22, next intersection: (4.220, 6.533, 0.000)
+[INFO] [1779110347.384718356]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[INFO] [1779110352.884398408]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.867, 6.535, 0.063), intersection: (4.220, 6.533), distance: 0.353, index: 23, next intersection: (5.150, 7.380, 1.571)
+[INFO] [1779110352.884758728]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[INFO] [1779110353.884589775]: SIGN_RELOC2(Crosswalk): FAILURE: yaw error too large: 87.011, thresh: 45.000, sign: Crosswalk, ID: 14
+[INFO] [1779110354.884568881]: SIGN_RELOC2(Crosswalk): FAILURE: yaw error too large: 79.211, thresh: 45.000, sign: Crosswalk, ID: 14
+[INFO] [1779110355.384582534]: SIGN_RELOC2(Crosswalk): FAILURE: yaw error too large: 69.911, thresh: 45.000, sign: Crosswalk, ID: 14
+[INFO] [1779110355.884698638]: SIGN_RELOC2(Crosswalk): FAILURE: yaw error too large: 57.311, thresh: 45.000, sign: Crosswalk, ID: 14
+[INFO] [1779110356.484716225]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (5.400, 7.333), actual: (5.450, 7.353), error: (0.051, 0.019), error norm: 0.054, threshold: 0.900, old states: (4.966, 6.938), new states: (5.016, 6.958), yaw: 50.889, sign: Crosswalk, ID: 14
+[INFO] [1779110356.884649994]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (5.070, 7.077, 1.071), intersection: (5.150, 7.380), distance: 0.314, index: 24, next intersection: (1.740, 10.000, 3.142)
+[INFO] [1779110356.884766239]: intersection reached: CASE Crosswalk, proceeding...
+[INFO] [1779110358.183980176]: LANE_RELOC2(): SUCCESS: errorx: -0.051, errory: 0.004, errory: 0.051, right_only: 0, on_highway: 0
+[INFO] [1779110358.767334340]: LANE_RELOC2(): SUCCESS: errorx: -0.021, errory: 0.001, errory: 0.021, right_only: 0, on_highway: 0
+[INFO] [1779110368.584408103]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.784, 10.183), actual: (1.785, 10.239), error: (0.001, 0.057), error norm: 0.057, threshold: 0.900, old states: (3.271, 10.172), new states: (3.272, 10.228), yaw: 169.589, sign: Crosswalk, ID: 17
+[INFO] [1779110369.184437628]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.792, 10.241), actual: (1.785, 10.239), error: (-0.007, -0.002), error norm: 0.007, threshold: 0.900, old states: (3.071, 10.237), new states: (3.064, 10.235), yaw: 177.389, sign: Crosswalk, ID: 17
+[INFO] [1779110369.333981959]: LANE_RELOC2(): SUCCESS: errorx: -0.000, errory: -0.034, errory: 0.034, right_only: 0, on_highway: 0
+[INFO] [1779110369.784356958]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.772, 10.236), actual: (1.785, 10.239), error: (0.013, 0.003), error norm: 0.014, threshold: 0.900, old states: (2.862, 10.190), new states: (2.875, 10.194), yaw: -176.611, sign: Crosswalk, ID: 17
+[INFO] [1779110369.934005883]: LANE_RELOC2(): SUCCESS: errorx: -0.003, errory: 0.043, errory: -0.043, right_only: 0, on_highway: 0
+[INFO] [1779110370.384341227]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.780, 10.280), actual: (1.785, 10.239), error: (0.005, -0.040), error norm: 0.041, threshold: 0.900, old states: (2.665, 10.210), new states: (2.670, 10.170), yaw: -172.611, sign: Crosswalk, ID: 17
+[INFO] [1779110370.884441391]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.782, 10.258), actual: (1.785, 10.239), error: (0.005, -0.019), error norm: 0.014, threshold: 0.900, old states: (2.496, 10.142), new states: (2.499, 10.128), yaw: -170.311, sign: Crosswalk, ID: 17
+[INFO] [1779110371.484358865]: SIGN_RELOC2(Crosswalk): SUCCESS: estimated sign pose: (1.781, 10.252), actual: (1.785, 10.239), error: (0.004, -0.012), error norm: 0.013, threshold: 0.900, old states: (2.292, 10.099), new states: (2.296, 10.087), yaw: -171.511, sign: Crosswalk, ID: 17
+[INFO] [1779110372.084346014]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (2.085, 10.064, 3.253), intersection: (1.740, 10.000), distance: 0.351, index: 25, next intersection: (0.359, 7.445, -1.571)
+[INFO] [1779110372.084432718]: intersection reached: CASE Crosswalk, proceeding...
+[INFO] [1779110378.784339466]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.151, 7.464), actual: (0.104, 7.522), error: (-0.047, 0.057), error norm: 0.074, threshold: 0.900, old states: (0.366, 8.989), new states: (0.319, 9.046), yaw: -98.611, sign: Priority, ID: 53
+[INFO] [1779110379.250690085]: LANE_RELOC2(): SUCCESS: errorx: -0.008, errory: 0.000, errory: -0.008, right_only: 0, on_highway: 0
+[INFO] [1779110379.284432526]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.099, 7.545), actual: (0.104, 7.522), error: (0.006, -0.023), error norm: 0.024, threshold: 0.900, old states: (0.301, 8.857), new states: (0.307, 8.834), yaw: -93.211, sign: Priority, ID: 53
+[INFO] [1779110379.784005524]: LANE_RELOC2(): SUCCESS: errorx: -0.008, errory: -0.000, errory: -0.008, right_only: 0, on_highway: 0
+[INFO] [1779110379.884550643]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.079, 7.527), actual: (0.104, 7.522), error: (0.026, -0.005), error norm: 0.026, threshold: 0.900, old states: (0.303, 8.615), new states: (0.329, 8.610), yaw: -88.111, sign: Priority, ID: 53
+[INFO] [1779110380.484477237]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.086, 7.526), actual: (0.104, 7.522), error: (0.019, -0.004), error norm: 0.019, threshold: 0.900, old states: (0.336, 8.401), new states: (0.354, 8.397), yaw: -87.311, sign: Priority, ID: 53
+[INFO] [1779110380.984588636]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.099, 7.518), actual: (0.104, 7.522), error: (0.006, 0.004), error norm: 0.007, threshold: 0.900, old states: (0.357, 8.225), new states: (0.362, 8.229), yaw: -88.611, sign: Priority, ID: 53
+[INFO] [1779110381.584334367]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.106, 7.507), actual: (0.104, 7.522), error: (-0.002, 0.014), error norm: 0.014, threshold: 0.900, old states: (0.361, 8.021), new states: (0.359, 8.036), yaw: -90.211, sign: Priority, ID: 53
+[INFO] [1779110382.084409183]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (0.107, 7.507), actual: (0.104, 7.522), error: (-0.003, 0.015), error norm: 0.015, threshold: 0.900, old states: (0.358, 7.859), new states: (0.355, 7.873), yaw: -90.511, sign: Priority, ID: 53
+[INFO] [1779110382.284454785]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (0.356, 7.805, 4.714), intersection: (0.359, 7.445), distance: 0.360, index: 26, next intersection: (1.976, 6.534, 0.000)
+[INFO] [1779110382.284545170]: intersection reached: CASE Priority, proceeding...
+[INFO] [1779110388.184646438]: CHECK_INTERSECTION(None): REACHED: x_cur: (1.610, 6.564, 6.232), intersection: (1.976, 6.534), distance: 0.367, index: 27, next intersection: (2.522, 4.558, -1.571)
+[INFO] [1779110388.184744440]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[INFO] [1779110391.684418720]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.263, 4.608), actual: (2.216, 4.601), error: (-0.047, -0.007), error norm: 0.047, threshold: 0.900, old states: (2.482, 5.918), new states: (2.435, 5.911), yaw: -73.611, sign: Lights, ID: 4
+[INFO] [1779110392.184436886]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.133, 4.589), actual: (2.216, 4.601), error: (0.083, 0.012), error norm: 0.084, threshold: 0.900, old states: (2.464, 5.741), new states: (2.547, 5.753), yaw: -80.111, sign: Lights, ID: 4
+[INFO] [1779110392.784437478]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.220, 4.613), actual: (2.216, 4.601), error: (-0.004, -0.012), error norm: 0.013, threshold: 0.900, old states: (2.557, 5.533), new states: (2.553, 5.522), yaw: -88.111, sign: Lights, ID: 4
+[INFO] [1779110393.384245140]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.250, 4.593), actual: (2.216, 4.601), error: (-0.034, 0.008), error norm: 0.035, threshold: 0.900, old states: (2.546, 5.308), new states: (2.512, 5.316), yaw: -91.911, sign: Lights, ID: 4
+[INFO] [1779110393.884337239]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (2.233, 4.597), actual: (2.216, 4.601), error: (-0.017, 0.004), error norm: 0.018, threshold: 0.900, old states: (2.508, 5.138), new states: (2.491, 5.143), yaw: -91.111, sign: Lights, ID: 4
+[INFO] [1779110394.484370797]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.494, 4.930, 4.740), intersection: (2.522, 4.558), distance: 0.372, index: 28, next intersection: (4.220, 3.645, 0.000)
+[INFO] [1779110394.484445498]: intersection reached: CASE Lights, proceeding...
+[INFO] [1779110400.884438030]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.867, 3.672, 6.295), intersection: (4.220, 3.645), distance: 0.355, index: 29, next intersection: (5.136, 5.984, 1.571)
+[INFO] [1779110400.884514044]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[INFO] [1779110406.084351508]: CHECK_INTERSECTION(): sign found for intersection at (5.136, 5.984), sign: Stop Sign, cumulative confidence: 2.567, error: 0.000
+[INFO] [1779110406.684377865]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (5.346, 5.988), actual: (5.391, 5.907), error: (0.045, -0.081), error norm: 0.093, threshold: 0.900, old states: (5.119, 4.866), new states: (5.164, 4.785), yaw: 85.389, sign: Stop Sign, ID: 159
+[INFO] [1779110407.384348561]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (5.389, 5.901), actual: (5.391, 5.907), error: (0.002, 0.006), error norm: 0.006, threshold: 0.900, old states: (5.164, 5.064), new states: (5.166, 5.070), yaw: 91.289, sign: Stop Sign, ID: 159
+[INFO] [1779110407.984342784]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (5.413, 5.913), actual: (5.391, 5.907), error: (-0.021, -0.006), error norm: 0.022, threshold: 0.900, old states: (5.157, 5.300), new states: (5.135, 5.294), yaw: 92.689, sign: Stop Sign, ID: 159
+[INFO] [1779110408.684445055]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (5.397, 5.920), actual: (5.391, 5.907), error: (-0.006, -0.013), error norm: 0.014, threshold: 0.900, old states: (5.130, 5.549), new states: (5.124, 5.535), yaw: 91.489, sign: Stop Sign, ID: 159
+[INFO] [1779110408.984444983]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (5.123, 5.643, 7.871), intersection: (5.136, 5.984), distance: 0.341, index: 30, next intersection: (3.429, 6.902, 3.142)
+[INFO] [1779110408.984532999]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[INFO] [1779110410.184487615]: CHECK_INTERSECTION(): sign found for intersection at (3.429, 6.902), sign: Stop Sign, cumulative confidence: 4.343, error: 0.000
+Sending State
+Stopping CAR
+[INFO] [1779110412.037409527]: Changing from MOVING to INIT
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110413.996647572]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+[INFO] [1779110416.396663383]: check_emergency_stop(): emergency stop released
+[INFO] [1779110416.496647346]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110428.796678511]: check_emergency_stop(): emergency stop released
+[INFO] [1779110428.896702256]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110432.796647871]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+[INFO] [1779110432.896647996]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110435.696666517]: check_emergency_stop(): emergency stop released
+[INFO] [1779110435.796662481]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110438.996668317]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+[INFO] [1779110439.196650420]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110441.296669824]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110441.596681018]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110442.896666516]: check_emergency_stop(): emergency stop released
+[INFO] [1779110442.996646542]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110444.696662020]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+[INFO] [1779110444.896644571]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110446.496692281]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110446.596695927]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110447.996666668]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110448.696667866]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110450.596799263]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110450.696690249]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110452.096677217]: check_emergency_stop(): emergency stop released
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110453.096650881]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779110454.496663678]: check_emergency_stop(): emergency stop released
+^C[mpc_controller_ubuntu_13063_8990016734629362759-2] killing on exit
+[ERROR] [1779110469.187290893]: serial error: Operation canceled
+corrupted double-linked list
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+scandy@ubuntu:~/AD$ 
