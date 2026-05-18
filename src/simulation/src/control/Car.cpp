@@ -106,7 +106,7 @@ void Car::plan_path() {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
-	path = planner->spline_utils.interpolate_path(general_path, planner->density, planner->hw_density_factor, planner->cw_density_factor);
+	path = planner->spline_utils.interpolate_path(general_path, planner->density, planner->hw_speed_ratio, planner->cw_density_factor);
 }
 
 void Car::move_car_to(double x, double y, double yaw) {
