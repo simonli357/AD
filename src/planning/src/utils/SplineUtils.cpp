@@ -10,7 +10,7 @@ using Graph = Track::Graph;
 using ATTRIBUTE = Track::ATTRIBUTE;
 using VD = boost::graph_traits<Graph>::vertex_descriptor;
 
-std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, double density, double hw_density_factor, double cw_density_factor, double smooth_factor) {
+std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &path, double density, double hw_speed_ratio, double cw_density_factor, double smooth_factor) {
 	if (path.size() <= 1 || density <= 0.0) {
 		return path;
 	}
@@ -103,7 +103,7 @@ std::vector<Vertex> SplineUtils::interpolate_path(const std::vector<Vertex> &pat
 			break;
 		case ATTRIBUTE::HIGHWAY_LEFT:
 		case ATTRIBUTE::HIGHWAY_RIGHT:
-			eff_density /= hw_density_factor;
+			eff_density /= hw_speed_ratio;
 			break;
 		default:
 			break;

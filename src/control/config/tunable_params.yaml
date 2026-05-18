@@ -8,7 +8,6 @@ real:
   sign_cooldown: 0.5
   lane_localization_cooldown: 0.5
   # Sign/object pose correction from src/perception/scripts/data_analysis/2026/long.csv + long2.csv.
-  # CSV distances were recorded in cm; offsets below are converted to meters.
   # sign_lon_correction_offset: 0.03834467
   sign_lon_correction_offset: 0.01334467 # reduced by 2.5 cm
   sign_lon_correction_lon_coeff: 0.915505
@@ -43,7 +42,7 @@ real:
   parking_base_speed: -0.2
   parking_base_thresh: 0.1
   cw_speed_ratio: 0.85
-  hw_speed_ratio: 1.25
+  hw_speed_ratio: 1.33
   pixel_center_offset: 0
   constant_distance_to_intersection_at_detection: 0.3725
   NORMAL_SPEED: 0.23

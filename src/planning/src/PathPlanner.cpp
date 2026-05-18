@@ -12,6 +12,14 @@ PathPlanner::PathPlanner(double vref, int N, double T) : track(), spline_utils()
 	this->density = 1.0 / std::fabs(this->vref) / this->T;
 }
 
+void PathPlanner::set_highway_speed_ratio(double ratio) {
+	if (!std::isfinite(ratio) || ratio <= 0.0) {
+		std::cerr << "Invalid highway speed ratio " << ratio << ", keeping " << hw_speed_ratio << std::endl;
+		return;
+	}
+	hw_speed_ratio = ratio;
+}
+
 void PathPlanner::set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::vector<std::tuple<float, float>> destination_positions) {
 	this->vref = vref;
 	this->N = N;
@@ -119,8 +127,8 @@ void PathPlanner::construct_path(bool use_gps) {
 		general_path.insert(general_path.end(), shortest_path.begin() + 1, shortest_path.end());
 		prev = v;
 	}
-	condensed_path = spline_utils.interpolate_path(general_path, density, hw_density_factor, cw_density_factor);
-	path_utils.compute_speeds(condensed_path, vref, density, hw_density_factor, cw_density_factor);
+	condensed_path = spline_utils.interpolate_path(general_path, density, hw_speed_ratio, cw_density_factor);
+	path_utils.compute_speeds(condensed_path, vref, density, hw_speed_ratio, cw_density_factor);
 }
 
 void PathPlanner::plan_path(Float32MultiArray &out_state_refs, Float32MultiArray &out_input_refs, Float32MultiArray &out_attributes, Float32MultiArray &out_normals) {

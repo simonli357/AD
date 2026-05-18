@@ -14,8 +14,8 @@ def get_image_files_from_dir(directory):
 
 def main():
     # image_dir = "/root/AD/rf2/yawn31_off0c"
-    image_dir = "/root/AD/rf2/yaw3_off0c"
-    # image_dir = "/root/AD/src/gui/src/frames"
+    # image_dir = "/root/AD/rf2/yaw3_off0c"
+    image_dir = "/root/AD/src/gui/src/frames"
 
     if not os.path.isdir(image_dir):
         rospy.logerr("Provided path is not a directory: {}".format(image_dir))

@@ -105,7 +105,7 @@ def to_xy_points(run):
 class Path:
     def __init__(self, v_ref, N, T, x0=None, name="speedrun", dest=None):
         use_spline = False
-        self.hw_density_factor = rospy.get_param('hw', default=1.33)
+        self.hw_density_factor = rospy.get_param('/real/hw_speed_ratio', rospy.get_param('hw', default=1.33))
         self.v_ref = v_ref
         self.N = N
         self.T = T

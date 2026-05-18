@@ -1129,7 +1129,7 @@ public:
         // if (car_speed > 0.0537) {
         //     static_distance += LANE_OFFSET;
         // }
-        double ego_speed = Tunable::vref;
+        double ego_speed = Tunable::v_ref;
         if (on_highway) ego_speed *= Tunable::hw_speed_ratio;
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;

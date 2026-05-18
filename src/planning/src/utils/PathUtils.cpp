@@ -57,7 +57,7 @@ void PathUtils::smooth_yaw(std::vector<Vertex> &path) {
 	}
 }
 
-void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double hw_density_factor, double cw_density_factor) {
+void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double hw_speed_ratio, double cw_density_factor) {
 	for (size_t i = 1; i < path.size();) {
 		double current_thresh = thresh;
 		switch (path[i].attribute) {
@@ -65,10 +65,10 @@ void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double
 			current_thresh /= cw_density_factor;
 			break;
 		case Track::HIGHWAY_LEFT:
-			current_thresh *= hw_density_factor;
+			current_thresh *= hw_speed_ratio;
 			break;
 		case Track::HIGHWAY_RIGHT:
-			current_thresh *= hw_density_factor;
+			current_thresh *= hw_speed_ratio;
 			break;
 		default:
 			break;
@@ -83,17 +83,17 @@ void PathUtils::distance_filter(std::vector<Vertex> &path, double thresh, double
 	}
 }
 
-void PathUtils::compute_speeds(std::vector<Vertex> &path, double vref, double density, double hw_density_factor, double cw_density_factor) {
+void PathUtils::compute_speeds(std::vector<Vertex> &path, double vref, double density, double hw_speed_ratio, double cw_density_factor) {
 	for (auto &v : path) {
 		switch (v.attribute) {
 		case Track::CROSSWALK:
 			v.vref = vref / cw_density_factor;
 			break;
 		case Track::HIGHWAY_LEFT:
-			v.vref = vref * hw_density_factor;
+			v.vref = vref * hw_speed_ratio;
 			break;
 		case Track::HIGHWAY_RIGHT:
-			v.vref = vref * hw_density_factor;
+			v.vref = vref * hw_speed_ratio;
 			break;
 		default:
 			v.vref = vref;

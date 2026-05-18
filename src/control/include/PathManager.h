@@ -67,6 +67,13 @@ inline int intersection_index = 0;
 
 enum ATTRIBUTE { NORMAL, CROSSWALK, INTERSECTION, ONEWAY, HIGHWAYLEFT, HIGHWAYRIGHT, ROUNDABOUT, STOPLINE, DOTTED, DOTTED_CROSSWALK };
 
+inline void apply_speed_ratios_to_planner() {
+    path_planner.set_highway_speed_ratio(Tunable::hw_speed_ratio);
+    if (nh) {
+        nh->setParam("/hw", Tunable::hw_speed_ratio);
+    }
+}
+
 inline void init(ros::NodeHandle& nh_, double T_, int N_, double v_ref_, const std::string& pathName_) {
     nh = &nh_;
     T = T_; N = N_; v_ref = v_ref_; pathName = pathName_;
@@ -78,6 +85,7 @@ inline void init(ros::NodeHandle& nh_, double T_, int N_, double v_ref_, const s
     closest_waypoint_index = target_waypoint_index = last_waypoint_index = 0;
     v_ref_int = static_cast<int>(v_ref * 100);
     path_planner = PathPlanner(v_ref, N, T);
+    apply_speed_ratios_to_planner();
     waypoints_client       = nh->serviceClient<utils::waypoints>  ("/waypoint_path");
     go_to_client           = nh->serviceClient<utils::go_to>       ("/go_to");
     go_to_multiple_client  = nh->serviceClient<utils::go_to_multiple>("/go_to_multiple");
@@ -588,6 +596,7 @@ inline bool call_waypoint_service(double x, double y, double yaw, const std::sha
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;
 	std_msgs::Float32MultiArray wp_normals_in;
+	apply_speed_ratios_to_planner();
 	path_planner.set_constraints(v_ref, N, T, x, y, Sensing::yaw, pathName, Tunable::useGps);
 	path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 
@@ -657,6 +666,7 @@ inline bool call_go_to_multiple_service(double x, double y, double yaw, const st
 	std_msgs::Float32MultiArray input_refs_in;
 	std_msgs::Float32MultiArray wp_attributes_in;
 	std_msgs::Float32MultiArray wp_normals_in;
+	apply_speed_ratios_to_planner();
 	path_planner.set_constraints(v_ref, N, T, x, y, Sensing::yaw, destinations);
 	path_planner.plan_path(state_refs_in, input_refs_in, wp_attributes_in, wp_normals_in);
 

@@ -39,12 +39,13 @@ class PathPlanner {
 	std::string serialized_graph = track.serialize_graph(track.graph);
 
 	double density;
-	double hw_density_factor = 4.0 / 3.0;
+	double hw_speed_ratio = 4.0 / 3.0;
 	double cw_density_factor = 3.0 / 2.0;
 	double distance_threshold;
 	double yaw_threshold = 60 * M_PI / 180;
 
 	void print_path();
+	void set_highway_speed_ratio(double ratio);
 
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::vector<std::tuple<float, float>> destination_positions);
 	void set_constraints(double vref, int N, double T, double start_x, double start_y, double car_yaw, std::string name, bool use_gps);
