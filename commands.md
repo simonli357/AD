@@ -101,7 +101,7 @@ With traffic and GPS:
 # Probe first. Use the localization tag ID that returns live location data.
 scripts/traffic_server_probe.py --discover --loc-id <LIVE_ID> --timeout 5
 
-roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=<LIVE_ID>
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=8
 ```
 
 ## GUI
