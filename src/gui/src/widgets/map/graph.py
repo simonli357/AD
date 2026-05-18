@@ -56,7 +56,7 @@ class GraphEditor:
         self.node_instance_renderer = None
         self.arrow_instance_renderer = None
         self.prev_hovered = None
-        self.G = map_widget.main_window.database.graph_queries.fetch_graph()
+        self.G = None
 
         self._dragging = False
         self._drag_index = None
@@ -76,6 +76,16 @@ class GraphEditor:
             11: (0.9, 0.3, 0.4, 1.0),
             12: (0.2, 0.4, 0.8, 1.0)
         }
+        self.load_graph(map_widget.main_window.database.graph_queries.fetch_graph())
+
+    def load_graph(self, graph):
+        self.G = graph
+        self.instance_data = InstanceData()
+        self.node_instance_renderer = None
+        self.arrow_instance_renderer = None
+        self.prev_hovered = None
+        self.prev_edge_node_hovered = None
+        self.edge_candidates.clear()
 
     def draw(self, proj_mat, view_mat, ortho_proj_mat):
         self.proj_mat = proj_mat
@@ -215,13 +225,13 @@ class GraphEditor:
     def update_instance_data(self):
         for node_id, data in self.G.nodes(data=True):
             int_id = int(node_id.lstrip('n'))
-            real_id = int(data.get('id', 0))
+            real_id = int(data.get('id', int_id))
             x_real = float(data.get('x', 0))
             y_real = float(data.get('y', 0))
-            attr = int(data.get('attr', 0))
+            attr = int(data.get('attr', data.get('new_attribute', 0)))
             x, y = self.map_widget.get_gl_coords(x_real, y_real)
             z = 0.0
-            self.instance_data.keys.append(f"n{real_id}")
+            self.instance_data.keys.append(str(real_id))
             self.instance_data.ids.append(real_id)
             self.instance_data.idx.append(int_id)
             self.instance_data.positions.append((x, y, z))
@@ -367,7 +377,7 @@ class GraphEditor:
         # pick new ID/key, attribute, color
         new_id = max(self.instance_data.idx) + 1
         k = max(self.instance_data.ids) + 1
-        new_key = f"n{k}"
+        new_key = str(k)
         if prev_idx is not None:
             new_attr = self.instance_data.attributes[prev_idx]
         else:
