@@ -211,8 +211,9 @@ public:
 
     std::deque<std::pair<LightColor, double>> color_history;
     static constexpr size_t HISTORY_SIZE = 10; // need tune based on detection frequency
+    static constexpr size_t OUT_OF_SEQUENCE_STOP_CONFIRMATIONS = 2;
 
-    // Timestamp when the current state was entered (for forced transitions).
+    // Timestamp when the current state was entered.
     ros::Time state_start_time;
 
     // When detections have not been updated for this many seconds, clear history.
@@ -239,6 +240,23 @@ public:
                new_type == OBJECT::REDLIGHT;
     }
 
+    static bool is_stop_color(LightColor color) {
+        return color == LightColor::RED || color == LightColor::YELLOW;
+    }
+
+    bool has_recent_consecutive_color(LightColor color, size_t min_count) const {
+        size_t count = 0;
+        for (auto it = color_history.rbegin(); it != color_history.rend(); ++it) {
+            if (it->first == color) {
+                count++;
+                if (count >= min_count) return true;
+            } else if (it->first != LightColor::UNDETERMINED) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     LightColor aggregateDetection() const {
         double weight_green = 0.0, weight_yellow = 0.0, weight_red = 0.0, weight_undetermined = 0.0;
         for (const auto& entry : color_history) {
@@ -259,11 +277,12 @@ public:
             return LightColor::UNDETERMINED;
     }
 
-    void update_light_detection(LightColor detected, double detection_confidence) {
+    void update_light_detection(LightColor detected, double detection_confidence, const ros::Time& previous_detection_time) {
         ros::Time now = ros::Time::now();
+        bool stale_track = (now - previous_detection_time).toSec() > RESET_HISTORY_THRESHOLD;
         
         // If enough time passed since the last update, clear the history.
-        if ((now - last_detection_time).toSec() > RESET_HISTORY_THRESHOLD) {
+        if (stale_track) {
             color_history.clear();
             current_color = LightColor::UNDETERMINED;
             state_start_time = now;
@@ -277,16 +296,10 @@ public:
         
         // Aggregate the detections.
         LightColor aggregated_detection = aggregateDetection();
-        double time_in_state = (now - state_start_time).toSec();
-        
-        // Time-based forced transition: e.g., if red for over n seconds, force a transition to green.
-        if (current_color == LightColor::RED && time_in_state > 10.0) {
-            current_color = LightColor::GREEN;
-            state_start_time = now;
+        if (aggregated_detection == LightColor::UNDETERMINED) {
             return;
         }
         
-        // Enforce proper transition order.
         LightColor allowed_next;
         switch (current_color) {
             case LightColor::GREEN:
@@ -299,27 +312,34 @@ public:
                 allowed_next = LightColor::GREEN;
                 break;
             case LightColor::UNDETERMINED:
-                // For undetermined, adopt the aggregated detection immediately.
                 allowed_next = aggregated_detection;
                 break;
         }
         
-        // Change state only if the aggregated detection indicates the allowed next state.
         if (aggregated_detection != current_color && aggregated_detection == allowed_next) {
             current_color = allowed_next;
             state_start_time = now;
+            return;
         }
-        // Otherwise, keep the current state.
+
+        // If we revisit mid-cycle or miss yellow, accept red/yellow only after
+        // consecutive stop-color detections. This keeps one-frame false stops filtered.
+        if (!stale_track && is_stop_color(detected) && detected != current_color &&
+            has_recent_consecutive_color(detected, OUT_OF_SEQUENCE_STOP_CONFIRMATIONS)) {
+            current_color = detected;
+            state_start_time = now;
+        }
     }
 
     void merge(double new_x, double new_y, double new_yaw, double new_conf, OBJECT new_type) override {
+        ros::Time previous_detection_time = last_detection_time;
         KnownStaticObject::merge(new_x, new_y, new_yaw, new_conf, this->type);
         LightColor detected_color = new_type == OBJECT::GREENLIGHT ? LightColor::GREEN :
                                     new_type == OBJECT::YELLOWLIGHT ? LightColor::YELLOW :
                                     new_type == OBJECT::REDLIGHT ? LightColor::RED : 
                                     new_type == OBJECT::LIGHTS ? LightColor::UNDETERMINED : 
                                     current_color;
-        update_light_detection(detected_color, new_conf);
+        update_light_detection(detected_color, new_conf, previous_detection_time);
     }
 
     void populate_msg(std_msgs::Float32MultiArray& msg) const override {
