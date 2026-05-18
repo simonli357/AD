@@ -567,32 +567,44 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         if (!Tunable::lane_yaw_reset || (ros::Time::now() - next_yaw_reset_time).toSec() < 0) {
             return;
         }
+        const int required_good_yaw_frames = std::max(1, Tunable::lane_yaw_reset_consecutive_frames);
         static int good_yaw_count = 0;
-        static double last_straight_lane_angle = 0.0;
-        if (msg.good_left && msg.good_right && msg.straight_lane && std::abs(msg.straight_lane_angle) < Tunable::lane_yaw_reset_thresh1 * M_PI / 180.0) {
+        static double straight_lane_angle_sum = 0.0;
+        const bool good_lane_yaw =
+            msg.good_left &&
+            msg.good_right &&
+            msg.straight_lane &&
+            std::abs(msg.straight_lane_angle) < Tunable::lane_yaw_reset_thresh1 * M_PI / 180.0;
+        if (good_lane_yaw) {
             good_yaw_count++;
-            last_straight_lane_angle = msg.straight_lane_angle;
-            if (good_yaw_count < 2) return; // need 2 consecutive messages with straight lane angle to reset yaw
+            straight_lane_angle_sum += msg.straight_lane_angle;
+            if (good_yaw_count < required_good_yaw_frames) {
+                return;
+            }
             double nearest_direction_yaw = helper::nearest_direction(Sensing::yaw);
-            double avg_straight_lane_angle = (last_straight_lane_angle + msg.straight_lane_angle) / 2.0;
+            double avg_straight_lane_angle = straight_lane_angle_sum / good_yaw_count;
             double lane_based_yaw = nearest_direction_yaw - avg_straight_lane_angle;
             double yaw_error = helper::compare_yaw(lane_based_yaw, Sensing::yaw);
             // debug("process_lane_data(): lane_based_yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", yaw_error: " + helper::d2str(yaw_error*180/M_PI) + ", straight_lane_angle: " + helper::d2str(msg.straight_lane_angle*180/M_PI), 1);
             if (std::abs(yaw_error) < Tunable::lane_yaw_reset_thresh2 * M_PI / 180.0) {
                 next_yaw_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_yaw_reset_cooldown);
-                std::cout << msg.straight_lane_angle*180/M_PI << std::endl;
                 debug("LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: " + helper::d2str(lane_based_yaw*180/M_PI) + ", current yaw: " + helper::d2str(Sensing::yaw*180/M_PI) + ", straight_lane_angle: " + helper::d2str(avg_straight_lane_angle*180/M_PI), 1);
                 Sensing::reset_yaw(lane_based_yaw);
                 good_yaw_count = 0;
+                straight_lane_angle_sum = 0.0;
                 // emergency=true;
                 // ros::Time now = ros::Time::now();
                 // while(ros::ok() && (ros::Time::now() - now).toSec() < 3.0) {
                 //     publish_cmd_vel(0.0, 0.0);
                 // }
                 // emergency = false;
+            } else {
+                good_yaw_count = 0;
+                straight_lane_angle_sum = 0.0;
             }
         } else {
             good_yaw_count = 0;
+            straight_lane_angle_sum = 0.0;
         }
     }
 }
