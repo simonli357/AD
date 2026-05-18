@@ -13,7 +13,8 @@ def get_image_files_from_dir(directory):
                    if f.lower().endswith(supported_exts)])
 
 def main():
-    image_dir = "/root/AD/rf2/yawn31_off0c"
+    # image_dir = "/root/AD/rf2/yawn31_off0c"
+    image_dir = "/root/AD/rf2/yaw3_off0c"
     # image_dir = "/root/AD/src/gui/src/frames"
 
     if not os.path.isdir(image_dir):

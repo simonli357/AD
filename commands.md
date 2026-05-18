@@ -38,6 +38,14 @@ sudo nmcli device wifi connect "BoschFMC" password "bosch23581321"
 sudo nmcli device wifi connect "slsecret357" password "simonli357"
 ```
 
+Switch between already-saved Jetson Wi-Fi profiles:
+
+```bash
+# Use this over USB SSH: ssh scandy@192.168.55.1
+sudo nmcli con up BoschFMC
+sudo nmcli con up slsecret357
+```
+
 Create persistent connections and force BoschFMC to 2.4 GHz:
 
 ```bash
