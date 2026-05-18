@@ -6,9 +6,10 @@ import re
 import sys
 
 
-# Edit these after steering calibration. Values are degrees.
-STEERING_MIN_DEG = -24.14
-STEERING_MAX_DEG = 25.3
+# Edit these after steering calibration. Values are signed controller/acados degrees:
+# positive turns left, negative turns right.
+STEERING_MAX_RIGHT_DEG = -24.14
+STEERING_MAX_LEFT_DEG = 25.3
 
 
 ASSIGNMENT_TEMPLATE = r"(^\s*{name}\[1\]\s*=\s*)[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?(\s*;)"
@@ -54,17 +55,17 @@ def main():
         print(f"No generated solver files found under {acados_dir}", file=sys.stderr)
         return 1
 
-    min_rad = math.radians(STEERING_MIN_DEG)
-    max_rad = math.radians(STEERING_MAX_DEG)
+    max_right_rad = math.radians(STEERING_MAX_RIGHT_DEG)
+    max_left_rad = math.radians(STEERING_MAX_LEFT_DEG)
 
     print("Steering bounds:")
-    print(f"  min: {STEERING_MIN_DEG:.6f} deg = {format_rad(min_rad)} rad")
-    print(f"  max: {STEERING_MAX_DEG:.6f} deg = {format_rad(max_rad)} rad")
+    print(f"  max right: {STEERING_MAX_RIGHT_DEG:.6f} deg = {format_rad(max_right_rad)} rad")
+    print(f"  max left:  {STEERING_MAX_LEFT_DEG:.6f} deg = {format_rad(max_left_rad)} rad")
 
     changed_count = 0
     for path in solver_files:
         try:
-            changed = update_solver_file(path, min_rad, max_rad, args.dry_run)
+            changed = update_solver_file(path, max_right_rad, max_left_rad, args.dry_run)
         except ValueError as exc:
             print(f"ERROR: {path}: {exc}", file=sys.stderr)
             return 1

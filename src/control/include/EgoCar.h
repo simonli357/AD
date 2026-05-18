@@ -293,8 +293,7 @@ inline void initialize_ekf(double x0, double y0) {
 
 inline bool send_speed_and_steer(double velocity, double steer) {
     // speed: m/s, steer: degrees
-    if (steer > HARD_MAX_STEERING) steer = HARD_MAX_STEERING;
-    if (steer < -HARD_MAX_STEERING) steer = -HARD_MAX_STEERING;
+    steer = clip_steering(steer);
     if (std::isnan(steer)) {
         std::cerr << "Error: Steering angle is NaN!" << std::endl;
         steer = 0.0;
@@ -343,4 +342,3 @@ inline bool send_speed_and_steer(double velocity, double steer) {
 }
 
 } // namespace EgoCar
-

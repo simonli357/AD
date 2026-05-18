@@ -317,7 +317,6 @@ public:
         // utils.debug("parking_maneuver_hardcode(): base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 3);
         base_yaw_target = base_yaw_target + 0.02 / (0.29 * M_PI) * base_yaw_target * initial_y_error / MAX_PARKING_Y_ERROR * (right ? 1 : -1);
         // utils.debug("parking_maneuver_hardcode(): initial y error: " + helper::d2str(initial_y_error) + ", initial yaw error: " + helper::d2str(initial_yaw_error) + ", base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 2);
-        // double base_steer = - HARD_MAX_STEERING;
         double base_steer = - SOFT_MAX_STEERING;
         double base_speed = parking_base_speed;
         double base_thresh = parking_base_thresh;
@@ -1585,7 +1584,7 @@ void StateMachine::run() {
             const double MAX_REV_SPEED       = -0.25;  // safe reverse
 
             const double STEERING_INCREMENT  = 1.0;
-            const double HARD_MAX_STEERING   = 22.0;
+            const double KEYBOARD_MAX_STEERING = 22.0;
             const double STEERING_RETURN     = 1.0;
 
             /* ---- Runtime state ---- */
@@ -1647,12 +1646,12 @@ void StateMachine::run() {
                     /* ----- Steering ----- */
                     case 'a':
                         steering_angle -= STEERING_INCREMENT;
-                        if (steering_angle < -HARD_MAX_STEERING) steering_angle = -HARD_MAX_STEERING;
+                        if (steering_angle < -KEYBOARD_MAX_STEERING) steering_angle = -KEYBOARD_MAX_STEERING;
                         break;
 
                     case 'd':
                         steering_angle += STEERING_INCREMENT;
-                        if (steering_angle > HARD_MAX_STEERING) steering_angle =  HARD_MAX_STEERING;
+                        if (steering_angle > KEYBOARD_MAX_STEERING) steering_angle = KEYBOARD_MAX_STEERING;
                         break;
 
                     /* ----- Quit ----- */

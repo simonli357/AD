@@ -837,8 +837,7 @@ int Utility::update_states_rk4 (double speed, double steering_angle, double dt) 
 void Utility::publish_cmd_vel(double steering_angle, double velocity, bool clip) {
     if (velocity < -3.5) velocity = maxspeed;
     if (clip) {
-        if (steering_angle > HARD_MAX_STEERING) steering_angle = HARD_MAX_STEERING;
-        if (steering_angle < -HARD_MAX_STEERING) steering_angle = -HARD_MAX_STEERING;
+        steering_angle = clip_steering(steering_angle);
     }
     
     // Check for NaN values and handle them
@@ -906,9 +905,7 @@ double Utility::get_steering_angle(double offset) {
     double d_error = (error - last) / dt;
     last = error;
     double steering_angle = (p * error + d * d_error) * 180 / M_PI;
-    if (steering_angle > HARD_MAX_STEERING) steering_angle = HARD_MAX_STEERING;
-    if (steering_angle < -HARD_MAX_STEERING) steering_angle = -HARD_MAX_STEERING;
-    return steering_angle;
+    return clip_steering(steering_angle);
 }
 void Utility::publish_static_transforms() {
     std::vector<geometry_msgs::TransformStamped> static_transforms;
