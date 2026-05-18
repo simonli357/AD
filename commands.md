@@ -109,3 +109,10 @@ roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=tru
 ```bash
 rosrun gui main.py
 ```
+
+- streaming computer:
+```bash
+rosrun gui main.py -ip 192.168.50.175 # boschfmc
+rosrun gui main.py -ip 10.89.16.85 # hotspot
+```
+
