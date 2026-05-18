@@ -192,9 +192,9 @@ def save_plot(times: list[float], speeds: list[float], vmax: float, duration: fl
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Sine‑wave encoder test (cm/s)")
-    ap.add_argument("--max",   type=float, default=75, help="Peak command speed [cm/s]")
-    ap.add_argument("--steer", type=float, default=-10,  help="Steering angle [deg]")
-    ap.add_argument("--dur",   type=float, default=10, help="Duration / sine period [s]")
+    ap.add_argument("--max",   type=float, default=60, help="Peak command speed [cm/s]")
+    ap.add_argument("--steer", type=float, default=-0,  help="Steering angle [deg]")
+    ap.add_argument("--dur",   type=float, default=20, help="Duration / sine period [s]")
     ap.add_argument("--csv",   type=Path, help="Save raw data to CSV")
     ap.add_argument("--port",  default="/dev/ttyACM0")
     ap.add_argument("--baud",  type=int, default=115200)
