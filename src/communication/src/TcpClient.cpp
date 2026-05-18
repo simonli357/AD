@@ -365,7 +365,7 @@ void TcpClient::send_lane2(const utils::Lane2 &lane) {
 		lane2_msg->encode(header, center, stopline, stopline_dist, crosswalk, false);
 		std::vector<uint8_t> bytes = lane2_msg->serialize(udp_data_types[0]);
 		std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -379,7 +379,7 @@ void TcpClient::send_road_object(const std_msgs::Float32MultiArray &array) {
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[1];
 		std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -393,7 +393,7 @@ void TcpClient::send_waypoint(const std_msgs::Float32MultiArray &array) {
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[2];
 		std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -470,7 +470,7 @@ void TcpClient::send_steer(float steer) {
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[6];
 		std::memcpy(udp_buffer.data() + header_size, &steer, length);
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -480,7 +480,7 @@ void TcpClient::send_swload() {
 		swload->refresh();
 		std::vector<uint8_t> bytes = swload->serialize(udp_data_types[7]);
 		std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -494,7 +494,7 @@ void TcpClient::send_model_states(const geometry_msgs::Pose &msg) {
 		std::memcpy(udp_buffer.data(), &length, message_size);
 		udp_buffer[4] = udp_data_types[8];
 		std::memcpy(udp_buffer.data() + header_size, arr.data(), length);
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), header_size + length, 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 
@@ -504,7 +504,7 @@ void TcpClient::send_imu_calib(float sys_calib, float gyro_calib, float mag_cali
 		imu_msg->encode(sys_calib, gyro_calib, mag_calib, accel_calib);
 		std::vector<uint8_t> bytes = imu_msg->serialize(udp_data_types[9]);
 		std::memcpy(udp_buffer.data(), bytes.data(), bytes.size());
-		sendto(udp_socket, udp_buffer.data(), udp_buffer.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
+		sendto(udp_socket, udp_buffer.data(), bytes.size(), 0, (struct sockaddr *)&udp_address, sizeof(udp_address));
 	});
 }
 

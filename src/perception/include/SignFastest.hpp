@@ -333,18 +333,6 @@ class SignFastest {
             }
 
             bool emergency = detect_emergency_obstacle(depthImage);
-            // bool emergency = false;
-            if (emergency) {
-                for (int i = 0; i < NUM_VALUES_PER_OBJECT; i++) {
-                    sign_msg.data.push_back(-1.0);
-                }
-                if (publish_msg) {
-                    pub.publish(sign_msg);
-                }
-                if (tcp_client != nullptr) tcp_client->send_sign(std::move(sign_msg.data));
-                if (print) ROS_INFO("Emergency obstacle detected");
-                return sign_msg;
-            }
             
             static std::vector<int> detected_indices(OBJECT_COUNT, 0);
             std::fill(detected_indices.begin(), detected_indices.end(), 0);
@@ -531,6 +519,13 @@ class SignFastest {
             //     dim.stride = boxes.size() * NUM_VALUES_PER_OBJECT;
             //     sign_msg.layout.dim.push_back(dim); 
             // }
+            if (emergency) {
+                for (int i = 0; i < NUM_VALUES_PER_OBJECT; i++) {
+                    sign_msg.data.push_back(-1.0);
+                }
+                if (print) ROS_INFO("Emergency obstacle detected");
+            }
+
             // Publish Sign message
             if (publish_msg) {
                 if (sign_msg.data.size() % NUM_VALUES_PER_OBJECT != 0) {

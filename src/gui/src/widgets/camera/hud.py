@@ -214,6 +214,8 @@ class CameraOverlay(QtWidgets.QOpenGLWidget):
                 print("Error in sign detection")
                 print(e)
                 return
+            if id < 0 or id >= len(self.confidence_thresholds):
+                continue
             if self.cam_widget.detected_objects[7 * i + 5] < self.confidence_thresholds[id]:
                 continue
 

@@ -13,6 +13,7 @@ class CameraWidget(QtWidgets.QWidget):
         self.show_depth = False
         self.numObj = 0
         self.detected_objects = np.zeros(7)
+        self.emergency = False
         self.setup_ui()
 
     def setup_ui(self):
@@ -54,11 +55,17 @@ class CameraWidget(QtWidgets.QWidget):
 
     def sign_callback(self, sign) -> None:
         if sign.data:
-            self.numObj = len(sign.data) // 7
-            if self.numObj > 0:
-                self.detected_objects = np.array(sign.data)  # .reshape(-1, 7).T
+            data = np.array(sign.data)
+            data = data[:(len(data) // 7) * 7].reshape(-1, 7)
+            sentinel_mask = (data[:, 5] == -1) & (data[:, 6] == -1)
+            self.emergency = bool(np.any(sentinel_mask))
+            data = data[~sentinel_mask]
+            self.numObj = len(data)
+            self.detected_objects = data.reshape(-1) if self.numObj > 0 else np.array([])
         else:
             self.numObj = 0
+            self.detected_objects = np.array([])
+            self.emergency = False
 
     def lane_callback(self, lane) -> None:
         self.hud.center = lane.center

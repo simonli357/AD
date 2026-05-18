@@ -330,16 +330,37 @@ void Utility::sign_callback(const utils::Sign::ConstPtr& msg) {
     process_sign_data(*msg);   
 }
 void Utility::process_sign_data(const utils::Sign& msg) {
-    if (msg.data.size()) {
-        num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
-        {
-            // std::lock_guard<std::mutex> lock(general_mutex);
-            detected_objects.assign(msg.data.begin(), msg.data.end());
+    const int raw_num_obj = msg.data.size() / NUM_VALUES_PER_OBJECT;
+    auto is_emergency_sentinel = [&](int object_index) {
+        const int start = object_index * NUM_VALUES_PER_OBJECT;
+        if (start + VehicleConstants::id >= static_cast<int>(msg.data.size())) {
+            return false;
         }
-    } else {
-        num_obj = 0;
+        return msg.data[start + VehicleConstants::confidence] == -1.0 &&
+               msg.data[start + VehicleConstants::id] == -1.0;
+    };
+
+    bool emergency_detected = false;
+    std::vector<float> real_detected_objects;
+    real_detected_objects.reserve(raw_num_obj * NUM_VALUES_PER_OBJECT);
+    for (int i = 0; i < raw_num_obj; i++) {
+        if (is_emergency_sentinel(i)) {
+            emergency_detected = true;
+            continue;
+        }
+        const int start = i * NUM_VALUES_PER_OBJECT;
+        real_detected_objects.insert(
+            real_detected_objects.end(),
+            msg.data.begin() + start,
+            msg.data.begin() + start + NUM_VALUES_PER_OBJECT
+        );
     }
-    if (detected_objects.size() >= NUM_VALUES_PER_OBJECT && detected_objects[5] == -1.0 && num_obj == 1 && detected_objects[6] == -1.0) {
+    {
+        // std::lock_guard<std::mutex> lock(general_mutex);
+        detected_objects = real_detected_objects;
+        num_obj = detected_objects.size() / NUM_VALUES_PER_OBJECT;
+    }
+    if (emergency_detected) {
         double x, y, yaw;
         get_states(x, y, yaw);
         double fog_x = Tracking::fog->x;
@@ -375,16 +396,17 @@ void Utility::process_sign_data(const utils::Sign& msg) {
     // debug("calib status: " + std::to_string(Sensing::sys_calib) + ", " + std::to_string(Sensing::gyro_calib) + ", " + std::to_string(Sensing::mag_calib) + ", " + std::to_string(Sensing::accel_calib), 2);
     Tracking::predict_dynamic_objects();
     for(int i = 0; i < num_obj; i++) {
+        const int startIndex = i * NUM_VALUES_PER_OBJECT;
         double dist = object_distance(i);
         if(dist > 4.0 || dist < 0.3) continue;
-        auto type = static_cast<OBJECT>(msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::id]);
-        double confidence = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::confidence];
+        auto type = static_cast<OBJECT>(detected_objects[startIndex + VehicleConstants::id]);
+        double confidence = detected_objects[startIndex + VehicleConstants::confidence];
         bool found_same = false;
 
-        double xmin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x1];
-        double ymin = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y1];
-        double xmax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::x2];
-        double ymax = msg.data[i * NUM_VALUES_PER_OBJECT + VehicleConstants::y2];
+        double xmin = detected_objects[startIndex + VehicleConstants::x1];
+        double ymin = detected_objects[startIndex + VehicleConstants::y1];
+        double xmax = detected_objects[startIndex + VehicleConstants::x2];
+        double ymax = detected_objects[startIndex + VehicleConstants::y2];
         double latency = (ros::Time::now() - object_detection_time).toSec();
         bool is_car = type == OBJECT::CAR;
         Eigen::Vector2d world_states = estimate_object_pose2d(ego_x, ego_y, ego_yaw, xmin, ymin, xmax, ymax, dist, is_car);
