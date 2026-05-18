@@ -1421,7 +1421,7 @@ void StateMachine::run() {
             change_state(STATE::MOVING);
         } else if (state == STATE::PARKING) {
             stop_for(stop_duration/2);
-            double offset_thresh = 0.1;
+            double offset_thresh = 0.0;
             double base_offset = detected_dist + PARKING_SPOT_LENGTH * 1.5 + offset_thresh;
             double offset = base_offset;
             utils.debug("park sign detected at a distance of: " + helper::d2str(detected_dist) + ", parking offset is: " + helper::d2str(offset), 2);
