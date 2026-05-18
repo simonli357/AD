@@ -15,6 +15,6 @@ ncnn_model: "sissi753-opt"
 # v8_model: "brooke"
 v8_model: "linxinya"
 emergency_thresh: 440 #mm
-emergency_width: 0.42
+emergency_width: 0.47
 emergency_height: 0.25
-emergency_y: 0.03 # offset from bottom of image
+emergency_y: 0.00 # offset from bottom of image
