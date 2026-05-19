@@ -45,8 +45,7 @@ real:
   parking_base_speed: -0.2
   parking_base_thresh: 0.1
   cw_speed_ratio: 0.85
-  # hw_speed_ratio: 1.6
-  hw_speed_ratio: 1.43
+  hw_speed_ratio: 1.33
   pixel_center_offset: 0
   constant_distance_to_intersection_at_detection: 0.3725
   NORMAL_SPEED: 0.23
@@ -62,7 +61,6 @@ real:
   min_dist_to_car: 0.34 # min distance from ego car front to other car back
   change_lane_offset_scaler: 1.07
   min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
-  highway_overtake_min_assumed_car_speed: 0.175 # m/s; size highway overtakes for cars that may start moving after first detection
   lane_yaw_reset_thresh1: 1.1 # degrees
   lane_yaw_reset_thresh2: 3.75 # degrees
   lane_yaw_reset_consecutive_frames: 1
