@@ -517,14 +517,14 @@ class PedestrianObject : public DynamicObject {
         : DynamicObject(type, x, y, yaw, confidence), on_crosswalk(false) {
         if (type != OBJECT::PEDESTRIAN) {
             throw std::invalid_argument("PedestrianObject Constructor(): PedestrianObject must be of type PEDESTRIAN");
-            for(auto& crosswalk: ALL_CROSSWALKS) {
-                if (std::hypot(crosswalk[0] - x, crosswalk[1] - y) < 0.537) {
-                    on_crosswalk = true;
-                    break;
-                }
-            }
-            parked = false;
         }
+        for (auto& crosswalk : ALL_CROSSWALKS) {
+            if (std::hypot(crosswalk[0] - x, crosswalk[1] - y) < 0.537) {
+                on_crosswalk = true;
+                break;
+            }
+        }
+        parked = false;
     }
 };
 
@@ -665,7 +665,7 @@ inline void create_object(OBJECT type, double x, double y, double yaw, double co
             return;
         }
         case OBJECT::PEDESTRIAN: {
-            auto pedestrian = std::make_shared<DynamicObject>(type, x, y, yaw, confidence);
+            auto pedestrian = std::make_shared<PedestrianObject>(type, x, y, yaw, confidence);
             road_pedestrians.push_back(pedestrian);
             return;
         }

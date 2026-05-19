@@ -566,78 +566,175 @@ void TrafficClient::send_car_data() {
 		return;
 	}
 	tasks->run([this]() {
-		std::string v_pos = create_vehicle_pos(Tracking::ego_car->x, Tracking::ego_car->y);
-		std::string v_rot = create_vehicle_rot(Tracking::ego_car->yaw);
-		std::string v_speed = create_vehicle_speed(Tracking::ego_car->speed);
-		std::string msg_string = v_pos + v_rot + v_speed;
+		std::shared_ptr<Tracking::EgoCarObject> ego_car;
+		std::vector<std::shared_ptr<Tracking::RoadObject>> road_objects;
+		std::vector<std::shared_ptr<Tracking::KnownStaticObject>> road_known_static_objects;
+		std::vector<std::shared_ptr<Tracking::DynamicObject>> road_cars;
+		std::vector<std::shared_ptr<Tracking::DynamicObject>> road_pedestrians;
+		{
+			std::lock_guard<std::mutex> lock(Tracking::container_mutex);
+			ego_car = Tracking::ego_car;
+			road_objects = Tracking::road_objects;
+			road_known_static_objects = Tracking::road_known_static_objects;
+			road_cars = Tracking::road_cars;
+			road_pedestrians = Tracking::road_pedestrians;
+		}
 
-		for (auto &obj : Tracking::road_objects) {
+		if (!ego_car) {
+			return;
+		}
+
+		double ego_x = 0.0;
+		double ego_y = 0.0;
+		double ego_yaw = 0.0;
+		double ego_speed = 0.0;
+		{
+			std::lock_guard<std::mutex> lock(ego_car->mtx);
+			ego_x = ego_car->x;
+			ego_y = ego_car->y;
+			ego_yaw = ego_car->yaw;
+			ego_speed = ego_car->speed;
+		}
+
+		std::string v_pos = create_vehicle_pos(ego_x, ego_y);
+		std::string v_rot = create_vehicle_rot(ego_yaw);
+		std::string v_speed = create_vehicle_speed(ego_speed);
+		std::string msg_string = v_pos + v_rot + v_speed;
+		std::vector<int> newly_reported_history_ids;
+
+		auto append_history_object_once = [this, &msg_string, &newly_reported_history_ids](const std::shared_ptr<Tracking::RoadObject> &obj, int history_id) {
+			if (!obj || history_id <= 0) {
+				return;
+			}
+
+			int tracking_id = -1;
+			int type_index = -1;
+			double x = 0.0;
+			double y = 0.0;
+			double cumulative_confidence = 0.0;
+			{
+				std::lock_guard<std::mutex> lock(obj->mtx);
+				tracking_id = obj->id;
+				type_index = static_cast<int>(obj->type);
+				x = obj->x;
+				y = obj->y;
+				cumulative_confidence = obj->cumulative_confidence;
+			}
+
+			if (type_index < 0 || type_index >= static_cast<int>(Tunable::cumulative_confidence_thresholds.size())) {
+				return;
+			}
+			if (cumulative_confidence < Tunable::cumulative_confidence_thresholds[type_index]) {
+				return;
+			}
+
+			{
+				std::lock_guard<std::mutex> lock(reported_history_mutex);
+				if (!reported_history_object_ids.insert(tracking_id).second) {
+					return;
+				}
+				newly_reported_history_ids.push_back(tracking_id);
+			}
+
+			msg_string += create_encountered_obstacle(history_id, x, y);
+		};
+
+		auto get_object_type = [](const std::shared_ptr<Tracking::RoadObject> &obj, OBJECT &type) {
+			if (!obj) {
+				return false;
+			}
+			std::lock_guard<std::mutex> lock(obj->mtx);
+			type = obj->type;
+			return true;
+		};
+
+		for (auto &obj : road_objects) {
+			OBJECT type;
+			if (!get_object_type(obj, type)) {
+				continue;
+			}
 			int id = -1;
-			if (obj->type == OBJECT::ONEWAY) {
+			if (type == OBJECT::ONEWAY) {
 				id = 8;
-			} else if (obj->type == OBJECT::NOENTRY) {
+			} else if (type == OBJECT::NOENTRY) {
 				id = 9;
-			} else if (obj->type == OBJECT::RAMP) {
+			} else if (type == OBJECT::RAMP) {
 				id = 17;
-			} else if (obj->type == OBJECT::TUNNEL) {
+			} else if (type == OBJECT::TUNNEL) {
 				id = 16;
-			} else if (obj->type == OBJECT::FOG) {
+			} else if (type == OBJECT::FOG) {
 				id = 15;
 			}
-			if (id > 0)
-				msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+			append_history_object_once(obj, id);
 		}
-		for (auto &obj : Tracking::road_known_static_objects) {
+		for (auto &obj : road_known_static_objects) {
+			OBJECT type;
+			if (!get_object_type(obj, type)) {
+				continue;
+			}
 			int id = -1;
-			if (obj->type == OBJECT::LIGHTS || obj->type == OBJECT::GREENLIGHT || obj->type == OBJECT::YELLOWLIGHT || obj->type == OBJECT::REDLIGHT) {
+			if (type == OBJECT::LIGHTS || type == OBJECT::GREENLIGHT || type == OBJECT::YELLOWLIGHT || type == OBJECT::REDLIGHT) {
 				auto light_obj = std::dynamic_pointer_cast<Tracking::LightObject>(obj);
 				if (!light_obj) {
 					continue;
 				}
 				id = 14;
-			} else if (obj->type == OBJECT::HIGHWAYENTRANCE) {
+			} else if (type == OBJECT::HIGHWAYENTRANCE) {
 				id = 5;
-			} else if (obj->type == OBJECT::STOPSIGN) {
+			} else if (type == OBJECT::STOPSIGN) {
 				id = 1;
-			} else if (obj->type == OBJECT::ROUNDABOUT) {
+			} else if (type == OBJECT::ROUNDABOUT) {
 				id = 7;
-			} else if (obj->type == OBJECT::PARK) {
+			} else if (type == OBJECT::PARK) {
 				id = 3;
-			} else if (obj->type == OBJECT::CROSSWALK) {
+			} else if (type == OBJECT::CROSSWALK) {
 				id = 4;
-			} else if (obj->type == OBJECT::HIGHWAYEXIT) {
+			} else if (type == OBJECT::HIGHWAYEXIT) {
 				id = 6;
-			} else if (obj->type == OBJECT::PRIORITY) {
+			} else if (type == OBJECT::PRIORITY) {
 				id = 2;
 			}
-			if (id > 0)
-				msg_string += create_encountered_obstacle(id, obj->x, obj->y);
+			append_history_object_once(obj, id);
 		}
 
-		for (auto &car : Tracking::road_cars) {
+		for (auto &car : road_cars) {
 			int id = -1;
-			auto car_obj = std::dynamic_pointer_cast<Tracking::DynamicObject>(car);
-			if (!car_obj) {
+			if (!car) {
 				continue;
 			}
-			if (car_obj->parked)
+			bool parked = false;
+			{
+				std::lock_guard<std::mutex> lock(car->mtx);
+				parked = car->parked;
+			}
+			if (parked) {
 				id = 10;
-			if (id > 0)
-				msg_string += create_encountered_obstacle(id, car_obj->x, car_obj->y);
+			}
+			append_history_object_once(car, id);
 		}
 
-		for (auto &car : Tracking::road_pedestrians) {
+		for (auto &car : road_pedestrians) {
 			int id = 11;
 			auto pedestrian_obj = std::dynamic_pointer_cast<Tracking::PedestrianObject>(car);
-			if (!pedestrian_obj) {
-				continue;
+			if (pedestrian_obj) {
+				bool on_crosswalk = false;
+				{
+					std::lock_guard<std::mutex> lock(pedestrian_obj->mtx);
+					on_crosswalk = pedestrian_obj->on_crosswalk;
+				}
+				if (on_crosswalk) {
+					id = 12;
+				}
 			}
-			if (pedestrian_obj->on_crosswalk)
-				id = 12;
-			if (id > 0)
-				msg_string += create_encountered_obstacle(id, pedestrian_obj->x, pedestrian_obj->y);
+			append_history_object_once(car, id);
 		}
 
-		send(tcp_socket, msg_string.data(), msg_string.size(), 0);
+		const ssize_t bytes_sent = send(tcp_socket, msg_string.data(), msg_string.size(), MSG_NOSIGNAL);
+		if (bytes_sent != static_cast<ssize_t>(msg_string.size()) && !newly_reported_history_ids.empty()) {
+			std::lock_guard<std::mutex> lock(reported_history_mutex);
+			for (int id : newly_reported_history_ids) {
+				reported_history_object_ids.erase(id);
+			}
+		}
 	});
 }

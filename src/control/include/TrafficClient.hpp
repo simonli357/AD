@@ -4,6 +4,7 @@
 #include "Tunable.h"
 #include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <netinet/in.h>
 #include <string>
 #include <std_msgs/Float32MultiArray.h>
@@ -11,6 +12,7 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_group.h>
 #include <thread>
+#include <unordered_set>
 #include <vector>
 
 using namespace std::chrono;
@@ -53,6 +55,8 @@ class TrafficClient {
 	sockaddr_in tcp_address{};
 	int tcp_socket = -1;
 	std::string receive_buffer;
+	std::mutex reported_history_mutex;
+	std::unordered_set<int> reported_history_object_ids;
 	std::thread main;
 	std::unique_ptr<tbb::task_group> tasks;
 	// Utility Methods
