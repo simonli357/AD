@@ -108,3 +108,10 @@ runDotted318: # AI Path
 runDotted: # Test Path
 - 55
 - 551
+run_arena:
+- 224
+- 314
+- 425
+- 173
+- 425
+- 330

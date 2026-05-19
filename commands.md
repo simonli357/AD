@@ -104,6 +104,11 @@ scripts/traffic_server_probe.py --discover --loc-id <LIVE_ID> --timeout 5
 roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=true real:=true realsense:=true use_traffic_server:=true gps_points:=25 gps_id:=3
 ```
 
+Arena 
+```bash
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true use_traffic_server:=true  gps_id:=3 path:=run_arena
+```
+
 ## GUI
 
 ```bash
