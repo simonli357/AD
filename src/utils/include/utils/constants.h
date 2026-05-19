@@ -254,10 +254,10 @@ namespace VehicleConstants {
         // {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1, M_PI}},
         // {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1, 0}},
         // Ferreol's measurements
-        {{2.216, 4.601, -M_PI/2}},
-        {{3.195, 3.031, M_PI/2}},
-        {{3.541, 3.865637+ofs6*2+pole_size+sign_ofs1 + 0.05, M_PI}},
-        {{1.906, 3.347, 0}},
+        {{2.216, 4.55, -M_PI/2}},
+        {{3.195, 3.1, M_PI/2}},
+        {{3.43, 3.865637+ofs6*2+pole_size+sign_ofs1 + 0.05, M_PI}},
+        {{1.98, 3.347, 0}},
     };
     static const std::vector<std::vector<double>> ALL_HIGHWAYENTRANCES = {
         {{14.362,11.028, M_PI}},
