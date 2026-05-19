@@ -45,7 +45,7 @@ real:
   parking_base_speed: -0.2
   parking_base_thresh: 0.1
   cw_speed_ratio: 0.85
-  hw_speed_ratio: 1.43
+  hw_speed_ratio: 1.33
   pixel_center_offset: 0
   constant_distance_to_intersection_at_detection: 0.3725
   NORMAL_SPEED: 0.23
