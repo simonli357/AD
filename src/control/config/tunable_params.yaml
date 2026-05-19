@@ -61,7 +61,6 @@ real:
   min_dist_to_car: 0.34 # min distance from ego car front to other car back
   change_lane_offset_scaler: 1.07
   min_dist_to_consider_car: 1.0 # min distance from center of ego car to center of other car at which we consider it
-  highway_overtake_min_assumed_car_speed: 0.175 # m/s; size highway overtakes for cars that may start moving after first detection
   lane_yaw_reset_thresh1: 1.1 # degrees
   lane_yaw_reset_thresh2: 3.75 # degrees
   lane_yaw_reset_consecutive_frames: 1
