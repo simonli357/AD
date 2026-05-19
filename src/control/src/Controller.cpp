@@ -314,9 +314,9 @@ public:
         Eigen::VectorXd speeds(3);
         Eigen::VectorXd thresholds(3);
         double base_yaw_target = parking_base_yaw_target * M_PI;
-        // utils.debug("parking_maneuver_hardcode(): base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 3);
+        // utils.debug("parking_maneuver():(): base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 3);
         base_yaw_target = base_yaw_target + 0.02 / (0.29 * M_PI) * base_yaw_target * initial_y_error / MAX_PARKING_Y_ERROR * (right ? 1 : -1);
-        // utils.debug("parking_maneuver_hardcode(): initial y error: " + helper::d2str(initial_y_error) + ", initial yaw error: " + helper::d2str(initial_yaw_error) + ", base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 2);
+        // utils.debug("parking_maneuver():(): initial y error: " + helper::d2str(initial_y_error) + ", initial yaw error: " + helper::d2str(initial_yaw_error) + ", base yaw target: " + helper::d2str(base_yaw_target / M_PI) + "pi", 2);
         double base_steer = - SOFT_MAX_STEERING;
         double base_speed = parking_base_speed;
         double base_thresh = parking_base_thresh;
@@ -337,7 +337,7 @@ public:
             targets *= -1;
             std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
         }
-        utils.debug(std::string("parking_maneuver_hardcode(): park right: ") + 
+        utils.debug(std::string("parking_maneuver():(): park right: ") + 
             (right ? "true" : "false") + 
             ", exit: " + helper::d2str(exit), 2);
         // std::cout << "targets: " << targets.transpose() << ", steerings: " << steerings.transpose() << ", speeds: " << speeds.transpose() << ", thresholds: " << thresholds.transpose() << std::endl;
@@ -357,8 +357,8 @@ public:
         Eigen::VectorXd yaw0_vec = Eigen::VectorXd::Constant(targets.size(), yaw0);
         Eigen::VectorXd target_yaws = targets + yaw0_vec;
         // std::cout << "target yaws: " << target_yaws.transpose() << std::endl;
-        utils.debug("maneuver_hardcode(): initial yaw: " + helper::d2str(yaw0) + ", target yaws: " + helper::d2str(target_yaws(0)) + ", " + helper::d2str(target_yaws(1)), 2);
-        utils.debug("maneuver_hardcode(): nearest direction: " + helper::d2str(yaw0), 2);
+        utils.debug("parking_maneuver(): initial yaw: " + helper::d2str(yaw0) + ", target yaws: " + helper::d2str(target_yaws(0)) + ", " + helper::d2str(target_yaws(1)), 2);
+        utils.debug("parking_maneuver(): nearest direction: " + helper::d2str(yaw0), 2);
         int stage = 1;
         int num_stages = targets.size();
         ros::Rate temp_rate(rate_val);
@@ -372,7 +372,7 @@ public:
             yaw = utils.get_yaw();
             yaw = helper::yaw_mod(yaw);
             yaw_error = yaw - target_yaws(stage-1);
-            utils.debug("maneuver_hardcode(): stage " + helper::d2str(stage) + ", yaw: " + helper::d2str(yaw) + ", target yaw: " + helper::d2str(target_yaws(stage-1)) + ", yaw error: " + helper::d2str(yaw_error), 5);
+            utils.debug("parking_maneuver(): stage " + helper::d2str(stage) + ", yaw: " + helper::d2str(yaw) + ", target yaw: " + helper::d2str(target_yaws(stage-1)) + ", yaw error: " + helper::d2str(yaw_error), 5);
             while(std::abs(yaw_error) > M_PI * 1.2) {
                 if(yaw_error > M_PI * 1.2) {
                     yaw_error -= 2*M_PI;
@@ -393,7 +393,7 @@ public:
                 } else {
                     exit_cond = yaw_error < thresholds(stage-1);
                 }
-                // utils.debug("maneuver_hardcode(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
+                // utils.debug("parking_maneuver(): yaw error: " + helper::d2str(yaw_error) + ", exit condition: " + helper::d2str(exit_cond), 5);
                 utils.publish_cmd_vel(-steering_angle, speed);
             }
             if (exit_cond) {
@@ -1028,8 +1028,8 @@ public:
                         + (PathManager::normals.block(start_idx, 0, 1, 2).transpose().eval() 
                         * LANE_OFFSET * sign));
         Eigen::Vector2d start_point_same = PathManager::state_refs.block(start_idx, 0, 1, 2).transpose().eval();
-        double car_speed;
-        double car_speed_adj;
+        double car_speed = 0.0;
+        double car_speed_adj = 0.0;
         for (auto& car : cars) {
             if (car->cumulative_confidence < Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) {
                 // std::cout << "CHECK_CAR(): car confidence too low: " + helper::d2str(car->cumulative_confidence) + ", threshold: " + helper::d2str(Tunable::cumulative_confidence_thresholds[static_cast<int>(OBJECT::CAR)]) << std::endl;
@@ -1131,9 +1131,17 @@ public:
         // }
         double ego_speed = Tunable::v_ref;
         if (on_highway) ego_speed *= Tunable::hw_speed_ratio;
-        double relative_speed = ego_speed - car_speed;
-        double total_distance = static_distance * ego_speed / relative_speed;
-        int end_idx = static_cast<int>(total_distance * density) + closest_idx;
+        double car_speed_raw = car_speed;
+        double car_speed_for_overtake = car_speed;
+        bool using_highway_min_assumed_speed = false;
+        if (on_highway && car_speed_for_overtake < Tunable::highway_overtake_min_assumed_car_speed) {
+            car_speed_for_overtake = Tunable::highway_overtake_min_assumed_car_speed;
+            using_highway_min_assumed_speed = true;
+        }
+        car_speed_for_overtake = std::min(0.375, car_speed_for_overtake); // cap car speed for overtake 
+        double relative_speed = ego_speed - car_speed_for_overtake;
+        double total_distance = 0.0;
+        int end_idx = closest_idx;
         can_overtake = can_overtake && (PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYLEFT) 
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::HIGHWAYRIGHT)
                             || PathManager::attribute_cmp(closest_idx, PathManager::ATTRIBUTE::DOTTED)
@@ -1143,14 +1151,20 @@ public:
             utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is on solid line", 2);
         }
 
-        if (!PathManager::attribute_cmp2(closest_idx, end_idx)) {
-            can_overtake = false;
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + helper::d2str(PathManager::state_attributes(end_idx)) + " is not on the same lane as closest idx " + helper::d2str(PathManager::state_attributes(closest_idx)) + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
-        }
-        
         if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", total distance = " + helper::d2str(total_distance) + ", ego_speed = " + helper::d2str(ego_speed) + ", car_speed = " + helper::d2str(car_speed), 2);
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: detected car is too fast to overtake, relative speed = " + helper::d2str(relative_speed) + ", ego_speed = " + helper::d2str(ego_speed) + ", car_speed_raw = " + helper::d2str(car_speed_raw) + ", car_speed_used = " + helper::d2str(car_speed_for_overtake) + ", using_highway_min_assumed_speed = " + std::to_string(using_highway_min_assumed_speed), 2);
             can_overtake = false;
+        }
+        if (can_overtake) {
+            total_distance = static_distance * ego_speed / relative_speed;
+            end_idx = static_cast<int>(total_distance * density) + closest_idx;
+        }
+
+        if (can_overtake && !PathManager::attribute_cmp2(closest_idx, end_idx)) {
+            can_overtake = false;
+            std::string closest_attr = closest_idx >= 0 && closest_idx < PathManager::state_attributes.size() ? helper::d2str(PathManager::state_attributes(closest_idx)) : "out_of_bounds";
+            std::string end_attr = end_idx >= 0 && end_idx < PathManager::state_attributes.size() ? helper::d2str(PathManager::state_attributes(end_idx)) : "out_of_bounds";
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx attr " + end_attr + " is not on the same lane as closest idx attr " + closest_attr + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
         }
         if (can_overtake && min_adj_lane_dist < total_distance) {
             if (std::abs(min_adj_lane_lat_dist) < LANE_OFFSET - CAR_WIDTH + SAME_LANE_SAFETY_FACTOR) {
@@ -1171,7 +1185,7 @@ public:
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
-            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
+            utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed_raw: " + helper::d2str(car_speed_raw) + ", car_speed_used: " + helper::d2str(car_speed_for_overtake) + ", using_highway_min_assumed_speed: " + std::to_string(using_highway_min_assumed_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
             if (PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
