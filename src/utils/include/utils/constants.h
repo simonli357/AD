@@ -254,10 +254,10 @@ namespace VehicleConstants {
         // {{3.4543+sign_ofs2, 3.865637+ofs6*2+pole_size+sign_ofs1, M_PI}},
         // {{1.95075-sign_ofs2, 3.794-ofs6*2-pole_size-sign_ofs1, 0}},
         // Ferreol's measurements
-        {{2.216, 4.55, -M_PI/2}},
-        {{3.195, 3.1, M_PI/2}},
-        {{3.43, 3.865637+ofs6*2+pole_size+sign_ofs1 + 0.05, M_PI}},
-        {{1.98, 3.347, 0}},
+        {{2.246, 4.603, -M_PI/2}}, // 2.216, 4.601
+        {{3.148, 3.049, M_PI/2}}, // 3.195, 3.031
+        {{3.490, 4.272, M_PI}}, // 3.541, 3.865637+ofs6*2+pole_size+sign_ofs1 + 0.05
+        {{1.921, 3.367, 0}}, // 1.906, 3.347
     };
     static const std::vector<std::vector<double>> ALL_HIGHWAYENTRANCES = {
         {{14.362,11.028, M_PI}},
@@ -290,10 +290,10 @@ namespace VehicleConstants {
     static constexpr double rdb_ofs1 = 0.107834;
     static constexpr double rdb_ofs2 = 0.05361;
     static const std::vector<std::vector<double>> ALL_ROUNDABOUTS = {
-        {{15.737-rdb_ofs1, 11.690741+rdb_ofs2, -M_PI/2}},
-        {{16.4+rdb_ofs1, 9.52-rdb_ofs2, M_PI/2}},
-        {{17.164+rdb_ofs2, 10.928+rdb_ofs1, M_PI}},
-        {{14.9777-rdb_ofs2, 10.263-rdb_ofs1, 0}}
+        {{15.647, 11.689, -M_PI/2}}, // 15.737-rdb_ofs1, 11.690741+rdb_ofs2
+        {{16.504, 9.491, M_PI/2}}, // 16.4+rdb_ofs1, 9.52-rdb_ofs2
+        {{17.176, 11.022, M_PI}}, // 17.164+rdb_ofs2, 10.928+rdb_ofs1
+        {{14.647, 10.152, 0}} // 14.9777-rdb_ofs2, 10.263-rdb_ofs1
     };
 
     // CROSSWALK COORDINATES
