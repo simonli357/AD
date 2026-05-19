@@ -6,7 +6,7 @@ l_f: 0.155
 wheelbase: 0.260
 
 constraints:
-  v_max: 0.5
+  v_max: 0.73
   v_min: -0.5
   v_ref: 0.35
 
