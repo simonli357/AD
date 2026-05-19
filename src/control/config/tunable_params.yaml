@@ -2,6 +2,9 @@ real:
   lane_relocalize: false
   intersection_relocalize: false
   lane_relocalize2: true
+  lane_relocalize2_consecutive_frames: 3
+  lane_relocalize2_max_error_spread: 0.015
+  lane_relocalize2_post_sign_cooldown: 2.0
   sign_relocalize: true
   lane_yaw_reset: true 
   highway_cooldown: 3.0

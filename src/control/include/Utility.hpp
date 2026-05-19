@@ -71,6 +71,7 @@ public:
     double center, lane_center_offset, image_center, p, d, last;
     double stopline_dist, stopline_angle;
     Eigen::MatrixXd lane_waypoints;
+    ros::Time lane_relocalize2_blocked_until = ros::Time(0);
 
     double height=0, velocity, steer_command, velocity_command, x_speed, y_speed;
     std::deque<double> velocity_command_queue; 
@@ -276,6 +277,14 @@ public:
             y0 += y_offset;
         }
         return 1;
+    }
+    void suppress_lane_relocalize2(double duration) {
+        if (duration <= 0.0) return;
+        const ros::Time blocked_until = ros::Time::now() + ros::Duration(duration);
+        std::lock_guard<std::mutex> lock(general_mutex);
+        if (blocked_until > lane_relocalize2_blocked_until) {
+            lane_relocalize2_blocked_until = blocked_until;
+        }
     }
     int get_mean_ekf(double &x_, double &y_, int n = 10) {
         auto ekf_states = Eigen::MatrixXd (2, n);

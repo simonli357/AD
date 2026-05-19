@@ -525,9 +525,17 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
         // Lane wpt pose correction
         static ros::Time next_pose_reset_time = ros::Time::now();
         static int good_pose_count = 0;
+        static std::vector<double> pose_error_window;
+        auto reset_pose_gate = [&]() {
+            good_pose_count = 0;
+            pose_error_window.clear();
+        };
         if (Tunable::lane_relocalize2 && (ros::Time::now() - next_pose_reset_time).toSec() > 0) {
-            // if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
-            if (true) {
+            bool pose_gate_updated = false;
+            if (lane_relocalize2_blocked_until > ros::Time::now()) {
+                reset_pose_gate();
+            } else if (true) {
+                // if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
                 if((msg.good_left||msg.good_right)) {
                     if(msg.lane_waypoints.size() > lane_waypoints.size()/3) {
                         double lane_wpt_y = msg.lane_waypoints[1];
@@ -573,27 +581,53 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                                 double yaw_error = helper::compare_yaw(ego_yaw, dir_yaw);
                                 if (yaw_error > 5 * M_PI / 180.0) proceed = false;
                             }
-                            
+
                             if (proceed && std::abs(errory) < Tunable::lane_localization_threshold) {
-                                double err_dx_world = -std::sin(ego_yaw) * errory;   // Δx in world
-                                double err_dy_world =  std::cos(ego_yaw) * errory;   // Δy in world
-                                debug("LANE_RELOC2(): SUCCESS: err_dx: " + helper::d2str(err_dx_world) + ", err_dy: " + helper::d2str(err_dy_world) + ", errlat: " + helper::d2str(errory) +
-                                    ", lfit: " + std::to_string(msg.good_left) +
-                                    ", rfit: " + std::to_string(msg.good_right) +
-                                    ", yaw: " + helper::d2str(ego_yaw * 180.0 / M_PI) +
-                                    ", normal: " + std::to_string(normal_lane) +
-                                    // ", highway_left: " + std::to_string(highway_left) +
-                                    // ", highway_right: " + std::to_string(highway_right) +
-                                    ", sldist: " + helper::d2str(msg.stopline_dist) +
-                                    ", lanedeg: " + helper::d2str(msg.straight_lane_angle * 180.0 / M_PI) +
-                                    ", r_only: " + std::to_string(right_only) + ", on_hw: " + std::to_string(on_highway), 1);
-                                recalibrate_states(err_dx_world, err_dy_world);
-                                next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
+                                pose_gate_updated = true;
+                                const int required_good_pose_frames = std::max(1, Tunable::lane_relocalize2_consecutive_frames);
+                                good_pose_count++;
+                                pose_error_window.push_back(errory);
+                                while (pose_error_window.size() > static_cast<size_t>(required_good_pose_frames)) {
+                                    pose_error_window.erase(pose_error_window.begin());
+                                }
+                                if (good_pose_count >= required_good_pose_frames &&
+                                    pose_error_window.size() >= static_cast<size_t>(required_good_pose_frames)) {
+                                    std::vector<double> sorted_errors = pose_error_window;
+                                    std::sort(sorted_errors.begin(), sorted_errors.end());
+                                    double error_spread = sorted_errors.back() - sorted_errors.front();
+                                    if (error_spread > Tunable::lane_relocalize2_max_error_spread) {
+                                        reset_pose_gate();
+                                    } else {
+                                        double median_errory = sorted_errors[sorted_errors.size() / 2];
+                                        if (sorted_errors.size() % 2 == 0) {
+                                            median_errory = 0.5 * (sorted_errors[sorted_errors.size() / 2 - 1] + sorted_errors[sorted_errors.size() / 2]);
+                                        }
+                                        double err_dx_world = -std::sin(ego_yaw) * median_errory;   // Δx in world
+                                        double err_dy_world =  std::cos(ego_yaw) * median_errory;   // Δy in world
+                                        debug("LANE_RELOC2(): SUCCESS: err_dx: " + helper::d2str(err_dx_world) + ", err_dy: " + helper::d2str(err_dy_world) + ", errlat: " + helper::d2str(median_errory) +
+                                            ", latest_errlat: " + helper::d2str(errory) +
+                                            ", gate_frames: " + std::to_string(required_good_pose_frames) +
+                                            ", err_spread: " + helper::d2str(error_spread) +
+                                            ", lfit: " + std::to_string(msg.good_left) +
+                                            ", rfit: " + std::to_string(msg.good_right) +
+                                            ", yaw: " + helper::d2str(ego_yaw * 180.0 / M_PI) +
+                                            ", normal: " + std::to_string(normal_lane) +
+                                            // ", highway_left: " + std::to_string(highway_left) +
+                                            // ", highway_right: " + std::to_string(highway_right) +
+                                            ", sldist: " + helper::d2str(msg.stopline_dist) +
+                                            ", lanedeg: " + helper::d2str(msg.straight_lane_angle * 180.0 / M_PI) +
+                                            ", r_only: " + std::to_string(right_only) + ", on_hw: " + std::to_string(on_highway), 1);
+                                        recalibrate_states(err_dx_world, err_dy_world);
+                                        next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
+                                        reset_pose_gate();
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+            if (!pose_gate_updated) reset_pose_gate();
         }
 
         // Lane wpt yaw correction

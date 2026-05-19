@@ -754,6 +754,7 @@ public:
         utils.get_states(x, y, yaw);
         utils.recalibrate_states(object->gt_pose[0] - object->x, object->gt_pose[1] - object->y);
         utils.update_states(x_current);
+        utils.suppress_lane_relocalize2(Tunable::lane_relocalize2_post_sign_cooldown);
         utils.debug("SIGN_RELOC2("+object->name+"): SUCCESS: estimated sign pose: (" + helper::d2str(object->x) + ", " + helper::d2str(object->y) + "), actual: (" + helper::d2str(object->gt_pose[0]) + ", " + helper::d2str(object->gt_pose[1]) + "), error: (" + helper::d2str(object->gt_pose[0] - object->x) + ", " + helper::d2str(object->gt_pose[1] - object->y) + "), error norm: " + helper::d2str(std::sqrt(error_sq)) + ", threshold: " + helper::d2str(thresh) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI) + ", sign: " + OBJECT_NAMES[object->type] + ", ID: " + std::to_string(object->id), 2);
         // stop_for(3.0);
         return true;
@@ -774,6 +775,7 @@ public:
             utils.get_states(x, y, yaw);
             utils.recalibrate_states(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0], EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]);
             utils.update_states(x_current);
+            utils.suppress_lane_relocalize2(Tunable::lane_relocalize2_post_sign_cooldown);
             utils.debug("SIGN_RELOC(" + sign_type + "): SUCCESS: estimated sign pose: (" + helper::d2str(estimated_sign_pose[0]) + ", " + helper::d2str(estimated_sign_pose[1]) + "), actual: (" + helper::d2str(EMPIRICAL_POSES[min_index][0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1]) + "), error: (" + helper::d2str(EMPIRICAL_POSES[min_index][0] - estimated_sign_pose[0]) + ", " + helper::d2str(EMPIRICAL_POSES[min_index][1] - estimated_sign_pose[1]) + "), error norm: " + helper::d2str(std::sqrt(min_error_sq)) + ", threshold: " + helper::d2str(sign_localization_threshold) + ", old states: (" + helper::d2str(x) + ", " + helper::d2str(y) + "), new states: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), yaw: " + helper::d2str(x_current[2] * 180 / M_PI), 2);
             // stop_for(3.0);
             PathManager::reset_target_waypoint_index(x_current);
