@@ -561,20 +561,32 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
                             double errory = path_wpt_y_body - lane_wpt_y;
                             // std::cout << "path_wpt_y_body: " << path_wpt_y_body << ", lane_wpt_y: " << lane_wpt_y << ", errory: " << errory << std::endl;
                             bool proceed = true;
-                            if (PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT)) {
+                            bool highway_left = PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYLEFT);
+                            bool highway_right = PathManager::attribute_cmp(PathManager::closest_waypoint_index, PathManager::ATTRIBUTE::HIGHWAYRIGHT);
+                            bool normal_lane = !highway_left && !highway_right;
+                            if (highway_left) {
                                 errory += 0.05;
                             } else {
                                 if (!msg.good_left || !msg.good_right) proceed = false;
                                 if (msg.stopline_dist > 0 && msg.stopline_dist < 0.73) proceed = false;
                                 double dir_yaw = helper::nearest_direction(ego_yaw);
-		                        double yaw_error = helper::compare_yaw(ego_yaw, dir_yaw);
+                                double yaw_error = helper::compare_yaw(ego_yaw, dir_yaw);
                                 if (yaw_error > 5 * M_PI / 180.0) proceed = false;
                             }
                             
-                            if (proceed && std::abs(errory) < Tunable::lane_localization_threshold) { 
+                            if (proceed && std::abs(errory) < Tunable::lane_localization_threshold) {
                                 double err_dx_world = -std::sin(ego_yaw) * errory;   // Δx in world
                                 double err_dy_world =  std::cos(ego_yaw) * errory;   // Δy in world
-                                debug("LANE_RELOC2(): SUCCESS: errorx: " + helper::d2str(err_dx_world) + ", errory: " + helper::d2str(err_dy_world) + ", errory: " + helper::d2str(errory) + ", right_only: " + std::to_string(right_only) + ", on_highway: " + std::to_string(on_highway), 1);
+                                debug("LANE_RELOC2(): SUCCESS: err_dx: " + helper::d2str(err_dx_world) + ", err_dy: " + helper::d2str(err_dy_world) + ", errlat: " + helper::d2str(errory) +
+                                    ", lfit: " + std::to_string(msg.good_left) +
+                                    ", rfit: " + std::to_string(msg.good_right) +
+                                    ", yaw: " + helper::d2str(ego_yaw * 180.0 / M_PI) +
+                                    ", normal: " + std::to_string(normal_lane) +
+                                    // ", highway_left: " + std::to_string(highway_left) +
+                                    // ", highway_right: " + std::to_string(highway_right) +
+                                    ", sldist: " + helper::d2str(msg.stopline_dist) +
+                                    ", lanedeg: " + helper::d2str(msg.straight_lane_angle * 180.0 / M_PI) +
+                                    ", r_only: " + std::to_string(right_only) + ", on_hw: " + std::to_string(on_highway), 1);
                                 recalibrate_states(err_dx_world, err_dy_world);
                                 next_pose_reset_time = ros::Time::now() + ros::Duration(Tunable::lane_localization_cooldown);
                             }
