@@ -1138,7 +1138,7 @@ public:
         double ego_speed = Tunable::v_ref;
         if (on_highway) {
             ego_speed *= Tunable::hw_speed_ratio;
-            car_speed = std::max(car_speed, 0.15); // assume min speed on hw
+            car_speed = std::max(car_speed, 0.35); // assume min speed on hw
         }
         double relative_speed = ego_speed - car_speed;
         double total_distance = static_distance * ego_speed / relative_speed;
