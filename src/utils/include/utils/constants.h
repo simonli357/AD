@@ -290,10 +290,10 @@ namespace VehicleConstants {
     static constexpr double rdb_ofs1 = 0.107834;
     static constexpr double rdb_ofs2 = 0.05361;
     static const std::vector<std::vector<double>> ALL_ROUNDABOUTS = {
-        {{15.647, 11.689, -M_PI/2}}, // 15.737-rdb_ofs1, 11.690741+rdb_ofs2
-        {{16.504, 9.491, M_PI/2}}, // 16.4+rdb_ofs1, 9.52-rdb_ofs2
-        {{17.176, 11.022, M_PI}}, // 17.164+rdb_ofs2, 10.928+rdb_ofs1
-        {{14.647, 10.152, 0}} // 14.9777-rdb_ofs2, 10.263-rdb_ofs1
+        {{15.737-rdb_ofs1, 11.690741+rdb_ofs2, -M_PI/2}},
+        {{16.4+rdb_ofs1, 9.52-rdb_ofs2, M_PI/2}},
+        {{17.164+rdb_ofs2, 10.928+rdb_ofs1, M_PI}},
+        {{14.9777-rdb_ofs2, 10.263-rdb_ofs1, 0}}
     };
 
     // CROSSWALK COORDINATES
