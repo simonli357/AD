@@ -584,7 +584,10 @@ void Utility::process_lane_data(const utils::Lane3& msg) {
 
                             if (proceed && std::abs(errory) < Tunable::lane_localization_threshold) {
                                 pose_gate_updated = true;
-                                const int required_good_pose_frames = std::max(1, Tunable::lane_relocalize2_consecutive_frames);
+                                int required_good_pose_frames = std::max(1, Tunable::lane_relocalize2_consecutive_frames);
+                                if (on_highway) {
+                                    required_good_pose_frames = 1;
+                                }
                                 good_pose_count++;
                                 pose_error_window.push_back(errory);
                                 while (pose_error_window.size() > static_cast<size_t>(required_good_pose_frames)) {
