@@ -1,0 +1,89 @@
+hold: 0.900, old states: (4.763, 8.345), new states: (4.752, 8.357), yaw: -79.883, sign: Crosswalk, ID: 101
+[INFO] [1779262357.471191352]: CHECK_INTERSECTION(Crosswalk): REACHED: x_cur: (4.760, 8.287, 4.847), intersection: (4.750, 7.920), distance: 0.367, index: 40, next intersection: (4.768, 4.556, -1.571)
+[INFO] [1779262357.471287528]: intersection reached: CASE Crosswalk, proceeding...
+[INFO] [1779262362.498503656]: LANE_RELOC2(): SUCCESS: err_dx: -0.054, err_dy: 0.001, errlat: -0.054, latest_errlat: -0.053, gate_frames: 3, err_spread: 0.002, lfit: 1, rfit: 1, yaw: -90.783, normal: 1, sldist: -1.000, lanedeg: 4.828, r_only: 0, on_hw: 0
+[INFO] [1779262362.671203723]: CHECK_INTERSECTION(): sign found for intersection at (4.768, 4.556), sign: Priority, cumulative confidence: 2.169, error: 0.000
+[INFO] [1779262363.671109378]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.497, 4.613), actual: (4.513, 4.633), error: (0.016, 0.020), error norm: 0.025, threshold: 0.900, old states: (4.726, 6.108), new states: (4.742, 6.128), yaw: -85.883, sign: Priority, ID: 102
+[INFO] [1779262364.271082046]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.498, 4.647), actual: (4.513, 4.633), error: (0.016, -0.015), error norm: 0.021, threshold: 0.900, old states: (4.751, 5.911), new states: (4.767, 5.897), yaw: -87.183, sign: Priority, ID: 102
+[INFO] [1779262364.771222520]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.511, 4.631), actual: (4.513, 4.633), error: (0.002, 0.002), error norm: 0.003, threshold: 0.900, old states: (4.768, 5.724), new states: (4.770, 5.726), yaw: -88.983, sign: Priority, ID: 102
+[INFO] [1779262365.471066475]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.520, 4.639), actual: (4.513, 4.633), error: (-0.007, -0.007), error norm: 0.010, threshold: 0.900, old states: (4.766, 5.486), new states: (4.758, 5.480), yaw: -90.783, sign: Priority, ID: 102
+[INFO] [1779262366.171087446]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.518, 4.627), actual: (4.513, 4.633), error: (-0.005, 0.006), error norm: 0.008, threshold: 0.900, old states: (4.753, 5.240), new states: (4.748, 5.246), yaw: -91.183, sign: Priority, ID: 102
+[INFO] [1779262366.871196878]: SIGN_RELOC2(Priority): SUCCESS: estimated sign pose: (4.517, 4.626), actual: (4.513, 4.633), error: (-0.004, 0.007), error norm: 0.008, threshold: 0.900, old states: (4.745, 5.005), new states: (4.741, 5.013), yaw: -90.283, sign: Priority, ID: 102
+[INFO] [1779262367.171076183]: CHECK_INTERSECTION(Priority): REACHED: x_cur: (4.741, 4.908, 4.714), intersection: (4.768, 4.556), distance: 0.353, index: 41, next intersection: (4.767, 1.274, -1.571)
+[INFO] [1779262367.171166276]: intersection reached: CASE Priority, proceeding...
+[INFO] [1779262373.215096363]: LANE_YAW_RESET(): SUCCESS: Resetting yaw to lane-based yaw: 269.516, current yaw: -89.583, straight_lane_angle: 0.484
+[INFO] [1779262373.271899854]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.541, 1.372), actual: (4.512, 1.351), error: (-0.029, -0.021), error norm: 0.036, threshold: 0.900, old states: (4.757, 2.784), new states: (4.727, 2.764), yaw: -90.484, sign: Stop Sign, ID: 5
+[INFO] [1779262373.871832439]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.524, 1.366), actual: (4.512, 1.351), error: (-0.012, -0.015), error norm: 0.019, threshold: 0.900, old states: (4.732, 2.564), new states: (4.720, 2.549), yaw: -87.984, sign: Stop Sign, ID: 5
+[INFO] [1779262374.371862585]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.498, 1.356), actual: (4.512, 1.351), error: (0.014, -0.005), error norm: 0.015, threshold: 0.900, old states: (4.729, 2.387), new states: (4.743, 2.382), yaw: -86.184, sign: Stop Sign, ID: 5
+[INFO] [1779262374.971854399]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.499, 1.341), actual: (4.512, 1.351), error: (0.013, 0.010), error norm: 0.017, threshold: 0.900, old states: (4.754, 2.170), new states: (4.766, 2.181), yaw: -86.584, sign: Stop Sign, ID: 5
+[INFO] [1779262375.572078009]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.509, 1.345), actual: (4.512, 1.351), error: (0.003, 0.006), error norm: 0.006, threshold: 0.900, old states: (4.772, 1.961), new states: (4.775, 1.967), yaw: -88.084, sign: Stop Sign, ID: 5
+[INFO] [1779262376.171276434]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (4.511, 1.344), actual: (4.512, 1.351), error: (0.000, 0.007), error norm: 0.007, threshold: 0.900, old states: (4.774, 1.753), new states: (4.774, 1.759), yaw: -89.884, sign: Stop Sign, ID: 5
+[INFO] [1779262376.571246591]: CHECK_INTERSECTION(Stop Sign): REACHED: x_cur: (4.768, 1.616, 4.688), intersection: (4.767, 1.274), distance: 0.342, index: 42, next intersection: (3.431, 0.729, 3.142)
+[INFO] [1779262376.571662735]: intersection reached: CASE STOP SIGN, stopping for 3 seconds...
+[INFO] [1779262382.072549564]: CHECK_INTERSECTION(None): REACHED: x_cur: (3.780, 0.718, 3.185), intersection: (3.431, 0.729), distance: 0.350, index: 43, next intersection: (2.892, 3.097, 1.571)
+[INFO] [1779262382.073353710]: intersection reached: WARNING: CASE NO SIGN, not stopping for safety...
+[INFO] [1779262386.271108787]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.219, 3.059), actual: (3.148, 3.049), error: (-0.071, -0.010), error norm: 0.072, threshold: 0.900, old states: (2.886, 1.604), new states: (2.815, 1.595), yaw: 95.816, sign: Lights, ID: 62
+[INFO] [1779262386.771213914]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.143, 3.045), actual: (3.148, 3.049), error: (0.005, 0.004), error norm: 0.007, threshold: 0.900, old states: (2.816, 1.766), new states: (2.821, 1.770), yaw: 89.816, sign: Lights, ID: 62
+[INFO] [1779262387.371102284]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.118, 3.061), actual: (3.148, 3.049), error: (0.030, -0.012), error norm: 0.033, threshold: 0.900, old states: (2.835, 1.979), new states: (2.865, 1.966), yaw: 86.316, sign: Lights, ID: 62
+[INFO] [1779262387.971067557]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.118, 3.052), actual: (3.148, 3.049), error: (0.030, -0.003), error norm: 0.030, threshold: 0.900, old states: (2.875, 2.180), new states: (2.905, 2.177), yaw: 87.916, sign: Lights, ID: 62
+[INFO] [1779262388.671096020]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.147, 3.058), actual: (3.148, 3.049), error: (0.001, -0.009), error norm: 0.009, threshold: 0.900, old states: (2.902, 2.424), new states: (2.904, 2.415), yaw: 91.816, sign: Lights, ID: 62
+[INFO] [1779262389.471071840]: SIGN_RELOC2(Lights): SUCCESS: estimated sign pose: (3.154, 3.061), actual: (3.148, 3.049), error: (-0.006, -0.012), error norm: 0.014, threshold: 0.900, old states: (2.895, 2.702), new states: (2.889, 2.689), yaw: 92.116, sign: Lights, ID: 62
+[INFO] [1779262389.571067958]: CHECK_INTERSECTION(Lights): REACHED: x_cur: (2.888, 2.725, 1.608), intersection: (2.892, 3.097), distance: 0.372, index: 44, next intersection: (2.892, 5.986, 1.571)
+[INFO] [1779262389.571159363]: intersection reached: CASE Lights, proceeding...
+[INFO] [1779262392.570983262]: CHECK_INTERSECTION(): sign found for intersection at (2.892, 5.986), sign: Stop Sign, cumulative confidence: 2.382, error: 0.000
+[INFO] [1779262393.748500014]: LANE_RELOC2(): SUCCESS: err_dx: -0.004, err_dy: 0.000, errlat: 0.004, latest_errlat: 0.004, gate_frames: 3, err_spread: 0.001, lfit: 1, rfit: 1, yaw: 89.816, normal: 1, sldist: -1.000, lanedeg: 0.775, r_only: 0, on_hw: 0
+[INFO] [1779262394.471190362]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.153, 5.895), actual: (3.147, 5.909), error: (-0.005, 0.015), error norm: 0.016, threshold: 0.900, old states: (2.876, 4.457), new states: (2.871, 4.472), yaw: 89.816, sign: Stop Sign, ID: 103
+[INFO] [1779262395.071151633]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.149, 5.926), actual: (3.147, 5.909), error: (-0.002, -0.017), error norm: 0.017, threshold: 0.900, old states: (2.873, 4.671), new states: (2.871, 4.654), yaw: 89.716, sign: Stop Sign, ID: 103
+[INFO] [1779262395.671190158]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.146, 5.907), actual: (3.147, 5.909), error: (0.001, 0.003), error norm: 0.003, threshold: 0.900, old states: (2.873, 4.854), new states: (2.874, 4.856), yaw: 89.616, sign: Stop Sign, ID: 103
+[INFO] [1779262396.171245597]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.144, 5.901), actual: (3.147, 5.909), error: (0.004, 0.009), error norm: 0.009, threshold: 0.900, old states: (2.875, 5.015), new states: (2.879, 5.023), yaw: 89.616, sign: Stop Sign, ID: 103
+[INFO] [1779262396.771177605]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.145, 5.909), actual: (3.147, 5.909), error: (0.003, 0.000), error norm: 0.003, threshold: 0.900, old states: (2.880, 5.190), new states: (2.882, 5.190), yaw: 89.816, sign: Stop Sign, ID: 103
+[INFO] [1779262396.871162677]: Changing from MOVING to DONE
+Sending State
+Stopping CAR
+[INFO] [1779262407.447226466]: Changing from DONE to INIT
+[INFO] [1779262415.982524334]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262417.382588208]: check_emergency_stop(): emergency stop released
+Sending State
+Starting CAR
+[INFO] [1779262421.367540521]: Changing from INIT to MOVING
+[INFO] [1779262421.384222457]: SIGN_RELOC2(Stop Sign): SUCCESS: estimated sign pose: (3.151, 5.863), actual: (3.147, 5.909), error: (-0.003, 0.047), error norm: 0.047, threshold: 0.900, old states: (2.882, 5.255), new states: (2.879, 5.302), yaw: 89.816, sign: Stop Sign, ID: 103
+[INFO] [1779262421.384419612]: Changing from MOVING to DONE
+Sending State
+Stopping CAR
+[INFO] [1779262475.595413579]: Changing from DONE to INIT
+[INFO] [1779262777.550104273]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779262778.950110070]: check_emergency_stop(): emergency stop released
+[INFO] [1779262779.050087938]: check_emergency_stop(): emergency stop triggered
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+No valid depth data in ROI!
+[INFO] [1779262780.450110288]: check_emergency_stop(): emergency stop released
+[INFO] [1779262782.450105113]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262783.850093270]: check_emergency_stop(): emergency stop released
+[INFO] [1779262785.650099447]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262786.950100579]: check_emergency_stop(): emergency stop released
+[INFO] [1779262790.150116459]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262791.450121145]: check_emergency_stop(): emergency stop released
+[INFO] [1779262794.050076889]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262795.350145798]: check_emergency_stop(): emergency stop released
+[INFO] [1779262859.550117294]: check_emergency_stop(): emergency stop triggered
+[INFO] [1779262860.950121554]: check_emergency_stop(): emergency stop released
+^C[mpc_controller_ubuntu_8482_7965600412540066703-2] killing on exit
+[ERROR] [1779262869.609071586]: serial error: Operation canceled
+corrupted double-linked list
+[rosout-1] killing on exit
+[master] killing on exit
+shutting down processing monitor...
+... shutting down processing monitor complete
+done
+scandy@ubuntu:~/AD$ 
