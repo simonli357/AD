@@ -1154,7 +1154,10 @@ public:
 
         if (!PathManager::attribute_cmp2(closest_idx, end_idx)) {
             can_overtake = false;
-            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + helper::d2str(PathManager::state_attributes(end_idx)) + " is not on the same lane as closest idx " + helper::d2str(PathManager::state_attributes(closest_idx)) + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
+            int attr_count = static_cast<int>(PathManager::state_attributes.size());
+            std::string end_attr = (end_idx >= 0 && end_idx < attr_count) ? helper::d2str(PathManager::state_attributes(end_idx)) : "out_of_bounds";
+            std::string closest_attr = (closest_idx >= 0 && closest_idx < attr_count) ? helper::d2str(PathManager::state_attributes(closest_idx)) : "out_of_bounds";
+            utils.debug("CHECK_CAR(): CANT OVERTAKE: end idx " + end_attr + " is not on the same lane as closest idx " + closest_attr + ", closest idx: " + helper::d2str(closest_idx) + ", end idx: " + helper::d2str(end_idx), 2);
         }
 
         if (can_overtake && relative_speed < Tunable::rel_speed_thresh) {
@@ -1180,6 +1183,10 @@ public:
                 return;
             };
             PathManager::overtake_end_index = start_index + static_cast<int>((total_distance) * density);
+            if (PathManager::overtake_end_index < 0 || PathManager::overtake_end_index >= PathManager::state_refs.rows()) {
+                utils.debug("CHECK_CAR(): WARNING: overtake end index exceeds state_refs size, stopping... start_index: " + helper::d2str(start_index) + ", end_index: " + helper::d2str(PathManager::overtake_end_index) + ", state_refs size: " + helper::d2str(PathManager::state_refs.rows()), 2);
+                return;
+            }
             utils.debug("CHECK_CAR(): SAME_LANE: OVERTAKING: start idx: " + helper::d2str(start_index) + ", end idx: " + helper::d2str(PathManager::overtake_end_index) + ", min_dist: " + helper::d2str(min_same_lane_dist) + ", min_dist_adj: " + helper::d2str(min_adj_lane_dist) + ", changing lane to the " + std::string(right ? "right" : "left") + " in " + helper::d2str(start_dist) + " meters. start pose: (" + helper::d2str(PathManager::state_refs(start_index, 0)) + "," + helper::d2str(PathManager::state_refs(start_index, 1)) + "), end: (" + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 0)) + ", " + helper::d2str(PathManager::state_refs(PathManager::overtake_end_index, 1)) + "), cur: (" + helper::d2str(x_current[0]) + ", " + helper::d2str(x_current[1]) + "), min_dist_to_car: " + helper::d2str(Tunable::min_dist_to_car) + ", egospeed: " + helper::d2str(ego_speed) + ", car_speed: " + helper::d2str(car_speed) + ", total_distance: " + helper::d2str(total_distance), 2);
             int num_extra = PathManager::change_lane(start_index, PathManager::overtake_end_index, right, lane_offset);
             PathManager::overtake_end_index += num_extra;
