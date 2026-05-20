@@ -238,6 +238,10 @@ void Utility::initialize() {
     p = 0.005;
     d = 0.0005;
     last = 0;
+
+    x0 = Tunable::x0;
+    y0 = Tunable::y0;
+    yaw0 = Tunable::yaw0;
     
     triggerServiceClient = nh.serviceClient<std_srvs::Trigger>("trigger_service");
     static_broadcaster = tf2_ros::StaticTransformBroadcaster();
