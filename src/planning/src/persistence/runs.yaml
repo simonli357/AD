@@ -109,7 +109,6 @@ runDotted: # Test Path
 - 55
 - 551
 run_arena:
-- 223
 - 314
 - 425
 - 173

@@ -106,7 +106,7 @@ roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=tru
 
 Arena 
 ```bash
-roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true use_traffic_server:=true  gps_id:=3 path:=run_arena do_parking:=false
+roslaunch control controller.launch camera:=true ip:=192.168.50.175 use_gps:=false real:=true realsense:=true use_traffic_server:=true  gps_id:=3 path:=run_arena do_parking:=false x0:=7.35 y0:=0.93
 ```
 
 ## GUI
