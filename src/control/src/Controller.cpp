@@ -308,6 +308,10 @@ public:
         }
     }
     int parking_maneuver_hardcode(bool right=true, bool exit=false, double rate_val=20, double initial_y_error = 0, double initial_yaw_error = 0) {
+        if (!Tunable::do_parking) {
+            utils.debug("parking_maneuver_hardcode(): skipped because do_parking is false", 2);
+            return 0;
+        }
         // rate_val = 1/mpc.T;
         Eigen::VectorXd targets(3);
         Eigen::VectorXd steerings(3);
@@ -1353,7 +1357,7 @@ void StateMachine::run() {
                 find_highway_for_relocalization();
                 find_oneway_for_relocalization();
                 check_light();
-                int park_index = park_sign_detected();
+                int park_index = Tunable::do_parking ? park_sign_detected() : -1;
                 if(park_index>=0 && park_count <3) {
                     auto x1 = PARKING_SIGN_POSES1[0][0];
                     auto y1 = PARKING_SIGN_POSES1[0][1];
@@ -1425,6 +1429,11 @@ void StateMachine::run() {
             // else change_state(STATE::MOVING);
             change_state(STATE::MOVING);
         } else if (state == STATE::PARKING) {
+            if (!Tunable::do_parking) {
+                utils.debug("PARKING(): skipped because do_parking is false", 2);
+                change_state(STATE::MOVING);
+                continue;
+            }
             stop_for(stop_duration/2);
             double offset_thresh = 0.0;
             double base_offset = detected_dist + PARKING_SPOT_LENGTH * 1.5 + offset_thresh;
@@ -1550,9 +1559,19 @@ void StateMachine::run() {
             }
             change_state(STATE::PARKED);
         } else if (state == STATE::PARKED) {
+            if (!Tunable::do_parking) {
+                utils.debug("PARKED(): skipped because do_parking is false", 2);
+                change_state(STATE::MOVING);
+                continue;
+            }
             stop_for(stop_duration);
             change_state(STATE::EXITING_PARKING);
         } else if (state == STATE::EXITING_PARKING) {
+            if (!Tunable::do_parking) {
+                utils.debug("EXITING_PARKING(): skipped because do_parking is false", 2);
+                change_state(STATE::MOVING);
+                continue;
+            }
             bool hard_code = true;
             if (hard_code) {
                 // right_park = true;

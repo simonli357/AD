@@ -16,7 +16,7 @@ namespace Tunable {
     inline bool initialized = false;
 
     // launch args
-    inline bool sign, ekf, lane, real, dashboard, keyboardControl, pubWaypoints, hasGps, useGps;
+    inline bool sign, ekf, lane, do_parking, real, dashboard, keyboardControl, pubWaypoints, hasGps, useGps;
     inline bool emergency = false;
     inline double T, v_ref, T_park;
     inline int N;
@@ -136,6 +136,7 @@ namespace Tunable {
       std::cout << "LoadFromParams: nodeName: " << nodeName << std::endl;
   
       CHECK_PARAM(nodeName + "/lane", lane);
+      CHECK_PARAM(nodeName + "/do_parking", do_parking);
       CHECK_PARAM(nodeName + "/ekf", ekf);
       CHECK_PARAM(nodeName + "/sign", sign);
       CHECK_PARAM("T", T);
@@ -168,8 +169,8 @@ namespace Tunable {
       CHECK_PARAM(nodeName + "/sign_debug", sign_debug);
       CHECK_PARAM("/realsense_imu", realsense_imu);
   
-      printf("LoadFromParams: emergency: %d, pubWaypoints: %d, kb: %d, dashboard: %d, gps: %d, lane: %d, ekf: %d, sign: %d, T: %.3f, N: %d, v_ref: %.3f, robot_name: %s, vref: %.3f, x0: %.3f, y0: %.3f, yaw0: %.3f, T_park: %.3f, real: %d, use_beta: %d, async: %d, use_tcp: %d, test: %d\n",
-          emergency, pubWaypoints, keyboardControl, dashboard, hasGps, lane, ekf, sign, T, N, v_ref,
+      printf("LoadFromParams: emergency: %d, pubWaypoints: %d, kb: %d, dashboard: %d, gps: %d, lane: %d, do_parking: %d, ekf: %d, sign: %d, T: %.3f, N: %d, v_ref: %.3f, robot_name: %s, vref: %.3f, x0: %.3f, y0: %.3f, yaw0: %.3f, T_park: %.3f, real: %d, use_beta: %d, async: %d, use_tcp: %d, test: %d\n",
+          emergency, pubWaypoints, keyboardControl, dashboard, hasGps, lane, do_parking, ekf, sign, T, N, v_ref,
           robot_name.c_str(), vref, x0, y0, yaw0, T_park, real, use_beta, async, use_tcp, testing);
       printf("LoadFromParams2: debug_level: %d, camera: %d, steer_offset: %.3f, speed_offset: %.3f, steer_offset_minimum: %.3f, steer_offset_maximum: %.3f, subModel: %d, rateVal: %.3f, realsense_imu: %d, sign_debug: %d\n",
           debugLevel, camera, steer_offset, speed_offset, steer_offset_minimum, steer_offset_maximum, subModel, rateVal, realsense_imu, sign_debug);

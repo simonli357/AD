@@ -2,6 +2,7 @@
   <arg name="sign" default="true"/>
   <arg name="ekf" default="false"/>
   <arg name="lane" default="true"/>
+  <arg name="do_parking" default="true"/>
   <arg name="name" default="car1"/>
   <arg name="v" default="35"/>
   <arg name="vref" default="0.$(arg v)"/>
@@ -104,6 +105,7 @@
     <param name="sign" value="$(arg sign)"/>
     <param name="ekf" value="$(arg ekf)"/>
     <param name="lane" value="$(arg lane)"/>
+    <param name="do_parking" value="$(arg do_parking)"/>
     <param name="name" value="$(arg name)"/>
     <param name="/robot_name" value="$(arg name)"/>
     <param name="vref" value="$(arg vref)"/>
